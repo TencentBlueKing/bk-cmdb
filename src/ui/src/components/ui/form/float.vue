@@ -1,11 +1,12 @@
 <template>
     <div class="cmdb-form form-float">
-        <input class="cmdb-form-input form-float-input" type="text"
+        <bk-input class="cmdb-form-input form-float-input" type="text"
             :placeholder="placeholder || $t('Form[\'请输入浮点数\']')"
             :value="value"
             :disabled="disabled"
             @blur="handleInput($event)"
             @change="handleChange">
+        </bk-input>
     </div>
 </template>
 

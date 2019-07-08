@@ -43,10 +43,6 @@
                         v-else-if="property['bk_property_type'] === 'bool'"
                         v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
                     </cmdb-form-bool-input>
-                    <cmdb-form-associate-input class="filter-field-value filter-field-associate fr"
-                        v-else-if="['singleasst', 'multiasst'].includes(property['bk_property_type'])"
-                        v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
-                    </cmdb-form-associate-input>
                     <component class="filter-field-value fr" :class="`filter-field-${property['bk_property_type']}`"
                         v-else
                         :is="`cmdb-form-${property['bk_property_type']}`"
@@ -65,11 +61,12 @@
                 <div class="collection-form" ref="collectionTips" v-click-outside="handleCloseCollection" v-show="collection.show">
                     <div class="form-title">{{$t('Hosts[\'收藏此查询\']')}}</div>
                     <div class="form-group">
-                        <input type="text" class="form-name cmdb-form-input"
+                        <bk-input type="text" class="form-name cmdb-form-input"
                             v-validate="'required'"
                             v-model.trim="collection.name"
                             data-vv-name="collectionName"
                             :placeholder="$t('Hosts[\'请填写名称\']')">
+                        </bk-input>
                         <span v-show="errors.has('collectionName')" class="form-error">{{errors.first('collectionName')}}</span>
                     </div>
                     <div class="form-group">

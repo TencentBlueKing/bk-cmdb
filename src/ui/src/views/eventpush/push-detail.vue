@@ -7,12 +7,12 @@
                         {{$t('EventPush["推送名称"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
-                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入推送名称\']')"
+                        <bk-input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入推送名称\']')"
                             maxlength="20"
                             v-model.trim="tempEventData['subscription_name']"
                             :data-vv-name="$t('EventPush[\'推送名称\']')"
-                            v-validate="'required'"
-                        >
+                            v-validate="'required'">
+                        </bk-input>
                         <span v-show="errors.has($t('EventPush[\'推送名称\']'))" class="color-danger">{{ errors.first($t('EventPush[\'推送名称\']')) }}</span>
                     </div>
                 </li>
@@ -21,11 +21,11 @@
                         {{$t('EventPush["系统名称"]')}}
                     </label>
                     <div class="item-content">
-                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入系统名称\']')"
+                        <bk-input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入系统名称\']')"
                             v-model.trim="tempEventData['system_name']"
                             v-validate="'singlechar'"
-                            :data-vv-name="$t('EventPush[\'系统名称\']')"
-                        >
+                            :data-vv-name="$t('EventPush[\'系统名称\']')">
+                        </bk-input>
                         <span v-show="errors.has($t('EventPush[\'系统名称\']'))" class="color-danger">{{ errors.first($t('EventPush[\'系统名称\']')) }}</span>
                     </div>
                 </li>
@@ -35,11 +35,11 @@
                     </label>
                     <div class="item-content url">
                         <div class="url-box">
-                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
+                            <bk-input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
                                 v-model.trim="tempEventData['callback_url']"
                                 v-validate="'required|http'"
-                                name="http"
-                            >
+                                name="http">
+                            </bk-input>
                             <span v-show="errors.has('http')" class="color-danger">{{ errors.first('http') }}</span>
                         </div>
                         <bk-button class="test-btn" theme="primary" @click.prevent="testPush">{{$t('EventPush["测试推送"]')}}</bk-button>
@@ -61,18 +61,18 @@
                             >{{$t('Common["正则验证"]')}}
                         </label>
                         <div class="input-box">
-                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
+                            <bk-input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
                                 v-if="tempEventData['confirm_mode'] === 'regular'"
                                 v-model.trim="tempEventData['confirm_pattern']['regular']"
                                 :data-vv-name="$t('Common[\'该字段\']')"
-                                v-validate="'required'"
-                            >
-                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'成功标志\']')"
+                                v-validate="'required'">
+                            </bk-input>
+                            <bk-input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'成功标志\']')"
                                 v-else
                                 v-model.trim="tempEventData['confirm_pattern']['httpstatus']"
                                 v-validate="{ required: true, regex: /^[0-9]+$/ }"
-                                :data-vv-name="$t('Common[\'该字段\']')"
-                            >
+                                :data-vv-name="$t('Common[\'该字段\']')">
+                            </bk-input>
                             <i class="tip" :class="{ 'reg': tempEventData['confirm_mode'] === 'regular' }"></i>
                         </div>
                         <span v-show="errors.has($t('Common[\'该字段\']'))" class="color-danger">{{ errors.first($t('Common[\'该字段\']')) }}</span>
@@ -83,12 +83,13 @@
                         {{$t('EventPush["超时时间"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content length-short">
-                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'单位：秒\']')"
+                        <bk-input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'单位：秒\']')"
                             v-model.trim="tempEventData['time_out']"
                             v-validate="{ required: true, regex: /^[0-9]+$/ }"
                             :data-vv-name="$t('EventPush[\'超时时间\']')"
-                            maxlength="10"
-                        ><span class="unit">S</span>
+                            maxlength="10">
+                        </bk-input>
+                        <span class="unit">S</span>
                         <div v-show="errors.has($t('EventPush[\'超时时间\']'))" class="color-danger">{{ errors.first($t('EventPush[\'超时时间\']')) }}</div>
                     </div>
                 </li>

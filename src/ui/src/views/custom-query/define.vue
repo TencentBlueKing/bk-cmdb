@@ -25,11 +25,12 @@
                     active: !editable,
                     auth: [$OPERATION.U_CUSTOM_QUERY]
                 }">
-                    <input type="text" class="cmdb-form-input"
+                    <bk-input type="text" class="cmdb-form-input"
                         v-model.trim="name"
                         :name="$t('CustomQuery[\'查询名称\']')"
                         :disabled="!editable"
                         v-validate="'required|max:15'">
+                    </bk-input>
                 </div>
                 <span v-show="errors.has($t('CustomQuery[\'查询名称\']'))" class="color-danger">{{ errors.first($t('CustomQuery[\'查询名称\']')) }}</span>
             </div>
@@ -96,11 +97,6 @@
                             v-model="property.value"
                             :disabled="!editable">
                         </cmdb-form-bool-input>
-                        <cmdb-form-associate-input class="filter-field-value filter-field-associate fl"
-                            v-else-if="['singleasst', 'multiasst'].includes(property.propertyType)"
-                            v-model="property.value"
-                            :disabled="!editable">
-                        </cmdb-form-associate-input>
                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
                             v-else
                             :is="`cmdb-form-${property.propertyType}`"

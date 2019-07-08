@@ -6,7 +6,7 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])">
+                <bk-input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])"></bk-input>
             </div>
         </label>
         <label class="form-label">
@@ -15,7 +15,7 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])">
+                <bk-input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])"></bk-input>
             </div>
         </label>
         <label class="form-label">
@@ -24,11 +24,12 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
-                <input type="text" class="cmdb-form-input"
+                <bk-input type="text" class="cmdb-form-input"
                     name="asstName"
                     :disabled="relationInfo.ispre || !isEdit"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
                     v-validate="'required|singlechar'">
+                </bk-input>
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
         </label>

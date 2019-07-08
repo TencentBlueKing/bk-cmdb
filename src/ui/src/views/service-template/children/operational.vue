@@ -8,12 +8,13 @@
                     <span class="color-danger">*</span>
                 </label>
                 <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('templateName') }">
-                    <input type="text" class="cmdb-form-input" id="templateName"
+                    <bk-input type="text" class="cmdb-form-input" id="templateName"
                         name="templateName"
                         :placeholder="$t('ServiceManagement[\'请输入模版名称\']')"
                         :disabled="!isCreatedType"
                         v-model.trim="formData.templateName"
                         v-validate="'required|singlechar'">
+                    </bk-input>
                     <p class="form-error">{{errors.first('templateName')}}</p>
                 </div>
             </div>

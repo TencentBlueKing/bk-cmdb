@@ -12,7 +12,11 @@
             <div class="role-form-content">
                 <div class="content-group clearfix">
                     <label for="groupName" class="fl">{{$t('Permission["角色名"]')}}</label>
-                    <input type="text" class="cmdb-form-input fl" id="groupName" v-model.trim="data['group_name']" maxlength="50">
+                    <bk-input type="text" class="cmdb-form-input fl"
+                        id="groupName"
+                        maxlength="50"
+                        v-model.trim="data['group_name']">
+                    </bk-input>
                 </div>
                 <div class="content-group clearfix">
                     <label for="userList" class="fl">{{$t('Permission["角色成员"]')}}</label>

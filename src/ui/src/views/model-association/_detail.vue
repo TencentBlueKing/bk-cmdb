@@ -7,12 +7,13 @@
                     <span class="color-danger">*</span>
                 </span>
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
-                    <input type="text" class="cmdb-form-input"
+                    <bk-input type="text" class="cmdb-form-input"
                         name="asstId"
                         :disabled="isEdit"
                         v-model.trim="relationInfo['bk_asst_id']"
                         v-validate="'required|associationId'"
                         :placeholder="$t('ModelManagement[\'请输入英文标识\']')">
+                    </bk-input>
                     <p class="form-error">{{errors.first('asstId')}}</p>
                 </div>
             </label>
@@ -22,13 +23,14 @@
                     <span class="color-danger">*</span>
                 </span>
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
-                    <input type="text"
+                    <bk-input type="text"
                         class="cmdb-form-input"
                         name="asstName"
                         :disabled="isEdit && relation.ispre"
                         v-validate="'required|singlechar'"
                         v-model.trim="relationInfo['bk_asst_name']"
                         :placeholder="$t('ModelManagement[\'请输入名称\']')">
+                    </bk-input>
                     <p class="form-error">{{errors.first('asstName')}}</p>
                 </div>
             </label>
@@ -54,13 +56,14 @@
                     <span class="color-danger">*</span>
                 </span>
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has('destDes') }">
-                    <input type="text"
+                    <bk-input type="text"
                         class="cmdb-form-input"
                         name="destDes"
                         :disabled="isEdit && relation.ispre"
                         v-validate="'required|singlechar'"
                         v-model.trim="relationInfo['dest_des']"
                         :placeholder="$t('ModelManagement[\'请输入关联描述如：属于、上联\']')">
+                    </bk-input>
                     <p class="form-error">{{errors.first('destDes')}}</p>
                 </div>
             </label>

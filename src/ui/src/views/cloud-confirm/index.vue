@@ -29,12 +29,13 @@
                     v-model="filter.value"
                     @on-selected="getTableData">
                 </cmdb-form-enum>
-                <input
+                <bk-input
                     class="confirm-filter-value cmdb-form-input fl"
                     type="text"
                     v-else
                     v-model.trim="filter.text"
-                    @keydown.enter="getTableData">
+                    @enter="getTableData">
+                </bk-input>
                 <i class="confirm-filter-search bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>

@@ -139,12 +139,13 @@
                             {{$t('ModelManagement["唯一标识"]')}}<span class="color-danger">*</span>
                         </div>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('classifyId') }">
-                            <input type="text" class="cmdb-form-input"
+                            <bk-input type="text" class="cmdb-form-input"
                                 name="classifyId"
                                 :placeholder="$t('ModelManagement[\'请输入唯一标识\']')"
                                 :disabled="groupDialog.isEdit"
                                 v-model.trim="groupDialog.data['bk_classification_id']"
                                 v-validate="'required|classifyId'">
+                            </bk-input>
                             <p class="form-error">{{errors.first('classifyId')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
@@ -155,12 +156,13 @@
                         </span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('classifyName') }">
-                            <input type="text"
+                            <bk-input type="text"
                                 class="cmdb-form-input"
                                 name="classifyName"
                                 :placeholder="$t('ModelManagement[\'请输入名称\']')"
                                 v-model.trim="groupDialog.data['bk_classification_name']"
                                 v-validate="'required|classifyName'">
+                            </bk-input>
                             <p class="form-error">{{errors.first('classifyName')}}</p>
                         </div>
                     </label>

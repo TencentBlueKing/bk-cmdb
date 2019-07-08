@@ -1,9 +1,10 @@
 <template>
     <div class="search-layout">
         <div class="search-box" v-click-outside="handleClickOutside">
-            <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('Index[\'开始查询\']')"
+            <bk-input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('Index[\'开始查询\']')"
                 v-model.trim="keyword"
                 @focus="focus = true">
+            </bk-input>
             <label class="bk-icon icon-search" for="indexSearch"></label>
             <div class="search-result" v-show="focus && keyword.length > 2">
                 <div class="search-loading" v-bkloading="{ isLoading: loading }" v-if="loading"></div>

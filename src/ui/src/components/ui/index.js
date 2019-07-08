@@ -20,7 +20,6 @@ import singlechar from './form/singlechar.vue'
 import timezone from './form/timezone.vue'
 import enumeration from './form/enum.vue'
 import objuser from './form/objuser.vue'
-import associateInput from './form/associate-input.vue'
 import tree from './tree/tree.vue'
 import resize from './other/resize.vue'
 import collapseTransition from './transition/collapse.js'
@@ -49,7 +48,6 @@ const install = (Vue, opts = {}) => {
         timezone,
         enumeration,
         objuser,
-        associateInput,
         tree,
         resize,
         collapseTransition,
@@ -84,7 +82,6 @@ export default {
     timezone,
     enumeration,
     objuser,
-    associateInput,
     tree,
     resize,
     collapseTransition,

@@ -1,6 +1,6 @@
 <template>
     <div class="form-bool-input">
-        <input class="cmdb-form-input" type="text" v-model.trim="localValue">
+        <bk-input class="cmdb-form-input" type="text" v-model.trim="localValue"></bk-input>
     </div>
 </template>
 

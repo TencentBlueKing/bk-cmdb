@@ -1,7 +1,10 @@
 <template>
     <div class="model-icon-list">
         <div class="page clearfix">
-            <input type="text" class="cmdb-form-input" :placeholder="$t('ModelManagement[\'请输入关键词\']')" v-model.trim="searchText">
+            <bk-input type="text" class="cmdb-form-input"
+                :placeholder="$t('ModelManagement[\'请输入关键词\']')"
+                v-model.trim="searchText">
+            </bk-input>
             <div class="page-btn">
                 <bk-button theme="default" :disabled="!page.current" @click="pageTurning(--page.current)">
                     <i class="bk-icon icon-angle-left"></i>

@@ -48,18 +48,22 @@
                     <label class="label first">
                         <span>{{$t('NetworkDiscovery["设备型号"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text"
+                    <bk-input type="text"
                         class="cmdb-form-input"
                         name="device_model"
                         v-model.trim="deviceDialog.data['device_model']"
                         v-validate="'required|singlechar'">
+                    </bk-input>
                     <div v-show="errors.has('device_model')" class="color-danger">{{ errors.first('device_model') }}</div>
                 </div>
                 <div>
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["设备名称"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text" class="cmdb-form-input" name="device_name" v-model.trim="deviceDialog.data['device_name']" v-validate="'required|singlechar'">
+                    <bk-input type="text" class="cmdb-form-input" name="device_name"
+                        v-model.trim="deviceDialog.data['device_name']"
+                        v-validate="'required|singlechar'">
+                    </bk-input>
                     <div v-show="errors.has('device_name')" class="color-danger">{{ errors.first('device_name') }}</div>
                 </div>
                 <div>
@@ -80,7 +84,10 @@
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["厂商"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text" class="cmdb-form-input" name="bk_vendor" v-model.trim="deviceDialog.data['bk_vendor']" v-validate="'required|singlechar'">
+                    <bk-input type="text" class="cmdb-form-input" name="bk_vendor"
+                        v-model.trim="deviceDialog.data['bk_vendor']"
+                        v-validate="'required|singlechar'">
+                    </bk-input>
                     <div v-show="errors.has('bk_vendor')" class="color-danger">{{ errors.first('bk_vendor') }}</div>
                 </div>
                 <div class="footer">

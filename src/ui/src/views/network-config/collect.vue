@@ -8,7 +8,11 @@
                 {{$t('NetworkDiscovery["执行发现"]')}}
             </bk-button>
             <div class="input-box">
-                <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'搜索IP、云区域\']')" v-model.trim="filter.text" @keyup.enter="getTableData">
+                <bk-input type="text" class="cmdb-form-input"
+                    :placeholder="$t('NetworkDiscovery[\'搜索IP、云区域\']')"
+                    v-model.trim="filter.text"
+                    @enter="getTableData">
+                </bk-input>
                 <i class="bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>
@@ -101,7 +105,10 @@
                         <span class="color-danger">*</span>
                         <i class="bk-icon icon-exclamation-circle" v-tooltip="'Community String'"></i>
                     </label>
-                    <input type="text" name="community" class="cmdb-form-input" v-validate="'required'" v-model.trim="configDialog.community">
+                    <bk-input type="text" name="community" class="cmdb-form-input"
+                        v-validate="'required'"
+                        v-model.trim="configDialog.community">
+                    </bk-input>
                     <div v-show="errors.has('community')" class="color-danger">{{ errors.first('community') }}</div>
                 </div>
                 <div class="footer">

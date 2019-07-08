@@ -29,11 +29,12 @@
                     @on-selected="handleSelectSecondary">
                 </cmdb-selector>
                 <div class="filter-search fl">
-                    <input type="text"
+                    <bk-input type="text"
                         class="bk-form-input"
                         :placeholder="$t('ServiceManagement[\'搜索\']')"
                         v-model.trim="filter.templateName"
-                        @keypress.enter="searchByTemplateName">
+                        @enter="searchByTemplateName">
+                    </bk-input>
                     <i class="bk-icon icon-search" @click="searchByTemplateName"></i>
                 </div>
             </div>

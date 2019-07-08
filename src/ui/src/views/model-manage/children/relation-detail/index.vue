@@ -6,7 +6,7 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" v-model.trim="objAsstId" disabled>
+                <bk-input type="text" class="cmdb-form-input" v-model.trim="objAsstId" disabled></bk-input>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
@@ -15,12 +15,13 @@
                 {{$t('ModelManagement["关联描述"]')}}
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
-                <input type="text" class="cmdb-form-input"
+                <bk-input type="text" class="cmdb-form-input"
                     name="asstName"
                     :placeholder="$t('ModelManagement[\'请输入关联描述\']')"
                     :disabled="relationInfo.ispre || isReadOnly"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
                     v-validate="'singlechar'">
+                </bk-input>
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>

@@ -32,8 +32,11 @@
                 </bk-button>
             </span>
             <div class="filter-text fr">
-                <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')"
-                    v-model.trim="filter.text" @keyup.enter="handlePageChange(1)">
+                <bk-input type="text" class="bk-form-input"
+                    :placeholder="$t('ProcessManagement[\'进程名称搜索\']')"
+                    v-model.trim="filter.text"
+                    @enter="handlePageChange(1)">
+                </bk-input>
                 <i class="bk-icon icon-search" @click="handlePageChange(1)"></i>
             </div>
         </div>

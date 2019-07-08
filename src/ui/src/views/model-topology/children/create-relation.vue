@@ -6,7 +6,7 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])">
+                <bk-input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])"></bk-input>
             </div>
         </label>
         <label class="form-label exchange-icon-wrapper">
@@ -15,7 +15,7 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])">
+                <bk-input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])"></bk-input>
             </div>
             <span class="exchange-icon" @click="exchangeObjAsst">
                 <i class="bk-icon icon-sort"></i>
@@ -41,11 +41,12 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
-                <input type="text" class="cmdb-form-input"
+                <bk-input type="text" class="cmdb-form-input"
                     name="asstName"
                     v-validate="'required|singlechar'"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
                     :placeholder="$t('ModelManagement[\'请输入关联描述\']')">
+                </bk-input>
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
         </label>
