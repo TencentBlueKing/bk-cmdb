@@ -275,7 +275,10 @@ func (m *module) AddMultiModule(bizID, setID int64, moduleNames []string, data m
 		data.Set(common.BKDefaultField, 0)
 		data.Set(common.BKInstParentStr, setID)
 
-		rsp, err := m.client.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, data)
+		createParam := &metadata.CreateModelInstance{
+			Data: data,
+		}
+		rsp, err := m.client.CoreService().Instance().CreateInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, createParam)
 		if nil != err {
 			blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
 			return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
