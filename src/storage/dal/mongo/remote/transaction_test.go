@@ -140,3 +140,90 @@ func TestTransaction(t *testing.T) {
 	require.EqualValues(t, 2, count)
 
 }
+
+func TestInsertCommit(t *testing.T) {
+	db, err := NewWithDiscover(getServerFunc)
+	require.NoError(t, err)
+
+	header := http.Header{}
+	header.Set(common.BKHTTPCCRequestID, "xxxxx")
+	orgctx := context.WithValue(context.Background(), common.CCContextKeyJoinOption, dal.JoinOption{
+		RequestID: header.Get(common.BKHTTPCCRequestID),
+		TxnID:     header.Get(common.BKHTTPCCTransactionID),
+	})
+	tablename := "tmptest"
+
+	tx, err := db.Start(orgctx)
+	require.NoError(t, err)
+	header = tx.TxnInfo().IntoHeader(header)
+	ctx := util.GetDBContext(context.Background(), header)
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	require.True(t, ok)
+	require.NotEmpty(t, opt.RequestID)
+	require.NotEmpty(t, opt.TxnID)
+
+	err = db.Table(tablename).Insert(ctx, map[string]interface{}{"name": "tmptest_insert_commit"})
+	require.NoError(t, err)
+
+	err = db.Commit(ctx)
+	require.NoError(t, err)
+
+	db.Close()
+
+}
+
+func TestInsertAbort(t *testing.T) {
+	db, err := NewWithDiscover(getServerFunc)
+	require.NoError(t, err)
+
+	header := http.Header{}
+	header.Set(common.BKHTTPCCRequestID, "xxxxx")
+	orgctx := context.WithValue(context.Background(), common.CCContextKeyJoinOption, dal.JoinOption{
+		RequestID: header.Get(common.BKHTTPCCRequestID),
+		TxnID:     header.Get(common.BKHTTPCCTransactionID),
+	})
+	tablename := "tmptest"
+
+	tx, err := db.Start(orgctx)
+	require.NoError(t, err)
+	header = tx.TxnInfo().IntoHeader(header)
+	ctx := util.GetDBContext(context.Background(), header)
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	require.True(t, ok)
+	require.NotEmpty(t, opt.RequestID)
+	require.NotEmpty(t, opt.TxnID)
+
+	row := map[string]string{"name": "tmptest_insert_abort"}
+	err = db.Table(tablename).Insert(ctx, row)
+	require.NoError(t, err)
+
+	newRow := make(map[string]string, 0)
+	err = db.Table(tablename).Find(row).One(ctx, &newRow)
+	require.NoError(t, err)
+	if len(newRow) == 0 {
+		t.Errorf("not found data")
+		return
+	}
+	if newRow["name"] != row["name"] {
+		t.Errorf(" %#v != %#v", newRow, row)
+		return
+	}
+
+	err = db.Abort(ctx)
+	require.NoError(t, err)
+
+	newRow = make(map[string]string, 0)
+	err = db.Table(tablename).Find(row).One(context.Background(), &newRow)
+	if !db.IsNotFoundError(err) {
+		t.Errorf(err.Error())
+		return
+	}
+
+	if len(newRow) != 0 {
+		t.Errorf("abort txn failure")
+		return
+	}
+
+	db.Close()
+
+}
