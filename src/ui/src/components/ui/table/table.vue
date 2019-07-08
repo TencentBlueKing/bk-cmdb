@@ -26,16 +26,12 @@
                 </v-tbody>
             </div>
         </div>
-        <div class="pagination-layout" v-if="showFooter && pagination.count > 0">
-            <v-pagination :layout="layout"></v-pagination>
-        </div>
     </div>
 </template>
 
 <script>
     import vThead from './table-head'
     import vTbody from './table-body'
-    import vPagination from './table-pagination'
     import TableLayout from './table-layout'
     import throttle from 'lodash.throttle'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events.js'
@@ -43,8 +39,7 @@
         name: 'cmdb-table',
         components: {
             vThead,
-            vTbody,
-            vPagination
+            vTbody
         },
         props: {
             loading: {

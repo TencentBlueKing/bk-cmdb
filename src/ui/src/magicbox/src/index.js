@@ -23,7 +23,6 @@ import bkInfoBox from './components/info-box'
 import bkTooltip from './components/tooltip'
 import bkDatePicker from './components/date-picker'
 import bkDateRange from './components/date-range'
-import bkPaging from './components/paging'
 import bkTransfer from './components/transfer'
 import bkTree from './components/tree'
 import bkCollapse from './components/collapse'
@@ -33,7 +32,6 @@ import bkUpload from './components/upload'
 import bkTimeline from './components/timeline'
 import bkProcess from './components/process'
 import bkCombox from './components/combox'
-import bkPagination from './components/pagination'
 
 import bkException from './components/exception'
 import locale from './locale'
@@ -57,7 +55,6 @@ const components = {
     bkDropdown,
     bkDropdownMenu,
     bkIconButton,
-    bkPaging,
     bkProcess,
     bkRound,
     bkSteps,
@@ -69,7 +66,6 @@ const components = {
     bkTree,
     bkUpload,
     bkException,
-    bkPagination
 }
 
 export function install (Vue, opts = {}) {
@@ -131,7 +127,6 @@ export {
     bkDropdown,
     bkDropdownMenu,
     bkIconButton,
-    bkPaging,
     bkProcess,
     bkRound,
     bkSteps,
@@ -152,7 +147,6 @@ export {
     bkException,
     langPkg,
     localeMixin,
-    bkPagination
 }
 
 // export default Object.assign(bkMagic, {install})

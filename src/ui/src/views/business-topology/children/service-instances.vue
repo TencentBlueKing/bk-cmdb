@@ -62,15 +62,15 @@
                     @check-change="handleCheckChange">
                 </service-instance-table>
             </div>
-            <bk-paging class="pagination"
-                pagination-able
-                location="left"
-                :cur-page="pagination.current"
-                :total-page="pagination.totalPage"
-                :pagination-count="pagination.size"
-                @page-change="handlePageChange"
-                @pagination-change="handleSizeChange">
-            </bk-paging>
+            <bk-pagination class="pagination"
+                align="right"
+                size="small"
+                :current="pagination.current"
+                :count="pagination.count"
+                :limit="pagination.size"
+                @change="handlePageChange"
+                @limit-change="handleSizeChange">
+            </bk-pagination>
             <div class="filter-empty" v-if="!instances.length">
                 <div class="filter-empty-content">
                     <i class="bk-icon icon-empty"></i>
@@ -118,7 +118,7 @@
                 instances: [],
                 pagination: {
                     current: 1,
-                    totalPage: 0,
+                    count: 0,
                     size: 10
                 },
                 processForm: {
@@ -237,7 +237,7 @@
                     this.isCheckAll = false
                     this.isExpandAll = false
                     this.instances = data.info
-                    this.pagination.totalPage = Math.ceil(data.count / this.pagination.size)
+                    this.pagination.count = data.count
                 } catch (e) {
                     console.error(e)
                     this.instances = []
