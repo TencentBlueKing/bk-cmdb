@@ -65,7 +65,8 @@ func (m *module) hasHost(bizID int64, moduleIDS []int64) (bool, error) {
 
 	return 0 != len(rsp.Data), nil
 }
-func (m *module) isValidSet(bizID, setID int64) (bool, error) {
+
+func (m *module) isValidSet(bizID int64, setID int64) (bool, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(bizID)
@@ -154,6 +155,7 @@ func (m *module) UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData
 
 	return nil
 }
+
 func (m *module) SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstResult, error) {
 
 	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header, query)
@@ -169,12 +171,13 @@ func (m *module) SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstRe
 
 	return &rsp.Data, nil
 }
+
 func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error) {
 
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
-	//fmt.Println("cond:", cond.ToMapStr())
+	// fmt.Println("cond:", cond.ToMapStr())
 	// search sets
 	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, m.params.Header, query)
 	if nil != err {
@@ -200,12 +203,18 @@ func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition
 	}
 
 	// search modules
-	cond = condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKSetIDField).In(setIDS)
-	query.Condition = cond.ToMapStr()
-
-	rspModule, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header, query)
+	inputParam := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKSetIDField: map[string]interface{}{
+				common.BKDBIN: setIDS,
+			},
+		},
+	}
+	rspModule, err := m.client.CoreService().Instance().ReadInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, inputParam)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
 		return nil, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -216,8 +225,13 @@ func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition
 		return nil, m.params.Err.New(rspModule.Code, rspModule.ErrMsg)
 	}
 
-	return &rspModule.Data, nil
+	result := &metadata.InstResult{
+		Count: rspModule.Data.Count,
+		Info:  rspModule.Data.Info,
+	}
+	return result, nil
 }
+
 func (m *module) AddMultiModule(bizID, setID int64, moduleNames []string, data mapstr.MapStr) error {
 
 	ok, err := m.isValidSet(bizID, setID)
