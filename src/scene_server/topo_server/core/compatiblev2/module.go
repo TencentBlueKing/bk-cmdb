@@ -309,7 +309,10 @@ func (m *module) DeleteMultiModule(bizID int64, moduleIDS []int64) error {
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	cond.Field(common.BKModuleIDField).In(moduleIDS)
 
-	rsp, err := m.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, cond.ToMapStr())
+	deleteParam := &metadata.DeleteOption{
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := m.client.CoreService().Instance().DeleteInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, deleteParam)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
 		return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

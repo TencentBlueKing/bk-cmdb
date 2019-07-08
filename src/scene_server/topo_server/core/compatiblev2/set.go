@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -69,7 +70,10 @@ func (s *set) deleteModules(bizID int64, setIDS []int64) error {
 	cond.Field(common.BKSetIDField).In(setIDS)
 	cond.Field(common.BKAppIDField).Eq(bizID)
 
-	rsp, err := s.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDModule, s.params.Header, cond.ToMapStr())
+	deleteParam := &metadata.DeleteOption{
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := s.client.CoreService().Instance().DeleteInstance(s.params.Context, s.params.Header, common.BKInnerObjIDModule, deleteParam)
 
 	if nil != err {
 		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s", err.Error())
@@ -128,7 +132,10 @@ func (s *set) DeleteMultiSet(bizID int64, setIDS []int64) error {
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	cond.Field(common.BKSetIDField).In(setIDS)
 
-	rsp, err := s.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDSet, s.params.Header, cond.ToMapStr())
+	deleteParam := &metadata.DeleteOption{
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := s.client.CoreService().Instance().DeleteInstance(s.params.Context, s.params.Header, common.BKInnerObjIDSet, deleteParam)
 	if nil != err {
 		blog.Errorf("[compatiblev2-set] faield to check host, err: %s", err.Error())
 		return err

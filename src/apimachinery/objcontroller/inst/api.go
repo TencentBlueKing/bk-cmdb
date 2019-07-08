@@ -21,7 +21,6 @@ import (
 )
 
 type InstanceInterface interface {
-	DelObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error)
 	UpdateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
 }
 
