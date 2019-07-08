@@ -258,23 +258,23 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.ProcNum.Value = inst.ProcNum
 		template.ProcNum.AsDefaultValue = &True
 	}
-	if inst.StopCmd != nil {
+	if inst.StopCmd != nil && len(*inst.StopCmd) > 0 {
 		template.StopCmd.Value = inst.StopCmd
 		template.StopCmd.AsDefaultValue = &True
 	}
-	if inst.RestartCmd != nil {
+	if inst.RestartCmd != nil && len(*inst.RestartCmd) > 0 {
 		template.RestartCmd.Value = inst.RestartCmd
 		template.RestartCmd.AsDefaultValue = &True
 	}
-	if inst.ForceStopCmd != nil {
+	if inst.ForceStopCmd != nil && len(*inst.ForceStopCmd) > 0 {
 		template.ForceStopCmd.Value = inst.ForceStopCmd
 		template.ForceStopCmd.AsDefaultValue = &True
 	}
-	if inst.FuncName != nil {
+	if inst.FuncName != nil && len(*inst.FuncName) > 0 {
 		template.FuncName.Value = inst.FuncName
 		template.FuncName.AsDefaultValue = &True
 	}
-	if inst.WorkPath != nil {
+	if inst.WorkPath != nil && len(*inst.WorkPath) > 0 {
 		template.WorkPath.Value = inst.WorkPath
 		template.WorkPath.AsDefaultValue = &True
 	}
@@ -287,19 +287,19 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.Priority.Value = inst.Priority
 		template.Priority.AsDefaultValue = &True
 	}
-	if inst.ReloadCmd != nil {
+	if inst.ReloadCmd != nil && len(*inst.ReloadCmd) > 0 {
 		template.ReloadCmd.Value = inst.ReloadCmd
 		template.ReloadCmd.AsDefaultValue = &True
 	}
-	if inst.ProcessName != nil {
+	if inst.ProcessName != nil && len(*inst.ProcessName) > 0 {
 		template.ProcessName.Value = inst.ProcessName
 		template.ProcessName.AsDefaultValue = &True
 	}
-	if inst.Port != nil {
+	if inst.Port != nil && len(*inst.Port) > 0 {
 		template.Port.Value = inst.Port
 		template.Port.AsDefaultValue = &True
 	}
-	if inst.PidFile != nil {
+	if inst.PidFile != nil && len(*inst.PidFile) > 0 {
 		template.PidFile.Value = inst.PidFile
 		template.PidFile.AsDefaultValue = &True
 	}
@@ -311,15 +311,15 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.AutoTimeGapSeconds.Value = inst.AutoTimeGap
 		template.AutoTimeGapSeconds.AsDefaultValue = &True
 	}
-	if inst.StartCmd != nil {
+	if inst.StartCmd != nil && len(*inst.StartCmd) > 0 {
 		template.StartCmd.Value = inst.StartCmd
 		template.StartCmd.AsDefaultValue = &True
 	}
-	if inst.FuncID != nil {
+	if inst.FuncID != nil && len(*inst.FuncID) > 0 {
 		template.FuncID.Value = inst.FuncID
 		template.FuncID.AsDefaultValue = &True
 	}
-	if inst.User != nil {
+	if inst.User != nil && len(*inst.User) > 0 {
 		template.User.Value = inst.User
 		template.User.AsDefaultValue = &True
 	}
@@ -327,13 +327,17 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.TimeoutSeconds.Value = inst.TimeoutSeconds
 		template.TimeoutSeconds.AsDefaultValue = &True
 	}
-	if inst.Protocol != nil {
+	if inst.Protocol != nil && inst.Protocol.String() != "" {
 		template.Protocol.Value = inst.Protocol
 		template.Protocol.AsDefaultValue = &True
 	}
-	if inst.Description != nil {
+	if inst.Description != nil && len(*inst.Description) > 0 {
 		template.Description.Value = inst.Description
 		template.Description.AsDefaultValue = &True
+	}
+	if inst.StartParamRegex != nil && len(*inst.StartParamRegex) > 0 {
+		template.StartParamRegex.Value = inst.StartParamRegex
+		template.StartParamRegex.AsDefaultValue = &True
 	}
 
 	return &template
