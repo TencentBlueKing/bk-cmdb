@@ -203,7 +203,14 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		}
 		cond.Field(common.GetInstIDField(objID)).NotEq(instID)
 
-		result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: cond.ToMapStr()})
+		inputParam := &metadata.QueryCondition{
+			Limit: metadata.SearchLimit{
+				Limit: common.BKNoLimit,
+			},
+			Condition: cond.ToMapStr(),
+		}
+		objType := common.GetObjByType(valid.objID)
+		result, err := valid.CoreAPI.CoreService().Instance().ReadInstance(valid.ctx, valid.pheader, objType, inputParam)
 		if nil != err {
 			blog.Errorf("[validUpdateUnique] search [%s] inst error %v", valid.objID, err)
 			return err
