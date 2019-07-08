@@ -134,7 +134,16 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		mapData[key] = val
 	}
 
-	uniqueresp, err := valid.CoreAPI.ObjectController().Unique().Search(valid.ctx, valid.pheader, valid.objID)
+	inputParam := metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Offset: 0,
+			Limit:  common.BKNoLimit,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKObjIDField: valid.objID,
+		}),
+	}
+	uniqueresp, err := valid.CoreAPI.CoreService().Model().ReadModelAttrUnique(valid.ctx, valid.pheader, inputParam)
 	if nil != err {
 		blog.Errorf("[validUpdateUnique] search [%s] unique error %v", valid.objID, err)
 		return err
@@ -144,12 +153,12 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		return valid.errif.New(uniqueresp.Code, uniqueresp.ErrMsg)
 	}
 
-	if 0 >= len(uniqueresp.Data) {
+	if 0 >= len(uniqueresp.Data.Info) {
 		blog.Warnf("[validUpdateUnique] there're not unique constraint for %s, return", valid.objID)
 		return nil
 	}
 
-	for _, unique := range uniqueresp.Data {
+	for _, unique := range uniqueresp.Data.Info {
 		// retrive unique value
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
