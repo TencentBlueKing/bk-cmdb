@@ -32,17 +32,3 @@ func (t *openAPI) GetProcessesByModuleName(ctx context.Context, h http.Header, d
 		Into(resp)
 	return
 }
-
-func (t *openAPI) DeleteSetHost(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/openapi/set/delhost"
-
-	err = t.client.Delete().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}

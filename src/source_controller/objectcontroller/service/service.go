@@ -64,7 +64,6 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/topographics/update").To(s.UpdateTopoGraphics))
 
 	api.Route(api.POST("/openapi/proc/getProcModule").To(s.GetProcessesByModuleName))
-	api.Route(api.DELETE("/openapi/set/delhost").To(s.DeleteSetHost))
 
 	api.Route(api.POST("/privilege/group/{bk_supplier_account}").To(s.CreateUserGroup))
 	api.Route(api.PUT("/privilege/group/{bk_supplier_account}/{group_id}").To(s.UpdateUserGroup))

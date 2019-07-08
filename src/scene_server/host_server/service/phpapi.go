@@ -826,17 +826,25 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	param := make(common.KvMap)
-	param[common.BKAppIDField] = appID
-	param[common.BKHostIDField] = hostID
-	res, err := s.CoreAPI.ObjectController().OpenAPI().DeleteSetHost(srvData.ctx, req.Request.Header, param)
+	defaultModule, err := s.CoreAPI.CoreService().Process().GetBusinessDefaultSetModuleInfo(srvData.ctx, srvData.header, appID)
+	if err != nil {
+		blog.Errorf("DelHostInApp failed, get biz default module info failed, err:%s, appID:%d, rid:%s", err.Error(), appID, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+	transferOption := &meta.TransferHostToInnerModule{
+		ApplicationID: appID,
+		ModuleID:      defaultModule.IdleModuleID,
+		HostID:        []int64{hostID},
+	}
+	res, err := s.CoreAPI.CoreService().Host().TransferToInnerModule(srvData.ctx, srvData.header, transferOption)
 	if nil != err {
-		blog.Errorf("DelHostInApp DeleteSetHost   error:%s,  input:%+v,param:%+v,,rid:%s", err.Error(), input, param, srvData.rid)
+		blog.Errorf("DelHostInApp failed, TransferToInnerModule failed, err: %s, input:%+v, param:%+v, rid:%s", err.Error(), input, transferOption, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostEditRelationPoolFail)})
 		return
 	}
 	if false == res.Result {
-		blog.Errorf("DelHostInApp DeleteSetHost   error:%s,  input:%+v,param:%+v,rid:%s", res.ErrMsg, input, param, srvData.rid)
+		blog.Errorf("DelHostInApp DeleteSetHost   error:%s,  input:%+v,param:%+v,rid:%s", res.ErrMsg, input, transferOption, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
 		return
 	}
@@ -845,7 +853,6 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 		BaseResp: meta.SuccessBaseResp,
 		Data:     res.Data,
 	})
-
 }
 
 func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {

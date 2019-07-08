@@ -22,7 +22,6 @@ import (
 
 type OpenApiInterface interface {
 	GetProcessesByModuleName(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.ProcInfoArrResult, err error)
-	DeleteSetHost(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 }
 
 func NewOpenApiInterface(client rest.ClientInterface) OpenApiInterface {
