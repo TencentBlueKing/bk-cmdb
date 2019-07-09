@@ -27,25 +27,26 @@
                 </i>
             </div>
         </div>
-        <cmdb-table
+        <bk-table
             class="role-table"
-            row-cursor="default"
-            :sortable="false"
-            :loading="$loading('searchUserGroup')"
-            :header="table.header"
-            :list="table.list"
-            :wrapper-minus-height="240">
-            <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary" @click="showDetails(item)">{{$t('Permission["权限详情"]')}}</span>
-                <span class="text-primary" @click.stop="editRole(item)">{{$t('Common["编辑"]')}}</span>
-                <span class="text-danger" @click.stop="confirmDeleteRole(item)">{{$t('Common["删除"]')}}</span>
-            </template>
-            <div class="empty-info" slot="data-empty">
+            v-bkloading="{ isLoading: $loading('searchUserGroup') }"
+            :data="table.list"
+            :max-height="$APP.height - 240">
+            <bk-table-column prop="group_name" :label="$t('Permission[\'角色名\']')"></bk-table-column>
+            <bk-table-column prop="user_list" :label="$t('Permission[\'角色成员\']')"></bk-table-column>
+            <bk-table-column :label="$t('Permission[\'操作\']')" align="center">
+                <template slot-scope="{ row }">
+                    <span class="text-primary" @click="showDetails(row)">{{$t('Permission["权限详情"]')}}</span>
+                    <span class="text-primary" @click.stop="editRole(row)">{{$t('Common["编辑"]')}}</span>
+                    <span class="text-danger" @click.stop="confirmDeleteRole(row)">{{$t('Common["删除"]')}}</span>
+                </template>
+            </bk-table-column>
+            <div class="empty-info" slot="empty">
                 <p>{{$t("Common['暂时没有数据']")}}</p>
                 <p>{{$t("Permission['当前并无角色，可点击下方按钮新增']")}}</p>
                 <bk-button class="process-btn" theme="primary" @click="createRole">{{$t("Permission['新建角色']")}}</bk-button>
             </div>
-        </cmdb-table>
+        </bk-table>
         <v-role-form
             ref="roleForm"
             v-if="form.isShow"
@@ -91,19 +92,6 @@
                     name: this.$t('Permission["角色成员"]')
                 }],
                 table: {
-                    header: [{
-                        id: 'group_name',
-                        name: this.$t('Permission["角色名"]')
-                    }, {
-                        id: 'user_list',
-                        name: this.$t('Permission["角色成员"]')
-                    }, {
-                        id: 'operation',
-                        name: this.$t('Permission["操作"]'),
-                        attr: {
-                            align: 'center'
-                        }
-                    }],
                     list: []
                 },
                 form: {
