@@ -226,7 +226,7 @@
                         bk_supplier_account: this.supplierAccount
                     }),
                     config: {
-                        requestId: `post_searchObjectAttribute_process`,
+                        requestId: `searchObjectAttribute_templateProcess`,
                         fromCache: false
                     }
                 })
