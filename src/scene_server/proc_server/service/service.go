@@ -92,10 +92,6 @@ func (ps *ProcServer) WebService() *restful.Container {
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	// v2
-	api.Route(api.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
-	api.Route(api.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
-
 	ps.newProcessService(api)
 	container := restful.NewContainer()
 	container.Add(api)

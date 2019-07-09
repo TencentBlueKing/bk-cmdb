@@ -23,7 +23,6 @@ import (
 
 type ObjControllerClientInterface interface {
 	Meta() meta.MetaInterface
-	OpenAPI() openapi.OpenApiInterface
 }
 
 func NewObjectControllerInterface(c *util.Capability, version string) ObjControllerClientInterface {
@@ -39,8 +38,4 @@ type objectctrl struct {
 
 func (o *objectctrl) Meta() meta.MetaInterface {
 	return meta.NewmetaInterface(o.client)
-}
-
-func (o *objectctrl) OpenAPI() openapi.OpenApiInterface {
-	return openapi.NewOpenApiInterface(o.client)
 }
