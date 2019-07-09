@@ -181,6 +181,13 @@ const (
 
 	CCErrCommFuncCalledWithInappropriateParam = 1199064
 
+	// CCErrCommStartTranscationFailed start transcation failed
+	CCErrCommStartTranscationFailed = 1199065
+	// CCErrCommCommitTranscationFailed commit transcation failed
+	CCErrCommCommitTranscationFailed = 1199066
+	// CCErrCommcommitTranscationFailed abort transcation failed
+	CCErrCommAbortTranscationFailed = 1199067
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 

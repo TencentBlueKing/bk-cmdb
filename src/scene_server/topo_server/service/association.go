@@ -26,7 +26,7 @@ import (
 
 // CreateMainLineObject create a new object in the main line topo
 func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
-	tx, err := s.Txn.StartTransaction(context.Background())
+	tx, err := s.Txn.Start(context.Background())
 	if err != nil {
 		blog.Errorf("create mainline object failed, start transaction failed, err: %v", err)
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
@@ -64,7 +64,7 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 
 // DeleteMainLineObject delete a object int the main line topo
 func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	tx, err := s.Txn.StartTransaction(context.Background())
+	tx, err := s.Txn.Start(context.Background())
 	if err != nil {
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 	}
