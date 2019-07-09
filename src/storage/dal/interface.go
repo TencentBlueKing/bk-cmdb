@@ -13,11 +13,13 @@
 package dal
 
 import (
-	"configcenter/src/storage/mongodb"
-	"configcenter/src/storage/types"
-
 	"context"
 	"errors"
+	"net/http"
+
+	ccErr "configcenter/src/common/errors"
+	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/types"
 )
 
 // Errors defind
@@ -38,14 +40,7 @@ type DB interface {
 	Clone() DB
 	// Table collection 操作
 	Table(collection string) Table
-	// StartTransaction 开启新事务
-	StartTransaction(ctx context.Context) (DB, error)
-	// Commit 提交事务
-	Commit(context.Context) error
-	// Abort 取消事务
-	Abort(context.Context) error
-	// TxnInfo 当前事务信息，用于事务发起者往下传递
-	TxnInfo() *types.Transaction
+
 	// NextSequence 获取新序列号(非事务)
 	NextSequence(ctx context.Context, sequenceName string) (uint64, error)
 	// Ping 健康检查
@@ -62,6 +57,23 @@ type DB interface {
 	IsNotFoundError(error) bool
 
 	Close() error
+}
+
+// Transcation db transcation interface
+type Transcation interface {
+	// Start 开启新事务
+	Start(ctx context.Context) (Transcation, error)
+	// Commit 提交事务
+	Commit(context.Context) error
+	// Abort 取消事务
+	Abort(context.Context) error
+	// TxnInfo 当前事务信息，用于事务发起者往下传递
+	TxnInfo() *types.Transaction
+
+	// AutoRun Interface for automatic processing of encapsulated transactions
+	// f func return error, abort commit, other commit transcation. transcation commit can be error.
+	// f func parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
+	AutoRun(ctx context.Context, opt TxnWrapperOption, f func(header http.Header) error) error
 }
 
 // Table collection operation interface
@@ -98,6 +110,13 @@ type JoinOption struct {
 	TxnID     string // 事务ID,uuid
 	RequestID string // 请求ID,可选项
 	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
+
+	TMAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
+}
+
+type TxnWrapperOption struct {
+	Header http.Header
+	CCErr  ccErr.DefaultCCErrorIf
 }
 
 // Find find operation interface
