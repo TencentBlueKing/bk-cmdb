@@ -211,4 +211,5 @@ func (s *coreService) initService() {
 	s.initCloudSync()
 	s.label()
 	s.privilege()
+	s.topographics()
 }
