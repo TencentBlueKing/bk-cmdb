@@ -1,16 +1,20 @@
 <template>
     <div class="instance-details-wrapper">
-        <cmdb-table class="details-table" ref="table"
-            :header="header"
-            :list="attributeList"
-            :wrapper-minus-height="300">
-            <template slot="before_value" slot-scope="{ item }">
-                <span>{{item.before_value ? item.before_value : '--'}}</span>
-            </template>
-            <template slot="show_value" slot-scope="{ item }">
-                <span>{{item.show_value ? item.show_value : '--'}}</span>
-            </template>
-        </cmdb-table>
+        <bk-table
+            :data="attributeList"
+            :max-height="$APP.height - 300">
+            <bk-table-column prop="property_name" :label="$t('BusinessSynchronous[\'属性名称\']')"></bk-table-column>
+            <bk-table-column prop="before_value" :label="$t('BusinessSynchronous[\'变更前\']')">
+                <template slot-scope="{ row }">
+                    <span>{{row.before_value ? row.before_value : '--'}}</span>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="show_value" :label="$t('BusinessSynchronous[\'变更后\']')">
+                <template slot-scope="{ row }">
+                    <span>{{row.show_value ? row.show_value : '--'}}</span>
+                </template>
+            </bk-table-column>
+        </bk-table>
     </div>
 </template>
 
@@ -22,25 +26,6 @@
                 default: () => {
                     return []
                 }
-            }
-        },
-        data () {
-            return {
-                header: [
-                    {
-                        id: 'property_name',
-                        name: this.$t("BusinessSynchronous['属性名称']"),
-                        sortable: false
-                    }, {
-                        id: 'before_value',
-                        name: this.$t("BusinessSynchronous['变更前']"),
-                        sortable: false
-                    }, {
-                        id: 'show_value',
-                        name: this.$t("BusinessSynchronous['变更后']"),
-                        sortable: false
-                    }
-                ]
             }
         }
     }

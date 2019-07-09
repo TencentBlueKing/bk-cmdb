@@ -22,30 +22,36 @@
             </div>
             <bk-button theme="primary" class="btn-search fr" @click="search">{{$t('Association["搜索"]')}}</bk-button>
         </div>
-        <cmdb-table class="new-association-table"
-            :loading="$loading()"
-            :pagination.sync="table.pagination"
-            :sort="table.sort"
-            :header="table.header"
-            :list="table.list"
-            :col-border="true"
-            :wrapper-minus-height="308"
-            @handlePageChange="setCurrentPage"
-            @handleSizeChange="search"
-            @handleSortChange="setCurrentSort">
-            <template slot="options" slot-scope="{ item }">
-                <a href="javascript:void(0)" class="option-link"
-                    v-if="isAssociated(item)"
-                    @click="updateAssociation(item[instanceIdKey], 'remove')">
-                    {{$t('Association["取消关联"]')}}
-                </a>
-                <a href="javascript:void(0)" class="option-link" v-else
-                    v-click-outside="handleCloseConfirm"
-                    @click.stop="beforeUpdate($event, item[instanceIdKey], 'new')">
-                    {{$t('Association["添加关联"]')}}
-                </a>
-            </template>
-        </cmdb-table>
+        <bk-table class="new-association-table"
+            v-bkloading="{ isLoading: $loading() }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :border="true"
+            :max-height="$APP.height - 350"
+            @page-change="setCurrentPage"
+            @page-limit-change="setPageLimit"
+            @sort-change="setCurrentSort">
+            <bk-table-column :prop="instanceIdKey" label="ID"></bk-table-column>
+            <bk-table-column :prop="instanceNameKey" :label="instanceName"></bk-table-column>
+            <bk-table-column v-if="filter.id !== instanceNameKey"
+                :prop="filter.id"
+                :label="(getProperty(filter.id) || {}).bk_property_name">
+            </bk-table-column>
+            <bk-table-column fixed="right" :label="$t('Association[\'操作\']')">
+                <template slot-scope="{ row }">
+                    <a href="javascript:void(0)" class="option-link"
+                        v-if="isAssociated(row)"
+                        @click="updateAssociation(row[instanceIdKey], 'remove')">
+                        {{$t('Association["取消关联"]')}}
+                    </a>
+                    <a href="javascript:void(0)" class="option-link" v-else
+                        v-click-outside="handleCloseConfirm"
+                        @click.stop="beforeUpdate($event, row[instanceIdKey], 'new')">
+                        {{$t('Association["添加关联"]')}}
+                    </a>
+                </template>
+            </bk-table-column>
+        </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.id">
             <p class="tips-content">{{$t('Association["更新确认"]')}}</p>
             <div class="tips-option">
@@ -78,7 +84,7 @@
                     pagination: {
                         count: 0,
                         current: 1,
-                        size: 10
+                        limit: 10
                     },
                     sort: ''
                 },
@@ -164,8 +170,8 @@
             page () {
                 const pagination = this.table.pagination
                 return {
-                    start: (pagination.current - 1) * pagination.size,
-                    limit: pagination.size,
+                    start: (pagination.current - 1) * pagination.limit,
+                    limit: pagination.limit,
                     sort: this.table.sort
                 }
             },
@@ -174,11 +180,6 @@
             },
             isSource () {
                 return this.currentOption['bk_obj_id'] === this.objId
-            }
-        },
-        watch: {
-            'filter.id' (id) {
-                this.setTableHeader(id)
             }
         },
         async created () {
@@ -225,28 +226,12 @@
                 this.getInstance()
             },
             setCurrentSort (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.search()
             },
-            setTableHeader (propertyId) {
-                const header = [{
-                    id: this.instanceIdKey,
-                    name: 'ID'
-                }, {
-                    id: this.instanceNameKey,
-                    name: this.instanceName
-                }, {
-                    id: 'options',
-                    name: this.$t('Association["操作"]'),
-                    sortable: false
-                }]
-                if (propertyId && propertyId !== this.instanceNameKey) {
-                    header.splice(2, 0, {
-                        id: propertyId,
-                        name: (this.getProperty(propertyId) || {})['bk_property_name']
-                    })
-                }
-                this.table.header = header
+            setPageLimit (limit) {
+                this.table.pagination.limit = limit
+                this.search()
             },
             getAssociationType () {
                 return this.searchAssociationType({}).then(data => {
@@ -322,7 +307,6 @@
                 this.table.pagination.current = 1
                 this.table.pagination.count = 0
                 this.table.list = []
-                this.setTableHeader()
                 await Promise.all([
                     this.getAsstObjProperties(),
                     this.getExistInstAssociation()

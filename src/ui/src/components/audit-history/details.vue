@@ -14,26 +14,33 @@
                     </span>
                 </div>
             </div>
-            <cmdb-table
-                row-cursor="default"
-                row-hover-color="#fff"
-                :loading="$loading(`post_searchObjectAttribute_${objId}`)"
-                :sortable="false"
-                :width="width ? width : 700"
-                :wrapper-minus-height="300"
-                :empty-height="230"
-                :header="tableHeader"
-                :list="displayList"
+            <bk-table
+                v-bkloading="{ isLoading: $loading(`post_searchObjectAttribute_${objId}`) }"
+                :data="displayList"
+                :width="width || 700"
+                :max-height="$APP.height - 300"
+                :height="height"
                 :row-border="true"
                 :col-border="true"
-                v-bind="height ? { height } : {}">
-                <template slot="pre_data" slot-scope="{ item }">
-                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item.pre_data"></div>
-                </template>
-                <template slot="cur_data" slot-scope="{ item }">
-                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item.cur_data"></div>
-                </template>
-            </cmdb-table>
+                :header-border="true">
+                <bk-table-column prop="bk_property_name"></bk-table-column>
+                <bk-table-column v-if="details.op_type !== 1"
+                    prop="pre_data"
+                    :label="$t('OperationAudit[\'变更前\']')">
+                    <template slot-scope="{ row }">
+                        <div :class="['details-data', { 'has-changed': hasChanged(row) }]" v-html="row.pre_data"></div>
+                    </template>
+                </bk-table-column>
+                <bk-table-column v-if="details.op_type !== 3"
+                    prop="cur_data"
+                    :label="$t('OperationAudit[\'变更后\']')">
+                    <template slot-scope="{ row }">
+                        <div :class="['details-data', { 'has-changed': hasChanged(row) }]"
+                            v-html="row.cur_data">
+                        </div>
+                    </template>
+                </bk-table-column>
+            </bk-table>
             <p class="field-btn" @click="toggleFields" v-if="isShowToggle && details.op_type !== 1 && details.op_type !== 3">
                 {{isShowAllFields ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
             </p>
@@ -101,30 +108,6 @@
                     biz,
                     opType
                 }
-            },
-            tableHeader () {
-                const header = [{
-                    id: 'bk_property_name',
-                    name: '',
-                    width: 130
-                }]
-                const preDataHeader = {
-                    id: 'pre_data',
-                    name: this.$t("OperationAudit['变更前']")
-                }
-                const curDataHeader = {
-                    id: 'cur_data',
-                    name: this.$t("OperationAudit['变更后']")
-                }
-                if (this.details['op_type'] === 1) {
-                    header.push(curDataHeader)
-                } else if (this.details['op_type'] === 2 || this.details['op_type'] === 100) {
-                    header.push(preDataHeader)
-                    header.push(curDataHeader)
-                } else if (this.details['op_type'] === 3) {
-                    header.push(preDataHeader)
-                }
-                return header
             },
             tableList () {
                 const list = []

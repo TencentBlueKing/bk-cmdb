@@ -103,20 +103,23 @@
                     @click="getTableData"></i>
             </div>
         </div>
-        <cmdb-table class="models-table" ref="table"
-            :loading="$loading()"
-            :checked.sync="table.checked"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :default-sort="table.defaultSort"
-            :wrapper-minus-height="157"
-            @handleRowClick="handleRowClick"
-            @handleSortChange="handleSortChange"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange"
-            @handleCheckAll="handleCheckAll">
-        </cmdb-table>
+        <bk-table class="models-table" ref="table"
+            v-bkloading="{ isLoading: $loading() }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 160"
+            @row-click="handleRowClick"
+            @sort-change="handleSortChange"
+            @page-limit-change="handleSizeChange"
+            @page-change="handlePageChange"
+            @selection-change="handleSelectChange">
+            <bk-table-column type="selection"></bk-table-column>
+            <bk-table-column v-for="column in table.header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+        </bk-table>
         <bk-sideslider
             :is-show.sync="slider.show"
             :title="slider.title"
@@ -220,7 +223,7 @@
                     allList: [],
                     pagination: {
                         count: 0,
-                        size: 10,
+                        limit: 10,
                         current: 1
                     },
                     defaultSort: 'bk_inst_id',
@@ -354,7 +357,7 @@
                     allList: [],
                     pagination: {
                         count: 0,
-                        size: 10,
+                        limit: 10,
                         current: 1
                     },
                     defaultSort: 'bk_inst_id',
@@ -393,16 +396,12 @@
                 this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
             },
             updateTableHeader (properties) {
-                this.table.header = [{
-                    id: 'bk_inst_id',
-                    type: 'checkbox',
-                    width: 50
-                }].concat(properties.map(property => {
+                this.table.header = properties.map(property => {
                     return {
                         id: property['bk_property_id'],
                         name: property['bk_property_name']
                     }
-                }))
+                })
             },
             async handleCheckAll (type) {
                 if (type === 'current') {
@@ -419,16 +418,19 @@
                 this.attribute.type = 'details'
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handlePageChange (page) {
                 this.table.pagination.current = page
                 this.getTableData()
+            },
+            handleSelectChange (selection) {
+                this.table.checked = selection.map(row => row.bk_inst_id)
             },
             getInstList (config = { cancelPrevious: true }) {
                 return this.searchInst({
@@ -480,8 +482,8 @@
                     },
                     fields: {},
                     page: {
-                        start: this.table.pagination.size * (this.table.pagination.current - 1),
-                        limit: this.table.pagination.size,
+                        start: this.table.pagination.limit * (this.table.pagination.current - 1),
+                        limit: this.table.pagination.limit,
                         sort: this.table.sort
                     }
                 }

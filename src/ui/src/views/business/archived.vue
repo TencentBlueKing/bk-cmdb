@@ -4,29 +4,33 @@
             <label class="fl">{{$t('Common["归档历史"]')}}</label>
             <bk-button class="fr" theme="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
         </div>
-        <cmdb-table class="archived-table"
-            row-cursor="default"
-            :sortable="false"
-            :pagination.sync="pagination"
-            :list="list"
-            :header="header"
-            :wrapper-minus-height="157"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange">
-            <template slot="options" slot-scope="{ item }">
-                <span class="inline-block-middle"
-                    v-cursor="{
-                        active: !$isAuthorized(archiveAuth),
-                        auth: [archiveAuth]
-                    }">
-                    <bk-button theme="primary" size="small"
-                        :disabled="!$isAuthorized(archiveAuth)"
-                        @click="handleRecovery(item)">
-                        {{$t('Inst["恢复业务"]')}}
-                    </bk-button>
-                </span>
-            </template>
-        </cmdb-table>
+        <bk-table class="archived-table"
+            :pagination="pagination"
+            :data="list"
+            :max-height="$APP.height - 160"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange">
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('Common[\'操作\']')" fixed="right">
+                <template slot-scope="{ row }">
+                    <span class="inline-block-middle"
+                        v-cursor="{
+                            active: !$isAuthorized(archiveAuth),
+                            auth: [archiveAuth]
+                        }">
+                        <bk-button theme="primary" size="small"
+                            :disabled="!$isAuthorized(archiveAuth)"
+                            @click="handleRecovery(row)">
+                            {{$t('Inst["恢复业务"]')}}
+                        </bk-button>
+                    </span>
+                </template>
+            </bk-table-column>
+        </bk-table>
     </div>
 </template>
 
@@ -40,7 +44,7 @@
                 list: [],
                 pagination: {
                     current: 1,
-                    size: 10,
+                    limit: 10,
                     count: 0
                 }
             }
@@ -93,9 +97,6 @@
                 })).concat([{
                     id: 'last_time',
                     name: this.$t('Common["更新时间"]')
-                }, {
-                    id: 'options',
-                    name: this.$t('Common["操作"]')
                 }])
             },
             getTableData () {
@@ -120,8 +121,8 @@
                     },
                     fields: [],
                     page: {
-                        start: (this.pagination.current - 1) * this.pagination.size,
-                        limit: this.pagination.size,
+                        start: (this.pagination.current - 1) * this.pagination.limit,
+                        limit: this.pagination.limit,
                         sort: '-bk_biz_id'
                     }
                 }
@@ -150,7 +151,7 @@
                 })
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.pagination.limit = size
                 this.handlePageChange(1)
             },
             handlePageChange (current) {

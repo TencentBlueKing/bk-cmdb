@@ -4,27 +4,34 @@
             <bk-button class="fl" theme="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
             <cmdb-form-date-range class="confirm-filter" v-model="dateRange" position="left"></cmdb-form-date-range>
         </div>
-        <cmdb-table ref="table"
-            :loading="$loading('getConfirHistory')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :wrapper-minus-height="220"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange">
-            <template slot="bk_resource_type" slot-scope="{ item }">
-                <span class="change-span" v-if="item.bk_resource_type === 'change'">
-                    {{$t('Cloud["变更"]')}}
-                </span>
-                <span class="new-add-span" v-else>
-                    {{$t('Cloud["新增"]')}}
-                </span>
-            </template>
-            <template slot="bk_account_type" slot-scope="{ item }">
-                <span v-if="item.bk_account_type === 'tencent_cloud'">{{$t('Cloud[\'腾讯云\']')}}</span>
-            </template>
-        </cmdb-table>
+        <bk-table
+            v-bkloading="{ isLoading: $loading('getConfirHistory') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 220"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange">
+            <bk-table-column v-for="column in table.header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+                <template slot-scope="{ row }">
+                    <template v-if="column.id === 'bk_resource_type'">
+                        <span class="change-span" v-if="row.bk_resource_type === 'change'">
+                            {{$t('Cloud["变更"]')}}
+                        </span>
+                        <span class="new-add-span" v-else>
+                            {{$t('Cloud["新增"]')}}
+                        </span>
+                    </template>
+                    <template v-else-if="column.id === 'bk_account_type' && row.bk_account_type === 'tencent_cloud'">
+                        {{$t('Cloud[\'腾讯云\']')}}
+                    </template>
+                    <template v-else>{{row[column.id]}}</template>
+                </template>
+            </bk-table-column>
+        </bk-table>
     </div>
 </template>
 
@@ -78,7 +85,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        size: 10
+                        limit: 10
                     },
                     checked: [],
                     defaultSort: '-confirm_history_id',
@@ -115,8 +122,8 @@
                 const params = {}
                 const innerParams = {}
                 const page = {
-                    start: (pagination.current - 1) * pagination.size,
-                    limit: pagination.size,
+                    start: (pagination.current - 1) * pagination.limit,
+                    limit: pagination.limit,
                     sort: this.table.sort
                 }
                 innerParams['$gte'] = this.filterRange[0]
@@ -137,14 +144,14 @@
                 this.getTableData()
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             back () {
                 this.$router.go(-1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.getTableData()
             }
         }

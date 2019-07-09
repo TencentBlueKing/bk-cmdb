@@ -11,20 +11,24 @@
             </div>
             <bk-button class="fr" theme="primary" @click="refresh(true)">{{$t("Common['查询']")}}</bk-button>
         </div>
-        <cmdb-table class="audit-table"
-            :loading="$loading('getOperationLog')"
-            :header="header"
-            :list="list"
-            :pagination.sync="pagination"
-            :wrapper-minus-height="220"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange"
-            @handleRowClick="handleRowClick">
-            <template slot="op_time" slot-scope="{ item }">
-                {{$tools.formatTime(item['op_time'])}}
-            </template>
-        </cmdb-table>
+        <bk-table
+            v-bkloading="{ isLoading: $loading('getUserOperationLog') }"
+            :header-border="true"
+            :data="list"
+            :pagination="pagination"
+            :max-height="$APP.height - 220"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange"
+            @row-click="handleRowClick">
+            <bk-table-column :label="$t('HostResourcePool[\'变更内容\']')" prop="op_desc"></bk-table-column>
+            <bk-table-column :label="$t('HostResourcePool[\'操作账号\']')" prop="operator"></bk-table-column>
+            <bk-table-column :label="$t('HostResourcePool[\'操作时间\']')" prop="op_time">
+                <template slot-scope="{ row }">
+                    {{$tools.formatTime(row.op_time)}}
+                </template>
+            </bk-table-column>
+        </bk-table>
         <div class="history-details" v-if="details.isShow" v-click-outside="closeDetails">
             <p class="details-title">
                 <span>{{$t('OperationAudit[\'操作详情\']')}}</span>
@@ -67,21 +71,12 @@
                 dateRange: [],
                 operator: '',
                 sendOperator: '',
-                header: [{
-                    id: 'op_desc',
-                    name: this.$t("HostResourcePool['变更内容']")
-                }, {
-                    id: 'operator',
-                    name: this.$t("HostResourcePool['操作账号']")
-                }, {
-                    id: 'op_time',
-                    name: this.$t("HostResourcePool['操作时间']")
-                }],
                 list: [],
                 pagination: {
                     count: 0,
                     current: 1,
-                    size: 10
+                    limit: 10,
+                    size: 'small'
                 },
                 defaultSort: '-op_time',
                 sort: '-op_time',
@@ -153,9 +148,9 @@
                 }
                 return {
                     condition,
-                    limit: this.pagination.size,
+                    limit: this.pagination.limit,
                     sort: this.sort,
-                    start: (this.pagination.current - 1) * this.pagination.size
+                    start: (this.pagination.current - 1) * this.pagination.limit
                 }
             },
             handlePageChange (current) {
@@ -163,11 +158,11 @@
                 this.refresh()
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.sort = sort
+                this.sort = this.$tools.getSort(sort)
                 this.refresh()
             },
             handleRowClick (item) {

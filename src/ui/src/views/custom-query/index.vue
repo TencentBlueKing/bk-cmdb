@@ -26,27 +26,31 @@
                 </bk-input>
             </div>
         </div>
-        <cmdb-table
+        <bk-table
             class="api-table"
-            :loading="$loading('searchCustomQuery')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :wrapper-minus-height="220"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange"
-            @handleRowClick="showUserAPIDetails">
-            <template slot="create_time" slot-scope="{ item }">
-                {{$tools.formatTime(item['create_time'])}}
-            </template>
-            <template slot="last_time" slot-scope="{ item }">
-                {{$tools.formatTime(item['last_time'])}}
-            </template>
-            <div class="empty-info" slot="data-empty">
-                <p>{{$t("Common['暂时没有数据']")}}</p>
-            </div>
-        </cmdb-table>
+            v-bkloading="{ isLoading: $loading('searchCustomQuery') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 220"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange"
+            @row-click="showUserAPIDetails">
+            <bk-table-column prop="id" label="ID"></bk-table-column>
+            <bk-table-column prop="name" :label="$t('CustomQuery[\'查询名称\']')"></bk-table-column>
+            <bk-table-column prop="create_user" :label="$t('CustomQuery[\'创建用户\']')"></bk-table-column>
+            <bk-table-column prop="create_time" :label="$t('CustomQuery[\'创建时间\']')">
+                <template slot-scope="{ row }">
+                    {{$tools.formatTime(row['create_time'])}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="modify_user" :label="$t('CustomQuery[\'修改人\']')"></bk-table-column>
+            <bk-table-column prop="last_time" :label="$t('CustomQuery[\'修改时间\']')">
+                <template slot-scope="{ row }">
+                    {{$tools.formatTime(row['last_time'])}}
+                </template>
+            </bk-table-column>
+        </bk-table>
         <bk-sideslider
             :is-show.sync="slider.isShow"
             :has-quick-close="true"
@@ -83,32 +87,13 @@
                     name: ''
                 },
                 table: {
-                    header: [{
-                        id: 'id',
-                        name: 'ID'
-                    }, {
-                        id: 'name',
-                        name: this.$t("CustomQuery['查询名称']")
-                    }, {
-                        id: 'create_user',
-                        name: this.$t("CustomQuery['创建用户']")
-                    }, {
-                        id: 'create_time',
-                        name: this.$t("CustomQuery['创建时间']")
-                    }, {
-                        id: 'modify_user',
-                        name: this.$t("CustomQuery['修改人']")
-                    }, {
-                        id: 'last_time',
-                        name: this.$t("CustomQuery['修改时间']")
-                    }],
                     list: [],
                     sort: '-last_time',
                     defaultSort: '-last_time',
                     pagination: {
                         current: 1,
                         count: 0,
-                        size: 10
+                        limit: 10
                     }
                 },
                 slider: {
@@ -125,8 +110,8 @@
             ...mapGetters('objectBiz', ['bizId']),
             searchParams () {
                 const params = {
-                    start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                    limit: this.table.pagination.size,
+                    start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                    limit: this.table.pagination.limit,
                     sort: this.table.sort
                 }
                 this.filter.name ? params['condition'] = { 'name': this.filter.name } : void (0)
@@ -199,11 +184,11 @@
                 this.getUserAPIList()
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.getUserAPIList()
             }
         }

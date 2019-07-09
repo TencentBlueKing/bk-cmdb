@@ -10,48 +10,57 @@
                 {{$t('ModelManagement["新建关联"]')}}
             </bk-button>
         </span>
-        <cmdb-table
+        <bk-table
             class="relation-table"
-            :loading="$loading()"
-            :sortable="false"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :wrapper-minus-height="220"
-            @handleSortChange="handleSortChange">
-            <template slot="bk_obj_asst_id" slot-scope="{ item }">
-                <span
-                    v-if="item.ispre"
-                    :class="['relation-pre', $i18n.locale]">
-                    {{$t('ModelManagement["内置"]')}}
-                </span>
-                <span class="relation-id">{{item['bk_obj_asst_id']}}</span>
-            </template>
-            <template slot="bk_asst_name" slot-scope="{ item }">
-                {{getRelationName(item['bk_asst_id'])}}
-            </template>
-            <template slot="mapping" slot-scope="{ item }">
-                {{mappingMap[item.mapping]}}
-            </template>
-            <template slot="bk_obj_name" slot-scope="{ item }">
-                {{getModelName(item['bk_obj_id'])}}
-            </template>
-            <template slot="bk_asst_obj_name" slot-scope="{ item }">
-                {{getModelName(item['bk_asst_obj_id'])}}
-            </template>
-            <template slot="operation" slot-scope="{ item }">
-                <button class="text-primary mr10"
-                    :disabled="!isEditable(item)"
-                    @click.stop="editRelation(item)">
-                    {{$t('Common["编辑"]')}}
-                </button>
-                <button class="text-primary"
-                    :disabled="!isEditable(item)"
-                    @click.stop="deleteRelation(item)">
-                    {{$t('Common["删除"]')}}
-                </button>
-            </template>
-        </cmdb-table>
+            v-bkloading="{ isLoading: $loading() }"
+            :data="table.list"
+            :max-height="$APP.height - 220"
+            @sort-change="handleSortChange">
+            <bk-table-column prop="bk_obj_asst_id" :label="$t('ModelManagement[\'唯一标识\']')">
+                <template slot-scope="{ row }">
+                    <span
+                        v-if="row.ispre"
+                        :class="['relation-pre', $i18n.locale]">
+                        {{$t('ModelManagement["内置"]')}}
+                    </span>
+                    <span class="relation-id">{{row['bk_obj_asst_id']}}</span>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_asst_name" :label="$t('ModelManagement[\'关联类型\']')">
+                <template slot-scope="{ row }">
+                    {{getRelationName(row['bk_asst_id'])}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="mapping" :label="$t('ModelManagement[\'源-目标约束\']')">
+                <template slot-scope="{ row }">
+                    {{mappingMap[row.mapping]}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_obj_name" :label="$t('ModelManagement[\'源模型\']')">
+                <template slot-scope="{ row }">
+                    {{getModelName(row['bk_obj_id'])}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_asst_obj_name" :label="$t('ModelManagement[\'目标模型\']')">
+                <template slot-scope="{ row }">
+                    {{getModelName(row['bk_asst_obj_id'])}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="operation" :label="$t('Common[\'操作\']')" v-if="updateAuth">
+                <template slot-scope="{ row }">
+                    <button class="text-primary mr10"
+                        :disabled="!isEditable(row)"
+                        @click.stop="editRelation(row)">
+                        {{$t('Common["编辑"]')}}
+                    </button>
+                    <button class="text-primary"
+                        :disabled="!isEditable(row)"
+                        @click.stop="deleteRelation(row)">
+                        {{$t('Common["删除"]')}}
+                    </button>
+                </template>
+            </bk-table-column>
+        </bk-table>
         <bk-sideslider
             :width="450"
             :title="slider.title"
@@ -87,25 +96,6 @@
                 },
                 relationList: [],
                 table: {
-                    header: [{
-                        id: 'bk_obj_asst_id',
-                        name: this.$t('ModelManagement["唯一标识"]')
-                    }, {
-                        id: 'bk_asst_name',
-                        name: this.$t('ModelManagement["关联类型"]')
-                    }, {
-                        id: 'mapping',
-                        name: this.$t('ModelManagement["源-目标约束"]')
-                    }, {
-                        id: 'bk_obj_name',
-                        name: this.$t('ModelManagement["源模型"]')
-                    }, {
-                        id: 'bk_asst_obj_name',
-                        name: this.$t('ModelManagement["目标模型"]')
-                    }, {
-                        id: 'operation',
-                        name: this.$t('Common["操作"]')
-                    }],
                     list: [],
                     defaultSort: '-op_time',
                     sort: '-op_time'
@@ -140,9 +130,6 @@
             }
         },
         created () {
-            if (!this.updateAuth) {
-                this.table.header.pop()
-            }
             this.searchRelationList()
             this.initRelationList()
         },
@@ -257,7 +244,7 @@
                 this.searchRelationList()
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
             }
         }
     }

@@ -29,46 +29,55 @@
                 </bk-input>
             </label>
         </p>
-        <cmdb-table
-            :loading="$loading('searchAssociationType')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange">
-            <template slot="bk_asst_name" slot-scope="{ item }">
-                {{item['bk_asst_name'] || '--'}}
-            </template>
-            <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary disabled mr10"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_RELATION),
-                        auth: [$OPERATION.U_RELATION]
-                    }"
-                    v-if="item.ispre || !$isAuthorized($OPERATION.U_RELATION)">
-                    {{$t('Common["编辑"]')}}
-                </span>
-                <span class="text-primary mr10"
-                    v-else
-                    @click.stop="editRelation(item)">
-                    {{$t('Common["编辑"]')}}
-                </span>
-                <span class="text-primary disabled"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.D_RELATION),
-                        auth: [$OPERATION.D_RELATION]
-                    }"
-                    v-if="item.ispre || !$isAuthorized($OPERATION.D_RELATION)">
-                    {{$t('Common["删除"]')}}
-                </span>
-                <span class="text-primary"
-                    v-else
-                    @click.stop="deleteRelation(item)">
-                    {{$t('Common["删除"]')}}
-                </span>
-            </template>
-        </cmdb-table>
+        <bk-table
+            v-bkloading="{ isLoading: $loading('searchAssociationType') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange">
+            <bk-table-column prop="bk_asst_id" :label="$t('ModelManagement[\'唯一标识\']')"></bk-table-column>
+            <bk-table-column prop="bk_asst_name" :label="$t('Hosts[\'名称\']')">
+                <template slot-scope="{ row }">
+                    {{row['bk_asst_name'] || '--'}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="src_des" :label="$t('ModelManagement[\'源->目标描述\']')"></bk-table-column>
+            <bk-table-column prop="dest_des" :label="$t('ModelManagement[\'目标->源描述\']')"></bk-table-column>
+            <bk-table-column prop="count" :label="$t('ModelManagement[\'使用数\']')"></bk-table-column>
+            <bk-table-column v-if="isAdminView"
+                fixed="right"
+                :label="$t('Common[\'操作\']')">
+                <template slot-scope="{ row }">
+                    <span class="text-primary disabled mr10"
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_RELATION),
+                            auth: [$OPERATION.U_RELATION]
+                        }"
+                        v-if="row.ispre || !$isAuthorized($OPERATION.U_RELATION)">
+                        {{$t('Common["编辑"]')}}
+                    </span>
+                    <span class="text-primary mr10"
+                        v-else
+                        @click.stop="editRelation(row)">
+                        {{$t('Common["编辑"]')}}
+                    </span>
+                    <span class="text-primary disabled"
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.D_RELATION),
+                            auth: [$OPERATION.D_RELATION]
+                        }"
+                        v-if="row.ispre || !$isAuthorized($OPERATION.D_RELATION)">
+                        {{$t('Common["删除"]')}}
+                    </span>
+                    <span class="text-primary"
+                        v-else
+                        @click.stop="deleteRelation(row)">
+                        {{$t('Common["删除"]')}}
+                    </span>
+                </template>
+            </bk-table-column>
+        </bk-table>
         <bk-sideslider
             class="relation-slider"
             :width="450"
@@ -106,32 +115,11 @@
                 },
                 searchText: '',
                 table: {
-                    header: [{
-                        id: 'bk_asst_id',
-                        name: this.$t('ModelManagement["唯一标识"]')
-                    }, {
-                        id: 'bk_asst_name',
-                        name: this.$t('Hosts["名称"]')
-                    }, {
-                        id: 'src_des',
-                        name: this.$t('ModelManagement["源->目标描述"]')
-                    }, {
-                        id: 'dest_des',
-                        name: this.$t('ModelManagement["目标->源描述"]')
-                    }, {
-                        id: 'count',
-                        name: this.$t('ModelManagement["使用数"]'),
-                        sortable: false
-                    }, {
-                        id: 'operation',
-                        name: this.$t('Common["操作"]'),
-                        sortable: false
-                    }],
                     list: [],
                     pagination: {
                         count: 0,
                         current: 1,
-                        size: 10
+                        limit: 10
                     },
                     defaultSort: '-ispre',
                     sort: '-ispre'
@@ -144,8 +132,8 @@
             searchParams () {
                 const params = {
                     page: {
-                        start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                        limit: this.table.pagination.size,
+                        start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                        limit: this.table.pagination.limit,
                         sort: this.table.sort
                     }
                 }
@@ -162,9 +150,6 @@
             }
         },
         created () {
-            if (!this.isAdminView) {
-                this.table.header.pop()
-            }
             this.searchRelation()
             this.showFeatureTips = this.featureTipsParams['association']
         },
@@ -241,11 +226,11 @@
                 this.searchRelation()
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.searchRelation()
             }
         }

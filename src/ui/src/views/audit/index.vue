@@ -64,17 +64,53 @@
                 <bk-button theme="primary" :loading="$loading('getOperationLog')" @click="handlePageChange(1)">{{$t('OperationAudit[\'查询\']')}}</bk-button>
             </div>
         </div>
-        <cmdb-table
-            :loading="$loading('getOperationLog')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :wrapper-minus-height="220"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange"
-            @handleRowClick="handleRowClick"
-        ></cmdb-table>
+        <bk-table
+            v-bkloading="{ isLoading: $loading('getOperationLog') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 250"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange"
+            @row-click="handleRowClick">
+            <bk-table-column
+                sortable="custom"
+                prop="operator"
+                :label="$t('OperationAudit[\'操作账号\']')">
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="op_target"
+                :label="$t('OperationAudit[\'对象\']')">
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="op_desc"
+                :label="$t('OperationAudit[\'描述\']')">
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="bk_biz_id"
+                :label="$t('OperationAudit[\'所属业务\']')">
+                <template slot-scope="{ row }">{{row.bk_biz_name}}</template>
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="ext_key"
+                label="IP">
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="op_type"
+                :label="$t('OperationAudit[\'类型\']')">
+                <template slot-scope="{ row }">{{row.op_type_name}}</template>
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="op_time"
+                :label="$t('OperationAudit[\'操作时间\']')">
+            </bk-table-column>
+        </bk-table>
         <bk-sideslider
             :is-show.sync="details.isShow"
             :width="800"
@@ -118,35 +154,11 @@
                     name: this.$t('OperationAudit["关系变更"]')
                 }],
                 table: {
-                    header: [{
-                        id: 'operator',
-                        name: this.$t('OperationAudit["操作账号"]')
-                    }, {
-                        id: 'op_target',
-                        name: this.$t('OperationAudit["对象"]')
-                    }, {
-                        id: 'op_desc',
-                        name: this.$t('OperationAudit["描述"]')
-                    }, {
-                        id: 'bk_biz_name',
-                        name: this.$t('OperationAudit["所属业务"]'),
-                        sortKey: 'bk_biz_id'
-                    }, {
-                        id: 'ext_key',
-                        name: 'IP'
-                    }, {
-                        id: 'op_type_name',
-                        name: this.$t('OperationAudit["类型"]'),
-                        sortKey: 'op_type'
-                    }, {
-                        id: 'op_time',
-                        name: this.$t('OperationAudit["操作时间"]')
-                    }],
                     list: [],
                     pagination: {
                         current: 1,
                         count: 0,
-                        size: 10
+                        limit: 10
                     },
                     defaultSort: '-op_time',
                     sort: '-op_time'
@@ -208,8 +220,8 @@
                     condition: {
                         op_time: opTime
                     },
-                    start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                    limit: this.table.pagination.size,
+                    start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                    limit: this.table.pagination.limit,
                     sort: this.table.sort
                 }
                 this.setParams(params.condition, 'bk_biz_id', this.isAdminView ? this.filter.bizId : this.bizId)
@@ -286,11 +298,11 @@
                 this.getTableData()
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
             handleRowClick (item) {

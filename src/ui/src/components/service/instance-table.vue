@@ -10,25 +10,33 @@
                 <i class="bk-icon icon-close" v-if="deletable" @click="handleDelete"></i>
             </div>
         </div>
-        <cmdb-table
-            :header="header"
-            :list="processFlattenList"
-            :empty-height="58"
-            :sortable="false"
-            :reference-document-height="false">
-            <template slot="data-empty">
+        <bk-table
+            :data="processFlattenList"
+            :header-border="true">
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('Common[\'操作\']')" fixed="right">
+                <template slot-scope="{ row, $index }">
+                    <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess($index)">
+                        {{$t('Common["编辑"]')}}
+                    </a>
+                    <a href="javascript:void(0)" class="text-primary"
+                        v-if="!sourceProcesses.length"
+                        @click="handleDeleteProcess($index)">
+                        {{$t('Common["删除"]')}}
+                    </a>
+                </template>
+            </bk-table-column>
+            <template slot="empty">
                 <button class="add-process-button text-primary" @click="handleAddProcess">
                     <i class="bk-icon icon-plus"></i>
                     <span>{{$t('BusinessTopology["添加进程"]')}}</span>
                 </button>
             </template>
-            <template slot="__operation__" slot-scope="{ rowIndex }">
-                <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess(rowIndex)">{{$t('Common["编辑"]')}}</a>
-                <a href="javascript:void(0)" class="text-primary" v-if="!sourceProcesses.length"
-                    @click="handleDeleteProcess(rowIndex)">{{$t('Common["删除"]')}}
-                </a>
-            </template>
-        </cmdb-table>
+        </bk-table>
         <div class="add-process-options" v-if="!sourceProcesses.length && processList.length">
             <button class="add-process-button text-primary" @click="handleAddProcess">
                 <i class="bk-icon icon-plus"></i>
@@ -110,7 +118,7 @@
                     'work_path'
                 ]
                 const header = []
-                display.map(id => {
+                display.forEach(id => {
                     const property = this.processProperties.find(property => property.bk_property_id === id)
                     if (property) {
                         header.push({
@@ -118,10 +126,6 @@
                             name: property.bk_property_name
                         })
                     }
-                })
-                header.push({
-                    id: '__operation__',
-                    name: this.$t('Common["操作"]')
                 })
                 return header
             },

@@ -22,17 +22,18 @@
                 </span>
             </div>
         </div>
-        <cmdb-collapse-transition>
-            <cmdb-table class="association-table"
-                v-show="expanded"
-                :header="header"
-                :list="flattenList"
-                :show-footer="false"
-                :sortable="false"
-                :max-height="462"
-                :empty-height="40">
-                <template slot="__operation__" slot-scope="{ item }">
-                    <span class="text-primary" @click="showTips($event, item)" v-if="$isAuthorized(updateAuth)">
+        <bk-table class="association-table"
+            v-show="expanded"
+            :data="flattenList"
+            :max-height="462">
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('Common[\'操作\']')">
+                <template slot-scope="{ row }">
+                    <span class="text-primary" @click="showTips($event, row)" v-if="$isAuthorized(updateAuth)">
                         {{$t('Association["取消关联"]')}}
                     </span>
                     <span class="text-primary disabled"
@@ -44,8 +45,8 @@
                         {{$t('Association["取消关联"]')}}
                     </span>
                 </template>
-            </cmdb-table>
-        </cmdb-collapse-transition>
+            </bk-table-column>
+        </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.item">
             <p class="tips-content">{{$t('Association["确认取消"]')}}</p>
             <div class="tips-option">
@@ -150,11 +151,6 @@
                         id: property.bk_property_id,
                         name: property.bk_property_name
                     }
-                })
-                header.push({
-                    id: '__operation__',
-                    name: this.$t('Common["操作"]'),
-                    width: 150
                 })
                 return header
             },

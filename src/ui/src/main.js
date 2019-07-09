@@ -6,6 +6,7 @@ import i18n from './i18n'
 import cmdbRequestMixin from './mixins/request'
 import cmdbAuthMixin from './mixins/auth'
 import cmdbInjectMixin from './mixins/inject'
+import cmdbAppMixin from './mixins/app.js'
 import cmdbUI from './components/ui'
 import tools from './utils/tools'
 import clipboard from 'vue-clipboard2'
@@ -25,6 +26,7 @@ Vue.use(clipboard)
 Vue.mixin(cmdbRequestMixin)
 Vue.mixin(cmdbAuthMixin)
 Vue.mixin(cmdbInjectMixin)
+Vue.mixin(cmdbAppMixin)
 Vue.prototype.$http = api
 Vue.prototype.$tools = tools
 /* eslint-disable no-new */
