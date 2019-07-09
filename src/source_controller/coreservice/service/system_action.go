@@ -36,7 +36,7 @@ func (s *coreService) GetSystemFlag(params core.ContextParams, pathParams, query
 	var result interface{}
 	err := s.db.Table(common.BKTableNameSystem).Find(cond).One(params.Context, &result)
 	if nil != err {
-		blog.Errorf("get system config error :%v, cond:%#v", err, cond)
+		blog.Errorf("get system config error :%v, cond:%#v, rid: %s", err, cond, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrObjectSelectInstFailed)
 	}
 

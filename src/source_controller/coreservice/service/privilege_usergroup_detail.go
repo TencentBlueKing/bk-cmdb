@@ -34,23 +34,23 @@ func (s *coreService) CreateUserGroupPrivi(params core.ContextParams, pathParams
 	cond = util.SetModOwner(cond, params.SupplierAccount)
 	cnt, err := s.db.Table(common.BKTableNameUserGroupPrivilege).Find(cond).Count(params.Context)
 	if nil != err && !s.db.IsNotFoundError(err) {
-		blog.Errorf("get user group privi error :%v", err)
+		blog.Errorf("get user group privi error :%v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
 	}
 	if cnt > 0 {
-		blog.V(3).Infof("update user group privi: %+v, by condition %+v ", data, cond)
+		blog.V(3).Infof("update user group privi: %+v, by condition %+v, rid: %s", data, cond, params.ReqID)
 		err = s.db.Table(common.BKTableNameUserGroupPrivilege).Update(params.Context, cond, data)
 		if nil != err {
-			blog.Errorf("update user group privi error :%v", err)
+			blog.Errorf("update user group privi error :%v, rid: %s", err, params.ReqID)
 			return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
 		}
 		return nil, nil
 	}
 
-	blog.V(3).Infof("create user group privi: %+v", data)
+	blog.V(3).Infof("create user group privi: %+v, rid: %s", data, params.ReqID)
 	err = s.db.Table(common.BKTableNameUserGroupPrivilege).Insert(params.Context, data)
 	if nil != err {
-		blog.Errorf("insert user group privi error :%v", err)
+		blog.Errorf("insert user group privi error :%v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
 	}
 
@@ -65,7 +65,7 @@ func (s *coreService) UpdateUserGroupPrivi(params core.ContextParams, pathParams
 	cond[common.BKUserGroupIDField] = groupID
 	data[common.BKPrivilegeField] = info
 	cond = util.SetModOwner(cond, params.SupplierAccount)
-	blog.V(3).Infof("update user group privi: %+v, by condition %+v ", data, cond)
+	blog.V(3).Infof("update user group privi: %+v, by condition %+v, rid: %s", data, cond, params.ReqID)
 	err := s.db.Table(common.BKTableNameUserGroupPrivilege).Update(params.Context, cond, data)
 	if nil != err {
 		blog.Errorf("update user group privi error :%v, rid: %s", err, params.ReqID)

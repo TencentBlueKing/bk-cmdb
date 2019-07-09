@@ -76,7 +76,7 @@ func (s *coreService) CreateRolePri(params core.ContextParams, pathParams, query
 
 	err = s.db.Table(common.BKTableNamePrivilege).Insert(params.Context, input)
 	if nil != err {
-		blog.Errorf("create role privilege error :%v", err)
+		blog.Errorf("create role privilege error :%v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
 	}
 
@@ -92,7 +92,7 @@ func (s *coreService) UpdateRolePri(params core.ContextParams, pathParams, query
 	}{}
 	err := data.MarshalJSONInto(&requestBody)
 	if err != nil {
-		blog.Errorf("read json data error: %v", err)
+		blog.Errorf("read json data error: %v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 	input := make(map[string]interface{})
@@ -105,7 +105,7 @@ func (s *coreService) UpdateRolePri(params core.ContextParams, pathParams, query
 
 	err = s.db.Table(common.BKTableNamePrivilege).Update(params.Context, cond, input)
 	if nil != err {
-		blog.Errorf("update role privilege error :%v", err)
+		blog.Errorf("update role privilege error :%v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
 	}
 

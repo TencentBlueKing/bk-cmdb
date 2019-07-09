@@ -44,7 +44,7 @@ func (s *coreService) SearchTopoGraphics(params core.ContextParams, pathParams, 
 
 	results := make([]meta.TopoGraphics, 0)
 	if selErr := s.db.Table(common.BKTableNameTopoGraphics).Find(cond).All(params.Context, &results); nil != selErr {
-		blog.Errorf("search topo graphics, but select data failed, error information is %s", selErr.Error())
+		blog.Errorf("search topo graphics, but select data failed, error information is %s, rid: %s", selErr.Error(), params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 
