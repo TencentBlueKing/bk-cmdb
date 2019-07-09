@@ -16,7 +16,6 @@ import (
 	"fmt"
 
 	"configcenter/src/apimachinery/objcontroller/meta"
-	"configcenter/src/apimachinery/objcontroller/openapi"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 )
