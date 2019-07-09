@@ -190,6 +190,11 @@ func (s *coreService) privilege() {
 	s.addAction(http.MethodGet, "/system/{flag}/{bk_supplier_account}", s.GetSystemFlag, nil)
 }
 
+func (s *coreService) topographics() {
+	s.addAction(http.MethodPost, "/topographics/search", s.SearchTopoGraphics, nil)
+	s.addAction(http.MethodPost, "/topographics/update", s.UpdateTopoGraphics, nil)
+}
+
 func (s *coreService) initService() {
 	s.initModelClassification()
 	s.initModel()
