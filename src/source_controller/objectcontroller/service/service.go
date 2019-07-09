@@ -62,22 +62,6 @@ func (s *Service) WebService() *restful.Container {
 
 	api.Route(api.POST("/topographics/search").To(s.SearchTopoGraphics))
 	api.Route(api.POST("/topographics/update").To(s.UpdateTopoGraphics))
-
-	api.Route(api.POST("/privilege/group/{bk_supplier_account}").To(s.CreateUserGroup))
-	api.Route(api.PUT("/privilege/group/{bk_supplier_account}/{group_id}").To(s.UpdateUserGroup))
-	api.Route(api.DELETE("/privilege/group/{bk_supplier_account}/{group_id}").To(s.DeleteUserGroup))
-	api.Route(api.POST("/privilege/group/{bk_supplier_account}/search").To(s.SearchUserGroup))
-
-	api.Route(api.POST("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.CreateUserGroupPrivi))
-	api.Route(api.PUT("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.UpdateUserGroupPrivi))
-	api.Route(api.GET("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.GetUserGroupPrivi))
-
-	api.Route(api.POST("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.CreateRolePri))
-	api.Route(api.GET("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.GetRolePri))
-	api.Route(api.PUT("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.UpdateRolePri))
-
-	api.Route(api.GET("/system/{flag}/{bk_supplier_account}").To(s.GetSystemFlag))
-
 	container = container.Add(api)
 
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
