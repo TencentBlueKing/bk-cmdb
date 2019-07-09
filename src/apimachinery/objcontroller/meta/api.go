@@ -23,8 +23,6 @@ import (
 type MetaInterface interface {
 	SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (resp *metadata.SearchTopoGraphicsResult, err error)
 	UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error)
-	CreatePropertyGroup(ctx context.Context, h http.Header, dat *metadata.Group) (resp *metadata.CreateObjectGroupResult, err error)
-	SelectObjectAttWithParams(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectAttributeResult, err error)
 }
 
 func NewmetaInterface(client rest.ClientInterface) MetaInterface {

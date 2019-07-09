@@ -44,22 +44,10 @@ func (s *Service) WebService() *restful.Container {
 		return s.Core.CCErr
 	}
 	api.Path("/object/{version}").Filter(s.Core.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
-	//restful.DefaultRequestContentType(restful.MIME_JSON)
+	// restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
 	api.Route(api.POST("/meta/objectatts").To(s.SelectObjectAttWithParams))
-	api.Route(api.POST("/meta/objectatt").To(s.CreateObjectAtt))
-
-	api.Route(api.POST("/meta/objectatt/group/new").To(s.CreatePropertyGroup))
-
-	api.Route(api.POST("/meta/object/classification/{owner_id}/objects").To(s.SelectClassificationWithObject))
-	api.Route(api.POST("/meta/object/classification/search").To(s.SelectClassifications))
-	api.Route(api.DELETE("/meta/object/classification/{id}").To(s.DeleteClassification))
-	api.Route(api.POST("/meta/object/classification").To(s.CreateClassification))
-	api.Route(api.PUT("/meta/object/classification/{id}").To(s.UpdateClassification))
-
-	api.Route(api.GET("/object/{bk_obj_id}/unique/action/search").To(s.SearchObjectUnique))
-
 	api.Route(api.POST("/topographics/search").To(s.SearchTopoGraphics))
 	api.Route(api.POST("/topographics/update").To(s.UpdateTopoGraphics))
 	container = container.Add(api)
