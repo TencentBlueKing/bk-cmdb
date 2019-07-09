@@ -13,13 +13,14 @@
 package coreservice
 
 import (
-	"configcenter/src/apimachinery/coreservice/cloudsync"
 	"fmt"
 
 	"configcenter/src/apimachinery/coreservice/association"
 	"configcenter/src/apimachinery/coreservice/auditlog"
+	"configcenter/src/apimachinery/coreservice/cloudsync"
 	"configcenter/src/apimachinery/coreservice/host"
 	"configcenter/src/apimachinery/coreservice/instance"
+	"configcenter/src/apimachinery/coreservice/label"
 	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
 	"configcenter/src/apimachinery/coreservice/process"
@@ -38,6 +39,7 @@ type CoreServiceClientInterface interface {
 	Audit() auditlog.AuditClientInterface
 	Process() process.ProcessInterface
 	Cloud() cloudsync.CloudSyncClientInterface
+	Label() label.LabelInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -85,4 +87,8 @@ func (c *coreService) Process() process.ProcessInterface {
 
 func (c *coreService) Cloud() cloudsync.CloudSyncClientInterface {
 	return cloudsync.NewCloudSyncClientInterface(c.restCli)
+}
+
+func (c *coreService) Label() label.LabelInterface {
+	return label.NewLabelInterfaceClient(c.restCli)
 }

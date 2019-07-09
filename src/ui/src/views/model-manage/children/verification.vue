@@ -3,8 +3,8 @@
         <span class="inline-block-middle"
             v-if="!isTopoModel"
             v-cursor="{
-                active: !$isAuthorized(OPERATION.U_MODEL),
-                auth: [OPERATION.U_MODEL]
+                active: !$isAuthorized($OPERATION.U_MODEL),
+                auth: [$OPERATION.U_MODEL]
             }">
             <bk-button class="create-btn" type="primary"
                 :disabled="isReadOnly || !updateAuth"
@@ -64,14 +64,12 @@
 <script>
     import theVerificationDetail from './verification-detail'
     import { mapActions, mapGetters } from 'vuex'
-    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             theVerificationDetail
         },
         data () {
             return {
-                OPERATION,
                 slider: {
                     isShow: false,
                     isEdit: false,
@@ -114,7 +112,7 @@
                     return false
                 }
                 const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(OPERATION.U_MODEL)
+                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         async created () {

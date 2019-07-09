@@ -31,7 +31,7 @@
                     }"
                     v-cursor="{
                         active: !createAuth,
-                        auth: [OPERATION.SYSTEM_TOPOLOGY]
+                        auth: [$OPERATION.SYSTEM_TOPOLOGY]
                     }"
                     v-if="canAddLevel(model)"
                     @click="handleAddLevel(model)">
@@ -51,7 +51,6 @@
     import { mapGetters, mapActions } from 'vuex'
     import theCreateModel from '@/components/model-manage/_create-model'
     import featureTips from '@/components/feature-tips/index'
-    import { OPERATION } from './router.config.js'
     const NODE_MARGIN = 62
 
     export default {
@@ -62,7 +61,6 @@
         data () {
             return {
                 showFeatureTips: false,
-                OPERATION,
                 margin: NODE_MARGIN * 1.5,
                 topo: [],
                 innerModel: ['biz', 'set', 'module', 'host'],
@@ -76,7 +74,7 @@
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView', 'featureTipsParams']),
             ...mapGetters('objectModelClassify', ['models']),
             createAuth () {
-                return this.$isAuthorized(OPERATION.SYSTEM_TOPOLOGY)
+                return this.$isAuthorized(this.$OPERATION.SYSTEM_TOPOLOGY)
             }
         },
         created () {

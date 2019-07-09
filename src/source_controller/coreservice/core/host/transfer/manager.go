@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/eventclient"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
@@ -47,27 +46,39 @@ func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence Oper
 	}
 }
 
+// NewHostModuleTransfer business normal module transfer
+func (manager *TransferManager) NewHostModuleTransfer(ctx core.ContextParams, bizID int64, moduleIDArr []int64, isIncr bool) *genericTransfer {
+	return &genericTransfer{
+		dbProxy:     manager.dbProxy,
+		eventC:      manager.eventC,
+		dependent:   manager.dependence,
+		moduleIDArr: moduleIDArr,
+		bizID:       bizID,
+		isIncrement: isIncr,
+	}
+}
+
 // TransferHostToInnerModule transfer host to inner module, default module contain(idle module, fault module)
-func (manager *TransferManager) TransferHostToInnerModule(ctx core.ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error) {
+func (manager *TransferManager) TransferToInnerModule(ctx core.ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error) {
 
 	transfer := manager.NewHostModuleTransfer(ctx, input.ApplicationID, []int64{input.ModuleID}, false)
 
 	exit, err := transfer.HasInnerModule(ctx)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToInnerModule HasInnerModule error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		blog.ErrorJSON("TransferHostToInnerModule failed, HasInnerModule failed, input:%s, err:%s, rid:%s", input, err.Error(), ctx.ReqID)
 		return nil, err
 	}
 	if !exit {
-		blog.ErrorJSON("TransferHostToInnerModule validation module error. module ID not default. input:%s, rid:%s", input, ctx.ReqID)
+		blog.ErrorJSON("TransferHostToInnerModule validate module failed, module ID is not default module. input:%s, rid:%s", input, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ModuleID, input.ApplicationID)
 	}
 	if err := transfer.DoTransferToInnerCheck(ctx, input.HostID); err != nil {
-		blog.ErrorJSON("TransferHostToInnerModule failed. DoTransferToInnerCheck failed. err: %+v, rid:%s", err, ctx.ReqID)
+		blog.ErrorJSON("TransferHostToInnerModule failed, DoTransferToInnerCheck failed, err: %s, rid:%s", err.Error(), ctx.ReqID)
 		return nil, err
 	}
 	err = transfer.ValidParameter(ctx)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToInnerModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		blog.ErrorJSON("TransferHostToInnerModule failed, ValidParameter failed, input:%s, err:%s, rid:%s", input, err.Error(), ctx.ReqID)
 		return nil, err
 	}
 
@@ -75,7 +86,7 @@ func (manager *TransferManager) TransferHostToInnerModule(ctx core.ContextParams
 	for _, hostID := range input.HostID {
 		err := transfer.Transfer(ctx, hostID)
 		if err != nil {
-			blog.ErrorJSON("TransferHostToInnerModule  Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
+			blog.ErrorJSON("TransferHostToInnerModule failed, Transfer module host relation failed, input:%s, hostID:%s, err:%s, rid:%s", input, hostID, err.Error(), ctx.ReqID)
 			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
 				Message:     err.Error(),
 				Code:        int64(err.GetCode()),
@@ -92,16 +103,18 @@ func (manager *TransferManager) TransferHostToInnerModule(ctx core.ContextParams
 
 // TransferHostModule transfer host to use add module
 // 目标模块不能为空闲机模块
-func (manager *TransferManager) TransferHostModule(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
+func (manager *TransferManager) TransferToNormalModule(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
 	// 确保目标模块不能为空闲机模块
 	defaultModuleFilter := map[string]interface{}{
 		common.BKDefaultField: []int{common.DefaultResModuleFlag, common.DefaultFaultModuleFlag},
 	}
 	defaultModuleCount, err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(ctx.Context)
 	if err != nil {
+		blog.ErrorJSON("TransferToNormalModule failed, filter default module failed, filter:%s, hostID:%s, err:%s, rid:%s", defaultModuleFilter, common.BKTableNameBaseModule, err.Error(), ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if defaultModuleCount > 0 {
+		blog.ErrorJSON("TransferToNormalModule failed, target module shouldn't be default module, input:%s, err:%s, rid:%s", input, err.Error(), ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCoreServiceTransferToDefaultModuleUseWrongMethod)
 	}
 
@@ -116,6 +129,7 @@ func (manager *TransferManager) TransferHostModule(ctx core.ContextParams, input
 		}
 		hostModuleConfigs := make([]metadata.ModuleHost, 0)
 		if err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(ctx.Context, &hostModuleConfigs); err != nil {
+			blog.ErrorJSON("TransferToNormalModule failed, find default module failed, filter:%s, hostID:%s, err:%s, rid:%s", defaultModuleFilter, common.BKTableNameBaseModule, err.Error(), ctx.ReqID)
 			return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 		}
 		hostModuleMap := make(map[int64][]int64)
@@ -144,6 +158,7 @@ func (manager *TransferManager) TransferHostModule(ctx core.ContextParams, input
 			}
 			instanceCount, err := manager.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Context)
 			if err != nil {
+				blog.ErrorJSON("TransferToNormalModule failed, find service instance failed, filter:%s, hostID:%s, err:%s, rid:%s", serviceInstanceFilter, common.BKTableNameServiceInstance, err.Error(), ctx.ReqID)
 				return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 			}
 			if instanceCount > 0 {
@@ -164,13 +179,13 @@ func (manager *TransferManager) TransferHostModule(ctx core.ContextParams, input
 
 	err = transfer.ValidParameter(ctx)
 	if err != nil {
-		blog.ErrorJSON("TransferHostModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		blog.ErrorJSON("TransferToNormalModule failed, ValidParameter failed, input:%s, err:%s, rid:%s", input, err, ctx.ReqID)
 		return nil, err
 	}
 	for _, hostID := range input.HostID {
 		err := transfer.Transfer(ctx, hostID)
 		if err != nil {
-			blog.ErrorJSON("TransferHostModule  Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
+			blog.ErrorJSON("TransferToNormalModule failed, Transfer module host relation failed. input:%s, hostID:%s, err:%s, rid:%s", input, hostID, err, ctx.ReqID)
 			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
 				Message:     err.Error(),
 				Code:        int64(err.GetCode()),
@@ -191,7 +206,7 @@ func (manager *TransferManager) TransferHostModule(ctx core.ContextParams, input
 // 如果主机属于空闲机模块，操作失败
 // 如果主机属于故障机模块，操作失败
 // 如果主机不在参数指定的模块中，操作失败
-func (manager *TransferManager) RemoveHostFromModule(ctx core.ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error) {
+func (manager *TransferManager) RemoveFromModule(ctx core.ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error) {
 	hostConfigFilter := map[string]interface{}{
 		common.BKHostIDField:   input.HostID,
 		common.BKModuleIDField: input.ModuleID,
@@ -199,17 +214,19 @@ func (manager *TransferManager) RemoveHostFromModule(ctx core.ContextParams, inp
 	}
 	hostConfigs := make([]metadata.ModuleHost, 0)
 	if err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(ctx.Context, &hostConfigs); err != nil {
+		blog.ErrorJSON("RemoveFromModule failed, find host module config failed, filter:%s, hostID:%s, err:%s, rid:%s", hostConfigFilter, common.BKTableNameModuleHostConfig, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrHostModuleConfigFaild, err.Error())
 	}
 
 	// 如果主机不在参数指定的模块中，操作失败
 	if len(hostConfigs) == 0 {
+		blog.ErrorJSON("RemoveFromModule failed, host invalid, host module config not found, input:%s, rid:%s", input, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrHostModuleNotExist)
 	}
 
 	moduleIDs := make([]int64, 0)
 	for _, hostConfig := range hostConfigs {
-		moduleIDs = append(moduleIDs, hostConfig.HostID)
+		moduleIDs = append(moduleIDs, hostConfig.ModuleID)
 	}
 
 	// 检查 moduleIDs 是否有空闲机或故障机模块
@@ -225,9 +242,11 @@ func (manager *TransferManager) RemoveHostFromModule(ctx core.ContextParams, inp
 	}
 	defaultModuleCount, err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(ctx.Context)
 	if err != nil {
+		blog.ErrorJSON("RemoveFromModule failed, filter default module failed, filter:%s, hostID:%s, err:%s, rid:%s", defaultModuleFilter, common.BKTableNameBaseModule, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrHostGetModuleFail, err.Error())
 	}
 	if defaultModuleCount > 0 {
+		blog.ErrorJSON("RemoveFromModule failed, default module shouldn't in target modules, input:%s, rid:%s", input, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrHostRemoveFromDefaultModuleFailed)
 	}
 
@@ -244,7 +263,12 @@ func (manager *TransferManager) RemoveHostFromModule(ctx core.ContextParams, inp
 			ModuleID:      targetModuleIDs,
 			IsIncrement:   false,
 		}
-		return manager.TransferHostModule(ctx, &option)
+		result, err := manager.TransferToNormalModule(ctx, &option)
+		if err != nil {
+			blog.ErrorJSON("RemoveFromModule failed, TransferToNormalModule failed, input:%s, option:%s, err:%s, rid:%s", input, option, err.Error(), ctx.ReqID)
+			return nil, err
+		}
+		return result, nil
 	}
 
 	// transfer host to idle module
@@ -261,11 +285,16 @@ func (manager *TransferManager) RemoveHostFromModule(ctx core.ContextParams, inp
 		ModuleID:      idleModule.ModuleID,
 		HostID:        []int64{input.HostID},
 	}
-	return manager.TransferHostToInnerModule(ctx, &innerModuleOption)
+	result, err := manager.TransferToInnerModule(ctx, &innerModuleOption)
+	if err != nil {
+		blog.ErrorJSON("RemoveFromModule failed, TransferToInnerModule failed, filter:%s, option:%s, err:%s, rid:%s", input, innerModuleOption, err.Error(), ctx.ReqID)
+		return nil, err
+	}
+	return result, nil
 }
 
 // TransferHostCrossBusiness Host cross-business transfer
-func (manager *TransferManager) TransferHostCrossBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
+func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
 	// check whether there is service instance bound to hosts
 	serviceInstanceFilter := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
@@ -274,10 +303,11 @@ func (manager *TransferManager) TransferHostCrossBusiness(ctx core.ContextParams
 	}
 	serviceInstanceCount, err := manager.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Context)
 	if err != nil {
-		blog.Errorf("TransferHostCrossBusiness failed, query host related service instances failed, filter: %+v, err: %+v, rid: %s", serviceInstanceFilter, err, ctx.ReqID)
+		blog.Errorf("TransferToAnotherBusiness failed, query host related service instances failed, filter: %s, err: %s, rid: %s", serviceInstanceFilter, err.Error(), ctx.ReqID)
 		return nil, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	if serviceInstanceCount > 0 {
+		blog.InfoJSON("RemoveFromModule forbidden, %d service instances bound to hosts, input:%s, rid:%s", serviceInstanceCount, input, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
 	}
 
@@ -286,14 +316,14 @@ func (manager *TransferManager) TransferHostCrossBusiness(ctx core.ContextParams
 
 	err = transfer.ValidParameter(ctx)
 	if err != nil {
-		blog.ErrorJSON("TransferHostCrossBusiness ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		blog.ErrorJSON("TransferToAnotherBusiness failed, ValidParameter failed, err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
 		return nil, err
 	}
 	var exceptionArr []metadata.ExceptionResult
 	for _, hostID := range input.HostIDArr {
 		err := transfer.Transfer(ctx, hostID)
 		if err != nil {
-			blog.ErrorJSON("TransferHostCrossBusiness  Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
+			blog.ErrorJSON("TransferToAnotherBusiness failed, Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
 			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
 				Message:     err.Error(),
 				Code:        int64(err.GetCode()),
@@ -343,14 +373,14 @@ func (manager *TransferManager) GetHostModuleRelation(ctx core.ContextParams, in
 }
 
 // DeleteHost delete host module relation and host info
-func (manager *TransferManager) DeleteHost(ctx core.ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
+func (manager *TransferManager) DeleteFromSystem(ctx core.ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
 
 	transfer := manager.NewHostModuleTransfer(ctx, input.ApplicationID, nil, false)
 	transfer.SetDeleteHost(ctx)
 
 	err := transfer.ValidParameter(ctx)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToInnerModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		blog.ErrorJSON("DeleteFromSystem failed, ValidParameter failed, err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
 		return nil, err
 	}
 
@@ -358,7 +388,7 @@ func (manager *TransferManager) DeleteHost(ctx core.ContextParams, input *metada
 	for _, hostID := range input.HostIDArr {
 		err := transfer.Transfer(ctx, hostID)
 		if err != nil {
-			blog.ErrorJSON("TransferHostToInnerModule  Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
+			blog.ErrorJSON("DeleteFromSystem failed, Transfer module host relation failed. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
 			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
 				Message:     err.Error(),
 				Code:        int64(err.GetCode()),
@@ -373,33 +403,6 @@ func (manager *TransferManager) DeleteHost(ctx core.ContextParams, input *metada
 	return nil, nil
 }
 
-func (manager *TransferManager) countByCond(ctx core.ContextParams, conds mapstr.MapStr, tableName string) (uint64, errors.CCErrorCoder) {
-	conds = util.SetQueryOwner(conds, ctx.SupplierAccount)
-	cnt, err := manager.dbProxy.Table(tableName).Find(conds).Count(ctx)
-	if err != nil {
-		blog.ErrorJSON("countByCond find data error. err:%s, table:%s,cond:%s, rid:%s", err.Error(), tableName, conds, ctx.ReqID)
-		return 0, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-
-	return cnt, nil
-}
-
-func (manager *TransferManager) getModuleInfoByModuleID(ctx core.ContextParams, appID int64, moduleID []int64, fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
-	moduleConds := condition.CreateCondition()
-	moduleConds.Field(common.BKAppIDField).Eq(appID)
-	moduleConds.Field(common.BKModuleIDField).In(moduleID)
-	cond := util.SetQueryOwner(moduleConds.ToMapStr(), ctx.SupplierAccount)
-
-	moduleInfoArr := make([]mapstr.MapStr, 0)
-	err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(ctx, &moduleInfoArr)
-	if err != nil {
-		blog.ErrorJSON("getModuleInfoByModuleID find data CCErrorCoder. err:%s,cond:%s, rid:%s", err.Error(), cond, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-
-	return moduleInfoArr, nil
-}
-
 func (manager *TransferManager) getHostIDModuleMapByHostID(ctx core.ContextParams, appID int64, hostIDArr []int64) (map[int64][]metadata.ModuleHost, errors.CCErrorCoder) {
 	moduleHostCond := condition.CreateCondition()
 	moduleHostCond.Field(common.BKAppIDField).Eq(appID)
@@ -409,7 +412,7 @@ func (manager *TransferManager) getHostIDModuleMapByHostID(ctx core.ContextParam
 	var dataArr []metadata.ModuleHost
 	err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).All(ctx, &dataArr)
 	if err != nil {
-		blog.ErrorJSON("getHostIDMOduleIDMapByHostID query db error. err:%s, cond:%s,rid:%s", err.Error(), cond, ctx.ReqID)
+		blog.ErrorJSON("getHostIDModuleMapByHostID query db error. err:%s, cond:%s,rid:%s", err.Error(), cond, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	result := make(map[int64][]metadata.ModuleHost, 0)
