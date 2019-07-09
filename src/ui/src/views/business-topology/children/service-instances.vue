@@ -96,16 +96,36 @@
                 @on-cancel="handleBeforeClose">
             </cmdb-form>
         </cmdb-slider>
+
+        <bk-dialog
+            :is-show.sync="editLabel.show"
+            :padding="0"
+            :quick-close="false"
+            :width="580"
+            @confirm="handleSubmitBatchLabel"
+            @cancel="handleCloseBatchLable">
+            <div class="reset-header" slot="header">
+                {{$t("BusinessTopology['批量编辑']")}}
+                <span>{{$t("BusinessTopology['（已选择19个实例）']")}}</span>
+            </div>
+            <batch-edit-label ref="batchLabel" slot="content">
+                <cmdb-edit-label ref="instanceLabel" slot="batch-add-label" class="edit-label"></cmdb-edit-label>
+            </batch-edit-label>
+        </bk-dialog>
     </div>
 </template>
 
 <script>
     import serviceInstanceTable from './service-instance-table.vue'
     import serviceInstanceEmpty from './service-instance-empty.vue'
+    import batchEditLabel from './batch-edit-label.vue'
+    import cmdbEditLabel from './edit-label.vue'
     export default {
         components: {
             serviceInstanceTable,
-            serviceInstanceEmpty
+            serviceInstanceEmpty,
+            batchEditLabel,
+            cmdbEditLabel
         },
         data () {
             return {
@@ -130,6 +150,9 @@
                     properties: [],
                     propertyGroups: [],
                     unwatch: null
+                },
+                editLabel: {
+                    show: false
                 }
             }
         },
@@ -164,6 +187,10 @@
                 }, {
                     name: this.$t('BusinessTopology["复制IP"]'),
                     handler: this.copyIp,
+                    disabled: !this.checked.length
+                }, {
+                    name: this.$t('BusinessTopology["编辑标签"]'),
+                    handler: this.handleShowBatchLabel,
                     disabled: !this.checked.length
                 }]
             }
@@ -477,6 +504,65 @@
                         from: `${this.$route.path}?module=${this.currentNode.data.bk_inst_id}`
                     }
                 })
+            },
+            handleShowBatchLabel () {
+                this.editLabel.show = true
+            },
+            async handleSubmitBatchLabel () {
+                try {
+                    const validator = this.$refs.instanceLabel.$validator
+                    const list = this.$refs.instanceLabel.list
+                    if (
+                        (!await validator.validateAll() && list.length !== 1)
+                        || (list.length === 1 && !list[0].key && list[0].value)
+                        || (list.length === 1 && list[0].key && !list[0].value)
+                    ) {
+                        this.$bkMessage({
+                            message: this.$t('BusinessTopology["请填写完整标签键/值"]'),
+                            theme: 'warning'
+                        })
+                        const errorId = validator.errors.items[0].id
+                        const focusEl = validator.fields.items.find(field => field.id === errorId)
+                        focusEl && focusEl.el.focus()
+                        return
+                    }
+                    const serviceInstanceIds = this.checked.map(instance => instance.id)
+                    const removeList = this.$refs.instanceLabel.removeList
+                    const addList = list.filter(label => label.id === -1 && label.key && label.value)
+                    if (removeList.length) {
+                        await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
+                            params: this.$injectMetadata({
+                                instance_ids: [serviceInstanceIds],
+                                keys: removeList
+                            }),
+                            config: {
+                                requestId: 'deleteInstanceLabel'
+                            }
+                        })
+                    }
+                    if (addList.length) {
+                        const labelSet = {}
+                        addList.forEach(label => {
+                            labelSet[label.key] = label.value
+                        })
+                        await this.$store.dispatch('instanceLabel/createInstanceLabel', {
+                            params: this.$injectMetadata({
+                                instance_ids: [serviceInstanceIds],
+                                labels: labelSet
+                            }),
+                            config: {
+                                requestId: 'createInstanceLabel'
+                            }
+                        })
+                    }
+                    this.$success('Common["保存成功"]')
+                    this.handleCloseBatchLable()
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleCloseBatchLable () {
+                this.editLabel.show = false
             }
         }
     }
@@ -620,6 +706,12 @@
                 font-size: 65px;
                 color: #c3cdd7;
             }
+        }
+    }
+    .reset-header {
+        span {
+            color: #979ba5;
+            font-size: 14px;
         }
     }
 </style>

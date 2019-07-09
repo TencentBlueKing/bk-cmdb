@@ -21,6 +21,29 @@
                     </li>
                 </ul>
             </cmdb-dot-menu>
+            <div class="instance-label clearfix" @click.stop>
+                <div class="label-title fl">
+                    <i class="icon-cc-label"></i>
+                    <span>{{$t('BusinessTopology["标签"]')}}</span>
+                </div>
+                <div class="label-list fl">
+                    <span class="label-item">env：value</span>
+                    <span class="label-item">env：value</span>
+                    <span class="label-item">env：value</span>
+                    <div class="label-item label-tips" ref="tipsLabelContainer" @mouseenter="handleShowTipsLabel" @mouseleave="handleCloseTipsLabel">
+                        <span>...</span>
+                        <div class="tips-label-list" ref="tipsLabel" v-click-outside="handleCloseTipsLabel" v-show="tipsLabel.show">
+                            <span class="label-item">env：value</span>
+                            <span class="label-item">env：value</span>
+                            <span class="label-item">env：value</span>
+                            <span class="label-item">env：value</span>
+                            <span class="label-item">env：value</span>
+                            <span class="label-item">env：value</span>
+                            <span class="label-item">env：value</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <cmdb-table
             v-show="localExpanded"
@@ -63,11 +86,31 @@
                 <span>{{$t('BusinessTopology["添加进程"]')}}</span>
             </button>
         </div>
+
+        <bk-dialog
+            :is-show.sync="editLabel.show"
+            :padding="0"
+            :quick-close="false"
+            :width="580"
+            @confirm="handleSubmitEditLable"
+            @cancel="handleCloseEditLable">
+            <div slot="header">
+                {{$t("BusinessTopology['编辑标签']")}}
+            </div>
+            <cmdb-edit-label
+                v-if="editLabel.show"
+                slot="content"
+                ref="instanceLabel"
+                :default-list="[]">
+            </cmdb-edit-label>
+        </bk-dialog>
     </div>
 </template>
 
 <script>
+    import cmdbEditLabel from './edit-label.vue'
     export default {
+        components: { cmdbEditLabel },
         props: {
             instance: {
                 type: Object,
@@ -77,6 +120,14 @@
         },
         data () {
             return {
+                editLabel: {
+                    show: false
+                },
+                tipsLabel: {
+                    show: false,
+                    instance: null,
+                    id: null
+                },
                 show: true,
                 checked: false,
                 localExpanded: this.expanded,
@@ -95,6 +146,9 @@
             },
             instanceMenu () {
                 const menu = [{
+                    name: this.$t('BusinessTopology["编辑标签"]'),
+                    handler: this.handleShowEditLabel
+                }, {
                     name: this.$t('Common["删除"]'),
                     handler: this.handleDeleteInstance
                 }]
@@ -265,6 +319,85 @@
                         }
                     }
                 })
+            },
+            handleShowEditLabel () {
+                this.editLabel.show = true
+            },
+            handleCloseEditLable () {
+                this.editLabel.show = false
+            },
+            async handleSubmitEditLable () {
+                try {
+                    const validator = this.$refs.instanceLabel.$validator
+                    const list = this.$refs.instanceLabel.list
+                    if (
+                        (!await validator.validateAll() && list.length !== 1)
+                        || (list.length === 1 && !list[0].key && list[0].value)
+                        || (list.length === 1 && list[0].key && !list[0].value)
+                    ) {
+                        this.$bkMessage({
+                            message: this.$t('BusinessTopology["请填写完整标签键/值"]'),
+                            theme: 'warning'
+                        })
+                        const errorId = validator.errors.items[0].id
+                        const focusEl = validator.fields.items.find(field => field.id === errorId)
+                        focusEl && focusEl.el.focus()
+                        return
+                    }
+                    const removeList = this.$refs.instanceLabel.removeList
+                    const addList = list.filter(label => label.id === -1 && label.key && label.value)
+                    if (removeList.length) {
+                        await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
+                            params: this.$injectMetadata({
+                                instance_ids: [this.instance.id],
+                                keys: removeList
+                            }),
+                            config: {
+                                requestId: 'deleteInstanceLabel'
+                            }
+                        })
+                    }
+                    if (addList.length) {
+                        const labelSet = {}
+                        addList.forEach(label => {
+                            labelSet[label.key] = label.value
+                        })
+                        await this.$store.dispatch('instanceLabel/createInstanceLabel', {
+                            params: this.$injectMetadata({
+                                instance_ids: [this.instance.id],
+                                labels: labelSet
+                            }),
+                            config: {
+                                requestId: 'createInstanceLabel'
+                            }
+                        })
+                    }
+                    this.$success('Common["保存成功"]')
+                    this.handleCloseEditLable()
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleCloseTipsLabel () {
+                this.tipsLabel.instance && this.tipsLabel.instance.destroy()
+                this.tipsLabel.show = false
+            },
+            handleShowTipsLabel (event) {
+                if (this.tipsLabel.show) {
+                    this.handleCloseTipsLabel()
+                    return
+                }
+                this.tipsLabel.show = true
+                this.tipsLabel.instance = this.$tooltips({
+                    duration: -1,
+                    theme: 'light',
+                    zIndex: 9999,
+                    width: 290,
+                    placements: ['bottom'],
+                    container: this.$refs.tipsLabelContainer,
+                    target: event.target
+                })
+                this.tipsLabel.instance.$el.append(this.$refs.tipsLabel)
             }
         }
     }
@@ -325,6 +458,41 @@
                 &:hover {
                     background-color: #E1ECFF;
                     color: #3A84FF;
+                }
+            }
+        }
+    }
+    .instance-label {
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 12px;
+        .icon-cc-label {
+            color: #979ba5;
+            font-size: 16px;
+        }
+        .label-list {
+            padding-left: 4px;
+            line-height: 38px;
+            .label-item {
+                display: inline-block;
+                height: 20px;
+                line-height: 20px;
+                vertical-align: middle;
+                margin-right: 4px;
+                padding: 0 6px;
+                color: #979ba5;
+                background-color: #fafbfd;
+                border-radius: 2px;
+            }
+            .label-tips:hover {
+                background-color: #f0f1f5;
+            }
+            .tips-label-list {
+                .label-item {
+                    line-height: 18px;
+                    color: #979ba5;
+                    border: 1px solid #dcdee5;
+                    margin: 5px 2px;
                 }
             }
         }
