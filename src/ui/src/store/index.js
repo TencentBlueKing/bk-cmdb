@@ -50,6 +50,7 @@ import processTemplate from './modules/api/process-template.js'
 import businessSynchronous from './modules/api/business-synchronous.js'
 import serviceInstance from './modules/api/service-instance.js'
 import processInstance from './modules/api/process-instance.js'
+import instanceLabel from './modules/api/instance-label.js'
 
 Vue.use(Vuex)
 
@@ -102,6 +103,7 @@ export default new Vuex.Store({
         processTemplate,
         businessSynchronous,
         serviceInstance,
-        processInstance
+        processInstance,
+        instanceLabel
     }
 })
