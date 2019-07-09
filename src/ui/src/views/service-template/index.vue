@@ -39,38 +39,43 @@
                 </div>
             </div>
         </div>
-        <cmdb-table class="template-table" ref="table"
-            :loading="$loading('get_proc_service_template')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :default-sort="table.defaultSort"
-            :sortable="false"
-            :wrapper-minus-height="210"
-            @handleSortChange="handleSortChange"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange">
-            <template slot="last_time" slot-scope="{ item }">
-                {{$tools.formatTime(item['last_time'], 'YYYY-MM-DD HH:mm')}}
-            </template>
-            <template slot="operation" slot-scope="{ item }">
-                <button class="text-primary mr10"
-                    @click.stop="operationTemplate(item['id'])">
-                    {{$t('Common["编辑"]')}}
-                </button>
-                <span class="text-primary"
-                    style="color: #c4c6cc !important; cursor: not-allowed;"
-                    v-if="item['service_instance_count']"
-                    v-bktooltips.top="$t('ServiceManagement[\'不可删除\']')">
-                    {{$t('Common["删除"]')}}
-                </span>
-                <button class="text-primary"
-                    v-else
-                    @click.stop="deleteTemplate(item)">
-                    {{$t('Common["删除"]')}}
-                </button>
-            </template>
-        </cmdb-table>
+        <bk-table class="template-table"
+            v-bkloading="{ isLoading: $loading('get_proc_service_template') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 210"
+            @page-limit-change="handleSizeChange"
+            @page-change="handlePageChange">
+            <bk-table-column prop="name" :label="$t('ServiceManagement[\'模板名称\']')"></bk-table-column>
+            <bk-table-column prop="service_category" :label="$t('ServiceManagement[\'服务分类\']')"></bk-table-column>
+            <bk-table-column prop="process_template_count" :label="$t('ServiceManagement[\'进程数量\']')"></bk-table-column>
+            <bk-table-column prop="module_count" :label="$t('ServiceManagement[\'应用模块数\']')"></bk-table-column>
+            <bk-table-column prop="modifier" :label="$t('ServiceManagement[\'修改人\']')"></bk-table-column>
+            <bk-table-column prop="last_time" :label="$t('ServiceManagement[\'修改时间\']')">
+                <template slot-scope="{ row }">
+                    {{$tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm')}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="operation" :label="$t('Common[\'操作\']')">
+                <template slot-scope="{ row }">
+                    <button class="text-primary mr10"
+                        @click.stop="operationTemplate(row['id'])">
+                        {{$t('Common["编辑"]')}}
+                    </button>
+                    <span class="text-primary"
+                        style="color: #c4c6cc !important; cursor: not-allowed;"
+                        v-if="row['service_instance_count']"
+                        v-bktooltips.top="$t('ServiceManagement[\'不可删除\']')">
+                        {{$t('Common["删除"]')}}
+                    </span>
+                    <button class="text-primary"
+                        v-else
+                        @click.stop="deleteTemplate(row)">
+                        {{$t('Common["删除"]')}}
+                    </button>
+                </template>
+            </bk-table-column>
+        </bk-table>
     </div>
 </template>
 
@@ -90,37 +95,13 @@
                     templateName: ''
                 },
                 table: {
-                    header: [
-                        {
-                            id: 'name',
-                            name: this.$t("ServiceManagement['模板名称']")
-                        }, {
-                            id: 'service_category',
-                            name: this.$t("ServiceManagement['服务分类']")
-                        }, {
-                            id: 'process_template_count',
-                            name: this.$t("ServiceManagement['进程数量']")
-                        }, {
-                            id: 'module_count',
-                            name: this.$t("ServiceManagement['应用模块数']")
-                        }, {
-                            id: 'modifier',
-                            name: this.$t("ServiceManagement['修改人']")
-                        }, {
-                            id: 'last_time',
-                            name: this.$t("ServiceManagement['修改时间']")
-                        }, {
-                            id: 'operation',
-                            name: this.$t('Common["操作"]')
-                        }
-                    ],
                     height: 600,
                     list: [],
                     allList: [],
                     pagination: {
                         current: 1,
                         count: 0,
-                        size: 10
+                        limit: 10
                     },
                     defaultSort: '-last_time',
                     sort: '-id'
@@ -142,8 +123,8 @@
                 return {
                     service_category_id: id,
                     page: {
-                        start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                        limit: this.table.pagination.size,
+                        start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                        limit: this.table.pagination.limit,
                         sort: this.table.defaultSort
                     }
                 }
@@ -254,7 +235,7 @@
                 this.handlePageChange(1)
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handlePageChange (page) {

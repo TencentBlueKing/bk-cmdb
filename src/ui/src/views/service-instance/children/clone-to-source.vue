@@ -8,25 +8,29 @@
                 {{$t('Common["批量编辑"]')}}
             </bk-button>
         </div>
-        <cmdb-table class="source-table"
-            :sortable="false"
-            :cross-page-check="false"
-            :empty-height="42"
-            :header="header"
-            :list="flattenList"
-            :checked.sync="checked">
-            <template slot="__operation__" slot-scope="{ item }">
-                <button class="text-primary mr10" v-if="isRepeat(item)"
-                    @click="handleEditProcess(item)">
-                    <i class="bk-icon icon-exclamation-circle"></i>
-                    {{$t('Common["请编辑"]')}}
-                </button>
-                <button class="text-primary mr10" v-else
-                    @click="handleEditProcess(item)">
-                    {{$t('Common["编辑"]')}}
-                </button>
-            </template>
-        </cmdb-table>
+        <bk-table class="source-table"
+            :data="flattenList"
+            @selection-change="handleSelectChange">
+            <bk-table-column type="selection" align="center" width="60" fixed></bk-table-column>
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('Common[\'操作\']')" fixed="right">
+                <template slot-scope="{ row }">
+                    <button class="text-primary mr10" v-if="isRepeat(row)"
+                        @click="handleEditProcess(row)">
+                        <i class="bk-icon icon-exclamation-circle"></i>
+                        {{$t('Common["请编辑"]')}}
+                    </button>
+                    <button class="text-primary mr10" v-else
+                        @click="handleEditProcess(row)">
+                        {{$t('Common["编辑"]')}}
+                    </button>
+                </template>
+            </bk-table-column>
+        </bk-table>
         <div class="page-options">
             <bk-button class="options-button" theme="primary"
                 :disabled="!!repeatedProcesses.length"
@@ -95,14 +99,6 @@
                         id: property.bk_property_id,
                         name: property.bk_property_name
                     }
-                })
-                header.unshift({
-                    id: 'bk_process_id',
-                    type: 'checkbox'
-                })
-                header.push({
-                    id: '__operation__',
-                    name: this.$t('Common["操作"]')
                 })
                 return header
             },
@@ -181,6 +177,9 @@
             },
             isRepeat (item) {
                 return this.repeatedProcesses.some(process => process.bk_process_id === item.bk_process_id)
+            },
+            handleSelectChange (selection) {
+                this.checked = selection.map(row => row.bk_process_id)
             },
             handleBatchEdit () {
                 this.processForm.type = 'batch'

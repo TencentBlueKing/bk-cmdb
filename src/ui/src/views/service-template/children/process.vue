@@ -1,31 +1,30 @@
 <template>
     <div class="process-wrapper">
-        <cmdb-table class="process-table" ref="table"
-            :loading="loading"
-            :checked.sync="table.checked"
-            :header="table.header"
+        <bk-table class="process-table"
+            v-bkloading="{ isLoading: loading }"
             :list="showList"
-            :pagination.sync="table.pagination"
-            :default-sort="table.defaultSort"
-            :wrapper-minus-height="300">
-            <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                <template v-if="header.id === 'operation'">
-                    <div :key="index">
-                        <button class="text-primary mr10"
-                            @click.stop="handleEdite(item['originData'])">
-                            {{$t('Common["编辑"]')}}
-                        </button>
-                        <button class="text-primary"
-                            @click.stop="handleDelete(item['originData'])">
-                            {{$t('Common["删除"]')}}
-                        </button>
-                    </div>
+            :max-height="$APP.height - 300">
+            <bk-table-column v-for="column in table.header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+                <template slot-scope="{ row }">
+                    {{row[column.id] || '--'}}
                 </template>
-                <template v-else>
-                    <span :key="index">{{item[header.id] ? item[header.id] : '--'}}</span>
+            </bk-table-column>
+            <bk-table-column :label="$t('Common[\'操作\']')">
+                <template slot-scope="{ row }">
+                    <button class="text-primary mr10"
+                        @click.stop="handleEdite(row['originData'])">
+                        {{$t('Common["编辑"]')}}
+                    </button>
+                    <button class="text-primary"
+                        @click.stop="handleDelete(row['originData'])">
+                        {{$t('Common["删除"]')}}
+                    </button>
                 </template>
-            </template>
-        </cmdb-table>
+            </bk-table-column>
+        </bk-table>
     </div>
 </template>
 
@@ -77,19 +76,8 @@
                             id: 'user',
                             name: this.$t("ProcessManagement['启动用户']"),
                             sortable: false
-                        }, {
-                            id: 'operation',
-                            name: this.$t("Common['操作']"),
-                            sortable: false
                         }
-                    ],
-                    pagination: {
-                        current: 1,
-                        count: 0,
-                        size: 10
-                    },
-                    defaultSort: '-bk_process_id',
-                    sort: '-bk_process_id'
+                    ]
                 }
             }
         },
