@@ -10,31 +10,25 @@
  * limitations under the License.
  */
 
-package objcontroller
+package topographics
 
 import (
-	"fmt"
+	"context"
+	"net/http"
 
-	"configcenter/src/apimachinery/objcontroller/meta"
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/metadata"
 )
 
-type ObjControllerClientInterface interface {
-	Meta() meta.MetaInterface
+type TopoGraphicsInterface interface {
+	SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (resp *metadata.SearchTopoGraphicsResult, err error)
+	UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error)
 }
 
-func NewObjectControllerInterface(c *util.Capability, version string) ObjControllerClientInterface {
-	base := fmt.Sprintf("/object/%s", version)
-	return &objectctrl{
-		client: rest.NewRESTClient(c, base),
-	}
+func NewTopoGraphicsInterface(client rest.ClientInterface) TopoGraphicsInterface {
+	return &meta{client: client}
 }
 
-type objectctrl struct {
+type meta struct {
 	client rest.ClientInterface
-}
-
-func (o *objectctrl) Meta() meta.MetaInterface {
-	return meta.NewmetaInterface(o.client)
 }

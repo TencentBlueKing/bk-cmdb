@@ -47,8 +47,6 @@ func (s *Service) WebService() *restful.Container {
 	// restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	api.Route(api.POST("/topographics/search").To(s.SearchTopoGraphics))
-	api.Route(api.POST("/topographics/update").To(s.UpdateTopoGraphics))
 	container = container.Add(api)
 
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
