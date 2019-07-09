@@ -62,7 +62,7 @@ func (s *set) hasHost(params types.ContextParams, bizID int64, setIDS []int64) (
 		common.BKSetIDField: setIDS,
 	}
 
-	rsp, err := s.clientSet.HostController().Module().GetModulesHostConfig(context.Background(), params.Header, cond)
+	rsp, err := s.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, cond)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to request the object controller, error info is %s", err.Error())
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
