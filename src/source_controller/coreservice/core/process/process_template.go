@@ -30,6 +30,8 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 		err := ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
+	*template.Property.ProcessName.AsDefaultValue = true
+	*template.Property.FuncName.AsDefaultValue = true
 	if template.Property != nil && template.Property.ProcessName.Value != nil {
 		template.ProcessName = *template.Property.ProcessName.Value
 	}
@@ -62,7 +64,7 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
-	if err := p.UniqueValidate(ctx, &template); err != nil {
+	if err := p.processNameUniqueValidate(ctx, &template); err != nil {
 		return nil, err
 	}
 
@@ -87,7 +89,7 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 	return &template, nil
 }
 
-func (p *processOperation) UniqueValidate(ctx core.ContextParams, template *metadata.ProcessTemplate) errors.CCErrorCoder {
+func (p *processOperation) processNameUniqueValidate(ctx core.ContextParams, template *metadata.ProcessTemplate) errors.CCErrorCoder {
 	// process name unique
 	processName := ""
 	if template.Property.ProcessName.Value != nil {
@@ -108,7 +110,7 @@ func (p *processOperation) UniqueValidate(ctx core.ContextParams, template *meta
 		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
-		return ctx.Error.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated)
+		return ctx.Error.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, processName)
 	}
 
 	// func name unique
@@ -172,10 +174,12 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 		return nil, err
 	}
 
+	*template.Property.ProcessName.AsDefaultValue = true
+	*template.Property.FuncName.AsDefaultValue = true
 	template.Modifier = ctx.User
 	template.LastTime = time.Now()
 
-	if err := p.UniqueValidate(ctx, template); err != nil {
+	if err := p.processNameUniqueValidate(ctx, template); err != nil {
 		return nil, err
 	}
 	if template.Property != nil {
@@ -241,19 +245,16 @@ func (p *processOperation) DeleteProcessTemplate(ctx core.ContextParams, process
 		return err
 	}
 
-	// service template that referenced by process template shouldn't be removed
-	usageFilter := map[string]int64{
+	updateFilter := map[string]int64{
 		common.BKProcessTemplateIDField: template.ID,
 	}
-	usageCount, e := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(usageFilter).Count(ctx.Context)
-	if nil != e {
-		blog.Errorf("DeleteProcessTemplate failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, usageFilter, e, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	updateDoc := map[string]interface{}{
+		common.BKProcessTemplateIDField: common.ServiceTemplateIDNotSet,
 	}
-	if usageCount > 0 {
-		blog.Errorf("DeleteProcessTemplate failed, forbidden delete process template be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
-		err := ctx.Error.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
-		return err
+	e := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Update(ctx.Context, updateFilter, updateDoc)
+	if nil != e {
+		blog.Errorf("DeleteProcessTemplate failed, clear process instance templateID field failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, updateFilter, e, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
 	deleteFilter := map[string]int64{common.BKFieldID: template.ID}

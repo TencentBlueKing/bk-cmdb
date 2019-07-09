@@ -159,6 +159,13 @@ const setTitle = to => {
     router.app.$store.commit('setHeaderTitle', headerTitle)
 }
 
+const setAuthScope = (to, from) => {
+    const auth = to.meta.auth || {}
+    if (typeof auth.setAuthScope === 'function') {
+        auth.setAuthScope(to, from, router.app)
+    }
+}
+
 const checkAuthDynamicMeta = (to, from) => {
     router.app.$store.commit('auth/clearDynamicMeta')
     const auth = to.meta.auth || {}
@@ -203,6 +210,7 @@ const setupStatus = {
 router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
+            setLoading(true)
             await cancelRequest()
             if (setupStatus.preload) {
                 await preload(router.app)
@@ -210,9 +218,9 @@ router.beforeEach((to, from, next) => {
             if (!isShouldShow(to)) {
                 next({ name: index.name })
             } else {
-                setLoading(true)
                 setMenuState(to)
                 setTitle(to)
+                setAuthScope(to, from)
                 checkAuthDynamicMeta(to, from)
 
                 const isAvailable = checkAvailable(to, from)

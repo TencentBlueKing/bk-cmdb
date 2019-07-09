@@ -42,7 +42,7 @@ import (
 
 type Service struct {
 	Engine      *backbone.Engine
-	Txn         dal.DB
+	Txn         dal.Transcation
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
@@ -63,8 +63,8 @@ func (s *Service) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Error
 	}
-	// TODO: {version} need to replaced by v3
-	api.Path("/topo/{version}").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+
+	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
@@ -238,6 +238,7 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				ctx, _ := s.Engine.CCCtx.WithCancel()
 				ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+				ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 
 				handlerContext := types.ContextParams{
 					Context:         ctx,

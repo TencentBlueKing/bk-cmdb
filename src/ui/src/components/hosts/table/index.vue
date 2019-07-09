@@ -475,11 +475,12 @@
                 this.table.checked = list.map(item => item['host']['bk_host_id'])
             },
             handleRowClick (item) {
-                if (this.filter.business > -1) {
+                const business = item.biz[0]
+                if (!business.default) {
                     this.$router.push({
                         name: 'businessHostDetails',
                         params: {
-                            business: this.filter.business,
+                            business: business.bk_biz_id,
                             id: item.host.bk_host_id
                         },
                         query: {

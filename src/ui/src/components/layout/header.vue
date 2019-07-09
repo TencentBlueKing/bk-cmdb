@@ -65,13 +65,9 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { SYSTEM_MANAGEMENT } from '@/dictionary/auth'
     export default {
         data () {
             return {
-                OPERATION: {
-                    SYSTEM_MANAGEMENT
-                },
                 isShowUserDropdown: false,
                 isShowHelper: false
             }
@@ -335,6 +331,9 @@
                 background-color: #5d90e4;
                 border-radius: 20px;
                 cursor: pointer;
+                &:hover {
+                    background-color: #477ad0;
+                }
             }
         }
         .bk-tooltip-popper {

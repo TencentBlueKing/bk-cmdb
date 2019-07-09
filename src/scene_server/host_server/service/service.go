@@ -57,8 +57,10 @@ type srvComm struct {
 func (s *Service) newSrvComm(header http.Header) *srvComm {
 	rid := util.GetHTTPCCRequestID(header)
 	lang := util.GetLanguage(header)
+	user := util.GetUser(header)
 	ctx, cancel := s.Engine.CCCtx.WithCancel()
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 
 	return &srvComm{
 		header:        header,
@@ -154,12 +156,12 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/cloud/search").To(s.SearchCloudTask))
 	api.Route(api.PUT("/hosts/cloud/update").To(s.UpdateCloudTask))
 	api.Route(api.POST("/hosts/cloud/startSync").To(s.StartCloudSync))
-	api.Route(api.POST("/hosts/cloud/resourceConfirm").To(s.ResourceConfirm))
+	api.Route(api.POST("/hosts/cloud/resourceConfirm").To(s.CreateResourceConfirm))
 	api.Route(api.POST("/hosts/cloud/searchConfirm").To(s.SearchConfirm))
 	api.Route(api.POST("/hosts/cloud/confirmHistory/add").To(s.AddConfirmHistory))
 	api.Route(api.POST("/hosts/cloud/confirmHistory/search").To(s.SearchConfirmHistory))
 	api.Route(api.POST("/hosts/cloud/accountSearch").To(s.SearchAccount))
-	api.Route(api.POST("/hosts/cloud/syncHistory").To(s.CloudSyncHistory))
+	api.Route(api.POST("/hosts/cloud/syncHistory").To(s.SearchCloudSyncHistory))
 
 	container.Add(api)
 
@@ -236,6 +238,7 @@ func (s *Service) InitBackground() {
 		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
 		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
 	}
+	s.CacheDB.FlushDb()
 
 	srvData := s.newSrvComm(header)
 	go srvData.lgc.TimerTriggerCheckStatus(srvData.ctx)

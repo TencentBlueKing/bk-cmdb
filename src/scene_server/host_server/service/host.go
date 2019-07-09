@@ -138,7 +138,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		ApplicationID: appID,
 		HostIDArr:     iHostIDArr,
 	}
-	delResult, err := s.CoreAPI.CoreService().Host().DeleteHost(srvData.ctx, srvData.header, input)
+	delResult, err := s.CoreAPI.CoreService().Host().DeleteHostFromSystem(srvData.ctx, srvData.header, input)
 	if err != nil {
 		blog.Error("DeleteHostBatch DeleteHost http do error. err:%s, input:%s, rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -251,7 +251,7 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	}
 
 	// get snapshot
-	result, err := s.CoreAPI.HostController().Host().GetHostSnap(srvData.ctx, hostID, srvData.header)
+	result, err := s.CoreAPI.CoreService().Host().GetHostSnap(srvData.ctx, srvData.header, hostID)
 
 	if err != nil {
 		blog.Errorf("HostSnapInfohttp do error, err: %v ,input:%#v, rid:%s", err, hostID, srvData.rid)
@@ -557,7 +557,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 			return
 		}
 		if !result.Result {
-			blog.Errorf("UpdateHostBatch UpdateObject http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, opt, srvData.rid)
+			blog.Errorf("UpdateHostBatch UpdateObject http response error, err code:%d,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, opt, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 			return
 		}
@@ -675,7 +675,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	}
 	if 0 == len(appInfo) {
 		blog.Errorf("host sync app %d not found, reply:%+v,input:%+v,rid:%s", hostList.ApplicationID, appInfo, hostList, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoGetAppFaild, "not foud ")})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoGetAppFailed)})
 		return
 	}
 
@@ -885,14 +885,14 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 				ModuleID:      idleModuleID,
 				HostID:        []int64{hostID},
 			}
-			opResult, err = srvData.lgc.CoreAPI.CoreService().Host().TransferHostToInnerModule(srvData.ctx, srvData.header, input)
+			opResult, err = srvData.lgc.CoreAPI.CoreService().Host().TransferToInnerModule(srvData.ctx, srvData.header, input)
 		} else {
 			input := &meta.HostsModuleRelation{
 				ApplicationID: data.ApplicationID,
 				HostID:        []int64{hostID},
 				ModuleID:      newModuleIDArr,
 			}
-			opResult, err = srvData.lgc.CoreAPI.CoreService().Host().TransferHostModule(srvData.ctx, srvData.header, input)
+			opResult, err = srvData.lgc.CoreAPI.CoreService().Host().TransferToNormalModule(srvData.ctx, srvData.header, input)
 		}
 		if err != nil {
 			blog.Errorf("MoveSetHost2IdleModule handle error. err:%s, to idle module:%v, input:%#v, hostID:%d, rid:%s", err.Error(), toEmptyModule, data, hostID, srvData.rid)

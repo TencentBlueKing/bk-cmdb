@@ -843,9 +843,10 @@ const (
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID  = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime   = "Cc_Request_Time"
-	BKHTTPCCTransactionID = "Cc_Txn_Id"
+	BKHTTPOtherRequestID    = "X-Bkapi-Request-Id"
+	BKHTTPCCRequestTime     = "Cc_Request_Time"
+	BKHTTPCCTransactionID   = "Cc_Txn_Id"
+	BKHTTPCCTxnTMServerAddr = "Cc_Txn_Tm_addr-Ip"
 )
 
 type CCContextKey string
@@ -981,7 +982,6 @@ const (
 	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
 	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
 	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
-	RedisCloudSyncStartLockKey                = BKCacheKeyV3Prefix + "lock:cloudsyncstart"
 )
 
 // association fields
@@ -1057,7 +1057,17 @@ const (
 )
 
 const (
-	ContextRequestIDField = "request_id"
+	ContextRequestIDField   = "request_id"
+	ContextRequestUserField = "request_user"
+)
+
+// 云同步
+const (
+	CloudSyncTaskID            = "bk_task_id"
+	CloudSyncTaskName          = "bk_task_name"
+	CloudSyncResourceConfirmID = "bk_resource_id"
+	CloudSyncConfirmTime       = "confirm_time"
+	CloudSyncConfirmHistoryID  = "confirm_history_id"
 )
 
 const (

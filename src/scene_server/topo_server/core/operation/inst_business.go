@@ -264,7 +264,6 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 }
 
 func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error) {
-
 	query := &metadata.QueryInput{}
 	cond.Field(common.BKDefaultField).Eq(0)
 	query.Condition = cond.ToMapStr()

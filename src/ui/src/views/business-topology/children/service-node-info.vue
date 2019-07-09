@@ -32,6 +32,7 @@
             ref="form"
             :properties="properties"
             :property-groups="propertyGroups"
+            :disabled-properties="disabledProperties"
             :inst="instance"
             :type="type"
             @on-submit="handleSubmit"
@@ -61,6 +62,7 @@
             return {
                 type: 'details',
                 properties: [],
+                disabledProperties: [],
                 propertyGroups: [],
                 instance: {},
                 first: '',
@@ -90,6 +92,9 @@
             selectedNode () {
                 return this.$store.state.businessTopology.selectedNode
             },
+            isModuleNode () {
+                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
+            },
             modelId () {
                 if (this.selectedNode) {
                     return this.selectedNode.data.bk_obj_id
@@ -97,7 +102,7 @@
                 return null
             },
             withTemplate () {
-                return !!this.instance.service_template_id
+                return this.isModuleNode && !!this.instance.service_template_id
             },
             flattenedInstance () {
                 return this.$tools.flattenItem(this.properties, this.instance)
@@ -110,10 +115,11 @@
                     this.init()
                 }
             },
-            selectedNode (node) {
+            async selectedNode (node) {
                 if (node) {
                     this.type = 'details'
-                    this.getInstance()
+                    await this.getInstance()
+                    this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
                 }
             }
         },
@@ -169,18 +175,20 @@
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 1,
                     bk_isapi: false,
-                    editable: false
+                    editable: false,
+                    unit: ''
                 }, {
                     bk_property_id: '__service_category__',
                     bk_property_name: this.$t('BusinessTopology["服务分类"]'),
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 2,
                     bk_isapi: false,
-                    editable: false
+                    editable: false,
+                    unit: ''
                 }]
             },
             updateCategoryProperty (state) {
-                const serviceCategoryProperty = this.properties.find(property => property.bk_property_id === '__service_category__')
+                const serviceCategoryProperty = this.properties.find(property => property.bk_property_id === '__service_category__') || {}
                 Object.assign(serviceCategoryProperty, state)
             },
             async getPropertyGroups () {
@@ -436,7 +444,7 @@
                 this.$bkInfo({
                     title: `${this.$t('Common["确定删除"]')} ${this.selectedNode.name}?`,
                     content: this.modelId === 'module'
-                        ? this.$t('Common["请先转移其下所有的主机"]')
+                        ? this.$t('BusinessTopology["删除模块提示"]')
                         : this.$t('Common[\'下属层级都会被删除，请先转移其下所有的主机\']'),
                     confirmFn: async () => {
                         const promiseMap = {
@@ -508,6 +516,7 @@
                         })
                         this.instance.service_template_id = null
                         this.instance.__template_name__ = '--'
+                        this.disabledProperties = []
                     }
                 })
             }

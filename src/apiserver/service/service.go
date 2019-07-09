@@ -72,7 +72,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 		ws.Filter(s.authFilter(getErrFun))
 	}
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
-	ws.Route(ws.GET("/auth/business-list").To(s.GetAuthorizedAppList))
+	ws.Route(ws.GET("/auth/business-list").To(s.GetAnyAuthorizedAppList))
 	ws.Route(ws.GET("/auth/admin-entrance").To(s.GetAdminEntrance))
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
@@ -80,7 +80,9 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	ws.Route(ws.DELETE("{.*}").Filter(s.URLFilterChan).To(s.Delete))
 
 	allWebServices := make([]*restful.WebService, 0)
-	allWebServices = append(allWebServices, ws, s.core.CompatibleV2Operation().WebService())
+	allWebServices = append(allWebServices, s.VersionWebService())
+	allWebServices = append(allWebServices, ws)
+	allWebServices = append(allWebServices, s.core.CompatibleV2Operation().WebService())
 	allWebServices = append(allWebServices, s.V3Healthz())
 	return allWebServices
 }

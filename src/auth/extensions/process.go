@@ -108,7 +108,7 @@ func (am *AuthManager) GenProcessNoPermissionResp(ctx context.Context, header ht
 	p.SystemName = authcenter.SystemNameCMDB
 	p.ScopeType = authcenter.ScopeTypeIDBiz
 	p.ScopeTypeName = authcenter.ScopeTypeIDBizName
-	p.ScopeID = strconv.FormatInt(businessID, 64)
+	p.ScopeID = strconv.FormatInt(businessID, 10)
 	p.ActionID = string(authcenter.Get)
 	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
 

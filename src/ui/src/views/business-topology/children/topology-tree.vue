@@ -14,7 +14,7 @@
             collapse-icon="bk-icon icon-right-shape"
             @select-change="handleSelectChange">
             <div class="node-info clearfix" slot-scope="{ node, data }">
-                <i :class="['node-model-icon fl', data.bk_obj_icon || modelIconMap[data.bk_obj_id]]"></i>
+                <i :class="['node-model-icon fl', { 'is-selected': node.selected }]">{{modelIconMap[data.bk_obj_id]}}</i>
                 <bk-button class="node-button fr"
                     type="primary"
                     v-if="showCreate(node, data)"
@@ -89,7 +89,7 @@
             modelIconMap () {
                 const map = {}
                 this.mainLineModels.forEach(model => {
-                    map[model.bk_obj_id] = model.bk_obj_icon
+                    map[model.bk_obj_id] = model.bk_obj_name[0]
                 })
                 return map
             }
@@ -253,10 +253,19 @@
 <style lang="scss" scoped>
     .node-info {
         .node-model-icon {
-            width: 20px;
-            line-height: 32px;
-            font-size: 18px;
-            margin: 0 4px 0 6px;
+            width: 22px;
+            height: 22px;
+            line-height: 21px;
+            text-align: center;
+            font-style: normal;
+            font-size: 12px;
+            margin: 5px 4px 0 6px;
+            border-radius: 50%;
+            background-color: #c4c6cc;
+            color: #fff;
+            &.is-selected {
+                background-color: #3a84ff;
+            }
         }
         .node-button {
             height: 24px;
