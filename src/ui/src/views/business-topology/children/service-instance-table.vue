@@ -22,16 +22,28 @@
                 </ul>
             </cmdb-dot-menu>
         </div>
-        <cmdb-table
+        <bk-table
             v-show="localExpanded"
-            :loading="$loading(Object.values(requestId))"
-            :header="header"
-            :list="flattenList"
-            :empty-height="42"
-            :visible="localExpanded"
-            :sortable="false"
-            :reference-document-height="false">
-            <template slot="data-empty">
+            v-bkloading="{ isLoading: $loading(Object.values(requestId)) }"
+            :data="flattenList">
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('Common[\'操作\']')">
+                <template slot-scope="{ row }">
+                    <button class="text-primary mr10"
+                        @click="handleEditProcess(row)">
+                        {{$t('Common["编辑"]')}}
+                    </button>
+                    <button class="text-primary" v-if="!withTemplate"
+                        @click="handleDeleteProcess(row)">
+                        {{$t('Common["删除"]')}}
+                    </button>
+                </template>
+            </bk-table-column>
+            <template slot="empty">
                 <template v-if="withTemplate">
                     <i18n path="BusinessTopology['暂无模板进程']">
                         <button class="add-process-button text-primary" place="link"
@@ -46,23 +58,13 @@
                     <span>{{$t('BusinessTopology["添加进程"]')}}</span>
                 </button>
             </template>
-            <template slot="__operation__" slot-scope="{ item }">
-                <button class="text-primary mr10"
-                    @click="handleEditProcess(item)">
-                    {{$t('Common["编辑"]')}}
+            <div class="add-process-options" v-if="!withTemplate && list.length" slot="append">
+                <button class="add-process-button text-primary" @click="handleAddProcess">
+                    <i class="bk-icon icon-plus"></i>
+                    <span>{{$t('BusinessTopology["添加进程"]')}}</span>
                 </button>
-                <button class="text-primary" v-if="!withTemplate"
-                    @click="handleDeleteProcess(item)">
-                    {{$t('Common["删除"]')}}
-                </button>
-            </template>
-        </cmdb-table>
-        <div class="add-process-options" v-if="!withTemplate && localExpanded && list.length">
-            <button class="add-process-button text-primary" @click="handleAddProcess">
-                <i class="bk-icon icon-plus"></i>
-                <span>{{$t('BusinessTopology["添加进程"]')}}</span>
-            </button>
-        </div>
+            </div>
+        </bk-table>
     </div>
 </template>
 
@@ -186,10 +188,6 @@
                         name: property.bk_property_name
                     }
                 })
-                header.push({
-                    id: '__operation__',
-                    name: this.$t('Common["操作"]')
-                })
                 this.header = header
             },
             handleAddProcess () {
@@ -293,8 +291,6 @@
         }
     }
     .add-process-options {
-        border: 1px solid $cmdbTableBorderColor;
-        border-top: none;
         line-height: 42px;
         font-size: 12px;
         text-align: center;

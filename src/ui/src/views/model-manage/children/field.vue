@@ -12,45 +12,56 @@
                 </bk-button>
             </span>
         </div>
-        <cmdb-table
+        <bk-table
             class="field-table"
-            :loading="$loading(`post_searchObjectAttribute_${objId}`)"
-            :header="table.header"
-            :has-footer="false"
-            :list="table.list"
-            :wrapper-minus-height="300"
-            @handleSortChange="handleSortChange">
-            <template slot="bk_property_id" slot-scope="{ item }">
-                <span
-                    v-if="item['ispre']"
-                    :class="['field-pre', $i18n.locale]">
-                    {{$t('ModelManagement["内置"]')}}
-                </span>
-                <span class="field-id">{{item['bk_property_id']}}</span>
-            </template>
-            <template slot="bk_property_type" slot-scope="{ item }">
-                <span>{{fieldTypeMap[item['bk_property_type']]}}</span>
-            </template>
-            <template slot="isrequired" slot-scope="{ item }">
-                <i class="field-required-icon bk-icon icon-check-1" v-if="item.isrequired"></i>
-                <i class="field-required-icon bk-icon icon-close" v-else></i>
-            </template>
-            <template slot="create_time" slot-scope="{ item }">
-                {{$tools.formatTime(item['create_time'])}}
-            </template>
-            <template slot="operation" slot-scope="{ item }">
-                <button class="text-primary mr10"
-                    :disabled="!isFieldEditable(item)"
-                    @click.stop="editField(item)">
-                    {{$t('Common["编辑"]')}}
-                </button>
-                <button class="text-primary"
-                    :disabled="!isFieldEditable(item)"
-                    @click.stop="deleteField(item)">
-                    {{$t('Common["删除"]')}}
-                </button>
-            </template>
-        </cmdb-table>
+            v-bkloading="{ isLoading: $loading(`post_searchObjectAttribute_${objId}`) }"
+            :data="table.list"
+            :max-height="$APP.height - 300"
+            @sort-change="handleSortChange">
+            <bk-table-column prop="isrequired" :label="$t('ModelManagement[\'必填\']')">
+                <template slot-scope="{ row }">
+                    <i class="field-required-icon bk-icon icon-check-1" v-if="row.isrequired"></i>
+                    <i class="field-required-icon bk-icon icon-close" v-else></i>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_property_id"
+                min-width="110"
+                :label="$t('ModelManagement[\'唯一标识\']')">
+                <template slot-scope="{ row }">
+                    <span
+                        v-if="row['ispre']"
+                        :class="['field-pre', $i18n.locale]">
+                        {{$t('ModelManagement["内置"]')}}
+                    </span>
+                    <span class="field-id">{{row['bk_property_id']}}</span>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_property_name" :label="$t('ModelManagement[\'名称\']')"></bk-table-column>
+            <bk-table-column prop="bk_property_type" :label="$t('ModelManagement[\'字段类型\']')">
+                <template slot-scope="{ row }">
+                    <span>{{fieldTypeMap[row['bk_property_type']]}}</span>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="create_time" :label="$t('ModelManagement[\'创建时间\']')">
+                <template slot-scope="{ row }">
+                    {{$tools.formatTime(row['create_time'])}}
+                </template>
+            </bk-table-column>
+            <bk-table-column :label="$t('Common[\'操作\']')" v-if="updateAuth">
+                <template slot-scope="{ row }">
+                    <button class="text-primary mr10"
+                        :disabled="!isFieldEditable(row)"
+                        @click.stop="editField(row)">
+                        {{$t('Common["编辑"]')}}
+                    </button>
+                    <button class="text-primary"
+                        :disabled="!isFieldEditable(row)"
+                        @click.stop="deleteField(row)">
+                        {{$t('Common["删除"]')}}
+                    </button>
+                </template>
+            </bk-table-column>
+        </bk-table>
         <bk-sideslider
             :width="450"
             :title="slider.title"
@@ -98,27 +109,6 @@
                     'bool': 'bool'
                 },
                 table: {
-                    header: [{
-                        id: 'isrequired',
-                        name: this.$t('ModelManagement["必填"]')
-                    }, {
-                        id: 'bk_property_id',
-                        name: this.$t('ModelManagement["唯一标识"]'),
-                        minWidth: 110
-                    }, {
-                        id: 'bk_property_name',
-                        name: this.$t('ModelManagement["名称"]')
-                    }, {
-                        id: 'bk_property_type',
-                        name: this.$t('ModelManagement["字段类型"]')
-                    }, {
-                        id: 'create_time',
-                        name: this.$t('ModelManagement["创建时间"]')
-                    }, {
-                        id: 'operation',
-                        name: this.$t('Common["操作"]'),
-                        sortable: false
-                    }],
                     list: [],
                     defaultSort: '-create_time',
                     sort: '-create_time'
@@ -161,9 +151,6 @@
         },
         created () {
             this.initFieldList()
-            if (!this.updateAuth) {
-                this.table.header.pop()
-            }
         },
         methods: {
             ...mapActions('objectModelProperty', [
@@ -224,6 +211,7 @@
                 this.initFieldList()
             },
             handleSortChange (sort) {
+                sort = this.$tools.getSort(sort)
                 if (!sort.length) {
                     sort = this.table.defaultSort
                 }

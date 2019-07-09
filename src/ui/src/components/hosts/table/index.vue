@@ -69,37 +69,12 @@
                 @on-search="handleQuickSearch">
             </cmdb-host-quick-search>
         </cmdb-collapse-transition>
-        <!-- <cmdb-table class="hosts-table" ref="hostsTable"
-            :loading="$loading()"
-            :checked.sync="table.checked"
-            :header="table.header"
-            :list="table.list"
-            :height="200"
-            :default-sort="table.defaultSort"
-            :wrapper-minus-height="table.tableMinusHeight"
-            @handleRowClick="handleRowClick"
-            @handleSortChange="handleSortChange"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleCheckAll="handleCheckAll">
-            <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                <label class="table-checkbox bk-form-checkbox bk-checkbox-small"
-                    :key="index"
-                    v-if="header.id === 'bk_host_id'"
-                    @click.stop>
-                    <input type="checkbox"
-                        :value="item['host']['bk_host_id']"
-                        v-model="table.checked">
-                </label>
-                <span v-else :key="index">
-                    {{getHostCellText(header, item)}}
-                </span>
-            </template>
-        </cmdb-table> -->
         <bk-table class="hosts-table"
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
             :pagination="table.pagination"
+            :header-border="true"
+            :max-height="$APP.height - 150"
             @selection-change="handleSelectionChange"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"
@@ -448,7 +423,6 @@
                 this.getHostList()
             },
             handlePageChange (current) {
-                console.log(current)
                 this.table.pagination.current = current
                 this.getHostList()
             },
@@ -492,7 +466,6 @@
                 this.table.checked = list.map(item => item['host']['bk_host_id'])
             },
             handleSelectionChange (selection) {
-                console.log('fuck')
                 this.table.checked = selection.map(item => item.host.bk_host_id)
             },
             handleRowClick (item) {

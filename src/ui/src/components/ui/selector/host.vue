@@ -11,26 +11,38 @@
                     <cmdb-input class="options-filter" icon="bk-icon icon-search"
                         v-model.trim="filter.ip"
                         :placeholder="$t('BusinessTopology[\'请输入IP\']')"
-                        @icon-click="handlePageChange(1)"
-                        @enter="handlePageChange(1)">
+                        @icon-click="infiniteIdentifier++"
+                        @enter="infiniteIdentifier++">
                     </cmdb-input>
                     <i18n class="options-count fr" path="BusinessTopology['已选择主机']">
                         <span place="count">{{checked.length}}</span>
                     </i18n>
                 </div>
-                <cmdb-table class="host-table"
-                    :loading="$loading(['getServiceProcessProperties', 'getHostSelectorList'])"
-                    :header="header"
-                    :list="list"
-                    :checked.sync="checked"
-                    :pagination="pagination"
+                <bk-table class="host-table"
+                    :data="list"
                     :height="286"
-                    :empty-height="246"
-                    :cross-page-check="false"
-                    :sortable="false"
-                    @handlePageChange="handlePageChange"
-                    @handleSizeChange="handleSizeChange">
-                </cmdb-table>
+                    @selection-change="handleSelectHost">
+                    <bk-table-column type="selection" fixed width="60" align="center"></bk-table-column>
+                    <bk-table-column v-for="column in header"
+                        :key="column.id"
+                        :prop="column.id"
+                        :label="column.name">
+                    </bk-table-column>
+                    <infinite-loading slot="append" v-if="ready"
+                        force-use-infinite-wrapper=".host-table .bk-table-body-wrapper"
+                        :distance="42"
+                        :identifier="infiniteIdentifier"
+                        @infinite="infiniteHandler">
+                        <span slot="no-more"></span>
+                        <span slot="no-results"></span>
+                        <span slot="error"></span>
+                        <div slot="spinner" style="height: 42px;"
+                            v-bkloading="{
+                                isLoading: $loading(['getServiceProcessProperties', 'getHostSelectorList'])
+                            }">
+                        </div>
+                    </infinite-loading>
+                </bk-table>
                 <div class="button-wrapper">
                     <bk-button class="button" theme="primary"
                         :disabled="!checked.length"
@@ -44,7 +56,11 @@
 </template>
 
 <script>
+    import infiniteLoading from 'vue-infinite-loading'
     export default {
+        components: {
+            infiniteLoading
+        },
         props: {
             visible: Boolean,
             moduleInstance: {
@@ -67,17 +83,18 @@
                 list: [],
                 header: [],
                 pagination: {
-                    current: 1,
+                    current: 0,
                     size: 10,
                     count: 0
                 },
                 properties: [],
-
                 internalModules: [],
                 filter: {
                     module: 'biz',
                     ip: ''
-                }
+                },
+                infiniteIdentifier: 0,
+                ready: false
             }
         },
         computed: {
@@ -141,12 +158,22 @@
                     (async () => {
                         await this.getProperties()
                         this.getInternalModule()
-                        this.handlePageChange(1)
+                        this.infiniteIdentifier++
+                        this.ready = true
                     })()
                 }
             },
             'filter.module' () {
-                this.handlePageChange(1)
+                this.infiniteIdentifier++
+            },
+            infiniteIdentifier () {
+                this.list = []
+                this.checked = []
+                this.pagination = {
+                    current: 0,
+                    count: 0,
+                    size: 10
+                }
             }
         },
         methods: {
@@ -178,13 +205,17 @@
                         }
                     })
                     this.pagination.count = data.count
-                    this.checked = []
-                    this.list = this.$tools.flattenList(this.properties, data.info.map(item => item.host))
+                    this.list.push(...this.$tools.flattenList(this.properties, data.info.map(item => item.host)))
+                    return data
                 } catch (e) {
                     console.error(e)
                     this.pagination.count = 0
                     this.list = []
                     this.checked = []
+                    return {
+                        count: 0,
+                        info: []
+                    }
                 }
             },
             async getInternalModule () {
@@ -207,10 +238,7 @@
                 }
             },
             setHeader () {
-                this.header = [{
-                    id: 'bk_host_id',
-                    type: 'checkbox'
-                }].concat([
+                this.header = [
                     'bk_host_innerip',
                     'bk_cloud_id',
                     'bk_host_outerip',
@@ -222,16 +250,24 @@
                         id: id,
                         name: property.bk_property_name
                     }
-                }))
+                })
             },
-            handlePageChange (page) {
-                this.pagination.current = page
-                this.getList()
+            async infiniteHandler (infiniteState) {
+                console.log(infiniteState)
+                try {
+                    const { current } = this.pagination
+                    this.pagination.current = current + 1
+                    const data = await this.getList()
+                    infiniteState.loaded()
+                    if (!data.info.length) {
+                        infiniteState.complete()
+                    }
+                } catch (e) {
+                    infiniteState.error()
+                }
             },
-            handleSizeChange (size) {
-                this.pagination.size = size
-                this.pagination.current = 1
-                this.getList()
+            handleSelectHost (selection) {
+                this.checked = selection.map(row => row.bk_host_id)
             },
             handleConfirm () {
                 this.$emit('host-selected', [...this.checked], this.list.filter(item => this.checked.includes(item.bk_host_id)))
@@ -295,6 +331,7 @@
             }
         }
         .host-table {
+            width: 800px;
             margin: 10px 24px 0;
         }
     }

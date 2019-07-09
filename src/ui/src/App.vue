@@ -47,10 +47,17 @@
         mounted () {
             this.$store.commit('setFeatureTipsParams')
             addResizeListener(this.$refs.mainScroller, execMainResizeListener)
+            addResizeListener(this.$el, this.calculateAppHeight)
             window.permissionModal = this.$refs.permissionModal
         },
         beforeDestroy () {
             removeResizeListener(this.$refs.mainScroller, execMainResizeListener)
+            removeResizeListener(this.$el, this.calculateAppHeight)
+        },
+        methods: {
+            calculateAppHeight () {
+                this.$store.commit('setAppHeight', this.$el.offsetHeight)
+            }
         }
     }
 </script>

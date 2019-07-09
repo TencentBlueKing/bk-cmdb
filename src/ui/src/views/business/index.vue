@@ -63,18 +63,21 @@
                     @click="handleFilterData"></i>
             </div>
         </div>
-        <cmdb-table class="business-table" ref="table"
-            :loading="$loading('post_searchBusiness_list')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :default-sort="table.defaultSort"
-            :wrapper-minus-height="157"
-            @handleRowClick="handleRowClick"
-            @handleSortChange="handleSortChange"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange">
-        </cmdb-table>
+        <bk-table class="business-table"
+            v-bkloading="{ isLoading: $loading('post_searchBusiness_list') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 160"
+            @row-click="handleRowClick"
+            @sort-change="handleSortChange"
+            @page-limit-change="handleSizeChange"
+            @page-change="handlePageChange">
+            <bk-table-column v-for="column in table.header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+        </bk-table>
         <bk-sideslider
             :is-show.sync="slider.show"
             :title="slider.title"
@@ -154,7 +157,7 @@
                     list: [],
                     pagination: {
                         count: 0,
-                        size: 10,
+                        limit: 10,
                         current: 1
                     },
                     defaultSort: 'bk_biz_id',
@@ -310,11 +313,11 @@
                 this.attribute.type = 'details'
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handlePageChange (page) {
@@ -346,8 +349,8 @@
                     },
                     fields: [],
                     page: {
-                        start: this.table.pagination.size * (this.table.pagination.current - 1),
-                        limit: this.table.pagination.size,
+                        start: this.table.pagination.limit * (this.table.pagination.current - 1),
+                        limit: this.table.pagination.limit,
                         sort: this.table.sort
                     }
                 }

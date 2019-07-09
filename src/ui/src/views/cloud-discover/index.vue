@@ -20,69 +20,87 @@
                 <i class="cloud-filter-search bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>
-        <cmdb-table class="cloud-discover-table" ref="table"
-            :loading="$loading('searchCloudTask')"
-            :checked.sync="table.checked"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :default-sort="table.defaultSort"
-            :wrapper-minus-height="300"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange"
-            @handleSortChange="handleSortChange">
-            <template slot="bk_sync_status" slot-scope="{ item }">
-                <template v-if="item.bk_status">
-                    <div class="bk-spin-loading bk-spin-loading-mini bk-spin-loading-primary">
-                        <div class="rotate rotate1"></div>
-                        <div class="rotate rotate2"></div>
-                        <div class="rotate rotate3"></div>
-                        <div class="rotate rotate4"></div>
-                        <div class="rotate rotate5"></div>
-                        <div class="rotate rotate6"></div>
-                        <div class="rotate rotate7"></div>
-                        <div class="rotate rotate8"></div>
-                    </div>
-                    <span>{{$t('Cloud["同步中"]')}}</span>
+        <bk-table class="cloud-discover-table"
+            v-bkloading="{ isLoading: $loading('searchCloudTask') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 300"
+            @page-limit-change="handleSizeChange"
+            @page-change="handlePageChange"
+            @sort-change="handleSortChange">
+            <bk-table-column type="selection" fixed width="60" align="center"></bk-table-column>
+            <bk-table-column prop="bk_task_name" :label="$t('Cloud[\'任务名称\']')"></bk-table-column>
+            <bk-table-column prop="bk_account_type" :label="$t('Cloud[\'账号类型\']')">
+                <template slot-scope="{ row }">
+                    <span v-if="row.bk_account_type === 'tencent_cloud'">{{$t('Cloud[\'腾讯云\']')}}</span>
                 </template>
-                <span class="sync-fail" v-else-if="item.bk_sync_status === 'fail'">
-                    {{$t('EventPush["失败"]')}}
-                </span>
-                <span v-else>--</span>
-            </template>
-            <template slot="status" slot-scope="{ item }">
-                <bk-switcher
-                    :key="item.bk_task_id"
-                    @change="changeStatus(...arguments, item)"
-                    :selected="item.bk_status"
-                    :is-outline="isOutline"
-                    size="small"
-                    :show-text="showText">
-                </bk-switcher>
-            </template>
-            <template slot="bk_account_type" slot-scope="{ item }">
-                <span v-if="item.bk_account_type === 'tencent_cloud'">{{$t('Cloud[\'腾讯云\']')}}</span>
-            </template>
-            <template slot="bk_last_sync_time" slot-scope="{ item }">
-                <span v-if="item.bk_last_sync_time === ''">--</span>
-                <span v-else>{{ item.bk_last_sync_time }}</span>
-            </template>
-            <template slot="bk_last_sync_result" slot-scope="{ item }">
-                <span v-if="item.bk_last_sync_time === ''">--</span>
-                <span v-else>
-                    {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
-                </span>
-            </template>
-            <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary mr20" @click.stop="detail(item)">{{$t('Cloud["详情"]')}}</span>
-                <span class="text-danger" @click.stop="deleteConfirm(item)">{{$t('Common["删除"]')}}</span>
-            </template>
-            <div class="empty-info" slot="data-empty">
+            </bk-table-column>
+            <bk-table-column prop="bk_last_sync_time" :label="$t('Cloud[\'最近同步时间\']')">
+                <template slot-scope="{ row }">
+                    <span v-if="row.bk_last_sync_time === ''">--</span>
+                    <span v-else>{{ row.bk_last_sync_time }}</span>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_last_sync_result" :label="$t('Cloud[\'最近同步结果\']')">
+                <template slot-scope="{ row }">
+                    <span v-if="row.bk_last_sync_time === ''">--</span>
+                    <span v-else>
+                        {{$t('Cloud[\'新增\']')}} ({{row.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{row.attr_changed}})
+                    </span>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_account_admin" :label="$t('Cloud[\'任务维护人\']')"></bk-table-column>
+            <bk-table-column prop="bk_sync_status"
+                :label="$t('ProcessManagement[\'状态\']')"
+                width="100">
+                <template slot-scope="{ row }">
+                    <template v-if="row.bk_status">
+                        <div class="bk-spin-loading bk-spin-loading-mini bk-spin-loading-primary">
+                            <div class="rotate rotate1"></div>
+                            <div class="rotate rotate2"></div>
+                            <div class="rotate rotate3"></div>
+                            <div class="rotate rotate4"></div>
+                            <div class="rotate rotate5"></div>
+                            <div class="rotate rotate6"></div>
+                            <div class="rotate rotate7"></div>
+                            <div class="rotate rotate8"></div>
+                        </div>
+                        <span>{{$t('Cloud["同步中"]')}}</span>
+                    </template>
+                    <span class="sync-fail" v-else-if="row.bk_sync_status === 'fail'">
+                        {{$t('EventPush["失败"]')}}
+                    </span>
+                    <span v-else>--</span>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="status"
+                :label="$t('Cloud[\'是否启用\']')"
+                width="90">
+                <template slot-scope="{ row }">
+                    <bk-switcher
+                        :key="row.bk_task_id"
+                        @change="changeStatus(...arguments, row)"
+                        :selected="row.bk_status"
+                        :is-outline="isOutline"
+                        size="small"
+                        :show-text="showText">
+                    </bk-switcher>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_task_name"
+                :label="$t('Common[\'操作\']')"
+                width="110">
+                <template slot-scope="{ row }">
+                    <span class="text-primary mr20" @click.stop="detail(row)">{{$t('Cloud["详情"]')}}</span>
+                    <span class="text-danger" @click.stop="deleteConfirm(row)">{{$t('Common["删除"]')}}</span>
+                </template>
+            </bk-table-column>
+            <div class="empty-info" slot="empty">
                 <p>{{$t("Cloud['暂时没有数据，请先']")}}
                     <span class="text-primary" @click="handleCreate">{{ $t('Cloud["新建云同步任务"]')}}</span>
                 </p>
             </div>
-        </cmdb-table>
+        </bk-table>
         <bk-sideslider
             :is-show.sync="slider.show"
             :title="slider.title"
@@ -168,46 +186,13 @@
                     text: ''
                 },
                 table: {
-                    header: [{
-                        id: 'bk_task_name',
-                        name: this.$t('Cloud["任务名称"]')
-                    }, {
-                        id: 'bk_account_type',
-                        name: this.$t('Cloud["账号类型"]')
-                    }, {
-                        id: 'bk_last_sync_time',
-                        name: this.$t('Cloud["最近同步时间"]')
-                    }, {
-                        id: 'bk_last_sync_result',
-                        sortable: false,
-                        name: this.$t('Cloud["最近同步结果"]')
-
-                    }, {
-                        id: 'bk_account_admin',
-                        sortable: false,
-                        name: this.$t('Cloud["任务维护人"]')
-                    }, {
-                        id: 'bk_sync_status',
-                        sortable: false,
-                        width: 100,
-                        name: this.$t('ProcessManagement["状态"]')
-                    }, {
-                        id: 'status',
-                        sortable: false,
-                        width: 90,
-                        name: this.$t('Cloud["是否启用"]')
-                    }, {
-                        id: 'operation',
-                        sortable: false,
-                        width: 110,
-                        name: this.$t('Common["操作"]')
-                    }],
+                    
                     list: [],
                     allList: [],
                     pagination: {
                         current: 1,
                         count: 0,
-                        size: 10
+                        limit: 10
                     },
                     checked: [],
                     defaultSort: '-bk_task_id',
@@ -233,8 +218,8 @@
                 const params = {}
                 const attr = {}
                 const page = {
-                    start: (pagination.current - 1) * pagination.size,
-                    limit: pagination.size,
+                    start: (pagination.current - 1) * pagination.limit,
+                    limit: pagination.limit,
                     sort: this.table.sort
                 }
                 if (this.filter.text.length !== 0) {
@@ -325,11 +310,11 @@
                 this.slider.title = this.$t('Cloud["编辑"]') + curPush.bk_task_name
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
             handlePageChange (page) {

@@ -17,17 +17,18 @@
                 </span>
                 <h3>{{i18n.permissionTitle}}</h3>
             </div>
-            <cmdb-table
-                :header="header"
-                :list="list"
+            <bk-table
+                :data="list"
                 :max-height="180"
-                :empty-height="140"
-                :visible="isModalShow"
-                :sortable="false">
-                <template slot="resource" slot-scope="{ item }">
-                    <div class="resouce-list" v-html="item.resource"></div>
-                </template>
-            </cmdb-table>
+                :border="true">
+                <bk-table-column prop="scope" :label="$t('资源所属')"></bk-table-column>
+                <bk-table-column prop="resource" :label="$t('资源')">
+                    <template slot-scope="{ row }">
+                        <div class="resource-list" v-html="row.resource"></div>
+                    </template>
+                </bk-table-column>
+                <bk-table-column prop="action" :label="$t('需要申请的权限')"></bk-table-column>
+            </bk-table>
         </div>
         <div class="permission-footer" slot="footer">
             <bk-button theme="primary" @click="handleApplyPermission">{{ i18n.apply }}</bk-button>
@@ -43,16 +44,6 @@
             return {
                 isModalShow: false,
                 list: [],
-                header: [{
-                    id: 'scope',
-                    name: this.$t('资源所属')
-                }, {
-                    id: 'resource',
-                    name: this.$t('资源')
-                }, {
-                    id: 'action',
-                    name: this.$t('需要申请的权限')
-                }],
                 i18n: {
                     permissionTitle: this.$t('没有权限访问或操作此资源'),
                     system: this.$t('系统'),
@@ -104,7 +95,7 @@
             }
         }
     }
-    .resouce-list {
+    .resource-list {
         padding: 12px 0;
         word-break: break-all;
         white-space: normal;

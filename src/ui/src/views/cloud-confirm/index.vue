@@ -39,39 +39,51 @@
                 <i class="confirm-filter-search bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>
-        <cmdb-table class="cloud-table" ref="table"
-            :loading="$loading('searchConfirm')"
-            :header="table.header"
-            :checked.sync="table.checked"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :default-sort="table.defaultSort"
-            :wrapper-minus-height="157"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange">
-            <template slot="bk_resource_type" slot-scope="{ item }">
-                <span class="attr-changed" v-if="item.bk_resource_type === 'change'">
-                    {{$t('Cloud["变更"]')}}
-                </span>
-                <span class="new-add" v-else>
-                    {{$t('Cloud["新增"]')}}
-                </span>
-            </template>
-            <template slot="bk_account_type" slot-scope="{ item }">
-                <span v-if="item.bk_account_type === 'tencent_cloud'">{{$t('Cloud[\'腾讯云\']')}}</span>
-            </template>
-            <template slot="bk_obj_id">
-                {{ $t('Hosts["主机"]')}}
-            </template>
-            <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary mr20" @click.stop="singleConfirm(item)">{{$t('Hosts["确认"]')}}</span>
-            </template>
-            <div class="empty-info" slot="data-empty">
+        <bk-table class="cloud-table"
+            v-bkloading="{ isLoading: $loading('searchConfirm') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 160"
+            @page-limit-change="handleSizeChange"
+            @page-change="handlePageChange"
+            @selection-change="handleSelectChange">
+            <bk-table-column type="selection" fixed width="60" align="center"></bk-table-column>
+            <bk-table-column prop="bk_host_innerip" :label="$t('Cloud[\'资源名称\']')"></bk-table-column>
+            <bk-table-column prop="bk_resource_type" :label="$t('Cloud[\'资源类型\']')">
+                <template slot-scope="{ row }">
+                    <span class="attr-changed" v-if="row.bk_resource_type === 'change'">
+                        {{$t('Cloud["变更"]')}}
+                    </span>
+                    <span class="new-add" v-else>
+                        {{$t('Cloud["新增"]')}}
+                    </span>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_obj_id" :label="$t('Cloud[\'模型\']')">
+                <template>
+                    {{ $t('Hosts["主机"]')}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_task_name" :label="$t('Cloud[\'任务名称\']')"></bk-table-column>
+            <bk-table-column prop="bk_account_type" :label="$t('Cloud[\'账号类型\']')">
+                <template slot-scope="{ row }">
+                    <span v-if="row.bk_account_type === 'tencent_cloud'">{{$t('Cloud[\'腾讯云\']')}}</span>
+                    <span v-else>{{row.bk_account_type}}</span>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_account_admin" :label="$t('Cloud[\'任务维护人\']')"></bk-table-column>
+            <bk-table-column prop="create_time" :label="$t('Cloud[\'发现时间\']')"></bk-table-column>
+            <bk-table-column :label="$t('Cloud[\'操作\']')" fixed="right">
+                <template slot-scope="{ row }">
+                    <span class="text-primary mr20" @click.stop="singleConfirm(row)">{{$t('Hosts["确认"]')}}</span>
+                </template>
+            </bk-table-column>
+            <div class="empty-info" slot="empty">
                 <p>{{$t("Cloud['暂时没有数据，请确保先添加云资源发现任务，']")}}
                     <span class="text-primary" @click="handleAdd">{{ $t('Cloud["去添加"]')}}</span>
                 </p>
             </div>
-        </cmdb-table>
+        </bk-table>
     </div>
 </template>
 
@@ -111,38 +123,6 @@
                     businessResolver: null
                 },
                 table: {
-                    header: [{
-                        id: 'bk_resource_id',
-                        type: 'checkbox'
-                    }, {
-                        id: 'bk_host_innerip',
-                        name: this.$t('Cloud["资源名称"]')
-                    }, {
-                        id: 'bk_resource_type',
-                        name: this.$t('Cloud["资源类型"]')
-                    }, {
-                        id: 'bk_obj_id',
-                        name: this.$t('Cloud["模型"]')
-                    }, {
-                        id: 'bk_task_name',
-                        name: this.$t('Cloud["任务名称"]')
-                    }, {
-                        id: 'bk_account_type',
-                        name: this.$t('Cloud["账号类型"]')
-                    }, {
-                        id: 'bk_account_admin',
-                        sortable: false,
-                        name: this.$t('Cloud["任务维护人"]')
-                    }, {
-                        id: 'create_time',
-                        width: 160,
-                        name: this.$t('Cloud["发现时间"]')
-                    }, {
-                        id: 'operation',
-                        sortable: false,
-                        width: 100,
-                        name: this.$t('Common["操作"]')
-                    }],
                     list: [],
                     allList: [],
                     pagination: {
@@ -207,6 +187,9 @@
                         from: this.$route.fullPath
                     }
                 })
+            },
+            handleSelectChange (selection) {
+                this.table.checked = selection.map(row => row.bk_resource_id)
             },
             handleSizeChange (size) {
                 this.table.pagination.size = size

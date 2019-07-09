@@ -13,17 +13,19 @@
                 @change="setFilterTime">
             </bk-date-range>
         </div>
-        <cmdb-table class="history-table"
-            row-cursor="default"
-            :sortable="false"
-            :loading="$loading()"
-            :pagination.sync="pagination"
-            :list="list"
-            :header="header"
-            :wrapper-minus-height="157"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange">
-        </cmdb-table>
+        <bk-table class="history-table"
+            v-bkloading="{ isLoading: $loading() }"
+            :pagination="pagination"
+            :data="list"
+            :max-height="157"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange">
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+        </bk-table>
     </div>
 </template>
 
@@ -40,7 +42,7 @@
                 list: [],
                 pagination: {
                     current: 1,
-                    size: 10,
+                    limit: 10,
                     count: 0
                 },
                 opTime: [],
@@ -189,13 +191,13 @@
                         'op_time': this.opTime,
                         'op_target': this.objId
                     },
-                    start: (this.pagination.current - 1) * this.pagination.size,
-                    limit: this.pagination.size,
+                    start: (this.pagination.current - 1) * this.pagination.limit,
+                    limit: this.pagination.limit,
                     sort: '-op_time'
                 }
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.pagination.limit = size
                 this.handlePageChange(1)
             },
             handlePageChange (current) {

@@ -12,19 +12,22 @@
                 @input="handlePageChange(1)">
             </cmdb-form-objuser>
         </div>
-        <cmdb-table class="history-table"
-            :loading="$loading('getHostAuditLog')"
-            :header="header"
-            :list="history"
-            :pagination.sync="pagination"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange"
-            @handleRowClick="handleRowClick">
-            <template slot="op_time" slot-scope="{ item }">
-                {{$tools.formatTime(item['op_time'])}}
-            </template>
-        </cmdb-table>
+        <bk-table class="history-table"
+            v-bkloading="{ isLoading: $loading('getHostAuditLog') }"
+            :data="history"
+            :pagination="pagination"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange"
+            @row-click="handleRowClick">
+            <bk-table-column prop="op_desc" :label="$t('HostResourcePool[\'变更内容\']')"></bk-table-column>
+            <bk-table-column prop="operator" :label="$t('HostResourcePool[\'操作账号\']')"></bk-table-column>
+            <bk-table-column :label="$t('HostResourcePool[\'操作时间\']')">
+                <template slot-scope="{ row }">
+                    {{$tools.formatTime(row['op_time'])}}
+                </template>
+            </bk-table-column>
+        </bk-table>
         <bk-sideslider
             :is-show.sync="details.show"
             :width="800"
@@ -45,21 +48,11 @@
             return {
                 dateRange: [],
                 operator: '',
-                header: [{
-                    id: 'op_desc',
-                    name: this.$t("HostResourcePool['变更内容']")
-                }, {
-                    id: 'operator',
-                    name: this.$t("HostResourcePool['操作账号']")
-                }, {
-                    id: 'op_time',
-                    name: this.$t("HostResourcePool['操作时间']")
-                }],
                 history: [],
                 pagination: {
                     count: 0,
                     current: 1,
-                    size: 10
+                    limit: 10
                 },
                 sort: '-op_time',
                 details: {
@@ -91,9 +84,9 @@
                     }
                     const data = await this.$http.post('object/host/audit/search', {
                         condition,
-                        limit: this.pagination.size,
+                        limit: this.pagination.limit,
                         sort: this.sort,
-                        start: (this.pagination.current - 1) * this.pagination.size
+                        start: (this.pagination.current - 1) * this.pagination.limit
                     }, {
                         requestId: 'getHostAuditLog'
                     })
@@ -110,7 +103,7 @@
                 this.getHistory()
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.pagination.limit = size
                 this.pagination.current = 1
                 this.getHistory()
             },
