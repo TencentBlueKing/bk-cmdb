@@ -109,11 +109,13 @@ func (lgc *Logics) GetSetIDByObjectCond(pheader http.Header, appID int64, object
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	instItem := meta.ConditionItem{}
+	// query condition has bk_inst_id field
 	var hasInstID bool
 	for _, i := range objectCond {
 		if i.Field != common.BKInstIDField {
 			continue
 		}
+		hasInstID = true
 		value, err := util.GetInt64ByInterface(i.Value)
 		if nil != err {
 			return nil, err
@@ -129,7 +131,6 @@ func (lgc *Logics) GetSetIDByObjectCond(pheader http.Header, appID int64, object
 		blog.Errorf("mainline miss bk_inst_id parameters. input:%#v, rid:%s", objectCond, rid)
 		return nil, defErr.Error(common.CCErrHostSearchNeedObjectInstIDErr)
 	}
-
 	nodefaultItem := meta.ConditionItem{}
 	nodefaultItem.Field = common.BKDefaultField
 	nodefaultItem.Operator = common.BKDBNE
