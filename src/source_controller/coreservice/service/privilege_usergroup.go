@@ -29,7 +29,7 @@ func (s *coreService) CreateUserGroup(params core.ContextParams, pathParams, que
 	data = util.SetModOwner(data, params.SupplierAccount)
 	err := s.db.Table(common.BKTableNameUserGroup).Insert(params.Context, data)
 	if nil != err {
-		blog.Errorf("create user group error :%v", err)
+		blog.Errorf("create user group error :%v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
 	}
 
@@ -44,7 +44,7 @@ func (s *coreService) UpdateUserGroup(params core.ContextParams, pathParams, que
 	cond = util.SetModOwner(cond, params.SupplierAccount)
 	err := s.db.Table(common.BKTableNameUserGroup).Update(params.Context, cond, data)
 	if nil != err {
-		blog.Errorf("update user group error :%v", err)
+		blog.Errorf("update user group error :%v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
 	}
 	return nil, nil
@@ -58,7 +58,7 @@ func (s *coreService) DeleteUserGroup(params core.ContextParams, pathParams, que
 	cond = util.SetModOwner(cond, params.SupplierAccount)
 	err := s.db.Table(common.BKTableNameUserGroup).Delete(params.Context, cond)
 	if nil != err {
-		blog.Errorf("delete user group error :%v", err)
+		blog.Errorf("delete user group error :%v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
 	}
 	return nil, nil
