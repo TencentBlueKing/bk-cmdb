@@ -3,8 +3,6 @@ import Vue from 'vue'
 import businessSelector from './selector/business.vue'
 import clipboardSelector from './selector/clipboard.vue'
 import selector from './selector/selector.vue'
-import table from './table/table.vue'
-import tableSelector from './table/table-selector.vue'
 import details from './details/details.vue'
 import form from './form/form.vue'
 import formMultiple from './form/form-multiple.vue'
@@ -31,8 +29,6 @@ const install = (Vue, opts = {}) => {
         businessSelector,
         clipboardSelector,
         selector,
-        table,
-        tableSelector,
         details,
         form,
         formMultiple,
@@ -65,8 +61,6 @@ export default {
     businessSelector,
     clipboardSelector,
     selector,
-    table,
-    tableSelector,
     details,
     form,
     formMultiple,
