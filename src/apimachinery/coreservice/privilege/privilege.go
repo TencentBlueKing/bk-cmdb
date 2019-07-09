@@ -122,9 +122,14 @@ func (t *privilege) CreateRolePri(ctx context.Context, ownerID string, objID str
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/role/%s/%s/%s", ownerID, objID, propertyID)
 
+	requestBody := struct {
+		Privileges []string `json:"privilege" field:"privilege" bson:"privilege"`
+	}{}
+	requestBody.Privileges = role
+
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(role).
+		Body(requestBody).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -151,9 +156,14 @@ func (t *privilege) UpdateRolePri(ctx context.Context, ownerID string, objID str
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/role/%s/%s/%s", ownerID, objID, propertyID)
 
+	requestBody := struct {
+		Privileges []string `json:"privilege" field:"privilege" bson:"privilege"`
+	}{}
+	requestBody.Privileges = role
+
 	err = t.client.Put().
 		WithContext(ctx).
-		Body(role).
+		Body(requestBody).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
