@@ -17,16 +17,13 @@ import (
 
 	"configcenter/src/apimachinery/objcontroller/meta"
 	"configcenter/src/apimachinery/objcontroller/openapi"
-	"configcenter/src/apimachinery/objcontroller/privilege"
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/toposerver/association"
 	"configcenter/src/apimachinery/util"
 )
 
 type ObjControllerClientInterface interface {
 	Meta() meta.MetaInterface
 	OpenAPI() openapi.OpenApiInterface
-	Privilege() privilege.PrivilegeInterface
 }
 
 func NewObjectControllerInterface(c *util.Capability, version string) ObjControllerClientInterface {
@@ -46,12 +43,4 @@ func (o *objectctrl) Meta() meta.MetaInterface {
 
 func (o *objectctrl) OpenAPI() openapi.OpenApiInterface {
 	return openapi.NewOpenApiInterface(o.client)
-}
-
-func (o *objectctrl) Privilege() privilege.PrivilegeInterface {
-	return privilege.NewPrivilegeInterface(o.client)
-}
-
-func (o *objectctrl) Association() association.AssociationInterface {
-	return association.NewAssociationInterface(o.client)
 }
