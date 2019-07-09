@@ -416,7 +416,10 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 }
 
-func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
+func (ac *AuthCenter) GetAnyAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
+	if !ac.Config.Enable {
+		return make([]int64, 0), nil
+	}
 	info := &Principal{
 		Type: cmdbUser,
 		ID:   user.UserName,
@@ -424,11 +427,10 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 
 	var appList []string
 	var err error
-	if ac.Config.Enable {
-		appList, err = ac.authClient.GetAuthorizedScopes(ctx, ScopeTypeIDBiz, info)
-		if err != nil {
-			return nil, err
-		}
+
+	appList, err = ac.authClient.GetAnyAuthorizedScopes(ctx, ScopeTypeIDBiz, info)
+	if err != nil {
+		return nil, err
 	}
 
 	businessIDs := make([]int64, 0)
@@ -442,6 +444,51 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 
 	return businessIDs, nil
 }
+
+// get a user's authorized read business list.
+func (ac *AuthCenter) GetExactAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
+	if !ac.Config.Enable {
+		return make([]int64, 0), nil
+	}
+
+	option := &ListAuthorizedResources{
+		Principal: Principal{
+			Type: cmdbUser,
+			ID:   user.UserName,
+		},
+		ScopeInfo: ScopeInfo{
+			ScopeType: ScopeTypeIDSystem,
+			ScopeID:   SystemIDCMDB,
+		},
+		TypeActions: []TypeAction{
+			{
+				ActionID:     Get,
+				ResourceType: SysBusinessInstance,
+			},
+		},
+		DataType: "array",
+		Exact:    true,
+	}
+	appListRsc, err := ac.authClient.GetAuthorizedResources(ctx, option)
+	if err != nil {
+		return nil, err
+	}
+
+	businessIDs := make([]int64, 0)
+	for _, appRsc := range appListRsc {
+		for _, appList := range appRsc.ResourceIDs {
+			for _, app := range appList {
+				id, err := strconv.ParseInt(app.ResourceID, 10, 64)
+				if err != nil {
+					return businessIDs, err
+				}
+				businessIDs = append(businessIDs, id)
+			}
+		}
+	}
+
+	return businessIDs, nil
+}
 func (ac *AuthCenter) AdminEntrance(ctx context.Context, user meta.UserInfo) ([]string, error) {
 	info := &Principal{
 		Type: cmdbUser,
@@ -451,7 +498,7 @@ func (ac *AuthCenter) AdminEntrance(ctx context.Context, user meta.UserInfo) ([]
 	var systemList []string
 	var err error
 	if ac.Config.Enable {
-		systemList, err = ac.authClient.GetAuthorizedScopes(ctx, ScopeTypeIDSystem, info)
+		systemList, err = ac.authClient.GetAnyAuthorizedScopes(ctx, ScopeTypeIDSystem, info)
 		if err != nil {
 			return nil, err
 		}
@@ -533,6 +580,10 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 
 func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*RegisterInfo, error) {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
+	user := commonutil.ExtractRequestUserFromContext(ctx)
+	if len(user) == 0 {
+		user = cmdbUserID
+	}
 
 	if ac.Config.Enable == false {
 		blog.V(5).Infof("auth disabled, auth config: %+v, rid: %s", ac.Config, rid)
@@ -545,7 +596,7 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 	}
 	info := RegisterInfo{}
 	info.CreatorType = cmdbUser
-	info.CreatorID = cmdbUserID
+	info.CreatorID = user
 	info.Resources = make([]ResourceEntity, 0)
 	for _, r := range rs {
 		if len(r.Basic.Type) == 0 {

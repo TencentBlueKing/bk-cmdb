@@ -696,3 +696,70 @@ func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.He
 
 	return ret.Data, nil
 }
+
+func (p *process) RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, moduleID int64) (*metadata.RemoveTemplateBoundOnModuleResult, errors.CCErrorCoder) {
+	ret := new(metadata.RemoveTemplateBoundOnModuleResult)
+	subPath := fmt.Sprintf("/delete/process/module_bound_template/%d", moduleID)
+
+	err := p.client.Delete().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("GetBusinessDefaultSetModuleInfo failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return nil, nil
+}
+
+func (p *process) ReconstructServiceInstanceName(ctx context.Context, h http.Header, instanceID int64) errors.CCErrorCoder {
+	ret := new(metadata.RemoveTemplateBoundOnModuleResult)
+	subPath := fmt.Sprintf("/update/process/service_instance_name/%d", instanceID)
+
+	err := p.client.Post().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("ReconstructServiceInstanceName failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return nil
+}
+
+func (p *process) GetProc2Module(ctx context.Context, h http.Header, option metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder) {
+	ret := new(metadata.GetProc2ModuleResult)
+	subPath := "/findmany/process/proc2module"
+
+	err := p.client.Post().
+		Body(option).
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("GetProc2Module failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}

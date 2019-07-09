@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"sort"
 	"strconv"
 
 	"configcenter/src/common"
@@ -25,7 +26,7 @@ import (
 
 // CreateMainLineObject create a new object in the main line topo
 func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
-	tx, err := s.Txn.StartTransaction(context.Background())
+	tx, err := s.Txn.Start(context.Background())
 	if err != nil {
 		blog.Errorf("create mainline object failed, start transaction failed, err: %v", err)
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
@@ -63,7 +64,7 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 
 // DeleteMainLineObject delete a object int the main line topo
 func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	tx, err := s.Txn.StartTransaction(context.Background())
+	tx, err := s.Txn.Start(context.Background())
 	if err != nil {
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 	}
@@ -124,8 +125,17 @@ func (s *Service) SearchObjectByClassificationID(params types.ContextParams, pat
 	return s.Core.AssociationOperation().SearchMainlineAssociationTopo(params, bizObj)
 }
 
-// SearchBusinessTopo search the business topo
+// SearchBusinessTopoWithStatistics calculate how many service instances on each topo instance node
+func (s *Service) SearchBusinessTopoWithStatistics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	return s.searchBusinessTopo(params, pathParams, queryParams, data, true)
+}
+
 func (s *Service) SearchBusinessTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	return s.searchBusinessTopo(params, pathParams, queryParams, data, false)
+}
+
+// SearchBusinessTopo search the business topo
+func (s *Service) searchBusinessTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr, withStatistics bool) ([]*metadata.TopoInstRst, error) {
 
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", pathParams("bk_biz_id"))
@@ -140,7 +150,24 @@ func (s *Service) SearchBusinessTopo(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
-	return s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id)
+	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id, withStatistics)
+	if err != nil {
+		return nil, err
+	}
+
+	// sort before response
+	SortTopoInst(topoInstRst)
+
+	return topoInstRst, nil
+}
+
+func SortTopoInst(instData []*metadata.TopoInstRst) {
+	sort.Slice(instData, func(i, j int) bool {
+		return instData[i].InstName < instData[j].InstName
+	})
+	for idx := range instData {
+		SortTopoInst(instData[idx].Child)
+	}
 }
 
 // SearchMainLineChildInstTopo search the child inst topo by a inst
@@ -165,7 +192,7 @@ func (s *Service) SearchMainLineChildInstTopo(params types.ContextParams, pathPa
 		return nil, err
 	}
 
-	return s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, obj, instID)
+	return s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, obj, instID, false)
 }
 
 func (s *Service) SearchAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {

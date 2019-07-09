@@ -163,7 +163,8 @@
         "服务管理": "Service Management",
         "服务模板": "Service Template",
         "服务分类": "Service Cagetory",
-        "统计报表": "Statistical report"
+        "统计报表": "Statistical report",
+        "业务主机": "Business Host"
     },
     "Index": {
         "首页": "Index",
@@ -791,7 +792,7 @@
         "批量删除": "Batch Deletion",
         "模板名称": "Template name",
         "进程数量": "Number of processes",
-        "应用数量": "Number of applications",
+        "应用模块数": "Number of application modules",
         "修改人": "Modifier",
         "修改时间": "Update Time",
         "新建服务模版": "New Service Template",
@@ -814,7 +815,8 @@
         "搜索": "Please enter template name to search...",
         "所有一级分类": "(All primary classification)",
         "所有二级分类": "(All secondary classification)",
-        "没有二级分类": "No secondary classification"
+        "没有二级分类": "No secondary classification",
+        "锁定不可编辑": "Locked service instance is not editable"
     },
     "ServiceCategory": {
         "服务分类功能提示": "Service classification can help the business sort out service usage. Configuring platform initialization includes some common classifications and supports more classifications based on business development.",
@@ -863,6 +865,7 @@
         "创建方式": "Create method",
         "模板名称": "Template name",
         "模块名称": "Module name",
+        "服务模板": "Service template",
         "服务实例分类": "Service instance category",
         "从模板创建": "Create from template",
         "直接创建": "Create directly",
@@ -885,11 +888,16 @@
         "节点信息": "Node info",
         "源实例主机提示": "Please update process, can not repeat with source instance",
         "编辑进程": "Update process",
-        "源实例主机": "Source instance host",
+        "克隆到": "Clone to",
+        "当前主机": "Current host",
         "其他主机": "Other host",
         "模板未定义进程": "Template named with {template} has not difine process, can not create service.",
         "模板未定义进程提示": "You can add process in template fist or add host directly",
-        "暂无符合条件的实例": "There are no matched instances with input condition"
+        "暂无符合条件的实例": "There are no matched instances with input condition",
+        "删除模块提示": "Need to remove all service instances under the module first",
+        "模块名称提示": "The module name must be consistent with the service template name.",
+        "请为主机添加进程": "Please add process to the host",
+        "请输入实例名称搜索": "Please enter instance name search..."
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",

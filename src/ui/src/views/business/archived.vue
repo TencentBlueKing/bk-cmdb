@@ -16,11 +16,11 @@
             <template slot="options" slot-scope="{ item }">
                 <span class="inline-block-middle"
                     v-cursor="{
-                        active: $isAuthorized(archiveAuth),
+                        active: !$isAuthorized(archiveAuth),
                         auth: [archiveAuth]
                     }">
                     <bk-button type="primary" size="mini"
-                        :disabled="$isAuthorized(archiveAuth)"
+                        :disabled="!$isAuthorized(archiveAuth)"
                         @click="handleRecovery(item)">
                         {{$t('Inst["恢复业务"]')}}
                     </bk-button>
@@ -32,7 +32,6 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import { OPERATION } from './router.config.js'
     export default {
         data () {
             return {
@@ -54,7 +53,7 @@
                 return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
             },
             archiveAuth () {
-                return OPERATION.BUSINESS_ARCHIVE
+                return this.$OPERATION.BUSINESS_ARCHIVE
             }
         },
         async created () {

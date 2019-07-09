@@ -20,14 +20,17 @@
                                 :key="propertyIndex">
                                 <div class="property-name clearfix">
                                     <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
-                                    <!-- <i class="property-name-tooltips icon-cc-tips"
-                                        v-if="property['placeholder'] && property['bk_property_id'] === 'bk_start_param_regex'"
+                                    <i class="property-name-tooltips icon-cc-tips"
+                                        v-if="property['placeholder']"
                                         v-tooltip="htmlEncode(property['placeholder'])">
-                                    </i> -->
+                                    </i>
                                     <label class="cmdb-form-checkbox cmdb-checkbox-small"
                                         v-if="property['isLocking'] !== undefined">
                                         <input type="checkbox" v-model="values[property['bk_property_id']]['as_default_value']">
-                                        <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
+                                        <span class="cmdb-checkbox-text"
+                                            v-tooltip="$t('ServiceManagement[\'锁定不可编辑\']')">
+                                            {{$t('ProcessManagement["锁定"]')}}
+                                        </span>
                                     </label>
                                 </div>
                                 <div class="property-value">
@@ -47,6 +50,7 @@
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
                                         :options="property.option || []"
+                                        :allow-clear="['bind_ip'].includes(property['bk_property_id'])"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
                                         v-validate="getValidateRules(property)"
@@ -119,6 +123,32 @@
         },
         data () {
             return {
+                ipOption: [
+                    {
+                        'name': '127.0.0.1',
+                        'type': 'text',
+                        'is_default': false,
+                        'id': '1'
+                    },
+                    {
+                        'id': '2',
+                        'name': '0.0.0.0',
+                        'type': 'text',
+                        'is_default': false
+                    }
+                    // {
+                    //     'name': '第一内网IP',
+                    //     'type': 'text',
+                    //     'is_default': false,
+                    //     'id': '3'
+                    // },
+                    // {
+                    //     'name': '第一外网IP',
+                    //     'type': 'text',
+                    //     'is_default': false,
+                    //     'id': '4'
+                    // }
+                ],
                 values: {},
                 refrenceValues: {},
                 scrollbar: false,
@@ -136,6 +166,10 @@
                     filterProperties.map(property => {
                         if (!['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])) {
                             property.isLocking = false
+                        }
+                        if (['bind_ip'].includes(property['bk_property_id'])) {
+                            property.bk_property_type = 'enum'
+                            property.option = this.ipOption
                         }
                     })
                     return filterProperties

@@ -266,7 +266,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 		ModuleID:      moduleID,
 		HostID:        []int64{hostID},
 	}
-	hResult, err := h.CoreAPI.CoreService().Host().TransferHostModule(h.ctx, h.pheader, opt)
+	hResult, err := h.CoreAPI.CoreService().Host().TransferToNormalModule(h.ctx, h.pheader, opt)
 	if err != nil {
 		blog.Errorf("add host module by ip:%s  err:%s,input:%+v,rid:%s", ip, err.Error(), opt, h.rid)
 		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))

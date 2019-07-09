@@ -106,7 +106,7 @@ func (a *authClient) verifyAnyResourceBatch(ctx context.Context, header http.Hea
 }
 
 func (a *authClient) registerResource(ctx context.Context, header http.Header, info *RegisterInfo) error {
-	// register resource with emtpy id will make crash
+	// register resource with empty id will make crash
 	for _, resource := range info.Resources {
 		if resource.ResourceID == nil || len(resource.ResourceID) == 0 {
 			return fmt.Errorf("resource id can't be empty, resource: %+v", resource)
@@ -428,7 +428,8 @@ func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAutho
 	return resp.Data, nil
 }
 
-func (a *authClient) GetAuthorizedScopes(ctx context.Context, scopeID string, body *Principal) ([]string, error) {
+// find resource list that a user got any authorized resources.
+func (a *authClient) GetAnyAuthorizedScopes(ctx context.Context, scopeID string, body *Principal) ([]string, error) {
 	resp := ListAuthorizedScopeResult{}
 
 	err := a.client.Post().
@@ -466,4 +467,31 @@ func (a *authClient) ListResources(ctx context.Context, header http.Header, sear
 	}
 
 	return resp.Data, nil
+}
+
+func (a *authClient) RegisterUserRole(ctx context.Context, header http.Header, roles RoleWithAuthResources) (int64, error) {
+	util.CopyHeader(a.basicHeader, header)
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/perm-templates", a.Config.SystemID)
+
+	resp := struct {
+		BaseResponse
+		Data struct {
+			TemplateID int64 `json:"perm_template_id"`
+		}
+	}{}
+
+	err := a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(roles).
+		Do().Into(&resp)
+	if err != nil {
+		return 0, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return 0, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data.TemplateID, nil
 }
