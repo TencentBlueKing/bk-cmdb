@@ -1,13 +1,11 @@
 <template>
     <bk-dialog
-        class="model-dialog dialog"
+        class="model-dialog dialog bk-dialog-no-padding"
+        width="600"
         :close-icon="false"
-        :has-header="false"
-        :width="600"
-        :padding="0"
-        :quick-close="false"
-        :is-show.sync="isShow">
-        <div slot="content" class="dialog-content">
+        :mask-close="false"
+        v-model="isShow">
+        <div class="dialog-content">
             <p class="title">{{title}}</p>
             <div class="content clearfix">
                 <div class="content-left">
@@ -21,18 +19,18 @@
                         <span class="label-title">{{$t('ModelManagement["所属分组"]')}}</span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelGroup') }">
-                            <cmdb-selector
-                                class="selector-box"
-                                name="modelGroup"
-                                setting-key="bk_classification_id"
-                                display-key="bk_classification_name"
-                                :content-max-height="200"
-                                :selected.sync="modelDialog.data['bk_classification_id']"
-                                :list="localClassifications"
-                                :empty-text="isAdminView ? '' : $t('ModelManagement[\'无自定义分组\']')"
+                            <bk-select style="width: 100%;"
+                                v-model="modelDialog.data.bk_classification_id"
                                 v-validate="'required'"
-                                v-model="modelDialog.data['bk_classification_id']"
-                            ></cmdb-selector>
+                                name="modelGroup"
+                                :scroll-height="200"
+                                :empty-text="isAdminView ? '' : $t('ModelManagement[\'无自定义分组\']')">
+                                <bk-option v-for="(option, index) in localClassifications"
+                                    :key="index"
+                                    :id="option.bk_classification_id"
+                                    :name="option.bk_classification_name">
+                                </bk-option>
+                            </bk-select>
                             <p class="form-error">{{errors.first('modelGroup')}}</p>
                         </div>
                     </div>
@@ -169,6 +167,9 @@
 
 <style lang="scss" scoped>
     .dialog {
+        /deep/.bk-dialog-tool {
+            display: none;
+        }
         .dialog-content {
             padding: 20px 15px 20px 28px;
         }

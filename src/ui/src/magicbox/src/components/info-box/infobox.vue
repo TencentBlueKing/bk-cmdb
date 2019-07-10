@@ -202,6 +202,3 @@
         }
     }
 </script>
-<style lang="scss">
-    @import '../../bk-magic-ui/src/dialog.scss'
-</style>

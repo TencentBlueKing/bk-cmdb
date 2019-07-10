@@ -91,6 +91,7 @@
             :title="$t('HostResourcePool[\'主机筛选项设置\']')"
             :width="600">
             <cmdb-filter-config slot="content"
+                v-if="filterConfig.show"
                 :properties="filterConfigProperties"
                 :selected="customFields"
                 @on-cancel="filterConfig.show = false"

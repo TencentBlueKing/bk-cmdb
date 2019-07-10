@@ -38,12 +38,12 @@
         </cmdb-table>
         <bk-dialog
             class="create-dialog"
-            :is-show.sync="deviceDialog.isShow"
+            v-model="deviceDialog.isShow"
             :title="deviceDialog.title"
-            :has-footer="false"
+            :show-footer="false"
             :close-icon="false"
             :width="424">
-            <div slot="content">
+            <div>
                 <div>
                     <label class="label first">
                         <span>{{$t('NetworkDiscovery["设备型号"]')}}<span class="color-danger">*</span></span>

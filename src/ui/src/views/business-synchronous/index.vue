@@ -105,7 +105,7 @@
             :width="676"
             :is-show.sync="slider.show"
             :title="slider.title">
-            <template slot="content">
+            <template slot="content" v-if="slider.show">
                 <instance-details :attribute-list="slider.details"></instance-details>
             </template>
         </bk-sideslider>

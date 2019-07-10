@@ -96,7 +96,7 @@
             :title="slider.title"
             :width="800"
             :before-close="handleSliderBeforeClose">
-            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content">
+            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.show">
                 <bk-tab-panel name="attribute" :label="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-form-multiple v-if="tab.attribute.type === 'multiple'"
                         ref="multipleForm"
@@ -115,6 +115,7 @@
             :width="600"
             :title="$t('BusinessTopology[\'列表显示属性配置\']')">
             <cmdb-columns-config slot="content"
+                v-if="columnsConfig.show"
                 :properties="columnsConfigProperties"
                 :selected="columnsConfig.selected"
                 :disabled-columns="columnsConfig.disabledColumns"
@@ -123,20 +124,19 @@
                 @on-reset="handleResetColumnsConfig">
             </cmdb-columns-config>
         </bk-sideslider>
-        <bk-dialog
-            :is-show.sync="transfer.show"
-            :draggable="true"
+        <bk-dialog class="bk-dialog-no-padding"
+            v-model="transfer.show"
+            draggable
             :close-icon="false"
-            :has-footer="false"
-            :has-header="false"
-            :padding="0"
+            :show-footer="false"
+            :show-header="false"
             :width="720">
             <div class="transfer-title" slot="tools">
                 <i class="icon icon-cc-shift mr5"></i>
                 <span>{{$t('Common[\'主机转移\']')}}</span>
                 <span v-if="selectedHosts.length === 1">{{selectedHosts[0]['host']['bk_host_innerip']}}</span>
             </div>
-            <div class="transfer-content" slot="content">
+            <div class="transfer-content">
                 <cmdb-transfer-host v-if="transfer.show"
                     :transfer-resource-auth="transferResourceAuth"
                     :selected-hosts="selectedHosts"

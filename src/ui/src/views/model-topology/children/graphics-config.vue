@@ -4,7 +4,7 @@
         :width="600"
         :title="$t('ModelManagement[\'拓扑显示设置\']')"
         @close="handleClose">
-        <div class="config-layout" slot="content">
+        <div class="config-layout" slot="content" v-if="isShow">
             <div class="config-section">
                 <h2 class="config-type">模型显示设置</h2>
                 <div class="config-name">

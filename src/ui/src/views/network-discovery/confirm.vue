@@ -84,6 +84,7 @@
             :is-show.sync="slider.isShow">
             <v-confirm-details
                 slot="content"
+                v-if="slider.isShow"
                 :ignore="activeItem.ignore"
                 :attributes.sync="activeItem.attributes"
                 :associations.sync="activeItem.associations"
@@ -99,13 +100,12 @@
         </div>
         <bk-dialog
             class="result-dialog"
-            :is-show.sync="resultDialog.isShow"
-            :has-header="false"
-            :has-footer="false"
-            :quick-close="false"
+            v-model="resultDialog.isShow"
+            :show-footer="false"
+            :mask-close="false"
             :close-icon="false"
             :width="448">
-            <div slot="content">
+            <div>
                 <h2>{{$t('NetworkDiscovery["执行结果"]')}}</h2>
                 <div class="dialog-content">
                     <p>
@@ -148,14 +148,13 @@
             </div>
         </bk-dialog>
         <bk-dialog
-            class="confirm-dialog"
-            :is-show.sync="confirmDialog.isShow"
+            class="bk-dialog-no-padding confirm-dialog"
+            v-model="confirmDialog.isShow"
             :title="$t('NetworkDiscovery[\'退出确认\']')"
-            :has-footer="false"
-            :quick-close="false"
-            padding="0"
+            :show-footer="false"
+            :mask-close="false"
             :width="390">
-            <div slot="content" class="dialog-content">
+            <div class="dialog-content">
                 <p>
                     {{$t('NetworkDiscovery["当前改动尚未生效，是否放弃？"]')}}
                 </p>

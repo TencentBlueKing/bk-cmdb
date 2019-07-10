@@ -80,7 +80,7 @@
             :title="slider.title"
             :width="800"
             :before-close="handleSliderBeforeClose">
-            <template slot="content">
+            <template slot="content" v-if="slider.show">
                 <process-form
                     ref="processForm"
                     :properties="properties"
@@ -96,14 +96,12 @@
             </template>
         </bk-sideslider>
         <bk-dialog
-            :is-show.sync="createdSucess.show"
+            v-model="createdSucess.show"
             :width="490"
             :close-icon="false"
-            :has-footer="false"
-            :has-header="false"
-            :title="createdSucess.title"
-            :content="createdSucess.content">
-            <div class="created-success" slot="content">
+            :show-footer="false"
+            :title="createdSucess.title">
+            <div class="created-success">
                 <div class="content">
                     <i class="bk-icon icon-check-1"></i>
                     <p>{{$t("ServiceManagement['服务模板创建成功']")}}</p>
@@ -444,29 +442,6 @@
 
 <style lang="scss" scoped>
     .create-template-wrapper {
-        .created-success {
-            font-size: 14px;
-            text-align: center;
-            color: #444444;
-            .bk-icon {
-                width: 60px;
-                height: 60px;
-                line-height: 60px;
-                font-size: 30px;
-                font-weight: bold;
-                color: #ffffff;
-                border-radius: 50%;
-                background-color: #2dcb56;
-                margin-top: 12px;
-            }
-            p {
-                font-size: 24px;
-                padding: 14px 0 24px;
-            }
-            .btn-box {
-                padding: 32px 0 36px;
-            }
-        }
         .info-group {
             h3 {
                 color: #63656e;
@@ -514,6 +489,29 @@
             .btn-box {
                 padding-top: 30px;
             }
+        }
+    }
+    .created-success {
+        font-size: 14px;
+        text-align: center;
+        color: #444444;
+        .bk-icon {
+            width: 60px;
+            height: 60px;
+            line-height: 60px;
+            font-size: 30px;
+            font-weight: bold;
+            color: #ffffff;
+            border-radius: 50%;
+            background-color: #2dcb56;
+            margin-top: 12px;
+        }
+        p {
+            font-size: 24px;
+            padding: 14px 0 24px;
+        }
+        .btn-box {
+            padding: 32px 0 36px;
         }
     }
 </style>

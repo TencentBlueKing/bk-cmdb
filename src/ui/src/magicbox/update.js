@@ -3,9 +3,6 @@ import {
     bkInput,
     bkDropdownMenu,
     bkDatePicker,
-    bkTimePicker,
-    bkTagInput,
-    bkSearchSelect,
     bkTable,
     bkTableColumn,
     bkPagination,
@@ -23,13 +20,6 @@ import {
 
 const components = [
     bkDropdownMenu,
-    bkDatePicker,
-    bkTimePicker,
-    bkTagInput,
-    bkSearchSelect,
-    bkTable,
-    bkTableColumn,
-    bkDialog,
     bkPopover
 ]
 components.forEach(component => {
@@ -48,3 +38,5 @@ Vue.component('bk-table', bkTable)
 Vue.component('bk-table-column', bkTableColumn)
 Vue.component('bk-checkbox', bkCheckbox)
 Vue.component('bk-pagination', bkPagination)
+Vue.component('bk-date-picker', bkDatePicker)
+Vue.component('bk-dialog', bkDialog)

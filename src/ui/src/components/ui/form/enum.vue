@@ -1,18 +1,16 @@
 <template>
-    <div class="form-enum">
-        <bk-select class="form-enum-selector"
-            v-model="selected"
-            :clearable="allowClear"
-            :searchable="searchable"
-            :disabled="disabled">
-            <bk-option
-                v-for="(option, index) in options"
-                :key="index"
-                :id="option.id"
-                :name="option.name">
-            </bk-option>
-        </bk-select>
-    </div>
+    <bk-select class="form-enum-selector"
+        v-model="selected"
+        :clearable="allowClear"
+        :searchable="searchable"
+        :disabled="disabled">
+        <bk-option
+            v-for="(option, index) in options"
+            :key="index"
+            :id="option.id"
+            :name="option.name">
+        </bk-option>
+    </bk-select>
 </template>
 
 <script>
@@ -80,9 +78,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .form-enum {
-        .form-enum-selector{
-            width: 100%;
-        }
+    .form-enum-selector{
+        width: 100%;
     }
 </style>

@@ -46,6 +46,7 @@
             :before-close="handleBeforeClose">
             <cmdb-form slot="content"
                 ref="processForm"
+                v-if="processForm.show"
                 :properties="properties"
                 :property-groups="propertyGroups"
                 :object-unique="processForm.type === 'single' ? [] : propertyUnique"

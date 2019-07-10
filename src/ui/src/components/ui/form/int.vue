@@ -1,14 +1,12 @@
 <template>
-    <div class="cmdb-form form-int">
-        <bk-input class="cmdb-form-input form-int-input" type="text"
-            :placeholder="placeholder || $t('Form[\'请输入数字\']')"
-            :value="value"
-            :maxlength="maxlength"
-            :disabled="disabled"
-            @blur="handleInput($event)"
-            @change="handleChange">
-        </bk-input>
-    </div>
+    <bk-input type="text"
+        :placeholder="placeholder || $t('Form[\'请输入数字\']')"
+        :value="value"
+        :maxlength="maxlength"
+        :disabled="disabled"
+        @blur="handleInput"
+        @change="handleChange">
+    </bk-input>
 </template>
 
 <script>
@@ -53,8 +51,8 @@
             this.localValue = this.value === '' ? null : this.value
         },
         methods: {
-            handleInput (event) {
-                let value = parseInt(event.target.value.trim())
+            handleInput (value, event) {
+                value = parseInt(event.target.value.trim())
                 if (isNaN(value)) {
                     value = null
                 }
@@ -67,18 +65,3 @@
         }
     }
 </script>
-
-<style lang="scss" scoped>
-    .form-int-input {
-        height: 36px;
-        width: 100%;
-        padding: 0 10px;
-        background-color: #fff;
-        border: 1px solid $cmdbBorderColor;
-        font-size: 14px;
-        outline: none;
-        &:focus{
-            border-color: $cmdbBorderFocusColor;
-        }
-    }
-</style>

@@ -3,7 +3,7 @@
         <div class="history-options clearfix">
             <div class="options-group fl">
                 <label class="options-label">{{$t("HostResourcePool['时间范围']")}}</label>
-                <cmdb-form-date-range class="options-filter" v-model="dateRange"></cmdb-form-date-range>
+                <cmdb-form-date-range class="options-filter" :clearable="false" v-model="dateRange"></cmdb-form-date-range>
             </div>
             <div class="options-group fl" style="margin: 0">
                 <label class="options-label">{{$t("HostResourcePool['操作账号']")}}</label>
@@ -89,10 +89,11 @@
         },
         computed: {
             filterRange () {
-                return [
+                const range = [
                     this.dateRange[0] ? this.dateRange[0] + ' 00:00:00' : '',
                     this.dateRange[1] ? this.dateRange[1] + ' 23:59:59' : ''
                 ]
+                return range.filter(date => !!date)
             }
         },
         created () {

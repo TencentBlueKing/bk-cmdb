@@ -11,7 +11,6 @@ import Vue from 'vue'
 import bkDropdownMenu from './components/dropdown-menu'
 import bkSwitcher from './components/switcher'
 import bkTagInput from './components/tag-input'
-import bkDialog from './components/dialog'
 import bkIconButton from './components/icon-button'
 import bkLoading from './components/loading'
 import bkSteps from './components/steps'
@@ -21,8 +20,6 @@ import bkTooltips from './components/tooltips'
 import bkDropdown from './components/dropdown'
 import bkInfoBox from './components/info-box'
 import bkTooltip from './components/tooltip'
-import bkDatePicker from './components/date-picker'
-import bkDateRange from './components/date-range'
 import bkTransfer from './components/transfer'
 import bkTree from './components/tree'
 import bkCollapse from './components/collapse'
@@ -49,9 +46,6 @@ const components = {
     bkCollapse,
     bkCollapseItem,
     bkCombox,
-    bkDatePicker,
-    bkDateRange,
-    bkDialog,
     bkDropdown,
     bkDropdownMenu,
     bkIconButton,
@@ -121,9 +115,6 @@ export {
     bkCollapse,
     bkCollapseItem,
     bkCombox,
-    bkDatePicker,
-    bkDateRange,
-    bkDialog,
     bkDropdown,
     bkDropdownMenu,
     bkIconButton,

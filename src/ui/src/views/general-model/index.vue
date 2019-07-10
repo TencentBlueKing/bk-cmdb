@@ -125,7 +125,7 @@
             :title="slider.title"
             :width="800"
             :before-close="handleSliderBeforeClose">
-            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content">
+            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.show">
                 <bk-tab-panel name="attribute" :label="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
@@ -174,6 +174,7 @@
         </bk-sideslider>
         <bk-sideslider :is-show.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
             <cmdb-columns-config slot="content"
+                v-if="columnsConfig.show"
                 :properties="properties"
                 :selected="columnsConfig.selected"
                 :disabled-columns="columnsConfig.disabledColumns"
