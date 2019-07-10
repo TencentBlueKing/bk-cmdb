@@ -67,12 +67,12 @@ func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 	}
 	rsp, err := a.clientSet.CoreService().Model().ReadModel(context.Background(), a.params.Header, &input)
 	if nil != err {
-		blog.Errorf("failed to request the object controller, err: %s", err.Error())
+		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), a.params.ReqID)
 		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to search the object(%s), err: %s", objID, rsp.ErrMsg)
+		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", objID, rsp.ErrMsg, a.params.ReqID)
 		return nil, a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -181,7 +181,7 @@ func (a *attribute) Create() error {
 	input := metadata.CreateModelAttributes{Attributes: []metadata.Attribute{a.attr}}
 	rsp, err := a.clientSet.CoreService().Model().CreateModelAttrs(context.Background(), a.params.Header, a.attr.ObjectID, &input)
 	if nil != err {
-		blog.Errorf("faield to request the object controller, the err: %s", err.Error())
+		blog.Errorf("faield to request the object controller, the err: %s, rid: %s", err.Error(), a.params.ReqID)
 		return err
 	}
 
@@ -226,12 +226,12 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 	}
 	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrs(context.Background(), a.params.Header, a.attr.ObjectID, &input)
 	if nil != err {
-		blog.Errorf("failed to request object controller, err: %s", err.Error())
+		blog.Errorf("failed to request object controller, err: %s, rid: %s", err.Error(), a.params.ReqID)
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to update the object attribute(%s), err: %s", a.attr.PropertyID, rsp.ErrMsg)
+		blog.Errorf("failed to update the object attribute(%s), err: %s, rid: %s", a.attr.PropertyID, rsp.ErrMsg, a.params.ReqID)
 		return a.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
 	}
 	return nil
@@ -240,12 +240,12 @@ func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, erro
 
 	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(context.Background(), a.params.Header, a.attr.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("failed to request to object controller, err: %s", err.Error())
+		blog.Errorf("failed to request to object controller, err: %s, rid: %s", err.Error(), a.params.ReqID)
 		return nil, err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to query the object controller, cond: %#v, err: %s", cond, rsp.ErrMsg)
+		blog.Errorf("failed to query the object controller, cond: %#v, err: %s, rid: %s", cond, rsp.ErrMsg, a.params.ReqID)
 		return nil, a.params.Err.Error(common.CCErrTopoObjectAttributeSelectFailed)
 	}
 
@@ -317,12 +317,12 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 
 	rsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), a.params.Header, a.attr.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[model-grp] failed to request the object controller, err: %s", err.Error())
+		blog.Errorf("[model-grp] failed to request the object controller, err: %s, rid: %s", err.Error(), a.params.ReqID)
 		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), err: %s", a.attr.ObjectID, cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), err: %s, rid: %s", a.attr.ObjectID, cond.ToMapStr(), rsp.ErrMsg, a.params.ReqID)
 		return nil, a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
