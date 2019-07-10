@@ -92,10 +92,6 @@ func (ps *ProcServer) WebService() *restful.Container {
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	// v2
-	api.Route(api.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
-	api.Route(api.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
-
 	ps.newProcessService(api)
 	container := restful.NewContainer()
 	container.Add(api)
@@ -167,29 +163,6 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 		zkItem.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, zkItem)
-
-	// object controller
-	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_OBJECTCONTROLLER}
-	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_OBJECTCONTROLLER); err != nil {
-		objCtr.IsHealthy = false
-		objCtr.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, objCtr)
-
-	// host controller
-	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}
-	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
-		hostCtrl.IsHealthy = false
-		hostCtrl.Message = err.Error()
-	}
-
-	// host controller
-	procCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_PROCCONTROLLER}
-	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_PROCCONTROLLER); err != nil {
-		procCtrl.IsHealthy = false
-		procCtrl.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, procCtrl)
 
 	// coreservice
 	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CORESERVICE}

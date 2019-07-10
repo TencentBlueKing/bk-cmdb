@@ -33,6 +33,7 @@ type PrivilegeInterface interface {
 	CreateRolePri(ctx context.Context, ownerID string, objID string, propertyID string, h http.Header, role []string) (resp *metadata.Response, err error)
 	GetRolePri(ctx context.Context, ownerID string, objID string, propertyID string, h http.Header) (resp *metadata.Response, err error)
 	UpdateRolePri(ctx context.Context, ownerID string, objID string, propertyID string, h http.Header, role []string) (resp *metadata.Response, err error)
+
 	GetSystemFlag(ctx context.Context, ownerID string, flag string, h http.Header) (resp *metadata.PermissionSystemResponse, err error)
 }
 

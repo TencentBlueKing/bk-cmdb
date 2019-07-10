@@ -574,7 +574,7 @@ func (p *processOperation) RemoveTemplateBindingOnModule(ctx core.ContextParams,
 	}
 	serviceInstanceResult, err := p.ListServiceInstance(ctx, listOption)
 	if err != nil {
-		blog.Errorf("", err)
+		blog.Errorf("ListServiceInstance failed, option: %+v, err: %s, rid: %s", listOption, err.Error(), ctx.ReqID)
 		return err
 	}
 	serviceInstanceIDs := make([]int64, 0)
