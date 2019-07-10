@@ -66,25 +66,24 @@ func FetchBizIDFromInstance(objID string, instanceData mapstr.MapStr) (int64, er
 		}
 		return metadata.ParseBizIDFromData(instanceData)
 	}
-	return 0, nil
 }
 
 func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr) error {
 	bizID, err := FetchBizIDFromInstance(objID, instanceData)
 	if err != nil {
-		blog.Errorf("validCreateInstanceData failed, FetchBizIDFromInstance failed, err: %+v", err)
+		blog.Errorf("validCreateInstanceData failed, FetchBizIDFromInstance failed, err: %+v, rid: %s", err, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
 	}
 
 	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
 	if nil != err {
-		blog.Errorf("init validator failed %s", err.Error())
+		blog.Errorf("init validator failed %s, rid: %s", err.Error(), ctx.ReqID)
 		return err
 	}
-	FillLostedFieldValue(instanceData, valid.propertyslice, valid.requirefields)
+	FillLostedFieldValue(ctx.Context, instanceData, valid.propertyslice, valid.requirefields)
 	for _, key := range valid.requirefields {
 		if _, ok := instanceData[key]; !ok {
-			blog.Errorf("field [%s] in required for model [%s], input data: %+v", key, objID, instanceData)
+			blog.Errorf("field [%s] in required for model [%s], input data: %+v, rid: %s", key, objID, instanceData, ctx.ReqID)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 	}
@@ -93,7 +92,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 	for key, val := range instanceData {
 		if key == common.BKObjIDField {
 			// common instance always has no property bk_obj_id, but this field need save to db
-			blog.V(9).Infof("skip verify filed: %s", key)
+			blog.V(9).Infof("skip verify filed: %s, rid: %s", key, ctx.ReqID)
 			continue
 		}
 		if metadata.BKMetadata == key {
@@ -109,31 +108,31 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		}
 		property, ok := valid.propertys[key]
 		if !ok {
-			blog.Errorf("field [%s] is not a valid property for model [%s]", key, objID)
+			blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, ctx.ReqID)
 			return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		fieldType := property.PropertyType
 		switch fieldType {
 		case common.FieldTypeSingleChar:
-			err = valid.validChar(val, key)
+			err = valid.validChar(ctx.Context, val, key)
 		case common.FieldTypeLongChar:
-			err = valid.validLongChar(val, key)
+			err = valid.validLongChar(ctx.Context, val, key)
 		case common.FieldTypeInt:
-			err = valid.validInt(val, key)
+			err = valid.validInt(ctx.Context, val, key)
 		case common.FieldTypeFloat:
-			err = valid.validFloat(val, key)
+			err = valid.validFloat(ctx.Context, val, key)
 		case common.FieldTypeEnum:
-			err = valid.validEnum(val, key)
+			err = valid.validEnum(ctx.Context, val, key)
 		case common.FieldTypeDate:
-			err = valid.validDate(val, key)
+			err = valid.validDate(ctx.Context, val, key)
 		case common.FieldTypeTime:
-			err = valid.validTime(val, key)
+			err = valid.validTime(ctx.Context, val, key)
 		case common.FieldTypeTimeZone:
-			err = valid.validTimeZone(val, key)
+			err = valid.validTimeZone(ctx.Context, val, key)
 		case common.FieldTypeBool:
-			err = valid.validBool(val, key)
+			err = valid.validBool(ctx.Context, val, key)
 		case common.FieldTypeForeignKey:
-			err = valid.validForeignKey(val, key)
+			err = valid.validForeignKey(ctx.Context, val, key)
 		default:
 			continue
 		}
@@ -196,18 +195,18 @@ func (m *instanceManager) validateModuleCreate(ctx core.ContextParams, instanceD
 func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
 	originData, err := m.getInstDataByID(ctx, objID, instID, m)
 	if err != nil {
-		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v", err)
+		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v, rid: %s", err, ctx.ReqID)
 		return err
 	}
 	bizID, err := FetchBizIDFromInstance(objID, originData)
 	if err != nil {
-		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v", err)
+		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v, rid: %s", err, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
 	}
 
 	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
 	if nil != err {
-		blog.Errorf("init validator failed %s", err.Error())
+		blog.Errorf("init validator failed %s, rid: %s", err.Error(), ctx.ReqID)
 		return err
 	}
 
@@ -225,25 +224,25 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 		fieldType := property.PropertyType
 		switch fieldType {
 		case common.FieldTypeSingleChar:
-			err = valid.validChar(val, key)
+			err = valid.validChar(ctx.Context, val, key)
 		case common.FieldTypeLongChar:
-			err = valid.validLongChar(val, key)
+			err = valid.validLongChar(ctx.Context, val, key)
 		case common.FieldTypeInt:
-			err = valid.validInt(val, key)
+			err = valid.validInt(ctx.Context, val, key)
 		case common.FieldTypeFloat:
-			err = valid.validFloat(val, key)
+			err = valid.validFloat(ctx.Context, val, key)
 		case common.FieldTypeEnum:
-			err = valid.validEnum(val, key)
+			err = valid.validEnum(ctx.Context, val, key)
 		case common.FieldTypeDate:
-			err = valid.validDate(val, key)
+			err = valid.validDate(ctx.Context, val, key)
 		case common.FieldTypeTime:
-			err = valid.validTime(val, key)
+			err = valid.validTime(ctx.Context, val, key)
 		case common.FieldTypeTimeZone:
-			err = valid.validTimeZone(val, key)
+			err = valid.validTimeZone(ctx.Context, val, key)
 		case common.FieldTypeBool:
-			err = valid.validBool(val, key)
+			err = valid.validBool(ctx.Context, val, key)
 		case common.FieldTypeForeignKey:
-			err = valid.validForeignKey(val, key)
+			err = valid.validForeignKey(ctx.Context, val, key)
 		default:
 			continue
 		}

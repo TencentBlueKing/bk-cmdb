@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package openapi
+package topographics
 
 import (
 	"context"
@@ -20,15 +20,15 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-type OpenApiInterface interface {
-	GetProcessesByModuleName(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.ProcInfoArrResult, err error)
-	DeleteSetHost(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+type TopoGraphicsInterface interface {
+	SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (resp *metadata.SearchTopoGraphicsResult, err error)
+	UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error)
 }
 
-func NewOpenApiInterface(client rest.ClientInterface) OpenApiInterface {
-	return &openAPI{client: client}
+func NewTopoGraphicsInterface(client rest.ClientInterface) TopoGraphicsInterface {
+	return &meta{client: client}
 }
 
-type openAPI struct {
+type meta struct {
 	client rest.ClientInterface
 }

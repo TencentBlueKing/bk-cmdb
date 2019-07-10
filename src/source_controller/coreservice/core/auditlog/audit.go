@@ -13,6 +13,8 @@
 package auditlog
 
 import (
+	"configcenter/src/common/util"
+	"context"
 	"strings"
 	"time"
 
@@ -42,7 +44,7 @@ func (m *auditManager) CreateAuditLog(ctx core.ContextParams, logs ...metadata.S
 
 	var logRows []interface{}
 	for _, content := range logs {
-		if instNotChange(content.Content) {
+		if instNotChange(ctx, content.Content) {
 			continue
 		}
 		row := &metadata.OperationLog{
@@ -74,15 +76,15 @@ func (m *auditManager) SearchAuditLog(ctx core.ContextParams, param metadata.Que
 	limit := param.Limit
 	fieldArr := strings.Split(fields, ",")
 	rows := make([]metadata.OperationLog, 0)
-	blog.V(5).Infof("Search table common.BKTableNameOperationLog with parameters: %+v", condition)
+	blog.V(5).Infof("Search table common.BKTableNameOperationLog with parameters: %+v, rid: %s", condition, ctx.ReqID)
 	err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(condition).Sort(param.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, &rows)
 	if nil != err {
-		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)
+		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, ctx.ReqID)
 		return nil, 0, err
 	}
 	cnt, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(condition).Count(ctx)
 	if nil != err {
-		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)
+		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, ctx.ReqID)
 		return nil, 0, err
 	}
 
@@ -90,7 +92,8 @@ func (m *auditManager) SearchAuditLog(ctx core.ContextParams, param metadata.Que
 }
 
 // instNotChange Determine whether the data is consistent before and after the change
-func instNotChange(content interface{}) bool {
+func instNotChange(ctx context.Context, content interface{}) bool {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	contentMap, ok := content.(map[string]interface{})
 	if !ok {
 		return false
@@ -107,7 +110,7 @@ func instNotChange(content interface{}) bool {
 	delete(curData, common.LastTimeField)
 	bl := cmp.Equal(preData, curData)
 	if bl {
-		blog.V(5).Infof("inst data same, %+v", content)
+		blog.V(5).Infof("inst data same, %+v, rid: %s", content, rid)
 	}
 	return bl
 }
