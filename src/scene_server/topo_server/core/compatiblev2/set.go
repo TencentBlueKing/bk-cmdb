@@ -54,12 +54,12 @@ func (s *set) hasHost(bizID int64, setIDS []int64) (bool, error) {
 
 	rsp, err := s.client.CoreService().Host().GetModulesHostConfig(context.Background(), s.params.Header, cond)
 	if nil != err {
-		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s, rid: %s", err.Error(), s.params.ReqID)
 		return false, s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-set]  failed to search the host module configures, err: %s", rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-set]  failed to search the host module configures, err: %s, rid: %s", rsp.ErrMsg, s.params.ReqID)
 		return false, s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -78,12 +78,12 @@ func (s *set) deleteModules(bizID int64, setIDS []int64) error {
 	rsp, err := s.client.CoreService().Instance().DeleteInstance(s.params.Context, s.params.Header, common.BKInnerObjIDModule, deleteParam)
 
 	if nil != err {
-		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s, rid: %s", err.Error(), s.params.ReqID)
 		return s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-set]  failed to delete module by the condition(%#v), err: %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-set]  failed to delete module by the condition(%#v), err: %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, s.params.ReqID)
 		return s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -97,12 +97,12 @@ func (s *set) UpdateMultiSet(bizID int64, data mapstr.MapStr, cond condition.Con
 	}
 	rsp, err := s.client.CoreService().Instance().UpdateInstance(s.params.Context, s.params.Header, common.BKInnerObjIDSet, updateParam)
 	if nil != err {
-		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s", rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s, rid: %s", rsp.ErrMsg, s.params.ReqID)
 		return s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-set]  failed to update the set, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-set]  failed to update the set, err: %s, rid: %s", err.Error(), s.params.ReqID)
 		return s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -114,12 +114,12 @@ func (s *set) DeleteMultiSet(bizID int64, setIDS []int64) error {
 	// checkout host
 	existsHost, err := s.hasHost(bizID, setIDS)
 	if nil != err {
-		blog.Errorf("[compatiblev2-set] faield to check host, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-set] faield to check host, err: %s, rid: %s", err.Error(), s.params.ReqID)
 		return err
 	}
 
 	if existsHost {
-		blog.Error("[compatiblev2-set] the setids has host, disable be deleted")
+		blog.Error("[compatiblev2-set] the setids has host, disable be deleted, rid: %s", s.params.ReqID)
 		return s.params.Err.Error(common.CCErrTopoHasHost)
 	}
 
@@ -138,12 +138,12 @@ func (s *set) DeleteMultiSet(bizID int64, setIDS []int64) error {
 	}
 	rsp, err := s.client.CoreService().Instance().DeleteInstance(s.params.Context, s.params.Header, common.BKInnerObjIDSet, deleteParam)
 	if nil != err {
-		blog.Errorf("[compatiblev2-set] faield to check host, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-set] faield to check host, err: %s, rid: %s", err.Error(), s.params.ReqID)
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-set]  failed to delete the sets by the condition(%#v), err: %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-set]  failed to delete the sets by the condition(%#v), err: %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, s.params.ReqID)
 		return s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -153,7 +153,7 @@ func (s *set) DeleteMultiSet(bizID int64, setIDS []int64) error {
 func (s *set) DeleteSetHost(bizID int64, setIDs []int64) error {
 	defaultModule, err := s.client.CoreService().Process().GetBusinessDefaultSetModuleInfo(s.params.Context, s.params.Header, bizID)
 	if err != nil {
-		blog.Errorf("[compatiblev2-set] failed to get biz default modules, err: %s, rid: %s", err.Error(), s.params.ReqID)
+		blog.Errorf("[compatiblev2-set] failed to get biz default modules, err: %s, rid: %s, rid: %s", err.Error(), s.params.ReqID, s.params.ReqID)
 		return err
 	}
 
@@ -163,7 +163,7 @@ func (s *set) DeleteSetHost(bizID int64, setIDs []int64) error {
 	}
 	relations, ccerr := s.client.CoreService().Host().GetHostModuleRelation(s.params.Context, s.params.Header, &relationParam)
 	if ccerr != nil {
-		blog.Errorf("[compatiblev2-set] failed find hosts, err: %s, rid: %s", err.Error(), s.params.ReqID)
+		blog.Errorf("[compatiblev2-set] failed find hosts, err: %s, rid: %s, rid: %s", err.Error(), s.params.ReqID, s.params.ReqID)
 		return ccerr
 	}
 	hostIDs := make([]int64, 0)
@@ -178,12 +178,12 @@ func (s *set) DeleteSetHost(bizID int64, setIDs []int64) error {
 	}
 	rsp, ccerr := s.client.CoreService().Host().TransferToInnerModule(s.params.Context, s.params.Header, transferOption)
 	if nil != ccerr {
-		blog.Errorf("[compatiblev2-set] failed to delete the set hosts, err: %s, rid: %s", err.Error(), s.params.ReqID)
+		blog.Errorf("[compatiblev2-set] failed to delete the set hosts, err: %s, rid: %s, rid: %s", err.Error(), s.params.ReqID, s.params.ReqID)
 		return ccerr
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-set] failed to delete the set hosts, err: %s", rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-set] failed to delete the set hosts, err: %s, rid: %s", rsp.ErrMsg, s.params.ReqID)
 		return s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 	return nil

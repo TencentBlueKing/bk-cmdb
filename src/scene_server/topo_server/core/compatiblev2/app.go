@@ -54,12 +54,12 @@ func (b *business) SearchAllApp(fields string, cond mapstr.MapStr) (*metadata.In
 	}
 	rsp, err := b.client.CoreService().Instance().ReadInstance(b.params.Context, b.params.Header, common.BKInnerObjIDApp, &inputParam)
 	if nil != err {
-		blog.Errorf("[compatiblev2-biz] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[compatiblev2-biz] failed to request object controller, error info is %s, rid: %s", err.Error(), b.params.ReqID)
 		return nil, err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-biz] failed to search the business, error info is %s", rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-biz] failed to search the business, error info is %s, rid: %s", rsp.ErrMsg, b.params.ReqID)
 		return nil, b.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

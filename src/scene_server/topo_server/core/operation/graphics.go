@@ -65,7 +65,7 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[graphics] failed to search the graphics , error info is %s", rsp.ErrMsg)
+		blog.Errorf("[graphics] failed to search the graphics , error info is %s, rid: %s", rsp.ErrMsg, params.ReqID)
 		return nil, params.Err.New(common.CCErrTopoGraphicsSearchFailed, rsp.ErrMsg)
 	}
 
@@ -81,13 +81,13 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 
 		objs, err := g.obj.FindObject(params, condition.CreateCondition())
 		if err != nil {
-			blog.Errorf("SelectObject failed %v", err.Error())
+			blog.Errorf("SelectObject failed %v, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.New(common.CCErrTopoGraphicsSearchFailed, err.Error())
 		}
 
 		assts, err := g.asst.SearchObjectAssociation(params, "")
 		if err != nil {
-			blog.Errorf("SelectObjectAsst failed %v", err.Error())
+			blog.Errorf("SelectObjectAsst failed %v, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.New(common.CCErrTopoGraphicsSearchFailed, err.Error())
 		}
 
@@ -128,17 +128,17 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 
 				resp, err := g.asst.SearchType(params, request)
 				if err != nil {
-					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: %v", asst.AsstKindID, err)
+					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: %v, rid: %s", asst.AsstKindID, err, params.ReqID)
 					return nil, params.Err.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
 				}
 				if !resp.Result {
-					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: %v", asst.AsstKindID, resp.ErrMsg)
+					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: %v, rid: %s", asst.AsstKindID, resp.ErrMsg, params.ReqID)
 					return nil, params.Err.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
 				}
 
 				// should only be one association kind.
 				if len(resp.Data.Info) == 0 {
-					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: can not find this association kind.", asst.AsstKindID)
+					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: can not find this association kind., rid: %s", asst.AsstKindID, params.ReqID)
 					return nil, params.Err.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
 				}
 
@@ -170,12 +170,12 @@ func (g *graphics) UpdateObjectTopoGraphics(params types.ContextParams, scopeTyp
 
 	rsp, err := g.clientSet.CoreService().TopoGraphics().UpdateTopoGraphics(context.Background(), params.Header, datas)
 	if err != nil {
-		blog.Errorf("UpdateGraphics failed %v", err.Error())
+		blog.Errorf("UpdateGraphics failed %v, rid: %s", err.Error(), params.ReqID)
 		return params.Err.New(common.CCErrTopoGraphicsUpdateFailed, err.Error())
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[graphics] failed to update the graphics, error info is %s", rsp.ErrMsg)
+		blog.Errorf("[graphics] failed to update the graphics, error info is %s, rid: %s", rsp.ErrMsg, params.ReqID)
 		return params.Err.New(common.CCErrTopoGraphicsUpdateFailed, rsp.ErrMsg)
 	}
 
