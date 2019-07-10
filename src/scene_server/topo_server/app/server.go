@@ -29,8 +29,6 @@ import (
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	toposvr "configcenter/src/scene_server/topo_server/service"
-
-	"github.com/emicklei/go-restful"
 )
 
 // TopoServer the topo server
@@ -92,7 +90,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(topoService.WebService()),
+		Handler:    topoService.WebService(),
 		TLS:        backbone.TLSConfig{},
 	}
 

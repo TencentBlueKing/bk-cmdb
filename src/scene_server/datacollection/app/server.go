@@ -19,8 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
@@ -57,7 +55,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService()),
+		Handler:    service.WebService(),
 		TLS:        backbone.TLSConfig{},
 	}
 
