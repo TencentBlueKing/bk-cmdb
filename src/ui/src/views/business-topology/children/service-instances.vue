@@ -37,16 +37,13 @@
                         @change="handleExpandAll">
                         <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                     </cmdb-form-bool>
-                    <cmdb-form-singlechar class="options-search"
+                    <bk-input class="options-search"
+                        clearable
+                        right-icon="bk-icon icon-search"
                         :placeholder="$t('BusinessTopology[\'请输入实例名称搜索\']')"
                         v-model="filter"
-                        @keydown.native.enter="handleSearch">
-                        <i class="bk-icon icon-close"
-                            v-show="filter.length"
-                            @click="handleClearFilter">
-                        </i>
-                        <i class="bk-icon icon-search" @click.stop="handleSearch"></i>
-                    </cmdb-form-singlechar>
+                        @enter="handleSearch">
+                    </bk-input>
                 </div>
             </div>
             <div class="tables">

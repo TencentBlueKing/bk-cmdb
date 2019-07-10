@@ -106,36 +106,37 @@
             :title="slider.title"
             :before-close="handleSliderBeforeClose"
             :width="680">
-            <v-create v-if="attribute.type === 'create'"
-                slot="content"
-                ref="detail"
-                :type="attribute.type"
-                @saveSuccess="saveSuccess"
-                @cancel="closeSlider">
-            </v-create>
-            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-else>
-                <bk-tab-panel name="details" :label="$t('Cloud[\'任务详情\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
-                    <v-update v-if="attribute.type === 'update'"
-                        ref="detail"
-                        :type="attribute.type"
-                        :cur-push="curPush"
-                        @saveSuccess="saveSuccess"
-                        @cancel="closeSlider">
-                    </v-update>
-                    <v-task-details v-else-if="attribute.type === 'details'"
-                        ref="detail"
-                        :type="attribute.type"
-                        :cur-push="curPush"
-                        @edit="handleEdit"
-                        @cancel="closeSlider">
-                    </v-task-details>
-                </bk-tab-panel>
-                <bk-tab-panel name="history" :label="$t('Cloud[\'同步历史\']')" :show="['update', 'details'].includes(attribute.type)">
-                    <v-sync-history
-                        :cur-push="curPush">
-                    </v-sync-history>
-                </bk-tab-panel>
-            </bk-tab>
+            <template v-if="slider.show" slot="content">
+                <v-create v-if="attribute.type === 'create'"
+                    ref="detail"
+                    :type="attribute.type"
+                    @saveSuccess="saveSuccess"
+                    @cancel="closeSlider">
+                </v-create>
+                <bk-tab :active.sync="tab.active" type="unborder-card" v-else>
+                    <bk-tab-panel name="details" :label="$t('Cloud[\'任务详情\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+                        <v-update v-if="attribute.type === 'update'"
+                            ref="detail"
+                            :type="attribute.type"
+                            :cur-push="curPush"
+                            @saveSuccess="saveSuccess"
+                            @cancel="closeSlider">
+                        </v-update>
+                        <v-task-details v-else-if="attribute.type === 'details'"
+                            ref="detail"
+                            :type="attribute.type"
+                            :cur-push="curPush"
+                            @edit="handleEdit"
+                            @cancel="closeSlider">
+                        </v-task-details>
+                    </bk-tab-panel>
+                    <bk-tab-panel name="history" :label="$t('Cloud[\'同步历史\']')" :show="['update', 'details'].includes(attribute.type)">
+                        <v-sync-history
+                            :cur-push="curPush">
+                        </v-sync-history>
+                    </bk-tab-panel>
+                </bk-tab>
+            </template>
         </bk-sideslider>
     </div>
 </template>

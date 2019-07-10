@@ -55,9 +55,9 @@
                 <div class="selector-content date-range-content">
                     <cmdb-form-date-range
                         class="date-range"
-                        position="left"
-                        :show-close="true"
-                        v-model="filter.bkCreateTime"></cmdb-form-date-range>
+                        :clearable="false"
+                        v-model="filter.bkCreateTime">
+                    </cmdb-form-date-range>
                 </div>
             </div>
             <div class="group-content button-group">
@@ -115,7 +115,7 @@
             :is-show.sync="details.isShow"
             :width="800"
             :title="$t('OperationAudit[\'操作详情\']')">
-            <v-details :details="details.data" slot="content"></v-details>
+            <v-details :details="details.data" slot="content" v-if="details.isShow"></v-details>
         </bk-sideslider>
     </div>
 </template>

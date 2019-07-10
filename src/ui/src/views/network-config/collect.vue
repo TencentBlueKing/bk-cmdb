@@ -69,15 +69,13 @@
             </template>
         </cmdb-table>
         <bk-dialog
-            class="config-dialog"
-            :is-show.sync="configDialog.isShow"
-            :has-header="false"
-            :has-footer="false"
-            :quick-close="false"
+            class="bk-dialog-no-padding config-dialog"
+            v-model="configDialog.isShow"
+            :show-footer="false"
+            :mask-close="false"
             :close-icon="false"
-            padding="0"
             :width="424">
-            <div slot="content" class="dialog-content">
+            <div class="dialog-content">
                 <div class="content-box">
                     <h2 class="title">
                         {{$t('NetworkDiscovery["配置采集器"]')}}

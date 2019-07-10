@@ -4,7 +4,7 @@
         :title="title"
         :is-show.sync="isShow"
         @close="handleClose">
-        <div class="association-layout" slot="content">
+        <div class="association-layout" slot="content" v-if="isShow">
             <div class="form-group">
                 <label class="form-label"
                     :class="{

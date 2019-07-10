@@ -1,16 +1,11 @@
 <template>
     <bk-dialog
         ext-cls="error-content-dialog"
-        :is-show="isModalShow"
-        :title="' '"
-        :width="'600'"
-        padding="0 24px 40px 24px"
-        :has-header="true"
-        :has-footer="true"
-        :quick-close="false"
-        :close-icon="true"
+        v-model="isModalShow"
+        width="600"
+        :mask-close="false"
         @cancel="onCloseDialog">
-        <div class="permission-content" slot="content">
+        <div class="permission-content">
             <div class="permission-header">
                 <span class="title-icon">
                     <img src="../../assets/images/lock-closed.svg" class="locked-icon" alt="locked-icon" />
@@ -100,17 +95,4 @@
         word-break: break-all;
         white-space: normal;
     }
-    /deep/ .bk-dialog-footer.bk-d-footer {
-        height: 50px;
-        line-height: 50px;
-        .permission-footer {
-            padding: 0 24px;
-            text-align: right;
-        }
-        .bk-button {
-            height: 32px;
-            line-height: 30px;
-        }
-    }
-    
 </style>

@@ -53,6 +53,7 @@
             <the-verification-detail
                 class="slider-content"
                 slot="content"
+                v-if="slider.isShow"
                 :is-read-only="isReadOnly"
                 :is-edit="slider.isEdit"
                 :verification="slider.verification"

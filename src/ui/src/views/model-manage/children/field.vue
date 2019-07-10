@@ -71,6 +71,7 @@
                 ref="fieldForm"
                 class="slider-content"
                 slot="content"
+                v-if="slider.isShow"
                 :is-read-only="isReadOnly"
                 :is-edit-field="slider.isEditField"
                 :field="slider.curField"

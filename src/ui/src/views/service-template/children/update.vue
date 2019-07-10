@@ -68,18 +68,18 @@
             :is-show.sync="slider.show"
             :width="800"
             :title="slider.title">
-            <template slot="content">
-                <process-form
-                    :properties="properties"
-                    :property-groups="propertyGroups"
-                    :object-unique="objectUnique"
-                    :inst="attribute.inst.details"
-                    :type="attribute.type"
-                    :save-disabled="true"
-                    @on-submit="handleSliderSave"
-                    @on-cancel="handleSliderCancel">
-                </process-form>
-            </template>
+            <process-form
+                v-if="slider.show"
+                slot="content"
+                :properties="properties"
+                :property-groups="propertyGroups"
+                :object-unique="objectUnique"
+                :inst="attribute.inst.details"
+                :type="attribute.type"
+                :save-disabled="true"
+                @on-submit="handleSliderSave"
+                @on-cancel="handleSliderCancel">
+            </process-form>
         </bk-sideslider>
     </div>
 </template>

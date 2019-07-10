@@ -124,14 +124,12 @@
             </li>
         </ul>
         <bk-dialog
-            class="group-dialog dialog"
+            class="bk-dialog-no-padding bk-dialog-no-tools group-dialog dialog"
             :close-icon="false"
-            :has-header="false"
             :width="600"
-            :padding="0"
-            :quick-close="false"
-            :is-show.sync="groupDialog.isShow">
-            <div slot="content" class="dialog-content">
+            :mask-close="false"
+            v-model="groupDialog.isShow">
+            <div class="dialog-content">
                 <p class="title">{{groupDialog.title}}</p>
                 <div class="content">
                     <label>

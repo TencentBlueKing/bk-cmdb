@@ -32,7 +32,7 @@
             :is-show.sync="details.show"
             :width="800"
             :title="$t('OperationAudit[\'操作详情\']')">
-            <cmdb-host-history-details :details="details.data" slot="content"></cmdb-host-history-details>
+            <cmdb-host-history-details :details="details.data" slot="content" v-if="details.show"></cmdb-host-history-details>
         </bk-sideslider>
     </div>
 </template>

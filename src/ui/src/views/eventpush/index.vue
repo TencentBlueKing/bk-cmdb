@@ -90,6 +90,7 @@
             <v-push-detail
                 ref="detail"
                 slot="content"
+                v-if="slider.isShow"
                 :type="slider.type"
                 :cur-push="curPush"
                 @saveSuccess="saveSuccess"

@@ -25,7 +25,7 @@
             </div>
             <div class="form-item" v-if="withTemplate">
                 <label>{{$t('BusinessTopology["服务模板"]')}}</label>
-                <cmdb-selector
+                <cmdb-selector style="width: 100%;"
                     v-model="template"
                     v-validate.disabled="'required'"
                     data-vv-name="template"
@@ -231,10 +231,7 @@
         position: relative;
     }
     .node-create-title {
-        position: absolute;
-        top: -20px;
-        left: 0;
-        padding: 0 26px;
+        padding: 20px 26px 0;
         line-height: 30px;
         font-size: 22px;
         color: #333948;

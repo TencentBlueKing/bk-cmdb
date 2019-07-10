@@ -68,6 +68,7 @@
             <the-relation-detail
                 class="slider-content"
                 slot="content"
+                v-if="slider.isShow"
                 :is-read-only="isReadOnly"
                 :is-edit="slider.isEdit"
                 :relation="slider.relation"

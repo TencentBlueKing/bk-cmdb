@@ -59,6 +59,7 @@
             :before-close="handleSliderBeforeClose">
             <v-define slot="content"
                 ref="define"
+                v-if="slider.isShow"
                 :id="slider.id"
                 :biz-id="bizId"
                 :type="slider.type"

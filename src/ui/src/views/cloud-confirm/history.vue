@@ -2,7 +2,7 @@
     <div class="confirm-history-layout">
         <div class="confirm-history-options clearfix">
             <bk-button class="fl" theme="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
-            <cmdb-form-date-range class="confirm-filter" v-model="dateRange" position="left"></cmdb-form-date-range>
+            <cmdb-form-date-range class="confirm-filter" v-model="dateRange"></cmdb-form-date-range>
         </div>
         <bk-table
             v-bkloading="{ isLoading: $loading('getConfirHistory') }"

@@ -33,6 +33,7 @@
             :is-show.sync="details.show"
             :title="details.title">
             <cmdb-details slot="content"
+                v-if="details.show"
                 :show-options="false"
                 :inst="details.inst"
                 :properties="details.properties"

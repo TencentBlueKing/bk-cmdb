@@ -96,6 +96,7 @@
             <component
                 class="slider-content"
                 slot="content"
+                v-if="slider.isShow"
                 :is="slider.content"
                 v-bind="slider.properties"
                 @save="handleSliderSave"

@@ -96,18 +96,16 @@
                 </div>
             </template>
         </div>
-        <bk-dialog
-            :is-show.sync="dialog.isShow"
-            :has-header="false"
-            :quick-close="false"
+        <bk-dialog class="bk-dialog-no-padding"
+            v-model="dialog.isShow"
+            :mask-close="false"
             :width="600"
             @cancel="handleCancelAddProperty"
             @confirm="handleConfirmAddProperty">
             <div class="dialog-title" slot="tools">{{$t('ModelManagement["新建字段"]')}}</div>
-            <div class="dialog-content" slot="content">
+            <div class="dialog-content">
                 <div class="dialog-filter">
-                    <bk-input type="text" class="cmdb-form-input" v-model.trim="dialog.filter"></bk-input>
-                    <i class="bk-icon icon-search"></i>
+                    <bk-input type="text" class="cmdb-form-input" v-model.trim="dialog.filter" right-icon="bk-icon icon-search"></bk-input>
                 </div>
                 <ul class="dialog-property clearfix" ref="dialogProperty">
                     <li class="property-item fl"
@@ -759,6 +757,7 @@
     }
     .dialog-content {
         width: 470px;
+        padding: 0 0 20px 0;
         margin: 0 auto;
     }
     .dialog-filter {

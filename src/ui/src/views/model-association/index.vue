@@ -86,6 +86,7 @@
             <the-relation
                 slot="content"
                 class="slider-content"
+                v-if="slider.isShow"
                 :is-edit="slider.isEdit"
                 :relation="slider.relation"
                 @saved="saveRelation"

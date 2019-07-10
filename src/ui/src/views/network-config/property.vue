@@ -53,12 +53,12 @@
         </cmdb-table>
         <bk-dialog
             class="create-dialog"
-            :is-show.sync="propertyDialog.isShow"
+            v-model="propertyDialog.isShow"
             :title="propertyDialog.title"
-            :has-footer="false"
+            :show-footer="false"
             :close-icon="false"
             :width="424">
-            <div slot="content">
+            <div>
                 <div>
                     <label class="label first">
                         <span>{{$t('NetworkDiscovery["所属设备"]')}}<span class="color-danger">*</span></span>

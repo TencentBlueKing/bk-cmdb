@@ -24,24 +24,22 @@
                 <span class="node-name">{{data.bk_inst_name}}</span>
             </div>
         </cmdb-tree>
-        <bk-dialog
-            :is-show.sync="createInfo.show"
-            :has-header="false"
-            :has-footer="false"
-            :padding="0"
-            :quick-close="false"
+        <bk-dialog class="bk-dialog-no-padding bk-dialog-no-tools"
+            v-model="createInfo.show"
+            :show-footer="false"
+            :mask-close="false"
             :width="createInfo.nextModelId === 'module' ? 580 : 400"
-            @after-transition-leave="handleAfterCancelCreateNode"
+            @after-leave="handleAfterCancelCreateNode"
             @cancel="handleCancelCreateNode">
             <template v-if="createInfo.nextModelId === 'module'">
-                <create-module v-if="createInfo.visible" slot="content"
+                <create-module v-if="createInfo.visible"
                     :parent-node="createInfo.parentNode"
                     @submit="handleCreateNode"
                     @cancel="handleCancelCreateNode">
                 </create-module>
             </template>
             <template v-else>
-                <create-node v-if="createInfo.visible" slot="content"
+                <create-node v-if="createInfo.visible"
                     :properties="createInfo.properties"
                     :parent-node="createInfo.parentNode"
                     @submit="handleCreateNode"

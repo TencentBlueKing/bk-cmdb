@@ -100,7 +100,7 @@
             :is-show.sync="importInst.show"
             :width="800"
             :title="$t('HostResourcePool[\'批量导入\']')">
-            <bk-tab :active.sync="importInst.active" type="unborder-card" slot="content">
+            <bk-tab :active.sync="importInst.active" type="unborder-card" slot="content" v-if="importInst.show">
                 <bk-tab-panel name="import" :label="$t('HostResourcePool[\'批量导入\']')">
                     <cmdb-import v-if="importInst.show && importInst.active === 'import'"
                         :template-url="importInst.templateUrl"
