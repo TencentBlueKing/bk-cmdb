@@ -369,7 +369,7 @@ func (lgc *Logics) CheckSyncAlive(ctx context.Context) {
 		return
 	}
 
-	blog.V(5).Info("needStartAgain: %v", needStartAgain)
+	blog.V(5).Info("needStartAgain: %v, rid: %s", needStartAgain, lgc.rid)
 
 	for _, item := range needStartAgain {
 		if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStop, item.TaskID).Err(); err != nil {
@@ -712,7 +712,7 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) {
 	}
 
 	if attrConfirm && len(cloudHostAttr) > 0 {
-		blog.V(5).Info("attr chang")
+		blog.V(5).Info("attr chang, rid: %s", lgc.rid)
 
 		for _, host := range cloudHostAttr {
 			resourceConfirm := mapstr.MapStr{}
@@ -757,7 +757,7 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) {
 	}
 
 	cloudHistory.Status = "success"
-	blog.V(3).Info("finish sync")
+	blog.V(3).Info("finish sync, rid: %s", lgc.rid)
 	return
 }
 
@@ -784,7 +784,7 @@ func (lgc *Logics) AddCloudHosts(ctx context.Context, newCloudHost []mapstr.MapS
 		return err
 	}
 
-	blog.V(5).Info("resource confirm add new hosts")
+	blog.V(5).Infof("resource confirm add new hosts, rid: %s", lgc.rid)
 	for index, hostInfo := range newCloudHost {
 		if _, ok := hostInfoMap[int64(index)]; !ok {
 			hostInfoMap[int64(index)] = make(map[string]interface{}, 0)
@@ -979,7 +979,7 @@ func (lgc *Logics) CloudSyncHistory(ctx context.Context, taskID int64, startTime
 	startTimeStr := time.Unix(startTime, 0).Format(common.TimeTransferModel)
 	cloudHistory.StartTime = startTimeStr
 
-	blog.V(3).Info(cloudHistory.TimeConsume)
+	blog.V(3).Info("cloudHistory.TimeConsume: %+v, rid: %s", cloudHistory.TimeConsume, lgc.rid)
 
 	updateData := mapstr.MapStr{}
 	updateTime := time.Now()
