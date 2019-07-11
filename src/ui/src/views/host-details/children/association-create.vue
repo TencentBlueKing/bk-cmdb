@@ -20,7 +20,7 @@
                     @on-value-change="handleValueChange">
                 </cmdb-association-property-filter>
             </div>
-            <bk-button type="primary" class="btn-search fr" @click="search">{{$t('Association["搜索"]')}}</bk-button>
+            <bk-button theme="primary" class="btn-search fr" @click="search">{{$t('Association["搜索"]')}}</bk-button>
         </div>
         <bk-table class="new-association-table"
             v-bkloading="{ isLoading: $loading() }"

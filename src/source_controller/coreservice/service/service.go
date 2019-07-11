@@ -38,6 +38,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/instances"
+	"configcenter/src/source_controller/coreservice/core/label"
 	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/source_controller/coreservice/core/process"
@@ -86,22 +87,18 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		s.language = language
 	}
 
-	var db dal.DB
 	var dbErr error
-	if cfg.Mongo.Transaction == "enable" {
-		blog.Infof("connecting to transaction manager")
-		db, dbErr = remote.NewWithDiscover(engin.ServiceManageInterface.TMServer().GetServers, cfg.Mongo)
-		if dbErr != nil {
-			blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
-			return dbErr
-		}
+	var db dal.RDB
+	if s.cfg.Mongo.Enable == "true" {
+		db, dbErr = local.NewMgo(s.cfg.Mongo.BuildURI(), time.Minute)
 	} else {
-		db, dbErr = local.NewMgo(cfg.Mongo.BuildURI(), time.Minute)
-		if dbErr != nil {
-			blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
-			return dbErr
-		}
+		db, dbErr = remote.NewWithDiscover(s.engin.ServiceManageInterface.TMServer().GetServers)
 	}
+	if dbErr != nil {
+		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
+		return dbErr
+	}
+
 	cache, cacheRrr := dalredis.NewFromConfig(cfg.Redis)
 	if cacheRrr != nil {
 		blog.Errorf("new redis client failed, err: %v", cacheRrr)
@@ -121,6 +118,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		host.New(db, cache, s),
 		auditlog.New(db),
 		process.New(db, s),
+		label.New(db),
 	)
 	return nil
 }

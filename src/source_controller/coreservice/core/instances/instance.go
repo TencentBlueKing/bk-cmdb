@@ -185,24 +185,24 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("SearchModelInstance failed, parse condition failed, inputParam: %+v, err: %+v", inputParam, err)
+		blog.Errorf("SearchModelInstance failed, parse condition failed, inputParam: %+v, err: %+v, rid: %s", inputParam, err, ctx.ReqID)
 		return &metadata.QueryResult{}, err
 	}
 	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
 	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
 	inputParam.Condition = condition.ToMapStr()
 
-	blog.V(9).Infof("search instance with parameter: %+v", inputParam)
+	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, ctx.ReqID)
 	instItems, err := m.searchInstance(ctx, objID, inputParam)
 	if nil != err {
-		blog.Errorf("search instance error [%v]", err)
+		blog.Errorf("search instance error [%v], rid: %s", err, ctx.ReqID)
 		return &metadata.QueryResult{}, err
 	}
 
 	dataResult := &metadata.QueryResult{}
 	dataResult.Count, err = m.countInstance(ctx, objID, inputParam.Condition)
 	if nil != err {
-		blog.Errorf("count instance error [%v]", err)
+		blog.Errorf("count instance error [%v], rid: %s", err, ctx.ReqID)
 		return &metadata.QueryResult{}, err
 	}
 	dataResult.Info = instItems
@@ -254,9 +254,9 @@ func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, obj
 	tableName := common.GetInstTableName(objID)
 	instIDFieldName := common.GetInstIDField(objID)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
-	blog.Errorf("cascade delete model instance get inst error:%v", origins)
+	blog.Errorf("cascade delete model instance get inst error:%v, rid: %s", origins, ctx.ReqID)
 	if nil != err {
-		blog.Errorf("cascade delete model instance get inst error:%v", err)
+		blog.Errorf("cascade delete model instance get inst error:%v, rid: %s", err, ctx.ReqID)
 		return &metadata.DeletedCount{}, err
 	}
 
