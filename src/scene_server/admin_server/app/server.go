@@ -32,8 +32,6 @@ import (
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo"
-
-	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -65,7 +63,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService()),
+		Handler:    service.WebService(),
 		TLS:        backbone.TLSConfig{},
 	}
 
