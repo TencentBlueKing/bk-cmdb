@@ -68,7 +68,7 @@ func (b *business) HasHosts(params types.ContextParams, bizID int64) (bool, erro
 	cond := map[string][]int64{
 		common.BKAppIDField: {bizID},
 	}
-	rsp, err := b.clientSet.HostController().Module().GetModulesHostConfig(context.Background(), params.Header, cond)
+	rsp, err := b.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, cond)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to request the object controller, error info is %s", err.Error())
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
