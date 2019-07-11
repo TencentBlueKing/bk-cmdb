@@ -311,7 +311,7 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
 		meta.TransferHost,
-		meta.MoveHostToModule:
+		meta.MoveBizHostToModule:
 		return Edit, nil
 
 	case meta.MoveHostFromModuleToResPool:
