@@ -191,7 +191,16 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 
-	uniques, err := lgc.CoreAPI.ObjectController().Unique().Search(context.Background(), header, objID)
+	inputParam := metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Offset: 0,
+			Limit:  common.BKNoLimit,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKObjIDField: objID,
+		}),
+	}
+	uniques, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrUnique(context.Background(), header, inputParam)
 	if nil != err {
 		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, err, util.GetHTTPCCRequestID(header))
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
@@ -202,7 +211,7 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 	}
 
 	keyIDs := map[uint64]bool{}
-	for _, unique := range uniques.Data {
+	for _, unique := range uniques.Data.Info {
 		if unique.MustCheck {
 			for _, key := range unique.Keys {
 				keyIDs[key.ID] = true

@@ -64,12 +64,12 @@ func (s *set) hasHost(params types.ContextParams, bizID int64, setIDS []int64) (
 
 	rsp, err := s.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, cond)
 	if nil != err {
-		blog.Errorf("[operation-set] failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-set] failed to request the object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-set]  failed to search the host set configures, error info is %s", rsp.ErrMsg)
+		blog.Errorf("[operation-set]  failed to search the host set configures, error info is %s, rid: %s", rsp.ErrMsg, params.ReqID)
 		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -101,24 +101,24 @@ func (s *set) DeleteSet(params types.ContextParams, obj model.Object, bizID int6
 
 	exists, err := s.hasHost(params, bizID, setIDS)
 	if nil != err {
-		blog.Errorf("[operation-set] failed to check the host, error info is %s", err.Error())
+		blog.Errorf("[operation-set] failed to check the host, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return err
 	}
 
 	if exists {
-		blog.Errorf("[operation-set] the sets(%#v) has some hosts", setIDS)
+		blog.Errorf("[operation-set] the sets(%#v) has some hosts, rid: %s", setIDS, params.ReqID)
 		return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
 	}
 
 	// clear the moudle belong to deleted sets
 	moduleObj, err := s.obj.FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
-		blog.Errorf("[operation-set] failed to find the object , error info is %s", err.Error())
+		blog.Errorf("[operation-set] failed to find the object , error info is %s, rid: %s", err.Error(), params.ReqID)
 		return err
 	}
 
 	if err = s.module.DeleteModule(params, moduleObj, bizID, setIDS, nil); nil != err {
-		blog.Errorf("[operation-set] failed to delete the modules, error info is %s", err.Error())
+		blog.Errorf("[operation-set] failed to delete the modules, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return params.Err.New(common.CCErrTopoSetDeleteFailed, err.Error())
 	}
 
