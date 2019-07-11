@@ -13,31 +13,19 @@
 package service
 
 import (
-	"context"
 	"crypto/md5"
 	"encoding/hex"
-	"net/http"
-
-	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/source_controller/coreservice/core"
 )
 
 // GetSystemFlag get the system define flag
-func (cli *Service) GetSystemFlag(req *restful.Request, resp *restful.Response) {
-
-	language := util.GetLanguage(req.Request.Header)
-	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
-
-	var result interface{}
-	pathParams := req.PathParameters()
-	ownerID := pathParams[common.BKOwnerIDField]
-	flag := pathParams["flag"]
+func (s *coreService) GetSystemFlag(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	ownerID := pathParams(common.BKOwnerIDField)
+	flag := pathParams("flag")
 	cond := make(map[string]interface{})
 
 	h := md5.New()
@@ -45,12 +33,12 @@ func (cli *Service) GetSystemFlag(req *restful.Request, resp *restful.Response) 
 	cipherStr := h.Sum(nil)
 	cond[flag] = hex.EncodeToString(cipherStr) + ownerID
 
-	err := db.Table(common.BKTableNameSystem).Find(cond).One(ctx, &result)
+	var result interface{}
+	err := s.db.Table(common.BKTableNameSystem).Find(cond).One(params.Context, &result)
 	if nil != err {
-		blog.Errorf("get system config error :%v, cond:%#v", err, cond)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
-		return
+		blog.Errorf("get system config error :%v, cond:%#v, rid: %s", err, cond, params.ReqID)
+		return nil, params.Error.CCError(common.CCErrObjectSelectInstFailed)
 	}
 
-	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: result})
+	return result, nil
 }

@@ -10,24 +10,37 @@
  * limitations under the License.
  */
 
-package identifier
+package topographics
 
 import (
 	"context"
 	"net/http"
 
-	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/metadata"
 )
 
-type IdentifierInterface interface {
-	SearchIdentifier(ctx context.Context, h http.Header, objType string, param *metadata.SearchIdentifierParam) (resp *metadata.SearchHostIdentifierResult, err error)
+func (t *meta) SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (resp *metadata.SearchTopoGraphicsResult, err error) {
+	subPath := "/topographics/search"
+	resp = new(metadata.SearchTopoGraphicsResult)
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func NewIdentifierInterface(client rest.ClientInterface) IdentifierInterface {
-	return &identifier{client: client}
-}
-
-type identifier struct {
-	client rest.ClientInterface
+func (t *meta) UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error) {
+	subPath := "/topographics/update"
+	resp = new(metadata.UpdateResult)
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }

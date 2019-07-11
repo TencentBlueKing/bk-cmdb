@@ -115,13 +115,13 @@ func (lgc *Logics) FindHostIDsByAppID(ctx context.Context, input *meta.UpdateHos
 	moduleInfo, err := phpapi.GetDefaultModules(ctx, int(appID))
 
 	if nil != err {
-		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
+		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v, rid: %s", input, err, moduleInfo, lgc.rid)
 		return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoModuleSelectFailed)
 	}
 
 	defaultModuleID, err := moduleInfo.Int64(common.BKModuleIDField)
 	if nil != err {
-		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
+		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v, rid: %s", input, err, moduleInfo, lgc.rid)
 		return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoModuleSelectFailed)
 	}
 	hostIDArr := make([]int64, 0)
@@ -190,13 +190,13 @@ func (lgc *Logics) UpdateHostByAppID(ctx context.Context, input *meta.UpdateHost
 	moduleInfo, err := phpapi.GetDefaultModules(ctx, int(appID))
 
 	if nil != err {
-		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
+		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v, rid: %s", input, err, moduleInfo, lgc.rid)
 		return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoModuleSelectFailed)
 	}
 
 	defaultModuleID, err := moduleInfo.Int64(common.BKModuleIDField)
 	if nil != err {
-		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
+		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v, rid: %s", input, err, moduleInfo, lgc.rid)
 		return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoModuleSelectFailed)
 	}
 	for _, pro := range input.ProxyList {
@@ -533,7 +533,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		blog.V(5).Infof("hostMapData:%+v,rid:%s", hostMapData, lgc.rid)
 		hostID, oK := existIPMap[dstIPV]
 		if true == oK {
-			blog.V(5).Infof("clone update")
+			blog.V(5).Infof("clone update, rid: %s", lgc.rid)
 			hostCondition := map[string]interface{}{
 				common.BKHostInnerIPField: dstIPV,
 				common.BKHostIDField:      hostID,

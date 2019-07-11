@@ -53,29 +53,6 @@ def generate_config_file(
     with open(output + "apiserver.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
-    # auditcontroller.conf
-    auditcontroller_file_template_str = '''
-[mongodb]
-host = $mongo_host
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-port = $mongo_port
-maxOpenConns = 3000
-maxIdleConns = 1000
-mechanism=SCRAM-SHA-1
-
-[auth]
-address = $auth_address
-appCode = $auth_app_code
-appSecret = $auth_app_secret
-enable = $auth_enabled
-'''
-    template = FileTemplate(auditcontroller_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "auditcontroller.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
     # datacollection.conf
     datacollection_file_template_str = '''
 [mongodb]
@@ -220,34 +197,6 @@ enableSync = false
     template = FileTemplate(migrate_file_template_str)
     result = template.substitute(**context)
     with open(output + "migrate.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
-    # objectcontroller.conf
-    objectcontroller_file_template_str = '''
-[mongodb]
-host = $mongo_host
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-port = $mongo_port
-maxOpenConns = 3000
-maxIDleConns = 1000
-mechanism = SCRAM-SHA-1
-
-[redis]
-host = $redis_host
-port = $redis_port
-usr = $redis_user
-pwd = $redis_pass
-database = 0
-port = $redis_port
-maxOpenConns = 3000
-maxIDleConns = 1000
-'''
-
-    template = FileTemplate(objectcontroller_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "objectcontroller.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
     # coreservice.conf
@@ -441,11 +390,9 @@ def main(argv):
     server_ports = {
         "cmdb_adminserver": 60004,
         "cmdb_apiserver": 8080,
-        "cmdb_auditcontroller": 50005,
         "cmdb_datacollection": 60005,
         "cmdb_eventserver": 60009,
         "cmdb_hostserver": 60001,
-        "cmdb_objectcontroller": 50001,
         "cmdb_coreservice": 50009,
         "cmdb_procserver": 60003,
         "cmdb_tmserver": 60008,
