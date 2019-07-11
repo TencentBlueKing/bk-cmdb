@@ -49,23 +49,29 @@ func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
 }
 
-func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
+func (s *Service) WebService() *restful.Container {
+	container := restful.NewContainer()
+
+	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/event/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/event/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/subscribe/search/{ownerID}/{appID}").To(s.Query))
-	ws.Route(ws.POST("/subscribe/ping").To(s.Ping))
-	ws.Route(ws.POST("/subscribe/telnet").To(s.Telnet))
-	ws.Route(ws.POST("/subscribe/{ownerID}/{appID}").To(s.Subscribe))
-	ws.Route(ws.DELETE("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UnSubscribe))
-	ws.Route(ws.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.Rebook))
+	api.Route(api.POST("/subscribe/search/{ownerID}/{appID}").To(s.Query))
+	api.Route(api.POST("/subscribe/ping").To(s.Ping))
+	api.Route(api.POST("/subscribe/telnet").To(s.Telnet))
+	api.Route(api.POST("/subscribe/{ownerID}/{appID}").To(s.Subscribe))
+	api.Route(api.DELETE("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UnSubscribe))
+	api.Route(api.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.Rebook))
 
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
+	container.Add(api)
 
-	return ws
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
