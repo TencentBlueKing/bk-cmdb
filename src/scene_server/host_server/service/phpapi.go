@@ -1015,6 +1015,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	}
 
 	input[common.BKOwnerIDField] = srvData.ownerID
+	cloudName := input["bk_cloud_name"]
 
 	valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDPlat, srvData.header, s.Engine)
 	validErr := valid.ValidMap(input, common.ValidCreate, 0)
@@ -1023,7 +1024,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("CreatePlat error: %v, input:%+v,rid:%s", validErr, input, srvData.rid)
 		if se, ok := validErr.(errors.CCErrorCoder); ok {
 			if se.GetCode() == common.CCErrCommDuplicateItem {
-				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommDuplicateItem, "")})
+				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommDuplicateItem, cloudName)})
 			}
 		}
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)})
