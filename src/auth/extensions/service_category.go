@@ -97,6 +97,15 @@ func (am *AuthManager) MakeResourcesByServiceCategory(header http.Header, action
 	return resources
 }
 
+func (am *AuthManager) MakeResourcesByServiceCategoryIDs(ctx context.Context, header http.Header, action meta.Action, businessID int64, ids ...int64) ([]meta.ResourceAttribute, error) {
+	categories, err := am.collectServiceCategoryByIDs(ctx, header, ids...)
+	if err != nil {
+		return nil, fmt.Errorf("get service categories by id failed, err: %+v", err)
+	}
+	resources := am.MakeResourcesByServiceCategory(header, action, businessID, categories...)
+	return resources, nil
+}
+
 func (am *AuthManager) AuthorizeByServiceCategoryID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
 	if am.Enabled() == false {
 		return nil
