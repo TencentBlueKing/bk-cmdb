@@ -95,6 +95,15 @@ func (am *AuthManager) MakeResourcesByServiceTemplate(header http.Header, action
 	return resources
 }
 
+func (am *AuthManager) MakeResourcesByServiceTemplateIDs(ctx context.Context, header http.Header, action meta.Action, businessID int64, ids ...int64) ([]meta.ResourceAttribute, error) {
+	templates, err := am.collectServiceTemplateByIDs(ctx, header, ids...)
+	if err != nil {
+		return nil, fmt.Errorf("get service templates by id failed, err: %+v", err)
+	}
+	resources := am.MakeResourcesByServiceTemplate(header, action, businessID, templates...)
+	return resources, nil
+}
+
 func (am *AuthManager) AuthorizeByServiceTemplateID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
 	if am.Enabled() == false {
 		return nil

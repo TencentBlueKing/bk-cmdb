@@ -13,7 +13,9 @@
 package service
 
 import (
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -59,6 +61,13 @@ func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
+	if err := ps.AuthManager.RegisterServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, *category); err != nil {
+		blog.Errorf("create service category success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	ctx.RespEntity(category)
 }
 
@@ -81,6 +90,13 @@ func (ps *ProcServer) UpdateServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
+	if err := ps.AuthManager.UpdateRegisteredServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, *category); err != nil {
+		blog.Errorf("update service category success, but update register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	ctx.RespEntity(category)
 }
 
@@ -91,15 +107,32 @@ func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service category, but get business id failed, err: %v", err)
+		return
+	}
+
+	// generate iam resource
+	iamResources, err := ps.AuthManager.MakeResourcesByServiceCategoryIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.Delete, bizID, input.ID)
+	if err != nil {
+		blog.Errorf("make iam resource by service category failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		ctx.RespAutoError(err)
 		return
 	}
 
 	err = ps.CoreAPI.CoreService().Process().DeleteServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input.ID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete service category failed, err: %v", err)
+		return
+	}
+
+	// deregister iam resource
+	if err := ps.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
+		blog.Errorf("delete service category success, but deregister from iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
+		ctx.RespAutoError(err)
 		return
 	}
 
