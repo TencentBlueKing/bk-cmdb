@@ -77,8 +77,8 @@ func (u *userGroup) checkGroupNameRepeat(supplierAccount, groupID, groupName str
 	}
 
 	if 0 < len(rsp.Data) {
-		blog.Warnf("[permission] the group name (%s) repeated, rid: %s", groupName, u.params.ReqID)
-		return u.params.Err.Error(common.CCErrCommDuplicateItem)
+		blog.Warnf("[permission] the group name (%s) repeated， rid: %s", groupName, u.params.ReqID)
+		return u.params.Err.Errorf(common.CCErrCommDuplicateItem, u.userGroup.GroupName)
 	}
 
 	return nil
