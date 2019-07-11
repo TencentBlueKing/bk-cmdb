@@ -150,8 +150,7 @@
                 this.table.pagination.count = templateData.count
                 this.table.allList = templateData.info.map(template => {
                     const result = {
-                        process_template_count: template['process_template_count'],
-                        service_instance_count: template['service_instance_count'],
+                        ...template,
                         ...template['service_template']
                     }
                     const secondaryCategory = this.allSecondaryList.find(classification => classification['id'] === result['service_category_id'])

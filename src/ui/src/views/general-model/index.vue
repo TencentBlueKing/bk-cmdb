@@ -14,7 +14,7 @@
                     </bk-button>
                 </div>
                 <div class="fl" v-tooltip="$t('ModelManagement[\'导出\']')">
-                    <bk-button class="models-button" type="default"
+                    <bk-button class="models-button" theme="default"
                         :disabled="!table.checked.length"
                         @click="handleExport">
                         <i class="icon-cc-derivation"></i>
@@ -47,7 +47,7 @@
                         active: !$isAuthorized($OPERATION.C_INST),
                         auth: [$OPERATION.C_INST]
                     }">
-                    <bk-button type="primary"
+                    <bk-button theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_INST)"
                         @click="handleCreate">
                         {{$t("Common['新建']")}}

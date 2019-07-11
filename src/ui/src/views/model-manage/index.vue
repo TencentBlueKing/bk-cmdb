@@ -50,11 +50,11 @@
             <div class="model-type-options fr">
                 <bk-button class="model-type-button enable"
                     size="small"
-                    :type="modelType === 'enable' ? 'primary' : 'default'"
+                    :theme="modelType === 'enable' ? 'primary' : 'default'"
                     @click="modelType = 'enable'">
                     {{$t('ModelManagement["启用模型"]')}}
                 </bk-button>
-                <bk-tooltip
+                <bk-popover
                     :content="$t('ModelManagement[\'停用模型提示\']')"
                     placenment="bottom"
                     v-if="!disabledClassifications.length">
@@ -62,11 +62,11 @@
                         v-tooltip="$t('ModelManagement[\'停用模型提示\']')"
                         size="small"
                         :disabled="!disabledClassifications.length"
-                        :type="modelType === 'disabled' ? 'primary' : 'default'"
+                        :theme="modelType === 'disabled' ? 'primary' : 'default'"
                         @click="modelType = 'disabled'">
                         {{$t('ModelManagement["停用模型"]')}}
                     </bk-button>
-                </bk-tooltip>
+                </bk-popover>
                 <bk-button class="model-type-button disabled"
                     v-else
                     size="small"

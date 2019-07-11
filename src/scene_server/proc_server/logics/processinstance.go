@@ -78,7 +78,7 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 	}
 
 	if err := ret.Data.Info[0].MarshalJSONInto(process); err != nil {
-		blog.Errorf("GetProcessInstanceWithID fai", err)
+		blog.Errorf("GetProcessInstanceWithID fai, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
@@ -159,7 +159,7 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, process *metadata.Process
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &inputParam)
 	if err != nil {
-		blog.Errorf("CreateProcessInstance failed, http request failed, err: %+v", err)
+		blog.Errorf("CreateProcessInstance failed, http request failed, err: %+v, rid: %s", err, kit.Rid)
 		return 0, errors.CCHttpError
 	}
 
@@ -264,13 +264,13 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 	if metadata.IsAsDefaultValue(t.BindIP.AsDefaultValue) {
 		if (t.BindIP.Value == nil && i.BindIP != nil) ||
 			(t.BindIP.Value != nil && i.BindIP == nil) ||
-			(t.BindIP.Value != nil && i.BindIP != nil && *t.BindIP.Value != *i.BindIP) {
+			(t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP) {
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["bind_ip"].ID,
 				PropertyID:            "bind_ip",
 				PropertyName:          attrMap["bind_ip"].PropertyName,
 				PropertyValue:         i.BindIP,
-				TemplatePropertyValue: t.BindIP,
+				TemplatePropertyValue: t.BindIP.Value.IP(),
 			})
 		}
 	}

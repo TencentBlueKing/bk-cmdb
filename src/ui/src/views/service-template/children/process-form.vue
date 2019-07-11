@@ -50,6 +50,7 @@
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
                                         :options="property.option || []"
+                                        :allow-clear="['bind_ip'].includes(property['bk_property_id'])"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
                                         v-validate="getValidateRules(property)"
@@ -122,6 +123,32 @@
         },
         data () {
             return {
+                ipOption: [
+                    {
+                        'name': '127.0.0.1',
+                        'type': 'text',
+                        'is_default': false,
+                        'id': '1'
+                    },
+                    {
+                        'id': '2',
+                        'name': '0.0.0.0',
+                        'type': 'text',
+                        'is_default': false
+                    }
+                    // {
+                    //     'name': '第一内网IP',
+                    //     'type': 'text',
+                    //     'is_default': false,
+                    //     'id': '3'
+                    // },
+                    // {
+                    //     'name': '第一外网IP',
+                    //     'type': 'text',
+                    //     'is_default': false,
+                    //     'id': '4'
+                    // }
+                ],
                 values: {},
                 refrenceValues: {},
                 scrollbar: false,
@@ -139,6 +166,10 @@
                     filterProperties.map(property => {
                         if (!['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])) {
                             property.isLocking = false
+                        }
+                        if (['bind_ip'].includes(property['bk_property_id'])) {
+                            property.bk_property_type = 'enum'
+                            property.option = this.ipOption
                         }
                     })
                     return filterProperties

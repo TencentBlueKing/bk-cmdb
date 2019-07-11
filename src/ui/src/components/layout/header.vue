@@ -41,7 +41,7 @@
                     </a>
                 </div>
             </div>
-            <bk-tooltip
+            <bk-popover
                 class="admin-tooltips"
                 v-if="hasAdminEntrance && !isAdminView && showTips"
                 :always="true"
@@ -55,7 +55,7 @@
                 <div class="admin" @click="toggleAdminView">
                     {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
                 </div>
-            </bk-tooltip>
+            </bk-popover>
             <div class="admin" v-else-if="hasAdminEntrance" @click="toggleAdminView">
                 {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
             </div>
@@ -277,75 +277,24 @@
             background-color: #f7f7f7;
         }
     }
-</style>
-
-<style lang="scss">
-    .tooltip.custom-query-header-tooltip {
-        .tooltip-inner {
-            margin-top: 5px;
-            background: white;
-            color: $cmdbTextColor;
-            padding: 30px;
-            max-width: 300px;
-            box-shadow: 0px 1px 6px 0px rgba(0, 0, 0, 0.3);
+    .tooltips-main {
+        font-size: 14px;
+        h3 {
+            font-size: 16px;
         }
-        .tooltip-arrow {
-            width: 0;
-            height: 0;
-            margin-top: 5px;
-            border-style: solid;
-            position: absolute;
-            border-color: rgba(0, 0, 0, 0.3);
-            z-index: 2;
-            &:before {
-                content: "";
-                border-width: 0 5px 5px 5px;
-                border-left-color: transparent !important;
-                border-right-color: transparent !important;
-                border-top-color: transparent !important;
-                top: -5px;
-                left: calc(50% - 5px);
-                width: 0;
-                height: 0;
-                margin-top: 5px;
-                border-style: solid;
-                position: absolute;
-                border-color: white;
-                z-index: 1;
+        p {
+            white-space: pre-wrap;
+            padding: 4px 0 6px;
+        }
+        span {
+            font-size: 12px;
+            padding: 4px 10px;
+            background-color: #5d90e4;
+            border-radius: 20px;
+            cursor: pointer;
+            &:hover {
+                background-color: #477ad0;
             }
-        }
-    }
-    .admin-tooltips {
-        .tooltips-main {
-            font-size: 14px;
-            h3 {
-                font-size: 16px;
-            }
-            p {
-                white-space: pre-wrap;
-                padding: 4px 0 6px;
-            }
-            span {
-                font-size: 12px;
-                padding: 4px 10px;
-                background-color: #5d90e4;
-                border-radius: 20px;
-                cursor: pointer;
-                &:hover {
-                    background-color: #477ad0;
-                }
-            }
-        }
-        .bk-tooltip-popper {
-            top: -14px !important;
-            left: -38px !important;
-        }
-        .bk-tooltip-arrow {
-            border-bottom-color: #699DF4 !important;
-        }
-        .bk-tooltip-inner {
-            background-color: #699DF4 !important;
-            padding-top: 12px;
         }
     }
 </style>

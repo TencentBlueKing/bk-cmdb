@@ -42,7 +42,7 @@ func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParam
 		return nil, err
 	}
 	if exists {
-		blog.Errorf("classification (%#v)is duplicated", inputParam.Data)
+		blog.Errorf("classification (%#v)is duplicated, rid: %s", inputParam.Data, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 

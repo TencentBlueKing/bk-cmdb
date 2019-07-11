@@ -1,25 +1,45 @@
 import Vue from 'vue'
-import i18n from '@/i18n'
-import magicbox from './src'
-import magicboxLocal from './src/locale'
-import magicboxEn from './src/locale/lang/en-US'
-import magicboxCn from './src/locale/lang/zh-CN'
-import './update.js'
+import {
+    bkInput,
+    bkDropdownMenu,
+    bkDatePicker,
+    bkTable,
+    bkTableColumn,
+    bkPagination,
+    bkSideslider,
+    bkButton,
+    bkSelect,
+    bkOption,
+    bkOptionGroup,
+    bkTab,
+    bkTabPanel,
+    bkDialog,
+    bkPopover,
+    bkCheckbox,
+    bkMessage,
+    bkLoading
+} from 'bk-magic-vue'
 
-i18n.setLocaleMessage('zh_CN', Object.assign({}, magicboxCn, i18n.messages['zh_CN']))
-i18n.setLocaleMessage('en', Object.assign({}, magicboxEn, i18n.messages.en))
-
-magicboxLocal.i18n((key, value) => i18n.t(key, value))
-
-Vue.use(magicbox)
-
-const Message = Vue.prototype.$bkMessage
-
-let messageInstance = null
+Vue.use(bkButton)
+Vue.use(bkInput)
+Vue.use(bkTab)
+Vue.use(bkTabPanel)
+Vue.use(bkSideslider)
+Vue.use(bkSelect)
+Vue.use(bkOption)
+Vue.use(bkOptionGroup)
+Vue.use(bkTable)
+Vue.use(bkTableColumn)
+Vue.use(bkCheckbox)
+Vue.use(bkPagination)
+Vue.use(bkDatePicker)
+Vue.use(bkDialog)
+Vue.use(bkPopover)
+Vue.use(bkDropdownMenu)
+Vue.use(bkLoading)
 
 export const $error = (message, delay = 3000) => {
-    messageInstance && messageInstance.close()
-    messageInstance = Message({
+    bkMessage({
         message,
         delay,
         theme: 'error'
@@ -27,8 +47,7 @@ export const $error = (message, delay = 3000) => {
 }
 
 export const $success = (message, delay = 3000) => {
-    messageInstance && messageInstance.close()
-    messageInstance = Message({
+    bkMessage({
         message,
         delay,
         theme: 'success'
@@ -36,8 +55,7 @@ export const $success = (message, delay = 3000) => {
 }
 
 export const $info = (message, delay = 3000) => {
-    messageInstance && messageInstance.close()
-    messageInstance = Message({
+    bkMessage({
         message,
         delay,
         theme: 'primary'
@@ -45,8 +63,7 @@ export const $info = (message, delay = 3000) => {
 }
 
 export const $warn = (message, delay = 3000) => {
-    messageInstance && messageInstance.close()
-    messageInstance = Message({
+    bkMessage({
         message,
         delay,
         theme: 'warning',

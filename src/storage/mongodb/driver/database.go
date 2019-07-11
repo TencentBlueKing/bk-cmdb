@@ -14,7 +14,6 @@ package driver
 
 import (
 	"context"
-	"fmt"
 
 	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongodb"
@@ -58,7 +57,7 @@ func (d *database) HasCollection(collName string) (bool, error) {
 		return true, nil
 	}
 
-	return false, fmt.Errorf("not found, %s", collName)
+	return false, nil
 }
 
 func (d *database) DropCollection(collName string) error {
@@ -66,8 +65,8 @@ func (d *database) DropCollection(collName string) error {
 }
 
 func (d *database) CreateEmptyCollection(collName string) error {
-	// TODO: unused
-	return nil
+	ret := d.innerDatabase.RunCommand(context.TODO(), map[string]interface{}{"create": collName})
+	return ret.Err()
 }
 
 func (d *database) GetCollectionNames() ([]string, error) {
