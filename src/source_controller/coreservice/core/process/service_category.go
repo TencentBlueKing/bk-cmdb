@@ -53,8 +53,9 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 	// check name unique in business scope
 	var count uint64
 	filter := map[string]interface{}{
-		common.MetadataField: category.Metadata,
-		"name":               category.Name,
+		common.MetadataField:   category.Metadata,
+		common.BKParentIDField: category.ParentID,
+		"name":                 category.Name,
 	}
 	if count, err = p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).Count(ctx); nil != err {
 		blog.Errorf("CreateServiceCategory failed, mongodb query failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceCategory, filter, err, ctx.ReqID)
@@ -147,6 +148,25 @@ func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categor
 		blog.Errorf("UpdateServiceCategory failed, forbidden update built-in category, code: %d, rid: %s", common.CCErrCommOperateBuiltInItemForbidden, ctx.ReqID)
 		err := ctx.Error.CCError(common.CCErrCommOperateBuiltInItemForbidden)
 		return nil, err
+	}
+
+	// check name unique in business scope
+	uniqueFilter := map[string]interface{}{
+		common.MetadataField:   category.Metadata,
+		common.BKFieldName:     category.Name,
+		common.BKParentIDField: category.ParentID,
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBNE: categoryID,
+		},
+	}
+	count, e := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(uniqueFilter).Count(ctx)
+	if e != nil {
+		blog.Errorf("UpdateServiceCategory failed, mongodb query failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceCategory, uniqueFilter, e, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	if count > 0 {
+		blog.Errorf("UpdateServiceCategory failed, category name duplicated, already exist %d, rid: %s", count, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceServiceCategoryNameDuplicated, category.Name)
 	}
 
 	// do update

@@ -22,6 +22,7 @@ import (
 
 func init() {
 	core.GCommands.SetCommand(types.OPUpdateCode, &update{})
+	core.GCommands.SetCommand(types.OPUpdateUnsetCode, &updateUnset{})
 }
 
 var _ core.SetDBProxy = (*update)(nil)
@@ -43,7 +44,7 @@ func (d *update) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 		reply.Message = err.Error()
 		return reply, err
 	}
-	blog.V(4).Infof("[MONGO OPERATION] %+v", &msg)
+	blog.V(4).Infof("[MONGO OPERATION] %+v, rid:%s", &msg, msg.RequestID)
 
 	var targetCol mongodb.CollectionInterface
 	if nil != ctx.Session {
@@ -53,6 +54,43 @@ func (d *update) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 	}
 
 	_, err := targetCol.UpdateMany(ctx, msg.Selector, msg.DOC, nil)
+	if nil == err {
+		reply.Success = true
+	} else {
+		reply.Message = err.Error()
+	}
+	return reply, err
+}
+
+var _ core.SetDBProxy = (*update)(nil)
+
+type updateUnset struct {
+	dbProxy mongodb.Client
+}
+
+func (d *updateUnset) SetDBProxy(db mongodb.Client) {
+	d.dbProxy = db
+}
+
+func (d *updateUnset) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
+
+	msg := types.OPUpdateOperation{}
+	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
+	if err := decoder.Decode(&msg); nil != err {
+		reply.Message = err.Error()
+		return reply, err
+	}
+	blog.V(4).Infof("[MONGO OPERATION] %+v, rid:%s", &msg, msg.RequestID)
+
+	var targetCol mongodb.CollectionInterface
+	if nil != ctx.Session {
+		targetCol = ctx.Session.Collection(msg.Collection)
+	} else {
+		targetCol = d.dbProxy.Collection(msg.Collection)
+	}
+
+	_, err := targetCol.UpdateUnsetMany(ctx, msg.Selector, msg.DOC, nil)
 	if nil == err {
 		reply.Success = true
 	} else {

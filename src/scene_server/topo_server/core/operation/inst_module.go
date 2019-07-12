@@ -59,7 +59,7 @@ func (m *module) hasHost(params types.ContextParams, bizID int64, moduleIDS []in
 		common.BKModuleIDField: moduleIDS,
 	}
 
-	rsp, err := m.clientSet.HostController().Module().GetModulesHostConfig(context.Background(), params.Header, cond)
+	rsp, err := m.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, cond)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to request the object controller, err: %s", err.Error())
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

@@ -13,15 +13,14 @@
 package operation
 
 import (
-	"configcenter/src/source_controller/coreservice/core/instances"
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal"
 )
 
@@ -31,7 +30,7 @@ type operationManager struct {
 	dbProxy dal.RDB
 }
 
-type M bson.M
+type M mapstr.MapStr
 
 func New(dbProxy dal.RDB) core.StatisticOperation {
 	return &operationManager{

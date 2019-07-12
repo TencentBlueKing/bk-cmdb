@@ -110,7 +110,7 @@ func (s *coreService) CreateConfirm(params core.ContextParams, pathParams, query
 	input.CreateTime = time.Now()
 	id, err := s.core.HostOperation().CreateResourceConfirm(params, input)
 	if err != nil {
-		blog.Errorf("CreateConfirm fail, input: %v error: %v", input, err)
+		blog.Errorf("CreateConfirm fail, input: %v error: %v, rid: %s", input, err, params.ReqID)
 		return nil, err
 	}
 
