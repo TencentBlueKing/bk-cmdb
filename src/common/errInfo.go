@@ -413,6 +413,9 @@ const (
 	CCErrorTopoGetAuthorizedBusinessListFailed = 1101086
 	CCErrTopoArchiveBusinessHasHost            = 1101087
 
+	// full text find err
+	CCErrorTopoFullTextFindErr = 1101085
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
