@@ -900,11 +900,13 @@
         "添加标签键": "Add tag key",
         "标签值": "Tag value",
         "已有标签": "Existing tag",
+        "已有标签提示": "(The list is the selected instance tag collection)",
         "批量添加标签": "Add tags in bulk",
         "批量编辑": "批量编辑",
         "标签": "Tag：",
         "编辑标签": "Edit tag",
-        "请填写完整标签键/值": "Please fill in the full tag key/value"
+        "请填写完整标签键/值": "Please fill in the full tag key/value",
+        "已选择实例": "({num} instances have been selected)"
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
