@@ -187,7 +187,6 @@ type SyncServiceInstanceByTemplateOption struct {
 type ListServiceInstancesWithHostInput struct {
 	Metadata Metadata `json:"metadata"`
 	HostID   int64    `json:"bk_host_id"`
-	WithName bool     `json:"with_name"`
 }
 
 type ListProcessInstancesOption struct {

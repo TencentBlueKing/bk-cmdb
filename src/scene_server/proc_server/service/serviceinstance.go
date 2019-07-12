@@ -1157,8 +1157,7 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d",
-			bizID, input.HostID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d", bizID, input.HostID, err)
 		return
 	}
 
@@ -1317,6 +1316,7 @@ func (ps *ProcServer) ServiceInstanceLabelsAggregation(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	// TODO: how to move aggregation into label service
 	aggregationData := make(map[string][]string)
 	for _, inst := range instanceRst.Info {
 		for key, value := range inst.Labels {
