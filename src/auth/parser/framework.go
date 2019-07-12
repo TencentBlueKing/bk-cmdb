@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-type InstanceIDGetter = func(request *RequestContext) ([]int64, error)
+type InstanceIDGetter = func(request *RequestContext, config AuthConfig) ([]int64, error)
 
 type AuthConfig struct {
 	Name                  string
@@ -72,7 +72,7 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 			}
 			iamResources = append(iamResources, iamResource)
 		} else {
-			ids, err := item.InstanceIDGetter(request)
+			ids, err := item.InstanceIDGetter(request, item)
 			if err != nil {
 				blog.Warnf("get business id in metadata failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
 				return nil, err

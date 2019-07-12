@@ -37,6 +37,14 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:          meta.ProcessServiceInstance,
 		ResourceAction:        meta.Find,
 	}, {
+		Name:                  "findServiceInstanceByHostPattern",
+		Description:           "根据主机服务实例",
+		Pattern:               "/api/v3/findmany/proc/service_instance/with_host",
+		HTTPMethod:            http.MethodPost,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceInstance,
+		ResourceAction:        meta.Find,
+	}, {
 		Name:                  "deleteServiceInstancePattern",
 		Description:           "删除服务实例",
 		Pattern:               "/api/v3/deletemany/proc/service_instance",

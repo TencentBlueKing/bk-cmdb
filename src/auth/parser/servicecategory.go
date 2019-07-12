@@ -17,9 +17,11 @@ import (
 	"net/http"
 
 	"configcenter/src/auth/meta"
+
 	"github.com/tidwall/gjson"
 )
 
+// utility.AddHandler(rest.Action{Verb: , Path: , Handler: ps.UpdateServiceCategory})
 var ServiceCategoryAuthConfigs = []AuthConfig{
 	{
 		Name:                  "findmanyServiceCategoryPattern",
@@ -28,7 +30,8 @@ var ServiceCategoryAuthConfigs = []AuthConfig{
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceCategory,
-		ResourceAction:        meta.FindMany,
+		// authorization should implements in scene server
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:                  "createServiceCategoryPattern",
 		Description:           "创建服务分类",
@@ -39,13 +42,28 @@ var ServiceCategoryAuthConfigs = []AuthConfig{
 		ResourceAction:        meta.Create,
 	}, {
 		Name:                  "deleteServiceCategoryPattern",
+		Description:           "修改服务分类",
+		Pattern:               "/api/v3/update/proc/service_category",
+		HTTPMethod:            http.MethodPut,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceCategory,
+		ResourceAction:        meta.Update,
+		InstanceIDGetter: func(request *RequestContext, config AuthConfig) ([]int64, error) {
+			categoryID := gjson.GetBytes(request.Body, "id").Int()
+			if categoryID <= 0 {
+				return nil, errors.New("invalid category id")
+			}
+			return []int64{categoryID}, nil
+		},
+	}, {
+		Name:                  "deleteServiceCategoryPattern",
 		Description:           "删除服务分类",
 		Pattern:               "/api/v3/delete/proc/service_category",
 		HTTPMethod:            http.MethodDelete,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceCategory,
 		ResourceAction:        meta.Delete,
-		InstanceIDGetter: func(request *RequestContext) ([]int64, error) {
+		InstanceIDGetter: func(request *RequestContext, config AuthConfig) ([]int64, error) {
 			categoryID := gjson.GetBytes(request.Body, "id").Int()
 			if categoryID <= 0 {
 				return nil, errors.New("invalid category id")
