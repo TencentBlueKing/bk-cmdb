@@ -1152,3 +1152,8 @@ type Proc2Module struct {
 	ProcessID       int    `json:"bk_process_id"`
 	SupplierAccount string `json:"bk_supplier_account"`
 }
+
+type LabelAggregationOption struct {
+	Metadata Metadata `json:"metadata"`
+	ModuleID *int64   `json:"bk_module_id" bson:"bk_module_id" field:"bk_module_id"`
+}
