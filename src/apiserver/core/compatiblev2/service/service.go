@@ -150,9 +150,6 @@ func (s *service) WebService() *restful.WebService {
 	ws.Route(ws.POST("Plat/delete").To(s.deletePlats))
 	ws.Route(ws.POST("Plat/add").To(s.createPlats))
 
-	ws.Route(ws.POST("process/getProcessPortByApplicationID").To(s.getProcessPortByApplicationID))
-	ws.Route(ws.POST("process/getProcessPortByIP").To(s.getProcessPortByIP))
-
 	ws.Route(ws.POST("Property/getList").To(s.getObjProperty))
 
 	ws.Route(ws.POST("/Host/getAppOwnerHostList").To(s.getHostListByOwner))

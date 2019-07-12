@@ -14,11 +14,13 @@ package service
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
 
 func (ps *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
+	blog.Debug("here-----------")
 	meta := new(metadata.MetadataWrapper)
 	if err := ctx.DecodeInto(meta); err != nil {
 		ctx.RespAutoError(err)

@@ -116,7 +116,7 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 		}
 	}
 
-	option, err := instances.ParseEnumOption(attribute.Option)
+	option, err := instances.ParseEnumOption(ctx, attribute.Option)
 	if err != nil {
 		blog.Errorf("parse enum option fail, err:%v", err)
 		return nil, err
