@@ -617,23 +617,25 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 			return
 		}
 
-		deleteOption := metadata.DeleteProcessInstanceRelationOption{
-			ServiceInstanceIDs: &[]int64{serviceInstanceID},
-		}
-		err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d, but delete service instance relations failed.", serviceInstanceID)
-			return
-		}
+		if len(relations.Info) > 0 {
+			deleteOption := metadata.DeleteProcessInstanceRelationOption{
+				ServiceInstanceIDs: &[]int64{serviceInstanceID},
+			}
+			err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
+			if err != nil {
+				ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d, but delete service instance relations failed.", serviceInstanceID)
+				return
+			}
 
-		// step2: delete process instance belongs to this service instance.
-		var processIDs []int64
-		for _, r := range relations.Info {
-			processIDs = append(processIDs, r.ProcessID)
-		}
-		if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, processIDs); err != nil {
-			ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d, but delete process instance failed.", serviceInstanceID)
-			return
+			// step2: delete process instance belongs to this service instance.
+			processIDs := make([]int64, 0)
+			for _, r := range relations.Info {
+				processIDs = append(processIDs, r.ProcessID)
+			}
+			if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, processIDs); err != nil {
+				ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d, but delete process instance failed.", serviceInstanceID)
+				return
+			}
 		}
 
 		// step3: delete service instance.
