@@ -70,7 +70,7 @@
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
                 <cmdb-selector
-                    :disabled="relationInfo.ispre || isReadOnly"
+                    :disabled="relationInfo.ispre || isReadOnly || isEdit"
                     :list="usefulRelationList"
                     v-validate="'required'"
                     name="asstId"

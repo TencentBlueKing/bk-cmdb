@@ -57,7 +57,7 @@ func (m *associationModel) createModelAssociation(ctx core.ContextParams, inputP
 	}
 	if exists {
 		blog.Warnf("request(%s): it is failed create a new association, because of the association ID (%s) is exists", ctx.ReqID, inputParam.Spec.AsstKindID)
-		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
+		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.AssociationName)
 	}
 
 	exists, err = m.isExistsAssociationObjectWithAnotherObject(ctx, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
