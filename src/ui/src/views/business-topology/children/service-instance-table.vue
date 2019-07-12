@@ -21,25 +21,21 @@
                     </li>
                 </ul>
             </cmdb-dot-menu>
-            <div class="instance-label clearfix" @click.stop>
+            <div class="instance-label clearfix" @click.stop v-if="labelShowList.length">
                 <div class="label-title fl">
                     <i class="icon-cc-label"></i>
                     <span>{{$t('BusinessTopology["标签"]')}}</span>
                 </div>
                 <div class="label-list fl">
-                    <span class="label-item">env：value</span>
-                    <span class="label-item">env：value</span>
-                    <span class="label-item">env：value</span>
-                    <div class="label-item label-tips" ref="tipsLabelContainer" @mouseenter="handleShowTipsLabel" @mouseleave="handleCloseTipsLabel">
+                    <span class="label-item" :key="index" v-for="(label, index) in labelShowList">{{`${label.key}：${label.value}`}}</span>
+                    <div class="label-item label-tips"
+                        ref="tipsLabelContainer"
+                        v-if="labelTipsList.length"
+                        @mouseenter="handleShowTipsLabel"
+                        @mouseleave="handleCloseTipsLabel">
                         <span>...</span>
                         <div class="tips-label-list" ref="tipsLabel" v-click-outside="handleCloseTipsLabel" v-show="tipsLabel.show">
-                            <span class="label-item">env：value</span>
-                            <span class="label-item">env：value</span>
-                            <span class="label-item">env：value</span>
-                            <span class="label-item">env：value</span>
-                            <span class="label-item">env：value</span>
-                            <span class="label-item">env：value</span>
-                            <span class="label-item">env：value</span>
+                            <span class="label-item" :key="index" v-for="(label, index) in labelTipsList">{{`${label.key}：${label.value}`}}</span>
                         </div>
                     </div>
                 </div>
@@ -101,7 +97,7 @@
                 v-if="editLabel.show"
                 slot="content"
                 ref="instanceLabel"
-                :default-list="[]">
+                :default-list="labelList">
             </cmdb-edit-label>
         </bk-dialog>
     </div>
@@ -175,6 +171,24 @@
                     properties: 'get_service_process_properties',
                     deleteProcess: 'delete_service_process'
                 }
+            },
+            labelList () {
+                const list = []
+                const labels = this.instance.labels
+                labels && Object.keys(labels).forEach(key => {
+                    list.push({
+                        id: this.instance.id,
+                        key: key,
+                        value: labels[key]
+                    })
+                })
+                return list
+            },
+            labelShowList () {
+                return this.labelList.slice(0, 3)
+            },
+            labelTipsList () {
+                return this.labelList.slice(3)
             }
         },
         watch: {
@@ -328,51 +342,48 @@
             },
             async handleSubmitEditLable () {
                 try {
+                    let status = ''
                     const validator = this.$refs.instanceLabel.$validator
                     const list = this.$refs.instanceLabel.list
-                    if (
-                        (!await validator.validateAll() && list.length !== 1)
-                        || (list.length === 1 && !list[0].key && list[0].value)
-                        || (list.length === 1 && list[0].key && !list[0].value)
-                    ) {
-                        this.$bkMessage({
-                            message: this.$t('BusinessTopology["请填写完整标签键/值"]'),
-                            theme: 'warning'
-                        })
-                        const errorId = validator.errors.items[0].id
-                        const focusEl = validator.fields.items.find(field => field.id === errorId)
-                        focusEl && focusEl.el.focus()
+                    if (!await validator.validateAll()) {
                         return
                     }
-                    const removeList = this.$refs.instanceLabel.removeList
-                    const addList = list.filter(label => label.id === -1 && label.key && label.value)
-                    if (removeList.length) {
-                        await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
-                            params: this.$injectMetadata({
-                                instance_ids: [this.instance.id],
-                                keys: removeList
-                            }),
+                    const originList = this.$refs.instanceLabel.originList
+                    const hasChange = JSON.stringify(this.$refs.instanceLabel.list) !== JSON.stringify(originList)
+                    const removeKeysList = this.$refs.instanceLabel.removeKeysList
+                    if (removeKeysList.length) {
+                        status = await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
                             config: {
-                                requestId: 'deleteInstanceLabel'
+                                data: this.$injectMetadata({
+                                    instance_ids: [this.instance.id],
+                                    keys: removeKeysList
+                                }),
+                                requestId: 'deleteInstanceLabel',
+                                transformData: false
                             }
                         })
                     }
-                    if (addList.length) {
+                    if (list.length && hasChange) {
                         const labelSet = {}
-                        addList.forEach(label => {
+                        list.forEach(label => {
                             labelSet[label.key] = label.value
                         })
-                        await this.$store.dispatch('instanceLabel/createInstanceLabel', {
+                        status = await this.$store.dispatch('instanceLabel/createInstanceLabel', {
                             params: this.$injectMetadata({
                                 instance_ids: [this.instance.id],
                                 labels: labelSet
                             }),
                             config: {
-                                requestId: 'createInstanceLabel'
+                                requestId: 'createInstanceLabel',
+                                transformData: false
                             }
                         })
                     }
-                    this.$success('Common["保存成功"]')
+                    if (status && status.bk_error_msg === 'success') {
+                        this.$success(this.$t('Common["保存成功"])'))
+                        this.$parent.filter = ''
+                        this.$parent.getServiceInstances()
+                    }
                     this.handleCloseEditLable()
                 } catch (e) {
                     console.error(e)
