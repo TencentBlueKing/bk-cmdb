@@ -174,7 +174,7 @@ type ProcessInstanceDetail struct {
 
 type ListProcessTemplateWithServiceTemplateInput struct {
 	Metadata            Metadata `json:"metadata"`
-	ProcessTemplatesIDs *[]int64 `json:"process_template_ids"`
+	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
 	ServiceTemplateID   int64    `json:"service_template_id"`
 	Page                BasePage `json:"page" field:"page" bson:"page"`
 }

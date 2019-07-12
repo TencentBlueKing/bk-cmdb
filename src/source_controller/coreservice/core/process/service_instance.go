@@ -245,7 +245,7 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 
 	if option.ServiceInstanceIDs != nil {
 		filter[common.BKFieldID] = map[string]interface{}{
-			common.BKDBIN: *option.ServiceInstanceIDs,
+			common.BKDBIN: option.ServiceInstanceIDs,
 		}
 	}
 
