@@ -30,7 +30,8 @@ func (ps *parseStream) processRelated() *parseStream {
 		ServiceInstance().
 		ServiceTemplate().
 		ServiceCategory().
-		processTemplate()
+		processTemplate().
+		ProcessInstance()
 		// remove process template and process template bound related api
 		// processTemplate()
 		// processTemplateBound()

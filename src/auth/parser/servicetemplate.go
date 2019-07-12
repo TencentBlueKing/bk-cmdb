@@ -14,10 +14,14 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 
 	"github.com/tidwall/gjson"
 )
@@ -26,36 +30,93 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 	{
 		Name:                  "createServiceTemplatePattern",
 		Description:           "创建服务模板",
-		Pattern:               "/process/v3/create/proc/service_template",
+		Pattern:               "/api/v3/create/proc/service_template",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceTemplate,
 		ResourceAction:        meta.Create,
 	}, {
+		Name:                  "updateServiceTemplate",
+		Description:           "更新服务模板",
+		Pattern:               "/api/v3/update/proc/service_template",
+		HTTPMethod:            http.MethodPut,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceTemplate,
+		ResourceAction:        meta.Update,
+		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
+			templateID := gjson.GetBytes(request.Body, common.BKFieldID).Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid service template")
+			}
+			return []int64{templateID}, nil
+		},
+	}, {
+		Name:                  "getServiceTemplate",
+		Description:           "获取服务模板",
+		Regex:                 regexp.MustCompile(`^/api/v3/find/proc/service_template/([0-9]+)$`),
+		HTTPMethod:            http.MethodGet,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceTemplate,
+		ResourceAction:        meta.Find,
+		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
+			subMatch := config.Regex.FindStringSubmatch(request.URI)
+			for _, subStr := range subMatch {
+				id, err := strconv.ParseInt(subStr, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("parse template id to int64 failed, err: %s", err)
+				}
+				return []int64{id}, nil
+			}
+			blog.Errorf("unexpected error: this code shouldn't be reached, rid: %s", request.Rid)
+			return nil, errors.New("unexpected error: this code shouldn't be reached")
+		},
+	}, {
+		Name:                  "getServiceTemplateDetail",
+		Description:           "获取服务模板详情",
+		Regex:                 regexp.MustCompile(`^/api/v3/find/proc/service_template/([0-9]+)/detail$`),
+		HTTPMethod:            http.MethodGet,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceTemplate,
+		ResourceAction:        meta.Find,
+		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
+			subMatch := config.Regex.FindStringSubmatch(request.URI)
+			for _, subStr := range subMatch {
+				id, err := strconv.ParseInt(subStr, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("parse template id to int64 failed, err: %s", err)
+				}
+				return []int64{id}, nil
+			}
+			blog.Errorf("unexpected error: this code shouldn't be reached, rid: %s", request.Rid)
+			return nil, errors.New("unexpected error: this code shouldn't be reached")
+		},
+	}, {
 		Name:                  "listServiceTemplatePattern",
 		Description:           "查询服务模板",
-		Pattern:               "/process/v3/findmany/proc/service_template",
+		Pattern:               "/api/v3/findmany/proc/service_template",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceTemplate,
-		ResourceAction:        meta.FindMany,
+		// authorization should implements in scene server
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:                  "listServiceTemplateDetailPattern",
 		Description:           "查询服务模板详情",
-		Pattern:               "/process/v3/findmany/proc/service_template/with_detail",
+		Pattern:               "/api/v3/findmany/proc/service_template/with_detail",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceTemplate,
-		ResourceAction:        meta.FindMany,
+		// authorization should implements in scene server
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:                  "deleteServiceTemplatePattern",
 		Description:           "删除服务模板",
-		Pattern:               "/process/v3/delete/proc/service_template",
+		Pattern:               "/api/v3/delete/proc/service_template",
 		HTTPMethod:            http.MethodDelete,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceTemplate,
 		ResourceAction:        meta.Delete,
-		InstanceIDGetter: func(request *RequestContext) (int64s []int64, e error) {
+		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
 			templateID := gjson.GetBytes(request.Body, common.BKServiceTemplateIDField).Int()
 			if templateID <= 0 {
 				return nil, errors.New("invalid service template")

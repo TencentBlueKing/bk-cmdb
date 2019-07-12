@@ -14,11 +14,14 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 
 	"github.com/tidwall/gjson"
 )
@@ -27,7 +30,7 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 	{
 		Name:                  "createProcessTemplateBatchPattern",
 		Description:           "创建进程模板",
-		Pattern:               "/process/v3/createmany/proc/proc_template/for_service_template",
+		Pattern:               "/api/v3/createmany/proc/proc_template",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessTemplate,
@@ -35,12 +38,12 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 	}, {
 		Name:                  "updateProcessTemplatePattern",
 		Description:           "更新进程模板",
-		Pattern:               "/process/v3/update/proc/proc_template/for_service_template",
+		Pattern:               "/api/v3/update/proc/proc_template",
 		HTTPMethod:            http.MethodPut,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessTemplate,
 		ResourceAction:        meta.Update,
-		InstanceIDGetter: func(request *RequestContext) (int64s []int64, e error) {
+		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
 			procTemplateID := gjson.GetBytes(request.Body, common.BKProcessTemplateIDField).Int()
 			if procTemplateID <= 0 {
 				return nil, errors.New("invalid process template id")
@@ -50,21 +53,13 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 	}, {
 		Name:                  "deleteProcessTemplateBatchPattern",
 		Description:           "删除进程模板",
-		Pattern:               "/process/v3/deletemany/proc/proc_template/for_service_template",
+		Pattern:               "/api/v3/deletemany/proc/proc_template",
 		HTTPMethod:            http.MethodDelete,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessTemplate,
 		ResourceAction:        meta.Delete,
-	}, {
-		Name:                  "findProcessTemplateBatchPattern",
-		Description:           "查找进程模板",
-		Pattern:               "/process/v3/findmany/proc/proc_template",
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessTemplate,
-		ResourceAction:        meta.Find,
-		InstanceIDGetter: func(request *RequestContext) (int64s []int64, e error) {
-			procTemplateIDs := gjson.GetBytes(request.Body, "process_template_ids").Array()
+		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
+			procTemplateIDs := gjson.GetBytes(request.Body, "process_templates").Array()
 			ids := make([]int64, 0)
 			for _, procTemplateID := range procTemplateIDs {
 				id := procTemplateID.Int()
@@ -76,19 +71,33 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 			return ids, nil
 		},
 	}, {
+		Name:                  "findProcessTemplateBatchPattern",
+		Description:           "查找进程模板",
+		Pattern:               "/api/v3/findmany/proc/proc_template",
+		HTTPMethod:            http.MethodPost,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessTemplate,
+		// authorization should implements in scene server
+		ResourceAction: meta.SkipAction,
+	}, {
 		Name:                  "findProcessTemplateRegexp",
 		Description:           "获取进程模板",
-		Regex:                 regexp.MustCompile(`/process/v3/find/proc/proc_template/id/[0-9]+/?$`),
+		Regex:                 regexp.MustCompile(`/api/v3/find/proc/proc_template/id/([0-9]+)/?$`),
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessTemplate,
 		ResourceAction:        meta.Find,
-		InstanceIDGetter: func(request *RequestContext) (int64s []int64, e error) {
-			procTemplateID := gjson.GetBytes(request.Body, "id").Int()
-			if procTemplateID <= 0 {
-				return nil, errors.New("invalid process template id")
+		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
+			subMatch := config.Regex.FindStringSubmatch(request.URI)
+			for _, subStr := range subMatch {
+				id, err := strconv.ParseInt(subStr, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("parse template id to int64 failed, err: %s", err)
+				}
+				return []int64{id}, nil
 			}
-			return []int64{procTemplateID}, nil
+			blog.Errorf("unexpected error: this code shouldn't be reached, rid: %s", request.Rid)
+			return nil, errors.New("unexpected error: this code shouldn't be reached")
 		},
 	},
 }
