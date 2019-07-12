@@ -13,7 +13,6 @@
         </div>
         <bk-table
             v-bkloading="{ isLoading: $loading('getUserOperationLog') }"
-            :header-border="true"
             :data="list"
             :pagination="pagination"
             :max-height="$APP.height - 220"

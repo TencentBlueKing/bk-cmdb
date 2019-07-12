@@ -11,8 +11,7 @@
             </div>
         </div>
         <bk-table
-            :data="processFlattenList"
-            :header-border="true">
+            :data="processFlattenList">
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"

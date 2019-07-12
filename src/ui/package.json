@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "axios": "0.18.0",
-    "bk-magic-vue": "^2.0.8-beta.9",
+    "bk-magic-vue": "^2.0.8-beta.10",
     "date-fns": "1.29.0",
     "echarts": "4.1.0",
     "js-cookie": "2.2.0",
