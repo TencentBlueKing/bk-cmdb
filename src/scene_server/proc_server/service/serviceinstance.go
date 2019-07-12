@@ -1292,3 +1292,42 @@ func (ps *ProcServer) ServiceInstanceRemoveLabels(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(nil)
 }
+
+// ServiceInstanceLabelsAggregation aggregation instance's labels
+func (ps *ProcServer) ServiceInstanceLabelsAggregation(ctx *rest.Contexts) {
+	option := metadata.LabelAggregationOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := option.Metadata.ParseBizID()
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	listOption := &metadata.ListServiceInstanceOption{
+		BusinessID: bizID,
+	}
+	if option.ModuleID != nil {
+		listOption.ModuleID = *option.ModuleID
+	}
+	instanceRst, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	aggregationData := make(map[string][]string)
+	for _, inst := range instanceRst.Info {
+		for key, value := range inst.Labels {
+			if _, exist := aggregationData[key]; exist == false {
+				aggregationData[key] = make([]string, 0)
+			}
+			aggregationData[key] = append(aggregationData[key], value)
+		}
+	}
+	for key := range aggregationData {
+		aggregationData[key] = util.StrArrayUnique(aggregationData[key])
+	}
+	ctx.RespEntity(aggregationData)
+}
