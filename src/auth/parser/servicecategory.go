@@ -15,6 +15,7 @@ package parser
 import (
 	"errors"
 	"net/http"
+	"regexp"
 
 	"configcenter/src/auth/meta"
 
@@ -48,7 +49,7 @@ var ServiceCategoryAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceCategory,
 		ResourceAction:        meta.Update,
-		InstanceIDGetter: func(request *RequestContext, config AuthConfig) ([]int64, error) {
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
 			categoryID := gjson.GetBytes(request.Body, "id").Int()
 			if categoryID <= 0 {
 				return nil, errors.New("invalid category id")
@@ -63,7 +64,7 @@ var ServiceCategoryAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceCategory,
 		ResourceAction:        meta.Delete,
-		InstanceIDGetter: func(request *RequestContext, config AuthConfig) ([]int64, error) {
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
 			categoryID := gjson.GetBytes(request.Body, "id").Int()
 			if categoryID <= 0 {
 				return nil, errors.New("invalid category id")

@@ -43,7 +43,7 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceTemplate,
 		ResourceAction:        meta.Update,
-		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			templateID := gjson.GetBytes(request.Body, common.BKFieldID).Int()
 			if templateID <= 0 {
 				return nil, errors.New("invalid service template")
@@ -58,8 +58,8 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceTemplate,
 		ResourceAction:        meta.Find,
-		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
-			subMatch := config.Regex.FindStringSubmatch(request.URI)
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			subMatch := re.FindStringSubmatch(request.URI)
 			for _, subStr := range subMatch {
 				id, err := strconv.ParseInt(subStr, 10, 64)
 				if err != nil {
@@ -78,8 +78,8 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceTemplate,
 		ResourceAction:        meta.Find,
-		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
-			subMatch := config.Regex.FindStringSubmatch(request.URI)
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			subMatch := re.FindStringSubmatch(request.URI)
 			for _, subStr := range subMatch {
 				id, err := strconv.ParseInt(subStr, 10, 64)
 				if err != nil {
@@ -116,7 +116,7 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceTemplate,
 		ResourceAction:        meta.Delete,
-		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			templateID := gjson.GetBytes(request.Body, common.BKServiceTemplateIDField).Int()
 			if templateID <= 0 {
 				return nil, errors.New("invalid service template")

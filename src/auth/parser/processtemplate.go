@@ -43,7 +43,7 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessTemplate,
 		ResourceAction:        meta.Update,
-		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			procTemplateID := gjson.GetBytes(request.Body, common.BKProcessTemplateIDField).Int()
 			if procTemplateID <= 0 {
 				return nil, errors.New("invalid process template id")
@@ -58,7 +58,7 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessTemplate,
 		ResourceAction:        meta.Delete,
-		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			procTemplateIDs := gjson.GetBytes(request.Body, "process_templates").Array()
 			ids := make([]int64, 0)
 			for _, procTemplateID := range procTemplateIDs {
@@ -87,8 +87,8 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessTemplate,
 		ResourceAction:        meta.Find,
-		InstanceIDGetter: func(request *RequestContext, config AuthConfig) (int64s []int64, e error) {
-			subMatch := config.Regex.FindStringSubmatch(request.URI)
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			subMatch := re.FindStringSubmatch(request.URI)
 			for _, subStr := range subMatch {
 				id, err := strconv.ParseInt(subStr, 10, 64)
 				if err != nil {
