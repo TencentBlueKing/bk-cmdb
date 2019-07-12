@@ -232,10 +232,10 @@ type TransferHostsCrossBusinessRequest struct {
 
 // HostModuleRelationRequest gethost module relation request parameter
 type HostModuleRelationRequest struct {
-	ApplicationID int64   `json:"bk_biz_id"`
-	SetIDArr      []int64 `json:"bk_set_ids"`
-	HostIDArr     []int64 `json:"bk_host_ids"`
-	ModuleIDArr   []int64 `json:"bk_module_ids"`
+	ApplicationID int64   `json:"bk_biz_id" bson:"bk_biz_id" field:"bk_biz_id"`
+	SetIDArr      []int64 `json:"bk_set_ids" bson:"bk_set_ids" field:"bk_set_ids"`
+	HostIDArr     []int64 `json:"bk_host_ids" bson:"bk_host_ids" field:"bk_host_ids"`
+	ModuleIDArr   []int64 `json:"bk_module_ids" bson:"bk_module_ids" field:"bk_module_ids"`
 }
 
 // Empty empty struct
