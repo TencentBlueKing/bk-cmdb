@@ -411,6 +411,10 @@ const (
 	// mainline's object unique can not be updated, deleted or create new rules.
 	CCErrorTopoMainlineObjectCanNotBeChanged   = 1101085
 	CCErrorTopoGetAuthorizedBusinessListFailed = 1101086
+	CCErrTopoArchiveBusinessHasHost            = 1101087
+
+	// full text find err
+	CCErrorTopoFullTextFindErr = 1101085
 
 	// object controller 1102XXX
 

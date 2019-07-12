@@ -58,7 +58,7 @@ func (a *unique) Create(params types.ContextParams, objectID string, request *me
 	}
 	resp, err := a.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), params.Header, objectID, metadata.CreateModelAttrUnique{Data: unique})
 	if err != nil {
-		blog.Errorf("[UniqueOperation] create for %s, %#v failed %v", objectID, request, err)
+		blog.Errorf("[UniqueOperation] create for %s, %#v failed %v, rid: %s", objectID, request, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrTopoObjectUniqueCreateFailed)
 	}
 	if !resp.Result {
@@ -74,7 +74,7 @@ func (a *unique) Update(params types.ContextParams, objectID string, id uint64, 
 	}
 	resp, err := a.clientSet.CoreService().Model().UpdateModelAttrUnique(context.Background(), params.Header, objectID, id, update)
 	if err != nil {
-		blog.Errorf("[UniqueOperation] update for %s, %d, %#v failed %v", objectID, id, request, err)
+		blog.Errorf("[UniqueOperation] update for %s, %d, %#v failed %v, rid: %s", objectID, id, request, err, params.ReqID)
 		return params.Err.Error(common.CCErrTopoObjectUniqueUpdateFailed)
 	}
 	if !resp.Result {
@@ -83,7 +83,7 @@ func (a *unique) Update(params types.ContextParams, objectID string, id uint64, 
 
 	// auth: update register to iam
 	if err := a.authManager.UpdateRegisteredModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
-		blog.V(2).Infof("update unique %d for model %s failed, authorization failed, err: %+v", id, objectID, err)
+		blog.V(2).Infof("update unique %d for model %s failed, authorization failed, err: %+v, rid: %s", id, objectID, err, params.ReqID)
 		return err
 	}
 	return nil
@@ -96,7 +96,7 @@ func (a *unique) Delete(params types.ContextParams, objectID string, id uint64) 
 	}
 	resp, err := a.clientSet.CoreService().Model().DeleteModelAttrUnique(context.Background(), params.Header, objectID, id, metadata.DeleteModelAttrUnique{Metadata: meta})
 	if err != nil {
-		blog.Errorf("[UniqueOperation] delete for %s, %d failed %v", objectID, id, err)
+		blog.Errorf("[UniqueOperation] delete for %s, %d failed %v, rid: %s", objectID, id, err, params.ReqID)
 		return params.Err.Error(common.CCErrTopoObjectUniqueDeleteFailed)
 	}
 	if !resp.Result {
@@ -104,7 +104,7 @@ func (a *unique) Delete(params types.ContextParams, objectID string, id uint64) 
 	}
 	// auth: deregister to iam
 	if err := a.authManager.DeregisterModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
-		blog.V(2).Infof("deregister unique %d for model %s failed, authorization failed, err: %+v", id, objectID, err)
+		blog.V(2).Infof("deregister unique %d for model %s failed, authorization failed, err: %+v, rid: %s", id, objectID, err, params.ReqID)
 		return err
 	}
 	return nil
@@ -124,7 +124,7 @@ func (a *unique) Search(params types.ContextParams, objectID string) (objectUniq
 	}
 	resp, err := a.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), params.Header, cond)
 	if err != nil {
-		blog.Errorf("[UniqueOperation] search for %s, failed %v", objectID, err)
+		blog.Errorf("[UniqueOperation] search for %s, failed %v, rid: %s", objectID, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrTopoObjectUniqueSearchFailed)
 	}
 	if !resp.Result {

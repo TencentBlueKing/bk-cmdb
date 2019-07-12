@@ -91,14 +91,15 @@ func (s *Service) Index(c *gin.Context) {
 	}
 
 	c.HTML(200, "index.html", gin.H{
-		"site":        s.Config.Site.DomainUrl,
-		"version":     s.Config.Version,
-		"ccversion":   version.CCVersion,
-		"authscheme":  s.Config.Site.AuthScheme,
-		"role":        role,
-		"curl":        s.Config.LoginUrl,
-		"userName":    userName,
-		"agentAppUrl": s.Config.AgentAppUrl,
-		"authCenter":  s.Config.AuthCenter,
+		"site":           s.Config.Site.DomainUrl,
+		"version":        s.Config.Version,
+		"ccversion":      version.CCVersion,
+		"authscheme":     s.Config.Site.AuthScheme,
+		"fullTextSearch": s.Config.Site.FullTextSearch,
+		"role":           role,
+		"curl":           s.Config.LoginUrl,
+		"userName":       userName,
+		"agentAppUrl":    s.Config.AgentAppUrl,
+		"authCenter":     s.Config.AuthCenter,
 	})
 }
