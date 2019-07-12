@@ -106,9 +106,9 @@
             @cancel="handleCloseBatchLable">
             <div class="reset-header" slot="header">
                 {{$t("BusinessTopology['批量编辑']")}}
-                <span>{{$t("BusinessTopology['（已选择19个实例）']")}}</span>
+                <span>{{$tc("BusinessTopology['已选择实例']", checked.length, { num: checked.length })}}</span>
             </div>
-            <batch-edit-label ref="batchLabel" slot="content">
+            <batch-edit-label ref="batchLabel" slot="content" :exisiting-label="editLabel.list">
                 <cmdb-edit-label ref="instanceLabel" slot="batch-add-label" class="edit-label"></cmdb-edit-label>
             </batch-edit-label>
         </bk-dialog>
@@ -152,7 +152,8 @@
                     unwatch: null
                 },
                 editLabel: {
-                    show: false
+                    show: false,
+                    list: []
                 }
             }
         },
@@ -507,55 +508,68 @@
             },
             handleShowBatchLabel () {
                 this.editLabel.show = true
+                const labelList = []
+                for (const instance of this.checked) {
+                    const labels = instance.labels
+                    labels && Object.keys(labels).forEach(key => {
+                        labelList.push({
+                            instanceId: instance.id,
+                            key: key,
+                            value: labels[key]
+                        })
+                    })
+                }
+                this.editLabel.list = labelList
             },
             async handleSubmitBatchLabel () {
                 try {
+                    let status = ''
                     const validator = this.$refs.instanceLabel.$validator
                     const list = this.$refs.instanceLabel.list
-                    if (
-                        (!await validator.validateAll() && list.length !== 1)
-                        || (list.length === 1 && !list[0].key && list[0].value)
-                        || (list.length === 1 && list[0].key && !list[0].value)
-                    ) {
-                        this.$bkMessage({
-                            message: this.$t('BusinessTopology["请填写完整标签键/值"]'),
-                            theme: 'warning'
-                        })
-                        const errorId = validator.errors.items[0].id
-                        const focusEl = validator.fields.items.find(field => field.id === errorId)
-                        focusEl && focusEl.el.focus()
+                    if (!await validator.validateAll()) {
                         return
                     }
-                    const serviceInstanceIds = this.checked.map(instance => instance.id)
-                    const removeList = this.$refs.instanceLabel.removeList
-                    const addList = list.filter(label => label.id === -1 && label.key && label.value)
+                    const removeList = this.$refs.batchLabel.removeList
+                    const removeKeys = []
+                    const instanceIds = []
+                    removeList.forEach(label => {
+                        removeKeys.push(label.key)
+                        instanceIds.push(label.instanceId)
+                    })
                     if (removeList.length) {
-                        await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
-                            params: this.$injectMetadata({
-                                instance_ids: [serviceInstanceIds],
-                                keys: removeList
-                            }),
+                        status = await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
                             config: {
-                                requestId: 'deleteInstanceLabel'
+                                data: this.$injectMetadata({
+                                    instance_ids: instanceIds,
+                                    keys: removeKeys
+                                }),
+                                requestId: 'deleteInstanceLabel',
+                                transformData: false
                             }
                         })
                     }
-                    if (addList.length) {
+                    if (list.length) {
+                        const serviceInstanceIds = this.checked.map(instance => instance.id)
                         const labelSet = {}
-                        addList.forEach(label => {
+                        list.forEach(label => {
                             labelSet[label.key] = label.value
                         })
-                        await this.$store.dispatch('instanceLabel/createInstanceLabel', {
+                        status = await this.$store.dispatch('instanceLabel/createInstanceLabel', {
                             params: this.$injectMetadata({
-                                instance_ids: [serviceInstanceIds],
+                                instance_ids: serviceInstanceIds,
                                 labels: labelSet
                             }),
                             config: {
-                                requestId: 'createInstanceLabel'
+                                requestId: 'createInstanceLabel',
+                                transformData: false
                             }
                         })
                     }
-                    this.$success('Common["保存成功"]')
+                    if (status && status.bk_error_msg === 'success') {
+                        this.$success(this.$t('Common["保存成功"])'))
+                        this.filter = ''
+                        this.getServiceInstances()
+                    }
                     this.handleCloseBatchLable()
                 } catch (e) {
                     console.error(e)
@@ -563,6 +577,7 @@
             },
             handleCloseBatchLable () {
                 this.editLabel.show = false
+                this.editLabel.list = []
             }
         }
     }

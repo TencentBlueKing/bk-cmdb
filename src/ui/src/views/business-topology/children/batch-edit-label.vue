@@ -3,48 +3,12 @@
         <div class="exisiting-label">
             <div class="title">
                 {{$t("BusinessTopology['已有标签']")}}
-                <span>{{$t("BusinessTopology['（列表为所选实例标签集合）']")}}</span>
+                <span>{{$t("BusinessTopology['已有标签提示']")}}</span>
             </div>
             <div class="label-set">
-                <span class="label-item">
-                    数据库：mysql
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                </span>
-                <span class="label-item">
-                    数据库：mysql
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                </span>
-                <span class="label-item">
-                    数据库：mysql
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                </span>
-                <span class="label-item">
-                    数据库：mysql
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                </span>
-                <span class="label-item">
-                    数据库：mysql
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                </span>
-                <span class="label-item">
-                    数据库：mysql
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                </span>
-                <span class="label-item">
-                    数据库：mysql
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                </span>
-                <span class="label-item">
-                    数据库：mysql
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                </span>
-                <span class="label-item">
-                    数据库：mysql
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                </span>
-                <span class="label-item">
-                    数据库：mysql
-                    <i class="bk-icon icon-close-circle-shape"></i>
+                <span class="label-item" :key="index" v-for="(label, index) in localExisitingLabel">
+                    {{`${label.key}：${label.value}`}}
+                    <i class="bk-icon icon-close-circle-shape" @click="handleRemove(index)"></i>
                 </span>
             </div>
         </div>
@@ -65,7 +29,19 @@
         },
         data () {
             return {
-                localExisitingLabel: this.exisitingLabel
+                localExisitingLabel: [],
+                removeList: []
+            }
+        },
+        watch: {
+            exisitingLabel (list) {
+                this.localExisitingLabel = list
+            }
+        },
+        methods: {
+            handleRemove (index) {
+                this.removeList.push(this.localExisitingLabel[index])
+                this.localExisitingLabel.splice(index, 1)
             }
         }
     }
@@ -102,8 +78,8 @@
                 border: 1px solid #c4c6cc;
                 .label-item {
                     display: inline-block;
-                    height: 24px;
-                    line-height: 24px;
+                    height: 22px;
+                    line-height: 20px;
                     font-size: 12px;
                     padding: 0 7px;
                     margin: 0 10px 10px 0;
