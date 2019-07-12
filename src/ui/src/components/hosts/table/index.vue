@@ -73,7 +73,6 @@
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
             :pagination="table.pagination"
-            :header-border="true"
             :max-height="$APP.height - 150"
             @selection-change="handleSelectionChange"
             @row-click="handleRowClick"

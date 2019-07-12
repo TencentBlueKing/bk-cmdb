@@ -21,8 +21,7 @@
                 :max-height="$APP.height - 300"
                 :height="height"
                 :row-border="true"
-                :col-border="true"
-                :header-border="true">
+                :col-border="true">
                 <bk-table-column prop="bk_property_name"></bk-table-column>
                 <bk-table-column v-if="details.op_type !== 1"
                     prop="pre_data"
