@@ -98,6 +98,11 @@ const customRules = {
         validate: (value) => {
             return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[-_:]){0,256}$/.test(value)
         }
+    },
+    instanceTag: {
+        validate: value => {
+            return /^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
+        }
     }
 }
 
@@ -125,7 +130,8 @@ const dictionary = {
             dayFormat: () => '请输入00:00-23:59之间的时间',
             namedCharacter: () => '格式不正确，特殊符号仅支持(:_-)',
             min_value: () => '该值小于最小值',
-            max_value: () => '该值大于最大值'
+            max_value: () => '该值大于最大值',
+            instanceTag: () => '请输入正确的内容'
         },
         custom: {
             asst: {
@@ -156,7 +162,8 @@ const dictionary = {
             dayFormat: () => 'Please enter the time between 00:00-23:59',
             namedCharacter: () => 'Special symbols only support(:_-)',
             min_value: () => 'This value is less than the minimum',
-            max_value: () => 'This value is greater than the maximum'
+            max_value: () => 'This value is greater than the maximum',
+            instanceTag: () => 'Please enter the correct content'
         },
         custom: {
             asst: {
