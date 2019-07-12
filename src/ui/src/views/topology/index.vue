@@ -55,9 +55,9 @@
                     </bk-button>
                     <cmdb-hosts-table class="topo-table" ref="topoTable"
                         delete-auth=""
-                        :save-auth="OPERATION.U_HOST"
-                        :edit-auth="OPERATION.U_HOST"
-                        :transfer-resource-auth="OPERATION.HOST_TO_RESOURCE"
+                        :save-auth="$OPERATION.U_HOST"
+                        :edit-auth="$OPERATION.U_HOST"
+                        :transfer-resource-auth="$OPERATION.HOST_TO_RESOURCE"
                         :columns-config-key="columnsConfigKey"
                         :columns-config-properties="columnsConfigProperties"
                         :quick-search="true"
@@ -107,7 +107,6 @@
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbTopoNodeProcess from './children/_node-process'
     import treeNodeCreate from './children/_node-create.vue'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbHostsTable,
@@ -116,7 +115,6 @@
         },
         data () {
             return {
-                OPERATION,
                 properties: {
                     biz: [],
                     host: [],

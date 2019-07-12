@@ -516,6 +516,7 @@
                         })
                         this.instance.service_template_id = null
                         this.instance.__template_name__ = '--'
+                        this.disabledProperties = []
                     }
                 })
             }

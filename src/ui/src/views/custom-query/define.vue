@@ -23,7 +23,7 @@
                 </label>
                 <div v-cursor="{
                     active: !editable,
-                    auth: [OPERATION.U_CUSTOM_QUERY]
+                    auth: [$OPERATION.U_CUSTOM_QUERY]
                 }">
                     <input type="text" class="cmdb-form-input"
                         v-model.trim="name"
@@ -41,7 +41,7 @@
                     <div class="text-content"
                         v-cursor="{
                             active: !editable,
-                            auth: [OPERATION.U_CUSTOM_QUERY]
+                            auth: [$OPERATION.U_CUSTOM_QUERY]
                         }"
                         :class="{
                             open: attribute.isShow,
@@ -75,7 +75,7 @@
                     <div class="filter-content clearfix" :class="{ disabled: !editable }"
                         v-cursor="{
                             active: !editable,
-                            auth: [OPERATION.U_CUSTOM_QUERY]
+                            auth: [$OPERATION.U_CUSTOM_QUERY]
                         }">
                         <filter-field-operator class="filter-field-operator fl"
                             v-if="!['date', 'time'].includes(property.propertyType)"
@@ -116,7 +116,7 @@
             <div class="userapi-new">
                 <div v-cursor="{
                     active: !editable,
-                    auth: [OPERATION.U_CUSTOM_QUERY]
+                    auth: [$OPERATION.U_CUSTOM_QUERY]
                 }">
                     <button class="userapi-new-btn"
                         :disabled="!editable"
@@ -146,7 +146,7 @@
                 <span class="inline-block-middle"
                     v-cursor="{
                         active: !editable,
-                        auth: [OPERATION.U_CUSTOM_QUERY]
+                        auth: [$OPERATION.U_CUSTOM_QUERY]
                     }">
                     <bk-button type="primary" class="userapi-btn"
                         v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
@@ -162,7 +162,7 @@
                 <span class="inline-block-middle"
                     v-cursor="{
                         active: !editable,
-                        auth: [OPERATION.U_CUSTOM_QUERY]
+                        auth: [$OPERATION.U_CUSTOM_QUERY]
                     }">
                     <bk-button type="danger" class="userapi-btn button-delete"
                         v-if="type === 'update'"
@@ -190,7 +190,6 @@
     import { mapActions, mapGetters } from 'vuex'
     import filterFieldOperator from '@/components/hosts/filter/_filter-field-operator'
     import vPreview from './preview'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             filterFieldOperator,
@@ -210,7 +209,6 @@
         },
         data () {
             return {
-                OPERATION,
                 name: '',
                 attribute: {
                     list: [],
@@ -283,7 +281,7 @@
             ]),
             editable () {
                 if (this.type === 'update') {
-                    return this.$isAuthorized(OPERATION.U_CUSTOM_QUERY)
+                    return this.$isAuthorized(this.$OPERATION.U_CUSTOM_QUERY)
                 }
                 return true
             },

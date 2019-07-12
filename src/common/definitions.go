@@ -843,9 +843,10 @@ const (
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID  = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime   = "Cc_Request_Time"
-	BKHTTPCCTransactionID = "Cc_Txn_Id"
+	BKHTTPOtherRequestID    = "X-Bkapi-Request-Id"
+	BKHTTPCCRequestTime     = "Cc_Request_Time"
+	BKHTTPCCTransactionID   = "Cc_Txn_Id"
+	BKHTTPCCTxnTMServerAddr = "Cc_Txn_Tm_addr-Ip"
 )
 
 type CCContextKey string
@@ -1056,7 +1057,8 @@ const (
 )
 
 const (
-	ContextRequestIDField = "request_id"
+	ContextRequestIDField   = "request_id"
+	ContextRequestUserField = "request_user"
 )
 
 const (

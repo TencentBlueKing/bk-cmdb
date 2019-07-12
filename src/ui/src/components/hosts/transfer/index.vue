@@ -114,13 +114,10 @@
                 return modules
             },
             showIncrementOption () {
-                if (this.selectedHosts.length === 1) {
-                    return false
-                }
-                const hasSpecialModule = this.selectedModules.some(node => {
-                    return node.data.bk_inst_id === 'resource' || [1, 2].includes(node.data.default)
+                const hasSpecialModule = this.selectedModuleStates.some(({ node }) => {
+                    return node['bk_inst_id'] === 'resource' || [1, 2].includes(node.default)
                 })
-                return !!this.selectedModules.length && !hasSpecialModule
+                return this.selectedModuleStates.length && this.selectedHosts.length > 1 && !hasSpecialModule
             },
             loading () {
                 const requestIds = [
