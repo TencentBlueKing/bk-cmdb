@@ -13,37 +13,16 @@
 package parser
 
 import (
-	"configcenter/src/auth/meta"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
 	"net/http"
 	"regexp"
+
+	"configcenter/src/auth/meta"
 )
-
-type AuthConfig struct {
-	Name                  string
-	Pattern               string
-	Regex                 *regexp.Regexp
-	HTTPMethod            string
-	RequiredBizInMetadata bool
-	ResourceType          meta.ResourceType
-	ResourceAction        meta.Action
-}
-
-func (config *AuthConfig) Match(request *RequestContext) bool {
-	if config.HTTPMethod != request.Method {
-		return false
-	}
-	if config.Regex != nil && config.Regex.MatchString(request.URI) == false {
-		return false
-	}
-
-	return config.Pattern == request.URI
-}
 
 var ServiceInstanceAuthConfigs = []AuthConfig{
 	{
 		Name:                  "createServiceInstancePattern",
+		Description:           "创建服务实例",
 		Pattern:               "/api/v3/create/proc/service_instance",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
@@ -51,6 +30,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceAction:        meta.Create,
 	}, {
 		Name:                  "findServiceInstancePattern",
+		Description:           "list 服务实例",
 		Pattern:               "/api/v3/find/proc/service_instance",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
@@ -58,13 +38,15 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceAction:        meta.Find,
 	}, {
 		Name:                  "deleteServiceInstancePattern",
+		Description:           "删除服务实例",
 		Pattern:               "/api/v3/deletemany/proc/service_instance",
 		HTTPMethod:            http.MethodDelete,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceInstance,
 		ResourceAction:        meta.Delete,
 	}, {
-		Name:                  "findServiceInstanceDifferencePattern",
+		Name:                  "diffServiceInstanceWithTemplatePattern",
+		Description:           "对比服务实例与模板",
 		Pattern:               "/api/v3/find/proc/service_instance/difference",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
@@ -72,6 +54,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceAction:        meta.Find,
 	}, {
 		Name:                  "syncServiceInstanceAccordingToServiceTemplate",
+		Description:           "用服务模板更新服务实例",
 		Pattern:               "/api/v3/update/proc/service_instance/sync",
 		HTTPMethod:            http.MethodPut,
 		RequiredBizInMetadata: true,
@@ -79,6 +62,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceAction:        meta.Update,
 	}, {
 		Name:                  "listServiceInstanceWithHostPattern",
+		Description:           "根据主机查询服务实例",
 		Pattern:               "/api/v3/findmany/proc/service_instance/with_host",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
@@ -86,6 +70,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceAction:        meta.Find,
 	}, {
 		Name:                  "addServiceInstanceLabelsPattern",
+		Description:           "服务实例添加label",
 		Pattern:               "/api/v3/createmany/proc/service_instance/labels",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: false,
@@ -93,6 +78,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceAction:        meta.Find,
 	}, {
 		Name:                  "removeServiceInstanceLabelsPattern",
+		Description:           "服务实例删除label",
 		Pattern:               "/api/v3/deletemany/proc/service_instance/labels",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
@@ -100,6 +86,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceAction:        meta.Find,
 	}, {
 		Name:                  "deleteProcessInstanceInServiceInstanceRegexp",
+		Description:           "删除进程实例",
 		Regex:                 regexp.MustCompile(`/api/v3/delete/proc/service_instance/[0-9]+/process/?$`),
 		HTTPMethod:            http.MethodDelete,
 		RequiredBizInMetadata: true,
@@ -109,30 +96,12 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 }
 
 func (ps *parseStream) ServiceInstance() *parseStream {
-	for _, item := range ServiceInstanceAuthConfigs {
-		if item.Match(ps.RequestCtx) == false {
-			continue
-		}
-
-		var businessID int64
-		if item.RequiredBizInMetadata {
-			bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-			if err != nil {
-				blog.Warnf("get business id in metadata failed, err: %v, rid: %s", err, ps.RequestCtx.Rid)
-				ps.err = err
-				return ps
-			}
-			businessID = bizID
-		}
-
-		iamResource := meta.ResourceAttribute{
-			Basic: meta.Basic{
-				Type:   item.ResourceType,
-				Action: item.ResourceAction,
-			},
-			BusinessID: businessID,
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{iamResource}
+	resources, err := MatchAndGenerateIAMResource(ServiceInstanceAuthConfigs, ps.RequestCtx)
+	if err != nil {
+		ps.err = err
+	}
+	if resources != nil {
+		ps.Attribute.Resources = resources
 	}
 	return ps
 }
