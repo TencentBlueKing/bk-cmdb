@@ -369,6 +369,11 @@ type ListProcessTemplatesOption struct {
 	ServiceTemplateID  int64    `json:"service_template_id,omitempty" bson:"service_template_id"`
 	Page               BasePage `json:"page" field:"page" bson:"page"`
 }
+type ListServiceCategoriesOption struct {
+	BusinessID         int64    `json:"bk_biz_id" bson:"bk_biz_id"`
+	ServiceCategoryIDs *[]int64 `json:"service_category_ids,omitempty" bson:"service_category_ids"`
+	WithStatistics     bool     `json:"with_statistics" bson:"with_statistics"`
+}
 
 type OneServiceInstanceResult struct {
 	BaseResp `json:",inline"`

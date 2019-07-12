@@ -18,9 +18,10 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
-func (ps *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
+func (ps *ProcServer) ListServiceCategory(ctx *rest.Contexts) {
 	meta := new(metadata.MetadataWrapper)
 	if err := ctx.DecodeInto(meta); err != nil {
 		ctx.RespAutoError(err)
@@ -33,7 +34,32 @@ func (ps *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	list, err := ps.CoreAPI.CoreService().Process().ListServiceCategories(ctx.Kit.Ctx, ctx.Kit.Header, bizID, true)
+	listOption := metadata.ListServiceCategoriesOption{
+		BusinessID:     bizID,
+		WithStatistics: true,
+	}
+	if ps.AuthManager.Enabled() == true {
+		authorizedCategoryIDs, err := ps.AuthManager.ListAuthorizedServiceCategoryIDs(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
+		if err != nil {
+			blog.Errorf("ListAuthorizedServiceCategoryIDs failed, bizID: %d, err: %+v, rid: %s", bizID, err, ctx.Kit.Rid)
+			err := ctx.Kit.CCError.Error(common.CCErrCommListAuthorizedResourcedFromIAMFailed)
+			ctx.RespAutoError(err)
+			return
+		}
+		if listOption.ServiceCategoryIDs != nil {
+			listOption.ServiceCategoryIDs = &authorizedCategoryIDs
+		} else {
+			ids := make([]int64, 0)
+			for _, id := range *listOption.ServiceCategoryIDs {
+				if util.InArray(id, authorizedCategoryIDs) == true {
+					ids = append(ids, id)
+				}
+			}
+			listOption.ServiceCategoryIDs = &ids
+		}
+	}
+
+	list, err := ps.CoreAPI.CoreService().Process().ListServiceCategories(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPReadBodyFailed, "get service category list failed, err: %v", err)
 		return

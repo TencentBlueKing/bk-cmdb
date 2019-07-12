@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
@@ -31,7 +32,11 @@ import (
 func (am *AuthManager) CollectServiceCategoryByBusinessIDs(ctx context.Context, header http.Header, businessID int64) ([]metadata.ServiceCategory, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	result, err := am.clientSet.CoreService().Process().ListServiceCategories(ctx, header, businessID, false)
+	option := metadata.ListServiceCategoriesOption{
+		BusinessID:     businessID,
+		WithStatistics: false,
+	}
+	result, err := am.clientSet.CoreService().Process().ListServiceCategories(ctx, header, option)
 	if err != nil {
 		blog.Errorf("list service categories by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("list service categories by businessID:%d failed, err: %+v", businessID, err)
@@ -278,4 +283,33 @@ func (am *AuthManager) DeregisterServiceCategory(ctx context.Context, header htt
 	resources := am.MakeResourcesByServiceCategory(header, meta.EmptyAction, bizID, categories...)
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
+}
+
+func (am *AuthManager) ListAuthorizedServiceCategoryIDs(ctx context.Context, header http.Header, bizID int64) ([]int64, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	listOption := &meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Type:   meta.ProcessServiceCategory,
+			Action: meta.FindMany,
+		},
+		SupplierAccount: util.GetOwnerID(header),
+		BusinessID:      bizID,
+	}
+	resources, err := am.Authorize.ListResources(ctx, listOption)
+	if err != nil {
+		blog.Errorf("list authorized service category from iam failed, err: %+v, rid: %s", err, rid)
+		return nil, err
+	}
+	ids := make([]int64, 0)
+	for _, item := range resources {
+		for _, resource := range item {
+			id, err := strconv.ParseInt(resource.ResourceID, 10, 64)
+			if err != nil {
+				blog.Errorf("list authorized service category from iam failed, err: %+v, rid: %s", err, rid)
+				return nil, fmt.Errorf("parse resource id into int64 failed, err: %+v", err)
+			}
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
 }

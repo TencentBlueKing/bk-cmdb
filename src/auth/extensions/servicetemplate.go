@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
@@ -276,4 +277,33 @@ func (am *AuthManager) DeregisterServiceTemplates(ctx context.Context, header ht
 	resources := am.MakeResourcesByServiceTemplate(header, meta.EmptyAction, bizID, templates...)
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
+}
+
+func (am *AuthManager) ListAuthorizedServiceTemplateIDs(ctx context.Context, header http.Header, bizID int64) ([]int64, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	listOption := &meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Type:   meta.ProcessServiceTemplate,
+			Action: meta.FindMany,
+		},
+		SupplierAccount: util.GetOwnerID(header),
+		BusinessID:      bizID,
+	}
+	resources, err := am.Authorize.ListResources(ctx, listOption)
+	if err != nil {
+		blog.Errorf("list authorized service template from iam failed, err: %+v, rid: %s", err, rid)
+		return nil, err
+	}
+	ids := make([]int64, 0)
+	for _, item := range resources {
+		for _, resource := range item {
+			id, err := strconv.ParseInt(resource.ResourceID, 10, 64)
+			if err != nil {
+				blog.Errorf("list authorized service template from iam failed, err: %+v, rid: %s", err, rid)
+				return nil, fmt.Errorf("parse resource id into int64 failed, err: %+v", err)
+			}
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
 }
