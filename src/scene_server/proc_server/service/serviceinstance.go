@@ -137,7 +137,7 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 	processIDs = util.IntArrayUnique(processIDs)
 	option := &metadata.ListProcessInstanceRelationOption{
 		BusinessID: bizID,
-		ProcessIDs: &processIDs,
+		ProcessIDs: processIDs,
 		Page:       metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
@@ -416,7 +416,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	}
 	relationOption := &metadata.ListProcessInstanceRelationOption{
 		BusinessID:         bizID,
-		ServiceInstanceIDs: &[]int64{serviceInstance.ID},
+		ServiceInstanceIDs: []int64{serviceInstance.ID},
 		ProcessTemplateID:  common.ServiceTemplateIDNotSet,
 		HostID:             serviceInstance.HostID,
 		Page: metadata.BasePage{
@@ -499,7 +499,7 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 
 	listOption := &metadata.ListProcessInstanceRelationOption{
 		BusinessID: bizID,
-		ProcessIDs: &input.ProcessInstanceIDs,
+		ProcessIDs: input.ProcessInstanceIDs,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
@@ -523,7 +523,7 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 
 	// delete process relation at the same time.
 	deleteOption := metadata.DeleteProcessInstanceRelationOption{}
-	deleteOption.ProcessIDs = &input.ProcessInstanceIDs
+	deleteOption.ProcessIDs = input.ProcessInstanceIDs
 	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance: %v, but delete instance relation failed.", input.ProcessInstanceIDs)
@@ -609,7 +609,7 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		// step1: delete the service instance relation.
 		option := &metadata.ListProcessInstanceRelationOption{
 			BusinessID:         bizID,
-			ServiceInstanceIDs: &[]int64{serviceInstanceID},
+			ServiceInstanceIDs: []int64{serviceInstanceID},
 		}
 		relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {
@@ -619,7 +619,7 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 
 		if len(relations.Info) > 0 {
 			deleteOption := metadata.DeleteProcessInstanceRelationOption{
-				ServiceInstanceIDs: &[]int64{serviceInstanceID},
+				ServiceInstanceIDs: []int64{serviceInstanceID},
 			}
 			err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
 			if err != nil {
@@ -998,7 +998,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	// find all the process instances relations for the usage of getting process instances.
 	relationOption := &metadata.ListProcessInstanceRelationOption{
 		BusinessID:         bizID,
-		ServiceInstanceIDs: &serviceInstanceIDs,
+		ServiceInstanceIDs: serviceInstanceIDs,
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
 	if err != nil {
@@ -1065,7 +1065,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 
 				// remove process instance relation now.
 				deleteOption := metadata.DeleteProcessInstanceRelationOption{}
-				deleteOption.ProcessIDs = &[]int64{process.ProcessID}
+				deleteOption.ProcessIDs = []int64{process.ProcessID}
 				if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption); err != nil {
 					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "force sync service instance according to service template: %d, but delete process instance relation: %d with template: %d failed, err: %v", module.ServiceTemplateID, process.ProcessID, template.ID, err)
 					return
@@ -1183,7 +1183,7 @@ func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 	// list process instance relation
 	relationOption := metadata.ListProcessInstanceRelationOption{
 		BusinessID:         bizID,
-		ServiceInstanceIDs: &[]int64{input.ServiceInstanceID},
+		ServiceInstanceIDs: []int64{input.ServiceInstanceID},
 	}
 	relationsResult, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &relationOption)
 	if err != nil {
