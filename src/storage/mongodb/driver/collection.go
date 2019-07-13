@@ -333,11 +333,22 @@ func (c *collection) FindOneAndModify(ctx context.Context, filter interface{}, u
 	return c.innerCollection.FindOneAndUpdate(ctx, filter, update, findOneAndModify).Decode(output)
 }
 
-func (c *collection) AggregateOne(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error {
+func (c *collection) Aggregate(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error {
 	aggregateOptions := &options.AggregateOptions{}
 	if nil != opts {
 		aggregateOptions = opts.ConvertToMongoOptions()
 	}
+
+	outputV := reflect.ValueOf(output)
+	if outputV.Kind() != reflect.Ptr {
+		return errors.New("output not pointer")
+	}
+
+	if outputV.Elem().Kind() != reflect.Slice &&
+		outputV.Elem().Kind() != reflect.Array {
+		return errors.New("output not array")
+	}
+	typeItem := outputV.Elem().Type().Elem()
 
 	mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
 		cursor, err := c.innerCollection.Aggregate(mctx, pipeline, aggregateOptions)
@@ -347,7 +358,11 @@ func (c *collection) AggregateOne(ctx context.Context, pipeline interface{}, opt
 
 		defer cursor.Close(mctx)
 		for cursor.Next(ctx) {
-			return cursor.Decode(output)
+			item := reflect.New(typeItem)
+			if err := cursor.Decode(item.Interface()); err != nil {
+				return err
+			}
+			outputV.Elem().Set(reflect.Append(outputV.Elem(), item.Elem()))
 		}
 		return cursor.Err()
 	})
@@ -360,7 +375,12 @@ func (c *collection) AggregateOne(ctx context.Context, pipeline interface{}, opt
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		return cursor.Decode(output)
+		item := reflect.New(typeItem)
+		if err := cursor.Decode(item.Interface()); err != nil {
+			return err
+		}
+		outputV.Elem().Set(reflect.Append(outputV.Elem(), item.Elem()))
+
 	}
 	return cursor.Err()
 }
