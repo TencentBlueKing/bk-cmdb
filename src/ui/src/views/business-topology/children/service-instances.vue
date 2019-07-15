@@ -109,7 +109,12 @@
                 <span>{{$tc("BusinessTopology['已选择实例']", checked.length, { num: checked.length })}}</span>
             </div>
             <batch-edit-label ref="batchLabel" slot="content" :exisiting-label="editLabel.list">
-                <cmdb-edit-label ref="instanceLabel" slot="batch-add-label" class="edit-label"></cmdb-edit-label>
+                <cmdb-edit-label
+                    ref="instanceLabel"
+                    slot="batch-add-label"
+                    class="edit-label"
+                    :default-list="[]">
+                </cmdb-edit-label>
             </batch-edit-label>
         </bk-dialog>
     </div>
@@ -507,26 +512,38 @@
                 })
             },
             handleShowBatchLabel () {
-                this.editLabel.show = true
-                const labelList = []
-                for (const instance of this.checked) {
-                    const labels = instance.labels
-                    labels && Object.keys(labels).forEach(key => {
-                        labelList.push({
-                            instanceId: instance.id,
-                            key: key,
-                            value: labels[key]
+                try {
+                    this.editLabel.show = true
+                    const labelList = []
+                    const existingKeys = []
+                    for (const instance of this.checked) {
+                        const labels = instance.labels
+                        labels && Object.keys(labels).forEach(key => {
+                            const index = existingKeys.findIndex(exisitingKey => exisitingKey === key)
+                            if (index !== -1 && labels[key] === labelList[index].value) {
+                                labelList[index].instanceIds.push(instance.id)
+                            } else {
+                                labelList.push({
+                                    instanceIds: [instance.id],
+                                    key: key,
+                                    value: labels[key]
+                                })
+                                existingKeys.push(key)
+                            }
                         })
-                    })
+                    }
+                    this.editLabel.list = labelList
+                } catch (e) {
+                    console.error(e)
+                    this.editLabel.list = []
                 }
-                this.editLabel.list = labelList
             },
             async handleSubmitBatchLabel () {
                 try {
                     let status = ''
                     const validator = this.$refs.instanceLabel.$validator
-                    const list = this.$refs.instanceLabel.list
-                    if (!await validator.validateAll()) {
+                    const list = this.$refs.instanceLabel.submitList
+                    if (list.length && !await validator.validateAll()) {
                         return
                     }
                     const removeList = this.$refs.batchLabel.removeList
@@ -534,7 +551,7 @@
                     const instanceIds = []
                     removeList.forEach(label => {
                         removeKeys.push(label.key)
-                        instanceIds.push(label.instanceId)
+                        instanceIds.push(...label.instanceIds)
                     })
                     if (removeList.length) {
                         status = await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
@@ -566,9 +583,10 @@
                         })
                     }
                     if (status && status.bk_error_msg === 'success') {
-                        this.$success(this.$t('Common["保存成功"])'))
+                        this.$success(this.$t('Common["保存成功"]'))
                         this.filter = ''
                         this.getServiceInstances()
+                        this.handleCheckALL(false)
                     }
                     this.handleCloseBatchLable()
                 } catch (e) {
