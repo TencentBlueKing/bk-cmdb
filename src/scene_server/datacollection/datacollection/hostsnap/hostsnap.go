@@ -78,7 +78,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 	}
 
 	if err := h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10).Err(); err != nil {
-		blog.Errorf("[data-collection][hostsnap] save snapshot %s to redis faile: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
+		blog.Errorf("[data-collection][hostsnap] save snapshot %s to redis failed: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
 	}
 
 	condition := map[string]interface{}{common.BKHostIDField: host.get(common.BKHostIDField)}
@@ -89,7 +89,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 	}
 	outip, ok := host.get(common.BKHostOuterIPField).(string)
 	if !ok {
-		blog.Warnf("[data-collection][hostsnap] outip is not string, %s", val.String())
+		blog.Warnf("[data-collection][hostsnap] outerip is not string, %s", val.String())
 	}
 	setter := parseSetter(&val, innerip, outip)
 	if needToUpdate(setter, host) {
