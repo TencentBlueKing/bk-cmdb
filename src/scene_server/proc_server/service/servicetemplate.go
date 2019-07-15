@@ -146,15 +146,15 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 			return
 		}
 		if option.ServiceTemplateIDs != nil {
-			option.ServiceTemplateIDs = &authorizedIDs
+			option.ServiceTemplateIDs = authorizedIDs
 		} else {
 			ids := make([]int64, 0)
-			for _, id := range *option.ServiceTemplateIDs {
+			for _, id := range option.ServiceTemplateIDs {
 				if util.InArray(id, authorizedIDs) == true {
 					ids = append(ids, id)
 				}
 			}
-			option.ServiceTemplateIDs = &ids
+			option.ServiceTemplateIDs = ids
 		}
 	}
 
@@ -200,15 +200,15 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 			return
 		}
 		if option.ServiceTemplateIDs != nil {
-			option.ServiceTemplateIDs = &authorizedIDs
+			option.ServiceTemplateIDs = authorizedIDs
 		} else {
 			ids := make([]int64, 0)
-			for _, id := range *option.ServiceTemplateIDs {
+			for _, id := range option.ServiceTemplateIDs {
 				if util.InArray(id, authorizedIDs) == true {
 					ids = append(ids, id)
 				}
 			}
-			option.ServiceTemplateIDs = &ids
+			option.ServiceTemplateIDs = ids
 		}
 	}
 
