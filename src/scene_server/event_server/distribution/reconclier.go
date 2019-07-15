@@ -75,7 +75,7 @@ func (r *reconciler) loadAllCached() {
 func (r *reconciler) loadAllPersisted() {
 	r.persisted = map[string][]string{}
 	r.persistedSubscribers = []string{}
-	subscriptions := []metadata.Subscription{}
+	subscriptions := make([]metadata.Subscription, 0)
 	if err := r.db.Table(common.BKTableNameSubscription).Find(nil).All(r.ctx, &subscriptions); err != nil {
 		blog.Errorf("reconcile err: %v", err)
 	}
@@ -146,16 +146,16 @@ func SubscribeChannel(redisCli *redis.Client) (err error) {
 	}
 }
 
-func cleanOutdateEvents(redisCli *redis.Client) {
+func cleanExpiredEvents(redisCli *redis.Client) {
 	var err error
 	timeout := time.Hour * 1
 	tick := util.NewTicker(timeout)
 	tick.Tick()
 	for range tick.C {
-		blog.Infof("starting clean outdate events")
-		var keys = []string{}
+		blog.Infof("starting clean expired events")
+		var keys = make([]string, 0)
 		if err = redisCli.Keys(types.EventCacheDistDonePrefix + "*").ScanSlice(&keys); err != nil {
-			blog.Errorf("fetch outdate event keys failed: %v", err)
+			blog.Errorf("fetch expired event keys failed: %v", err)
 		}
 		keys = append(keys, types.EventCacheEventDoneKey)
 
@@ -165,13 +165,13 @@ func cleanOutdateEvents(redisCli *redis.Client) {
 				if strings.HasPrefix(iter.Val(), "{") {
 					if time.Now().Sub(gjson.Get(iter.Val(), "action_time").Time()) > timeout {
 						if err = redisCli.HDel(gjson.Get(iter.Val(), "event_id").String()).Err(); err != nil {
-							blog.Errorf("remove outdate event %s failed: %v", iter.Val(), err)
+							blog.Errorf("remove expired event %s failed: %v", iter.Val(), err)
 						}
 					}
 				}
 			}
 			if err := iter.Err(); err != nil {
-				blog.Errorf("scan outdate events failed: %v", err)
+				blog.Errorf("scan expired events failed: %v", err)
 			}
 		}
 	}

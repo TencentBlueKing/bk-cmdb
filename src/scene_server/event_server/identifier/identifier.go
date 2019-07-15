@@ -91,16 +91,16 @@ func (ih *IdentifierHandler) handleInstFieldChange(e *metadata.EventInstCtx, dif
 	hostIdentify.Action = metadata.EventActionUpdate
 
 	for dataIndex := range e.Data {
-		curdata := e.Data[dataIndex].CurData.(map[string]interface{})
-		predata := e.Data[dataIndex].PreData.(map[string]interface{})
-		if checkDifferent(curdata, predata, diffFields...) {
+		curData := e.Data[dataIndex].CurData.(map[string]interface{})
+		preData := e.Data[dataIndex].PreData.(map[string]interface{})
+		if checkDifferent(curData, preData, diffFields...) {
 
 			instIDField := common.GetInstIDField(e.ObjType)
 
-			instID := getInt(curdata, instIDField)
+			instID := getInt(curData, instIDField)
 			if 0 == instID {
 
-				blog.Errorf("identifier: conver instID faile the raw is %+v, rid: %s", curdata[instIDField], rid)
+				blog.Errorf("identifier: convert instID failed the raw is %+v, rid: %s", curData[instIDField], rid)
 				continue
 			}
 
@@ -114,7 +114,7 @@ func (ih *IdentifierHandler) handleInstFieldChange(e *metadata.EventInstCtx, dif
 				continue
 			}
 			for _, field := range diffFields {
-				inst.set(field, curdata[field])
+				inst.set(field, curData[field])
 			}
 			err = inst.saveCache(ih.cache)
 			if err != nil {
@@ -124,7 +124,7 @@ func (ih *IdentifierHandler) handleInstFieldChange(e *metadata.EventInstCtx, dif
 
 			if common.BKInnerObjIDHost == e.ObjType {
 				hostIdentify.ID = ih.cache.Incr(types.EventCacheEventIDKey).Val()
-				d := metadata.EventData{CurData: inst.ident.fillIden(ih.ctx, ih.cache, ih.db)}
+				d := metadata.EventData{CurData: inst.ident.fillIdentifier(ih.ctx, ih.cache, ih.db)}
 				hostIdentify.Data = append(hostIdentify.Data, d)
 
 				ih.cache.LPush(types.EventCacheEventQueueKey, &hostIdentify)
@@ -178,7 +178,7 @@ func (ih *IdentifierHandler) handleModuleTransfer(e *metadata.EventInstCtx) {
 			}
 
 			inst.saveCache(ih.cache)
-			d := metadata.EventData{CurData: inst.ident.fillIden(ih.ctx, ih.cache, ih.db)}
+			d := metadata.EventData{CurData: inst.ident.fillIdentifier(ih.ctx, ih.cache, ih.db)}
 			hostIdentify.Data = append(hostIdentify.Data, d)
 		}
 		hostIdentify.ID = ih.cache.Incr(types.EventCacheEventIDKey).Val()
@@ -267,7 +267,7 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 					continue
 				}
 				inst.saveCache(ih.cache)
-				d := metadata.EventData{CurData: inst.ident.fillIden(ih.ctx, ih.cache, ih.db)}
+				d := metadata.EventData{CurData: inst.ident.fillIdentifier(ih.ctx, ih.cache, ih.db)}
 				hostIdentify.Data = append(hostIdentify.Data, d)
 			}
 		} else {
@@ -298,11 +298,11 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 						continue
 					}
 					inst.saveCache(ih.cache)
-					d := metadata.EventData{CurData: inst.ident.fillIden(ih.ctx, ih.cache, ih.db)}
+					d := metadata.EventData{CurData: inst.ident.fillIdentifier(ih.ctx, ih.cache, ih.db)}
 					hostIdentify.Data = append(hostIdentify.Data, d)
 					continue
 				}
-				d := metadata.EventData{CurData: iden.fillIden(ih.ctx, ih.cache, ih.db)}
+				d := metadata.EventData{CurData: iden.fillIdentifier(ih.ctx, ih.cache, ih.db)}
 				hostIdentify.Data = append(hostIdentify.Data, d)
 			}
 		}
@@ -616,9 +616,9 @@ func (ih *IdentifierHandler) StartHandleInsts() error {
 func (ih *IdentifierHandler) handleInstLoop() error {
 	rid := util.ExtractRequestIDFromContext(ih.ctx)
 	defer func() {
-		procerr := recover()
-		if procerr != nil {
-			blog.Errorf("identifier: handleInstLoop panic: %v, stack:\n%s, rid: %s", procerr, debug.Stack(), rid)
+		procErr := recover()
+		if procErr != nil {
+			blog.Errorf("identifier: handleInstLoop panic: %v, stack:\n%s, rid: %s", procErr, debug.Stack(), rid)
 		}
 		go ih.handleInstLoop()
 	}()
