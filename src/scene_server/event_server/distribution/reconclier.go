@@ -28,7 +28,7 @@ import (
 	"configcenter/src/storage/dal"
 
 	"github.com/tidwall/gjson"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type reconciler struct {
@@ -65,9 +65,9 @@ func (r *reconciler) loadAll() {
 
 func (r *reconciler) loadAllCached() {
 	r.cached = map[string][]string{}
-	for _, formkey := range r.cache.Keys(types.EventCacheSubscribeformKey + "*").Val() {
-		if formkey != "" && formkey != nilStr && formkey != "redis" {
-			r.cached[strings.TrimPrefix(formkey, types.EventCacheSubscribeformKey)] = r.cache.SMembers(formkey).Val()
+	for _, formKey := range r.cache.Keys(types.EventCacheSubscribeformKey + "*").Val() {
+		if formKey != "" && formKey != nilStr && formKey != "redis" {
+			r.cached[strings.TrimPrefix(formKey, types.EventCacheSubscribeformKey)] = r.cache.SMembers(formKey).Val()
 		}
 	}
 }
@@ -81,11 +81,11 @@ func (r *reconciler) loadAllPersisted() {
 	}
 	blog.Infof("loaded %v subscriptions from persistent", len(subscriptions))
 	for _, sub := range subscriptions {
-		eventnames := strings.Split(sub.SubscriptionForm, ",")
+		eventNames := strings.Split(sub.SubscriptionForm, ",")
 		r.persistedSubscribers = append(r.persistedSubscribers, sub.GetCacheKey())
-		for _, eventname := range eventnames {
-			eventname = sub.OwnerID + ":" + eventname
-			r.persisted[eventname] = append(r.persisted[eventname], fmt.Sprint(sub.SubscriptionID))
+		for _, eventName := range eventNames {
+			eventName = sub.OwnerID + ":" + eventName
+			r.persisted[eventName] = append(r.persisted[eventName], fmt.Sprint(sub.SubscriptionID))
 		}
 	}
 }

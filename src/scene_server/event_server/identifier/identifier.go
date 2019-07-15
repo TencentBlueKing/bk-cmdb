@@ -281,7 +281,7 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 				idens = make([]interface{}, len(hostIDKeys))
 				for index := range idens {
 					// simulate that redis returns all nil
-					idens[index] = nilstr
+					idens[index] = nilStr
 				}
 			}
 			for identIndex := range idens {
@@ -462,7 +462,7 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 	var err error
 	ret := cache.Get(getInstCacheKey(objType, instID)).Val()
 	inst := Inst{objType: objType, instID: instID, ident: &HostIdentifier{}, data: map[string]interface{}{}}
-	if "" == ret || nilstr == ret || fromdb {
+	if "" == ret || nilStr == ret || fromdb {
 		blog.Infof("objType %s, instID %d not in cache, fetch it from db", objType, instID)
 		getobjCondition := map[string]interface{}{
 			common.GetInstIDField(objType): instID,
@@ -472,7 +472,7 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 		}
 		if common.BKInnerObjIDHost == objType {
 			inst.ident = NewHostIdentifier(inst.data)
-			hostmoduleids := []int64{}
+			hostModuleIDs := make([]int64, 0)
 
 			// 1. fill modules
 			relations := make([]metadata.ModuleHost, 0)
@@ -483,7 +483,7 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 				return nil, err
 			}
 			for _, relate := range relations {
-				hostmoduleids = append(hostmoduleids, relate.ModuleID)
+				hostModuleIDs = append(hostModuleIDs, relate.ModuleID)
 				inst.ident.Module[strconv.FormatInt(relate.ModuleID, 10)] = &Module{
 					SetID:    relate.SetID,
 					ModuleID: relate.ModuleID,
@@ -527,7 +527,7 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 // getHostIdentifierProcInfo 根据主机ID生成主机身份
 func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64) (map[int64][]Process, error) {
 	relationCond := condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
-	relations := []metadata.ProcessInstanceRelation{}
+	relations := make([]metadata.ProcessInstanceRelation, 0)
 
 	// query process id with host id
 	err := db.Table(common.BKTableNameProcessInstanceRelation).Find(relationCond.ToMapStr()).All(ctx, &relations)
@@ -557,19 +557,18 @@ func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64)
 	}
 	blog.V(5).Infof("findHostServiceInst query service instance info. service instance id:%#v, info:%#v", serviceInstIDs, serviceInstInfos)
 	// 服务实例与模块的关系
-	serviceInstModuleRealtion := make(map[int64][]int64, 0)
+	serviceInstModuleRelation := make(map[int64][]int64, 0)
 	for _, serviceInstInfo := range serviceInstInfos {
-		serviceInstModuleRealtion[serviceInstInfo.ID] = append(serviceInstModuleRealtion[serviceInstInfo.ID], serviceInstInfo.ModuleID)
+		serviceInstModuleRelation[serviceInstInfo.ID] = append(serviceInstModuleRelation[serviceInstInfo.ID], serviceInstInfo.ModuleID)
 	}
 
 	procModuleRelation := make(map[int64][]int64, 0)
 	for procID, serviceInstIDs := range procServiceInstMap {
 		for _, serviceInstID := range serviceInstIDs {
-			for _, moduleID := range serviceInstModuleRealtion[serviceInstID] {
+			for _, moduleID := range serviceInstModuleRelation[serviceInstID] {
 				procModuleRelation[procID] = append(procModuleRelation[procID], moduleID)
 			}
 		}
-
 	}
 
 	procInfos := make([]Process, 0)
@@ -632,14 +631,14 @@ func (ih *IdentifierHandler) handleInstLoop() error {
 	}
 }
 
-const nilstr = "nil"
+const nilStr = "nil"
 
 func (ih *IdentifierHandler) popEventInst() *metadata.EventInstCtx {
 	rid := util.ExtractRequestIDFromContext(ih.ctx)
 
 	eventstrs := ih.cache.BRPop(time.Second*60, types.EventCacheEventQueueDuplicateKey).Val()
 
-	if 0 >= len(eventstrs) || nilstr == eventstrs[1] || "" == eventstrs[1] {
+	if 0 >= len(eventstrs) || nilStr == eventstrs[1] || "" == eventstrs[1] {
 		return nil
 	}
 
@@ -705,7 +704,7 @@ func (ih *IdentifierHandler) fetchHostCache() {
 
 	for _, ident := range hosts {
 		ident.Module = map[string]*Module{}
-		hostprocs := map[int64]bool{}
+		hostProcs := map[int64]bool{}
 		for _, relate := range relationMap[ident.HostID] {
 			ident.Module[strconv.FormatInt(relate.ModuleID, 10)] = &Module{
 				SetID:    relate.SetID,
@@ -713,19 +712,19 @@ func (ih *IdentifierHandler) fetchHostCache() {
 				BizID:    relate.AppID,
 			}
 			if module, ok := modulesMap[relate.ModuleID]; ok {
-				for _, procid := range proc2modulesMap[module.ModuleName] {
-					hostprocs[procid] = true
+				for _, procID := range proc2modulesMap[module.ModuleName] {
+					hostProcs[procID] = true
 				}
 			}
 		}
 
 		ident.Process = []Process{}
-		for procid := range hostprocs {
-			bindModules := bindModulesMap[procid]
+		for procID := range hostProcs {
+			bindModules := bindModulesMap[procID]
 			if len(bindModules) == 0 {
 				bindModules = []int64{}
 			}
-			ident.Process = append(ident.Process, Process{ProcessID: procid, BindModules: bindModules})
+			ident.Process = append(ident.Process, Process{ProcessID: procID, BindModules: bindModules})
 		}
 
 		if err := ih.cache.Set(getInstCacheKey(common.BKInnerObjIDHost, ident.HostID), ident, 0).Err(); err != nil {
@@ -753,9 +752,9 @@ func (ih *IdentifierHandler) fetchHostCache() {
 
 }
 
-func checkDifferent(curdata, predata map[string]interface{}, fields ...string) (isDifferent bool) {
+func checkDifferent(curData, preData map[string]interface{}, fields ...string) (isDifferent bool) {
 	for _, field := range fields {
-		if curdata[field] != predata[field] {
+		if curData[field] != preData[field] {
 			return true
 		}
 	}

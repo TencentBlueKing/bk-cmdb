@@ -113,18 +113,18 @@ func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
 		err = eh.SaveEventDone(event)
 	}()
 
-	origindists := eh.GetDistInst(&event.EventInst)
+	originDists := eh.GetDistInst(&event.EventInst)
 
-	for _, origindist := range origindists {
-		subscribers := eh.findEventTypeSubscribers(origindist.GetType(), event.OwnerID)
+	for _, originDist := range originDists {
+		subscribers := eh.findEventTypeSubscribers(originDist.GetType(), event.OwnerID)
 		if len(subscribers) <= 0 || nilStr == subscribers[0] {
-			blog.Infof("%v no subscriber，continue", origindist.GetType())
+			blog.Infof("%v no subscriber，continue", originDist.GetType())
 			return eh.SaveEventDone(event)
 		}
 
 		for _, subscriber := range subscribers {
 			var dstbID, subscribeID int64
-			distinst := origindist
+			distInst := originDist
 			dstbID, err = eh.nextDistID(subscriber)
 			if err != nil {
 				return err
@@ -133,9 +133,9 @@ func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
 			if err != nil {
 				return err
 			}
-			distinst.DstbID = dstbID
-			distinst.SubscriptionID = subscribeID
-			distByte, _ := json.Marshal(distinst)
+			distInst.DstbID = dstbID
+			distInst.SubscriptionID = subscribeID
+			distByte, _ := json.Marshal(distInst)
 			eh.pushToQueue(types.EventCacheDistQueuePrefix+subscriber, string(distByte))
 		}
 	}
@@ -144,10 +144,10 @@ func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
 }
 
 func (eh *EventHandler) GetDistInst(e *metadata.EventInst) []metadata.DistInst {
-	distinst := metadata.DistInst{
+	distInst := metadata.DistInst{
 		EventInst: *e,
 	}
-	distinst.ID = 0
+	distInst.ID = 0
 	var ds []metadata.DistInst
 	var m map[string]interface{}
 	if e.EventType == metadata.EventTypeInstData && e.ObjType == common.BKInnerObjIDObject {
@@ -167,11 +167,11 @@ func (eh *EventHandler) GetDistInst(e *metadata.EventInst) []metadata.DistInst {
 		}
 
 		if m[common.BKObjIDField] != nil {
-			distinst.ObjType = m[common.BKObjIDField].(string)
+			distInst.ObjType = m[common.BKObjIDField].(string)
 		}
 
 	}
-	ds = append(ds, distinst)
+	ds = append(ds, distInst)
 
 	return ds
 }

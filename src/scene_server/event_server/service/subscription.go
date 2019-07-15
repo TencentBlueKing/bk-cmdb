@@ -113,8 +113,8 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 			}
 		}
 
-		mesg, _ := json.Marshal(&sub)
-		s.cache.Publish(types.EventCacheProcessChannel, "create"+string(mesg))
+		msg, _ := json.Marshal(&sub)
+		s.cache.Publish(types.EventCacheProcessChannel, "create"+string(msg))
 		s.cache.Del(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(sub.SubscriptionID))
 	}
 
@@ -239,7 +239,7 @@ func (s *Service) rebook(header http.Header, id int64, ownerID string, sub *meta
 	oldSub := metadata.Subscription{}
 	condition := util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()
 	if err := s.db.Table(common.BKTableNameSubscription).Find(condition).One(s.ctx, &oldSub); err != nil {
-		blog.Errorf("fail to get subscription by id %v, error information is %v, rid: %s", id, err, rid)
+		blog.Errorf("fail to get subscription by id %v, err: %v, rid: %s", id, err, rid)
 		return err
 	}
 	if oldSub.SubscriptionName != sub.SubscriptionName {
