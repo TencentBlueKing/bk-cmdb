@@ -5,7 +5,7 @@
                 <div class="label-key" :class="{ 'is-error': errors.has('key-' + index) }">
                     <input class="cmdb-form-input" type="text"
                         :data-vv-name="'key-' + index"
-                        v-validate="'required|instanceTag'"
+                        v-validate="getValidateRules(index, 'key')"
                         v-model="label.key"
                         :placeholder="$t('BusinessTopology[\'添加标签键\']')">
                     <p class="input-error">{{errors.first('key-' + index)}}</p>
@@ -13,7 +13,7 @@
                 <div class="label-value" :class="{ 'is-error': errors.has('value-' + index) }">
                     <input class="cmdb-form-input" type="text"
                         :data-vv-name="'value-' + index"
-                        v-validate="'required|instanceTag'"
+                        v-validate="getValidateRules(index, 'value')"
                         v-model="label.value"
                         :placeholder="$t('BusinessTopology[\'标签值\']')">
                     <p class="input-error">{{errors.first('value-' + index)}}</p>
@@ -41,25 +41,53 @@
         data () {
             return {
                 originList: [],
-                list: this.defaultList,
-                removeKeysList: []
+                list: [],
+                removeKeysList: [],
+                submitList: []
             }
         },
-        created () {
-            this.initValue()
+        watch: {
+            defaultList: {
+                handler (list) {
+                    let cloneList = this.$tools.clone(list)
+                    if (!cloneList.length) {
+                        cloneList = cloneList.concat([{
+                            id: -1,
+                            key: '',
+                            value: ''
+                        }])
+                    }
+                    this.list = cloneList
+                    this.originList = this.$tools.clone(list)
+                },
+                deep: true
+            },
+            list: {
+                handler (list) {
+                    if (list.length === 1 && !list[0].key && !list[0].value) {
+                        this.submitList = []
+                        this.removeKeysList = this.originList.map(label => label.key)
+                    } else {
+                        this.submitList = list
+                    }
+                },
+                deep: true
+            }
         },
         methods: {
-            initValue () {
-                this.originList = this.$tools.clone(this.defaultList)
-                if (!this.list.length) {
-                    this.list = this.list.concat([{
-                        id: -1,
-                        key: '',
-                        value: ''
-                    }])
-                } else {
-                    this.list = this.list.concat([])
+            getValidateRules (currentIndex, type) {
+                const rules = {}
+                if (this.list.length === 1 && !this.list[0].key && !this.list[0].value) {
+                    return {}
                 }
+                rules.required = true
+                rules.instanceTag = true
+                if (type === 'key') {
+                    const list = this.$tools.clone(this.list)
+                    list.splice(currentIndex, 1)
+                    rules.repeatTagKey = list.map(label => label.key)
+                }
+                return rules
             },
             handleAddLabel (index) {
                 const currentTag = this.list[index]

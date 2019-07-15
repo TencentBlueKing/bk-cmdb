@@ -35,7 +35,7 @@
         },
         watch: {
             exisitingLabel (list) {
-                this.localExisitingLabel = list
+                this.localExisitingLabel = this.$tools.clone(list)
             }
         },
         methods: {

@@ -94,10 +94,9 @@
                 {{$t("BusinessTopology['编辑标签']")}}
             </div>
             <cmdb-edit-label
-                v-if="editLabel.show"
                 slot="content"
                 ref="instanceLabel"
-                :default-list="labelList">
+                :default-list="editLabel.list">
             </cmdb-edit-label>
         </bk-dialog>
     </div>
@@ -117,7 +116,8 @@
         data () {
             return {
                 editLabel: {
-                    show: false
+                    show: false,
+                    list: []
                 },
                 tipsLabel: {
                     show: false,
@@ -335,22 +335,26 @@
                 })
             },
             handleShowEditLabel () {
+                this.editLabel.list = this.labelList
                 this.editLabel.show = true
             },
             handleCloseEditLable () {
+                this.editLabel.list = []
                 this.editLabel.show = false
             },
             async handleSubmitEditLable () {
                 try {
                     let status = ''
                     const validator = this.$refs.instanceLabel.$validator
-                    const list = this.$refs.instanceLabel.list
-                    if (!await validator.validateAll()) {
-                        return
-                    }
+                    const removeKeysList = this.$refs.instanceLabel.removeKeysList
+                    const list = this.$refs.instanceLabel.submitList
                     const originList = this.$refs.instanceLabel.originList
                     const hasChange = JSON.stringify(this.$refs.instanceLabel.list) !== JSON.stringify(originList)
-                    const removeKeysList = this.$refs.instanceLabel.removeKeysList
+
+                    if (list.length && !await validator.validateAll()) {
+                        return
+                    }
+
                     if (removeKeysList.length) {
                         status = await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
                             config: {
@@ -363,6 +367,7 @@
                             }
                         })
                     }
+
                     if (list.length && hasChange) {
                         const labelSet = {}
                         list.forEach(label => {
@@ -380,7 +385,7 @@
                         })
                     }
                     if (status && status.bk_error_msg === 'success') {
-                        this.$success(this.$t('Common["保存成功"])'))
+                        this.$success(this.$t('Common["保存成功"]'))
                         this.$parent.filter = ''
                         this.$parent.getServiceInstances()
                     }
