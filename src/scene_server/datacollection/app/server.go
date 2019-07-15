@@ -99,7 +99,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 	<-ctx.Done()
-	blog.V(0).Info("process stoped")
+	blog.V(0).Info("process stopped")
 	return nil
 }
 
@@ -118,21 +118,21 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		if h.Config == nil {
 			h.Config = new(options.Config)
 		}
-
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
+		// ignore err, cause ConfigMap is map[string]string
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
 		blog.V(3).Infof("config updated: \n%s", out)
 
-		dbprefix := "mongodb"
-		mongoConf := mongo.ParseConfigFromKV(dbprefix, current.ConfigMap)
+		dbPrefix := "mongodb"
+		mongoConf := mongo.ParseConfigFromKV(dbPrefix, current.ConfigMap)
 		h.Config.MongoDB = mongoConf
 
-		ccredisPrefix := "redis"
-		redisConf := redis.ParseConfigFromKV(ccredisPrefix, current.ConfigMap)
+		ccRedisPrefix := "redis"
+		redisConf := redis.ParseConfigFromKV(ccRedisPrefix, current.ConfigMap)
 		h.Config.CCRedis = redisConf
 
 		snapPrefix := "snap-redis"
-		snapredisConf := redis.ParseConfigFromKV(snapPrefix, current.ConfigMap)
-		h.Config.SnapRedis.Config = snapredisConf
+		snapRedisConf := redis.ParseConfigFromKV(snapPrefix, current.ConfigMap)
+		h.Config.SnapRedis.Config = snapRedisConf
 		h.Config.SnapRedis.Enable = current.ConfigMap[snapPrefix+".enable"]
 
 		discoverPrefix := "discover-redis"
@@ -140,10 +140,10 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.DiscoverRedis.Config = discoverRedisConf
 		h.Config.SnapRedis.Enable = current.ConfigMap[discoverPrefix+".enable"]
 
-		netcollectPrefix := "netcollect-redis"
-		netcollectRedisConf := redis.ParseConfigFromKV(netcollectPrefix, current.ConfigMap)
-		h.Config.NetcollectRedis.Config = netcollectRedisConf
-		h.Config.SnapRedis.Enable = current.ConfigMap[netcollectPrefix+".enable"]
+		netCollectPrefix := "netcollect-redis"
+		netCollectRedisConf := redis.ParseConfigFromKV(netCollectPrefix, current.ConfigMap)
+		h.Config.NetCollectRedis.Config = netCollectRedisConf
+		h.Config.SnapRedis.Enable = current.ConfigMap[netCollectPrefix+".enable"]
 
 		esbPrefix := "esb"
 		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]

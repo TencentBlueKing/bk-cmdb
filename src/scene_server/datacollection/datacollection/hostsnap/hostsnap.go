@@ -68,32 +68,32 @@ func (h *HostSnap) Analyze(mesg string) error {
 	val := gjson.Parse(data)
 	host := h.getHostByVal(&val)
 	if host == nil {
-		blog.Warnf("[datacollect][hostsnap] host not found, continue, %s", val.String())
+		blog.Warnf("[data-collection][hostsnap] host not found, continue, %s", val.String())
 		return nil
 	}
 	hostid := fmt.Sprint(host.get(common.BKHostIDField))
 	if hostid == "" {
-		blog.Warnf("[datacollect][hostsnap] host id not found, continue, %s", val.String())
+		blog.Warnf("[data-collection][hostsnap] host id not found, continue, %s", val.String())
 		return nil
 	}
 
 	if err := h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10).Err(); err != nil {
-		blog.Errorf("[datacollect][hostsnap] save snapshot %s to redis faile: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
+		blog.Errorf("[data-collection][hostsnap] save snapshot %s to redis faile: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
 	}
 
 	condition := map[string]interface{}{common.BKHostIDField: host.get(common.BKHostIDField)}
 	innerip, ok := host.get(common.BKHostInnerIPField).(string)
 	if !ok {
-		blog.Infof("[datacollect][hostsnap] innerip is empty, continue, %s", val.String())
+		blog.Infof("[data-collection][hostsnap] innerip is empty, continue, %s", val.String())
 		return nil
 	}
 	outip, ok := host.get(common.BKHostOuterIPField).(string)
 	if !ok {
-		blog.Warnf("[datacollect][hostsnap] outip is not string, %s", val.String())
+		blog.Warnf("[data-collection][hostsnap] outip is not string, %s", val.String())
 	}
 	setter := parseSetter(&val, innerip, outip)
 	if needToUpdate(setter, host) {
-		blog.Infof("[datacollect][hostsnap] update host by %v, to %v", condition, setter)
+		blog.Infof("[data-collection][hostsnap] update host by %v, to %v", condition, setter)
 		if err := h.db.Table(common.BKTableNameBaseHost).Update(h.ctx, condition, setter); err != nil {
 			return fmt.Errorf("update host error: %v", err)
 		}
@@ -227,21 +227,21 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 
 	ips := getIPS(val)
 	if len(ips) > 0 {
-		blog.Infof("[datacollect][hostsnap] handle clouid: %s ips: %v", cloudid, ips)
+		blog.Infof("[data-collection][hostsnap] handle clouid: %s ips: %v", cloudid, ips)
 		for _, ip := range ips {
 			if host := h.getCache().get(cloudid + "::" + ip); host != nil {
 				return host
 			}
 		}
 
-		blog.Infof("[datacollect][hostsnap] ips not in cache clouid: %s,ip: %v", cloudid, ips)
-		clouidInt, err := strconv.Atoi(cloudid)
+		blog.Infof("[data-collection][hostsnap] ips not in cache clouid: %s,ip: %v", cloudid, ips)
+		cloudIDInt, err := strconv.Atoi(cloudid)
 		if nil != err {
-			blog.Infof("[datacollect][hostsnap] cloudid \"%s\" not integer", cloudid)
+			blog.Infof("[data-collection][hostsnap] cloudid \"%s\" not integer", cloudid)
 			return nil
 		}
 		condition := map[string]interface{}{
-			common.BKCloudIDField: clouidInt,
+			common.BKCloudIDField: cloudIDInt,
 			common.BKHostInnerIPField: map[string]interface{}{
 				common.BKDBIN: ips,
 			},
@@ -250,18 +250,18 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 		result := make([]map[string]interface{}, 0)
 		err = h.db.Table(common.BKTableNameBaseHost).Find(condition).All(h.ctx, &result)
 		if err != nil {
-			blog.Errorf("[datacollect][hostsnap] fetch db error %v", err)
+			blog.Errorf("[data-collection][hostsnap] fetch db error %v", err)
 		}
 		for index := range result {
-			cloudid := fmt.Sprint(result[index][common.BKCloudIDField])
-			innerip := fmt.Sprint(result[index][common.BKHostInnerIPField])
+			cloudID := fmt.Sprint(result[index][common.BKCloudIDField])
+			innerIP := fmt.Sprint(result[index][common.BKHostInnerIPField])
 			inst := &HostInst{data: result[index]}
-			h.setCache(cloudid+"::"+innerip, inst)
+			h.setCache(cloudID+"::"+innerIP, inst)
 			return inst
 		}
-		blog.Infof("[datacollect][hostsnap] ips not in cache and db, clouid: %v, ip: %v", cloudid, ips)
+		blog.Infof("[data-collection][hostsnap] ips not in cache and db, clouid: %v, ip: %v", cloudid, ips)
 	} else {
-		blog.Errorf("[datacollect][hostsnap] message has no ip, message:%s", val.String())
+		blog.Errorf("[data-collection][hostsnap] message has no ip, message:%s", val.String())
 	}
 	return nil
 }
@@ -318,7 +318,7 @@ func (h *HostSnap) fetch() *HostCache {
 		result := make([]map[string]interface{}, 0)
 		err := h.db.Table(common.BKTableNameBaseHost).Find(nil).Start(start).Limit(limit).All(h.ctx, &result)
 		if err != nil {
-			blog.Errorf("[datacollect][hostsnap] fetch db error %v", err)
+			blog.Errorf("[data-collection][hostsnap] fetch db error %v", err)
 		}
 		for index := range result {
 			cloudid := fmt.Sprint(result[index][common.BKCloudIDField])
@@ -330,7 +330,7 @@ func (h *HostSnap) fetch() *HostCache {
 		}
 		start += limit
 	}
-	blog.Infof("[datacollect][hostsnap] success fetch %d collections to cache", len(hostcache.data))
+	blog.Infof("[data-collection][hostsnap] success fetch %d collections to cache", len(hostcache.data))
 	return hostcache
 }
 

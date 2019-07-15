@@ -253,7 +253,7 @@ func (d *Discover) GetAttrs(ownerID, objID, modelAttrKey string, attrs map[strin
 		bkc.BKOwnerIDField: ownerID,
 	}
 
-	resp, err := d.CoreAPI.CoreService().Model().ReadModelAttr(d.ctx, d.pheader, objID, &metadata.QueryCondition{Condition: cond})
+	resp, err := d.CoreAPI.CoreService().Model().ReadModelAttr(d.ctx, d.httpHeader, objID, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		blog.Errorf("SelectObjectAttWithParams error %s", err.Error())
 		return nil, err
@@ -319,7 +319,7 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 		property.PropertyGroup = bkc.BKDefaultField
 		property.Creator = bkc.CCSystemCollectorUserName
 
-		resp, err := d.CoreAPI.TopoServer().Object().CreateObjectAtt(d.ctx, d.pheader, &property)
+		resp, err := d.CoreAPI.TopoServer().Object().CreateObjectAtt(d.ctx, d.httpHeader, &property)
 		if err != nil {
 			blog.Errorf("create model attr failed %s", err.Error())
 			return fmt.Errorf("create model attr failed: %s", err.Error())
@@ -450,7 +450,7 @@ func (d *Discover) GetModel(model Model, ownerID string) (bool, error) {
 		bkc.BKObjIDField:   model.BkObjID,
 		bkc.BKOwnerIDField: ownerID,
 	}
-	resp, err := d.CoreAPI.CoreService().Model().ReadModel(d.ctx, d.pheader, &metadata.QueryCondition{Condition: cond})
+	resp, err := d.CoreAPI.CoreService().Model().ReadModel(d.ctx, d.httpHeader, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		blog.Errorf("search model failed %s", err.Error())
 		return false, fmt.Errorf("search model failed: %s", err.Error())
@@ -504,7 +504,7 @@ func (d *Discover) TryCreateModel(msg string) error {
 	input := metadata.CreateModel{
 		Spec: newObj,
 	}
-	resp, err := d.CoreAPI.CoreService().Model().CreateModel(d.ctx, d.pheader, &input)
+	resp, err := d.CoreAPI.CoreService().Model().CreateModel(d.ctx, d.httpHeader, &input)
 	if err != nil {
 		blog.Errorf("create model failed %s", err.Error())
 		return fmt.Errorf("create model failed: %s", err.Error())
@@ -532,7 +532,7 @@ func (d *Discover) GetInst(ownerID, objID string, keys []string, instKey string)
 		bkc.BKObjIDField:   objID,
 	}
 
-	resp, err := d.CoreAPI.CoreService().Instance().ReadInstance(d.ctx, d.pheader, objID, &metadata.QueryCondition{Condition: cond})
+	resp, err := d.CoreAPI.CoreService().Instance().ReadInstance(d.ctx, d.httpHeader, objID, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		blog.Errorf("search model failed %s", err.Error())
 		return nil, fmt.Errorf("search model failed: %s", err.Error())
@@ -587,7 +587,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 
 	if len(inst) <= 0 {
 		data, err := mapstr.NewFromInterface(gjson.Get(msg, "data.data").Value())
-		resp, err := d.CoreAPI.CoreService().Instance().CreateInstance(d.ctx, d.pheader, objID, &metadata.CreateModelInstance{Data: data})
+		resp, err := d.CoreAPI.CoreService().Instance().CreateInstance(d.ctx, d.httpHeader, objID, &metadata.CreateModelInstance{Data: data})
 		if err != nil {
 			blog.Errorf("search model failed %s", err.Error())
 			return fmt.Errorf("search model failed: %s", err.Error())
@@ -656,7 +656,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		Data:      inst,
 		Condition: condition.CreateCondition().Field(common.BKInstIDField).Eq(instID).ToMapStr(),
 	}
-	resp, err := d.CoreAPI.CoreService().Instance().UpdateInstance(d.ctx, d.pheader, objID, &input)
+	resp, err := d.CoreAPI.CoreService().Instance().UpdateInstance(d.ctx, d.httpHeader, objID, &input)
 	if err != nil {
 		blog.Errorf("search model failed %s", err.Error())
 		return fmt.Errorf("search model failed: %s", err.Error())

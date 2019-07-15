@@ -42,7 +42,7 @@ func NewNetCollect(ctx context.Context, db dal.RDB) *NetCollect {
 
 // Analyze implements the Analyzer interface
 func (h *NetCollect) Analyze(raw string) error {
-	blog.V(4).Infof("[datacollect][netcollect] received message: %s", raw)
+	blog.V(4).Infof("[data-collection][netcollect] received message: %s", raw)
 	msg := ReportMessage{}
 	err := json.Unmarshal([]byte(raw), &msg)
 	if err != nil {
@@ -51,7 +51,7 @@ func (h *NetCollect) Analyze(raw string) error {
 
 	for _, report := range msg.Data {
 		if err = h.handleReport(&report); err != nil {
-			blog.Errorf("[datacollect][netcollect] handleData failed: %v,raw: %s", err, raw)
+			blog.Errorf("[data-collection][netcollect] handleData failed: %v,raw: %s", err, raw)
 		}
 	}
 	return nil
@@ -60,7 +60,7 @@ func (h *NetCollect) Analyze(raw string) error {
 func (h *NetCollect) handleReport(report *metadata.NetcollectReport) (err error) {
 	// TODO compare 若有变化才插入
 	if err = h.upsertReport(report); err != nil {
-		blog.Errorf("[datacollect][netcollect] upsert association error: %v", err)
+		blog.Errorf("[data-collection][netcollect] upsert association error: %v", err)
 		return err
 	}
 
