@@ -80,6 +80,7 @@ func (o *OperationServer) DeleteOperationChart(ctx *rest.Contexts) {
 func (o *OperationServer) SearchOperationChart(ctx *rest.Contexts) {
 	opt := make(map[string]interface{})
 
+	blog.Debug("here------------")
 	result, err := o.Engine.CoreAPI.CoreService().Operation().SearchOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationSearchChartFail, "search chart info fail, err: %v", err)

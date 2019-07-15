@@ -315,6 +315,8 @@
 }
 .icon-arrows-down:before {
   content: "\e95c";
+  font-weight: 900;
+  font-size: 20px;
 }
 .icon-arrows-down-circle:before {
   content: "\e95d";
@@ -333,6 +335,8 @@
 }
 .icon-arrows-up:before {
   content: "\e962";
+  font-weight: 900;
+  font-size: 20px;
 }
 .icon-arrows-up-circle:before {
   content: "\e963";

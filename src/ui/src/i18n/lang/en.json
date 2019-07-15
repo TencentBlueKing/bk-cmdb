@@ -918,6 +918,16 @@
         "最新数据": "The current template is the latest version, no need to update ~"
     },
     "Operation": {
+        "数量": "Total",
+        "考虑显示效果，上限为25个，100%宽度建议显示20个，50%宽度10个": "Considering the display effect, the upper limit is 25, the 100% width is recommended to display 20, and the 50% width is 10.",
+        "横轴坐标数量": "Number of abscissal coordinates",
+        "新增图表": "Add Chart",
+        "所有更改已实时保存": "All changes are saved in real time",
+        "编辑图表": "Edit Chart",
+        "实例总数": "Inst Amount",
+        "模型总数":"Model Amount",
+        "主机总数": "Host Amount",
+        "业务总数": "Business Amount",
         "编辑": "Edit",
         "主机统计": "Host statistics",
         "统计报表": "Statistical report forms",
@@ -934,7 +944,7 @@
         "实例统计": "Case statistics",
         "该图表暂无数据": "The chart has no data for the time being.",
         "编辑模式": "Editorial Model",
-        "退出编辑模式": "Exit editing mode",
+        "退出编辑模式": "Exit editing",
         "是否确认删除": "Whether to confirm deletion?"
     },
     "HostDetails": {

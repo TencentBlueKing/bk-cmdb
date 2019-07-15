@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'icomoon';
-  src:  url('fonts/icomoon.eot?gkz7vk');
-  src:  url('fonts/icomoon.eot?gkz7vk#iefix') format('embedded-opentype'),
-    url('fonts/icomoon.ttf?gkz7vk') format('truetype'),
-    url('fonts/icomoon.woff?gkz7vk') format('woff'),
-    url('fonts/icomoon.svg?gkz7vk#icomoon') format('svg');
+  src:  url('fonts/icomoon.eot?91mgzw');
+  src:  url('fonts/icomoon.eot?91mgzw#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?91mgzw') format('truetype'),
+    url('fonts/icomoon.woff?91mgzw') format('woff'),
+    url('fonts/icomoon.svg?91mgzw#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -24,6 +24,30 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.icon-cc-op-pie:before {
+  content: "\e9c2";
+  color: #979ba5;
+}
+.icon-cc-op-bar:before {
+  content: "\e9c1";
+  color: #979ba5;
+}
+.icon-cc-op-model:before {
+  content: "\e9bd";
+  color: #fff;
+}
+.icon-cc-op-example:before {
+  content: "\e9be";
+  color: #fff;
+}
+.icon-cc-op-biz:before {
+  content: "\e9bf";
+  color: #fff;
+}
+.icon-cc-op-host:before {
+  content: "\e9c0";
+  color: #fff;
+}
 .icon-cc-activeMQ:before {
   content: "\e900";
 }
