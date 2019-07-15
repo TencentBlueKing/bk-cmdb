@@ -49,14 +49,14 @@ func (m *Manager) run() error {
 	return nil
 }
 
-type mockmesg struct {
+type mockMesg struct {
 	Name    string `json:"name"`
 	Message string `json:"mesg"`
 }
 
 func (m *Manager) mockServer() {
 	mockServer := http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
-		mockMSG := mockmesg{}
+		mockMSG := mockMesg{}
 		err := json.NewDecoder(req.Body).Decode(&mockMSG)
 		if err != nil {
 			fmt.Fprintf(resp, "decode message error: %v", err)

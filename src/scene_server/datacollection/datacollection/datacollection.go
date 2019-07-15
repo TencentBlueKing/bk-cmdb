@@ -55,7 +55,7 @@ func (d *DataCollection) Run() error {
 		blog.Errorf("[data-collection][RUN] connect cc redis failed: %v", err)
 		return err
 	}
-	blog.Infof("[datacollection][RUN]connected to cc redis %+v", d.Config.CCRedis)
+	blog.Infof("[data-collection][RUN]connected to cc redis %+v", d.Config.CCRedis)
 
 	var db dal.RDB
 	if d.Config.MongoDB.Enable == "true" {
@@ -110,14 +110,14 @@ func (d *DataCollection) Run() error {
 		man.AddPorter(middlewarePorter)
 	}
 
-	if d.Config.NetcollectRedis.Enable != "false" {
-		blog.Infof("[data-collection][RUN]connecting to netcollect-redis %+v", d.Config.NetcollectRedis.Config)
-		netCli, err := redis.NewFromConfig(d.Config.NetcollectRedis.Config)
+	if d.Config.NetCollectRedis.Enable != "false" {
+		blog.Infof("[data-collection][RUN]connecting to netcollect-redis %+v", d.Config.NetCollectRedis.Config)
+		netCli, err := redis.NewFromConfig(d.Config.NetCollectRedis.Config)
 		if nil != err {
 			blog.Errorf("[data-collection][RUN] connect netcollect-redis failed: %v", err)
 			return err
 		}
-		blog.Infof("[data-collection][RUN]connected to netcollect-redis %+v", d.Config.NetcollectRedis.Config)
+		blog.Infof("[data-collection][RUN]connected to netcollect-redis %+v", d.Config.NetCollectRedis.Config)
 		netDevChanName := d.getNetcollectChanName(defaultAppID)
 		netCollector := netcollect.NewNetCollect(d.ctx, db)
 		netCollectPorter := BuildChanPorter("netcollect", netCollector, redisCli, netCli, netDevChanName, netcollect.MockMessage, d.registry)

@@ -108,7 +108,7 @@ func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Cl
 			Name: ns + "analyze_total",
 			Help: "number of analyzed message.",
 		},
-		[]string{LableStatus},
+		[]string{LabelStatus},
 	)
 	registry.MustRegister(porter.analyzeTotal)
 
@@ -116,7 +116,7 @@ func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Cl
 }
 
 const (
-	LableStatus = "status"
+	LabelStatus = "status"
 )
 
 type chanPorter struct {
@@ -190,7 +190,7 @@ func (p *chanPorter) Run() error {
 	var err error
 	for {
 		if err = p.collect(); err != nil {
-			blog.Errorf("[datacollect][%s] collect message failed: %v, retry 3s later", p.name, err)
+			blog.Errorf("[data-collection][%s] collect message failed: %v, retry 3s later", p.name, err)
 		}
 		// 睡3秒， 防止空跑导致CPU占用高涨
 		time.Sleep(time.Second * 3)
@@ -205,8 +205,8 @@ func (p *chanPorter) analyzeLoop() {
 
 func (p *chanPorter) analyze() {
 	defer func() {
-		if syserr := recover(); syserr != nil {
-			blog.Errorf("[datacollect][%s] analyzeLoop panic by: %v, stack:\n %s", p.name, syserr, debug.Stack())
+		if sysErr := recover(); sysErr != nil {
+			blog.Errorf("[data-collection][%s] analyzeLoop panic by: %v, stack:\n %s", p.name, sysErr, debug.Stack())
 		}
 	}()
 
@@ -216,7 +216,7 @@ func (p *chanPorter) analyze() {
 	for mesg = range p.analyzeC {
 		before := time.Now()
 		if err = p.analyzer.Analyze(mesg); err != nil {
-			blog.Errorf("[datacollect][%s] analyze message failed: %v, raw mesg: %s", p.name, err, mesg)
+			blog.Errorf("[data-collection][%s] analyze message failed: %v, raw msg: %s", p.name, err, mesg)
 			p.analyzeTotal.WithLabelValues("failed").Inc()
 		} else {
 			p.analyzeTotal.WithLabelValues("success").Inc()
@@ -233,7 +233,7 @@ func (p *chanPorter) analyzeCount() {
 	for i = range p.analyzeCounterC {
 		cnt += i
 		if time.Since(ts) > time.Minute*10 {
-			blog.Infof("[datacollect][%s] analyze rate: %d message in last %v, analyzeC length: %d", p.name, cnt, time.Now().Sub(ts), len(p.analyzeC))
+			blog.Infof("[data-collection][%s] analyze rate: %d message in last %v, analyzeC length: %d", p.name, cnt, time.Now().Sub(ts), len(p.analyzeC))
 			cnt = 0
 			ts = time.Now()
 		}
@@ -247,16 +247,16 @@ func (p *chanPorter) collect() error {
 	if err != nil {
 		// 抢失败，成为slave
 		if strings.HasPrefix(err.Error(), "there is other master") {
-			blog.Infof("[datacollect][%s] %v", p.name, err)
+			blog.Infof("[data-collection][%s] %v", p.name, err)
 			return nil
 		}
-		blog.Errorf("[datacollect][%s] %v", p.name, err)
+		blog.Errorf("[data-collection][%s] %v", p.name, err)
 		return err
 	}
 
 	// 抢成功，成为master，开始读redis channel，并推送处理不过来的消息到slave处理队列
-	blog.Infof("[datacollect][%s] i am master(id: %s) from now", p.name, p.pid)
-	defer blog.Infof("[datacollect][%s] exist master(id: %s) from now", p.name, p.pid)
+	blog.Infof("[data-collection][%s] i am master(id: %s) from now", p.name, p.pid)
+	defer blog.Infof("[data-collection][%s] exist master(id: %s) from now", p.name, p.pid)
 	p.isMaster.Set()
 	defer p.isMaster.UnSet()
 
@@ -287,12 +287,12 @@ func (p *chanPorter) subscribeLoop() error {
 	}
 	defer subChan.Unsubscribe(p.channels...)
 
-	blog.Info("[datacollect][%s] subcribing channel %v from redis", p.name, p.channels)
-	defer blog.Info("[datacollect][%s] unsubcribe channel %v from redis", p.name, p.channels)
+	blog.Info("[data-collection][%s] subscribing channel %v from redis", p.name, p.channels)
+	defer blog.Info("[data-collection][%s] unsubscribe channel %v from redis", p.name, p.channels)
 
 	ts := time.Now()
 	var cnt int64
-	var timeouterr net.Error
+	var timeoutErr net.Error
 	var ok bool
 	var received interface{}
 	var name = p.name + "[receive]"
@@ -301,7 +301,7 @@ func (p *chanPorter) subscribeLoop() error {
 		if err == redis.Nil || err == io.EOF {
 			continue
 		}
-		if timeouterr, ok = err.(net.Error); ok && timeouterr.Timeout() {
+		if timeoutErr, ok = err.(net.Error); ok && timeoutErr.Timeout() {
 			continue
 		}
 		if nil != err {
@@ -333,7 +333,7 @@ func (p *chanPorter) subscribeLoop() error {
 
 		p.lastMesgTs = time.Now()
 		if time.Since(ts) > time.Minute*10 {
-			blog.Infof("[datacollect][%s] receive rate: %d message in last %v", p.name, cnt, time.Now().Sub(ts))
+			blog.Infof("[data-collection][%s] receive rate: %d message in last %v", p.name, cnt, time.Now().Sub(ts))
 			cnt = 0
 			ts = time.Now()
 		}
@@ -345,7 +345,7 @@ func (p *chanPorter) renewalMasterLoop() {
 	var err error
 	for range time.Tick(time.Second * 3) {
 		if err = renewalMaster(p.redisCli, p.name, p.pid); err != nil {
-			blog.Warnf("[datacollect][%s] renewal master failed: %v", p.name, err)
+			blog.Warnf("[data-collection][%s] renewal master failed: %v", p.name, err)
 			p.isMaster.UnSet()
 			return
 		}
@@ -363,29 +363,29 @@ func (p *chanPorter) healthCheck() {
 	ticker := time.NewTicker(time.Minute)
 	defer func() {
 		ticker.Stop()
-		if syserr := recover(); syserr != nil {
-			blog.Errorf("[datacollect][%s] panic by: %v, stack:\n %s", p.name, syserr, debug.Stack())
+		if sysErr := recover(); sysErr != nil {
+			blog.Errorf("[data-collection][%s] panic by: %v, stack:\n %s", p.name, sysErr, debug.Stack())
 		}
 	}()
 
 	var err error
 	var now time.Time
 	for now = range ticker.C {
-		var channelstatus int
+		var channelStatus int
 		if err = p.snapCli.Ping().Err(); err != nil {
-			channelstatus = common.CCErrHostGetSnapshotChannelClose
-			blog.Errorf("[datacollect][%s][healthCheck] snap redis server connection error: %s", p.name, err.Error())
+			channelStatus = common.CCErrHostGetSnapshotChannelClose
+			blog.Errorf("[data-collection][%s][healthCheck] snap redis server connection error: %s", p.name, err.Error())
 		} else if err = p.redisCli.Ping().Err(); err != nil {
-			channelstatus = common.CCErrHostGetSnapshotChannelClose
-			blog.Errorf("[datacollect][%s][healthCheck] cc redis server connection error: %s", p.name, err.Error())
+			channelStatus = common.CCErrHostGetSnapshotChannelClose
+			blog.Errorf("[data-collection][%s][healthCheck] cc redis server connection error: %s", p.name, err.Error())
 		} else if p.isMaster.IsSet() && now.Sub(p.lastMesgTs) > time.Minute {
-			blog.Warnf("[datacollect][%s][healthCheck] snapchannel was empty in last 1 min", p.name)
-			channelstatus = common.CCErrHostGetSnapshotChannelEmpty
+			blog.Warnf("[data-collection][%s][healthCheck] snapshot channel was empty in last 1 min", p.name)
+			channelStatus = common.CCErrHostGetSnapshotChannelEmpty
 		} else {
-			channelstatus = common.CCSuccess
+			channelStatus = common.CCSuccess
 		}
-		if err = p.redisCli.Set(channelStatusKey(p.name), channelstatus, time.Minute*2).Err(); err != nil {
-			blog.Errorf("[datacollect][%s][healthCheck] set channelstatus failed: %v", p.name, err)
+		if err = p.redisCli.Set(channelStatusKey(p.name), channelStatus, time.Minute*2).Err(); err != nil {
+			blog.Errorf("[data-collection][%s][healthCheck] set channel status failed: %v", p.name, err)
 		}
 	}
 }
@@ -399,50 +399,50 @@ func (p *chanPorter) popLoop() {
 }
 
 func (p *chanPorter) pop() {
-	blog.Info("[datacollect][%s] start popLoop from redis", p.name)
-	defer blog.Info("[datacollect][%s] stop popLoop from redis", p.name)
+	blog.Info("[data-collection][%s] start popLoop from redis", p.name)
+	defer blog.Info("[data-collection][%s] stop popLoop from redis", p.name)
 
 	defer func() {
-		if syserr := recover(); syserr != nil {
-			blog.Errorf("[datacollect][%s] panic by: %v, stack:\n %s", p.name, syserr, debug.Stack())
+		if sysErr := recover(); sysErr != nil {
+			blog.Errorf("[data-collection][%s] panic by: %v, stack:\n %s", p.name, sysErr, debug.Stack())
 		}
 	}()
 
 	// 推消息到slave处理队列
-	var mesg []string
+	var msg []string
 	var err error
-	var timeouterr net.Error
+	var timeoutErr net.Error
 	var ok bool
 	var llen int64
 	var key = slaveQueueKey(p.name)
 	var name = p.name + "[pop]"
 	for {
-		mesg, err = p.redisCli.BRPop(time.Second*30, key).Result()
+		msg, err = p.redisCli.BRPop(time.Second*30, key).Result()
 		if err == redis.Nil {
 			continue
 		}
-		if timeouterr, ok = err.(net.Error); ok && timeouterr.Timeout() {
+		if timeoutErr, ok = err.(net.Error); ok && timeoutErr.Timeout() {
 			continue
 		}
 		if err != nil {
-			blog.Errorf("[datacollect][%s] pop message from redis failed: %v, retry 3s later", p.name, err)
+			blog.Errorf("[data-collection][%s] pop message from redis failed: %v, retry 3s later", p.name, err)
 			// 睡3秒，防止空跑导致CPU占用高涨
 			time.Sleep(time.Second * 3)
 		}
-		if len(mesg) > 1 && mesg[1] != "nil" && mesg[1] != "" {
-			writeOrClearChan(p.analyzeC, name, mesg[1])
+		if len(msg) > 1 && msg[1] != "nil" && msg[1] != "" {
+			writeOrClearChan(p.analyzeC, name, msg[1])
 		}
 		if p.isMaster.IsSet() {
 			llen, err = p.redisCli.LLen(key).Result()
 			if err != nil {
-				blog.Errorf("[datacollect][%s] llen failed: %v", p.name, err)
+				blog.Errorf("[data-collection][%s] llen failed: %v", p.name, err)
 				continue
 			}
 			if llen > cacheSize {
 				// 清理超过处理能力的未处理消息
-				blog.Errorf("[datacollect][%s] slavequeue %v fulled, clear it", p.name, key)
+				blog.Errorf("[data-collection][%s] slave queue %v fulled, clear it", p.name, key)
 				if err = p.redisCli.Del(key).Err(); err != nil {
-					blog.Errorf("[datacollect][%s] llen failed: %v", p.name, err)
+					blog.Errorf("[data-collection][%s] llen failed: %v", p.name, err)
 					continue
 				}
 			}
@@ -460,43 +460,43 @@ func (p *chanPorter) pushLoop() {
 
 // push 把master处理不过来的消息推到slave处理队列，让slave协助处理
 func (p *chanPorter) push() {
-	blog.Info("[datacollect][%s] start pushLoop to redis", p.name)
-	defer blog.Info("[datacollect][%s] stop pushLoop to redis", p.name)
+	blog.Info("[data-collection][%s] start pushLoop to redis", p.name)
+	defer blog.Info("[data-collection][%s] stop pushLoop to redis", p.name)
 
 	defer func() {
-		if syserr := recover(); syserr != nil {
-			blog.Errorf("[datacollect][%s] panic by: %v, stack:\n %s", p.name, syserr, debug.Stack())
+		if sysErr := recover(); sysErr != nil {
+			blog.Errorf("[data-collection][%s] panic by: %v, stack:\n %s", p.name, sysErr, debug.Stack())
 		}
 	}()
 
-	var mesg string
+	var msg string
 	var err error
 	key := slaveQueueKey(p.name)
-	for mesg = range p.slaveC {
+	for msg = range p.slaveC {
 		p.pushTotal.Inc()
-		if err = p.redisCli.LPush(key, mesg).Err(); err != nil {
-			blog.Errorf("[datacollect][%s] push message to redis failed: %v", p.name, err)
+		if err = p.redisCli.LPush(key, msg).Err(); err != nil {
+			blog.Errorf("[data-collection][%s] push message to redis failed: %v", p.name, err)
 		}
 	}
 }
 
 // writeOrClearChan 利用非阻塞读channel达到清里channel的目的
-func writeOrClearChan(mesgC chan string, name, mesg string) {
+func writeOrClearChan(msgC chan string, name, msg string) {
 	select {
-	case mesgC <- mesg:
+	case msgC <- msg:
 	default:
 		// channel fulled, so we drop 200 oldest events from queue
-		blog.Infof("[datacollect][%s] msgChan full, len %d. clear 200 oldest from queue", name, len(mesgC))
-		defer blog.Infof("[datacollect][%s] msgChan full, len %d. cleared 200 oldest from queue", name, len(mesgC))
+		blog.Infof("[data-collection][%s] msgChan full, len %d. clear 200 oldest from queue", name, len(msgC))
+		defer blog.Infof("[data-collection][%s] msgChan full, len %d. cleared 200 oldest from queue", name, len(msgC))
 		var ok bool
 		for i := 0; i < 200; i++ {
-			_, ok = <-mesgC
+			_, ok = <-msgC
 			if !ok {
 				break
 			}
 		}
 		select {
-		case mesgC <- mesg:
+		case msgC <- msg:
 		default:
 		}
 	}
@@ -579,7 +579,7 @@ func logoutMaster(redisCli *redis.Client, name string, procID string) error {
 	if err != nil {
 		return fmt.Errorf("release master failed: %v, key(%s)", err, lockKey)
 	}
-	blog.Infof("[datacollect][%s] logout master success", name)
+	blog.Infof("[data-collection][%s] logout master success", name)
 	return nil
 }
 
