@@ -14,6 +14,7 @@ import (
 )
 
 type RequestContext struct {
+	Rid string
 	// http header
 	Header http.Header
 	// http method

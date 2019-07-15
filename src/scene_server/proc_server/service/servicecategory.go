@@ -13,12 +13,15 @@
 package service
 
 import (
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
-func (ps *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
+func (ps *ProcServer) ListServiceCategory(ctx *rest.Contexts) {
 	meta := new(metadata.MetadataWrapper)
 	if err := ctx.DecodeInto(meta); err != nil {
 		ctx.RespAutoError(err)
@@ -31,7 +34,32 @@ func (ps *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	list, err := ps.CoreAPI.CoreService().Process().ListServiceCategories(ctx.Kit.Ctx, ctx.Kit.Header, bizID, true)
+	listOption := metadata.ListServiceCategoriesOption{
+		BusinessID:     bizID,
+		WithStatistics: true,
+	}
+	if ps.AuthManager.Enabled() == true {
+		authorizedCategoryIDs, err := ps.AuthManager.ListAuthorizedServiceCategoryIDs(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
+		if err != nil {
+			blog.Errorf("ListAuthorizedServiceCategoryIDs failed, bizID: %d, err: %+v, rid: %s", bizID, err, ctx.Kit.Rid)
+			err := ctx.Kit.CCError.Error(common.CCErrCommListAuthorizedResourcedFromIAMFailed)
+			ctx.RespAutoError(err)
+			return
+		}
+		if listOption.ServiceCategoryIDs != nil {
+			listOption.ServiceCategoryIDs = &authorizedCategoryIDs
+		} else {
+			ids := make([]int64, 0)
+			for _, id := range *listOption.ServiceCategoryIDs {
+				if util.InArray(id, authorizedCategoryIDs) == true {
+					ids = append(ids, id)
+				}
+			}
+			listOption.ServiceCategoryIDs = &ids
+		}
+	}
+
+	list, err := ps.CoreAPI.CoreService().Process().ListServiceCategories(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPReadBodyFailed, "get service category list failed, err: %v", err)
 		return
@@ -59,6 +87,13 @@ func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
+	if err := ps.AuthManager.RegisterServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, *category); err != nil {
+		blog.Errorf("create service category success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	ctx.RespEntity(category)
 }
 
@@ -81,6 +116,13 @@ func (ps *ProcServer) UpdateServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
+	if err := ps.AuthManager.UpdateRegisteredServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, *category); err != nil {
+		blog.Errorf("update service category success, but update register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	ctx.RespEntity(category)
 }
 
@@ -91,15 +133,32 @@ func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service category, but get business id failed, err: %v", err)
+		return
+	}
+
+	// generate iam resource
+	iamResources, err := ps.AuthManager.MakeResourcesByServiceCategoryIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.Delete, bizID, input.ID)
+	if err != nil {
+		blog.Errorf("make iam resource by service category failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		ctx.RespAutoError(err)
 		return
 	}
 
 	err = ps.CoreAPI.CoreService().Process().DeleteServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input.ID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete service category failed, err: %v", err)
+		return
+	}
+
+	// deregister iam resource
+	if err := ps.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
+		blog.Errorf("delete service category success, but deregister from iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
+		ctx.RespAutoError(err)
 		return
 	}
 
