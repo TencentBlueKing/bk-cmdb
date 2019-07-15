@@ -26,7 +26,7 @@ type EventClient struct {
 	// eventID --> eventData
 	cache           map[int64]metadata.EventData
 	instanceManager *instanceManager
-	eventC          eventclient.Client
+	eventCli        eventclient.Client
 }
 
 // NewEventHandle new event client
@@ -34,7 +34,7 @@ func (m *instanceManager) NewEventClient(objID string) *EventClient {
 	return &EventClient{
 		cache:           make(map[int64]metadata.EventData, 0),
 		instanceManager: m,
-		eventC:          m.EventC,
+		eventCli:        m.EventCli,
 	}
 }
 
@@ -105,7 +105,7 @@ func (eh *EventClient) Push(ctx core.ContextParams, objType, eventAction string)
 		srcEvent.Data = []metadata.EventData{item}
 		eventInstArr = append(eventInstArr, srcEvent)
 	}
-	err := eh.eventC.Push(ctx, eventInstArr...)
+	err := eh.eventCli.Push(ctx, eventInstArr...)
 	if err != nil {
 		blog.ErrorJSON("Push objType(%s) change to event server error. data:%s, rid:%s", objType, eventInstArr, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrEventPushEventFailed)
