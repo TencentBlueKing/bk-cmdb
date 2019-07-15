@@ -50,6 +50,7 @@ import processTemplate from './modules/api/process-template.js'
 import businessSynchronous from './modules/api/business-synchronous.js'
 import serviceInstance from './modules/api/service-instance.js'
 import processInstance from './modules/api/process-instance.js'
+import instanceLabel from './modules/api/instance-label.js'
 import fullTextSearch from './modules/api/full-text-search.js'
 
 Vue.use(Vuex)
@@ -104,6 +105,7 @@ export default new Vuex.Store({
         businessSynchronous,
         serviceInstance,
         processInstance,
+        instanceLabel,
         fullTextSearch
     }
 })

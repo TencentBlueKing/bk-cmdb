@@ -94,16 +94,40 @@
                 @on-cancel="handleBeforeClose">
             </cmdb-form>
         </bk-sideslider>
+
+        <bk-dialog class="bk-dialog-no-padding"
+            v-model="editLabel.show"
+            :mask-close="false"
+            :width="580"
+            @confirm="handleSubmitBatchLabel"
+            @cancel="handleCloseBatchLable">
+            <div class="reset-header" slot="header">
+                {{$t("BusinessTopology['批量编辑']")}}
+                <span>{{$tc("BusinessTopology['已选择实例']", checked.length, { num: checked.length })}}</span>
+            </div>
+            <batch-edit-label ref="batchLabel" :exisiting-label="editLabel.list">
+                <cmdb-edit-label
+                    ref="instanceLabel"
+                    slot="batch-add-label"
+                    class="edit-label"
+                    :default-list="[]">
+                </cmdb-edit-label>
+            </batch-edit-label>
+        </bk-dialog>
     </div>
 </template>
 
 <script>
     import serviceInstanceTable from './service-instance-table.vue'
     import serviceInstanceEmpty from './service-instance-empty.vue'
+    import batchEditLabel from './batch-edit-label.vue'
+    import cmdbEditLabel from './edit-label.vue'
     export default {
         components: {
             serviceInstanceTable,
-            serviceInstanceEmpty
+            serviceInstanceEmpty,
+            batchEditLabel,
+            cmdbEditLabel
         },
         data () {
             return {
@@ -128,6 +152,10 @@
                     properties: [],
                     propertyGroups: [],
                     unwatch: null
+                },
+                editLabel: {
+                    show: false,
+                    list: []
                 }
             }
         },
@@ -162,6 +190,10 @@
                 }, {
                     name: this.$t('BusinessTopology["复制IP"]'),
                     handler: this.copyIp,
+                    disabled: !this.checked.length
+                }, {
+                    name: this.$t('BusinessTopology["编辑标签"]'),
+                    handler: this.handleShowBatchLabel,
                     disabled: !this.checked.length
                 }]
             }
@@ -475,6 +507,92 @@
                         from: `${this.$route.path}?module=${this.currentNode.data.bk_inst_id}`
                     }
                 })
+            },
+            handleShowBatchLabel () {
+                try {
+                    this.editLabel.show = true
+                    const labelList = []
+                    const existingKeys = []
+                    for (const instance of this.checked) {
+                        const labels = instance.labels
+                        labels && Object.keys(labels).forEach(key => {
+                            const index = existingKeys.findIndex(exisitingKey => exisitingKey === key)
+                            if (index !== -1 && labels[key] === labelList[index].value) {
+                                labelList[index].instanceIds.push(instance.id)
+                            } else {
+                                labelList.push({
+                                    instanceIds: [instance.id],
+                                    key: key,
+                                    value: labels[key]
+                                })
+                                existingKeys.push(key)
+                            }
+                        })
+                    }
+                    this.editLabel.list = labelList
+                } catch (e) {
+                    console.error(e)
+                    this.editLabel.list = []
+                }
+            },
+            async handleSubmitBatchLabel () {
+                try {
+                    let status = ''
+                    const validator = this.$refs.instanceLabel.$validator
+                    const list = this.$refs.instanceLabel.submitList
+                    if (list.length && !await validator.validateAll()) {
+                        return
+                    }
+                    const removeList = this.$refs.batchLabel.removeList
+                    const removeKeys = []
+                    const instanceIds = []
+                    removeList.forEach(label => {
+                        removeKeys.push(label.key)
+                        instanceIds.push(...label.instanceIds)
+                    })
+                    if (removeList.length) {
+                        status = await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
+                            config: {
+                                data: this.$injectMetadata({
+                                    instance_ids: instanceIds,
+                                    keys: removeKeys
+                                }),
+                                requestId: 'deleteInstanceLabel',
+                                transformData: false
+                            }
+                        })
+                    }
+                    if (list.length) {
+                        const serviceInstanceIds = this.checked.map(instance => instance.id)
+                        const labelSet = {}
+                        list.forEach(label => {
+                            labelSet[label.key] = label.value
+                        })
+                        status = await this.$store.dispatch('instanceLabel/createInstanceLabel', {
+                            params: this.$injectMetadata({
+                                instance_ids: serviceInstanceIds,
+                                labels: labelSet
+                            }),
+                            config: {
+                                requestId: 'createInstanceLabel',
+                                transformData: false
+                            }
+                        })
+                    }
+                    if (status && status.bk_error_msg === 'success') {
+                        this.$success(this.$t('Common["保存成功"]'))
+                        this.filter = ''
+                        this.getServiceInstances()
+                        this.handleCheckALL(false)
+                    }
+                    this.handleCloseBatchLable()
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleCloseBatchLable () {
+                this.editLabel.show = false
+                this.editLabel.list = []
             }
         }
     }
@@ -618,6 +736,12 @@
                 font-size: 65px;
                 color: #c3cdd7;
             }
+        }
+    }
+    .reset-header {
+        span {
+            color: #979ba5;
+            font-size: 14px;
         }
     }
 </style>

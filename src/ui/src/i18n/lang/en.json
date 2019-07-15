@@ -849,7 +849,8 @@
         "新增关联": "New Association",
         "批量取消": "Batch Cancel",
         "列表": "List",
-        "暂无关联关系": "No Association"
+        "暂无关联关系": "No Association",
+        "服务列表": "Service List"
     },
     "BusinessTopology": {
         "已选择主机": "{count}host selected",
@@ -906,7 +907,17 @@
         "删除模块提示": "Need to remove all service instances under the module first",
         "模块名称提示": "The module name must be consistent with the service template name.",
         "请为主机添加进程": "Please add process to the host",
-        "请输入实例名称搜索": "Please enter instance name search..."
+        "请输入实例名称搜索": "Please enter instance name search...",
+        "添加标签键": "Add tag key",
+        "标签值": "Tag value",
+        "已有标签": "Existing tag",
+        "已有标签提示": "(The list is the selected instance tag collection)",
+        "批量添加标签": "Add tags in bulk",
+        "批量编辑": "批量编辑",
+        "标签": "Tag：",
+        "编辑标签": "Edit tag",
+        "请填写完整标签键/值": "Please fill in the full tag key/value",
+        "已选择实例": "({num} instances have been selected)"
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",

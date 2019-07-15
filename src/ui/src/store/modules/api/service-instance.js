@@ -1,6 +1,9 @@
 import $http from '@/api'
 
 const actions = {
+    getHostServiceInstances (context, { params, config }) {
+        return $http.post('findmany/proc/service_instance/with_host', params, config)
+    },
     getModuleServiceInstances (context, { params, config }) {
         return $http.post('find/proc/service_instance', params, config)
     },
