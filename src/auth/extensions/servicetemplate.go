@@ -50,7 +50,7 @@ func (am *AuthManager) collectServiceTemplateByIDs(ctx context.Context, header h
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	templateIDs = util.IntArrayUnique(templateIDs)
 	option := &metadata.ListServiceTemplateOption{
-		ServiceTemplateIDs: &templateIDs,
+		ServiceTemplateIDs: templateIDs,
 	}
 	result, err := am.clientSet.CoreService().Process().ListServiceTemplates(ctx, header, option)
 	if err != nil {
