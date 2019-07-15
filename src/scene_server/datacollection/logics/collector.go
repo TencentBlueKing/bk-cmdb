@@ -22,8 +22,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdpartyclient/esbserver/nodeman"
@@ -88,16 +86,21 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 		collectors = append(collectors, collector)
 	}
 
-	cloudCond := condition.CreateCondition()
-	cloudCond.Field(common.BKCloudIDField).In(cloudIDs)
-	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryCondition{Condition: cloudCond.ToMapStr()})
+	cloudCond := map[string]interface{}{
+		common.BKCloudIDField: map[string]interface{}{
+			common.BKDBIN: cloudIDs,
+		},
+	}
+	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryCondition{Condition: cloudCond})
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchCollector] find clouds by %+v failed: %v", cloudCond, err)
 		return 0, nil, err
 	}
 
-	cloudCond.Field(common.BKHostInnerIPField).In(ips)
-	collectorMap, err := lgc.findCollectorMap(cloudCond.ToMapStr())
+	cloudCond[common.BKHostInnerIPField] = map[string]interface{}{
+		common.BKDBIN: ips,
+	}
+	collectorMap, err := lgc.findCollectorMap(cloudCond)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchCollector] get collector config by %+v failed %v", cloudCond, err)
 		return 0, nil, err
@@ -108,15 +111,12 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 		collector := &collectors[index]
 
 		if clodInst, ok := cloudMap[collector.CloudID]; ok {
-			cloudname, err := clodInst.String(common.BKCloudNameField)
+			cloudName, err := clodInst.String(common.BKCloudNameField)
 			if err != nil {
-				blog.Errorf("[NetDevice][SearchCollector] bk_cloud_name field invalied: %v, inst: %+v", err, clodInst)
+				blog.Errorf("[NetDevice][SearchCollector] bk_cloud_name field invalid: %v, inst: %+v", err, clodInst)
 			}
-			collector.CloudName = cloudname
+			collector.CloudName = cloudName
 		}
-
-		cond := condition.CreateCondition()
-		cond.Field(common.BKCloudIDField).Eq(collector.CloudID)
 
 		key := collectorMapKey(collector.CloudID, collector.InnerIP)
 		existsOne, ok := collectorMap[key]
@@ -198,19 +198,20 @@ func (lgc *Logics) findCollectorMap(cond interface{}) (map[string]metadata.Netco
 }
 
 func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollector) error {
-	cond := condition.CreateCondition()
-	cond.Field(common.BKCloudIDField).Eq(config.CloudID)
-	cond.Field(common.BKHostInnerIPField).Eq(config.InnerIP)
+	filter := map[string]interface{}{
+		common.BKCloudIDField:     config.CloudID,
+		common.BKHostInnerIPField: config.InnerIP,
+	}
 
-	count, err := lgc.db.Table(common.BKTableNameNetcollectConfig).Find(cond.ToMapStr()).Count(lgc.ctx)
+	count, err := lgc.db.Table(common.BKTableNameNetcollectConfig).Find(filter).Count(lgc.ctx)
 	if err != nil {
-		blog.Errorf("[UpdateCollector] count by %+v error: %v", cond.ToMapStr(), err)
+		blog.Errorf("[UpdateCollector] count by %+v error: %v", filter, err)
 		return err
 	}
 	if count > 0 {
-		err = lgc.db.Table(common.BKTableNameNetcollectConfig).Update(lgc.ctx, cond, config)
+		err = lgc.db.Table(common.BKTableNameNetcollectConfig).Update(lgc.ctx, filter, config)
 		if err != nil {
-			blog.Errorf("[UpdateCollector] UpdateByCondition by %+v to %+v error: %v", cond.ToMapStr(), config, err)
+			blog.Errorf("[UpdateCollector] UpdateByCondition by %+v to %+v error: %v", filter, config, err)
 			return err
 		}
 		return lgc.DiscoverNetDevice(header, []metadata.Netcollector{config})
@@ -267,12 +268,17 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 		cloudIDs = append(cloudIDs, config.CloudID)
 		ips = append(ips, config.InnerIP)
 	}
-	cloudCond := condition.CreateCondition()
-	cloudCond.Field(common.BKCloudIDField).In(cloudIDs)
-	cloudCond.Field(common.BKHostInnerIPField).In(ips)
-	collectorMap, err := lgc.findCollectorMap(cloudCond.ToMapStr())
+	cloudFilter := map[string]interface{}{
+		common.BKHostInnerIPField: map[string]interface{}{
+			common.BKDBIN: ips,
+		},
+		common.BKCloudIDField: map[string]interface{}{
+			common.BKDBIN: cloudIDs,
+		},
+	}
+	collectorMap, err := lgc.findCollectorMap(cloudFilter)
 	if err != nil {
-		blog.Errorf("[NetDevice][SearchCollector] get collector config by %+v failed, %v", cloudCond.ToMapStr(), err)
+		blog.Errorf("[NetDevice][SearchCollector] get collector config by %+v failed, %v", cloudFilter, err)
 		return err
 	}
 
@@ -309,15 +315,19 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 }
 
 func (lgc *Logics) saveCollectTask(collector *metadata.Netcollector, taskID int64, status string) error {
-	data := mapstr.MapStr{}
-	data.Set("task_id", taskID)
-	data.Set("status.config_status", status)
+	data := map[string]interface{}{
+		"task_id":              taskID,
+		"status.config_status": status,
+	}
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKCloudIDField).Eq(collector.CloudID)
-	cond.Field(common.BKHostInnerIPField).In(collector.InnerIP)
+	filter := map[string]interface{}{
+		common.BKCloudIDField: collector.CloudID,
+		common.BKHostInnerIPField: map[string]interface{}{
+			common.BKDBIN: collector.InnerIP,
+		},
+	}
 
-	return lgc.db.Table(common.BKTableNameNetcollectConfig).Update(lgc.ctx, cond.ToMapStr(), data)
+	return lgc.db.Table(common.BKTableNameNetcollectConfig).Update(lgc.ctx, filter, data)
 }
 
 func (lgc *Logics) buildUpgradePluginRequest(collector *metadata.Netcollector, user string, pkg *nodeman.PluginPackage, proc *nodeman.PluginProcess, porcInfo *nodeman.PluginProcessInfo) (*nodeman.UpgradePluginRequest, error) {

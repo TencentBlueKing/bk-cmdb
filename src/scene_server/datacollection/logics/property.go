@@ -19,7 +19,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -421,7 +420,7 @@ func (lgc *Logics) addNewNetProperty(netPropertyInfo meta.NetcollectProperty, ow
 }
 
 func (lgc *Logics) updateNetPropertyByPropertyIDAndDeviceID(netPropertyInfo meta.NetcollectProperty) error {
-	queryParams := mapstr.MapStr{
+	queryParams := map[string]interface{}{
 		common.BKDeviceIDField:   netPropertyInfo.DeviceID,
 		common.BKPropertyIDField: netPropertyInfo.PropertyID,
 		common.BKOwnerIDField:    netPropertyInfo.OwnerID,
@@ -439,7 +438,7 @@ func (lgc *Logics) updateNetPropertyByPropertyIDAndDeviceID(netPropertyInfo meta
 }
 
 func (lgc *Logics) updateExistingPropertyByNetPropertyID(netPropertyInfo meta.NetcollectProperty, netPropertyID uint64) error {
-	queryParams := mapstr.MapStr{
+	queryParams := map[string]interface{}{
 		common.BKNetcollectPropertyIDField: netPropertyID,
 		common.BKOwnerIDField:              netPropertyInfo.OwnerID,
 	}
@@ -458,9 +457,11 @@ func (lgc *Logics) updateExistingPropertyByNetPropertyID(netPropertyInfo meta.Ne
 
 // check if there is the same propertyInfo
 func (lgc *Logics) checkNetPropertyExist(deviceID uint64, propertyID, ownerID string) (bool, error) {
-	queryParams := mapstr.MapStr{
-		common.BKDeviceIDField: deviceID, common.BKPropertyIDField: propertyID, common.BKOwnerIDField: ownerID}
-
+	queryParams := map[string]interface{}{
+		common.BKDeviceIDField:   deviceID,
+		common.BKPropertyIDField: propertyID,
+		common.BKOwnerIDField:    ownerID,
+	}
 	rowCount, err := lgc.db.Table(common.BKTableNameNetcollectProperty).Find(queryParams).Count(lgc.ctx)
 	if nil != err {
 		blog.Errorf("[NetProperty] check if net deviceID and propertyID exist, query device fail, error information is %v, params:%v",
