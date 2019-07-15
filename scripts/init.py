@@ -349,8 +349,6 @@ maxIDleConns = 1000
     with open(output + "operation.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
-=======
->>>>>>> dc457310e1614af6389d78823bb2b11b11a9a1df
     # txc.conf
     txcserver_file_template_str = '''
 [mongodb]
