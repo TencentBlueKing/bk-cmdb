@@ -28,7 +28,7 @@ import (
 
 type TransferManager struct {
 	dbProxy    dal.RDB
-	eventC     eventclient.Client
+	eventCli   eventclient.Client
 	cache      *redis.Client
 	dependence OperationDependence
 }
@@ -41,7 +41,7 @@ func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence Oper
 	return &TransferManager{
 		dbProxy:    db,
 		cache:      cache,
-		eventC:     ec,
+		eventCli:   ec,
 		dependence: dependence,
 	}
 }
@@ -50,7 +50,7 @@ func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence Oper
 func (manager *TransferManager) NewHostModuleTransfer(ctx core.ContextParams, bizID int64, moduleIDArr []int64, isIncr bool) *genericTransfer {
 	return &genericTransfer{
 		dbProxy:     manager.dbProxy,
-		eventC:      manager.eventC,
+		eventCli:    manager.eventCli,
 		dependent:   manager.dependence,
 		moduleIDArr: moduleIDArr,
 		bizID:       bizID,
