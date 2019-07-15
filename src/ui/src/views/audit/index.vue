@@ -41,7 +41,7 @@
             <div class="group-content">
                 <span class="title-name">{{$t('OperationAudit[\'类型\']')}}</span>
                 <div class="selector-content">
-                    <bk-select v-model="filter.bkOpType" :clearable="false">
+                    <bk-select v-model="filter.bkOpType">
                         <bk-option v-for="option in operateTypeList"
                             :key="option.id"
                             :id="option.id"

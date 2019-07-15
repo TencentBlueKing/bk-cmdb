@@ -99,7 +99,7 @@ func (m *associationInstance) CreateOneInstanceAssociation(ctx core.ContextParam
 	}
 	if exists {
 		blog.Errorf("association instance (%#v)is duplicated, rid: %s", inputParam.Data, ctx.ReqID)
-		return nil, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
+		return nil, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "association")
 	}
 	//check association kind
 	cond := mongo.NewCondition()

@@ -32,7 +32,7 @@ import synchronous from '@/views/business-synchronous/router.config'
 Vue.use(Router)
 
 export const viewRouters = [
-    index,
+    ...index,
     audit,
     businessModel,
     businessTopology,
@@ -53,6 +53,8 @@ export const viewRouters = [
     synchronous,
     ...serviceInstance
 ]
+
+const indexName = index[0].name
 
 const statusRouters = [
     {
@@ -82,7 +84,7 @@ const redirectRouters = [{
 }, {
     path: '/',
     redirect: {
-        name: index.name
+        name: indexName
     }
 }]
 
@@ -214,7 +216,7 @@ router.beforeEach((to, from, next) => {
                 await preload(router.app)
             }
             if (!isShouldShow(to)) {
-                next({ name: index.name })
+                next({ name: indexName })
             } else {
                 setMenuState(to)
                 setTitle(to)

@@ -304,7 +304,7 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 	}
 
 	assignParams := &metadata.TransferHostsCrossBusinessRequest{
-		SrcApplicationID: ownerModuleID,
+		SrcApplicationID: ownerAppID,
 		DstApplicationID: conf.ApplicationID,
 		HostIDArr:        conf.HostID,
 		DstModuleIDArr:   []int64{moduleID},

@@ -15,7 +15,7 @@ class FileTemplate(Template):
 def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v, redis_user_v,
         redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v,
-        cc_url_v, paas_url_v, auth_address, auth_app_code,
+        cc_url_v, paas_url_v, full_text_search, es_url_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme
 ):
     output = os.getcwd() + "/cmdb_adminserver/configures/"
@@ -31,6 +31,7 @@ def generate_config_file(
         redis_port=redis_port_v,
         cc_url=cc_url_v,
         paas_url=paas_url_v,
+        es_url=es_url_v,
         ui_root="../web",
         agent_url=paas_url_v,
         configures_dir=output,
@@ -39,7 +40,8 @@ def generate_config_file(
         auth_app_code=auth_app_code,
         auth_app_secret=auth_app_secret,
         auth_enabled=auth_enabled,
-        auth_scheme=auth_scheme
+        auth_scheme=auth_scheme,
+        full_text_search=full_text_search
     )
     if not os.path.exists(output):
         os.mkdir(output)
@@ -293,6 +295,10 @@ address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
 enable = $auth_enabled
+
+[es]
+full_text_search = $full_text_search
+url=$es_url
 '''
 
     template = FileTemplate(topo_file_template_str)
@@ -323,6 +329,7 @@ bk_account_url = ${paas_url}/login/accounts/get_all_user/?bk_token=%s
 resources_path = /tmp/
 html_root = $ui_root
 authscheme = $auth_scheme
+full_text_search = $full_text_search
 
 [app]
 agent_app_url = ${agent_url}/console/?app=bk_agent_setup
@@ -386,6 +393,8 @@ def main(argv):
         "auth_app_code": "bk_cmdb",
         "auth_app_secret": "",
     }
+    full_text_search = 'off'
+    es_url='http://127.0.0.1:9200'
 
     server_ports = {
         "cmdb_adminserver": 60004,
@@ -404,9 +413,9 @@ def main(argv):
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
         "redis_user=", "redis_pass=", "mongo_ip=", "mongo_port=",
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=",
-        "blueking_paas_url=", "listen_port=", "auth_address=",
+        "blueking_paas_url=", "listen_port=", "es_url=", "auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
-        "auth_scheme="
+        "auth_scheme=", "full_text_search="
     ]
     usage = '''
     usage:
@@ -427,9 +436,11 @@ def main(argv):
       --auth_address       <auth_address>         iam address
       --auth_app_code      <auth_app_code>        app code for iam, default bk_cmdb
       --auth_app_secret    <auth_app_secret>      app code for iam
+      --full_text_search   <full_text_search>     full text search on or off
+      --es_url             <es_url>               the es listen url, see in es dir config/elasticsearch.yml, (network.host, http.port), default: http://127.0.0.1:9200
     '''
     try:
-        opts, _ = getopt.getopt(argv, "hd:D:r:p:x:s:m:P:X:S:u:U:a:l:", arr)
+        opts, _ = getopt.getopt(argv, "hd:D:r:p:x:s:m:P:X:S:u:U:a:l:es", arr)
 
     except getopt.GetoptError as e:
         print("\n \t", e.msg)
@@ -442,7 +453,7 @@ def main(argv):
 
     for opt, arg in opts:
         if opt in ('-h', '--help'):
-            print('init.py --discovery <discovery> --database <database>  --redis_ip <redis_ip> --redis_port <redis_port> --redis_pass <redis_pass> --mongo_ip <mongo_ip> --mongo_port <mongo_port> --mongo_user <mongo_user> --mongo_pass <mongo_pass> --blueking_cmdb_url <blueking_cmdb_url> --blueking_paas_url <blueking_paas_url> --listen_port <listen_port>')
+            print('init.py --discovery <discovery> --database <database>  --redis_ip <redis_ip> --redis_port <redis_port> --redis_pass <redis_pass> --mongo_ip <mongo_ip> --mongo_port <mongo_port> --mongo_user <mongo_user> --mongo_pass <mongo_pass> --blueking_cmdb_url <blueking_cmdb_url> --blueking_paas_url <blueking_paas_url> --listen_port <listen_port> --es_url <es_url>')
             sys.exit()
         elif opt in ("-d", "--discovery"):
             rd_server = arg
@@ -495,6 +506,12 @@ def main(argv):
         elif opt in ("--auth_app_secret",):
             auth["auth_app_secret"] = arg
             print("auth_app_secret:", auth["auth_app_secret"])
+        elif opt in ("--full_text_search",):
+            full_text_search = arg
+            print('full_text_search:', full_text_search)
+        elif opt in("-es","--es_url",):
+            es_url = arg
+            print('es_url:', es_url)
 
     if 0 == len(rd_server):
         print('please input the ZooKeeper address, eg:127.0.0.1:2181')
@@ -533,6 +550,14 @@ def main(argv):
         print('blueking cmdb url not start with http://')
         sys.exit()
 
+    if full_text_search not in ["off", "on"]:
+        print('full_text_search can only be off or on')
+        sys.exit()
+    if full_text_search == "on":
+        if not es_url.startswith("http://"):
+            print('es url not start with http://')
+            sys.exit()
+
     if auth["auth_scheme"] not in ["internal", "iam"]:
         print('auth_scheme can only be internal or iam')
         sys.exit()
@@ -556,7 +581,7 @@ def main(argv):
 
     generate_config_file(rd_server, db_name, redis_ip, redis_port, redis_user,
                          redis_pass, mongo_ip, mongo_port, mongo_user,
-                         mongo_pass, cc_url, paas_url, **auth)
+                         mongo_pass, cc_url, paas_url, full_text_search, es_url, **auth)
     update_start_script(rd_server, server_ports)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
 

@@ -119,7 +119,7 @@ const (
 	MoveHostToAnotherBizModule     Action = "moveHostToAnotherBizModule"
 	CleanHostInSetOrModule         Action = "cleanHostInSetOrModule"
 	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"
-	MoveHostToModule               Action = "moveHostToModule"
+	MoveBizHostToModule            Action = "moveBizHostToModule"
 	TransferHost                   Action = "transferHost"
 
 	// process actions
