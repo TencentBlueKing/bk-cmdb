@@ -25,7 +25,7 @@ type ContextParams struct {
 	context.Context
 	Session  mongodb.Session
 	ListenIP string
-	Header   types.MsgHeader
+	Header   types.MsgHeader `bson:"msgheader"`
 }
 
 // Deadline overwrite Context Deadline methods

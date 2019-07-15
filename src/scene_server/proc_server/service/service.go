@@ -92,10 +92,6 @@ func (ps *ProcServer) WebService() *restful.Container {
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	// v2
-	api.Route(api.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
-	api.Route(api.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
-
 	ps.newProcessService(api)
 	container := restful.NewContainer()
 	container.Add(api)
@@ -114,7 +110,7 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	})
 
 	// service category
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_category", Handler: ps.GetServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_category", Handler: ps.ListServiceCategory})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_category", Handler: ps.CreateServiceCategory})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_category", Handler: ps.UpdateServiceCategory})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_category", Handler: ps.DeleteServiceCategory})
@@ -144,6 +140,7 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_instance/sync", Handler: ps.SyncServiceInstanceByTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/service_instance/labels", Handler: ps.ServiceInstanceAddLabels})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance/labels", Handler: ps.ServiceInstanceRemoveLabels})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/labels/aggregation", Handler: ps.ServiceInstanceLabelsAggregation})
 
 	// process instance
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/process_instance", Handler: ps.CreateProcessInstances})
@@ -167,29 +164,6 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 		zkItem.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, zkItem)
-
-	// object controller
-	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_OBJECTCONTROLLER}
-	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_OBJECTCONTROLLER); err != nil {
-		objCtr.IsHealthy = false
-		objCtr.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, objCtr)
-
-	// host controller
-	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}
-	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
-		hostCtrl.IsHealthy = false
-		hostCtrl.Message = err.Error()
-	}
-
-	// host controller
-	procCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_PROCCONTROLLER}
-	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_PROCCONTROLLER); err != nil {
-		procCtrl.IsHealthy = false
-		procCtrl.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, procCtrl)
 
 	// coreservice
 	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CORESERVICE}

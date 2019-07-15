@@ -170,7 +170,7 @@ func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryPa
 			dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 			dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 			if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
-				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
+				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(params.Context, params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
 			}
 		}
 	}
@@ -321,7 +321,7 @@ func (s *coreService) SearchModelAttributesByCondition(params core.ContextParams
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
 		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[index])
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
-			dataResult.Info[index].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
+			dataResult.Info[index].Option = s.TranslateEnumName(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
 	}
 
@@ -345,7 +345,7 @@ func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParam
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
 		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[index])
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
-			dataResult.Info[index].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
+			dataResult.Info[index].Option = s.TranslateEnumName(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
 	}
 

@@ -29,7 +29,7 @@ type Config struct {
 	Mechanism    string
 	MaxOpenConns string
 	MaxIdleConns string
-	Transaction  string
+	Enable       string
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -43,6 +43,10 @@ func (c Config) BuildURI() string {
 		c.Address = c.Address + ":" + c.Port
 	}
 
+	c.User = strings.Replace(c.User, "@", "%40", -1)
+	c.Password = strings.Replace(c.Password, "@", "%40", -1)
+	c.User = strings.Replace(c.User, ":", "%3a", -1)
+	c.Password = strings.Replace(c.Password, ":", "%3a", -1)
 	uri := fmt.Sprintf("mongodb://%s:%s@%s/%s", c.User, c.Password, c.Address, c.Database)
 	if c.Mechanism != "" {
 		uri += "?authMechanism=" + c.Mechanism
@@ -77,6 +81,6 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
 		MaxOpenConns: conifgmap[prefix+".maxOpenConns"],
 		MaxIdleConns: conifgmap[prefix+".maxIDleConns"],
 		Mechanism:    conifgmap[prefix+".mechanism"],
-		Transaction:  conifgmap[prefix+".transaction"],
+		Enable:       conifgmap[prefix+".enable"],
 	}
 }

@@ -94,23 +94,23 @@ func (m *associationInstance) CreateOneInstanceAssociation(ctx core.ContextParam
 	inputParam.Data.OwnerID = ctx.SupplierAccount
 	_, exists, err := m.isExists(ctx, inputParam.Data.InstID, inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID, inputParam.Data.Metadata)
 	if nil != err {
-		blog.Errorf("check instance (%#v)is duplicated error", inputParam.Data)
+		blog.Errorf("check instance (%#v)is duplicated error, rid: %s", inputParam.Data, ctx.ReqID)
 		return nil, err
 	}
 	if exists {
-		blog.Errorf("association instance (%#v)is duplicated", inputParam.Data)
-		return nil, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
+		blog.Errorf("association instance (%#v)is duplicated, rid: %s", inputParam.Data, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "association")
 	}
 	//check association kind
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.AssociationObjAsstIDField, Val: inputParam.Data.ObjectAsstID})
 	_, exists, err = m.associationModel.isExists(ctx, cond)
 	if nil != err {
-		blog.Errorf("check asst kind(%#v)is not exist", inputParam.Data.ObjectAsstID)
+		blog.Errorf("check asst kind(%#v)is not exist, rid: %s", inputParam.Data.ObjectAsstID, ctx.ReqID)
 		return nil, err
 	}
 	if !exists {
-		blog.Errorf("association asst kind(%#v)is not exist", inputParam.Data.ObjectAsstID)
+		blog.Errorf("association asst kind(%#v)is not exist, rid: %s", inputParam.Data.ObjectAsstID, ctx.ReqID)
 		return nil, ctx.Error.Error(common.CCErrorTopoAsstKindIsNotExist)
 	}
 	//check association inst
@@ -120,7 +120,7 @@ func (m *associationInstance) CreateOneInstanceAssociation(ctx core.ContextParam
 	}
 
 	if !exists {
-		blog.Errorf("inst to asst is not exist objid(%#v), instid(%#v)", inputParam.Data.ObjectID, inputParam.Data.InstID)
+		blog.Errorf("inst to asst is not exist objid(%#v), instid(%#v), rid: %s", inputParam.Data.ObjectID, inputParam.Data.InstID, ctx.ReqID)
 		return nil, ctx.Error.Error(common.CCErrorAsstInstIsNotExist)
 	}
 	//check inst to asst
@@ -130,7 +130,7 @@ func (m *associationInstance) CreateOneInstanceAssociation(ctx core.ContextParam
 	}
 
 	if !exists {
-		blog.Errorf("asst inst is not exist objid(%#v), instid(%#v)", inputParam.Data.ObjectID, inputParam.Data.InstID)
+		blog.Errorf("asst inst is not exist objid(%#v), instid(%#v), rid: %s", inputParam.Data.ObjectID, inputParam.Data.InstID, ctx.ReqID)
 		return nil, ctx.Error.Error(common.CCErrorInstToAsstIsNotExist)
 	}
 	id, err := m.save(ctx, inputParam.Data)
@@ -243,7 +243,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(ctx core.ContextPara
 func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("parse conditon  error [%#v]", err)
+		blog.Errorf("parse conditon  error [%#v], rid: %s", err, ctx.ReqID)
 		return &metadata.QueryResult{}, err
 	}
 	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
@@ -251,7 +251,7 @@ func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, 
 	inputParam.Condition = condition.ToMapStr()
 	instAsstItems, err := m.searchInstanceAssociation(ctx, inputParam)
 	if nil != err {
-		blog.Errorf("search inst association array err [%#v]", err)
+		blog.Errorf("search inst association array err [%#v], rid: %s", err, ctx.ReqID)
 		return &metadata.QueryResult{}, err
 	}
 
@@ -259,7 +259,7 @@ func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, 
 	dataResult.Count, err = m.countInstanceAssociation(ctx, inputParam.Condition)
 	dataResult.Info = make([]mapstr.MapStr, 0)
 	if nil != err {
-		blog.Errorf("search inst association count err [%#v]", err)
+		blog.Errorf("search inst association count err [%#v], rid: %s", err, ctx.ReqID)
 		return &metadata.QueryResult{}, err
 	}
 	for _, item := range instAsstItems {
@@ -273,13 +273,13 @@ func (m *associationInstance) DeleteInstanceAssociation(ctx core.ContextParams, 
 	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 	cnt, err := m.instCount(ctx, inputParam.Condition)
 	if nil != err {
-		blog.Errorf("delete inst association get inst [%#v] count err [%#v]", inputParam.Condition, err)
+		blog.Errorf("delete inst association get inst [%#v] count err [%#v], rid: %s", inputParam.Condition, err, ctx.ReqID)
 		return &metadata.DeletedCount{}, err
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameInstAsst).Delete(ctx, inputParam.Condition)
 	if nil != err {
-		blog.Errorf("delete inst association [%#v] err [%#v]", inputParam.Condition, err)
+		blog.Errorf("delete inst association [%#v] err [%#v], rid: %s", inputParam.Condition, err, ctx.ReqID)
 		return &metadata.DeletedCount{}, err
 	}
 	return &metadata.DeletedCount{Count: cnt}, nil

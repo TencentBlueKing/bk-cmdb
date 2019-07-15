@@ -15,6 +15,7 @@ package remote
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/storage/dal"
@@ -29,11 +30,13 @@ type Find struct {
 
 // Fields 查询字段
 func (f *Find) Fields(fields ...string) dal.Find {
-	projection := types.Document{}
+	var newFields []string
 	for _, field := range fields {
-		projection[field] = true
+		if strings.TrimSpace(field) != "" {
+			newFields = append(newFields, field)
+		}
 	}
-	f.msg.Projection = projection
+	f.msg.Fields = newFields
 	return f
 }
 
@@ -69,7 +72,7 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 
 	// call
 	reply := types.OPReply{}
-	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	err := f.rpc.Option(&opt).Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -90,13 +93,17 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	if f.TxnID != "" {
 		f.msg.TxnID = f.TxnID
 	}
+	// find one. need return one row
+	f.msg.Start = 0
+	f.msg.Limit = 1
 
 	// call
 	reply := types.OPReply{}
-	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	err := f.rpc.Option(&opt).Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
 		return err
 	}
+
 	if !reply.Success {
 		return errors.New(reply.Message)
 	}
@@ -124,7 +131,7 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 
 	// call
 	reply := types.OPReply{}
-	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	err := f.rpc.Option(&opt).Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
 		return 0, err
 	}

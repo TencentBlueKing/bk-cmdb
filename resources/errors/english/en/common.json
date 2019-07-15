@@ -60,6 +60,10 @@
     "1199062": "get business default set and module info failed",
     "1199063": "requests parameters count not enough",
     "1199064": "function be called with inappropriate parameter",
+    "1199065":"start transcation failed, error:%s",
+    "1199066":"commit transcation failed, error:%s",
+    "1199067":"abort transcation failed, error:%s",
+    "1199068":"list authorized %s resource from iam failed",
 
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",

@@ -33,6 +33,7 @@ import (
 	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/remote"
+	"configcenter/src/thirdpartyclient/elasticsearch"
 )
 
 // TopoServer the topo server
@@ -56,6 +57,8 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 		blog.Infof("config update with max topology level: %d", t.Config.BusinessTopoLevelMax)
 	}
 	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+	t.Config.FullTextSearch = current.ConfigMap["es.full_text_search"]
+	t.Config.EsUrl = current.ConfigMap["es.url"]
 	t.Config.ConfigMap = current.ConfigMap
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
@@ -95,7 +98,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	txn, err := remote.NewWithDiscover(engine.ServiceManageInterface.TMServer().GetServers, server.Config.Mongo)
+	txn, err := remote.NewWithDiscover(engine.ServiceManageInterface.TMServer().GetServers)
 	if err != nil {
 		blog.Errorf("failed to connect the txc server, error info is %v", err)
 		return err
@@ -106,11 +109,22 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
 	}
 
+	essrv := new(elasticsearch.EsSrv)
+	if server.Config.FullTextSearch == "on" {
+		// if use https, config tls.Config{xxx}, and instead NewEsClient param nil
+		esclient, err := elasticsearch.NewEsClient(server.Config.EsUrl, nil)
+		if err != nil {
+			blog.Errorf("failed to create elasticsearch client, err:%s", err.Error())
+		}
+		essrv.Client = esclient
+	}
+
 	authManager := extensions.NewAuthManager(engine.CoreAPI, authorize)
 	server.Service = &service.Service{
 		Language:    engine.Language,
 		Engine:      engine,
 		AuthManager: authManager,
+		Es:          essrv,
 		Core:        core.New(engine.CoreAPI, authManager),
 		Error:       engine.CCErr,
 		Txn:         txn,
