@@ -18,7 +18,7 @@
             <bk-tabpanel name="status" :title="$t('HostDetails[\'实时状态\']')">
                 <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
             </bk-tabpanel>
-            <bk-tabpanel name="service" :title="$t('HostDetails[\'服务列表\']')">
+            <bk-tabpanel name="service" :title="$t('HostDetails[\'服务列表\']')" v-if="business !== -1">
                 <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
             </bk-tabpanel>
             <bk-tabpanel name="history" :title="$t('HostDetails[\'变更记录\']')">
