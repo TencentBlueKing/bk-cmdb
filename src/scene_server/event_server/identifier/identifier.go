@@ -22,7 +22,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
@@ -220,10 +219,12 @@ func (ih *IdentifierHandler) handleBindProcess(e *metadata.EventInstCtx) {
 			}
 
 			modules := make([]metadata.ModuleInst, 0)
-			cond := condition.CreateCondition().Field(common.BKSupplierIDField).Eq(curdata[common.BKSupplierIDField]).
-				Field(common.BKAppIDField).Eq(curdata[common.BKAppIDField]).
-				Field(common.BKModuleNameField).Eq(curdata[common.BKModuleNameField])
-			if err := ih.db.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).All(ih.ctx, &modules); err != nil {
+			filter := map[string]interface{}{
+				common.BKSupplierIDField: curdata[common.BKSupplierIDField],
+				common.BKAppIDField:      curdata[common.BKAppIDField],
+				common.BKModuleNameField: curdata[common.BKModuleNameField],
+			}
+			if err := ih.db.Table(common.BKTableNameBaseModule).Find(filter).All(ih.ctx, &modules); err != nil {
 				continue
 			}
 
@@ -345,17 +346,19 @@ func getString(value interface{}) string {
 func (ih *IdentifierHandler) findHost(objType string, instID int64) (hostIDs []int64, err error) {
 	rid := util.ExtractRequestIDFromContext(ih.ctx)
 	relations := make([]metadata.ModuleHost, 0)
-	cond := condition.CreateCondition().Field(common.GetInstIDField(objType)).Eq(instID)
+	filter := map[string]interface{}{
+		common.GetInstIDField(objType): instID,
+	}
 
 	if objType == common.BKInnerObjIDPlat {
-		if err = ih.db.Table(common.BKTableNameBaseHost).Find(cond.ToMapStr()).Fields([]string{common.BKHostIDField}...).All(ih.ctx, &relations); err != nil {
+		if err = ih.db.Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostIDField).All(ih.ctx, &relations); err != nil {
 			return nil, err
 		}
 	} else if objType == common.BKInnerObjIDProc {
 		// 根据进程获取主机信息
 		serviceInstRelationArr := make([]metadata.ProcessInstanceRelation, 0)
-		if err = ih.db.Table(common.BKTableNameProcessInstanceRelation).Find(cond.ToMapStr).All(context.Background(), &serviceInstRelationArr); err != nil {
-			blog.ErrorJSON("find table(%s) data error. err:%s, condition:%s, rid: %s", err.Error(), cond.ToMapStr(), rid)
+		if err = ih.db.Table(common.BKTableNameProcessInstanceRelation).Find(filter).All(context.Background(), &serviceInstRelationArr); err != nil {
+			blog.ErrorJSON("find table(%s) data error. err:%s, filter:%s, rid: %s", err.Error(), filter, rid)
 			return nil, err
 		}
 		for _, item := range serviceInstRelationArr {
@@ -364,7 +367,7 @@ func (ih *IdentifierHandler) findHost(objType string, instID int64) (hostIDs []i
 		return hostIDs, nil
 
 	} else {
-		if err = ih.db.Table(common.BKTableNameModuleHostConfig).Find(cond.ToMapStr()).Fields(common.BKHostIDField).All(ih.ctx, &relations); err != nil {
+		if err = ih.db.Table(common.BKTableNameModuleHostConfig).Find(filter).Fields(common.BKHostIDField).All(ih.ctx, &relations); err != nil {
 			return nil, err
 		}
 	}
@@ -526,13 +529,17 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 
 // getHostIdentifierProcInfo 根据主机ID生成主机身份
 func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64) (map[int64][]Process, error) {
-	relationCond := condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
+	relationFilter := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: hostIDs,
+		},
+	}
 	relations := make([]metadata.ProcessInstanceRelation, 0)
 
 	// query process id with host id
-	err := db.Table(common.BKTableNameProcessInstanceRelation).Find(relationCond.ToMapStr()).All(ctx, &relations)
+	err := db.Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).All(ctx, &relations)
 	if err != nil {
-		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameProcessInstanceRelation, relationCond.ToMapStr())
+		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameProcessInstanceRelation, relationFilter)
 		return nil, err
 	}
 
@@ -549,10 +556,14 @@ func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64)
 	}
 
 	serviceInstInfos := make([]metadata.ServiceInstance, 0)
-	serviceInstCond := condition.CreateCondition().Field(common.BKFieldID).In(serviceInstIDs)
-	err = db.Table(common.BKTableNameServiceInstance).Find(serviceInstCond.ToMapStr()).All(ctx, &serviceInstInfos)
+	serviceInstFilter := map[string]interface{}{
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: serviceInstIDs,
+		},
+	}
+	err = db.Table(common.BKTableNameServiceInstance).Find(serviceInstFilter).All(ctx, &serviceInstInfos)
 	if err != nil {
-		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameBaseProcess, serviceInstCond.ToMapStr())
+		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameBaseProcess, serviceInstFilter)
 		return nil, err
 	}
 	blog.V(5).Infof("findHostServiceInst query service instance info. service instance id:%#v, info:%#v", serviceInstIDs, serviceInstInfos)
@@ -573,10 +584,14 @@ func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64)
 
 	procInfos := make([]Process, 0)
 	// query process info with process id
-	cond := condition.CreateCondition().Field(common.BKProcIDField).In(procIDs)
-	err = db.Table(common.BKTableNameBaseProcess).Find(cond.ToMapStr()).All(ctx, &procInfos)
+	processFilter := map[string]interface{}{
+		common.BKProcIDField: map[string]interface{}{
+			common.BKDBIN: procIDs,
+		},
+	}
+	err = db.Table(common.BKTableNameBaseProcess).Find(processFilter).All(ctx, &procInfos)
 	if err != nil {
-		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameBaseProcess, cond.ToMapStr())
+		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameBaseProcess, processFilter)
 		return nil, err
 	}
 
