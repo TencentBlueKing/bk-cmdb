@@ -52,7 +52,7 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) 
 		chErr <- ih.StartHandleInsts()
 	}()
 
-	go cleanOutdateEvents(cache)
+	go cleanExpiredEvents(cache)
 
 	if rc != nil {
 		th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, committed: make(chan string, 100), shouldClose: util.NewBool(false)}

@@ -35,7 +35,7 @@ func (dh *DistHandler) SendCallback(receiver *metadata.Subscription, event strin
 	body := bytes.NewBufferString(event)
 	req, err := http.NewRequest("POST", receiver.CallbackURL, body)
 	if err != nil {
-		increaseFailue(dh.cache, receiver.SubscriptionID)
+		increaseFailure(dh.cache, receiver.SubscriptionID)
 		return fmt.Errorf("event distribute fail, build request error: %v, date=[%s]", err, event)
 	}
 	var duration time.Duration
@@ -46,18 +46,18 @@ func (dh *DistHandler) SendCallback(receiver *metadata.Subscription, event strin
 	}
 	resp, err := httpCli.DoWithTimeout(duration, req)
 	if err != nil {
-		increaseFailue(dh.cache, receiver.SubscriptionID)
+		increaseFailure(dh.cache, receiver.SubscriptionID)
 		return fmt.Errorf("event distribute fail, send request error: %v, date=[%s]", err, event)
 	}
 	defer resp.Body.Close()
 	respData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		increaseFailue(dh.cache, receiver.SubscriptionID)
+		increaseFailure(dh.cache, receiver.SubscriptionID)
 		return fmt.Errorf("event distribute fail, read response error: %v, date=[%s]", err, event)
 	}
 	if receiver.ConfirmMode == metadata.ConfirmmodeHttpstatus {
 		if strconv.Itoa(resp.StatusCode) != receiver.ConfirmPattern {
-			increaseFailue(dh.cache, receiver.SubscriptionID)
+			increaseFailure(dh.cache, receiver.SubscriptionID)
 			return fmt.Errorf("event distribute fail, received response %s, date=[%s]", respData, event)
 		}
 	} else if receiver.ConfirmMode == metadata.ConfirmmodeRegular {
@@ -66,7 +66,7 @@ func (dh *DistHandler) SendCallback(receiver *metadata.Subscription, event strin
 			return fmt.Errorf("event distribute fail, build regexp error: %v", err)
 		}
 		if !pattern.Match(respData) {
-			increaseFailue(dh.cache, receiver.SubscriptionID)
+			increaseFailure(dh.cache, receiver.SubscriptionID)
 			return fmt.Errorf("event distribute fail, received response %s, date=[%s]", respData, event)
 		}
 		return nil
@@ -81,7 +81,7 @@ func increaseTotal(cache *redis.Client, subscriptionID int64) error {
 	return increase(cache, subscriptionID, "total")
 }
 
-func increaseFailue(cache *redis.Client, subscriptionID int64) error {
+func increaseFailure(cache *redis.Client, subscriptionID int64) error {
 	return increase(cache, subscriptionID, "failue")
 }
 

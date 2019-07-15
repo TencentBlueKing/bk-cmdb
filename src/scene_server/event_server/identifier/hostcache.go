@@ -80,7 +80,7 @@ func (identifier *HostIdentifier) MarshalBinary() (data []byte, err error) {
 	return json.Marshal(identifier)
 }
 
-func (identifier *HostIdentifier) fillIden(ctx context.Context, cache *redis.Client, db dal.RDB) *HostIdentifier {
+func (identifier *HostIdentifier) fillIdentifier(ctx context.Context, cache *redis.Client, db dal.RDB) *HostIdentifier {
 	// fill cloudName
 	cloud, err := getCache(ctx, cache, db, common.BKInnerObjIDPlat, identifier.CloudID, false)
 	if err != nil {
