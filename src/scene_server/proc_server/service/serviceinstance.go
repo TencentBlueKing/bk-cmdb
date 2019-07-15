@@ -168,7 +168,7 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		// step1: delete the service instance relation.
 		option := &metadata.ListProcessInstanceRelationOption{
 			BusinessID:         bizID,
-			ServiceInstanceIDs: &[]int64{serviceInstanceID},
+			ServiceInstanceIDs: []int64{serviceInstanceID},
 		}
 		relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {
@@ -176,23 +176,25 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 			return
 		}
 
-		deleteOption := metadata.DeleteProcessInstanceRelationOption{
-			ServiceInstanceIDs: &[]int64{serviceInstanceID},
-		}
-		err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d, but delete service instance relations failed.", serviceInstanceID)
-			return
-		}
+		if len(relations.Info) > 0 {
+			deleteOption := metadata.DeleteProcessInstanceRelationOption{
+				ServiceInstanceIDs: []int64{serviceInstanceID},
+			}
+			err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
+			if err != nil {
+				ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d, but delete service instance relations failed.", serviceInstanceID)
+				return
+			}
 
-		// step2: delete process instance belongs to this service instance.
-		var processIDs []int64
-		for _, r := range relations.Info {
-			processIDs = append(processIDs, r.ProcessID)
-		}
-		if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, processIDs); err != nil {
-			ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d, but delete process instance failed.", serviceInstanceID)
-			return
+			// step2: delete process instance belongs to this service instance.
+			processIDs := make([]int64, 0)
+			for _, r := range relations.Info {
+				processIDs = append(processIDs, r.ProcessID)
+			}
+			if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, processIDs); err != nil {
+				ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d, but delete process instance failed.", serviceInstanceID)
+				return
+			}
 		}
 
 		// step3: delete service instance.
@@ -555,7 +557,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	// find all the process instances relations for the usage of getting process instances.
 	relationOption := &metadata.ListProcessInstanceRelationOption{
 		BusinessID:         bizID,
-		ServiceInstanceIDs: &serviceInstanceIDs,
+		ServiceInstanceIDs: serviceInstanceIDs,
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
 	if err != nil {
@@ -622,7 +624,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 
 				// remove process instance relation now.
 				deleteOption := metadata.DeleteProcessInstanceRelationOption{}
-				deleteOption.ProcessIDs = &[]int64{process.ProcessID}
+				deleteOption.ProcessIDs = []int64{process.ProcessID}
 				if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption); err != nil {
 					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "force sync service instance according to service template: %d, but delete process instance relation: %d with template: %d failed, err: %v", module.ServiceTemplateID, process.ProcessID, template.ID, err)
 					return
@@ -716,8 +718,7 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d",
-			bizID, input.HostID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d", bizID, input.HostID, err)
 		return
 	}
 
@@ -748,4 +749,44 @@ func (ps *ProcServer) ServiceInstanceRemoveLabels(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+// ServiceInstanceLabelsAggregation aggregation instance's labels
+func (ps *ProcServer) ServiceInstanceLabelsAggregation(ctx *rest.Contexts) {
+	option := metadata.LabelAggregationOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := option.Metadata.ParseBizID()
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	listOption := &metadata.ListServiceInstanceOption{
+		BusinessID: bizID,
+	}
+	if option.ModuleID != nil {
+		listOption.ModuleID = *option.ModuleID
+	}
+	instanceRst, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	// TODO: how to move aggregation into label service
+	aggregationData := make(map[string][]string)
+	for _, inst := range instanceRst.Info {
+		for key, value := range inst.Labels {
+			if _, exist := aggregationData[key]; exist == false {
+				aggregationData[key] = make([]string, 0)
+			}
+			aggregationData[key] = append(aggregationData[key], value)
+		}
+	}
+	for key := range aggregationData {
+		aggregationData[key] = util.StrArrayUnique(aggregationData[key])
+	}
+	ctx.RespEntity(aggregationData)
 }

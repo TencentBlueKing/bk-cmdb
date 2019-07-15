@@ -55,17 +55,30 @@ func (s *coreService) getModuleIDsByHostID(params core.ContextParams, moduleCond
 }
 
 func (s *coreService) GetModulesHostConfig(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	var dat = make(map[string][]int)
-	if err := data.MarshalJSONInto(dat); err != nil {
+	relationRequest := meta.HostModuleRelationRequest{}
+	if err := data.MarshalJSONInto(relationRequest); err != nil {
 		blog.Errorf("del module host config failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	query := make(map[string]interface{})
-	for key, val := range dat {
-		conditon := make(map[string]interface{})
-		conditon[common.BKDBIN] = val
-		query[key] = conditon
+	if relationRequest.ApplicationID != 0 {
+		query[common.BKAppIDField] = relationRequest.ApplicationID
+	}
+	if relationRequest.HostIDArr != nil {
+		query[common.BKHostIDField] = map[string]interface{}{
+			common.BKDBIN: relationRequest.HostIDArr,
+		}
+	}
+	if relationRequest.SetIDArr != nil {
+		query[common.BKSetIDField] = map[string]interface{}{
+			common.BKDBIN: relationRequest.SetIDArr,
+		}
+	}
+	if relationRequest.ModuleIDArr != nil {
+		query[common.BKModuleIDField] = map[string]interface{}{
+			common.BKDBIN: relationRequest.ModuleIDArr,
+		}
 	}
 
 	query = util.SetModOwner(query, params.SupplierAccount)
