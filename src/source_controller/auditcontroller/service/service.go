@@ -13,12 +13,12 @@
 package service
 
 import (
-	"configcenter/src/common/metadata"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
@@ -32,30 +32,35 @@ type Service struct {
 	Instance dal.RDB
 }
 
-func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
+func (s *Service) WebService() *restful.Container {
+	container := restful.NewContainer()
+
+	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/audit/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	restful.DefaultRequestContentType(restful.MIME_JSON)
-	restful.DefaultResponseContentType(restful.MIME_JSON)
+	api.Path("/audit/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/host/{owner_id}/{biz_id}/{user}").To(s.AddHostLog))
-	ws.Route(ws.POST("/hosts/{owner_id}/{biz_id}/{user}").To(s.AddHostLogs))
-	ws.Route(ws.POST("/obj/{owner_id}/{biz_id}/{user}").To(s.AddObjectLog))
-	ws.Route(ws.POST("/objs/{owner_id}/{biz_id}/{user}").To(s.AddObjectLogs))
-	ws.Route(ws.POST("/proc/{owner_id}/{biz_id}/{user}").To(s.AddProcLog))
-	ws.Route(ws.POST("/procs/{owner_id}/{biz_id}/{user}").To(s.AddProcLogs))
-	ws.Route(ws.POST("/module/{owner_id}/{biz_id}/{user}").To(s.AddModuleLog))
-	ws.Route(ws.POST("/modules/{owner_id}/{biz_id}/{user}").To(s.AddModuleLogs))
-	ws.Route(ws.POST("/app/{owner_id}/{biz_id}/{user}").To(s.AddAppLog))
-	ws.Route(ws.POST("set/{owner_id}/{biz_id}/{user}").To(s.AddSetLog))
-	ws.Route(ws.POST("/sets/{owner_id}/{biz_id}/{user}").To(s.AddSetLogs))
-	ws.Route(ws.POST("/search").To(s.Get))
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
+	api.Route(api.POST("/host/{owner_id}/{biz_id}/{user}").To(s.AddHostLog))
+	api.Route(api.POST("/hosts/{owner_id}/{biz_id}/{user}").To(s.AddHostLogs))
+	api.Route(api.POST("/obj/{owner_id}/{biz_id}/{user}").To(s.AddObjectLog))
+	api.Route(api.POST("/objs/{owner_id}/{biz_id}/{user}").To(s.AddObjectLogs))
+	api.Route(api.POST("/proc/{owner_id}/{biz_id}/{user}").To(s.AddProcLog))
+	api.Route(api.POST("/procs/{owner_id}/{biz_id}/{user}").To(s.AddProcLogs))
+	api.Route(api.POST("/module/{owner_id}/{biz_id}/{user}").To(s.AddModuleLog))
+	api.Route(api.POST("/modules/{owner_id}/{biz_id}/{user}").To(s.AddModuleLogs))
+	api.Route(api.POST("/app/{owner_id}/{biz_id}/{user}").To(s.AddAppLog))
+	api.Route(api.POST("set/{owner_id}/{biz_id}/{user}").To(s.AddSetLog))
+	api.Route(api.POST("/sets/{owner_id}/{biz_id}/{user}").To(s.AddSetLogs))
+	api.Route(api.POST("/search").To(s.Get))
 
-	return ws
+	container.Add(api)
+
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
