@@ -23,7 +23,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
@@ -86,7 +85,7 @@ func migrateIDToMongo(ctx context.Context, cache *redis.Client, db dal.RDB) erro
 		return err
 	}
 
-	docs := mapstr.MapStr{
+	docs := map[string]interface{}{
 		"_id":        common.EventCacheEventIDKey,
 		"SequenceID": id,
 	}

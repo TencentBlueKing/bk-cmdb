@@ -21,7 +21,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
 )
@@ -153,7 +152,10 @@ func (dh *DistHandler) distToSubscribe(param metadata.Subscription, chNew chan m
 				blog.Infof("refresh ignore, subscriber cache key not change\nold:%s\nnew:%s ", sub.GetCacheKey(), nsub.GetCacheKey())
 			}
 		case <-ticker.C:
-			count, countErr := dh.db.Table(common.BKTableNameSubscription).Find(condition.CreateCondition().Field(common.BKSubscriptionIDField).Eq(sub.SubscriptionID).ToMapStr()).Count(context.Background())
+			filter := map[string]interface{}{
+				common.BKSubscriptionIDField: sub.SubscriptionID,
+			}
+			count, countErr := dh.db.Table(common.BKTableNameSubscription).Find(filter).Count(context.Background())
 			if countErr != nil {
 				blog.Errorf("get subscription count error %v", countErr)
 				continue

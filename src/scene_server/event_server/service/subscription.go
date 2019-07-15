@@ -66,7 +66,11 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	sub.SubscriptionForm = strings.Join(events, ",")
 
 	exists := make([]metadata.Subscription, 0)
-	err = s.db.Table(common.BKTableNameSubscription).Find(map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID}).All(s.ctx, &exists)
+	filter := map[string]interface{}{
+		common.BKSubscriptionNameField: sub.SubscriptionName,
+		common.BKOwnerIDField:          ownerID,
+	}
+	err = s.db.Table(common.BKTableNameSubscription).Find(filter).All(s.ctx, &exists)
 	if err != nil {
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommDuplicateItem, "subscription_name"),
@@ -243,7 +247,11 @@ func (s *Service) rebook(header http.Header, id int64, ownerID string, sub *meta
 		return err
 	}
 	if oldSub.SubscriptionName != sub.SubscriptionName {
-		count, err := s.db.Table(common.BKTableNameSubscription).Find(map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID}).Count(s.ctx)
+		filter := map[string]interface{}{
+			common.BKSubscriptionNameField: sub.SubscriptionName,
+			common.BKOwnerIDField:          ownerID,
+		}
+		count, err := s.db.Table(common.BKTableNameSubscription).Find(filter).Count(s.ctx)
 		if err != nil {
 			blog.Errorf("get subscription count error: %v, rid: %s", err, rid)
 			return err
@@ -267,7 +275,11 @@ func (s *Service) rebook(header http.Header, id int64, ownerID string, sub *meta
 	sort.Strings(events)
 	sub.SubscriptionForm = strings.Join(events, ",")
 
-	if updateErr := s.db.Table(common.BKTableNameSubscription).Update(s.ctx, util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build(), sub); nil != updateErr {
+	filter := map[string]interface{}{
+		common.BKSubscriptionIDField: id,
+		common.BKOwnerIDField:        ownerID,
+	}
+	if updateErr := s.db.Table(common.BKTableNameSubscription).Update(s.ctx, filter, sub); nil != updateErr {
 		blog.Errorf("fail update subscription by condition, error information is %s, rid: %s", updateErr.Error(), rid)
 		return updateErr
 	}
