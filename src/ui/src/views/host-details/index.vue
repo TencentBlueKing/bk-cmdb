@@ -19,6 +19,9 @@
             <bk-tab-panel name="status" :label="$t('HostDetails[\'实时状态\']')">
                 <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
             </bk-tab-panel>
+            <bk-tab-panel name="service" :label="$t('HostDetails[\'服务列表\']')" v-if="business !== -1">
+                <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
+            </bk-tab-panel>
             <bk-tab-panel name="history" :label="$t('HostDetails[\'变更记录\']')">
                 <cmdb-host-history v-if="active === 'history'"></cmdb-host-history>
             </bk-tab-panel>
@@ -33,13 +36,15 @@
     import cmdbHostProperty from './children/property.vue'
     import cmdbHostStatus from './children/status.vue'
     import cmdbHostHistory from './children/history.vue'
+    import cmdbHostService from './children/service-list.vue'
     export default {
         components: {
             cmdbHostInfo,
             cmdbHostAssociation,
             cmdbHostProperty,
             cmdbHostStatus,
-            cmdbHostHistory
+            cmdbHostHistory,
+            cmdbHostService
         },
         data () {
             return {

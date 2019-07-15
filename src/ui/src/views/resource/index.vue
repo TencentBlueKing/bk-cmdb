@@ -1,20 +1,5 @@
 <template>
     <div class="resource-layout clearfix">
-        <cmdb-hosts-filter class="resource-filter fr"
-            :active-tab="['filter']"
-            :active-setting="['reset', 'filter-config']"
-            :filter-config-key="filter.filterConfigKey"
-            @on-refresh="handleRefresh">
-            <div class="filter-group" slot="scope">
-                <label class="filter-label">{{$t("Hosts['搜索范围']")}}</label>
-                <cmdb-form-bool class="filter-field" :disabled="true" :checked="true">
-                    <span class="filter-field-label">{{$t("Hosts['未分配主机']")}}</span>
-                </cmdb-form-bool>
-                <cmdb-form-bool class="filter-field" v-model="filter.assigned">
-                    <span class="filter-field-label">{{$t("Hosts['已分配主机']")}}</span>
-                </cmdb-form-bool>
-            </div>
-        </cmdb-hosts-filter>
         <cmdb-hosts-table class="resource-main" ref="resourceTable"
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
@@ -128,12 +113,10 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import cmdbHostsFilter from '@/components/hosts/filter'
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbImport from '@/components/import/import'
     export default {
         components: {
-            cmdbHostsFilter,
             cmdbHostsTable,
             cmdbImport
         },

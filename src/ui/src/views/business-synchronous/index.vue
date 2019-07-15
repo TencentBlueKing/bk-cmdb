@@ -51,7 +51,7 @@
                             </div>
                             <div class="process-name"
                                 v-show="process['operational_type'] === 'changed'">
-                                {{$t("ProcessManagement['进程名称']")}}：{{process['process_template_name']}}
+                                {{$t("ProcessManagement['进程名称']")}}：<span style="color: #313238;">{{process['process_template_name']}}</span>
                             </div>
                             <div class="process-name mb50"
                                 v-show="process['operational_type'] === 'added'">
@@ -445,23 +445,32 @@
             max-height: 500px;
             min-height: 300px;
             height: calc(100% - 160px);
-            border: 1px solid #c3cdd7;
+            border: 1px solid #dcdee5;
             .tab-head {
                 height: 100%;
                 .tab-nav {
                     @include scrollbar-y;
+                    position: relative;
                     width: 200px;
                     height: 100%;
                     background-color: #fafbfd;
                     padding-bottom: 20px;
-                    border-right: 1px solid #c3cdd7;
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        right: 0;
+                        width: 1px;
+                        height: 100%;
+                        background-color: #dcdee5;
+                    }
                 }
                 .nav-item {
                     @include space-between;
                     position: relative;
                     height: 60px;
                     padding: 0px 14px;
-                    border-bottom: 1px solid #c3cdd7;
+                    border-bottom: 1px solid #dcdee5;
                     cursor: pointer;
                     &.delete-item span {
                         text-decoration: line-through;
@@ -501,10 +510,11 @@
                             content: '';
                             position: absolute;
                             top: 0;
-                            right: -1px;
+                            right: 0;
                             width: 1px;
-                            height: 100%;
+                            height: 60px;
                             background-color: #ffffff;
+                            z-index: 2;
                         }
                         &.delete-item {
                             color: #ff5656;
@@ -531,7 +541,7 @@
                         }
                     }
                     .change-box {
-                        color: #313238;
+                        color: #63656e;
                         .process-info {
                             padding-top: 20px;
                             padding-bottom: 30px;
@@ -551,11 +561,14 @@
                         .instances-item {
                             @include space-between;
                             width: 240px;
+                            height: 24px;
+                            line-height: 24px;
                             font-size: 14px;
-                            padding: 2px 6px 4px;
+                            padding: 0 6px;
                             margin-bottom: 16px;
                             margin-right: 14px;
                             border: 1px solid #dcdee5;
+                            border-radius: 2px;
                             background-color: #fafbfd;
                             cursor: pointer;
                             h6 {

@@ -41,69 +41,21 @@
                 </div>
             </div>
         </div>
-        <bk-table
+        <cmdb-table
             v-show="localExpanded"
-            v-bkloading="{ isLoading: $loading(Object.values(requestId)) }"
-            :data="flattenList">
-            <bk-table-column v-for="column in header"
-                :key="column.id"
-                :prop="column.id"
-                :label="column.name">
-            </bk-table-column>
-            <bk-table-column :label="$t('Common[\'操作\']')">
-                <template slot-scope="{ row }">
-                    <button class="text-primary mr10"
-                        @click="handleEditProcess(row)">
-                        {{$t('Common["编辑"]')}}
-                    </button>
-                    <button class="text-primary" v-if="!withTemplate"
-                        @click="handleDeleteProcess(row)">
-                        {{$t('Common["删除"]')}}
-                    </button>
-                </template>
-            </bk-table-column>
-            <template slot="empty">
-                <template v-if="withTemplate">
-                    <i18n path="BusinessTopology['暂无模板进程']">
-                        <button class="add-process-button text-primary" place="link"
-                            @click.stop="handleAddProcessToTemplate">
-                            {{$t('BusinessTopology["模板添加"]')}}
-                        </button>
-                    </i18n>
-                </template>
-                <button class="add-process-button text-primary" v-else
-                    @click.stop="handleAddProcess">
-                    <i class="bk-icon icon-plus"></i>
-                    <span>{{$t('BusinessTopology["添加进程"]')}}</span>
-                </button>
-            </template>
-            <div class="add-process-options" v-if="!withTemplate && list.length" slot="append">
-                <button class="add-process-button text-primary" @click="handleAddProcess">
-                    <i class="bk-icon icon-plus"></i>
-                    <span>{{$t('BusinessTopology["添加进程"]')}}</span>
-                </button>
-            </div>
-        </bk-table>
-        <bk-dialog class="bk-dialog-no-padding"
-            v-model="editLabel.show"
-            :width="580"
-            @confirm="handleSubmitEditLable"
-            @cancel="handleCloseEditLable">
-            <div slot="header">
-                {{$t("BusinessTopology['编辑标签']")}}
-            </div>
-            <cmdb-edit-label
-                ref="instanceLabel"
-                :default-list="editLabel.list">
-            </cmdb-edit-label>
-        </bk-dialog>
+            :loading="$loading(Object.values(requestId))"
+            :header="header"
+            :list="flattenList"
+            :empty-height="42"
+            :visible="localExpanded"
+            :sortable="false"
+            :reference-document-height="false">
+        </cmdb-table>
     </div>
 </template>
 
 <script>
-    import cmdbEditLabel from './edit-label.vue'
     export default {
-        components: { cmdbEditLabel },
         props: {
             instance: {
                 type: Object,
@@ -113,10 +65,6 @@
         },
         data () {
             return {
-                editLabel: {
-                    show: false,
-                    list: []
-                },
                 tipsLabel: {
                     show: false,
                     instance: null,
@@ -140,21 +88,9 @@
             },
             instanceMenu () {
                 const menu = [{
-                    name: this.$t('BusinessTopology["编辑标签"]'),
-                    handler: this.handleShowEditLabel
-                }, {
                     name: this.$t('Common["删除"]'),
                     handler: this.handleDeleteInstance
                 }]
-                if (!this.withTemplate) {
-                    menu.unshift({
-                        name: this.$t('BusinessTopology["添加进程"]'),
-                        handler: this.handleAddProcess
-                    }, {
-                        name: this.$t('BusinessTopology["克隆"]'),
-                        handler: this.handleCloneInstance
-                    })
-                }
                 return menu
             },
             module () {
@@ -254,43 +190,6 @@
                 })
                 this.header = header
             },
-            handleAddProcess () {
-                this.$emit('create-process', this)
-            },
-            async handleEditProcess (item) {
-                const processInstance = this.list.find(data => data.relation.bk_process_id === item.bk_process_id)
-                this.$emit('update-process', processInstance, this)
-            },
-            async handleDeleteProcess (item) {
-                try {
-                    await this.$store.dispatch('processInstance/deleteServiceInstanceProcess', {
-                        serviceInstanceId: this.instance.id,
-                        config: {
-                            data: this.$injectMetadata({
-                                process_instance_ids: [item.bk_process_id]
-                            })
-                        }
-                    })
-                    this.getServiceProcessList()
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            handleCloneInstance () {
-                this.$router.push({
-                    name: 'cloneServiceInstance',
-                    params: {
-                        instanceId: this.instance.id,
-                        hostId: this.instance.bk_host_id,
-                        setId: this.module.bk_set_id,
-                        moduleId: this.module.bk_module_id
-                    },
-                    query: {
-                        from: this.$route.fullPath,
-                        title: this.instance.name
-                    }
-                })
-            },
             handleDeleteInstance () {
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认删除实例"]'),
@@ -311,82 +210,6 @@
                         }
                     }
                 })
-            },
-            handleAddProcessToTemplate () {
-                this.$router.push({
-                    name: 'operationalTemplate',
-                    params: {
-                        templateId: this.instance.service_template_id
-                    },
-                    query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.module.bk_module_id
-                            }
-                        }
-                    }
-                })
-            },
-            handleShowEditLabel () {
-                this.editLabel.list = this.labelList
-                this.editLabel.show = true
-            },
-            handleCloseEditLable () {
-                this.editLabel.list = []
-                this.editLabel.show = false
-            },
-            async handleSubmitEditLable () {
-                try {
-                    let status = ''
-                    const validator = this.$refs.instanceLabel.$validator
-                    const removeKeysList = this.$refs.instanceLabel.removeKeysList
-                    const list = this.$refs.instanceLabel.submitList
-                    const originList = this.$refs.instanceLabel.originList
-                    const hasChange = JSON.stringify(this.$refs.instanceLabel.list) !== JSON.stringify(originList)
-
-                    if (list.length && !await validator.validateAll()) {
-                        return
-                    }
-
-                    if (removeKeysList.length) {
-                        status = await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
-                            config: {
-                                data: this.$injectMetadata({
-                                    instance_ids: [this.instance.id],
-                                    keys: removeKeysList
-                                }),
-                                requestId: 'deleteInstanceLabel',
-                                transformData: false
-                            }
-                        })
-                    }
-
-                    if (list.length && hasChange) {
-                        const labelSet = {}
-                        list.forEach(label => {
-                            labelSet[label.key] = label.value
-                        })
-                        status = await this.$store.dispatch('instanceLabel/createInstanceLabel', {
-                            params: this.$injectMetadata({
-                                instance_ids: [this.instance.id],
-                                labels: labelSet
-                            }),
-                            config: {
-                                requestId: 'createInstanceLabel',
-                                transformData: false
-                            }
-                        })
-                    }
-                    if (status && status.bk_error_msg === 'success') {
-                        this.$success(this.$t('Common["保存成功"]'))
-                        this.$parent.filter = ''
-                        this.$parent.getServiceInstances()
-                    }
-                    this.handleCloseEditLable()
-                } catch (e) {
-                    console.error(e)
-                }
             },
             handleCloseTipsLabel () {
                 this.tipsLabel.instance && this.tipsLabel.instance.destroy()
@@ -432,18 +255,6 @@
         .title-label {
             font-size: 14px;
             color: #313238;
-            @include inlineBlock;
-        }
-    }
-    .add-process-options {
-        line-height: 42px;
-        font-size: 12px;
-        text-align: center;
-    }
-    .add-process-button {
-        line-height: 32px;
-        .bk-icon,
-        span {
             @include inlineBlock;
         }
     }
