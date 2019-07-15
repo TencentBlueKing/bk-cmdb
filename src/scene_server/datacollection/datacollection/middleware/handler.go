@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common"
 	bkc "configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -361,7 +360,6 @@ func (d *Discover) GetModelFromRedis(modelKey string) (MapData, error) {
 	}
 
 	return cacheData, nil
-
 }
 
 func (d *Discover) GetModelAttrsFromRedis(modelAttrKey string) ([]string, error) {
@@ -653,8 +651,10 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	delete(inst, bkc.CreateTimeField)
 
 	input := metadata.UpdateOption{
-		Data:      inst,
-		Condition: condition.CreateCondition().Field(common.BKInstIDField).Eq(instID).ToMapStr(),
+		Data: inst,
+		Condition: map[string]interface{}{
+			common.BKInstIDField: instID,
+		},
 	}
 	resp, err := d.CoreAPI.CoreService().Instance().UpdateInstance(d.ctx, d.httpHeader, objID, &input)
 	if err != nil {

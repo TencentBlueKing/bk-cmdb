@@ -271,14 +271,15 @@ func (lgc *Logics) findObjectIn(header http.Header, objIDs ...string) ([]metadat
 	return lgc.findObject(header, cond.ToMapStr())
 }
 
-func (lgc *Logics) findObject(header http.Header, cond mapstr.MapStr) ([]metadata.Object, error) {
-	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), header, &metadata.QueryCondition{Condition: cond})
+func (lgc *Logics) findObject(header http.Header, filter mapstr.MapStr) ([]metadata.Object, error) {
+	cond := &metadata.QueryCondition{Condition: filter}
+	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), header, cond)
 	if err != nil {
-		blog.Errorf("[NetDevice][findObject] by %+v error: %v", cond, err)
+		blog.Errorf("[NetDevice][findObject] by %+v error: %v", filter, err)
 		return nil, err
 	}
 	if !resp.Result {
-		blog.Errorf("[NetDevice][findObject] by %+v error: %v", cond, resp)
+		blog.Errorf("[NetDevice][findObject] by %+v error: %v", filter, resp)
 		return nil, err
 	}
 	models := make([]metadata.Object, 0)

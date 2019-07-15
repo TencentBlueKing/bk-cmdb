@@ -20,7 +20,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
 )
@@ -68,12 +67,13 @@ func (h *NetCollect) handleReport(report *metadata.NetcollectReport) (err error)
 }
 
 func (h *NetCollect) upsertReport(report *metadata.NetcollectReport) error {
-	existCond := condition.CreateCondition()
-	existCond.Field(common.BKCloudIDField).Eq(report.CloudID)
-	existCond.Field(common.BKObjIDField).Eq(report.ObjectID)
-	existCond.Field(common.BKInstKeyField).Eq(report.InstKey)
+	existFilter := map[string]interface{}{
+		common.BKCloudIDField: report.CloudID,
+		common.BKObjIDField:   report.ObjectID,
+		common.BKInstKeyField: report.InstKey,
+	}
 
-	count, err := h.db.Table(common.BKTableNameNetcollectReport).Find(existCond.ToMapStr()).Count(h.ctx)
+	count, err := h.db.Table(common.BKTableNameNetcollectReport).Find(existFilter).Count(h.ctx)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (h *NetCollect) upsertReport(report *metadata.NetcollectReport) error {
 		return err
 	}
 
-	return h.db.Table(common.BKTableNameNetcollectReport).Update(h.ctx, existCond.ToMapStr(), report)
+	return h.db.Table(common.BKTableNameNetcollectReport).Update(h.ctx, existFilter, report)
 }
 
 // ReportMessage define a netcollect message
