@@ -29,7 +29,7 @@ import (
 
 var (
 	timeout    = time.Second * 10
-	waitperiod = time.Second
+	waitPeriod = time.Second
 )
 
 // Err define
@@ -40,12 +40,12 @@ var (
 
 func (eh *EventHandler) StartHandleInsts() (err error) {
 	defer func() {
-		syserror := recover()
-		if syserror != nil {
-			err = fmt.Errorf("system error: %v", syserror)
+		sysError := recover()
+		if sysError != nil {
+			err = fmt.Errorf("system error: %v", sysError)
 		}
 		if err != nil {
-			blog.Infof("event inst handle process stoped by %v", err)
+			blog.Infof("event inst handle process stopped by %v", err)
 			blog.Errorf("%s", debug.Stack())
 		}
 	}()
@@ -77,20 +77,20 @@ func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
 	}
 
 	previousID := fmt.Sprint(event.ID - 1)
-	priviousRunningkey := types.EventCacheEventRunningPrefix + previousID
+	previousRunningKey := types.EventCacheEventRunningPrefix + previousID
 	done, err := checkFromDone(eh.cache, types.EventCacheEventDoneKey, previousID)
 	if err != nil {
 		return err
 	}
 	if !done {
-		running, checkErr := checkFromRunning(eh.cache, priviousRunningkey)
+		running, checkErr := checkFromRunning(eh.cache, previousRunningKey)
 		if checkErr != nil {
 			return checkErr
 		}
 		if !running {
 
 			time.Sleep(time.Second * 3)
-			running, checkErr = checkFromRunning(eh.cache, priviousRunningkey)
+			running, checkErr = checkFromRunning(eh.cache, previousRunningKey)
 			if checkErr != nil {
 				return checkErr
 			}
@@ -117,7 +117,7 @@ func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
 
 	for _, origindist := range origindists {
 		subscribers := eh.findEventTypeSubscribers(origindist.GetType(), event.OwnerID)
-		if len(subscribers) <= 0 || nilstr == subscribers[0] {
+		if len(subscribers) <= 0 || nilStr == subscribers[0] {
 			blog.Infof("%v no subscriber，continue", origindist.GetType())
 			return eh.SaveEventDone(event)
 		}
@@ -182,9 +182,9 @@ func (eh *EventHandler) pushToQueue(key, value string) (err error) {
 	return
 }
 
-func (eh *EventHandler) nextDistID(eventtype string) (nextid int64, err error) {
+func (eh *EventHandler) nextDistID(eventType string) (nextid int64, err error) {
 	var id int64
-	id, err = eh.cache.Incr(types.EventCacheDistIDPrefix + eventtype).Result()
+	id, err = eh.cache.Incr(types.EventCacheDistIDPrefix + eventType).Result()
 	if err != nil {
 		return
 	}
@@ -215,7 +215,7 @@ func waitPreviousDone(cache *redis.Client, key string, id string, timeout time.D
 				return
 			}
 		}
-		time.Sleep(waitperiod)
+		time.Sleep(waitPeriod)
 	}
 	return
 }
@@ -244,20 +244,20 @@ func (eh *EventHandler) findEventTypeSubscribers(eventtype, ownerID string) []st
 }
 
 func (eh *EventHandler) popEventInst() *metadata.EventInstCtx {
-	var eventstr string
+	var eventStr string
 
-	eh.cache.BRPopLPush(types.EventCacheEventQueueKey, types.EventCacheEventQueueDuplicateKey, time.Second*60).Scan(&eventstr)
+	eh.cache.BRPopLPush(types.EventCacheEventQueueKey, types.EventCacheEventQueueDuplicateKey, time.Second*60).Scan(&eventStr)
 
-	if eventstr == "" || eventstr == nilstr {
+	if eventStr == "" || eventStr == nilStr {
 		return nil
 	}
-	eventbytes := []byte(eventstr)
+	eventBytes := []byte(eventStr)
 	event := metadata.EventInst{}
-	if err := json.Unmarshal(eventbytes, &event); err != nil {
-		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventbytes)
+	if err := json.Unmarshal(eventBytes, &event); err != nil {
+		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventBytes)
 		return nil
 	}
-	return &metadata.EventInstCtx{EventInst: event, Raw: eventstr}
+	return &metadata.EventInstCtx{EventInst: event, Raw: eventStr}
 }
 
-const nilstr = "nil"
+const nilStr = "nil"

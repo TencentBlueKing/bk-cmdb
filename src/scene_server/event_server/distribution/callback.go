@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"time"
 
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
@@ -50,7 +50,7 @@ func (dh *DistHandler) SendCallback(receiver *metadata.Subscription, event strin
 		return fmt.Errorf("event distribute fail, send request error: %v, date=[%s]", err, event)
 	}
 	defer resp.Body.Close()
-	respdata, err := ioutil.ReadAll(resp.Body)
+	respData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		increaseFailue(dh.cache, receiver.SubscriptionID)
 		return fmt.Errorf("event distribute fail, read response error: %v, date=[%s]", err, event)
@@ -58,16 +58,16 @@ func (dh *DistHandler) SendCallback(receiver *metadata.Subscription, event strin
 	if receiver.ConfirmMode == metadata.ConfirmmodeHttpstatus {
 		if strconv.Itoa(resp.StatusCode) != receiver.ConfirmPattern {
 			increaseFailue(dh.cache, receiver.SubscriptionID)
-			return fmt.Errorf("event distribute fail, received response %s, date=[%s]", respdata, event)
+			return fmt.Errorf("event distribute fail, received response %s, date=[%s]", respData, event)
 		}
 	} else if receiver.ConfirmMode == metadata.ConfirmmodeRegular {
 		pattern, err := regexp.Compile(receiver.ConfirmPattern)
 		if err != nil {
 			return fmt.Errorf("event distribute fail, build regexp error: %v", err)
 		}
-		if !pattern.Match(respdata) {
+		if !pattern.Match(respData) {
 			increaseFailue(dh.cache, receiver.SubscriptionID)
-			return fmt.Errorf("event distribute fail, received response %s, date=[%s]", respdata, event)
+			return fmt.Errorf("event distribute fail, received response %s, date=[%s]", respData, event)
 		}
 		return nil
 	}
@@ -88,7 +88,7 @@ func increaseFailue(cache *redis.Client, subscriptionID int64) error {
 func increase(cache *redis.Client, subscriptionID int64, key string) error {
 	err := cache.HIncrBy(types.EventCacheDistCallBackCountPrefix+strconv.FormatInt(subscriptionID, 10), key, 1).Err()
 	if err != nil {
-		blog.V(3).Infof("increaseFailue %s", err.Error())
+		blog.V(3).Infof("increaseFailure %s", err.Error())
 	}
 	return err
 }

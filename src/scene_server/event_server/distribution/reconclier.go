@@ -66,7 +66,7 @@ func (r *reconciler) loadAll() {
 func (r *reconciler) loadAllCached() {
 	r.cached = map[string][]string{}
 	for _, formkey := range r.cache.Keys(types.EventCacheSubscribeformKey + "*").Val() {
-		if formkey != "" && formkey != nilstr && formkey != "redis" {
+		if formkey != "" && formkey != nilStr && formkey != "redis" {
 			r.cached[strings.TrimPrefix(formkey, types.EventCacheSubscribeformKey)] = r.cache.SMembers(formkey).Val()
 		}
 	}
