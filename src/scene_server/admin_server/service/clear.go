@@ -32,6 +32,7 @@ func (s *Service) clear(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 
 	if version.CCRunMode == version.CCRunModeProduct {
+		blog.Errorf("clear production data forbidden, rid: %s", rid)
 		result := &metadata.RespError{
 			Msg: defErr.Error(common.CCErrCommMigrateFailed),
 		}
@@ -41,7 +42,7 @@ func (s *Service) clear(req *restful.Request, resp *restful.Response) {
 
 	err := clearDatabase(s.db)
 	if nil != err {
-		blog.Errorf("clear error: %+v, rid: %s", err, rid)
+		blog.Errorf("clear database failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.Error(common.CCErrCommMigrateFailed),
 		}

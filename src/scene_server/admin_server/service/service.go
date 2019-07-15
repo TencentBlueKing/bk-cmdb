@@ -95,7 +95,8 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, zkItem)
 
 	// mongodb
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
+	healthItem := metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping())
+	meta.Items = append(meta.Items, healthItem)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

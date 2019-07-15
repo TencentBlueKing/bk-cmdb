@@ -20,7 +20,7 @@ import (
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/synchronizer/meta"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
 )
 
 // HandleSetSync do sync set of one business
