@@ -35,7 +35,7 @@ import (
 const Netdevicebeat = "netdevicebeat"
 
 func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcollectorSearch) (int64, []metadata.Netcollector, error) {
-	collectors := []metadata.Netcollector{}
+	collectors := make([]metadata.Netcollector, 0)
 
 	// fetch package info
 	packageResp, err := lgc.ESB.NodemanSrv().SearchPackage(context.Background(), header, Netdevicebeat)
@@ -64,22 +64,22 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 	}
 
 	// build collectors
-	cloudIDs := []int64{}
-	ips := []string{}
-	for _, phost := range pluginHostResp.Data {
-		cloudIDs = append(cloudIDs, phost.Host.BkCloudID)
-		ips = append(ips, phost.Host.InnerIP)
+	cloudIDs := make([]int64, 0)
+	ips := make([]string, 0)
+	for _, pHost := range pluginHostResp.Data {
+		cloudIDs = append(cloudIDs, pHost.Host.BkCloudID)
+		ips = append(ips, pHost.Host.InnerIP)
 
 		collectorStatus := metadata.CollectorStatusAbnormal
-		if strings.ToUpper(phost.Status) == "RUNNING" {
+		if strings.ToUpper(pHost.Status) == "RUNNING" {
 			collectorStatus = metadata.CollectorStatusNormal
 		}
 
 		collector := metadata.Netcollector{
-			BizID:   phost.Host.BkBizID,
-			CloudID: phost.Host.BkCloudID,
-			InnerIP: phost.Host.InnerIP,
-			Version: phost.Version,
+			BizID:   pHost.Host.BkBizID,
+			CloudID: pHost.Host.BkCloudID,
+			InnerIP: pHost.Host.InnerIP,
+			Version: pHost.Version,
 			Status: metadata.NetcollectorStatus{
 				CollectorStatus: collectorStatus,
 			},
@@ -184,8 +184,8 @@ func collectorMapKey(cloudID int64, ip string) string {
 }
 
 func (lgc *Logics) findCollectorMap(cond interface{}) (map[string]metadata.Netcollector, error) {
-	collectors := []metadata.Netcollector{}
-	err := lgc.Instance.Table(common.BKTableNameNetcollectConfig).Find(cond).All(lgc.ctx, &collectors)
+	collectors := make([]metadata.Netcollector, 0)
+	err := lgc.db.Table(common.BKTableNameNetcollectConfig).Find(cond).All(lgc.ctx, &collectors)
 	if err != nil {
 		return nil, err
 	}
@@ -202,13 +202,13 @@ func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollec
 	cond.Field(common.BKCloudIDField).Eq(config.CloudID)
 	cond.Field(common.BKHostInnerIPField).Eq(config.InnerIP)
 
-	count, err := lgc.Instance.Table(common.BKTableNameNetcollectConfig).Find(cond.ToMapStr()).Count(lgc.ctx)
+	count, err := lgc.db.Table(common.BKTableNameNetcollectConfig).Find(cond.ToMapStr()).Count(lgc.ctx)
 	if err != nil {
 		blog.Errorf("[UpdateCollector] count by %+v error: %v", cond.ToMapStr(), err)
 		return err
 	}
 	if count > 0 {
-		err = lgc.Instance.Table(common.BKTableNameNetcollectConfig).Update(lgc.ctx, cond, config)
+		err = lgc.db.Table(common.BKTableNameNetcollectConfig).Update(lgc.ctx, cond, config)
 		if err != nil {
 			blog.Errorf("[UpdateCollector] UpdateByCondition by %+v to %+v error: %v", cond.ToMapStr(), config, err)
 			return err
@@ -216,7 +216,7 @@ func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollec
 		return lgc.DiscoverNetDevice(header, []metadata.Netcollector{config})
 	}
 
-	err = lgc.Instance.Table(common.BKTableNameNetcollectConfig).Insert(lgc.ctx, config)
+	err = lgc.db.Table(common.BKTableNameNetcollectConfig).Insert(lgc.ctx, config)
 	if err != nil {
 		blog.Errorf("[UpdateCollector] Insert %+v error: %v", config, err)
 		return err
@@ -261,8 +261,8 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 		return fmt.Errorf("search plugin host from nodeman failed: %s", procInfoResp.Message)
 	}
 
-	cloudIDs := []int64{}
-	ips := []string{}
+	cloudIDs := make([]int64, 0)
+	ips := make([]string, 0)
 	for _, config := range configs {
 		cloudIDs = append(cloudIDs, config.CloudID)
 		ips = append(ips, config.InnerIP)
@@ -317,7 +317,7 @@ func (lgc *Logics) saveCollectTask(collector *metadata.Netcollector, taskID int6
 	cond.Field(common.BKCloudIDField).Eq(collector.CloudID)
 	cond.Field(common.BKHostInnerIPField).In(collector.InnerIP)
 
-	return lgc.Instance.Table(common.BKTableNameNetcollectConfig).Update(lgc.ctx, cond.ToMapStr(), data)
+	return lgc.db.Table(common.BKTableNameNetcollectConfig).Update(lgc.ctx, cond.ToMapStr(), data)
 }
 
 func (lgc *Logics) buildUpgradePluginRequest(collector *metadata.Netcollector, user string, pkg *nodeman.PluginPackage, proc *nodeman.PluginProcess, porcInfo *nodeman.PluginProcessInfo) (*nodeman.UpgradePluginRequest, error) {
@@ -397,14 +397,14 @@ func (lgc *Logics) buildNetdevicebeatConfigFile(collector *metadata.Netcollector
 }
 
 func (lgc *Logics) findCustom() ([]Custom, error) {
-	customs := []Custom{}
-	propertys := []metadata.NetcollectProperty{}
-	if err := lgc.Instance.Table(common.BKTableNameNetcollectProperty).Find(nil).All(lgc.ctx, &propertys); err != nil {
+	customs := make([]Custom, 0)
+	properties := make([]metadata.NetcollectProperty, 0)
+	if err := lgc.db.Table(common.BKTableNameNetcollectProperty).Find(nil).All(lgc.ctx, &properties); err != nil {
 		blog.Errorf("[NetDevice] failed to query the propertys, error info %v", err)
 		return nil, err
 	}
-	devices := []metadata.NetcollectDevice{}
-	if err := lgc.Instance.Table(common.BKTableNameNetcollectDevice).Find(nil).All(lgc.ctx, &devices); err != nil {
+	devices := make([]metadata.NetcollectDevice, 0)
+	if err := lgc.db.Table(common.BKTableNameNetcollectDevice).Find(nil).All(lgc.ctx, &devices); err != nil {
 		blog.Errorf("[NetDevice] failed to query the devices, error info %v", err)
 		return nil, err
 	}
@@ -414,7 +414,7 @@ func (lgc *Logics) findCustom() ([]Custom, error) {
 		deviceMap[device.DeviceID] = device
 	}
 
-	for _, property := range propertys {
+	for _, property := range properties {
 		device := deviceMap[property.DeviceID]
 
 		custom := Custom{}
@@ -481,7 +481,7 @@ type SnmpConfig struct {
 
 type Version string
 
-// SnmpVersion constanst
+// SnmpVersion constant
 const (
 	Version1  Version = "SNMPv1"
 	Version2c Version = "SNMPv2c"

@@ -29,15 +29,15 @@ type Manager struct {
 }
 
 func NewManager() *Manager {
-	man := &Manager{
+	mgr := &Manager{
 		porterC: make(chan Porter, 1),
 		porters: map[string]Porter{},
 	}
-	go man.run()
+	go mgr.run()
 	if version.CCRunMode != version.CCRunModeProduct {
-		go man.mockServer()
+		go mgr.mockServer()
 	}
-	return man
+	return mgr
 }
 
 func (m *Manager) run() error {
@@ -56,21 +56,21 @@ type mockmesg struct {
 
 func (m *Manager) mockServer() {
 	mockServer := http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
-		mockmesg := mockmesg{}
-		err := json.NewDecoder(req.Body).Decode(&mockmesg)
+		mockMSG := mockmesg{}
+		err := json.NewDecoder(req.Body).Decode(&mockMSG)
 		if err != nil {
 			fmt.Fprintf(resp, "decode message error: %v", err)
 			resp.WriteHeader(400)
 			return
 		}
-		if porter, ok := m.porters[mockmesg.Name]; ok {
-			if err := porter.Mock(mockmesg.Message); err != nil {
+		if porter, ok := m.porters[mockMSG.Name]; ok {
+			if err := porter.Mock(mockMSG.Message); err != nil {
 				fmt.Fprintf(resp, "mock failed: %v", err)
 				resp.WriteHeader(400)
 				return
 			}
 		} else {
-			fmt.Fprintf(resp, "unknow porter: %v", mockmesg.Name)
+			fmt.Fprintf(resp, "unknow porter: %v", mockMSG.Name)
 			resp.WriteHeader(400)
 			return
 		}

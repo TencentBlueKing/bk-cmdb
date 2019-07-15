@@ -47,15 +47,15 @@ func NewDataCollection(ctx context.Context, config *options.Config, backbone *ba
 }
 
 func (d *DataCollection) Run() error {
-	blog.Infof("datacollection start...")
+	blog.Infof("data-collection start...")
 
-	blog.Infof("[datacollect][RUN]connecting to cc redis %+v", d.Config.CCRedis)
-	rediscli, err := redis.NewFromConfig(d.Config.CCRedis)
+	blog.Infof("[data-collection][RUN]connecting to cc redis %+v", d.Config.CCRedis)
+	redisCli, err := redis.NewFromConfig(d.Config.CCRedis)
 	if nil != err {
-		blog.Errorf("[datacollection][RUN] connect cc redis failed: %v", err)
+		blog.Errorf("[data-collection][RUN] connect cc redis failed: %v", err)
 		return err
 	}
-	blog.Infof("[datacollect][RUN]connected to cc redis %+v", d.Config.CCRedis)
+	blog.Infof("[datacollection][RUN]connected to cc redis %+v", d.Config.CCRedis)
 
 	var db dal.RDB
 	if d.Config.MongoDB.Enable == "true" {
@@ -64,7 +64,7 @@ func (d *DataCollection) Run() error {
 		db, err = remote.NewWithDiscover(d.ServiceManageInterface.TMServer().GetServers)
 	}
 	if err != nil {
-		blog.Errorf("[datacollection][RUN] connect mongo failed: %v", err)
+		blog.Errorf("[data-collection][RUN] connect mongo failed: %v", err)
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
 
@@ -76,55 +76,55 @@ func (d *DataCollection) Run() error {
 		if nil == err {
 			break
 		}
-		blog.Errorf("getDefaultAppID faile: %v, please init database first, we will try 10 second later", err)
+		blog.Errorf("getDefaultAppID failed: %v, please init database first, we will try 10 second later", err)
 		time.Sleep(time.Second * 10)
 	}
 
 	man := NewManager()
 
 	if d.Config.SnapRedis.Enable != "false" {
-		blog.Infof("[datacollect][RUN]connecting to snap-redis %+v", d.Config.SnapRedis.Config)
+		blog.Infof("[data-collection][RUN]connecting to snap-redis %+v", d.Config.SnapRedis.Config)
 		snapcli, err := redis.NewFromConfig(d.Config.SnapRedis.Config)
 		if nil != err {
-			blog.Errorf("[datacollection][RUN] connect snap-redis failed: %v", err)
+			blog.Errorf("[data-collection][RUN] connect snap-redis failed: %v", err)
 			return err
 		}
-		blog.Infof("[datacollect][RUN]connected to snap-redis %+v", d.Config.SnapRedis.Config)
+		blog.Infof("[data-collection][RUN]connected to snap-redis %+v", d.Config.SnapRedis.Config)
 		snapChanName := d.getSnapChanName(defaultAppID)
-		hostsnapCollector := hostsnap.NewHostSnap(d.ctx, rediscli, db)
-		snapPorter := BuildChanPorter("hostsnap", hostsnapCollector, rediscli, snapcli, snapChanName, hostsnap.MockMessage, d.registry)
+		hostsnapCollector := hostsnap.NewHostSnap(d.ctx, redisCli, db)
+		snapPorter := BuildChanPorter("hostsnap", hostsnapCollector, redisCli, snapcli, snapChanName, hostsnap.MockMessage, d.registry)
 		man.AddPorter(snapPorter)
 	}
 
 	if d.Config.DiscoverRedis.Enable != "false" {
-		blog.Infof("[datacollect][RUN]connecting to discover-redis %+v", d.Config.DiscoverRedis.Config)
-		discli, err := redis.NewFromConfig(d.Config.DiscoverRedis.Config)
+		blog.Infof("[data-collection][RUN]connecting to discover-redis %+v", d.Config.DiscoverRedis.Config)
+		disCli, err := redis.NewFromConfig(d.Config.DiscoverRedis.Config)
 		if nil != err {
-			blog.Errorf("[datacollection][RUN] connect discover-redis failed: %v", err)
+			blog.Errorf("[data-collection][RUN] connect discover-redis failed: %v", err)
 			return err
 		}
-		blog.Infof("[datacollect][RUN]connected to discover-redis %+v", d.Config.DiscoverRedis.Config)
+		blog.Infof("[data-collection][RUN]connected to discover-redis %+v", d.Config.DiscoverRedis.Config)
 		discoverChanName := d.getDiscoverChanName(defaultAppID)
-		middlewareCollector := middleware.NewDiscover(d.ctx, rediscli, d.Engine)
-		middlewarePorter := BuildChanPorter("middleware", middlewareCollector, rediscli, discli, discoverChanName, middleware.MockMessage, d.registry)
+		middlewareCollector := middleware.NewDiscover(d.ctx, redisCli, d.Engine)
+		middlewarePorter := BuildChanPorter("middleware", middlewareCollector, redisCli, disCli, discoverChanName, middleware.MockMessage, d.registry)
 		man.AddPorter(middlewarePorter)
 	}
 
 	if d.Config.NetcollectRedis.Enable != "false" {
-		blog.Infof("[datacollect][RUN]connecting to netcollect-redis %+v", d.Config.NetcollectRedis.Config)
-		netcli, err := redis.NewFromConfig(d.Config.NetcollectRedis.Config)
+		blog.Infof("[data-collection][RUN]connecting to netcollect-redis %+v", d.Config.NetcollectRedis.Config)
+		netCli, err := redis.NewFromConfig(d.Config.NetcollectRedis.Config)
 		if nil != err {
-			blog.Errorf("[datacollection][RUN] connect netcollect-redis failed: %v", err)
+			blog.Errorf("[data-collection][RUN] connect netcollect-redis failed: %v", err)
 			return err
 		}
-		blog.Infof("[datacollect][RUN]connected to netcollect-redis %+v", d.Config.NetcollectRedis.Config)
-		netdevChanName := d.getNetcollectChanName(defaultAppID)
-		netcollector := netcollect.NewNetcollect(d.ctx, db)
-		netcollectPorter := BuildChanPorter("netcollect", netcollector, rediscli, netcli, netdevChanName, netcollect.MockMessage, d.registry)
-		man.AddPorter(netcollectPorter)
+		blog.Infof("[data-collection][RUN]connected to netcollect-redis %+v", d.Config.NetcollectRedis.Config)
+		netDevChanName := d.getNetcollectChanName(defaultAppID)
+		netCollector := netcollect.NewNetCollect(d.ctx, db)
+		netCollectPorter := BuildChanPorter("netcollect", netCollector, redisCli, netCli, netDevChanName, netcollect.MockMessage, d.registry)
+		man.AddPorter(netCollectPorter)
 	}
 
-	blog.Infof("datacollection started")
+	blog.Infof("data-collection started")
 	return nil
 }
 
@@ -147,7 +147,7 @@ func (d *DataCollection) getSnapChanName(defaultAppID string) []string {
 
 func (d *DataCollection) getDefaultAppID(ctx context.Context) (defaultAppID string, err error) {
 	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
-	results := []map[string]interface{}{}
+	results := make([]map[string]interface{}, 0)
 
 	if err = d.db.Table(common.BKTableNameBaseApp).Find(condition).All(ctx, &results); err != nil {
 		return "", err
