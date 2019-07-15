@@ -129,7 +129,7 @@ func (cc *ConfCenter) writeLanguageRes2Center(languageres string) error {
 	return cc.confRegDiscv.Write(key, data)
 }
 
-//WriteConfs2Center save configurs into center.
+// WriteConfs2Center save configurs into center.
 // parameter[confRootPath] define the configurs root path, the specification name of the configure \
 // file is [modulename].conf \
 func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {

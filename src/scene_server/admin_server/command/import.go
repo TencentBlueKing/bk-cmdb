@@ -570,7 +570,7 @@ func getModelAttributes(ctx context.Context, db dal.RDB, opt *option, objIDs []s
 	}
 
 	attributes := make([]metadata.Attribute, 0)
-	err = db.Table("cc_ObjAttDes").Find(cond).All(ctx, &attributes)
+	err = db.Table(common.BKTableNameObjAttDes).Find(cond).All(ctx, &attributes)
 	if nil != err {
 		return nil, nil, fmt.Errorf("faile to getModelAttributes for %v, error: %s", objIDs, err.Error())
 	}

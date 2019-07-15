@@ -99,7 +99,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			if err != nil {
 				return fmt.Errorf("new authcenter client failed: %v", err)
 			}
-			process.Service.SetAuthcenter(authcli)
+			process.Service.SetAuthCenter(authcli)
 
 			if process.Config.AuthCenter.EnableSync {
 				authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI, engine.Metric().Registry())

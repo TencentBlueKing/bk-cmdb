@@ -58,15 +58,15 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 		if err != nil {
 			return nil, err
 		}
-		procmodules, err := getProcessTopo(ctx, db, opt, bizID)
+		procModules, err := getProcessTopo(ctx, db, opt, bizID)
 		if nil != err {
 			return nil, err
 		}
-		proctopo := &ProcessTopo{
+		procTopo := &ProcessTopo{
 			BizName:   opt.bizName,
-			Processes: procmodules,
+			Processes: procModules,
 		}
-		result.ProcTopos = proctopo
+		result.ProcTopos = procTopo
 	}
 
 	if opt.mini {
@@ -131,16 +131,16 @@ func getTree(ctx context.Context, db dal.RDB, root *Node, pcmap map[string]*meta
 		childCondition.Field(common.BKObjIDField).Eq(asst.ObjectID)
 	}
 
-	// blog.InfoJSON("get childs for %s:%d", asst.ObjectID, instID)
-	childs := make([]map[string]interface{}, 0)
-	tablename := common.GetInstTableName(asst.ObjectID)
+	// blog.InfoJSON("get children for %s:%d", asst.ObjectID, instID)
+	children := make([]map[string]interface{}, 0)
+	tableName := common.GetInstTableName(asst.ObjectID)
 
-	err = db.Table(tablename).Find(childCondition.ToMapStr()).All(ctx, &childs)
+	err = db.Table(tableName).Find(childCondition.ToMapStr()).All(ctx, &children)
 	if nil != err {
 		return fmt.Errorf("get inst for %s error: %s", asst.ObjectID, err.Error())
 	}
 
-	for _, child := range childs {
+	for _, child := range children {
 		root.Children = append(root.Children, &Node{ObjID: asst.ObjectID, Data: child})
 	}
 
