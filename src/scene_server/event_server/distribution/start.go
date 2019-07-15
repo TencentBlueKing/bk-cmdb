@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -59,7 +59,7 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) 
 		go func() {
 			for {
 				if err := th.Run(); err != nil {
-					blog.Errorf("TxnHandler stoped with error: %v, we will try 1s later", err)
+					blog.Errorf("TxnHandler stopped with error: %v, we will try 1s later", err)
 				}
 				time.Sleep(time.Second)
 			}
