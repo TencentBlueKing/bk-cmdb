@@ -71,8 +71,8 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 
 	err := m.recheckUniqueForExistsInsts(ctx, objID, inputParam.Data.Keys, inputParam.Data.MustCheck, inputParam.Data.Metadata)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v, rid: %s", objID, inputParam, err, ctx.ReqID)
-		return 0, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
+		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v err: %#v, rid: %s", objID, inputParam, err, ctx.ReqID)
+		return 0, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "instance")
 	}
 
 	id, err := m.dbProxy.NextSequence(ctx, common.BKTableNameObjUnique)
@@ -136,7 +136,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 	err := m.recheckUniqueForExistsInsts(ctx, objID, unique.Keys, unique.MustCheck, unique.Metadata)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v, rid: %s", objID, unique, err, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
+		return ctx.Error.Errorf(common.CCErrCommDuplicateItem, "instance")
 	}
 
 	cond := condition.CreateCondition()

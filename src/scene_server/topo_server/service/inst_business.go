@@ -142,6 +142,16 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 		if err := s.Core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {
 			return nil, err
 		}
+
+		// check if this business still has hosts.
+		has, err := s.Core.BusinessOperation().HasHosts(params, bizID)
+		if err != nil {
+			return nil, err
+		}
+		if has {
+			return nil, params.Err.Error(common.CCErrTopoArchiveBusinessHasHost)
+		}
+
 		data.Set(common.BKDataStatusField, pathParams("flag"))
 	case common.DataStatusEnable:
 		name, err := bizs[0].GetInstName()
