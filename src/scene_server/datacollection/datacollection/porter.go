@@ -414,7 +414,7 @@ func (p *chanPorter) pop() {
 	var timeouterr net.Error
 	var ok bool
 	var llen int64
-	var key = slavequeueKey(p.name)
+	var key = slaveQueueKey(p.name)
 	var name = p.name + "[pop]"
 	for {
 		mesg, err = p.redisCli.BRPop(time.Second*30, key).Result()
@@ -471,7 +471,7 @@ func (p *chanPorter) push() {
 
 	var mesg string
 	var err error
-	key := slavequeueKey(p.name)
+	key := slaveQueueKey(p.name)
 	for mesg = range p.slaveC {
 		p.pushTotal.Inc()
 		if err = p.redisCli.LPush(key, mesg).Err(); err != nil {
@@ -588,8 +588,8 @@ func masterLockKey(name string) string {
 	return common.BKCacheKeyV3Prefix + name + ":masterlock"
 }
 
-// slavequeueKey 交给slave处理的消息待处理队列的key
-func slavequeueKey(name string) string {
+// slaveQueueKey 交给slave处理的消息待处理队列的key
+func slaveQueueKey(name string) string {
 	return common.BKCacheKeyV3Prefix + name + ":queue"
 }
 

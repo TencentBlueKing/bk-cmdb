@@ -25,15 +25,15 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-// Netcollect collect the net information
-type Netcollect struct {
+// NetCollect collect the net information
+type NetCollect struct {
 	ctx context.Context
 	db  dal.RDB
 }
 
-// NewNetcollect returns a new netcollector
-func NewNetcollect(ctx context.Context, db dal.RDB) *Netcollect {
-	h := &Netcollect{
+// NewNetCollect returns a new netcollector
+func NewNetCollect(ctx context.Context, db dal.RDB) *NetCollect {
+	h := &NetCollect{
 		ctx: ctx,
 		db:  db,
 	}
@@ -41,7 +41,7 @@ func NewNetcollect(ctx context.Context, db dal.RDB) *Netcollect {
 }
 
 // Analyze implements the Analyzer interface
-func (h *Netcollect) Analyze(raw string) error {
+func (h *NetCollect) Analyze(raw string) error {
 	blog.V(4).Infof("[datacollect][netcollect] received message: %s", raw)
 	msg := ReportMessage{}
 	err := json.Unmarshal([]byte(raw), &msg)
@@ -57,7 +57,7 @@ func (h *Netcollect) Analyze(raw string) error {
 	return nil
 }
 
-func (h *Netcollect) handleReport(report *metadata.NetcollectReport) (err error) {
+func (h *NetCollect) handleReport(report *metadata.NetcollectReport) (err error) {
 	// TODO compare 若有变化才插入
 	if err = h.upsertReport(report); err != nil {
 		blog.Errorf("[datacollect][netcollect] upsert association error: %v", err)
@@ -67,7 +67,7 @@ func (h *Netcollect) handleReport(report *metadata.NetcollectReport) (err error)
 	return nil
 }
 
-func (h *Netcollect) upsertReport(report *metadata.NetcollectReport) error {
+func (h *NetCollect) upsertReport(report *metadata.NetcollectReport) error {
 	existCond := condition.CreateCondition()
 	existCond.Field(common.BKCloudIDField).Eq(report.CloudID)
 	existCond.Field(common.BKObjIDField).Eq(report.ObjectID)
