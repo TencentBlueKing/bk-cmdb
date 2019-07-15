@@ -63,6 +63,7 @@
     "1199065":"start transcation failed, error:%s",
     "1199066":"commit transcation failed, error:%s",
     "1199067":"abort transcation failed, error:%s",
+    "1199068":"list authorized %s resource from iam failed",
 
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",
