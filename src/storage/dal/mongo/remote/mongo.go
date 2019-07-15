@@ -21,9 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
 )
@@ -34,39 +32,27 @@ var _ dal.DB = (*Mongo)(nil)
 type Mongo struct {
 	RequestID string // 请求ID,可选项
 	TxnID     string // 事务ID,uuid
-	rpc       rpc.Client
+	rpc       *pool
 	getServer types.GetServerFunc
 	parent    *Mongo
 
-	enableTransaction bool
+	tmAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
 }
 
 // NewWithDiscover returns new DB
-func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal.DB, err error) {
-	var enableTransaction bool
-	if config.Transaction == "enable" {
-		enableTransaction = true
-	}
-
-	if !enableTransaction {
-		blog.Warnf("not enable transaction")
-		return &Mongo{
-			enableTransaction: enableTransaction,
-		}, nil
-	}
-
+func NewWithDiscover(getServer types.GetServerFunc) (db *Mongo, err error) {
 	pool, err := rpc.NewClientPool("tcp", getServer, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
 	}
 	return &Mongo{
-		rpc:               pool,
-		enableTransaction: enableTransaction,
+		rpc: NewPool(pool),
 	}, nil
 }
 
+/* 不支持事务透传的版本无法使用域名配置。
 // New returns new DB
-func New(uri string, enableTransaction bool) (dal.DB, error) {
+ func New(uri string, enableTransaction bool) (dal.DB, error) {
 	rpccli, err := rpc.DialHTTPPath("tcp", uri, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
@@ -75,7 +61,7 @@ func New(uri string, enableTransaction bool) (dal.DB, error) {
 		rpc:               rpccli,
 		enableTransaction: enableTransaction,
 	}, nil
-}
+}*/
 
 // Close replica client
 func (c *Mongo) Close() error {
@@ -96,11 +82,10 @@ func (c *Mongo) Ping() error {
 // Clone create a new DB instance
 func (c *Mongo) Clone() dal.DB {
 	nc := Mongo{
-		TxnID:             c.TxnID,
-		RequestID:         c.RequestID,
-		rpc:               c.rpc,
-		parent:            c,
-		enableTransaction: c.enableTransaction,
+		TxnID:     c.TxnID,
+		RequestID: c.RequestID,
+		rpc:       c.rpc,
+		parent:    c,
 	}
 	return &nc
 }
@@ -115,6 +100,9 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 			return true
 		}
 		if strings.Contains(err.Error(), "There's already an index with name") {
+			return true
+		}
+		if strings.Contains(err.Error(), "E11000 duplicate key error collection") {
 			return true
 		}
 	}
@@ -169,7 +157,7 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 
 	// call
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return 0, err
 	}
@@ -185,16 +173,67 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 }
 
 // HasTable 判断是否存在集合
-func (c *Mongo) HasTable(tablename string) (bool, error) {
-	return false, dal.ErrNotImplemented
+func (c *Mongo) HasTable(tableName string) (bool, error) {
+
+	msg := types.OPDDLOperation{
+		Command:    types.OPDDLHasCollectCommand,
+		Collection: tableName,
+		MsgHeader:  types.MsgHeader{OPCode: types.OPDDLCode},
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(nil).Call(types.CommandRDBOperation, msg, &reply)
+	if err != nil {
+		return false, err
+	}
+	if !reply.Success {
+		return false, errors.New(reply.Message)
+	}
+	if reply.Count > 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 // DropTable 移除集合
-func (c *Mongo) DropTable(tablename string) error {
-	return dal.ErrNotImplemented
+func (c *Mongo) DropTable(tableName string) error {
+	msg := types.OPDDLOperation{
+		Command:    types.OPDDLDropCollectCommand,
+		Collection: tableName,
+		MsgHeader:  types.MsgHeader{OPCode: types.OPDDLCode},
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(nil).Call(types.CommandRDBOperation, msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+
+	return nil
 }
 
 // CreateTable 创建集合
-func (c *Mongo) CreateTable(tablename string) error {
-	return dal.ErrNotImplemented
+func (c *Mongo) CreateTable(tableName string) error {
+	msg := types.OPDDLOperation{
+		Command:    types.OPDDLCreateCollectCommand,
+		Collection: tableName,
+		MsgHeader:  types.MsgHeader{OPCode: types.OPDDLCode},
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(nil).Call(types.CommandRDBOperation, msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+
+	return nil
 }

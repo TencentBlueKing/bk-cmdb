@@ -333,11 +333,22 @@ func (c *collection) FindOneAndModify(ctx context.Context, filter interface{}, u
 	return c.innerCollection.FindOneAndUpdate(ctx, filter, update, findOneAndModify).Decode(output)
 }
 
-func (c *collection) AggregateOne(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error {
+func (c *collection) Aggregate(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error {
 	aggregateOptions := &options.AggregateOptions{}
 	if nil != opts {
 		aggregateOptions = opts.ConvertToMongoOptions()
 	}
+
+	outputV := reflect.ValueOf(output)
+	if outputV.Kind() != reflect.Ptr {
+		return errors.New("output not pointer")
+	}
+
+	if outputV.Elem().Kind() != reflect.Slice &&
+		outputV.Elem().Kind() != reflect.Array {
+		return errors.New("output not array")
+	}
+	typeItem := outputV.Elem().Type().Elem()
 
 	mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
 		cursor, err := c.innerCollection.Aggregate(mctx, pipeline, aggregateOptions)
@@ -347,7 +358,11 @@ func (c *collection) AggregateOne(ctx context.Context, pipeline interface{}, opt
 
 		defer cursor.Close(mctx)
 		for cursor.Next(ctx) {
-			return cursor.Decode(output)
+			item := reflect.New(typeItem)
+			if err := cursor.Decode(item.Interface()); err != nil {
+				return err
+			}
+			outputV.Elem().Set(reflect.Append(outputV.Elem(), item.Elem()))
 		}
 		return cursor.Err()
 	})
@@ -360,7 +375,12 @@ func (c *collection) AggregateOne(ctx context.Context, pipeline interface{}, opt
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		return cursor.Decode(output)
+		item := reflect.New(typeItem)
+		if err := cursor.Decode(item.Interface()); err != nil {
+			return err
+		}
+		outputV.Elem().Set(reflect.Append(outputV.Elem(), item.Elem()))
+
 	}
 	return cursor.Err()
 }
@@ -524,5 +544,44 @@ func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replace
 			MatchedCount:  uint64(replaceResult.MatchedCount),
 			ModifiedCount: uint64(replaceResult.ModifiedCount),
 		},
+	}, nil
+}
+
+// UpdateUnsetMany update data support $unset command
+func (c *collection) UpdateUnsetMany(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.Many) (*mongodb.UpdateResult, error) {
+
+	updateOption := &options.UpdateOptions{}
+	if nil != opts {
+		updateOption = opts.ConvertToMongoOptions()
+	}
+
+	// in a session
+	if nil != c.innerSession {
+		returnResult := &mongodb.UpdateResult{}
+		err := mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			updateResult, err := c.innerCollection.UpdateMany(mctx, filter, bson.M{"$unset": update}, updateOption)
+			if nil != err {
+				return err
+			}
+			returnResult = &mongodb.UpdateResult{
+				MatchedCount:  uint64(updateResult.MatchedCount),
+				ModifiedCount: uint64(updateResult.ModifiedCount),
+			}
+
+			return nil
+		})
+
+		return returnResult, err
+
+	}
+
+	// no session
+	updateResult, err := c.innerCollection.UpdateMany(ctx, filter, bson.M{"$set": update}, updateOption)
+	if nil != err {
+		return &mongodb.UpdateResult{}, err
+	}
+	return &mongodb.UpdateResult{
+		MatchedCount:  uint64(updateResult.MatchedCount),
+		ModifiedCount: uint64(updateResult.ModifiedCount),
 	}, nil
 }

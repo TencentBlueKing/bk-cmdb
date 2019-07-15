@@ -55,18 +55,18 @@ func (m *module) SetProxy(inst InstOperationInterface) {
 
 func (m *module) hasHost(params types.ContextParams, bizID int64, moduleIDS []int64) (bool, error) {
 	cond := map[string][]int64{
-		common.BKAppIDField:    []int64{bizID},
+		common.BKAppIDField:    {bizID},
 		common.BKModuleIDField: moduleIDS,
 	}
 
 	rsp, err := m.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, cond)
 	if nil != err {
-		blog.Errorf("[operation-module] failed to request the object controller, err: %s", err.Error())
+		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-module]  failed to search the host module configures, err: %s", rsp.ErrMsg)
+		blog.Errorf("[operation-module]  failed to search the host module configures, err: %s, rid: %s", rsp.ErrMsg, params.ReqID)
 		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -110,7 +110,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		templateIDs := []int64{serviceTemplateID}
 		option := metadata.ListServiceTemplateOption{
 			BusinessID:         bizID,
-			ServiceTemplateIDs: &templateIDs,
+			ServiceTemplateIDs: templateIDs,
 		}
 		stResult, err := m.clientSet.CoreService().Process().ListServiceTemplates(params.Context, params.Header, &option)
 		if err != nil {
@@ -135,12 +135,12 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 
 	exists, err := m.hasHost(params, bizID, moduleIDS)
 	if nil != err {
-		blog.Errorf("[operation-module] failed to delete the modules, err: %s", err.Error())
+		blog.Errorf("[operation-module] failed to delete the modules, err: %s, rid: %s", err.Error(), params.ReqID)
 		return err
 	}
 
 	if exists {
-		blog.Errorf("[operation-module]the module has some hosts, can not be deleted")
+		blog.Errorf("[operation-module]the module has some hosts, can not be deleted, rid: %s", params.ReqID)
 		return params.Err.Error(common.CCErrTopoHasHost)
 	}
 
