@@ -31,8 +31,6 @@ import (
 	"configcenter/src/source_controller/hostcontroller/service"
 	"configcenter/src/storage/dal/mongo"
 	dalredis "configcenter/src/storage/dal/redis"
-
-	"github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
@@ -58,7 +56,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(coreService.WebService()),
+		Handler:    coreService.WebService(),
 		TLS:        backbone.TLSConfig{},
 	}
 
