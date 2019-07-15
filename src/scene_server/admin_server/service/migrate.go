@@ -29,16 +29,14 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	rid := util.GetHTTPCCRequestID(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
-
-	err := upgrader.Upgrade(s.ctx, s.db, &upgrader.Config{
+	updateCfg := &upgrader.Config{
 		OwnerID:      ownerID,
 		SupplierID:   common.BKDefaultSupplierID,
 		User:         common.CCSystemOperatorUserName,
 		CCApiSrvAddr: s.ccApiSrvAddr,
-	})
-
-	if nil != err {
-		blog.Errorf("db upgrade error: %v, rid: %s", err, rid)
+	}
+	if err := upgrader.Upgrade(s.ctx, s.db, updateCfg); err != nil {
+		blog.Errorf("db upgrade failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
 		}

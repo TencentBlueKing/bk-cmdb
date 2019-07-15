@@ -49,28 +49,28 @@ func (cc *ConfCenter) Ping() error {
 }
 
 // Start the configure center module service
-func (cc *ConfCenter) Start(confDir, errres, languageres string) error {
+func (cc *ConfCenter) Start(confDir, errRes, languageRes string) error {
 
 	// save configures
 	if err := cc.writeConfs2Center(confDir); err != nil {
 		blog.Errorf("fail to write configures to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("writed all configures resource to center %v", types.CC_SERVCONF_BASEPATH)
+		blog.Infof("write all configures resource to center %v success", types.CC_SERVCONF_BASEPATH)
 	}
 
-	if err := cc.writeErrorRes2Center(errres); err != nil {
+	if err := cc.writeErrorRes2Center(errRes); err != nil {
 		blog.Errorf("fail to write error resource to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("writed error resource to center %v", types.CC_SERVERROR_BASEPATH)
+		blog.Infof("write error resource to center %v success", types.CC_SERVERROR_BASEPATH)
 	}
 
-	if err := cc.writeLanguageRes2Center(languageres); err != nil {
-		blog.Errorf("fail to write languate packages to center, err:%s", err.Error())
+	if err := cc.writeLanguageRes2Center(languageRes); err != nil {
+		blog.Errorf("fail to write language packages to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("writed languate packages to center %v", types.CC_SERVLANG_BASEPATH)
+		blog.Infof("write language packages to center %v success", types.CC_SERVLANG_BASEPATH)
 	}
 
 	// TODO discover config file change
@@ -88,7 +88,7 @@ func (cc *ConfCenter) writeErrorRes2Center(errorres string) error {
 		return fmt.Errorf("directory %s not exists", errorres)
 	}
 	if err != nil {
-		return fmt.Errorf("Stat directory %s faile, %s", errorres, err.Error())
+		return fmt.Errorf("stat directory %s faile, %s", errorres, err.Error())
 	}
 	if !info.IsDir() {
 		return fmt.Errorf("%s is not directory", errorres)
@@ -154,7 +154,7 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 			blog.Warnf("fail to write configure of module(%s) into center", moduleName)
 			continue
 		} else {
-			blog.Infof("writed configure to center %s", key)
+			blog.Infof("write configure to center %s success", key)
 		}
 	}
 

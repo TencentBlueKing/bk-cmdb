@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package synchronizer
+package authsynchronizer
 
 import (
 	"context"
@@ -21,8 +21,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/synchronizer/meta"
-	"configcenter/src/scene_server/admin_server/synchronizer/utils"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/utils"
 )
 
 // Producer producer WorkRequest and enqueue it
@@ -105,12 +105,12 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 
 	// job of synchronize business scope resources to iam
 	resourceTypes := []meta.ResourceType{
-		meta.HostResource, 
-		meta.SetResource, 
-		meta.ModuleResource, 
-		meta.ModelResource, 
-		meta.ProcessResource, 
-		meta.DynamicGroupResource, 
+		meta.HostResource,
+		meta.SetResource,
+		meta.ModuleResource,
+		meta.ModelResource,
+		meta.ProcessResource,
+		meta.DynamicGroupResource,
 		meta.AuditCategory,
 		meta.ClassificationResource,
 	}

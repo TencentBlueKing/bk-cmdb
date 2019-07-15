@@ -28,9 +28,9 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/admin_server/app/options"
+	"configcenter/src/scene_server/admin_server/authsynchronizer"
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
-	"configcenter/src/scene_server/admin_server/synchronizer"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
@@ -95,14 +95,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		if process.Config.AuthCenter.Enable {
 			blog.Info("enable auth center access.")
-			authcli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter, engine.Metric().Registry())
+			authCli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter, engine.Metric().Registry())
 			if err != nil {
 				return fmt.Errorf("new authcenter client failed: %v", err)
 			}
-			process.Service.SetAuthCenter(authcli)
+			process.Service.SetAuthCenter(authCli)
 
 			if process.Config.AuthCenter.EnableSync {
-				authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI, engine.Metric().Registry())
+				authSynchronizer := authsynchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI, engine.Metric().Registry())
 				authSynchronizer.Run()
 				blog.Info("enable auth center and enable auth sync function.")
 			}

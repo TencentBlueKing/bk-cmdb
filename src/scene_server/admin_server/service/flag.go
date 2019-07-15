@@ -30,7 +30,7 @@ func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Res
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
 
-	blog.Errorf("modify data for  %s table, rid: %s", common.BKTableNameSystem, rid)
+	blog.Infof("set system configuration on table %s start, rid: %s", common.BKTableNameSystem, rid)
 	cond := map[string]interface{}{
 		common.HostCrossBizField: common.HostCrossBizValue,
 	}
@@ -40,7 +40,7 @@ func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Res
 
 	err := s.db.Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
 	if nil != err {
-		blog.Errorf("modify data for %s table error, err: %+v, rid: %s", common.BKTableNameSystem, err, rid)
+		blog.Errorf("set system configuration on table %s failed, err: %+v, rid: %s", common.BKTableNameSystem, err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.Error(common.CCErrCommMigrateFailed),
 		}
