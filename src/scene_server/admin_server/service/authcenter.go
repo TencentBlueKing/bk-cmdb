@@ -18,7 +18,6 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -27,58 +26,96 @@ import (
 
 func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
+	rid := util.GetHTTPCCRequestID(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	if !s.Config.AuthCenter.Enable {
-		blog.Error("received init auth center request, but not enable authcenter, maybe the configure is wrong.")
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommAuthCenterIsNotEnabled)})
+		blog.Errorf("received init auth center request, but not enable authcenter, maybe the configure is wrong, rid: %s", rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrCommAuthCenterIsNotEnabled),
+		}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
 
-	bizs := []metadata.BizInst{}
-	if err := s.db.Table(common.BKTableNameBaseApp).Find(condition.CreateCondition().Field("default").NotEq(1).ToMapStr()).All(s.ctx, &bizs); err != nil {
-		blog.Errorf("init auth center error: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
+	bizs := make([]metadata.BizInst, 0)
+	bizFilter := map[string]interface{}{
+		common.BKDefaultField: map[string]interface{}{
+			common.BKDBNE: 1,
+		},
+	}
+	if err := s.db.Table(common.BKTableNameBaseApp).Find(bizFilter).All(s.ctx, &bizs); err != nil {
+		blog.Errorf("init auth center error: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error()),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 
 	noRscPoolBiz := make([]metadata.BizInst, 0)
+	resourcePoolNames := []string{"资源池", "resource pool"}
 	for _, biz := range bizs {
-		if biz.BizName != "资源池" || biz.BizName == "resource pool" {
-			noRscPoolBiz = append(noRscPoolBiz, biz)
+		if util.InArray(biz.BizName, resourcePoolNames) {
+			continue
 		}
+		noRscPoolBiz = append(noRscPoolBiz, biz)
 	}
 
-	cls := []metadata.Classification{}
-	if err := s.db.Table(common.BKTableNameObjClassifiction).Find(condition.CreateCondition().Field("ispre").NotEq(true).ToMapStr()).All(s.ctx, &cls); err != nil {
-		blog.Errorf("init auth center error: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
+	cls := make([]metadata.Classification, 0)
+	clsFilter := map[string]interface{}{
+		common.BKIsPre: map[string]interface{}{
+			common.BKDBNE: true,
+		},
+	}
+	if err := s.db.Table(common.BKTableNameObjClassifiction).Find(clsFilter).All(s.ctx, &cls); err != nil {
+		blog.Errorf("init auth center error: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error()),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 
-	models := []metadata.Object{}
-	modelCondition := condition.CreateCondition().Field("bk_obj_id").NotIn([]string{"process", "plat"}).ToMapStr()
-	if err := s.db.Table(common.BKTableNameObjDes).Find(modelCondition).All(s.ctx, &models); err != nil {
-		blog.Errorf("init auth center error: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
+	models := make([]metadata.Object, 0)
+	modelFilter := map[string]interface{}{
+		common.BKObjIDField: map[string]interface{}{
+			common.BKDBNIN: []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat},
+		},
+	}
+	if err := s.db.Table(common.BKTableNameObjDes).Find(modelFilter).All(s.ctx, &models); err != nil {
+		blog.Errorf("init auth center error: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error()),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 
 	associationKinds := make([]metadata.AssociationKind, 0)
-	if err := s.db.Table(common.BKTableNameAsstDes).Find(condition.CreateCondition().Field("ispre").Eq(true).ToMapStr()).All(s.ctx, &associationKinds); err != nil {
-		blog.Errorf("init auth center with association kind, but get details association kind failed, err: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
+	associationFilter := map[string]interface{}{
+		common.BKIsPre: true,
+	}
+	if err := s.db.Table(common.BKTableNameAsstDes).Find(associationFilter).All(s.ctx, &associationKinds); err != nil {
+		blog.Errorf("init auth center with association kind, but get details association kind failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error()),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
-
-	if err := s.authCenter.Init(s.ctx, meta.InitConfig{
+	initCfg := meta.InitConfig{
 		Bizs:             noRscPoolBiz,
 		Models:           models,
 		Classifications:  cls,
 		AssociationKinds: associationKinds,
-	}); nil != err {
-		blog.Errorf("init auth center error: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
+	}
+	if err := s.authCenter.Init(s.ctx, initCfg); nil != err {
+		blog.Errorf("init auth center error: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error()),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
-	resp.WriteEntity(metadata.NewSuccessResp("init authcenter success"))
+	resp.WriteEntity(metadata.NewSuccessResp("init auth center success"))
 }

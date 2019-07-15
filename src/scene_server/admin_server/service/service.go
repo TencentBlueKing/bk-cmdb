@@ -48,7 +48,7 @@ func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 
-func (s *Service) SetAuthcenter(authCenter *authcenter.AuthCenter) {
+func (s *Service) SetAuthCenter(authCenter *authcenter.AuthCenter) {
 	s.authCenter = authCenter
 }
 
@@ -63,7 +63,10 @@ func (s *Service) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	api.Path("/migrate/v3").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/migrate/v3")
+	api.Filter(s.Engine.Metric().RestfulMiddleWare)
+	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
+	api.Produces(restful.MIME_JSON)
 
 	api.Route(api.POST("/authcenter/init").To(s.InitAuthCenter))
 	api.Route(api.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))

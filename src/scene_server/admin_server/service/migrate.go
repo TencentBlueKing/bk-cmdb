@@ -26,6 +26,7 @@ import (
 
 func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
+	rid := util.GetHTTPCCRequestID(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
 
@@ -37,8 +38,11 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	})
 
 	if nil != err {
-		blog.Errorf("db upgrade error: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error())})
+		blog.Errorf("db upgrade error: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 
