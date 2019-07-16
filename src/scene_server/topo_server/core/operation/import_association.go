@@ -538,7 +538,7 @@ func (ia *importAssociation) isExistInstAsst(idx int, cond condition.Condition, 
 	}
 	if rsp.Data[0].AsstInstID != dstInstID &&
 		asstMapping == metadata.OneToOneMapping {
-		return false, ia.params.Err.Errorf(common.CCErrCommDuplicateItem)
+		return false, ia.params.Err.Errorf(common.CCErrCommDuplicateItem, "association")
 	}
 
 	return true, nil
@@ -547,12 +547,12 @@ func (ia *importAssociation) isExistInstAsst(idx int, cond condition.Condition, 
 func (ia *importAssociation) getInstIDByPrimaryKey(objID, primary string) (int64, error) {
 	primaryArr := strings.Split(primary, common.ExcelAsstPrimaryKeySplitChar)
 	if len(primaryArr) == 0 {
-		return 0, fmt.Errorf(ia.params.Lang.Languagef("import_instance_not_foud", objID, primary))
+		return 0, fmt.Errorf(ia.params.Lang.Languagef("import_instance_not_found", objID, primary))
 	}
 
 	instArr, ok := ia.instIDAttrKeyValMap[objID][primaryArr[0]]
 	if !ok {
-		return 0, fmt.Errorf(ia.params.Lang.Languagef("import_instance_not_foud", objID, primaryArr[0]))
+		return 0, fmt.Errorf(ia.params.Lang.Languagef("import_instance_not_found", objID, primaryArr[0]))
 	}
 
 	for _, inst := range instArr {

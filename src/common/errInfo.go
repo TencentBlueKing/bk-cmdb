@@ -497,18 +497,18 @@ const (
 	CCErrAddHostToModuleFailStr   = 1110030
 
 	// hostserver api machinery new error code
-	CCErrAddUserCustomQueryFaild       = 1110040
-	CCErrUpdateUserCustomQueryFaild    = 1110041
-	CCErrDeleteUserCustomQueryFaild    = 1110042
-	CCErrSearchUserCustomQueryFaild    = 1110043
-	CCErrGetUserCustomQueryDetailFaild = 1110044
-	CCErrHostModuleConfigFaild         = 1110045
-	CCErrHostGetSetFaild               = 1110046
-	CCErrHostGetAPPFail                = 1110047
-	CCErrHostAPPNotFoundFail           = 1110048
-	CCErrHostGetModuleFail             = 1110049
-	CCErrHostAgentStatusFail           = 1110050
-	CCErrHostSearchNeedObjectInstIDErr = 1110058
+	CCErrAddUserCustomQueryFailed       = 1110040
+	CCErrUpdateUserCustomQueryFailed    = 1110041
+	CCErrDeleteUserCustomQueryFailed    = 1110042
+	CCErrSearchUserCustomQueryFailed    = 1110043
+	CCErrGetUserCustomQueryDetailFailed = 1110044
+	CCErrHostModuleConfigFailed         = 1110045
+	CCErrHostGetSetFailed               = 1110046
+	CCErrHostGetAPPFail                 = 1110047
+	CCErrHostAPPNotFoundFail            = 1110048
+	CCErrHostGetModuleFail              = 1110049
+	CCErrHostAgentStatusFail            = 1110050
+	CCErrHostSearchNeedObjectInstIDErr  = 1110058
 
 	//web  1111XXX
 	CCErrWebFileNoFound      = 1111001
