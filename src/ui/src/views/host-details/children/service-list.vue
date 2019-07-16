@@ -1,5 +1,5 @@
 <template>
-    <div class="service-wrapper">
+    <div class="service-wrapper" v-if="instances.length">
         <div class="options">
             <cmdb-form-bool class="options-checkall"
                 :size="16"
@@ -15,16 +15,15 @@
                     @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                 </cmdb-form-bool>
-                <cmdb-form-singlechar class="options-search"
-                    :placeholder="$t('BusinessTopology[\'请输入实例名称搜索\']')"
-                    v-model="filter"
-                    @keydown.native.enter="handleSearch">
-                    <i class="bk-icon icon-close"
-                        v-show="filter.length"
-                        @click="handleClearFilter">
-                    </i>
-                    <i class="bk-icon icon-search" @click.stop="handleSearch"></i>
-                </cmdb-form-singlechar>
+                <div class="options-search">
+                    <bk-search-select
+                        :show-condition="false"
+                        :placeholder="$t('BusinessTopology[\'实例名称/标签\']')"
+                        :data="searchSelect"
+                        v-model="searchSelectData"
+                        @change="handleSearch">
+                    </bk-search-select>
+                </div>
             </div>
         </div>
         <div class="tables">
@@ -37,24 +36,18 @@
                 @delete-instance="handleDeleteInstance"
                 @check-change="handleCheckChange">
             </service-instance-table>
-            <cmdb-table
-                v-if="!instances.length"
-                :list="[]"
-                :empty-height="42"
-                :sortable="false"
-                :reference-document-height="false">
-            </cmdb-table>
         </div>
-        <bk-paging class="pagination"
-            pagination-able
-            location="left"
-            :cur-page="pagination.current"
-            :total-page="pagination.totalPage"
-            :pagination-count="pagination.size"
-            @page-change="handlePageChange"
-            @pagination-change="handleSizeChange">
-        </bk-paging>
+        <bk-pagination class="pagination"
+            align="right"
+            size="small"
+            :current="pagination.current"
+            :count="pagination.totalPage"
+            :limit="pagination.size"
+            @change="handlePageChange"
+            @limit-change="handleSizeChange">
+        </bk-pagination>
     </div>
+    <bk-table v-else :data="[]"></bk-table>
 </template>
 
 <script>
@@ -66,6 +59,17 @@
         },
         data () {
             return {
+                searchSelect: [
+                    {
+                        name: this.$t('BusinessTopology["服务实例名"]'),
+                        id: 0
+                    },
+                    {
+                        name: this.$t('BusinessTopology["标签"]'),
+                        id: 1
+                    }
+                ],
+                searchSelectData: [],
                 pagination: {
                     current: 1,
                     totalPage: 0,
@@ -74,7 +78,7 @@
                 checked: [],
                 isExpandAll: false,
                 isCheckAll: false,
-                filter: '',
+                filter: [],
                 instances: []
             }
         },
@@ -90,13 +94,27 @@
         methods: {
             async getHostSeriveInstances () {
                 try {
+                    const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
+                        || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
+                    const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
+                    const selectors = labels.map(item => {
+                        return {
+                            key: item.values[0].name,
+                            operator: 'exists',
+                            values: []
+                        }
+                    })
                     const data = await this.$store.dispatch('serviceInstance/getHostServiceInstances', {
                         params: this.$injectMetadata({
                             page: {
                                 start: (this.pagination.current - 1) * this.pagination.size,
                                 limit: this.pagination.size
                             },
-                            bk_host_id: this.host.bk_host_id
+                            bk_host_id: this.host.bk_host_id,
+                            search_key: searchKey
+                                ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
+                                : '',
+                            selectors: selectors
                         })
                     })
                     this.checked = []
@@ -113,14 +131,14 @@
                 this.instances = this.instances.filter(instance => instance.id !== id)
             },
             handleCheckALL (checked) {
-                this.filter = ''
+                this.searchSelectData = []
                 this.isCheckAll = checked
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.checked = checked
                 })
             },
             handleExpandAll (expanded) {
-                this.filter = ''
+                this.searchSelectData = []
                 this.isExpandAll = expanded
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.localExpanded = expanded
@@ -160,10 +178,19 @@
                 }
             },
             handleClearFilter () {
-                this.filter = ''
                 this.handleSearch()
             },
-            handleSearch () {
+            handleSearch (value) {
+                const instanceName = this.searchSelectData.filter(item => (item.id === 0 && item.hasOwnProperty('values'))
+                    || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
+                if (instanceName.length >= 2) {
+                    this.searchSelectData.pop()
+                    this.$bkMessage({
+                        message: this.$t('BusinessTopology["服务实例名重复"]'),
+                        theme: 'warning'
+                    })
+                    return
+                }
                 this.handlePageChange(1)
             },
             handlePageChange (page) {
@@ -180,9 +207,6 @@
 </script>
 
 <style lang="scss" scoped>
-    .service-wrapper {
-        padding-top: 12px;
-    }
     .options-checkall {
         width: 36px;
         height: 32px;
@@ -201,43 +225,7 @@
     .options-search {
         @include inlineBlock;
         position: relative;
-        width: 240px;
-        .icon-search {
-            position: absolute;
-            top: 9px;
-            right: 9px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .icon-close {
-            position: absolute;
-            top: 8px;
-            right: 30px;
-            width: 16px;
-            height: 16px;
-            line-height: 16px;
-            border-radius: 50%;
-            text-align: center;
-            background-color: #ddd;
-            color: #fff;
-            font-size: 12px;
-            transition: backgroundColor .2s linear;
-            cursor: pointer;
-            &:before {
-                display: block;
-                transform: scale(.7);
-            }
-            &:hover {
-                background-color: #ccc;
-            }
-        }
-        /deep/ {
-            .cmdb-form-input {
-                height: 32px;
-                line-height: 30px;
-                padding-right: 50px;
-            }
-        }
+        min-width: 240px;
     }
     .tables {
         padding-top: 16px;

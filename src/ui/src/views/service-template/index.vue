@@ -28,15 +28,13 @@
                     :empty-text="emptyText"
                     @on-selected="handleSelectSecondary">
                 </cmdb-selector>
-                <div class="filter-search fl">
-                    <bk-input type="text"
-                        class="bk-form-input"
-                        :placeholder="$t('ServiceManagement[\'搜索\']')"
-                        v-model.trim="filter.templateName"
-                        @enter="searchByTemplateName">
-                    </bk-input>
-                    <i class="bk-icon icon-search" @click="searchByTemplateName"></i>
-                </div>
+                <bk-input type="text"
+                    class="filter-search fl"
+                    :placeholder="$t('ServiceManagement[\'搜索\']')"
+                    :right-icon="'bk-icon icon-search'"
+                    v-model.trim="filter.templateName"
+                    @enter="searchByTemplateName">
+                </bk-input>
             </div>
         </div>
         <bk-table class="template-table"
@@ -65,7 +63,7 @@
                     <span class="text-primary"
                         style="color: #c4c6cc !important; cursor: not-allowed;"
                         v-if="row['service_instance_count']"
-                        v-bktooltips.top="$t('ServiceManagement[\'不可删除\']')">
+                        v-tooltip.top="$t('ServiceManagement[\'不可删除\']')">
                         {{$t('Common["删除"]')}}
                     </span>
                     <button class="text-primary"
@@ -248,22 +246,13 @@
 <style lang="scss" scoped>
     .template-wrapper {
         .filter-text {
-            .bk-selector {
+            .bk-select {
                 width: 180px;
                 margin-right: 10px;
             }
             .filter-search {
                 width: 200px;
                 position: relative;
-                .bk-form-input {
-                    padding-right: 30px;
-                }
-                .icon-search {
-                    position: absolute;
-                    right: 10px;
-                    top: 11px;
-                    cursor: pointer;
-                }
             }
         }
         .template-table {

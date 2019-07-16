@@ -41,16 +41,16 @@
                 </div>
             </div>
         </div>
-        <cmdb-table
+        <bk-table
             v-show="localExpanded"
-            :loading="$loading(Object.values(requestId))"
-            :header="header"
-            :list="flattenList"
-            :empty-height="42"
-            :visible="localExpanded"
-            :sortable="false"
-            :reference-document-height="false">
-        </cmdb-table>
+            v-bkloading="{ isLoading: $loading(Object.values(requestId)) }"
+            :data="flattenList">
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+        </bk-table>
     </div>
 </template>
 

@@ -206,10 +206,6 @@
                 display: inline-block;
                 vertical-align: middle;
                 width: 120px;
-                height: 36px;
-                padding: 0 15px;
-                border: 1px solid $cmdbBorderColor;
-                border-radius: 2px;
             }
         }
     }
