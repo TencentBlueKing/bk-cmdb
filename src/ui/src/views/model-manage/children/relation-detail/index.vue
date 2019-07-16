@@ -33,6 +33,7 @@
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('objId') }">
                 <cmdb-selector
+                    class="bk-select-full-width"
                     :disabled="relationInfo.ispre || isEdit"
                     :has-children="true"
                     :auto-select="false"
@@ -52,6 +53,7 @@
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstObjId') }">
                 <cmdb-selector
+                    class="bk-select-full-width"
                     :disabled="relationInfo.ispre || isEdit"
                     :has-children="true"
                     :auto-select="false"
@@ -71,6 +73,7 @@
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
                 <cmdb-selector
+                    class="bk-select-full-width"
                     :disabled="relationInfo.ispre || isReadOnly || isEdit"
                     :list="usefulRelationList"
                     v-validate="'required'"
@@ -88,6 +91,7 @@
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('mapping') }">
                 <cmdb-selector
+                    class="bk-select-full-width"
                     :disabled="relationInfo.ispre || isEdit"
                     :list="mappingList"
                     v-validate="'required'"

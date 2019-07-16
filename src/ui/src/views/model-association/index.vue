@@ -21,9 +21,10 @@
                 </bk-button>
             </span>
             <label class="search-input">
-                <i class="bk-icon icon-search" @click="searchRelation(true)"></i>
+                <!-- <i class="bk-icon icon-search" @click="searchRelation(true)"></i> -->
                 <bk-input type="text" class="cmdb-form-input"
                     v-model.trim="searchText"
+                    :right-icon="'bk-icon icon-search'"
                     :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')"
                     @enter="searchRelation(true)">
                 </bk-input>
@@ -249,17 +250,6 @@
             position: relative;
             display: inline-block;
             width: 300px;
-            .icon-search {
-                position: absolute;
-                top: 9px;
-                right: 10px;
-                font-size: 18px;
-                color: $cmdbBorderColor;
-            }
-            .cmdb-form-input {
-                vertical-align: middle;
-                padding-right: 36px;
-            }
         }
     }
 </style>

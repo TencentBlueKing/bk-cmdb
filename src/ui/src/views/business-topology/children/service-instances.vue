@@ -169,7 +169,8 @@
                 editLabel: {
                     show: false,
                     list: []
-                }
+                },
+                historyLabls: {}
             }
         },
         computed: {
@@ -222,6 +223,7 @@
         created () {
             this.getProcessProperties()
             this.getProcessPropertyGroups()
+            this.getHistoryLabel()
         },
         methods: {
             async getProcessProperties () {
@@ -297,6 +299,15 @@
                     console.error(e)
                     this.instances = []
                 }
+            },
+            async getHistoryLabel () {
+                this.historyLabls = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
+                    params: this.$injectMetadata({}),
+                    config: {
+                        requestId: 'getHistoryLabel',
+                        cancelPrevious: true
+                    }
+                })
             },
             handleSearch () {
                 this.inSearch = true

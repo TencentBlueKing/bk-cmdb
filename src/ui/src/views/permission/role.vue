@@ -8,6 +8,7 @@
             </div>
             <div class="role-options-search fr clearfix">
                 <bk-select class="search-selector"
+                    :clearable="false"
                     v-model="filter.type">
                     <bk-option v-for="(option, index) in typeList"
                         :key="index"
@@ -15,16 +16,17 @@
                         :name="option.name">
                     </bk-option>
                 </bk-select>
-                <bk-input class="cmdb-form-input"
+                <bk-input class="search-input"
+                    :right-icon="'bk-icon icon-search'"
                     :placeholder="$t('Common[\'请输入\']')"
                     type="text"
                     id="SearchUserName"
                     v-model.trim="filter.text"
                     @enter="getRoleList">
                 </bk-input>
-                <i class="filter-search bk-icon icon-search"
+                <!-- <i class="filter-search bk-icon icon-search"
                     @click="getRoleList">
-                </i>
+                </i> -->
             </div>
         </div>
         <bk-table
@@ -196,12 +198,16 @@
             margin-right: -1px;
             z-index: 1;
         }
-        .cmdb-form-input {
+        .search-input {
             position: relative;
             width: 300px;
             border-radius: 0 2px 2px 0;
+            float: left;
             &:focus {
                 z-index: 2;
+            }
+            /deep/.bk-form-input {
+                float: left;
             }
         }
         .icon-search {
