@@ -459,7 +459,7 @@
                 .cmdb-form-item {
                     width: 520px;
                 }
-                .bk-selector {
+                .bk-select {
                     width: 254px;
                     margin-right: 10px;
                 }
