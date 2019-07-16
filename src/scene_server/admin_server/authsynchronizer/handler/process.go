@@ -19,8 +19,8 @@ import (
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/synchronizer/meta"
-	"configcenter/src/scene_server/admin_server/synchronizer/utils"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/utils"
 )
 
 // HandleProcessSync do sync process of one business

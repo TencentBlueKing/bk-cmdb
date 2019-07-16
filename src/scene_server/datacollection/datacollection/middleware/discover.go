@@ -24,8 +24,8 @@ import (
 )
 
 type Discover struct {
-	ctx     context.Context
-	pheader http.Header
+	ctx        context.Context
+	httpHeader http.Header
 
 	redisCli *redis.Client
 	*backbone.Engine
@@ -34,14 +34,14 @@ type Discover struct {
 var msgHandlerCnt = int64(0)
 
 func NewDiscover(ctx context.Context, redisCli *redis.Client, backbone *backbone.Engine) *Discover {
-	pheader := http.Header{}
-	pheader.Add(bkc.BKHTTPOwnerID, bkc.BKDefaultOwnerID)
-	pheader.Add(bkc.BKHTTPHeaderUser, bkc.CCSystemCollectorUserName)
+	header := http.Header{}
+	header.Add(bkc.BKHTTPOwnerID, bkc.BKDefaultOwnerID)
+	header.Add(bkc.BKHTTPHeaderUser, bkc.CCSystemCollectorUserName)
 
 	discover := &Discover{
-		redisCli: redisCli,
-		ctx:      ctx,
-		pheader:  pheader,
+		redisCli:   redisCli,
+		ctx:        ctx,
+		httpHeader: header,
 	}
 	discover.Engine = backbone
 	return discover
