@@ -70,7 +70,7 @@ func (m *instanceManager) CreateModelInstance(ctx core.ContextParams, objID stri
 
 	instIDFieldName := common.GetInstIDField(objID)
 	// 处理事件数据的
-	eh := m.NewEventHandle(objID)
+	eh := m.NewEventClient(objID)
 	err = eh.SetCurDataAndPush(ctx, objID, metadata.EventActionCreate, mapstr.MapStr{instIDFieldName: id})
 	if err != nil {
 		blog.ErrorJSON("CreateModelInstance  event push instance current data error. err:%s, objID:%s inst id:%s, rid:%s", err, objID, id, ctx.ReqID)
@@ -114,7 +114,7 @@ func (m *instanceManager) CreateManyModelInstance(ctx core.ContextParams, objID 
 	}
 	instIDFieldName := common.GetInstIDField(objID)
 	// 处理事件数据的
-	eh := m.NewEventHandle(objID)
+	eh := m.NewEventClient(objID)
 	err := eh.SetCurDataAndPush(ctx, objID, metadata.EventActionCreate, condition.CreateCondition().Field(instIDFieldName).In(newIDs).ToMapStr())
 	if err != nil {
 		blog.ErrorJSON("CreateManyModelInstance  event push instance current data error. err:%s, objID:%s inst id:%s, rid:%s", err, objID, newIDs, ctx.ReqID)
@@ -138,7 +138,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 	}
 
 	// 处理事件数据的
-	eh := m.NewEventHandle(objID)
+	eh := m.NewEventClient(objID)
 
 	var instMedataData metadata.Metadata
 	instMedataData.Label = make(metadata.Label)
@@ -220,7 +220,7 @@ func (m *instanceManager) DeleteModelInstance(ctx core.ContextParams, objID stri
 	}
 
 	// 处理事件数据的
-	eh := m.NewEventHandle(objID)
+	eh := m.NewEventClient(objID)
 
 	for _, origin := range origins {
 		instID, err := util.GetInt64ByInterface(origin[instIDFieldName])

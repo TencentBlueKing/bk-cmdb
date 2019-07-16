@@ -24,7 +24,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
 )
@@ -508,19 +507,24 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 				return fmt.Errorf("get instID faile, data: %+v, error: %v", node, err)
 			}
 
-			childCondition := condition.CreateCondition()
-			childCondition.Field(common.BKInstParentStr).Eq(instID)
-			childCondition.Field(node.getChildInstNameField()).NotIn(node.getChildInstNames())
+			childFilter := map[string]interface{}{
+				common.BKInstParentStr: instID,
+				node.getChildInstNameField(): map[string]interface{}{
+					common.BKDBNIN: node.getChildInstNames(),
+				},
+			}
 			switch node.getChildObjID() {
 			case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-				childCondition.Field(common.BKDefaultField).NotGt(0)
+				childFilter[common.BKDefaultField] = map[string]interface{}{
+					common.BKDBLTE: 0,
+				}
 			default:
-				childCondition.Field(common.BKObjIDField).Eq(node.getChildObjID())
+				childFilter[common.BKObjIDField] = node.getChildObjID()
 			}
 			shouldDelete := make([]map[string]interface{}, 0)
-			err = ipt.db.Table(childTableName).Find(childCondition.ToMapStr()).All(ipt.ctx, &shouldDelete)
+			err = ipt.db.Table(childTableName).Find(childFilter).All(ipt.ctx, &shouldDelete)
 			if nil != err {
-				return fmt.Errorf("get child of %+v error: %s", childCondition.ToMapStr(), err.Error())
+				return fmt.Errorf("get child of %+v error: %s", childFilter, err.Error())
 			}
 			if len(shouldDelete) > 0 {
 				// fmt.Printf("found %d should delete %s by %+v\n, parent %+v \n", len(shouldDelete), node.getChildObjID(), childCondition, node.Data)
@@ -570,7 +574,7 @@ func getModelAttributes(ctx context.Context, db dal.RDB, opt *option, objIDs []s
 	}
 
 	attributes := make([]metadata.Attribute, 0)
-	err = db.Table("cc_ObjAttDes").Find(cond).All(ctx, &attributes)
+	err = db.Table(common.BKTableNameObjAttDes).Find(cond).All(ctx, &attributes)
 	if nil != err {
 		return nil, nil, fmt.Errorf("faile to getModelAttributes for %v, error: %s", objIDs, err.Error())
 	}
