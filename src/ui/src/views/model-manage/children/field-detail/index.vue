@@ -38,7 +38,10 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <bk-select v-model="fieldInfo.bk_property_type"
+                <bk-select
+                    class="bk-select-full-width"
+                    :clearable="false"
+                    v-model="fieldInfo.bk_property_type"
                     :disabled="isEditField">
                     <bk-option v-for="(option, index) in fieldTypeList"
                         :key="index"

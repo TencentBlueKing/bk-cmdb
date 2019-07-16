@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import i18n from '@/i18n'
 import {
     bkInput,
     bkDropdownMenu,
@@ -20,7 +21,9 @@ import {
     bkLoading,
     bkBigTree,
     bkTooltips,
-    bkInfoBox
+    bkInfoBox,
+    bkSearchSelect,
+    locale as magicboxLocale
 } from 'bk-magic-vue'
 
 Vue.use(bkButton)
@@ -42,6 +45,15 @@ Vue.use(bkDropdownMenu)
 Vue.use(bkLoading)
 Vue.use(bkBigTree)
 Vue.use(bkTooltips)
+Vue.use(bkSearchSelect)
+
+const magicboxLanguageMap = {
+    zh_CN: magicboxLocale.lang.zhCN,
+    en: magicboxLocale.lang.enUS
+}
+
+i18n.mergeLocaleMessage(i18n.locale, magicboxLanguageMap[i18n.locale])
+magicboxLocale.i18n((key, value) => i18n.t(key, value))
 
 export const $error = (message, delay = 3000) => {
     bkMessage({
