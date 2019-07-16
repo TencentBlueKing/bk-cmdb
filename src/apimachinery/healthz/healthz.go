@@ -41,54 +41,47 @@ type health struct {
 }
 
 func (h *health) HealthCheck(moduleName string) (healthy bool, err error) {
-	var name string
+
 	switch moduleName {
 	case types.CC_MODULE_AUDITCONTROLLER:
 		h.capability.Discover = h.disc.AuditCtrl()
-		name = "audit"
 
 	case types.CC_MODULE_HOSTCONTROLLER:
 		h.capability.Discover = h.disc.HostCtrl()
-		name = "host"
 
 	case types.CC_MODULE_OBJECTCONTROLLER:
 		h.capability.Discover = h.disc.ObjectCtrl()
-		name = "object"
 
 	case types.CC_MODULE_PROCCONTROLLER:
 		h.capability.Discover = h.disc.ProcCtrl()
-		name = "process"
 
 	case types.CC_MODULE_DATACOLLECTION:
 		h.capability.Discover = h.disc.DataCollect()
-		name = "collector"
 
 	case types.CC_MODULE_HOST:
 		h.capability.Discover = h.disc.HostServer()
-		name = "host"
 
 	case types.CC_MODULE_MIGRATE:
 		h.capability.Discover = h.disc.MigrateServer()
-		name = "migrate"
 
 	case types.CC_MODULE_PROC:
 		h.capability.Discover = h.disc.ProcServer()
-		name = "process"
 
 	case types.CC_MODULE_TOPO:
 		h.capability.Discover = h.disc.TopoServer()
-		name = "topo"
 
 	case types.CC_MODULE_EVENTSERVER:
 		h.capability.Discover = h.disc.EventServer()
-		name = "event"
+
+	case types.CC_MODULE_APISERVER:
+		h.capability.Discover = h.disc.ApiServer()
 
 	default:
 		return false, fmt.Errorf("unsupported health module: %s", moduleName)
 	}
 
 	resp := new(metric.HealthResponse)
-	client := rest.NewRESTClient(h.capability, fmt.Sprintf("/%s/v3", name))
+	client := rest.NewRESTClient(h.capability, "/")
 	err = client.Get().
 		WithContext(context.Background()).
 		SubResource("/healthz").

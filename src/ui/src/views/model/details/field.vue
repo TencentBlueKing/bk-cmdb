@@ -232,7 +232,7 @@
                         config: {
                             requestId: 'importObjectAttribute',
                             globalError: false,
-                            originalResponse: true
+                            transformData: false
                         }
                     }).then(res => {
                         this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)

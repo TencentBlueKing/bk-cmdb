@@ -15,14 +15,15 @@ package eventclient
 import (
 	"encoding/json"
 	"net/http"
+	"reflect"
 	"time"
-
-	"gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
+
+	"gopkg.in/redis.v5"
 )
 
 type EventContext struct {
@@ -47,6 +48,14 @@ func (c *EventContext) InsertEvent(eventType, objType, action string, curData in
 	if c.CacheCli == nil {
 		return errors.New("invalid event context with nil cache client")
 	}
+	equal, err := instEqual(curData, preData)
+	if err != nil {
+		return err
+	}
+	if equal {
+		return nil
+	}
+
 	eventID, err := c.CacheCli.Incr(common.EventCacheEventIDKey).Result()
 	if err != nil {
 		return err
@@ -85,4 +94,42 @@ func (c *EventContext) InsertEvent(eventType, objType, action string, curData in
 		return c.CacheCli.LPush(common.EventCacheEventTxnQueuePrefix+c.TxnID, value).Err()
 	}
 	return c.CacheCli.LPush(common.EventCacheEventQueueKey, value).Err()
+}
+
+// instEqual Determine whether the data is consistent before and after the change
+func instEqual(predata, curdata interface{}) (bool, error) {
+	switch {
+	case predata == nil && curdata != nil:
+		return false, nil
+	case curdata == nil && predata != nil:
+		return false, nil
+	}
+
+	preData, err := toMap(predata)
+	if err != nil {
+		return false, err
+	}
+	curData, err := toMap(curdata)
+	if err != nil {
+		return false, err
+	}
+	delete(preData, common.LastTimeField)
+	delete(curData, common.LastTimeField)
+
+	return reflect.DeepEqual(preData, curData), nil
+}
+
+func toMap(data interface{}) (map[string]interface{}, error) {
+	out, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	m := map[string]interface{}{}
+	err = json.Unmarshal(out, &m)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }

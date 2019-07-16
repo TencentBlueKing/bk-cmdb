@@ -32,41 +32,46 @@ type ProctrlServer struct {
 	Cache    *redis.Client
 }
 
-func (ps *ProctrlServer) WebService() *restful.WebService {
+func (ps *ProctrlServer) WebService() *restful.Container {
+	container := restful.NewContainer()
 
-	ws := new(restful.WebService)
+	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return ps.Core.CCErr
 	}
 	// v3
 
-	ws.Path("/process/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	api.Path("/process/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	ws.Route(ws.DELETE("/module").To(ps.DeleteProc2Module))
-	ws.Route(ws.POST("/module").To(ps.CreateProc2Module))
-	ws.Route(ws.POST("/module/search").To(ps.GetProc2Module))
+	api.Route(api.DELETE("/module").To(ps.DeleteProc2Module))
+	api.Route(api.POST("/module").To(ps.CreateProc2Module))
+	api.Route(api.POST("/module/search").To(ps.GetProc2Module))
 
-	ws.Route(ws.POST("/template").To(ps.CreateProc2Template))
-	ws.Route(ws.DELETE("/template").To(ps.DeleteProc2Template))
-	ws.Route(ws.POST("/template/search").To(ps.GetProc2Template))
+	api.Route(api.POST("/template").To(ps.CreateProc2Template))
+	api.Route(api.DELETE("/template").To(ps.DeleteProc2Template))
+	api.Route(api.POST("/template/search").To(ps.GetProc2Template))
 
-	ws.Route(ws.POST("/instance/model").To(ps.CreateProcInstanceModel))
-	ws.Route(ws.POST("/instance/model/search").To(ps.GetProcInstanceModel))
-	ws.Route(ws.DELETE("/instance/model").To(ps.DeleteProcInstanceModel))
-	ws.Route(ws.POST("/instance/register/detail").To(ps.RegisterProcInstaceDetail))
-	ws.Route(ws.PUT("/instance/register/detail").To(ps.ModifyRegisterProcInstanceDetail))
-	ws.Route(ws.POST("/instance/register/detail/search").To(ps.GetProcInstanceDetail))
-	ws.Route(ws.DELETE("/instance/register/detail").To(ps.DeleteRegisterProcInstanceDetail))
+	api.Route(api.POST("/instance/model").To(ps.CreateProcInstanceModel))
+	api.Route(api.POST("/instance/model/search").To(ps.GetProcInstanceModel))
+	api.Route(api.DELETE("/instance/model").To(ps.DeleteProcInstanceModel))
+	api.Route(api.POST("/instance/register/detail").To(ps.RegisterProcInstaceDetail))
+	api.Route(api.PUT("/instance/register/detail").To(ps.ModifyRegisterProcInstanceDetail))
+	api.Route(api.POST("/instance/register/detail/search").To(ps.GetProcInstanceDetail))
+	api.Route(api.DELETE("/instance/register/detail").To(ps.DeleteRegisterProcInstanceDetail))
 
-	ws.Route(ws.POST("/operate/task").To(ps.AddOperateTaskInfo))
-	ws.Route(ws.PUT("/operate/task").To(ps.UpdateOperateTaskInfo))
-	ws.Route(ws.POST("/operate/task/search").To(ps.SearchOperateTaskInfo))
+	api.Route(api.POST("/operate/task").To(ps.AddOperateTaskInfo))
+	api.Route(api.PUT("/operate/task").To(ps.UpdateOperateTaskInfo))
+	api.Route(api.POST("/operate/task/search").To(ps.SearchOperateTaskInfo))
 
-	ws.Route(ws.GET("/healthz").To(ps.Healthz))
+	container.Add(api)
 
-	return ws
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(ps.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (ps *ProctrlServer) Healthz(req *restful.Request, resp *restful.Response) {

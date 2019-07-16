@@ -34,50 +34,57 @@ type Service struct {
 	Logics   *logics.Logics
 }
 
-func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
+func (s *Service) WebService() *restful.Container {
+	container := restful.NewContainer()
+
+	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Core.CCErr
 	}
-	ws.Path("/host/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	api.Path("/host/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/hosts/favorites/{user}").To(s.AddHostFavourite))
-	ws.Route(ws.PUT("/hosts/favorites/{user}/{id}").To(s.UpdateHostFavouriteByID))
-	ws.Route(ws.DELETE("/hosts/favorites/{user}/{id}").To(s.DeleteHostFavouriteByID))
-	ws.Route(ws.POST("/hosts/favorites/search/{user}").To(s.GetHostFavourites))
-	ws.Route(ws.POST("/hosts/favorites/search/{user}/{id}").To(s.GetHostFavouriteByID))
-	ws.Route(ws.POST("/history/{user}").To(s.AddHistory))
-	ws.Route(ws.GET("/history/{user}/{start}/{limit}").To(s.GetHistorys))
-	ws.Route(ws.GET("/host/{bk_host_id}").To(s.GetHostByID))
-	ws.Route(ws.POST("/hosts/search").To(s.GetHosts))
-	ws.Route(ws.POST("/insts").To(s.AddHost))
-	ws.Route(ws.GET("/host/snapshot/{bk_host_id}").To(s.GetHostSnap))
-	ws.Route(ws.POST("/meta/hosts/modules/search").To(s.GetHostModulesIDs))
-	ws.Route(ws.POST("/meta/hosts/modules").To(s.AddModuleHostConfig))
-	ws.Route(ws.DELETE("/meta/hosts/modules").To(s.DelModuleHostConfig))
-	ws.Route(ws.DELETE("/meta/hosts/defaultmodules").To(s.DelDefaultModuleHostConfig))
-	ws.Route(ws.PUT("/meta/hosts/resource").To(s.MoveHost2ResourcePool))
-	ws.Route(ws.POST("/meta/hosts/assign").To(s.AssignHostToApp))
-	ws.Route(ws.POST("/meta/hosts/module/config/search").To(s.GetModulesHostConfig))
-	ws.Route(ws.POST("/userapi").To(s.AddUserConfig))
-	ws.Route(ws.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserConfig))
-	ws.Route(ws.DELETE("/userapi/{bk_biz_id}/{id}").To(s.DeleteUserConfig))
-	ws.Route(ws.POST("/userapi/search").To(s.GetUserConfig))
-	ws.Route(ws.GET("/userapi/detail/{bk_biz_id}/{id}").To(s.UserConfigDetail))
-	ws.Route(ws.POST("/usercustom/{bk_user}").To(s.AddUserCustom))
-	ws.Route(ws.PUT("/usercustom/{bk_user}/{id}").To(s.UpdateUserCustomByID))
-	ws.Route(ws.POST("/usercustom/user/search/{bk_user}").To(s.GetUserCustomByUser))
-	ws.Route(ws.POST("/usercustom/default/search/{bk_user}").To(s.GetDefaultUserCustom))
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
-	ws.Route(ws.POST("/transfer/host/default/module").To(s.TransferHostToDefaultModuleConfig))
+	api.Route(api.POST("/hosts/favorites/{user}").To(s.AddHostFavourite))
+	api.Route(api.PUT("/hosts/favorites/{user}/{id}").To(s.UpdateHostFavouriteByID))
+	api.Route(api.DELETE("/hosts/favorites/{user}/{id}").To(s.DeleteHostFavouriteByID))
+	api.Route(api.POST("/hosts/favorites/search/{user}").To(s.GetHostFavourites))
+	api.Route(api.POST("/hosts/favorites/search/{user}/{id}").To(s.GetHostFavouriteByID))
+	api.Route(api.POST("/history/{user}").To(s.AddHistory))
+	api.Route(api.GET("/history/{user}/{start}/{limit}").To(s.GetHistorys))
+	api.Route(api.GET("/host/{bk_host_id}").To(s.GetHostByID))
+	api.Route(api.POST("/hosts/search").To(s.GetHosts))
+	api.Route(api.POST("/insts").To(s.AddHost))
+	api.Route(api.GET("/host/snapshot/{bk_host_id}").To(s.GetHostSnap))
+	api.Route(api.POST("/meta/hosts/modules/search").To(s.GetHostModulesIDs))
+	api.Route(api.POST("/meta/hosts/modules").To(s.AddModuleHostConfig))
+	api.Route(api.DELETE("/meta/hosts/modules").To(s.DelModuleHostConfig))
+	api.Route(api.DELETE("/meta/hosts/defaultmodules").To(s.DelDefaultModuleHostConfig))
+	api.Route(api.PUT("/meta/hosts/resource").To(s.MoveHost2ResourcePool))
+	api.Route(api.POST("/meta/hosts/assign").To(s.AssignHostToApp))
+	api.Route(api.POST("/meta/hosts/module/config/search").To(s.GetModulesHostConfig))
+	api.Route(api.POST("/userapi").To(s.AddUserConfig))
+	api.Route(api.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserConfig))
+	api.Route(api.DELETE("/userapi/{bk_biz_id}/{id}").To(s.DeleteUserConfig))
+	api.Route(api.POST("/userapi/search").To(s.GetUserConfig))
+	api.Route(api.GET("/userapi/detail/{bk_biz_id}/{id}").To(s.UserConfigDetail))
+	api.Route(api.POST("/usercustom/{bk_user}").To(s.AddUserCustom))
+	api.Route(api.PUT("/usercustom/{bk_user}/{id}").To(s.UpdateUserCustomByID))
+	api.Route(api.POST("/usercustom/user/search/{bk_user}").To(s.GetUserCustomByUser))
+	api.Route(api.POST("/usercustom/default/search/{bk_user}").To(s.GetDefaultUserCustom))
+	api.Route(api.POST("/transfer/host/default/module").To(s.TransferHostToDefaultModuleConfig))
 
-	ws.Route(ws.POST("/host/lock").To(s.LockHost))
-	ws.Route(ws.DELETE("/host/lock").To(s.UnlockHost))
-	ws.Route(ws.POST("/host/lock/search").To(s.QueryLockHost))
+	api.Route(api.POST("/host/lock").To(s.LockHost))
+	api.Route(api.DELETE("/host/lock").To(s.UnlockHost))
+	api.Route(api.POST("/host/lock/search").To(s.QueryLockHost))
 
-	return ws
+	container.Add(api)
+
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {

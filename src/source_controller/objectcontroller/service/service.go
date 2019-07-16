@@ -32,97 +32,105 @@ type Service struct {
 	Cache    *redis.Client
 }
 
-func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
+func (s *Service) WebService() *restful.Container {
+
+	container := restful.NewContainer()
+
+	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Core.CCErr
 	}
-	ws.Path("/object/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
-	//restful.DefaultRequestContentType(restful.MIME_JSON)
+	api.Path("/object/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/identifier/{obj_type}/search").To(s.SearchIdentifier))
+	api.Route(api.POST("/identifier/{obj_type}/search").To(s.SearchIdentifier))
 
-	ws.Route(ws.POST("/insts/{obj_type}/search").To(s.SearchInstObjects))
-	ws.Route(ws.POST("/insts/{obj_type}").To(s.CreateInstObject))
-	ws.Route(ws.DELETE("/insts/{obj_type}").To(s.DeleteInstObject))
-	ws.Route(ws.PUT("/insts/{obj_type}").To(s.UpdateInstObject))
+	api.Route(api.POST("/insts/{obj_type}/search").To(s.SearchInstObjects))
+	api.Route(api.POST("/insts/{obj_type}").To(s.CreateInstObject))
+	api.Route(api.DELETE("/insts/{obj_type}").To(s.DeleteInstObject))
+	api.Route(api.PUT("/insts/{obj_type}").To(s.UpdateInstObject))
 
-	ws.Route(ws.POST("/meta/objects").To(s.SelectObjects))
-	ws.Route(ws.DELETE("/meta/object/{id}").To(s.DeleteObject))
-	ws.Route(ws.POST("/meta/object").To(s.CreateObject))
-	ws.Route(ws.PUT("/meta/object/{id}").To(s.UpdateObject))
+	api.Route(api.POST("/meta/objects").To(s.SelectObjects))
+	api.Route(api.DELETE("/meta/object/{id}").To(s.DeleteObject))
+	api.Route(api.POST("/meta/object").To(s.CreateObject))
+	api.Route(api.PUT("/meta/object/{id}").To(s.UpdateObject))
 
-	ws.Route(ws.POST("/meta/objectassts").To(s.SelectObjectAssociations))
-	ws.Route(ws.DELETE("/meta/objectasst/{id}").To(s.DeleteObjectAssociation))
-	ws.Route(ws.POST("/meta/objectasst").To(s.CreateObjectAssociation))
-	ws.Route(ws.POST("/meta/mainlineobjectasst").To(s.CreateMainlineObjectAssociation))
-	ws.Route(ws.PUT("/meta/objectasst/{id}").To(s.UpdateObjectAssociation))
+	api.Route(api.POST("/meta/objectassts").To(s.SelectObjectAssociations))
+	api.Route(api.DELETE("/meta/objectasst/{id}").To(s.DeleteObjectAssociation))
+	api.Route(api.POST("/meta/objectasst").To(s.CreateObjectAssociation))
+	api.Route(api.POST("/meta/mainlineobjectasst").To(s.CreateMainlineObjectAssociation))
+	api.Route(api.PUT("/meta/objectasst/{id}").To(s.UpdateObjectAssociation))
 
-	ws.Route(ws.POST("/meta/objectatt/{id}").To(s.SelectObjectAttByID))
-	ws.Route(ws.POST("/meta/objectatts").To(s.SelectObjectAttWithParams))
-	ws.Route(ws.DELETE("/meta/objectatt/{id}").To(s.DeleteObjectAttByID))
-	ws.Route(ws.POST("/meta/objectatt").To(s.CreateObjectAtt))
-	ws.Route(ws.PUT("/meta/objectatt/{id}").To(s.UpdateObjectAttByID))
+	api.Route(api.POST("/meta/objectatt/{id}").To(s.SelectObjectAttByID))
+	api.Route(api.POST("/meta/objectatts").To(s.SelectObjectAttWithParams))
+	api.Route(api.DELETE("/meta/objectatt/{id}").To(s.DeleteObjectAttByID))
+	api.Route(api.POST("/meta/objectatt").To(s.CreateObjectAtt))
+	api.Route(api.PUT("/meta/objectatt/{id}").To(s.UpdateObjectAttByID))
 
-	ws.Route(ws.POST("/meta/objectatt/group/new").To(s.CreatePropertyGroup))
-	ws.Route(ws.PUT("/meta/objectatt/group/update").To(s.UpdatePropertyGroup))
-	ws.Route(ws.DELETE("/meta/objectatt/group/groupid/{id}").To(s.DeletePropertyGroup))
-	ws.Route(ws.PUT("/meta/objectatt/group/property").To(s.UpdatePropertyGroupObjectAtt))
-	ws.Route(ws.DELETE("/meta/objectatt/group/owner/{owner_id}/object/{object_id}/propertyids/{property_id}/groupids/{group_id}").To(s.DeletePropertyGroupObjectAtt))
-	ws.Route(ws.POST("/meta/objectatt/group/property/owner/{owner_id}/object/{object_id}").To(s.SelectPropertyGroupByObjectID))
-	ws.Route(ws.POST("/meta/objectatt/group/search").To(s.SelectGroup))
+	api.Route(api.POST("/meta/objectatt/group/new").To(s.CreatePropertyGroup))
+	api.Route(api.PUT("/meta/objectatt/group/update").To(s.UpdatePropertyGroup))
+	api.Route(api.DELETE("/meta/objectatt/group/groupid/{id}").To(s.DeletePropertyGroup))
+	api.Route(api.PUT("/meta/objectatt/group/property").To(s.UpdatePropertyGroupObjectAtt))
+	api.Route(api.DELETE("/meta/objectatt/group/owner/{owner_id}/object/{object_id}/propertyids/{property_id}/groupids/{group_id}").To(s.DeletePropertyGroupObjectAtt))
+	api.Route(api.POST("/meta/objectatt/group/property/owner/{owner_id}/object/{object_id}").To(s.SelectPropertyGroupByObjectID))
+	api.Route(api.POST("/meta/objectatt/group/search").To(s.SelectGroup))
 
-	ws.Route(ws.POST("/meta/object/classification/{owner_id}/objects").To(s.SelectClassificationWithObject))
-	ws.Route(ws.POST("/meta/object/classification/search").To(s.SelectClassifications))
-	ws.Route(ws.DELETE("/meta/object/classification/{id}").To(s.DeleteClassification))
-	ws.Route(ws.POST("/meta/object/classification").To(s.CreateClassification))
-	ws.Route(ws.PUT("/meta/object/classification/{id}").To(s.UpdateClassification))
+	api.Route(api.POST("/meta/object/classification/{owner_id}/objects").To(s.SelectClassificationWithObject))
+	api.Route(api.POST("/meta/object/classification/search").To(s.SelectClassifications))
+	api.Route(api.DELETE("/meta/object/classification/{id}").To(s.DeleteClassification))
+	api.Route(api.POST("/meta/object/classification").To(s.CreateClassification))
+	api.Route(api.PUT("/meta/object/classification/{id}").To(s.UpdateClassification))
 
-	ws.Route(ws.POST("/object/{bk_obj_id}/unique/action/create").To(s.CreateObjectUnique))
-	ws.Route(ws.PUT("/object/{bk_obj_id}/unique/{id}/action/update").To(s.UpdateObjectUnique))
-	ws.Route(ws.DELETE("/object/{bk_obj_id}/unique/{id}/action/delete").To(s.DeleteObjectUnique))
-	ws.Route(ws.GET("/object/{bk_obj_id}/unique/action/search").To(s.SearchObjectUnique))
+	api.Route(api.POST("/object/{bk_obj_id}/unique/action/create").To(s.CreateObjectUnique))
+	api.Route(api.PUT("/object/{bk_obj_id}/unique/{id}/action/update").To(s.UpdateObjectUnique))
+	api.Route(api.DELETE("/object/{bk_obj_id}/unique/{id}/action/delete").To(s.DeleteObjectUnique))
+	api.Route(api.GET("/object/{bk_obj_id}/unique/action/search").To(s.SearchObjectUnique))
 
 	// association api
-	ws.Route(ws.POST("/association/action/search").To(s.SearchAssociationType))
-	ws.Route(ws.POST("/association/action/create").To(s.CreateAssociationType))
-	ws.Route(ws.PUT("/association/{id}/action/update").To(s.UpdateAssociationType))
-	ws.Route(ws.DELETE("/association/{id}/action/delete").To(s.DeleteAssociationType))
+	api.Route(api.POST("/association/action/search").To(s.SearchAssociationType))
+	api.Route(api.POST("/association/action/create").To(s.CreateAssociationType))
+	api.Route(api.PUT("/association/{id}/action/update").To(s.UpdateAssociationType))
+	api.Route(api.DELETE("/association/{id}/action/delete").To(s.DeleteAssociationType))
 
-	ws.Route(ws.POST("/object/association/action/search").To(s.SelectObjectAssociations))                 // optimization: new api path
-	ws.Route(ws.POST("/object/association/action/create").To(s.CreateObjectAssociation))                  // optimization: new api path
-	ws.Route(ws.POST("/object/association/mainline/action/create").To(s.CreateMainlineObjectAssociation)) // interface mainline association
-	ws.Route(ws.PUT("/object/association/{id}/action/update").To(s.UpdateObjectAssociation))              // optimization: new api path
-	ws.Route(ws.DELETE("/object/association/{id}/action/delete").To(s.DeleteObjectAssociation))           // optimization: new api path
+	api.Route(api.POST("/object/association/action/search").To(s.SelectObjectAssociations))                 // optimization: new api path
+	api.Route(api.POST("/object/association/action/create").To(s.CreateObjectAssociation))                  // optimization: new api path
+	api.Route(api.POST("/object/association/mainline/action/create").To(s.CreateMainlineObjectAssociation)) // interface mainline association
+	api.Route(api.PUT("/object/association/{id}/action/update").To(s.UpdateObjectAssociation))              // optimization: new api path
+	api.Route(api.DELETE("/object/association/{id}/action/delete").To(s.DeleteObjectAssociation))           // optimization: new api path
 
-	ws.Route(ws.POST("/inst/association/action/search").To(s.SearchInstAssociations))
-	ws.Route(ws.POST("/inst/association/action/create").To(s.CreateInstAssociation))
-	ws.Route(ws.DELETE("/inst/association/{association_id}/action/delete").To(s.DeleteInstAssociation))
+	api.Route(api.POST("/inst/association/action/search").To(s.SearchInstAssociations))
+	api.Route(api.POST("/inst/association/action/create").To(s.CreateInstAssociation))
+	api.Route(api.DELETE("/inst/association/{association_id}/action/delete").To(s.DeleteInstAssociation))
 
-	ws.Route(ws.POST("/topographics/search").To(s.SearchTopoGraphics))
-	ws.Route(ws.POST("/topographics/update").To(s.UpdateTopoGraphics))
+	api.Route(api.POST("/topographics/search").To(s.SearchTopoGraphics))
+	api.Route(api.POST("/topographics/update").To(s.UpdateTopoGraphics))
 
-	ws.Route(ws.POST("/openapi/proc/getProcModule").To(s.GetProcessesByModuleName))
-	ws.Route(ws.DELETE("/openapi/set/delhost").To(s.DeleteSetHost))
+	api.Route(api.POST("/openapi/proc/getProcModule").To(s.GetProcessesByModuleName))
+	api.Route(api.DELETE("/openapi/set/delhost").To(s.DeleteSetHost))
 
-	ws.Route(ws.POST("/privilege/group/{bk_supplier_account}").To(s.CreateUserGroup))
-	ws.Route(ws.PUT("/privilege/group/{bk_supplier_account}/{group_id}").To(s.UpdateUserGroup))
-	ws.Route(ws.DELETE("/privilege/group/{bk_supplier_account}/{group_id}").To(s.DeleteUserGroup))
-	ws.Route(ws.POST("/privilege/group/{bk_supplier_account}/search").To(s.SearchUserGroup))
+	api.Route(api.POST("/privilege/group/{bk_supplier_account}").To(s.CreateUserGroup))
+	api.Route(api.PUT("/privilege/group/{bk_supplier_account}/{group_id}").To(s.UpdateUserGroup))
+	api.Route(api.DELETE("/privilege/group/{bk_supplier_account}/{group_id}").To(s.DeleteUserGroup))
+	api.Route(api.POST("/privilege/group/{bk_supplier_account}/search").To(s.SearchUserGroup))
 
-	ws.Route(ws.POST("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.CreateUserGroupPrivi))
-	ws.Route(ws.PUT("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.UpdateUserGroupPrivi))
-	ws.Route(ws.GET("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.GetUserGroupPrivi))
+	api.Route(api.POST("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.CreateUserGroupPrivi))
+	api.Route(api.PUT("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.UpdateUserGroupPrivi))
+	api.Route(api.GET("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.GetUserGroupPrivi))
 
-	ws.Route(ws.POST("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.CreateRolePri))
-	ws.Route(ws.GET("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.GetRolePri))
-	ws.Route(ws.PUT("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.UpdateRolePri))
+	api.Route(api.POST("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.CreateRolePri))
+	api.Route(api.GET("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.GetRolePri))
+	api.Route(api.PUT("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.UpdateRolePri))
 
-	ws.Route(ws.GET("/system/{flag}/{bk_supplier_account}").To(s.GetSystemFlag))
+	api.Route(api.GET("/system/{flag}/{bk_supplier_account}").To(s.GetSystemFlag))
 
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
-	return ws
+	container.Add(api)
+
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
