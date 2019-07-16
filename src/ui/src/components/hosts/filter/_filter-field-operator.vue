@@ -2,6 +2,7 @@
     <bk-select
         v-model="localSelected"
         :clearable="false"
+        :popover-min-width="75"
         :disabled="disabled">
         <bk-option
             v-for="(option, index) in list"

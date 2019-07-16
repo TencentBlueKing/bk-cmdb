@@ -146,7 +146,7 @@
                         auth: [$OPERATION.U_CUSTOM_QUERY]
                     }">
                     <bk-button theme="primary" class="userapi-btn"
-                        v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
+                        v-bk-tooltips="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
                         :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
                         :disabled="errors.any() || !editable"
                         @click="saveUserAPI">

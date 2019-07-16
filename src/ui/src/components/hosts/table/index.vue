@@ -46,29 +46,16 @@
                     :disabled="!table.checked.length"
                     @on-copy="handleCopy">
                 </cmdb-clipboard-selector>
-                <bk-button class="options-button quick-search-button" theme="default"
-                    v-if="quickSearch"
-                    ref="quickSearchButton"
-                    @click="quickSearchStatus.active = true">
-                    {{$t('HostResourcePool["筛选"]')}}
-                    <i class="bk-icon icon-angle-down"></i>
-                </bk-button>
-                <div class="fr" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
-                    <bk-button class="options-button" theme="default" style="margin-right: 0"
+                <div class="fr">
+                    <cmdb-host-filter :properties="filterProperties"></cmdb-host-filter>
+                    <bk-button class="options-button"
+                        icon="icon-cc-setting"
+                        v-bk-tooltips.top="$t('BusinessTopology[\'列表显示属性配置\']')"
                         @click="columnsConfig.show = true">
-                        <i class="icon-cc-setting"></i>
                     </bk-button>
                 </div>
             </slot>
         </div>
-        <cmdb-collapse-transition>
-            <cmdb-host-quick-search
-                v-if="quickSearch && quickSearchStatus.active"
-                :properties="properties.host"
-                @on-toggle="quickSearchStatus.active = false"
-                @on-search="handleQuickSearch">
-            </cmdb-host-quick-search>
-        </cmdb-collapse-transition>
         <bk-table class="hosts-table"
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
@@ -149,16 +136,14 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    // import cmdbHostsFilter from '@/components/hosts/filter'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbTransferHost from '@/components/hosts/transfer'
-    import cmdbHostQuickSearch from './_quick-search.vue'
+    import cmdbHostFilter from '@/components/hosts/filter/index.vue'
     export default {
         components: {
-            // cmdbHostsFilter,
             cmdbColumnsConfig,
             cmdbTransferHost,
-            cmdbHostQuickSearch
+            cmdbHostFilter
         },
         props: {
             columnsConfigProperties: {
@@ -174,10 +159,6 @@
                 default () {
                     return ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name']
                 }
-            },
-            quickSearch: {
-                type: Boolean,
-                default: false
             },
             saveAuth: {
                 type: [String, Array],
@@ -210,9 +191,6 @@
                     module: []
                 },
                 propertyGroups: [],
-                quickSearchStatus: {
-                    active: false
-                },
                 table: {
                     checked: [],
                     header: [],
@@ -269,6 +247,15 @@
             },
             selectedHosts () {
                 return this.table.allList.filter(host => this.table.checked.includes(host['host']['bk_host_id']))
+            },
+            filterProperties () {
+                const { module, set, host } = this.properties
+                const filterProperty = ['bk_host_innerip', 'bk_host_outerip', 'bk_cloud_id']
+                return {
+                    host: host.filter(property => !filterProperty.includes(property.bk_property_id)),
+                    module,
+                    set
+                }
             }
         },
         watch: {
@@ -571,7 +558,6 @@
             position: relative;
             display: inline-block;
             vertical-align: middle;
-            border-radius: 0;
             font-size: 14px;
             margin: 0 5px;
             &.quick-search-button {

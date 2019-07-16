@@ -2,7 +2,7 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <div class="fl" v-tooltip="$t('ModelManagement[\'导入\']')"
+                <div class="fl" v-bk-tooltips="$t('ModelManagement[\'导入\']')"
                     v-cursor="{
                         active: !$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST]),
                         auth: [$OPERATION.C_INST, $OPERATION.U_INST]
@@ -13,14 +13,14 @@
                         <i class="icon-cc-import"></i>
                     </bk-button>
                 </div>
-                <div class="fl" v-tooltip="$t('ModelManagement[\'导出\']')">
+                <div class="fl" v-bk-tooltips="$t('ModelManagement[\'导出\']')">
                     <bk-button class="models-button" theme="default"
                         :disabled="!table.checked.length"
                         @click="handleExport">
                         <i class="icon-cc-derivation"></i>
                     </bk-button>
                 </div>
-                <div class="fl" v-tooltip="$t('Inst[\'批量更新\']')"
+                <div class="fl" v-bk-tooltips="$t('Inst[\'批量更新\']')"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.U_INST),
                         auth: [$OPERATION.U_INST]
@@ -31,7 +31,7 @@
                         <i class="icon-cc-edit"></i>
                     </bk-button>
                 </div>
-                <div class="fl" v-tooltip="$t('Common[\'删除\']')"
+                <div class="fl" v-bk-tooltips="$t('Common[\'删除\']')"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.D_INST),
                         auth: [$OPERATION.D_INST]
@@ -55,10 +55,10 @@
                 </div>
             </div>
             <div class="options-button fr">
-                <bk-button v-tooltip="$t('Common[\'查看删除历史\']')" @click="routeToHistory">
+                <bk-button v-bk-tooltips="$t('Common[\'查看删除历史\']')" @click="routeToHistory">
                     <i class="icon-cc-history"></i>
                 </bk-button>
-                <bk-button class="button-setting" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">
+                <bk-button class="button-setting" v-bk-tooltips="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">
                     <i class="icon-cc-setting"></i>
                 </bk-button>
             </div>

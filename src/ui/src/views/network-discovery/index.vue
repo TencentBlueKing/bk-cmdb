@@ -13,7 +13,7 @@
                     </bk-input>
                     <i class="filter-search bk-icon icon-search" @click="getTableData"></i>
                 </div>
-                <bk-button theme="default" class="fl" v-tooltip="$t('NetworkDiscovery[\'查看完成历史\']')" @click="routeToHistory">
+                <bk-button theme="default" class="fl" v-bk-tooltips="$t('NetworkDiscovery[\'查看完成历史\']')" @click="routeToHistory">
                     <i class="icon-cc-history"></i>
                 </bk-button>
             </div>

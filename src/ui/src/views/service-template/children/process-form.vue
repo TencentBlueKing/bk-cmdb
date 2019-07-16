@@ -22,13 +22,13 @@
                                     <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                     <i class="property-name-tooltips icon-cc-tips"
                                         v-if="property['placeholder']"
-                                        v-tooltip="htmlEncode(property['placeholder'])">
+                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
                                     </i>
                                     <label class="cmdb-form-checkbox cmdb-checkbox-small"
                                         v-if="property['isLocking'] !== undefined">
                                         <input type="checkbox" v-model="values[property['bk_property_id']]['as_default_value']">
                                         <span class="cmdb-checkbox-text"
-                                            v-tooltip="$t('ServiceManagement[\'锁定不可编辑\']')">
+                                            v-bk-tooltips="$t('ServiceManagement[\'锁定不可编辑\']')">
                                             {{$t('ProcessManagement["锁定"]')}}
                                         </span>
                                     </label>

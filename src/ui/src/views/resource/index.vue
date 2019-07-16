@@ -68,15 +68,15 @@
                     </cmdb-clipboard-selector>
                 </div>
                 <div class="fr">
-                    <bk-button class="options-button options-icon" theme="default"
-                        v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')"
+                    <bk-button class="options-button options-icon"
+                        v-bk-tooltips="$t('BusinessTopology[\'列表显示属性配置\']')"
+                        icon="icon-cc-setting"
                         @click="handleColumnsConfig">
-                        <i class="icon-cc-setting"></i>
                     </bk-button>
-                    <bk-button class="options-button options-icon" theme="default"
-                        v-tooltip="$t('Common[\'查看删除历史\']')"
+                    <bk-button class="options-button options-icon"
+                        v-bk-tooltips="$t('Common[\'查看删除历史\']')"
+                        icon="icon-cc-history"
                         @click="routeToHistory">
-                        <i class="icon-cc-history"></i>
                     </bk-button>
                 </div>
             </div>
