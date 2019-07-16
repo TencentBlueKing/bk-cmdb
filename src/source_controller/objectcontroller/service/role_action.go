@@ -53,7 +53,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	}
 	if 0 == cnt { // TODO:
 		blog.V(3).Infof("failed to find the cnt")
-		info := make(map[string]interface{})
+		info := make([]string, 0)
 		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
 		return
 	}
@@ -68,15 +68,14 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	privilege, ok := result["privilege"]
 	if !ok {
 		blog.Errorf("not privilege, the origin data is %#v", result)
-		info := make(map[string]interface{})
+		info := make([]string, 0)
 		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
 		return
-
 	}
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: privilege})
 }
 
-//CreateRolePri create role privilege
+// CreateRolePri create role privilege
 func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) {
 
 	language := util.GetActionLanguage(req)
@@ -94,7 +93,7 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
-	var roleJSON []string
+	roleJSON := make([]string, 0)
 	err = json.Unmarshal([]byte(value), &roleJSON)
 	if err != nil {
 		blog.Errorf("read json data error :%v", err)
@@ -118,7 +117,7 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
 }
 
-//UpdateRolePri update role privilege
+// UpdateRolePri update role privilege
 func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) {
 
 	language := util.GetActionLanguage(req)
@@ -136,7 +135,7 @@ func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) 
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
-	var roleJSON []string
+	roleJSON := make([]string, 0)
 	err = json.Unmarshal([]byte(value), &roleJSON)
 	if err != nil {
 		blog.Errorf("read json data error :%v", err)
