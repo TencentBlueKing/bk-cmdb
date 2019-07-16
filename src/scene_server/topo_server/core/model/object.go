@@ -575,7 +575,7 @@ func (o *object) Create() error {
 	}
 
 	if exists {
-		return o.params.Err.Error(common.CCErrCommDuplicateItem)
+		return o.params.Err.Errorf(common.CCErrCommDuplicateItem, o.GetName())
 	}
 
 	if o.obj.ObjIcon == "" {
@@ -614,7 +614,7 @@ func (o *object) Update(data frtypes.MapStr) error {
 	}
 
 	if exists {
-		return o.params.Err.Error(common.CCErrCommDuplicateItem)
+		return o.params.Err.Errorf(common.CCErrCommDuplicateItem, o.GetName())
 	}
 
 	// update action

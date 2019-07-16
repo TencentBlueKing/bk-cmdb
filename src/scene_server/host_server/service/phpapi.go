@@ -26,7 +26,6 @@ import (
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
-
 )
 
 // updateHostPlat 根据条件更新主机信息
@@ -135,13 +134,13 @@ func (s *Service) HostSearchByIP(req *restful.Request, resp *restful.Response) {
 	configData, err := s.Logics.GetConfigByCond(req.Request.Header, configCond)
 	if nil != err {
 		blog.Errorf("HostSearchByIP error : %s, input:%v", err.Error(), input)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFailed, err.Error())})
 		return
 	}
 	hostData, err := phpapi.SetHostData(configData, hostMap)
 	if nil != err {
 		blog.Errorf("HostSearchByIP error : %v", err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFailed, err.Error())})
 		return
 	}
 
@@ -175,7 +174,7 @@ func (s *Service) HostSearchByConds(req *restful.Request, resp *restful.Response
 	configData, err := s.Logics.GetConfigByCond(req.Request.Header, configCond)
 	if nil != err {
 		blog.Errorf("HostSearchByConds error : %v, input:%v", err, input)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFailed, err.Error())})
 		return
 	}
 
@@ -220,7 +219,7 @@ func (s *Service) HostSearchByModuleID(req *restful.Request, resp *restful.Respo
 	})
 	if nil != err {
 		blog.Errorf("HostSearchByModuleID get host module config error:%s, input:%v", err.Error(), input)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFailed, err.Error())})
 		return
 	}
 
@@ -263,7 +262,7 @@ func (s *Service) HostSearchBySetID(req *restful.Request, resp *restful.Response
 	configData, err := s.Logics.GetConfigByCond(req.Request.Header, conds)
 	if nil != err {
 		blog.Errorf("HostSearchBySetID get host module config error:%s, input:%v", err.Error(), input)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFailed, err.Error())})
 		return
 	}
 
@@ -303,7 +302,7 @@ func (s *Service) HostSearchByAppID(req *restful.Request, resp *restful.Response
 
 	if nil != err {
 		blog.Errorf("HostSearchByModuleID get host module config error:%s, input:%v", err.Error(), input)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFailed, err.Error())})
 		return
 	}
 
@@ -372,7 +371,7 @@ func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Respo
 	setIDArr, err := s.Logics.GetSetIDByCond(req.Request.Header, setCondition)
 	if nil != err {
 		blog.Errorf("HostSearchByProperty get host module config error:%s, input:%v", err.Error(), input)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetSetFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetSetFailed, err.Error())})
 		return
 	}
 	blog.V(5).Infof("HostSearchByProperty ApplicationID: %d, SetID: %v\n", appID, setIDArr)
@@ -385,7 +384,7 @@ func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Respo
 	configData, err := s.Logics.GetConfigByCond(req.Request.Header, condition)
 	if nil != err {
 		blog.Errorf("HostSearchByProperty get host module config error:%s, input:%v", err.Error(), input)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFailed, err.Error())})
 		return
 	}
 
@@ -605,7 +604,7 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 	configArr, err := s.Logics.GetConfigByCond(req.Request.Header, configCon)
 	if err != nil {
 		blog.Errorf("DelHostInApp GetConfigByCond err msg:%v, input:%v", err, input)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFailed, err.Error())})
 		return
 	}
 	if len(configArr) == 0 {
@@ -699,7 +698,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 	setMap, err := s.Logics.GetSetMapByCond(req.Request.Header, "", setCondition)
 	if nil != err {
 		blog.Errorf("GetGitServerIp GetSetMapByCond error:%s, input:%s", err.Error(), input)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetSetFaild, err.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetSetFailed, err.Error())})
 		return
 	}
 	if 0 == len(setMap) {
@@ -721,7 +720,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 	moduleMap, err := s.Logics.GetModuleMapByCond(req.Request.Header, "", moduleCondition)
 	if nil != err {
 		blog.Errorf("GetGitServerIp GetModuleMapByCond error:%s, input:%s", err.Error(), input)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetSetFaild, err.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetSetFailed, err.Error())})
 		return
 	}
 	for key := range moduleMap {
@@ -745,7 +744,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 	configData, err := s.Logics.GetConfigByCond(req.Request.Header, confMap)
 	if nil != err {
 		blog.Errorf("GetGitServerIp GetModuleMapByCond error:%s, input:%s", err.Error(), input)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFailed, err.Error())})
 		return
 	}
 	blog.V(5).Infof("GetGitServerIp configData:%v", configData)
@@ -798,6 +797,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 
 	ownerId := util.GetOwnerID(req.Request.Header)
 	input[common.BKOwnerIDField] = ownerId
+	cloudName := input["bk_cloud_name"]
 
 	valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDPlat, req.Request.Header, s.Engine)
 	validErr := valid.ValidMap(input, common.ValidCreate, 0)
@@ -805,7 +805,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	if nil != validErr {
 		blog.Errorf("CreatePlat error: %v, input:%v", validErr, input)
 		if strings.Contains(defErr.Error(common.CCErrCommDuplicateItem).Error(), validErr.Error()) {
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, cloudName)})
 			return
 		}
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTopoInstCreateFailed)})
@@ -902,7 +902,7 @@ func (s *Service) getHostListByAppidAndField(req *restful.Request, resp *restful
 
 	if nil != err {
 		blog.Errorf("getHostListByAppidAndField error : %s, input:%v", err.Error(), common.KvMap{"appid": appID, "field": field})
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFailed, err.Error())})
 		return
 	}
 

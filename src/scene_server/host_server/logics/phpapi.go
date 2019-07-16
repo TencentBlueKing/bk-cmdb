@@ -244,7 +244,7 @@ func (lgc *Logics) GetIPAndProxyByCompany(ipArr []string, cloudID, appID int64, 
 	})
 	if nil != err {
 		blog.Errorf("getHostByIPArrAndSource failed, error:%s, ip:%v, cloudID:%d, appID:%d", err.Error(), ipArr, cloudID, appID)
-		return nil, defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())
+		return nil, defErr.Errorf(common.CCErrHostModuleConfigFailed, err.Error())
 	}
 
 	blog.V(5).Infof("vaildIPArr:%v", muduleHostConfigs)
@@ -395,7 +395,7 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 	blog.V(5).Infof("configData:%v, rid:%s", configDataArr, rid)
 	if nil != err {
 		blog.Errorf("CloneHostProperty clone host property error : %v, input:%v,rid:%s", err, input, rid)
-		return nil, defError.Errorf(common.CCErrHostModuleConfigFaild, err.Error())
+		return nil, defError.Errorf(common.CCErrHostModuleConfigFailed, err.Error())
 	}
 	if len(configDataArr) == 0 {
 		blog.Errorf("CloneHostProperty clone host property error not found src host  input:%v,rid:%s", input, rid)

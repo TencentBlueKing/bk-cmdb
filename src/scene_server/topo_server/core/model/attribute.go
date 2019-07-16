@@ -228,7 +228,7 @@ func (a *attribute) Create() error {
 	}
 
 	if exists {
-		return a.params.Err.Error(common.CCErrCommDuplicateItem)
+		return a.params.Err.Errorf(common.CCErrCommDuplicateItem, a.attr.PropertyName)
 	}
 
 	// create a new record
@@ -265,7 +265,7 @@ func (a *attribute) Update(data frtypes.MapStr) error {
 	}
 
 	if exists {
-		return a.params.Err.Error(common.CCErrCommDuplicateItem)
+		return a.params.Err.Errorf(common.CCErrCommDuplicateItem, a.attr.PropertyName)
 	}
 
 	rsp, err := a.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), a.attr.ID, a.params.Header, data)

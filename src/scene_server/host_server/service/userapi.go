@@ -57,7 +57,7 @@ func (s *Service) AddUserCustomQuery(req *restful.Request, resp *restful.Respons
 			err = fmt.Errorf(result.ErrMsg)
 		}
 		blog.Errorf("AddUserCustomQuery  dd user custom query failed,  err: %v, input:%v", err.Error(), ucq)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrAddUserCustomQueryFaild, err.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrAddUserCustomQueryFailed, err.Error())})
 		return
 	}
 
@@ -86,7 +86,7 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 			err = fmt.Errorf(result.ErrMsg)
 		}
 		blog.Errorf("update user custom query failed,  err: %v, input:%v", err, params)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrUpdateUserCustomQueryFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrUpdateUserCustomQueryFailed, err.Error())})
 		return
 	}
 
@@ -111,7 +111,7 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 			err = fmt.Errorf(result.ErrMsg)
 		}
 		blog.Errorf("delete user custom query failed,  err: %s, input:%v", err.Error(), req.PathParameters())
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrDeleteUserCustomQueryFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrDeleteUserCustomQueryFailed, err.Error())})
 		return
 	}
 
@@ -161,7 +161,7 @@ func (s *Service) GetUserCustomQuery(req *restful.Request, resp *restful.Respons
 			err = fmt.Errorf(result.ErrMsg)
 		}
 		blog.Errorf("delete user custom query failed,err: %v, input:%v", err, input)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrSearchUserCustomQueryFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrSearchUserCustomQueryFailed, err.Error())})
 		return
 	}
 
@@ -183,7 +183,7 @@ func (s *Service) GetUserCustomQueryDetail(req *restful.Request, resp *restful.R
 			err = fmt.Errorf(result.ErrMsg)
 		}
 		blog.Errorf("GetUserConfigDetail custom query failed,  err: %v, appid:%s, id:%s", err.Error(), appID, ID)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrGetUserCustomQueryDetailFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrGetUserCustomQueryDetailFailed, err.Error())})
 		return
 	}
 
@@ -215,7 +215,7 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 			err = fmt.Errorf(result.ErrMsg)
 		}
 		blog.Errorf("UserAPIResult custom query failed,  err: %v, appid:%s, id:%s", err.Error(), appID, ID)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrGetUserCustomQueryDetailFaild, err.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrGetUserCustomQueryDetailFailed, err.Error())})
 		return
 	}
 
@@ -244,7 +244,7 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 			err = fmt.Errorf(result.ErrMsg)
 		}
 		blog.Errorf("UserAPIResult custom query search host failed,  err: %v, appid:%s, id:%s", err.Error(), appID, ID)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrGetUserCustomQueryDetailFaild, err.Error())})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrGetUserCustomQueryDetailFailed, err.Error())})
 		return
 	}
 
