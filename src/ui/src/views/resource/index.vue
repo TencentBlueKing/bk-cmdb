@@ -480,6 +480,8 @@
             margin: 0 5px 0 0;
         }
         .options-business-selector{
+            display: inline-block;
+            vertical-align: middle;
             width: 180px;
         }
     }

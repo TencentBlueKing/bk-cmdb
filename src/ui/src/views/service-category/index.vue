@@ -44,6 +44,7 @@
                 <div class="child-category">
                     <div class="child-item child-edit" v-if="addChildStatus === mainCategory['id']">
                         <category-input
+                            class="child-input"
                             ref="editInput"
                             :input-ref="'categoryInput'"
                             :placeholder="$t('ServiceCategory[\'请输入二级分类\']')"
@@ -60,6 +61,7 @@
                         :key="childIndex">
                         <category-input
                             v-if="editChildStatus === childCategory['id']"
+                            class="child-input"
                             ref="editInput"
                             :input-ref="'categoryInput'"
                             :placeholder="$t('ServiceCategory[\'请输入二级分类\']')"
@@ -483,6 +485,12 @@
                 }
                 .edit-box {
                     width: 100%;
+                }
+                .child-input {
+                    /deep/.bk-form-input {
+                        border: 1px solid #c4c6cc;
+                        background-color: #ffffff !important;
+                    }
                 }
             }
         }

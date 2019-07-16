@@ -30,6 +30,7 @@
             </div>
             <div class="options-filter clearfix fr">
                 <bk-select
+                    class="filter-selector fl"
                     v-model="filter.id"
                     searchable
                     :clearable="false">
