@@ -90,6 +90,7 @@ func (ps *ProcServer) WebService() *restful.Container {
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
 	healthzAPI.Route(healthzAPI.GET("/healthz").To(ps.Healthz))
 	container.Add(healthzAPI)
+	container.Add(api)
 
 	return container
 }
