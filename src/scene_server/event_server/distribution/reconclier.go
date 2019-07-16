@@ -164,7 +164,7 @@ func cleanOutdateEvents(redisCli *redis.Client) {
 			for iter.Next() {
 				if strings.HasPrefix(iter.Val(), "{") {
 					if time.Now().Sub(gjson.Get(iter.Val(), "action_time").Time()) > timeout {
-						if err = redisCli.HDel(gjson.Get(iter.Val(), "event_id").String()).Err(); err != nil {
+						if err = redisCli.HDel(key, gjson.Get(iter.Val(), "event_id").String()).Err(); err != nil {
 							blog.Errorf("remove outdate event %s failed: %v", iter.Val(), err)
 						}
 					}
