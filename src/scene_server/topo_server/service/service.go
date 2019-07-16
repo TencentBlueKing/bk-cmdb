@@ -39,7 +39,7 @@ import (
 // TopoServiceInterface the topo service methods used to init
 type TopoServiceInterface interface {
 	SetOperation(operation core.Core, err errors.CCErrorIf, language language.CCLanguageIf)
-	WebService() *restful.WebService
+	WebService() *restful.Container
 	SetConfig(cfg options.Config, engin *backbone.Engine)
 }
 
@@ -73,36 +73,45 @@ func (s *topoService) SetOperation(operation core.Core, err errors.CCErrorIf, la
 }
 
 // WebService the web service
-func (s *topoService) WebService() *restful.WebService {
+func (s *topoService) WebService() *restful.Container {
 
 	// init service actions
 	s.initService()
 
-	ws := new(restful.WebService)
+	api := new(restful.WebService)
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
 
 	getErrFunc := func() errors.CCErrorIf {
 		return s.err
 	}
-	ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON) // TODO: {version} need to replaced by v3
+	api.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON) // TODO: {version} need to replaced by v3
 
 	innerActions := s.Actions()
 
 	for _, actionItem := range innerActions {
+		action := api
+		if actionItem.Path == "/healthz" {
+			action = healthzAPI
+		}
 		switch actionItem.Verb {
 		case http.MethodPost:
-			ws.Route(ws.POST(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.POST(actionItem.Path).To(actionItem.Handler))
 		case http.MethodDelete:
-			ws.Route(ws.DELETE(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.DELETE(actionItem.Path).To(actionItem.Handler))
 		case http.MethodPut:
-			ws.Route(ws.PUT(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.PUT(actionItem.Path).To(actionItem.Handler))
 		case http.MethodGet:
-			ws.Route(ws.GET(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.GET(actionItem.Path).To(actionItem.Handler))
 		default:
 			blog.Errorf(" the url (%s), the http method (%s) is not supported", actionItem.Path, actionItem.Verb)
 		}
 	}
 
-	return ws
+	container := restful.NewContainer().Add(api)
+
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, error) {

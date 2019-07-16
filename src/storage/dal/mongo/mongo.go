@@ -41,6 +41,11 @@ func (c Config) BuildURI() string {
 		c.Address = c.Address + ":" + c.Port
 	}
 
+	c.User = strings.Replace(c.User, "@", "%40", -1)
+	c.Password = strings.Replace(c.Password, "@", "%40", -1)
+	c.User = strings.Replace(c.User, ":", "%3a", -1)
+	c.Password = strings.Replace(c.Password, ":", "%3a", -1)
+
 	uri := fmt.Sprintf("mongodb://%s:%s@%s/%s", c.User, c.Password, c.Address, c.Database)
 	if c.Mechanism != "" {
 		uri += "?authMechanism=" + c.Mechanism

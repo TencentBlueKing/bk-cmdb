@@ -40,15 +40,24 @@ func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
 }
 
-func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
+func (s *Service) WebService() *restful.Container {
+
+	container := restful.NewContainer()
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
-	return ws
+	api := new(restful.WebService)
+	api.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+
+	container.Add(api)
+
+	healthzAPI := new(restful.WebService)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {

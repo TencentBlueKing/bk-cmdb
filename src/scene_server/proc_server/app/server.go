@@ -18,8 +18,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
@@ -60,13 +58,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	procSvr := new(service.ProcServer)
 	procSvr.Logics = &logics.Logics{}
 	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
-	container := restful.NewContainer()
-	container.Add(procSvr.WebService())
 
 	bkbsvr := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    container,
+		Handler:    procSvr.WebService(),
 		TLS:        backbone.TLSConfig{},
 	}
 
