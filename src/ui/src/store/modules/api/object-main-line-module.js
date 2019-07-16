@@ -64,7 +64,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getInstTopo ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
-        return $http.post(`find/topoinst/biz/${bizId}?level=-1`, config)
+        return $http.post(`find/topoinst/biz/${bizId}`, config)
     },
 
     /**

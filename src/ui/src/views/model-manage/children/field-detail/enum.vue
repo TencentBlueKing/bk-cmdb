@@ -7,7 +7,7 @@
                         :value="index"
                         name="enum-radio"
                         v-model="defaultIndex"
-                        v-tooltip="$t('ModelManagement[\'将设置为下拉选项默认选项\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'将设置为下拉选项默认选项\']')"
                         @change="handleChange(defaultIndex)" :disabled="isReadOnly">
                 </div>
                 <div class="enum-label">

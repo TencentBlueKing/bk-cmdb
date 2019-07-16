@@ -18,13 +18,13 @@
                     auth: [$OPERATION.BUSINESS_ARCHIVE]
                 }">
                     <bk-button class="button-history"
-                        v-tooltip.bottom="$t('Common[\'查看删除历史\']')"
+                        v-bk-tooltips.bottom="$t('Common[\'查看删除历史\']')"
                         :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
                         @click="routeToHistory">
                         <i class="icon-cc-history2"></i>
                     </bk-button>
                 </span>
-                <bk-button class="button-setting" v-tooltip.bottom="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">
+                <bk-button class="button-setting" v-bk-tooltips.bottom="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">
                     <i class="icon-cc-setting"></i>
                 </bk-button>
             </div>

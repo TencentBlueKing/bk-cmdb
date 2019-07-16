@@ -8,7 +8,7 @@
                 <span>{{$t("Cloud['批量确认']")}}</span>
             </bk-button>
             <div class="confirm-options-button fr">
-                <bk-button class="button-history" v-tooltip.bottom="$t('Cloud[\'查看确认记录\']')" @click="confirmHistory">
+                <bk-button class="button-history" v-bk-tooltips.bottom="$t('Cloud[\'查看确认记录\']')" @click="confirmHistory">
                     <i class="icon-cc-history"></i>
                 </bk-button>
             </div>

@@ -24,25 +24,25 @@
                 </div>
                 <div class="header-options fr" v-if="updateAuth && isEditable(group.info)">
                     <i class="options-icon bk-icon icon-arrows-up"
-                        v-tooltip="$t('ModelManagement[\'上移\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'上移\']')"
                         :class="{
                             disabled: !canRiseGroup(index, group)
                         }"
                         @click="handleRiseGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-arrows-down"
-                        v-tooltip="$t('ModelManagement[\'下移\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'下移\']')"
                         :class="{
                             disabled: !canDropGroup(index, group)
                         }"
                         @click="handleDropGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-plus-circle-shape"
-                        v-tooltip="$t('ModelManagement[\'新建字段\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'新建字段\']')"
                         @click="handleAddProperty(group)">
                     </i>
                     <i class="options-icon bk-icon icon-delete"
-                        v-tooltip="$t('ModelManagement[\'删除分组\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'删除分组\']')"
                         :class="{ disabled: ['none', 'default'].includes(group.info['bk_group_id']) }"
                         @click="handleDeleteGroup(group, index)">
                     </i>

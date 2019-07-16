@@ -39,7 +39,7 @@
                     {{$t('BusinessTopology["模块名称"]')}}
                     <font color="red">*</font>
                     <i class="icon-cc-tips"
-                        v-tooltip.top="$t('BusinessTopology[\'模块名称提示\']')"
+                        v-bk-tooltips.top="$t('BusinessTopology[\'模块名称提示\']')"
                         v-if="withTemplate === 1">
                     </i>
                 </label>

@@ -21,11 +21,11 @@
                 <p class="edit-cue">{{$t('ModelManagement["所有更改已自动保存"]')}}</p>
             </template>
             <div class="vis-button-group">
-                <i class="bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')"></i>
-                <i class="bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')"></i>
-                <i class="bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')"></i>
+                <i class="bk-icon icon-full-screen" @click="resizeFull" v-bk-tooltips="$t('ModelManagement[\'还原\']')"></i>
+                <i class="bk-icon icon-plus" @click="zoomIn" v-bk-tooltips="$t('ModelManagement[\'放大\']')"></i>
+                <i class="bk-icon icon-minus" @click="zoomOut" v-bk-tooltips="$t('ModelManagement[\'缩小\']')"></i>
                 <i class="icon-cc-setting"
-                    v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"
+                    v-bk-tooltips="$t('ModelManagement[\'拓扑显示设置\']')"
                     @click="showSlider('theDisplay')">
                 </i>
                 <div class="topo-example" v-if="!isAdminView">

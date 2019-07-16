@@ -29,7 +29,7 @@
                         auth: [$OPERATION.C_MODEL]
                     }">
                     <bk-button theme="primary"
-                        v-tooltip="$t('ModelManagement[\'新增模型提示\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'新增模型提示\']')"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
                         @click="showModelDialog(false)">
                         {{$t('ModelManagement["新建模型"]')}}
@@ -59,7 +59,7 @@
                     placenment="bottom"
                     v-if="!disabledClassifications.length">
                     <bk-button class="model-type-button disabled"
-                        v-tooltip="$t('ModelManagement[\'停用模型提示\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'停用模型提示\']')"
                         size="small"
                         :disabled="!disabledClassifications.length"
                         :theme="modelType === 'disabled' ? 'primary' : 'default'"
@@ -146,7 +146,7 @@
                             </bk-input>
                             <p class="form-error">{{errors.first('classifyId')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
+                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
                     </label>
                     <label>
                         <span class="label-title">

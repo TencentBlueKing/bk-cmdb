@@ -83,7 +83,7 @@
                     <label>
                         <span>{{$t('NetworkDiscovery["SNMP扫描范围"]')}}</span>
                         <span class="color-danger">*</span>
-                        <i class="bk-icon icon-exclamation-circle" v-tooltip="{ content: htmlEncode(), classes: 'collect-tooltip' }"></i>
+                        <i class="bk-icon icon-exclamation-circle" v-bk-tooltips="{ content: htmlEncode(), classes: 'collect-tooltip' }"></i>
                     </label>
                     <textarea name="scan_range" id="" cols="30" rows="10" v-validate="'required'" v-model.trim="configDialog.scan_range"></textarea>
                     <div v-show="errors.has('scan_range')" class="color-danger">{{ errors.first('scan_range') }}</div>
@@ -101,7 +101,7 @@
                     <label>
                         <span>{{$t('NetworkDiscovery["团体字"]')}}</span>
                         <span class="color-danger">*</span>
-                        <i class="bk-icon icon-exclamation-circle" v-tooltip="'Community String'"></i>
+                        <i class="bk-icon icon-exclamation-circle" v-bk-tooltips="'Community String'"></i>
                     </label>
                     <bk-input type="text" name="community" class="cmdb-form-input"
                         v-validate="'required'"

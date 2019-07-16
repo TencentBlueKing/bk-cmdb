@@ -31,7 +31,7 @@
                         <i class="icon-triple-dot"></i>
                         <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                         <i class="bk-icon icon-eye-slash-shape"
-                            v-tooltip="$t('Common[\'隐藏\']')"
+                            v-bk-tooltips="$t('Common[\'隐藏\']')"
                             @click="unselectProperty(property)">
                         </i>
                     </li>

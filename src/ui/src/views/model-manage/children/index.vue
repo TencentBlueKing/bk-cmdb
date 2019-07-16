@@ -74,7 +74,7 @@
                                 auth: [$OPERATION.U_MODEL]
                             }"
                             v-if="!isMainLine"
-                            v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
+                            v-bk-tooltips="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
                             <i class="bk-icon icon-minus-circle-shape"></i>
                             <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
                                 {{$t('ModelManagement["启用"]')}}
@@ -88,7 +88,7 @@
                                 active: !$isAuthorized($OPERATION.D_MODEL),
                                 auth: [$OPERATION.D_MODEL]
                             }"
-                            v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
+                            v-bk-tooltips="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
                             @click="dialogConfirm('delete')">
                             <i class="icon-cc-del"></i>
                             <span>{{$t("Common['删除']")}}</span>

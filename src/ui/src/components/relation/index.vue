@@ -19,7 +19,7 @@
             <div class="fr">
                 <bk-button theme="default" class="options-full-screen"
                     v-show="activeComponent === 'cmdbRelationTopology'"
-                    v-tooltip="$t('Common[\'全屏\']')"
+                    v-bk-tooltips="$t('Common[\'全屏\']')"
                     @click="handleFullScreen">
                     <i class="icon-cc-resize-full"></i>
                 </bk-button>

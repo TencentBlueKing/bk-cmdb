@@ -24,7 +24,7 @@
                                     </label>
                                     <i class="property-name-tooltips icon icon-cc-tips"
                                         v-if="property['placeholder']"
-                                        v-tooltip="htmlEncode(property['placeholder'])">
+                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
                                     </i>
                                 </div>
                                 <div class="property-value">

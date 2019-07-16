@@ -18,7 +18,7 @@
             <li class="icon"
                 ref="iconItem"
                 :class="{ 'create': type === 'create', 'active': icon.value === localValue }"
-                v-tooltip="{ content: language === 'zh_CN' ? icon.nameZh : icon.nameEn }"
+                v-bk-tooltips="{ content: language === 'zh_CN' ? icon.nameZh : icon.nameEn }"
                 v-for="(icon, index) in curIconList"
                 :key="index" @click="chooseIcon(icon.value)">
                 <i :class="icon.value"></i>

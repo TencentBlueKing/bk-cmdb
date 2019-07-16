@@ -1,56 +1,89 @@
 <template>
-    <div class="hosts-filter-layout" :class="{ close }">
-        <i class="filter-toggle bk-icon icon-angle-right" @click="close = !close"></i>
-        <div class="filter-main">
-            <bk-tab class="filter-tab" type="unborder-card" :active.sync="tab.active" style="padding: 0">
-                <bk-tab-panel name="filter" :label="$t('HostResourcePool[\'筛选\']')" v-if="activeTab.includes('filter')">
-                    <keep-alive>
-                        <the-filter ref="theFilter"
-                            v-if="tab.active === 'filter'"
-                            :active-setting="activeSetting"
-                            :filter-config-key="filterConfigKey"
-                            :collection-content="collectionContent"
-                            @on-collection-toggle="handleCollectionToggle"
-                            @on-refresh="handleRefresh">
-                            <slot name="business" slot="business"></slot>
-                            <slot name="scope" slot="scope"></slot>
-                        </the-filter>
-                    </keep-alive>
-                </bk-tab-panel>
-                <bk-tab-panel name="collection" :label="$t('Hosts[\'收藏\']')" v-if="activeTab.includes('collection')">
-                    <the-collection v-if="tab.active === 'collection'" @on-apply="handleApplyCollection"></the-collection>
-                </bk-tab-panel>
-            </bk-tab>
-        </div>
-    </div>
+    <bk-popover
+        ref="filterPopper"
+        placement="bottom"
+        theme="light"
+        trigger="click"
+        :width="350"
+        :on-show="handleShow"
+        :tippy-options="{
+            zIndex: 1001,
+            interactive: true
+        }">
+        <bk-button class="options-button"
+            theme="default"
+            v-bk-tooltips.top="$t('高级筛选')"
+            icon="icon-cc-funnel">
+        </bk-button>
+        <section class="filter-content" slot="content"
+            :style="{
+                height: $APP.height - 150 + 'px'
+            }">
+            <h2 class="filter-title">
+                {{$t('条件筛选')}}
+                <bk-button class="close-trigger" text icon="close"></bk-button>
+            </h2>
+            <div class="filter-group">
+                <label class="filter-label">IP</label>
+                <bk-input type="textarea" v-model="ip.text" :rows="4"></bk-input>
+            </div>
+            <div class="filter-group checkbox-group">
+                <bk-checkbox class="filter-checkbox"
+                    v-model="ip.inner"
+                    :disabled="!ip.outer">
+                    {{$t('内网')}}
+                </bk-checkbox>
+                <bk-checkbox class="filter-checkbox"
+                    v-model="ip.outer"
+                    :disabled="!ip.inner">
+                    {{$t('外网')}}
+                </bk-checkbox>
+                <bk-checkbox class="filter-checkbox" v-model="ip.exact">{{$t('精确')}}</bk-checkbox>
+            </div>
+            <div class="filter-add">
+                <bk-button class="filter-add-button" type="primary" icon="plus" text>{{$t('更多条件')}}</bk-button>
+            </div>
+            <div class="filter-group"
+                v-for="(filterItem, index) in filterCondition"
+                :key="index">
+                <label class="filter-label">{{getFilterLabel(filterItem)}}</label>
+                <div class="filter-condition">
+                    <filter-operator class="filter-operator"
+                        :type="getOperatorType(filterItem)"
+                        v-model="filterItem.operator">
+                    </filter-operator>
+                    <cmdb-form-enum class="filter-value"
+                        v-if="filterItem.bk_property_type === 'enum'"
+                        :options="filterItem.option || []"
+                        v-model="filterItem.value">
+                    </cmdb-form-enum>
+                    <cmdb-form-bool-input class="filter-value"
+                        v-else-if="filterItem.bk_property_type === 'bool'"
+                        v-model="filterItem.value">
+                    </cmdb-form-bool-input>
+                    <component class="filter-value"
+                        v-else
+                        :is="`cmdb-form-${filterItem.bk_property_type}`"
+                        v-model="filterItem.value">
+                    </component>
+                </div>
+            </div>
+        </section>
+        <property-selector :properties="properties"></property-selector>
+    </bk-popover>
 </template>
 
 <script>
-    import theFilter from './_filter'
-    import theCollection from './_collection'
+    import filterOperator from './_filter-field-operator.vue'
+    import propertySelector from './filter-property-selector.vue'
+    import { mapState } from 'vuex'
     export default {
         components: {
-            theFilter,
-            theCollection
+            filterOperator,
+            propertySelector
         },
         props: {
-            activeTab: {
-                type: Array,
-                default () {
-                    return ['filter', 'collection', 'history']
-                }
-            },
-            activeSetting: {
-                type: Array,
-                default () {
-                    return ['reset', 'collection', 'filter-config']
-                }
-            },
-            filterConfigKey: {
-                type: String,
-                required: true
-            },
-            collectionContent: {
+            properties: {
                 type: Object,
                 default () {
                     return {}
@@ -59,87 +92,120 @@
         },
         data () {
             return {
-                close: false,
-                tab: {
-                    active: 'filter'
-                }
+                ip: {
+                    text: '',
+                    inner: true,
+                    outer: true,
+                    exact: false
+                },
+                filterCondition: []
+            }
+        },
+        computed: {
+            ...mapState('hosts', ['filterList'])
+        },
+        watch: {
+            filterList () {
+                this.setFilterCondition()
             }
         },
         methods: {
-            handleReset () {
-                this.$refs.theFilter.reset()
+            handleToggleFilter () {
+                console.log(this.$refs.filterPopper)
             },
-            handleCollectionToggle (show) {
-                this.$refs.theSetting.collection.show = show
+            setFilterCondition () {
+                try {
+                    const condition = []
+                    this.filterList.forEach(filter => {
+                        const modelId = filter.bk_obj_id
+                        const propertyId = filter.bk_property_id
+                        const property = (this.properties[modelId] || []).find(property => property.bk_property_id === propertyId)
+                        if (property) {
+                            condition.push({
+                                bk_obj_id: modelId,
+                                bk_property_id: propertyId,
+                                bk_property_type: property.bk_property_type,
+                                option: property.option,
+                                operator: '',
+                                value: ''
+                            })
+                        }
+                    })
+                    this.filterCondition = condition
+                } catch (e) {
+                    console.error(e)
+                }
             },
-            handleCollection () {
-                this.$refs.theFilter.collection.show = true
+            handleShow (popper) {
+                popper.popperChildren.tooltip.style.padding = 0
             },
-            handleApplyCollection () {
-                this.tab.active = 'filter'
-                this.$nextTick(() => {
-                    this.$refs.theFilter.refresh()
-                })
+            getFilterLabel (filterItem) {
+                const model = this.$store.getters['objectModelClassify/getModelById'](filterItem.bk_obj_id) || {}
+                const property = (this.properties[filterItem.bk_obj_id] || []).find(property => property.bk_property_id === filterItem.bk_property_id) || {}
+                return `${model.bk_obj_name} - ${property.bk_property_name}`
             },
-            handleRefresh (params) {
-                this.$emit('on-refresh', params)
+            getOperatorType (filterItem) {
+                const propertyType = filterItem.bk_property_type
+                const propertyId = filterItem.bk_property_id
+                if (['bk_set_name', 'bk_module_name'].includes(propertyId)) {
+                    return 'name'
+                } else if (['singlechar', 'longchar'].includes(propertyType)) {
+                    return 'char'
+                }
+                return 'common'
             }
         }
     }
 </script>
 
-<style lang="scss" scoped>
-    .hosts-filter-layout{
+<style lang="scss" scoped="true">
+    .filter-content {
         position: relative;
-        height: 100%;
-        &.close{
-            .filter-toggle{
-                transform: rotate(180deg);
-                border-top-right-radius: 12px;
-                border-bottom-right-radius: 12px;
-                border-top-left-radius: 0;
-                border-bottom-left-radius: 0;
-            }
-            .filter-main{
-                display: none;
-            }
-        }
-        .filter-toggle{
+        padding: 10px 20px;
+    }
+    .filter-title {
+        position: relative;
+        font-size:14px;
+        color: #63656E;
+        .close-trigger {
             position: absolute;
-            right: 100%;
-            top: 50%;
-            width: 14px;
-            height: 100px;
-            margin: -50px  0 0 0;
-            line-height: 100px;
-            color: #fff;
-            font-size: 12px;
-            text-align: center;
-            border-top-left-radius: 12px;
-            border-bottom-left-radius: 12px;
-            background-color: #c3cdd7;
-            transition: background-color .2s ease;
-            cursor: pointer;
-            &:hover{
-                background-color: #6b7baa;
+            right: -15px;
+            top: -4px;
+        }
+    }
+    .filter-group {
+        padding: 15px 0 0 0;
+        &.checkbox-group {
+            padding: 10px 0 0 0;
+            .filter-checkbox {
+                margin: 0 15px 0 0;
+            }
+        }
+        .filter-label {
+            display: block;
+            line-height: 30px;
+            color: #63656E;
+        }
+    }
+    .filter-add {
+        margin: 14px 0 0 0;
+        .filter-add-button {
+            /deep/ {
+                span {
+                    display: inline-block;
+                    vertical-align: middle;
+                }
             }
         }
     }
-    .filter-main{
-        width: 358px;
-        height: 100%;
-        padding: 10px 0 0 0;
-        border-left: 1px solid $cmdbBorderColor;
-    }
-</style>
-
-<style lang="scss">
-    .hosts-filter-layout{
-        .bk-tab2.filter-tab .bk-tab2-head {
-            padding: 0 20px;
+    .filter-condition {
+        display: flex;
+        .filter-operator {
+            flex: 75px 0 0;
+            margin-right: 8px;
         }
-        .bk-tab2.filter-tab .bk-tab2-head .bk-tab2-nav .tab2-nav-item{
-            padding: 0 15px !important;
+        .filter-value {
+            flex: 1;
         }
     }
 </style>
