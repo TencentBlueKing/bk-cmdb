@@ -183,7 +183,7 @@
                 this.$store.dispatch('userCustom/setRencentlyData', { id: 'resource' })
                 this.setQueryParams()
                 await Promise.all([
-                    this.getParams(),
+                    // this.getParams(),
                     this.getProperties()
                 ])
                 this.getHostList()
@@ -237,7 +237,40 @@
                 }
             },
             getHostList (resetPage = false) {
-                this.$refs.resourceTable.search(this.filter.business, this.getScopedParams(), resetPage)
+                const params = {
+                    'bk_biz_id': this.filter.business,
+                    'ip': {
+                        'flag': 'bk_host_innerip|bk_host_outer',
+                        'exact': 0,
+                        'data': []
+                    },
+                    'condition': [{
+                        'bk_obj_id': 'biz',
+                        'condition': [{
+                            'field': 'default',
+                            'operator': '$eq',
+                            'value': 1
+                        }],
+                        'fields': []
+                    }, {
+                        'bk_obj_id': 'set',
+                        'condition': [],
+                        'fields': []
+                    }, {
+                        'bk_obj_id': 'module',
+                        'condition': [],
+                        'fields': []
+                    }, {
+                        'bk_obj_id': 'host',
+                        'condition': [],
+                        'fields': []
+                    }, {
+                        'bk_obj_id': 'object',
+                        'condition': [],
+                        'fields': []
+                    }]
+                }
+                this.$refs.resourceTable.search(this.filter.business, params, resetPage)
             },
             getScopedParams () {
                 const params = this.$tools.clone(this.filter.params)
