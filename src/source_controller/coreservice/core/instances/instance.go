@@ -35,7 +35,7 @@ type instanceManager struct {
 	dependent OperationDependences
 	validator validator
 	Cache     *redis.Client
-	EventC    eventclient.Client
+	EventCli  eventclient.Client
 }
 
 // New create a new instance manager instance
@@ -43,7 +43,7 @@ func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client) c
 	return &instanceManager{
 		dbProxy:   dbProxy,
 		dependent: dependent,
-		EventC:    eventclient.NewClientViaRedis(cache, dbProxy),
+		EventCli:  eventclient.NewClientViaRedis(cache, dbProxy),
 	}
 }
 
