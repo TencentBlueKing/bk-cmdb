@@ -150,11 +150,29 @@ func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) 
 	input[common.BKPrivilegeField] = roleJSON
 	cond = util.SetModOwner(cond, ownerID)
 
-	err = db.Table(common.BKTableNamePrivilege).Update(ctx, cond, input)
-	if nil != err {
-		blog.Errorf("update role privilege error :%v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
-		return
+	// do update or create operation
+	count, err := db.Table(common.BKTableNamePrivilege).Find(cond).Count(ctx)
+	if count == 0 {
+		input := make(map[string]interface{})
+		input[common.BKOwnerIDField] = ownerID
+		input[common.BKObjIDField] = objID
+		input[common.BKPropertyIDField] = propertyID
+		input[common.BKPrivilegeField] = roleJSON
+		input = util.SetModOwner(input, ownerID)
+
+		err = db.Table(common.BKTableNamePrivilege).Insert(ctx, input)
+		if nil != err {
+			blog.Errorf("create role privilege error :%v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+			return
+		}
+	} else {
+		err = db.Table(common.BKTableNamePrivilege).Update(ctx, cond, input)
+		if nil != err {
+			blog.Errorf("update role privilege error :%v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+			return
+		}
 	}
 
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
