@@ -18,7 +18,8 @@ import {
     bkCheckbox,
     bkMessage,
     bkLoading,
-    bkBigTree
+    bkBigTree,
+    bkSearchSelect
 } from 'bk-magic-vue'
 
 Vue.use(bkButton)
@@ -39,6 +40,7 @@ Vue.use(bkPopover)
 Vue.use(bkDropdownMenu)
 Vue.use(bkLoading)
 Vue.use(bkBigTree)
+Vue.use(bkSearchSelect)
 
 export const $error = (message, delay = 3000) => {
     bkMessage({
