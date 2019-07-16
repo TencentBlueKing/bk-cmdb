@@ -24,7 +24,7 @@
             <div class="instance-label clearfix" @click.stop v-if="labelShowList.length">
                 <div class="label-title fl">
                     <i class="icon-cc-label"></i>
-                    <span>{{$t('BusinessTopology["标签"]')}}</span>
+                    <span>{{$t('BusinessTopology["标签"]')}}：</span>
                 </div>
                 <div class="label-list fl">
                     <span class="label-item" :key="index" v-for="(label, index) in labelShowList">{{`${label.key}：${label.value}`}}</span>

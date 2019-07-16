@@ -37,13 +37,15 @@
                         @change="handleExpandAll">
                         <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                     </cmdb-form-bool>
-                    <bk-input class="options-search"
-                        clearable
-                        right-icon="bk-icon icon-search"
-                        :placeholder="$t('BusinessTopology[\'请输入实例名称搜索\']')"
-                        v-model="filter"
-                        @enter="handleSearch">
-                    </bk-input>
+                    <div class="options-search">
+                        <bk-search-select
+                            :show-condition="false"
+                            :placeholder="$t('BusinessTopology[\'实例名称/标签\']')"
+                            :data="searchSelect"
+                            v-model="searchSelectData"
+                            @change="handleSearch">
+                        </bk-search-select>
+                    </div>
                 </div>
             </div>
             <div class="tables">
@@ -137,6 +139,17 @@
                 filter: '',
                 inSearch: false,
                 instances: [],
+                searchSelect: [
+                    {
+                        name: this.$t('BusinessTopology["服务实例名"]'),
+                        id: 0
+                    },
+                    {
+                        name: this.$t('BusinessTopology["标签"]'),
+                        id: 1
+                    }
+                ],
+                searchSelectData: [],
                 pagination: {
                     current: 1,
                     count: 0,
@@ -201,7 +214,7 @@
         watch: {
             currentNode (node) {
                 if (node && node.data.bk_obj_id === 'module') {
-                    this.filter = ''
+                    this.searchSelectData = []
                     this.getServiceInstances()
                 }
             }
@@ -247,6 +260,16 @@
             },
             async getServiceInstances () {
                 try {
+                    const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
+                        || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
+                    const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
+                    const selectors = labels.map(item => {
+                        return {
+                            key: item.values[0].name,
+                            operator: 'exists',
+                            values: []
+                        }
+                    })
                     const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
                         params: this.$injectMetadata({
                             bk_module_id: this.currentNode.data.bk_inst_id,
@@ -255,7 +278,10 @@
                                 start: (this.pagination.current - 1) * this.pagination.size,
                                 limit: this.pagination.size
                             },
-                            search_key: this.filter
+                            search_key: searchKey
+                                ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
+                                : '',
+                            selectors: selectors
                         }),
                         config: {
                             requestId: 'getModuleServiceInstances',
@@ -274,10 +300,19 @@
             },
             handleSearch () {
                 this.inSearch = true
+                const instanceName = this.searchSelectData.filter(item => (item.id === 0 && item.hasOwnProperty('values'))
+                    || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
+                if (instanceName.length >= 2) {
+                    this.searchSelectData.pop()
+                    this.$bkMessage({
+                        message: this.$t('BusinessTopology["服务实例名重复"]'),
+                        theme: 'warning'
+                    })
+                    return
+                }
                 this.handlePageChange(1)
             },
             handleClearFilter () {
-                this.filter = ''
                 this.handleSearch()
             },
             handlePageChange (page) {
@@ -444,14 +479,14 @@
                 this.getServiceInstances()
             },
             handleCheckALL (checked) {
-                this.filter = ''
+                this.searchSelectData = []
                 this.isCheckAll = checked
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.checked = checked
                 })
             },
             handleExpandAll (expanded) {
-                this.filter = ''
+                this.searchSelectData = []
                 this.isExpandAll = expanded
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.localExpanded = expanded
@@ -581,7 +616,7 @@
                     }
                     if (status && status.bk_error_msg === 'success') {
                         this.$success(this.$t('Common["保存成功"]'))
-                        this.filter = ''
+                        this.searchSelectData = []
                         this.getServiceInstances()
                         this.handleCheckALL(false)
                     }
@@ -631,6 +666,13 @@
         @include inlineBlock;
         position: relative;
         width: 240px;
+        height: 34px;
+        .bk-search-select {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
         .icon-search {
             position: absolute;
             top: 9px;
