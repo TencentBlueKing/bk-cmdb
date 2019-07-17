@@ -14,8 +14,7 @@
                         :title="property.bk_property_name">
                         {{property.bk_property_name}}
                     </span>
-                    <v-popover class="property-popover"
-                        trigger="hover"
+                    <bk-popover class="property-popover"
                         placement="bottom"
                         :disabled="!tooltipState[property.bk_property_id]"
                         :delay="300"
@@ -25,10 +24,10 @@
                             @mouseover="handleHover($event, property)">
                             {{$tools.getPropertyText(property, host)}}
                         </span>
-                        <span class="popover-content" slot="popover">
+                        <span class="popover-content" slot="content">
                             {{$tools.getPropertyText(property, host)}}
                         </span>
-                    </v-popover>
+                    </bk-popover>
                     <template v-if="isPropertyEditable(property)">
                         <i class="property-edit icon-cc-edit"
                             v-if="$isAuthorized(updateAuth)"
@@ -227,6 +226,9 @@
     }
     .property-popover {
         display: inline-block;
+        /deep/.bk-tooltip-ref {
+            outline: none;
+        }
     }
     .popover-content {
         display: inline-block;

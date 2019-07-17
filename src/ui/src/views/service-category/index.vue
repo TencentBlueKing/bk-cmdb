@@ -331,6 +331,7 @@
             border: 1px solid #dcdee5;
             margin-right: 30px;
             margin-bottom: 20px;
+            overflow: hidden;
             &.add-item {
                 .category-name {
                     color: #dcdee5 !important;

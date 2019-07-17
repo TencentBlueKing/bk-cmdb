@@ -175,7 +175,7 @@
             @include inlineBlock;
         }
         .empty-content {
-            margin: -120px 0 0 0;
+            margin: 104px 0 0 0;
             @include inlineBlock;
         }
         .empty-text {

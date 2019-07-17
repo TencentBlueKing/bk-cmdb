@@ -129,11 +129,12 @@
             display: inline-block;
             vertical-align: middle;
             &.filter-range {
-                width: 300px;
+                width: 300px !important;
                 margin: 0 5px 0 0;
             }
             &.filter-user {
                 width: 240px;
+                height: 32px;
             }
         }
     }

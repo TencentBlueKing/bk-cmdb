@@ -2,7 +2,7 @@
     <div class="process-wrapper">
         <bk-table class="process-table"
             v-bkloading="{ isLoading: loading }"
-            :list="showList"
+            :data="showList"
             :max-height="$APP.height - 300">
             <bk-table-column v-for="column in table.header"
                 :key="column.id"
