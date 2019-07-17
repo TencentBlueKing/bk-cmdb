@@ -134,7 +134,8 @@
         "请输入关键字": "Please input keyword...",
         "添加": "Add",
         "全部展开": "Expand all",
-        "暂无数据": "No data"
+        "暂无数据": "No data",
+        "选择日期范围": "Select date range"
     },
     "Nav": {
         "首页": "Index",
