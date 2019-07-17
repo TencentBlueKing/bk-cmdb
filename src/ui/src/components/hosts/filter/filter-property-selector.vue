@@ -104,8 +104,9 @@
                             bk_property_id: selection.bk_property_id
                         }
                     })
+                    const key = this.$route.meta.filterPropertyKey
                     await this.$store.dispatch('userCustom/saveUsercustom', {
-                        'host_filter_properties': selectedList
+                        [key]: selectedList
                     })
                     this.$store.commit('hosts/setFilterList', selectedList)
                     this.isShow = false

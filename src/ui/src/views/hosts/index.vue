@@ -42,7 +42,7 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapGetters, mapActions, mapState } from 'vuex'
     import cmdbHostsTable from '@/components/hosts/table'
     export default {
         components: {
@@ -57,10 +57,6 @@
                     module: []
                 },
                 filter: {
-                    business: null,
-                    businessResolver: null,
-                    params: null,
-                    paramsResolver: null,
                     selectedNode: null
                 },
                 layout: {
@@ -70,13 +66,10 @@
         },
         computed: {
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
-            ...mapGetters('hostFavorites', ['applyingInfo']),
             ...mapGetters('objectBiz', ['bizId']),
+            ...mapState('hosts', ['filterParams']),
             columnsConfigKey () {
                 return `${this.userName}_host_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
-            },
-            filterConfigKey () {
-                return `${this.userName}_host_${this.isAdminView ? 'adminView' : this.bizId}_filter_fields`
             },
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
@@ -86,10 +79,8 @@
             }
         },
         watch: {
-            applyingInfo (info) {
-                if (info) {
-                    this.filter.business = info['bk_biz_id']
-                }
+            filterParams () {
+                this.getHostList()
             }
         },
         async created () {
@@ -107,14 +98,6 @@
             } catch (e) {
                 console.log(e)
             }
-        },
-        beforeRouteUpdate (to, from, next) {
-            this.$store.commit('hostFavorites/setApplying', null)
-            next()
-        },
-        beforeRouteLeave (to, from, next) {
-            this.$store.commit('hostFavorites/setApplying', null)
-            next()
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
@@ -185,15 +168,11 @@
                 }
                 const params = {
                     bk_biz_id: this.bizId,
-                    ip: {
-                        flag: 'bk_host_innerip|bk_host_outer',
-                        exact: 0,
-                        data: []
-                    },
+                    ip: this.filterParams.ip,
                     condition: defaultModel.map(model => {
                         return {
                             bk_obj_id: model,
-                            condition: [],
+                            condition: this.filterParams[model] || [],
                             fields: []
                         }
                     })
