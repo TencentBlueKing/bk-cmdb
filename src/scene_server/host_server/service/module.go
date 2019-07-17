@@ -236,7 +236,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 		if 0 == ownerAppID {
 			blog.Errorf("assign host to app module, but get resource pool failed, err: %v,input:%+v,rid:%s", err, data, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrAddHostToModuleFailStr)})
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrAddHostToModuleFailStr, "not found resource pool business")})
 			return
 		}
 
