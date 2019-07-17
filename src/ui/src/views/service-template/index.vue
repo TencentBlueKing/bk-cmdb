@@ -63,7 +63,7 @@
                     <span class="text-primary"
                         style="color: #c4c6cc !important; cursor: not-allowed;"
                         v-if="row['service_instance_count']"
-                        v-tooltip.top="$t('ServiceManagement[\'不可删除\']')">
+                        v-bk-tooltips.top="$t('ServiceManagement[\'不可删除\']')">
                         {{$t('Common["删除"]')}}
                     </span>
                     <button class="text-primary"
