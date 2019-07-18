@@ -208,7 +208,7 @@ func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, option m
 
 	if option.ProcessTemplateIDs != nil {
 		filter[common.BKProcessTemplateIDField] = map[string][]int64{
-			common.BKDBIN: *option.ProcessTemplateIDs,
+			common.BKDBIN: option.ProcessTemplateIDs,
 		}
 	}
 

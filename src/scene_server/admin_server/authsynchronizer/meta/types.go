@@ -20,14 +20,14 @@ var (
 	// HostResource represent host resource
 	HostResource = ResourceType("host")
 	// BusinessResource represent business resource
-	BusinessResource     = ResourceType("business")
-	SetResource          = ResourceType("set")
-	ModuleResource       = ResourceType("module")
-	ModelResource        = ResourceType("model")
-	InstanceResource     = ResourceType("instance")
-	AuditCategory        = ResourceType("audit")
-	ProcessResource      = ResourceType("process")
-	DynamicGroupResource = ResourceType("dynamicGroup")
+	BusinessResource       = ResourceType("business")
+	SetResource            = ResourceType("set")
+	ModuleResource         = ResourceType("module")
+	ModelResource          = ResourceType("model")
+	InstanceResource       = ResourceType("instance")
+	AuditCategory          = ResourceType("audit")
+	ProcessResource        = ResourceType("process")
+	DynamicGroupResource   = ResourceType("dynamicGroup")
 	ClassificationResource = ResourceType("classification")
 )
 
