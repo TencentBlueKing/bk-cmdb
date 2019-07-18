@@ -19,42 +19,37 @@ import (
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/synchronizer/meta"
-	"configcenter/src/scene_server/admin_server/synchronizer/utils"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/utils"
 )
 
-// HandleSetSync do sync set of one business
-func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
+// HandleHostSync do sync host of one business
+func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 
 	// step1 get instances by business from core service
-	businessID := businessSimplify.BKAppIDField
-	objects, err := ih.authManager.CollectObjectsByBusinessID(context.Background(), *header, businessID)
-
+	bizID := businessSimplify.BKAppIDField
+	hosts, err := ih.authManager.CollectHostByBusinessID(context.Background(), *header, bizID)
 	if err != nil {
-		blog.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
-		return fmt.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
+		blog.Errorf("get host by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
+		return err
 	}
-	blog.V(4).Infof("list model by business %d result: %+v", businessID, objects)
-
-	resources, err := ih.authManager.MakeResourcesByObjects(context.Background(), *header, authmeta.EmptyAction, objects...)
+	resources, err := ih.authManager.MakeResourcesByHosts(context.Background(), *header, authmeta.EmptyAction, hosts...)
 	if err != nil {
-		blog.Errorf("make iam resource from models failed, err: %+v", err)
-		return nil
+		blog.Errorf("make host resources failed, bizID: %d, err: %+v", businessSimplify.BKAppIDField, err)
+		return err
 	}
 
-	// step2 get models from iam
+	// step2 get host by business from iam
 	rs := &authmeta.ResourceAttribute{
 		Basic: authmeta.Basic{
-			Type: authmeta.Model,
+			Type: authmeta.HostInstance,
 		},
-		SupplierAccount: "",
-		BusinessID:      businessSimplify.BKAppIDField,
-		Layers:          make([]authmeta.Item, 0),
+		BusinessID: bizID,
 	}
 
-	taskName := fmt.Sprintf("sync model for business: %d", businessSimplify.BKAppIDField)
+	taskName := fmt.Sprintf("sync host for business: %d", businessSimplify.BKAppIDField)
 	iamIDPrefix := ""
 	skipDeregister := false
 	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)

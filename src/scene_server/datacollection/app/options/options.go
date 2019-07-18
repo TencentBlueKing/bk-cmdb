@@ -45,7 +45,7 @@ type Config struct {
 	CCRedis         redis.Config
 	SnapRedis       SnapRedis
 	DiscoverRedis   SnapRedis
-	NetcollectRedis SnapRedis
+	NetCollectRedis SnapRedis
 	Esb             esbutil.EsbConfig
 }
 

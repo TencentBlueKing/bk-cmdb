@@ -10,11 +10,11 @@
  * limitations under the License.
  */
 
-package synchronizer
+package authsynchronizer
 
 import (
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/synchronizer/meta"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
 )
 
 // NewWorker creates, and returns a new Worker object. Its only argument
