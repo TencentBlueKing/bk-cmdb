@@ -77,7 +77,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		if process.Config.MongoDB.Enable == "true" {
 			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
 		} else {
-			db, err = remote.NewWithDiscover(process.Core.ServiceManageInterface.TMServer().GetServers)
+			db, err = remote.NewWithDiscover(process.Core)
 		}
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
