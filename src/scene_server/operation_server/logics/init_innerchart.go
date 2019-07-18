@@ -55,6 +55,7 @@ var (
 		Width:      "50",
 		ChartType:  "pie",
 		Field:      "bk_os_type",
+		XAxisCount: 10,
 	}
 
 	HostBizChart = metadata.ChartConfig{
@@ -63,6 +64,7 @@ var (
 		ObjID:      "host",
 		Width:      "50",
 		ChartType:  "bar",
+		XAxisCount: 10,
 	}
 
 	HostCloudChart = metadata.ChartConfig{
@@ -72,12 +74,14 @@ var (
 		ObjID:      "host",
 		ChartType:  "bar",
 		Field:      common.BKCloudIDField,
+		XAxisCount: 20,
 	}
 
 	HostChangeBizChart = metadata.ChartConfig{
 		ReportType: common.HostChangeBizChart,
 		Name:       "主机数量变化趋势",
 		Width:      "100",
+		XAxisCount: 20,
 	}
 
 	ModelAndInstCountChart = metadata.ChartConfig{
@@ -89,6 +93,7 @@ var (
 		Name:       "实例数量统计",
 		Width:      "50",
 		ChartType:  "bar",
+		XAxisCount: 10,
 	}
 
 	ModelInstChangeChart = metadata.ChartConfig{
@@ -96,6 +101,7 @@ var (
 		Name:       "实例变更统计",
 		Width:      "50",
 		ChartType:  "bar",
+		XAxisCount: 10,
 	}
 
 	InnerCharts = map[string]metadata.ChartConfig{

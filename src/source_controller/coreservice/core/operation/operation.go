@@ -77,7 +77,6 @@ func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam me
 
 func (m *operationManager) SearchOperationChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 
-	blog.Debug("here---------------")
 	condition := mapstr.MapStr{}
 	condition[common.OperationReportType] = inputParam.ReportType
 
@@ -94,7 +93,6 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 	commonCount := make([]metadata.StringIDCount, 0)
 	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
 
-	blog.Info("--------------")
 	attribute := metadata.Attribute{}
 	opt := mapstr.MapStr{}
 	opt[common.BKObjIDField] = inputParam.ObjID
@@ -107,7 +105,7 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 	if inputParam.ObjID == common.BKInnerObjIDHost {
 		pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
 		if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(ctx, pipeline, &commonCount); err != nil {
-			blog.Errorf("model's instance count aggregate fail, err: %v", err)
+			blog.Errorf("host os type count aggregate fail, err: %v", err)
 			return nil, err
 		}
 	} else {

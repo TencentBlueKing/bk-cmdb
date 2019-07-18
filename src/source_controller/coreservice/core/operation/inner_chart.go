@@ -78,8 +78,9 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 }
 
 func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
-	lastTime := time.Now().AddDate(-1, 0, 0)
+	lastTime := time.Now().AddDate(0, 0, -30)
 
+	// todo 没有操作日志的时候，会报错误
 	createInstCount := make([]metadata.StringIDCount, 0)
 	createPipe := []M{{"$match": M{"op_desc": "create object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": "$content.cur_data.bk_obj_id", "count": M{"$sum": 1}}}}
 	if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, createPipe, &createInstCount); err != nil {
@@ -195,13 +196,12 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 				continue
 			}
 			if len(bizHostChange) > 0 {
-				_, ok := bizHostChange[0].Data[biz.BizName]
 				// 上次同步在24小时内，则不同步
-				subHour := now.Sub(bizHostChange[0].Data[biz.BizName][0].Id)
+				subHour := now.Sub(bizHostChange[0].Data[biz.BizName][len(bizHostChange[0].Data[biz.BizName])-1].Id)
 				if subHour < 24 {
 					return
 				}
-				if ok {
+				if len(bizHostChange[0].Data) > 0 {
 					bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], metadata.BizHostChart{
 						Id:    now,
 						Count: info.Count,
@@ -214,15 +214,14 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 					})
 				}
 			} else {
-				firstBizHostChange.OwnerID = "0"
-				firstBizHostChange.ReportType = common.HostChangeBizChart
-				_, ok := firstBizHostChange.Data[biz.BizName]
-				if ok {
+				if len(firstBizHostChange.Data) > 0 {
 					firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
 						Id:    now,
 						Count: info.Count,
 					})
 				} else {
+					firstBizHostChange.OwnerID = "0"
+					firstBizHostChange.ReportType = common.HostChangeBizChart
 					firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
 					firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
 						Id:    now,
