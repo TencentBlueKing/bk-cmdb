@@ -13,10 +13,11 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"strconv"
 )
 
 // create a process template for a service template.

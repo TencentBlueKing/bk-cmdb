@@ -176,6 +176,14 @@ type Metadata struct {
 	Label Label `field:"label" json:"label" bson:"label"`
 }
 
+func (md *Metadata) ParseBizID() (int64, error) {
+	bizID, err := BizIDFromMetadata(*md)
+	if err != nil {
+		return 0, err
+	}
+	return bizID, nil
+}
+
 func (md *Metadata) ToMapStr() mapstr.MapStr {
 	return mapstr.MapStr{"label": md.Label.ToMapStr()}
 }

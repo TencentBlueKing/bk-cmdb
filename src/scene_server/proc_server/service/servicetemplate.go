@@ -13,7 +13,9 @@
 package service
 
 import (
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -36,6 +38,13 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 	tpl, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service template failed, err: %v", err)
+		return
+	}
+
+	if err := ps.AuthManager.RegisterServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {
+		blog.Errorf("create service template success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -88,13 +97,20 @@ func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	temp, err := ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template.ID, template)
+	tpl, err := ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template.ID, template)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "update service template failed, err: %v", err)
 		return
 	}
 
-	ctx.RespEntity(temp)
+	if err := ps.AuthManager.UpdateRegisteredServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {
+		blog.Errorf("create service template success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(tpl)
 }
 
 func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
@@ -120,6 +136,28 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		Page:              input.Page,
 		ServiceCategoryID: &input.ServiceCategoryID,
 	}
+
+	if ps.AuthManager.Enabled() == true {
+		authorizedIDs, err := ps.AuthManager.ListAuthorizedServiceTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
+		if err != nil {
+			blog.Errorf("ListAuthorizedServiceTemplateIDs failed, bizID: %d, err: %+v, rid: %s", bizID, err, ctx.Kit.Rid)
+			err := ctx.Kit.CCError.Error(common.CCErrCommListAuthorizedResourcedFromIAMFailed)
+			ctx.RespAutoError(err)
+			return
+		}
+		if option.ServiceTemplateIDs != nil {
+			option.ServiceTemplateIDs = authorizedIDs
+		} else {
+			ids := make([]int64, 0)
+			for _, id := range option.ServiceTemplateIDs {
+				if util.InArray(id, authorizedIDs) == true {
+					ids = append(ids, id)
+				}
+			}
+			option.ServiceTemplateIDs = ids
+		}
+	}
+
 	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, input: %+v", input)
@@ -152,6 +190,28 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 		Page:              input.Page,
 		ServiceCategoryID: &input.ServiceCategoryID,
 	}
+
+	if ps.AuthManager.Enabled() == true {
+		authorizedIDs, err := ps.AuthManager.ListAuthorizedServiceTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
+		if err != nil {
+			blog.Errorf("ListAuthorizedServiceTemplateIDs failed, bizID: %d, err: %+v, rid: %s", bizID, err, ctx.Kit.Rid)
+			err := ctx.Kit.CCError.Error(common.CCErrCommListAuthorizedResourcedFromIAMFailed)
+			ctx.RespAutoError(err)
+			return
+		}
+		if option.ServiceTemplateIDs != nil {
+			option.ServiceTemplateIDs = authorizedIDs
+		} else {
+			ids := make([]int64, 0)
+			for _, id := range option.ServiceTemplateIDs {
+				if util.InArray(id, authorizedIDs) == true {
+					ids = append(ids, id)
+				}
+			}
+			option.ServiceTemplateIDs = ids
+		}
+	}
+
 	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, input: %+v", input)
@@ -216,15 +276,29 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service template, but get business id failed, err: %v", err)
+		return
+	}
+
+	iamResources, err := ps.AuthManager.MakeResourcesByServiceTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.Delete, bizID, input.ServiceTemplateID)
+	if err != nil {
+		blog.Errorf("make iam resource by service template failed, templateID: %d, err: %+v, rid: %s", input.ServiceTemplateID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 
 	err = ps.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcDeleteServiceTemplateFailed, "delete service template: %d failed", input.ServiceTemplateID)
+		return
+	}
+
+	if err := ps.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
+		blog.Errorf("delete service template success, but deregister from iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
+		ctx.RespAutoError(err)
 		return
 	}
 

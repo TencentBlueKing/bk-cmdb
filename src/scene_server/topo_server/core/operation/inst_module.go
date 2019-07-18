@@ -55,7 +55,7 @@ func (m *module) SetProxy(inst InstOperationInterface) {
 
 func (m *module) hasHost(params types.ContextParams, bizID int64, moduleIDS []int64) (bool, error) {
 	cond := map[string][]int64{
-		common.BKAppIDField:    []int64{bizID},
+		common.BKAppIDField:    {bizID},
 		common.BKModuleIDField: moduleIDS,
 	}
 
@@ -110,7 +110,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		templateIDs := []int64{serviceTemplateID}
 		option := metadata.ListServiceTemplateOption{
 			BusinessID:         bizID,
-			ServiceTemplateIDs: &templateIDs,
+			ServiceTemplateIDs: templateIDs,
 		}
 		stResult, err := m.clientSet.CoreService().Process().ListServiceTemplates(params.Context, params.Header, &option)
 		if err != nil {

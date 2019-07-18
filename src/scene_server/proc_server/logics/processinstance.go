@@ -125,6 +125,9 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) error {
 }
 
 func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) error {
+	if procIDs == nil {
+		return nil
+	}
 	option := metadata.DeleteOption{
 		Condition: mapstr.MapStr(map[string]interface{}{
 			common.BKProcessIDField: map[string]interface{}{

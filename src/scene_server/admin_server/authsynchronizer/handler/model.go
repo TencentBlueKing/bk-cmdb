@@ -19,44 +19,43 @@ import (
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/synchronizer/meta"
-	"configcenter/src/scene_server/admin_server/synchronizer/utils"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/utils"
 )
 
-// HandleModuleSync do sync module of one business
-func (ih *IAMHandler) HandleModuleSync(task *meta.WorkRequest) error {
+// HandleSetSync do sync set of one business
+func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
 	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 
 	// step1 get instances by business from core service
-	bizID := businessSimplify.BKAppIDField
-	modules, err := ih.authManager.CollectModuleByBusinessIDs(context.Background(), *header, bizID)
+	businessID := businessSimplify.BKAppIDField
+	objects, err := ih.authManager.CollectObjectsByBusinessID(context.Background(), *header, businessID)
+
 	if err != nil {
-		blog.Errorf("collect module by business id failed, err: %+v", err)
-		return err
+		blog.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
+		return fmt.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
 	}
-	if len(modules) == 0 {
-		blog.Infof("no modules found for business: %d", bizID)
-		return nil
-	}
-	resources := ih.authManager.MakeResourcesByModule(*header, authmeta.EmptyAction, bizID, modules...)
-	if len(resources) == 0 && len(modules) > 0 {
-		blog.Errorf("make iam resource for modules %+v return empty", modules)
+	blog.V(4).Infof("list model by business %d result: %+v", businessID, objects)
+
+	resources, err := ih.authManager.MakeResourcesByObjects(context.Background(), *header, authmeta.EmptyAction, objects...)
+	if err != nil {
+		blog.Errorf("make iam resource from models failed, err: %+v", err)
 		return nil
 	}
 
-	// step2 get modules by business from iam
+	// step2 get models from iam
 	rs := &authmeta.ResourceAttribute{
 		Basic: authmeta.Basic{
-			Type: authmeta.ModelModule,
+			Type: authmeta.Model,
 		},
 		SupplierAccount: "",
 		BusinessID:      businessSimplify.BKAppIDField,
 		Layers:          make([]authmeta.Item, 0),
 	}
 
-	taskName := fmt.Sprintf("sync module for business: %d", businessSimplify.BKAppIDField)
-	iamIDPrefix := "module"
+	taskName := fmt.Sprintf("sync model for business: %d", businessSimplify.BKAppIDField)
+	iamIDPrefix := ""
 	skipDeregister := false
 	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }
