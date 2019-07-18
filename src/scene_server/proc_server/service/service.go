@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
@@ -35,6 +36,7 @@ import (
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
 	"github.com/emicklei/go-restful"
+	"github.com/getsentry/raven-go"
 	redis "gopkg.in/redis.v5"
 )
 
@@ -213,6 +215,11 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 	cfg := ccRedis.ParseConfigFromKV("redis", current.ConfigMap)
 	ps.Config = &options.Config{
 		Redis: &cfg,
+	}
+
+	sentryCfg := config.ParseSentryConfigFromKV("sentry", current.ConfigMap)
+	if len(sentryCfg.DSN) > 0 {
+		raven.SetDSN(sentryCfg.DSN)
 	}
 
 	hostInstPrefix := "host instance"

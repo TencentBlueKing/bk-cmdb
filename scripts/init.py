@@ -222,6 +222,9 @@ database = 0
 port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
+
+[sentry]
+dsn =
 '''
 
     template = FileTemplate(coreservice_file_template_str)
@@ -238,6 +241,9 @@ usr = $redis_user
 pwd = $redis_pass
 port = $redis_port
 database = 0
+
+[sentry]
+dsn =
 '''
     template = FileTemplate(proc_file_template_str)
     result = template.substitute(**context)

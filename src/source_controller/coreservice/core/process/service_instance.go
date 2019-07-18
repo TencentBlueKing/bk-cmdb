@@ -23,6 +23,8 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+
+	"github.com/getsentry/raven-go"
 )
 
 func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instance metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder) {
@@ -252,6 +254,10 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 	}
 
 	if key, err := option.Selectors.Validate(); err != nil {
+		tags := map[string]string{
+			"rid": ctx.ReqID,
+		}
+		raven.CaptureError(err, tags)
 		blog.Errorf("ListServiceInstance failed, selector validate failed, selectors: %+v, key: %s, err: %+v, rid: %s", option.Selectors, key, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}

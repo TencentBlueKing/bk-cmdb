@@ -20,6 +20,8 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
+
+	"github.com/getsentry/raven-go"
 )
 
 // createServiceInstances 创建服务实例
@@ -127,6 +129,10 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
+		tags := map[string]string{
+			"rid": ctx.Kit.Rid,
+		}
+		raven.CaptureError(err, tags)
 		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
 		return
 	}

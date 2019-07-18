@@ -22,12 +22,15 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/coreservice/app/options"
 	coresvr "configcenter/src/source_controller/coreservice/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+
+	"github.com/getsentry/raven-go"
 )
 
 // CoreServer the core server
@@ -41,6 +44,7 @@ func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfi
 
 	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
+	t.Config.Sentry = config.ParseSentryConfigFromKV("sentry", current.ConfigMap)
 
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
@@ -80,6 +84,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		configReady = true
 		break
 
+	}
+	if len(coreSvr.Config.Sentry.DSN) > 0 {
+		raven.SetDSN(coreSvr.Config.Sentry.DSN)
 	}
 
 	if false == configReady {

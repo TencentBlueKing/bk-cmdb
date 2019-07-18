@@ -25,8 +25,13 @@ import (
 	"configcenter/src/scene_server/proc_server/app"
 	"configcenter/src/scene_server/proc_server/app/options"
 
+	"github.com/getsentry/raven-go"
 	"github.com/spf13/pflag"
 )
+
+func init() {
+	raven.SetDefaultLoggerName("proc_server")
+}
 
 func main() {
 	common.SetIdentification(types.CC_MODULE_PROC)

@@ -25,8 +25,13 @@ import (
 	"configcenter/src/source_controller/coreservice/app"
 	"configcenter/src/source_controller/coreservice/app/options"
 
+	"github.com/getsentry/raven-go"
 	"github.com/spf13/pflag"
 )
+
+func init() {
+	raven.SetDefaultLoggerName("core_service")
+}
 
 func main() {
 	common.SetIdentification(types.CC_MODULE_CORESERVICE)
