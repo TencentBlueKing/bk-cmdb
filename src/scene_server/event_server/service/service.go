@@ -26,7 +26,7 @@ import (
 	"configcenter/src/storage/dal"
 
 	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
@@ -63,7 +63,10 @@ func (s *Service) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	api.Path("/event/v3").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/event/v3")
+	api.Filter(s.Engine.Metric().RestfulMiddleWare)
+	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
+	api.Produces(restful.MIME_JSON)
 
 	api.Route(api.POST("/subscribe/search/{ownerID}/{appID}").To(s.Query))
 	api.Route(api.POST("/subscribe/ping").To(s.Ping))
@@ -93,10 +96,12 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, zkItem)
 
 	// mongodb
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
+	healthItem := metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping())
+	meta.Items = append(meta.Items, healthItem)
 
 	// redis
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err()))
+	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err())
+	meta.Items = append(meta.Items, redisItem)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

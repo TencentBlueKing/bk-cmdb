@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package synchronizer
+package authsynchronizer
 
 import (
 	"context"
@@ -21,8 +21,8 @@ import (
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/synchronizer/handler"
-	"configcenter/src/scene_server/admin_server/synchronizer/meta"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/handler"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

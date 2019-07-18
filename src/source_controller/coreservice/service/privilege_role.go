@@ -103,10 +103,25 @@ func (s *coreService) UpdateRolePri(params core.ContextParams, pathParams, query
 	input[common.BKPrivilegeField] = requestBody.Privileges
 	cond = util.SetModOwner(cond, params.SupplierAccount)
 
-	err = s.db.Table(common.BKTableNamePrivilege).Update(params.Context, cond, input)
-	if nil != err {
-		blog.Errorf("update role privilege error :%v, rid: %s", err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
+	// do update or create operation
+	count, err := s.db.Table(common.BKTableNamePrivilege).Find(cond).Count(params.Context)
+	if count == 0 {
+		input[common.BKOwnerIDField] = params.SupplierAccount
+		input[common.BKObjIDField] = objID
+		input[common.BKPropertyIDField] = propertyID
+		input[common.BKPrivilegeField] = requestBody.Privileges
+		input = util.SetModOwner(input, params.SupplierAccount)
+		err = s.db.Table(common.BKTableNamePrivilege).Insert(params.Context, input)
+		if nil != err {
+			blog.Errorf("create role privilege failed, err: %+v, rid: %s", err, params.ReqID)
+			return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
+		}
+	} else {
+		err = s.db.Table(common.BKTableNamePrivilege).Update(params.Context, cond, input)
+		if nil != err {
+			blog.Errorf("update role privilege failed, err: %v, rid: %s", err, params.ReqID)
+			return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
+		}
 	}
 
 	return nil, nil
