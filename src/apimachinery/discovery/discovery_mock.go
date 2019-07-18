@@ -66,15 +66,15 @@ func (d *MockDiscovery) GseProcServer() Interface {
 	return &mockServer{}
 }
 
+func (d *MockDiscovery) OperationServer() Interface {
+	return &mockServer{}
+}
+
 func (d *MockDiscovery) CoreService() Interface {
 	return &mockServer{}
 }
 
 func (d *MockDiscovery) TMServer() Interface {
-	return &mockServer{}
-}
-
-func (d *MockDiscovery) OperationServer() Interface {
 	return &mockServer{}
 }
 

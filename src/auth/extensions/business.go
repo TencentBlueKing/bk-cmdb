@@ -43,7 +43,7 @@ func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Heade
 		return nil, err
 	}
 
-	// step1 get business from core service
+	// step1 get business from logics service
 	businessList := make([]BusinessSimplify, 0)
 	for _, business := range result.Data.Info {
 		businessSimplify := BusinessSimplify{}

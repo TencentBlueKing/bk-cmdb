@@ -18,29 +18,45 @@
                         <label class="label-text">
                             {{$t('Operation["图表类型"]')}}：
                         </label>
-                        <label class="cmdb-form-radio cmdb-radio-small">
+                        <label class="cmdb-form-radio cmdb-radio-big">
                             <input type="radio" name="required" :value="true"
                                 v-model="chartType" :disabled="openType === 'edit'">
                             <span class="cmdb-radio-text">{{$t('ModelManagement["自定义"]')}}</span>
                         </label>
-                        <label class="cmdb-form-radio cmdb-radio-small">
+                        <label class="cmdb-form-radio cmdb-radio-big">
                             <input type="radio" name="required" :value="false"
                                 v-model="chartType" :disabled="openType === 'edit'">
                             <span class="cmdb-radio-text">{{$t('ModelManagement["内置"]')}}</span>
                         </label>
+                    </div>
+                    <div v-if="!chartType">
+                        <div class="content-item">
+                            <label class="label-text">
+                                {{$t('Operation["图表名称"]')}}：
+                            </label>
+                            <span class="cmdb-form-item">
+                                <cmdb-selector
+                                    setting-key="name"
+                                    display-key="name"
+                                    :list="seList.disList"
+                                    v-model="chartData.name"
+                                    v-validate="'required'"
+                                    name="present"
+                                    :disabled="openType === 'edit'">
+                                </cmdb-selector>
+                                <span class="form-error">{{errors.first('present')}}</span>
+                            </span>
+                        </div>
                     </div>
                     <div v-if="chartType">
                         <div class="content-item">
                             <label class="label-text">
                                 {{$t('Operation["图表名称"]')}}：
                             </label>
-                            <label class="cmdb-form-item">
-                                <cmdb-form-bool-input v-model="chartData.name"
-                                    v-validate="'required'"
-                                    data-vv-name="chartName">
-                                </cmdb-form-bool-input>
-                                <span class="form-error">{{errors.first('chartName')}}</span>
-                            </label>
+                            <span class="cmdb-form-item">
+                                <input class="cmdb-form-input" placeholder="请输入图表名称" v-model="chartData.name">
+                                <span class="form-error">{{errors.first('present')}}</span>
+                            </span>
                         </div>
                         <div class="content-item" v-if="chartData.bk_obj_id !== 'host'">
                             <label class="label-text">
@@ -76,49 +92,44 @@
                         </div>
                         <div class="content-item">
                             <label class="label-text">
-                                {{$t('Operation["图表展示"]')}}：
+                                {{$t('Operation["图表类型"]')}}：
                             </label>
-                            <label class="cmdb-form-radio cmdb-radio-small">
+                            <label class="cmdb-form-radio cmdb-radio-big">
                                 <input type="radio" name="present" value="pie" v-model="chartData.chart_type">
-                                <span class="cmdb-radio-text">{{$t('Operation["饼图"]')}}</span>
+                                <span class="cmdb-radio-text cmdb-radio-text-icon"><i class="icon icon-cc-op-pie"></i>{{$t('Operation["柱状图"]')}}</span>
                             </label>
-                            <label class="cmdb-form-radio cmdb-radio-small">
+                            <label class="cmdb-form-radio cmdb-radio-big">
                                 <input type="radio" name="present" value="bar" v-model="chartData.chart_type">
-                                <span class="cmdb-radio-text">{{$t('Operation["柱状图"]')}}</span>
+                                <span class="cmdb-radio-text cmdb-radio-text-icon"><i class="icon icon-cc-op-bar"></i>{{$t('Operation["柱状图"]')}}</span>
                             </label>
-                        </div>
-                    </div>
-                    <div v-else>
-                        <div class="content-item">
-                            <label class="label-text">
-                                {{$t('Operation["图表选择"]')}}：
-                            </label>
-                            <span class="cmdb-form-item">
-                                <cmdb-selector
-                                    setting-key="repType"
-                                    display-key="name"
-                                    :list="seList.disList"
-                                    v-model="chartData.report_type"
-                                    v-validate="'required'"
-                                    name="present"
-                                    :disabled="openType === 'edit'">
-                                </cmdb-selector>
-                                <span class="form-error">{{errors.first('present')}}</span>
-                            </span>
                         </div>
                     </div>
                     <div class="content-item">
                         <label class="label-text">
                             {{$t('Operation["图表宽度"]')}}：
                         </label>
-                        <label class="cmdb-form-radio cmdb-radio-small">
+                        <label class="cmdb-form-radio cmdb-radio-big">
                             <input type="radio" name="width" value="50" v-model="chartData.width">
                             <span class="cmdb-radio-text">50%</span>
                         </label>
-                        <label class="cmdb-form-radio cmdb-radio-small">
+                        <label class="cmdb-form-radio cmdb-radio-big">
                             <input type="radio" name="width" value="100" v-model="chartData.width">
                             <span class="cmdb-radio-text">100%</span>
                         </label>
+                    </div>
+                    <div class="content-item">
+                        <label class="label-text-x">
+                            {{$t('Operation["横轴坐标数量"]')}}：
+                        </label>
+                        <label class="cmdb-form-item">
+                            <div class="axis-picker">
+                                <input class="cmdb-form-input form-input" v-model="cal">
+                                <i class="bk-icon icon-angle-down" @click="calculate('down')"></i>
+                                <i class="bk-icon icon-angle-up" @click="calculate('up')"></i>
+                            </div>
+                            <span class="form-error">{{errors.first('chartName')}}</span>
+                        </label>
+                        <span class="tips">{{$t('Operation["考虑显示效果，上限为25个，100%宽度建议显示20个，50%宽度10个"]')}}</span>
                     </div>
                 </div>
                 <div class="footer">
@@ -140,6 +151,10 @@
                 type: String,
                 default: 'add'
             },
+            hostType: {
+                type: String,
+                default: 'host'
+            },
             chartData: {
                 type: Object,
                 default () {
@@ -157,6 +172,7 @@
         },
         data () {
             return {
+                cal: 10,
                 seList: {
                     host: [
                         {
@@ -192,8 +208,8 @@
                 staList: [],
                 chartType: true,
                 showDia: true,
-                hostFilter: ['host', 'module', 'biz', 'set'],
-                editTitle: this.openType === 'add' ? this.$t('Common["新增"]') : this.$t('Common["编辑"]')
+                hostFilter: ['host', 'module', 'biz', 'set', 'process'],
+                editTitle: this.openType === 'add' ? this.$t('Operation["新增图表"]') : this.$t('Operation["编辑图表"]')
             }
         },
         computed: {
@@ -229,6 +245,19 @@
                 'newStatisticalCharts',
                 'updateStatisticalCharts'
             ]),
+            calculate (flag) {
+                if (flag === 'up') {
+                    this.cal += 1
+                    if (this.cal > 25) {
+                        this.cal = 25
+                    }
+                } else {
+                    this.cal -= 1
+                    if (this.cal < 1) {
+                        this.cal = 1
+                    }
+                }
+            },
             async getStaList () {
                 this.staList = await this.getStaticObj({})
             },
@@ -276,26 +305,34 @@
         position: relative;
         .model-header{
             padding: 10px;
-            background: #eee;
+            background:white;
+            margin-bottom:25px;
             .modal-close{
                 position: absolute;
-                right: 5px;
-                top: 5px;
-                color: $cmdbMainBtnColor;
+                right: 10px;
+                top: 15px;
+                color:#D8D8D8;
                 cursor: pointer;
             }
             .title {
-                font-size: 16px;
-                color: #333948;
-                line-height: 1;
-                text-align: center;
+                display: inline-block;
+                float:left;
+                font-size:24px;
+                font-family:MicrosoftYaHei;
+                color:rgba(68,68,68,1);
+                margin-left: 14px;
             }
         }
         .content{
             padding: 10px 20px;
+            margin-left:40px;
             .content-item{
                 padding: 10px;
                 .label-text {
+                    width: 150px;
+                    margin-right: 50px;
+                }
+                .label-text-x{
                     width: 150px;
                     margin-right: 20px;
                 }
@@ -308,16 +345,61 @@
                     width: 319px;
                     vertical-align: middle;
                     position: relative;
+                    .axis-picker{
+                        position:relative;
+                        width:120px;
+                        height:32px;
+                        i{
+                            font-size:12px;
+                            position:absolute;
+                            right:8px;
+                            &:nth-child(2){
+                                bottom:4px
+                             }
+                            &:nth-child(3){
+                                 top: 4px;
+                             }
+                        }
+    }
+                }
+                .form-input{
+                    float:left;
+                    width:120px;
+                    height:32px;
+                }
+                .cmdb-radio-text-icon{
+                    i{
+                        vertical-align: middle;
+                        line-height: 19px;
+                        font-size:16px;
+                        margin-left:5px;
+                        border:1px dashed grey;
+                    }
+                }
+                .tips{
+                    display:block;
+                    width:380px;
+                    height:15px;
+                    font-size:11px;
+                    font-family:MicrosoftYaHei;
+                    color:rgba(151,155,165,1);
+                    line-height:15px;
+                    margin-left: 122px;
+                    margin-top: 6px;
                 }
             }
         }
     }
     .footer {
-        padding: 10px 24px;
+        border-top: 1px solid rgba(220,222,229,1);
+        height:50px;
+        line-height: 50px;
         font-size: 0;
         text-align: center;
         button {
-            margin-right: 10px;
+            float:right;
+            margin-right: 24px;
+            margin-top:7px;
         }
     }
     .form-error {

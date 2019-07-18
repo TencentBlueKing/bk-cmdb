@@ -79,6 +79,7 @@ func (s *coreService) CreateOperationChart(params core.ContextParams, pathParams
 		blog.Errorf("save chart config fail, err: %v", err)
 		return nil, err
 	}
+
 	return result, nil
 }
 

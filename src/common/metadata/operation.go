@@ -131,8 +131,3 @@ type AttributesOption struct {
 	Type      string `json:"type" bson:"type"`
 	IsDefault string `json:"is_default" bson:"is_default"`
 }
-
-type CoreUint64Response struct {
-	BaseResp `json:",inline"`
-	Data     uint64 `json:"data"`
-}
