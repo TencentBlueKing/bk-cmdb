@@ -57,11 +57,17 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <bk-button class="button-save" theme="primary"
-                    :disabled="saveDisabled || $loading()"
-                    @click="handleSave">
-                    {{$t("Common['保存']")}}
-                </bk-button>
+                <span style="display: inline-block"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_PROCESS_TEMPLATE),
+                        auth: [$OPERATION.C_PROCESS_TEMPLATE]
+                    }">
+                    <bk-button class="button-save" theme="primary"
+                        :disabled="saveDisabled || $loading() || !$isAuthorized($OPERATION.C_PROCESS_TEMPLATE)"
+                        @click="handleSave">
+                        {{$t("Common['保存']")}}
+                    </bk-button>
+                </span>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>

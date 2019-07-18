@@ -14,14 +14,30 @@
             </bk-table-column>
             <bk-table-column :label="$t('Common[\'操作\']')">
                 <template slot-scope="{ row }">
-                    <button class="text-primary mr10"
-                        @click.stop="handleEdite(row['originData'])">
-                        {{$t('Common["编辑"]')}}
-                    </button>
-                    <button class="text-primary"
-                        @click.stop="handleDelete(row['originData'])">
-                        {{$t('Common["删除"]')}}
-                    </button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_PROCESS_TEMPLATE),
+                            auth: [$OPERATION.U_PROCESS_TEMPLATE]
+                        }">
+                        <bk-button class="mr10"
+                            :disabled="!$isAuthorized($OPERATION.U_PROCESS_TEMPLATE)"
+                            :text="true"
+                            @click.stop="handleEdite(row['originData'])">
+                            {{$t('Common["编辑"]')}}
+                        </bk-button>
+                    </span>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.D_PROCESS_TEMPLATE),
+                            auth: [$OPERATION.D_PROCESS_TEMPLATE]
+                        }">
+                        <bk-button
+                            :disabled="!$isAuthorized($OPERATION.D_PROCESS_TEMPLATE)"
+                            :text="true"
+                            @click.stop="handleDelete(row['originData'])">
+                            {{$t('Common["删除"]')}}
+                        </bk-button>
+                    </span>
                 </template>
             </bk-table-column>
         </bk-table>

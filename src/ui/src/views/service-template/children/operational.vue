@@ -55,10 +55,16 @@
             <h3>{{$t("ProcessManagement['服务进程']")}}</h3>
             <div class="precess-box">
                 <div class="process-create">
-                    <bk-button class="create-btn" @click="handleCreateProcess">
-                        <i class="bk-icon icon-plus"></i>
-                        <span>{{$t("ServiceManagement['新建进程']")}}</span>
-                    </bk-button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_PROCESS_TEMPLATE),
+                            auth: [$OPERATION.C_PROCESS_TEMPLATE]
+                        }">
+                        <bk-button class="create-btn" :disabled="!$isAuthorized($OPERATION.C_PROCESS_TEMPLATE)" @click="handleCreateProcess">
+                            <i class="bk-icon icon-plus"></i>
+                            <span>{{$t("ServiceManagement['新建进程']")}}</span>
+                        </bk-button>
+                    </span>
                     <span class="create-tips">{{$t("ServiceManagement['新建进程提示']")}}</span>
                 </div>
                 <process-table
@@ -70,7 +76,17 @@
                     :list="processList">
                 </process-table>
                 <div class="btn-box">
-                    <bk-button theme="primary" @click="handleSubmit">{{$t("Common['确定']")}}</bk-button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                        }">
+                        <bk-button theme="primary"
+                            :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
+                            @click="handleSubmit">
+                            {{$t("Common['确定']")}}
+                        </bk-button>
+                    </span>
                     <bk-button @click="handleCancelOperation">{{$t("Common['取消']")}}</bk-button>
                 </div>
             </div>
