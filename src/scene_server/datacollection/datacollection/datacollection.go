@@ -61,7 +61,7 @@ func (d *DataCollection) Run() error {
 	if d.Config.MongoDB.Enable == "true" {
 		db, err = local.NewMgo(d.Config.MongoDB.BuildURI(), time.Minute)
 	} else {
-		db, err = remote.NewWithDiscover(d.ServiceManageInterface.TMServer().GetServers)
+		db, err = remote.NewWithDiscover(d.Engine)
 	}
 	if err != nil {
 		blog.Errorf("[data-collection][RUN] connect mongo failed: %v", err)
