@@ -69,6 +69,12 @@
                 type: [String, Number],
                 default: null
             },
+            defaultDisabledNodes: {
+                type: Array,
+                default () {
+                    return []
+                }
+            },
             beforeSelect: Function,
             beforeCheck: Function
         },
@@ -139,7 +145,15 @@
                 }
                 const children = parent.children
                 const offset = typeof trailing === 'number' ? trailing : trailing ? children.length : 0
-                const insertIndex = parent.index + Math.min(offset, children.length) + 1
+                let insertIndex
+                if (offset > 0) {
+                    const referenceChild = children[offset - 1]
+                    const referenceChildWithDescendants = [referenceChild, ...referenceChild.descendants]
+                    const referenceNode = referenceChildWithDescendants[referenceChildWithDescendants.length - 1]
+                    insertIndex = referenceNode.index + 1
+                } else {
+                    insertIndex = parent.index + 1
+                }
                 const data = Array.isArray(nodeData) ? nodeData : [nodeData]
                 const nodes = data.map(datum => {
                     return new TreeNode(datum, {
@@ -256,6 +270,21 @@
                 node.expanded = mergeOptions.expanded
                 if (mergeOptions.emitEvent) {
                     this.$emit('expand-change', mergeOptions.expanded, node)
+                }
+            },
+            setDisabled (nodeId, options = {}) {
+                const mergeOptions = {
+                    disabled: true,
+                    emitEvent: false,
+                    ...options
+                }
+                const node = this.getNodeById(nodeId)
+                if (!node) {
+                    throw new Error('Unexpected node id, set disabled failed.')
+                }
+                node.disabled = mergeOptions.disabled
+                if (mergeOptions.emitEvent) {
+                    this.$emit('disable-change', mergeOptions.disabled, node)
                 }
             },
             calulateLine () {

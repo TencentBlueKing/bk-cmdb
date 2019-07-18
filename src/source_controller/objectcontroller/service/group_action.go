@@ -27,7 +27,7 @@ import (
 	"github.com/rs/xid"
 )
 
-//CreateUserGroup create group
+// CreateUserGroup create group
 func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response) {
 
 	// get the language
@@ -72,7 +72,7 @@ func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
 }
 
-//UpdateUserGroup create group
+// UpdateUserGroup create group
 func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response) {
 
 	// get the language
@@ -118,7 +118,7 @@ func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
 }
 
-//DeleteUserGroup create group
+// DeleteUserGroup create group
 func (cli *Service) DeleteUserGroup(req *restful.Request, resp *restful.Response) {
 
 	// get the language
@@ -143,7 +143,7 @@ func (cli *Service) DeleteUserGroup(req *restful.Request, resp *restful.Response
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
 }
 
-//SearchUserGroup create group
+// SearchUserGroup create group
 func (cli *Service) SearchUserGroup(req *restful.Request, resp *restful.Response) {
 
 	// get the language

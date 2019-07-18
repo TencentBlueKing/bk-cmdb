@@ -65,9 +65,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 			if nil == err {
 				moduleToProcessesMap[moduleID] = processes
 			}
-
 		}
-
 	}
 
 	blog.V(5).Infof("moduleToProcessesMap: %+v,rid:%s", moduleToProcessesMap, srvData.rid)
@@ -299,7 +297,7 @@ func (ps *ProcServer) getConfigByCond(forward http.Header, cond map[string][]int
 	defErr := srvData.ccErr
 
 	configArr := make([]map[string]int64, 0)
-	ret, err := ps.CoreAPI.HostController().Module().GetModulesHostConfig(srvData.ctx, forward, cond)
+	ret, err := ps.CoreAPI.CoreService().Host().GetModulesHostConfig(srvData.ctx, forward, cond)
 	if nil != err {
 		blog.Errorf("getConfigByCond http do error.  err:%s, input:%+v,rid:%s", err.Error(), cond, srvData.rid)
 		return configArr, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -381,7 +379,7 @@ func (ps *ProcServer) getHostMapByAppID(forward http.Header, configData []map[st
 	input := new(meta.QueryInput)
 	input.Fields = fmt.Sprintf("%s,%s,%s,%s", common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostOuterIPField)
 	input.Condition = hostMapCondition
-	ret, err := ps.CoreAPI.HostController().Host().GetHosts(srvData.ctx, forward, input)
+	ret, err := ps.CoreAPI.CoreService().Host().GetHosts(srvData.ctx, forward, input)
 	if err != nil {
 		blog.Errorf("getAppMapByCond http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		return hostMap, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -412,7 +410,7 @@ func (ps *ProcServer) getHostMapByCond(forward http.Header, condition map[string
 	input := new(meta.QueryInput)
 	input.Fields = ""
 	input.Condition = condition
-	ret, err := ps.CoreAPI.HostController().Host().GetHosts(srvData.ctx, forward, input)
+	ret, err := ps.CoreAPI.CoreService().Host().GetHosts(srvData.ctx, forward, input)
 	if err != nil {
 		blog.Errorf("getHostMapByCond http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		return hostMap, hostIdArr, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -523,18 +521,17 @@ func (ps *ProcServer) getProcessBindModule(appId, procId int64, forward http.Hea
 
 	moduleArr := objModRet.Data.Info
 	condition[common.BKProcessIDField] = procId
-	procRet, err := ps.CoreAPI.ProcController().GetProc2Module(srvData.ctx, forward, condition)
+	option := meta.GetProc2ModuleOption{
+		ProcessID: procId,
+		BizID:     appId,
+	}
+	procModuleData, err := ps.CoreAPI.CoreService().Process().GetProc2Module(srvData.ctx, forward, option)
 	if err != nil {
-		blog.Errorf("getProcessMapByAppID http do error.  err:%s, input:%+v,rid:%s", err.Error(), condition, srvData.rid)
-		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("getProcessMapByAppID http do error.  err:%s, input:%+v,rid:%s", err.Error(), option, srvData.rid)
+		return nil, err
 
 	}
-	if !procRet.Result {
-		blog.Errorf("getProcessMapByAppID http reply  error. err code:%d err msg:%s, input:%+v,rid:%s", procRet.Code, procRet.Result, condition, srvData.rid)
-		return nil, defErr.New(procRet.Code, procRet.ErrMsg)
-	}
 
-	procModuleData := procRet.Data
 	disModuleNameArr := make([]string, 0)
 	for _, modArr := range moduleArr {
 		if !util.InArray(modArr[common.BKModuleNameField], disModuleNameArr) {

@@ -49,7 +49,7 @@ func (s *set) hasHost(bizID int64, setIDS []int64) (bool, error) {
 		"SetID":         setIDS,
 	}
 
-	rsp, err := s.client.HostController().Module().GetModulesHostConfig(context.Background(), s.params.Header, cond)
+	rsp, err := s.client.CoreService().Host().GetModulesHostConfig(context.Background(), s.params.Header, cond)
 	if nil != err {
 		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s", err.Error())
 		return false, s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

@@ -21,7 +21,4 @@ import (
 
 type UniqueInterface interface {
 	Search(ctx context.Context, h http.Header, objectID string) (resp *metadata.SearchUniqueResult, err error)
-	Create(ctx context.Context, h http.Header, objectID string, request *metadata.CreateUniqueRequest) (resp *metadata.CreateUniqueResult, err error)
-	Update(ctx context.Context, h http.Header, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (resp *metadata.UpdateUniqueResult, err error)
-	Delete(ctx context.Context, h http.Header, objectID string, id uint64) (resp *metadata.DeleteUniqueResult, err error)
 }

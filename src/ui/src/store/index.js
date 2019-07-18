@@ -41,6 +41,13 @@ import netCollectDevice from './modules/api/net-collect-device.js'
 import netCollectProperty from './modules/api/net-collect-property.js'
 import netDataCollection from './modules/api/net-data-collection.js'
 import netDiscovery from './modules/api/net-discovery.js'
+import serviceTemplate from './modules/api/service-template.js'
+import serviceClassification from './modules/api/service-classification.js'
+import processTemplate from './modules/api/process-template.js'
+import businessSynchronous from './modules/api/business-synchronous.js'
+import serviceInstance from './modules/api/service-instance.js'
+import processInstance from './modules/api/process-instance.js'
+import operationChart from './modules/api/operation-chart'
 
 Vue.use(Vuex)
 
@@ -84,6 +91,13 @@ export default new Vuex.Store({
         netCollectDevice,
         netCollectProperty,
         netDataCollection,
-        netDiscovery
+        netDiscovery,
+        serviceTemplate,
+        serviceClassification,
+        processTemplate,
+        businessSynchronous,
+        serviceInstance,
+        processInstance,
+        operationChart
     }
 })

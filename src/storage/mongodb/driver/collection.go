@@ -526,3 +526,42 @@ func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replace
 		},
 	}, nil
 }
+
+// UpdateUnsetMany update data support $unset command
+func (c *collection) UpdateUnsetMany(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.Many) (*mongodb.UpdateResult, error) {
+
+	updateOption := &options.UpdateOptions{}
+	if nil != opts {
+		updateOption = opts.ConvertToMongoOptions()
+	}
+
+	// in a session
+	if nil != c.innerSession {
+		returnResult := &mongodb.UpdateResult{}
+		err := mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			updateResult, err := c.innerCollection.UpdateMany(mctx, filter, bson.M{"$unset": update}, updateOption)
+			if nil != err {
+				return err
+			}
+			returnResult = &mongodb.UpdateResult{
+				MatchedCount:  uint64(updateResult.MatchedCount),
+				ModifiedCount: uint64(updateResult.ModifiedCount),
+			}
+
+			return nil
+		})
+
+		return returnResult, err
+
+	}
+
+	// no session
+	updateResult, err := c.innerCollection.UpdateMany(ctx, filter, bson.M{"$set": update}, updateOption)
+	if nil != err {
+		return &mongodb.UpdateResult{}, err
+	}
+	return &mongodb.UpdateResult{
+		MatchedCount:  uint64(updateResult.MatchedCount),
+		ModifiedCount: uint64(updateResult.ModifiedCount),
+	}, nil
+}

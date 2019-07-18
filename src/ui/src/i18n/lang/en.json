@@ -158,9 +158,13 @@
         "基础资源": "Basic Resource",
         "后台管理": "Back-stage",
         "后台管理标题": "Back-stage Management",
-        "基础资源": "Basic Resource",
         "云资源发现": "Cloud resource discovery",
-        "资源确认": "Resource confirm"
+        "资源确认": "Resource confirm",
+        "服务管理": "Service Management",
+        "服务模板": "Service Template",
+        "服务分类": "Service Cagetory",
+        "统计报表": "Statistical report",
+        "业务主机": "Business Host"
     },
     "Index": {
         "首页": "Index",
@@ -805,7 +809,7 @@
         "批量删除": "Batch Deletion",
         "模板名称": "Template name",
         "进程数量": "Number of processes",
-        "应用数量": "Number of applications",
+        "应用模块数": "Number of application modules",
         "修改人": "Modifier",
         "修改时间": "Update Time",
         "新建服务模版": "New Service Template",
@@ -828,9 +832,10 @@
         "搜索": "Please enter template name to search...",
         "所有一级分类": "(All primary classification)",
         "所有二级分类": "(All secondary classification)",
-        "没有二级分类": "No secondary classification"
+        "没有二级分类": "No secondary classification",
+        "锁定不可编辑": "Locked service instance is not editable"
     },
-    "ServiceCagetory": {
+    "ServiceCategory": {
         "服务分类功能提示": "Service classification can help the business sort out service usage. Configuring platform initialization includes some common classifications and supports more classifications based on business development.",
         "请输入一级分类": "Please enter",
         "请输入二级分类": "Please enter",
@@ -838,7 +843,7 @@
         "二级分类": "Secondary classification",
         "确认删除分类": "Confirm delete category?",
         "请输入分类名称": "Please enter category name",
-        "添加二级分类": "Add Secondary Cagetory",
+        "添加二级分类": "Add Secondary Category",
         "二级分类删除提示": "This category cannot be deleted because there is service instance"
     },
     "HostDetails": {
@@ -877,6 +882,7 @@
         "创建方式": "Create method",
         "模板名称": "Template name",
         "模块名称": "Module name",
+        "服务模板": "Service template",
         "服务实例分类": "Service instance category",
         "从模板创建": "Create from template",
         "直接创建": "Create directly",
@@ -899,11 +905,16 @@
         "节点信息": "Node info",
         "源实例主机提示": "Please update process, can not repeat with source instance",
         "编辑进程": "Update process",
-        "源实例主机": "Source instance host",
+        "克隆到": "Clone to",
+        "当前主机": "Current host",
         "其他主机": "Other host",
         "模板未定义进程": "Template named with {template} has not difine process, can not create service.",
         "模板未定义进程提示": "You can add process in template fist or add host directly",
-        "暂无符合条件的实例": "There are no matched instances with input condition"
+        "暂无符合条件的实例": "There are no matched instances with input condition",
+        "删除模块提示": "Need to remove all service instances under the module first",
+        "模块名称提示": "The module name must be consistent with the service template name.",
+        "请为主机添加进程": "Please add process to the host",
+        "请输入实例名称搜索": "Please enter instance name search..."
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
@@ -922,5 +933,48 @@
         "模版更新信息": "template update information:",
         "同步模板": "Sync Template",
         "最新数据": "The current template is the latest version, no need to update ~"
+    },
+    "Operation": {
+        "数量": "Total",
+        "考虑显示效果，上限为25个，100%宽度建议显示20个，50%宽度10个": "Considering the display effect, the upper limit is 25, the 100% width is recommended to display 20, and the 50% width is 10.",
+        "横轴坐标数量": "Number of abscissal coordinates",
+        "新增图表": "Add Chart",
+        "所有更改已实时保存": "All changes are saved in real time",
+        "编辑图表": "Edit Chart",
+        "实例总数": "Inst Amount",
+        "模型总数":"Model Amount",
+        "主机总数": "Host Amount",
+        "业务总数": "Business Amount",
+        "编辑": "Edit",
+        "主机统计": "Host statistics",
+        "统计报表": "Statistical report forms",
+        "实例": "Example",
+        "图表类型": "Chart type",
+        "图表选择": "Chart selection",
+        "图表宽度": "Chart width",
+        "图表名称": "Chart name",
+        "统计维度": "Statistical dimension",
+        "图表展示": "Chart presentation",
+        "统计对象": "Statistical object",
+        "饼图": "Pie chart",
+        "柱状图": "Histogram",
+        "实例统计": "Case statistics",
+        "该图表暂无数据": "The chart has no data for the time being.",
+        "编辑模式": "Editorial Model",
+        "退出编辑模式": "Exit editing",
+        "是否确认删除": "Whether to confirm deletion?"
+    },
+    "HostDetails": {
+        "主机详情": "Host Details",
+        "主机属性": "Host Properties",
+        "实时状态": "Real-Time Status",
+        "变更记录": "Change Log",
+        "基本值": "Basic Value",
+        "最近更新时间": "Update Time",
+        "关联": "Association",
+        "新增关联": "New Association",
+        "批量取消": "Batch Cancel",
+        "列表": "List",
+        "暂无关联关系": "No Association"
     }
 }

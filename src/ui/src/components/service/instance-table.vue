@@ -37,7 +37,8 @@
         </div>
         <cmdb-slider
             :title="`${$t('BusinessTopology[\'添加进程\']')}(${name})`"
-            :is-show.sync="processForm.show">
+            :is-show.sync="processForm.show"
+            :before-close="handleBeforeClose">
             <cmdb-form slot="content"
                 ref="processForm"
                 :type="processForm.type"
@@ -46,7 +47,7 @@
                 :property-groups="processPropertyGroups"
                 :uneditable-properties="immutableProperties"
                 @on-submit="handleSaveProcess"
-                @on-cancel="handleCancelCreateProcess">
+                @on-cancel="handleBeforeClose">
             </cmdb-form>
         </cmdb-slider>
     </div>
@@ -100,11 +101,12 @@
         computed: {
             header () {
                 const display = [
+                    'bk_func_name',
                     'bk_process_name',
+                    'bk_start_param_regex',
                     'bind_ip',
                     'port',
-                    'work_path',
-                    'user'
+                    'work_path'
                 ]
                 const header = []
                 display.map(id => {
@@ -205,6 +207,23 @@
             handleCancelCreateProcess () {
                 this.processForm.show = false
                 this.processForm.rowIndex = null
+            },
+            handleBeforeClose () {
+                const changedValues = this.$refs.processForm.changedValues
+                if (Object.keys(changedValues).length) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.handleCancelCreateProcess()
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.handleCancelCreateProcess()
             },
             handleEditProcess (rowIndex) {
                 this.processForm.instance = this.processList[rowIndex]

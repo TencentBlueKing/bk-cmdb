@@ -107,6 +107,28 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 	// template.Name = input.Name
 	if input.ServiceCategoryID != 0 {
 		template.ServiceCategoryID = input.ServiceCategoryID
+
+		bizID, e := metadata.BizIDFromMetadata(template.Metadata)
+		if e != nil {
+			blog.Errorf("UpdateServiceTemplate failed, parse biz id from metadata failed, code: %d, err: %+v, rid: %s", common.CCErrCommParseBizIDFromMetadataInDBFailed, e, ctx.ReqID)
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.CCErrCommParseBizIDFromMetadataInDBFailed)
+		}
+
+		// validate service category id field
+		category, err := p.GetServiceCategory(ctx, template.ServiceCategoryID)
+		if err != nil {
+			blog.Errorf("UpdateServiceTemplate failed, category id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		}
+		categoryBizID, e := metadata.BizIDFromMetadata(category.Metadata)
+		if e != nil {
+			blog.Errorf("UpdateServiceTemplate failed, parse biz id from metadata failed, code: %d, err: %+v, rid: %s", common.CCErrCommParseBizIDFromMetadataInDBFailed, err, ctx.ReqID)
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		}
+		if categoryBizID != 0 && categoryBizID != bizID {
+			blog.Errorf("UpdateServiceTemplate failed, category biz id and template not equal, code: %d, err: %+v, rid: %s", common.CCErrCommParseBizIDFromMetadataInDBFailed, err, ctx.ReqID)
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		}
 	}
 
 	if field, err := template.Validate(); err != nil {
@@ -201,11 +223,23 @@ func (p *processOperation) DeleteServiceTemplate(ctx core.ContextParams, service
 	}
 	usageCount, e := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(usageFilter).Count(ctx.Context)
 	if nil != e {
-		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, usageFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, usageFilter, e, ctx.ReqID)
+		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, process template usageFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, usageFilter, e, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if usageCount > 0 {
-		blog.Errorf("DeleteServiceTemplate failed, forbidden delete category be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
+		blog.Errorf("DeleteServiceTemplate failed, forbidden delete service template be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
+		err := ctx.Error.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
+		return err
+	}
+
+	// service template that referenced by module shouldn't be removed
+	usageCount, e = p.dbProxy.Table(common.BKTableNameBaseModule).Find(usageFilter).Count(ctx.Context)
+	if nil != e {
+		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, module usageFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, usageFilter, e, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	if usageCount > 0 {
+		blog.Errorf("DeleteServiceTemplate failed, forbidden delete service template be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
 		err := ctx.Error.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
 		return err
 	}

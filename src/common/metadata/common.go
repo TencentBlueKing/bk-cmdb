@@ -60,7 +60,7 @@ func (r *RespError) Error() string {
 // data is the data you want to return to client.
 func NewSuccessResp(data interface{}) *Response {
 	return &Response{
-		BaseResp: BaseResp{true, common.CCSuccess, common.CCSuccessStr},
+		BaseResp: BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr},
 		Data:     data,
 	}
 }

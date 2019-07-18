@@ -2,13 +2,19 @@
     <div class="relation-layout">
         <div class="relation-options clearfix">
             <div class="fl">
-                <bk-button class="options-button options-button-update" size="small" type="primary"
-                    :disabled="!hasRelation || disabled"
-                    :class="{ active: activeComponent === 'cmdbRelationUpdate' }"
-                    @click="handleShowUpdate">
-                    {{$t('Association["关联管理"]')}}
-                    <i class="bk-icon icon-angle-down"></i>
-                </bk-button>
+                <span class="inline-block-middle"
+                    v-cursor="{
+                        active: !$isAuthorized(auth),
+                        auth: [auth]
+                    }">
+                    <bk-button class="options-button options-button-update" size="small" type="primary"
+                        :disabled="!hasRelation || !$isAuthorized(auth)"
+                        :class="{ active: activeComponent === 'cmdbRelationUpdate' }"
+                        @click="handleShowUpdate">
+                        {{$t('Association["关联管理"]')}}
+                        <i class="bk-icon icon-angle-down"></i>
+                    </bk-button>
+                </span>
             </div>
             <div class="fr">
                 <bk-button type="default" class="options-full-screen"
@@ -49,7 +55,10 @@
                 type: Object,
                 required: true
             },
-            disabled: Boolean
+            auth: {
+                type: [String, Array],
+                default: ''
+            }
         },
         data () {
             return {

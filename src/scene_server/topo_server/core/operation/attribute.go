@@ -15,7 +15,6 @@ package operation
 import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -66,15 +65,7 @@ func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factor
 
 func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapstr.MapStr) (model.AttributeInterface, error) {
 
-	var businessID int64
 	var err error
-	if params.MetaData != nil {
-		businessID, err = metadata.BizIDFromMetadata(*params.MetaData)
-		if err != nil {
-			blog.Errorf("CreateObjectAttribute failed, parse biz id field, data: %+v, err: %+v", data, err)
-			return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
-		}
-	}
 	att := a.modelFactory.CreateAttribute(params)
 
 	err = att.Parse(data)
@@ -88,12 +79,6 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 	err = a.obj.IsValidObject(params, objID)
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
-	}
-
-	// auth: check authorization
-	if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, businessID, objID); err != nil {
-		blog.V(2).Infof("check authorization for create model attribute failed, err: %+v", err)
-		return nil, err
 	}
 
 	// check is the group exist
@@ -228,12 +213,6 @@ func (a *attribute) FindObjectAttribute(params types.ContextParams, cond conditi
 }
 
 func (a *attribute) UpdateObjectAttribute(params types.ContextParams, data mapstr.MapStr, attID int64) error {
-
-	// auth: check authorization
-	if err := a.authManager.AuthorizeByAttributeID(params.Context, params.Header, meta.Update, attID); err != nil {
-		blog.V(2).Infof("update model attribute %d failed, authorization failed, err: %+v", attID, err)
-		return err
-	}
 
 	input := metadata.UpdateOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(attID).ToMapStr(),

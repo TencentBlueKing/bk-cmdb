@@ -1,7 +1,7 @@
 <template>
     <div class="clone-layout">
         <div class="host-type clearfix">
-            <label class="type-label fl">{{$t('克隆的主机')}}</label>
+            <label class="type-label fl">{{$t('BusinessTopology["克隆到"]')}}</label>
             <div class="type-item fl">
                 <input class="type-radio"
                     type="radio"
@@ -9,7 +9,7 @@
                     name="hostTarget"
                     v-model="hostTarget"
                     :value="targetName.source">
-                <label for="sourceHost">{{$t('BusinessTopology["源实例主机"]')}}</label>
+                <label for="sourceHost">{{$t('BusinessTopology["当前主机"]')}}</label>
             </div>
             <div class="type-item fl">
                 <input class="type-radio"
@@ -115,7 +115,6 @@
         line-height: 19px;
         .type-label{
             width: 100px;
-            text-align: right;
             &:after {
                 content: '*';
                 color: $cmdbDangerColor;

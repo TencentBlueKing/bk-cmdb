@@ -94,7 +94,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	procSvr.Logic = &logics.Logic{
 		Engine: procSvr.Engine,
 	}
-	go procSvr.InitFunc()
 
 	if err := backbone.StartServer(ctx, engine, procSvr.WebService()); err != nil {
 		return err

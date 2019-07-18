@@ -39,13 +39,13 @@ func TestNewNetClassDevices(t *testing.T) {
 	}
 }
 
-func TestNewNetClass(t *testing.T) {
+func TestNetClass(t *testing.T) {
 	fs, err := NewFS(sysTestFixtures)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	nc, err := fs.NewNetClass()
+	nc, err := fs.NetClass()
 	if err != nil {
 		t.Fatal(err)
 	}

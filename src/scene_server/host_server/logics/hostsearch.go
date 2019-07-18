@@ -688,7 +688,7 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		Sort:      sh.hostSearchParam.Page.Sort,
 	}
 
-	gResult, err := sh.lgc.CoreAPI.HostController().Host().GetHosts(sh.ctx, sh.pheader, query)
+	gResult, err := sh.lgc.CoreAPI.CoreService().Host().GetHosts(sh.ctx, sh.pheader, query)
 	if err != nil {
 		blog.Errorf("get hosts failed, err: %v", err)
 		return err

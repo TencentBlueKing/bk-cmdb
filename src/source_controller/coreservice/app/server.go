@@ -80,11 +80,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			time.Sleep(time.Second)
 			continue
 		}
-		// Mongo not found
-		if "" == coreSvr.Config.Mongo.Address {
-			time.Sleep(time.Second)
-			continue
-		}
+
 		configReady = true
 		break
 

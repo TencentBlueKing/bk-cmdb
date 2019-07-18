@@ -26,6 +26,10 @@
                         </li>
                     </ul>
                 </bk-dropdown-menu>
+                <bk-button class="options-button sync-template-link" v-show="withTemplate" @click="handleSyncTemplate">
+                    <i class="bk-icon icon-refresh"></i>
+                    {{$t('BusinessTopology["同步模板"]')}}
+                </bk-button>
                 <div class="options-right fr">
                     <cmdb-form-bool class="options-checkbox"
                         :size="16"
@@ -34,8 +38,9 @@
                         <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                     </cmdb-form-bool>
                     <cmdb-form-singlechar class="options-search"
-                        :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
-                        v-model="filter">
+                        :placeholder="$t('BusinessTopology[\'请输入实例名称搜索\']')"
+                        v-model="filter"
+                        @keydown.native.enter="handleSearch">
                         <i class="bk-icon icon-close"
                             v-show="filter.length"
                             @click="handleClearFilter">
@@ -58,7 +63,6 @@
                 </service-instance-table>
             </div>
             <bk-paging class="pagination"
-                v-if="pagination.totalPage > 1"
                 pagination-able
                 location="left"
                 :cur-page="pagination.current"
@@ -79,16 +83,17 @@
         </service-instance-empty>
         <cmdb-slider
             :title="processForm.title"
-            :is-show.sync="processForm.show">
+            :is-show.sync="processForm.show"
+            :before-close="handleBeforeClose">
             <cmdb-form slot="content" v-if="processForm.show"
                 ref="processForm"
                 :type="processForm.type"
                 :inst="processForm.instance"
-                :uneditable-properties="processForm.uneditableProperties"
+                :disabled-properties="processForm.disabledProperties"
                 :properties="processForm.properties"
                 :property-groups="processForm.propertyGroups"
                 @on-submit="handleSaveProcess"
-                @on-cancel="handleCloseProcessForm">
+                @on-cancel="handleBeforeClose">
             </cmdb-form>
         </cmdb-slider>
     </div>
@@ -121,7 +126,7 @@
                     title: '',
                     instance: null,
                     referenceService: null,
-                    uneditableProperties: [],
+                    disabledProperties: [],
                     properties: [],
                     propertyGroups: [],
                     unwatch: null
@@ -134,6 +139,13 @@
             },
             currentNode () {
                 return this.$store.state.businessTopology.selectedNode
+            },
+            isModuleNode () {
+                return this.currentNode && this.currentNode.data.bk_obj_id === 'module'
+            },
+            withTemplate () {
+                const nodeInstance = this.$store.state.businessTopology.selectedNodeInstance
+                return this.isModuleNode && nodeInstance && nodeInstance.service_template_id
             },
             currentModule () {
                 if (this.currentNode && this.currentNode.data.bk_obj_id === 'module') {
@@ -281,14 +293,14 @@
                 const processTemplateId = processInstance.relation.process_template_id
                 if (processTemplateId) {
                     const template = await this.getProcessTemplate(processTemplateId)
-                    const uneditableProperties = []
+                    const disabledProperties = []
                     Object.keys(template).forEach(propertyId => {
                         const value = template[propertyId]
                         if (value.as_default_value) {
-                            uneditableProperties.push(propertyId)
+                            disabledProperties.push(propertyId)
                         }
                     })
-                    this.processForm.uneditableProperties = uneditableProperties
+                    this.processForm.disabledProperties = disabledProperties
                 }
             },
             async getProcessTemplate (processTemplateId) {
@@ -323,7 +335,7 @@
                     this.processForm.show = false
                     this.processForm.instance = null
                     this.processForm.referenceService = null
-                    this.processForm.uneditableProperties = []
+                    this.processForm.disabledProperties = []
                 } catch (e) {
                     console.error(e)
                 }
@@ -361,7 +373,24 @@
                 this.processForm.show = false
                 this.processForm.referenceService = null
                 this.processForm.instance = null
-                this.processForm.uneditableProperties = []
+                this.processForm.disabledProperties = []
+            },
+            handleBeforeClose () {
+                const changedValues = this.$refs.processForm.changedValues
+                if (Object.keys(changedValues).length) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.handleCloseProcessForm()
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.handleCloseProcessForm()
             },
             handleCreateServiceInstance () {
                 this.$router.push({
@@ -371,7 +400,12 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        from: this.$route.fullPath,
+                        from: {
+                            name: this.$route.name,
+                            query: {
+                                module: this.currentModule.bk_module_id
+                            }
+                        },
                         title: this.currentNode.name
                     }
                 })
@@ -430,6 +464,19 @@
                 }, () => {
                     this.$error(this.$t('Common["复制失败"]'))
                 })
+            },
+            handleSyncTemplate () {
+                this.$router.push({
+                    name: 'synchronous',
+                    params: {
+                        moduleId: this.currentNode.data.bk_inst_id,
+                        setId: this.currentNode.parent.data.bk_inst_id
+                    },
+                    query: {
+                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / '),
+                        from: `${this.$route.path}?module=${this.currentNode.data.bk_inst_id}`
+                    }
+                })
             }
         }
     }
@@ -451,7 +498,7 @@
         line-height: 30px;
         padding: 0 9px;
         text-align: center;
-        border: 1px solid #C4C6CC;
+        border: 1px solid #f0f1f5;
         border-radius: 2px;
     }
     .options-right {
@@ -534,6 +581,22 @@
                 color: #c4c6cc;
                 cursor: not-allowed;
             }
+        }
+    }
+    .sync-template-link {
+        position: relative;
+        margin-left: 18px;
+        &::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: -13px;;
+            width: 1px;
+            height: 20px;
+            background-color: #dcdee5;
+        }
+        .icon-refresh {
+            top: -1px;
         }
     }
     .tables {

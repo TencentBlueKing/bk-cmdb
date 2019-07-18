@@ -1,6 +1,7 @@
 <template>
     <bk-selector style="text-align: left;"
         :list="authorizedBusiness"
+        :placeholder="$t('请选择业务')"
         :selected.sync="localSelected"
         :searchable="authorizedBusiness.length > 5"
         :disabled="disabled"
@@ -64,8 +65,6 @@
             this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness')
             if (this.authorizedBusiness.length) {
                 this.setLocalSelected()
-            } else {
-                this.$error(this.$t('Common["您没有业务权限"]'))
             }
         },
         methods: {

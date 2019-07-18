@@ -1076,7 +1076,7 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 		common.BKCloudIDField: platID,
 	}
 
-	hostRes, err := s.CoreAPI.HostController().Host().GetHosts(srvData.ctx, srvData.header, params)
+	hostRes, err := s.CoreAPI.CoreService().Host().GetHosts(srvData.ctx, srvData.header, params)
 	if nil != err {
 		blog.Errorf("DelPlat search host error: %s, input:%+v,rid:%s", err.Error(), platID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetFail)})
@@ -1168,7 +1168,7 @@ func (s *Service) getHostListByAppidAndField(req *restful.Request, resp *restful
 			common.BKDBIN: hostIDArr,
 		},
 	}
-	ret, err := srvData.lgc.CoreAPI.HostController().Host().GetHosts(srvData.ctx, req.Request.Header, query)
+	ret, err := srvData.lgc.CoreAPI.CoreService().Host().GetHosts(srvData.ctx, req.Request.Header, query)
 	if nil != err {
 		blog.Errorf("getHostListByAppidAndField search host error: %s, input:%+v,rid:%s", err.Error(), common.KvMap{"appid": appID, "field": field}, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetFail)})
