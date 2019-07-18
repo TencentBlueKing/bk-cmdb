@@ -1,6 +1,6 @@
 <template>
-    <div class="hosts-layout clearfix">
-        <div class="hosts-topology fl"
+    <div class="hosts-layout">
+        <div class="hosts-topology"
             v-bkloading="{ isLoading: $loading(['getInstTopo', 'getInternalTopo']) }"
             :class="{ 'is-collapse': layout.topologyCollapse }">
             <bk-big-tree class="topology-tree"
@@ -32,6 +32,7 @@
         </div>
         <cmdb-hosts-table class="hosts-main" ref="hostsTable"
             delete-auth=""
+            :show-collection="true"
             :edit-auth="$OPERATION.U_HOST"
             :save-auth="$OPERATION.U_HOST"
             :transfer-resource-auth="$OPERATION.HOST_TO_RESOURCE"
@@ -61,7 +62,8 @@
                 },
                 layout: {
                     topologyCollapse: false
-                }
+                },
+                ready: false
             }
         },
         computed: {
@@ -80,7 +82,9 @@
         },
         watch: {
             filterParams () {
-                this.getHostList()
+                if (this.ready) {
+                    this.getHostList()
+                }
             }
         },
         async created () {
@@ -95,9 +99,13 @@
                 this.$refs.tree.setSelected(businessNodeId, {
                     emitEvent: true
                 })
+                this.ready = true
             } catch (e) {
                 console.log(e)
             }
+        },
+        beforeDestroy () {
+            this.ready = true
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
@@ -199,14 +207,15 @@
     .hosts-layout{
         height: 100%;
         padding: 0;
-        overflow: hidden;
+        display: flex;
         .hosts-topology {
             position: relative;
-            width: 280px;
+            flex: 280px 0 0;
             height: 100%;
             border-right: 1px solid $cmdbLayoutBorderColor;
             &.is-collapse {
                 width: 0;
+                flex: 0 0 0;
                 .topology-collapse-icon:before {
                     display: inline-block;
                     transform: rotate(180deg);
@@ -232,9 +241,9 @@
             }
         }
         .hosts-main{
+            flex: 1;
             height: 100%;
             padding: 20px;
-            overflow: hidden;
         }
     }
     .topology-tree {
