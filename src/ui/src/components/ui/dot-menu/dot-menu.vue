@@ -18,7 +18,7 @@
                 '--hoverColor': hoverColor
             }">
         </i>
-        <div class="menu-content" slot="content">
+        <div class="menu-content" slot="content" @click="handleContentClick">
             <slot></slot>
         </div>
     </bk-popover>
@@ -52,6 +52,11 @@
             },
             hide () {
                 this.open = false
+            },
+            handleContentClick () {
+                if (this.closeWhenMenuClick) {
+                    this.$refs.popover.$refs.reference._tippy.hide()
+                }
             }
         }
     }
