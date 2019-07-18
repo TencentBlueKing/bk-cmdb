@@ -144,11 +144,23 @@
             async handleConfirm () {
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
+                    if (serviceInstanceTables.some(table => !table.processList.length)) {
+                        this.$bkMessage({
+                            message: this.$t("BusinessTopology['请为主机添加进程']"),
+                            theme: 'warning'
+                        })
+                        return
+                    }
                     if (this.withTemplate) {
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
                             params: this.$injectMetadata({
                                 name: this.moduleInstance.bk_module_name,
-                                bk_module_id: this.moduleId
+                                bk_module_id: this.moduleId,
+                                instances: serviceInstanceTables.map(table => {
+                                    return {
+                                        bk_host_id: table.id
+                                    }
+                                })
                             })
                         })
                     } else {

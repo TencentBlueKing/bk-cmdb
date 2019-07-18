@@ -15,6 +15,7 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -32,13 +33,13 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	temp, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
+	tpl, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service template failed, err: %v", err)
 		return
 	}
 
-	ctx.RespEntity(temp)
+	ctx.RespEntity(tpl)
 }
 
 func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
@@ -159,6 +160,7 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 
 	details := make([]metadata.ListServiceTemplateWithDetailResult, 0)
 	for _, serviceTemplate := range temp.Info {
+		// process templates reference count
 		option := &metadata.ListProcessTemplatesOption{
 			BusinessID:        bizID,
 			ServiceTemplateID: serviceTemplate.ID,
@@ -170,6 +172,19 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 			return
 		}
 
+		// module reference
+		listModuleOption := &metadata.QueryCondition{
+			Condition: mapstr.MapStr(map[string]interface{}{
+				common.BKServiceTemplateIDField: serviceTemplate.ID,
+			}),
+		}
+		moduleRst, e := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, listModuleOption)
+		if e != nil {
+			ctx.RespWithError(e, common.CCErrTopoModuleSelectFailed, "list service template: %d detail, but module failed.", serviceTemplate.ID)
+			return
+		}
+
+		// service instance reference count
 		serviceOption := &metadata.ListServiceInstanceOption{
 			BusinessID:        bizID,
 			ServiceTemplateID: serviceTemplate.ID,
@@ -185,6 +200,7 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 			ServiceTemplate:      serviceTemplate,
 			ProcessTemplateCount: int64(processTemplates.Count),
 			ServiceInstanceCount: int64(serviceInstances.Count),
+			ModuleCount:          int64(moduleRst.Data.Count),
 		})
 	}
 

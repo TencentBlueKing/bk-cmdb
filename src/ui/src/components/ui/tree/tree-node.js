@@ -21,10 +21,12 @@ export default class TreeNode {
         this.state = {
             checked: false,
             expanded: false,
+            disabled: false,
             visible: true
         }
         this.checked = tree.defaultCheckedNodes.includes(this.id)
         this.expanded = tree.defaultExpandedNodes.includes(this.id)
+        this.disabled = tree.defaultDisabledNodes.includes(this.id)
 
         this.timer = null
     }
@@ -122,6 +124,17 @@ export default class TreeNode {
 
     get expanded () {
         return this.state.expanded
+    }
+
+    set disabled (disabled) {
+        if (this.state.disabled === disabled) {
+            return false
+        }
+        this.state.disabled = disabled
+    }
+
+    get disabled () {
+        return this.state.disabled
     }
 
     set visible (visible) {

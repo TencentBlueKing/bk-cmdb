@@ -1,12 +1,5 @@
 import Meta from '@/router/meta'
 import { NAV_PERMISSION } from '@/dictionary/menu'
-import {
-    SYSTEM_MANAGEMENT
-} from '@/dictionary/auth'
-
-export const OPERATION = {
-    SYSTEM_MANAGEMENT
-}
 
 const path = {
     business: '/permission/business',
@@ -26,9 +19,6 @@ export default [{
             parent: NAV_PERMISSION,
             businessView: false
         },
-        auth: {
-            view: SYSTEM_MANAGEMENT
-        },
         i18nTitle: 'Nav["业务权限管理"]'
     })
 }, {
@@ -43,9 +33,6 @@ export default [{
             order: 2,
             parent: NAV_PERMISSION,
             businessView: false
-        },
-        auth: {
-            view: SYSTEM_MANAGEMENT
         },
         i18nTitle: 'Nav["系统权限管理"]'
     })

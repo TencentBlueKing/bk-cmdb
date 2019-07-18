@@ -178,34 +178,6 @@ enable = $auth_enabled
     with open(output + "host.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
-    # hostcontroller.conf
-    hostcontroller_file_template_str = '''
-[mongodb]
-host = $mongo_host
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-port = $mongo_port
-maxOpenConns = 3000
-maxIDleConns = 1000
-mechanism = SCRAM-SHA-1
-
-[redis]
-host = $redis_host
-port = $redis_port
-usr = $redis_user
-pwd = $redis_pass
-database = 0
-port = $redis_port
-maxOpenConns = 3000
-maxIDleConns = 1000
-'''
-
-    template = FileTemplate(hostcontroller_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "hostcontroller.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
     # migrate.conf
     migrate_file_template_str = '''
 [config-server]
@@ -528,11 +500,9 @@ def main(argv):
         "cmdb_auditcontroller": 50005,
         "cmdb_datacollection": 60005,
         "cmdb_eventserver": 60009,
-        "cmdb_hostcontroller": 50002,
         "cmdb_hostserver": 60001,
         "cmdb_objectcontroller": 50001,
         "cmdb_coreservice": 50009,
-        "cmdb_proccontroller": 50003,
         "cmdb_procserver": 60003,
         "cmdb_tmserver": 60008,
         "cmdb_toposerver": 60002,

@@ -32,10 +32,15 @@ func (ps *parseStream) eventRelated() *parseStream {
 }
 
 var (
-	findSubscribePattern   = regexp.MustCompile(`^/api/v3/event/subscribe/search/\S+/\d+/?$`)
-	createSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/?$`)
-	updateSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+/?$`)
-	deleteSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+/?$`)
+	findSubscribeRegexp   = regexp.MustCompile(`^/api/v3/event/subscribe/search/\S+/\d+/?$`)
+	createSubscribeRegexp = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/?$`)
+	updateSubscribeRegexp = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+/?$`)
+	deleteSubscribeRegexp = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+/?$`)
+)
+
+const (
+	telnetEventTestPattern = "/api/v3/event/subscribe/telnet"
+	pingEventTestPattern   = "/api/v3/event/subscribe/ping"
 )
 
 func (ps *parseStream) subscribe() *parseStream {
@@ -44,7 +49,7 @@ func (ps *parseStream) subscribe() *parseStream {
 	}
 
 	// find all the subscription
-	if ps.hitRegexp(findSubscribePattern, http.MethodPost) {
+	if ps.hitRegexp(findSubscribeRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -57,7 +62,7 @@ func (ps *parseStream) subscribe() *parseStream {
 	}
 
 	// create a subscription
-	if ps.hitRegexp(createSubscribePattern, http.MethodPost) {
+	if ps.hitRegexp(createSubscribeRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -70,7 +75,7 @@ func (ps *parseStream) subscribe() *parseStream {
 	}
 
 	// update a subscription
-	if ps.hitRegexp(updateSubscribePattern, http.MethodPut) {
+	if ps.hitRegexp(updateSubscribeRegexp, http.MethodPut) {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update subscription batch, but got invalid subscription id: %s", ps.RequestCtx.Elements[4])
@@ -89,7 +94,7 @@ func (ps *parseStream) subscribe() *parseStream {
 	}
 
 	// delete a subscription
-	if ps.hitRegexp(deleteSubscribePattern, http.MethodDelete) {
+	if ps.hitRegexp(deleteSubscribeRegexp, http.MethodDelete) {
 		subscribeID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update subscription batch, but got invalid subscription id: %s", ps.RequestCtx.Elements[4])
@@ -101,6 +106,32 @@ func (ps *parseStream) subscribe() *parseStream {
 					Type:       meta.EventPushing,
 					Action:     meta.Delete,
 					InstanceID: subscribeID,
+				},
+			},
+		}
+		return ps
+	}
+
+	// telnet event for testing.
+	if ps.hitPattern(telnetEventTestPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.EventPushing,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// ping event for testing.
+	if ps.hitPattern(pingEventTestPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.EventPushing,
+					Action: meta.SkipAction,
 				},
 			},
 		}

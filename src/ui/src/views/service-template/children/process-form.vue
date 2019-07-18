@@ -20,16 +20,17 @@
                                 :key="propertyIndex">
                                 <div class="property-name clearfix">
                                     <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
-                                    <!-- <i class="property-name-tooltips icon-cc-tips"
-                                        v-if="property['placeholder'] && property['bk_property_id'] === 'bk_start_param_regex'"
+                                    <i class="property-name-tooltips icon-cc-tips"
+                                        v-if="property['placeholder']"
                                         v-tooltip="htmlEncode(property['placeholder'])">
-                                    </i> -->
-                                    <label :class="['cmdb-form-checkbox', 'cmdb-checkbox-small', hasUsed ? 'disabled' : '']"
+                                    </i>
+                                    <label class="cmdb-form-checkbox cmdb-checkbox-small"
                                         v-if="property['isLocking'] !== undefined">
-                                        <input type="checkbox"
-                                            v-model="values[property['bk_property_id']]['as_default_value']"
-                                            :disabled="hasUsed && values[property['bk_property_id']]['as_default_value']">
-                                        <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
+                                        <input type="checkbox" v-model="values[property['bk_property_id']]['as_default_value']">
+                                        <span class="cmdb-checkbox-text"
+                                            v-tooltip="$t('ServiceManagement[\'锁定不可编辑\']')">
+                                            {{$t('ProcessManagement["锁定"]')}}
+                                        </span>
                                     </label>
                                 </div>
                                 <div class="property-value">
@@ -48,8 +49,8 @@
                                     <component class="form-component" v-else
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :disabled="hasUsed && values[property['bk_property_id']]['as_default_value']"
                                         :options="property.option || []"
+                                        :allow-clear="['bind_ip'].includes(property['bk_property_id'])"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
                                         v-validate="getValidateRules(property)"
@@ -122,6 +123,32 @@
         },
         data () {
             return {
+                ipOption: [
+                    {
+                        'name': '127.0.0.1',
+                        'type': 'text',
+                        'is_default': false,
+                        'id': '1'
+                    },
+                    {
+                        'id': '2',
+                        'name': '0.0.0.0',
+                        'type': 'text',
+                        'is_default': false
+                    }
+                    // {
+                    //     'name': '第一内网IP',
+                    //     'type': 'text',
+                    //     'is_default': false,
+                    //     'id': '3'
+                    // },
+                    // {
+                    //     'name': '第一外网IP',
+                    //     'type': 'text',
+                    //     'is_default': false,
+                    //     'id': '4'
+                    // }
+                ],
                 values: {},
                 refrenceValues: {},
                 scrollbar: false,
@@ -139,6 +166,10 @@
                     filterProperties.map(property => {
                         if (!['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])) {
                             property.isLocking = false
+                        }
+                        if (['bind_ip'].includes(property['bk_property_id'])) {
+                            property.bk_property_type = 'enum'
+                            property.option = this.ipOption
                         }
                     })
                     return filterProperties
@@ -221,9 +252,7 @@
                 } else if (this.type === 'update') {
                     this.values['process_id'] = inst['process_id']
                 }
-                setTimeout(() => {
-                    this.refrenceValues = this.$tools.clone(this.values)
-                }, 0)
+                this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
                 const availabelProperties = properties.filter(property => {
@@ -291,17 +320,17 @@
             handleSave () {
                 this.$validator.validateAll().then(result => {
                     if (!this.hasChange()) {
-                        this.handleCancel()
+                        this.$emit('on-cancel')
                         return
                     }
                     if (result && this.isCreatedService) {
                         if (this.type === 'create' && !this.hasProcessName(this.values)) {
                             this.values['sign_id'] = new Date().getTime()
                             this.addLocalProcessTemplate(this.values)
-                            this.handleCancel()
+                            this.$emit('on-cancel')
                         } else if (this.type === 'update') {
                             this.updateLocalProcessTemplate(this.values)
-                            this.handleCancel()
+                            this.$emit('on-cancel')
                         } else {
                             this.$bkMessage({
                                 message: this.$t("ServiceManagement['进程名称已存在']"),
@@ -423,15 +452,8 @@
                 float: right;
                 line-height: 16px;
                 cursor: pointer;
-                &.disabled .cmdb-checkbox-text {
-                    cursor: not-allowed;
-                }
                 .cmdb-checkbox-text {
                     font-size: 12px;
-                }
-                input[type=checkbox][disabled] {
-                    background-color: #f1f1f1;
-                    cursor: not-allowed;
                 }
             }
         }

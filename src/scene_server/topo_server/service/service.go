@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -41,7 +42,7 @@ import (
 
 type Service struct {
 	Engine      *backbone.Engine
-	Txn         dal.DB
+	Txn         dal.Transcation
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
@@ -62,8 +63,8 @@ func (s *Service) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Error
 	}
-	// TODO: {version} need to replaced by v3
-	api.Path("/topo/{version}").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+
+	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
@@ -154,6 +155,20 @@ func (s *Service) sendCompleteResponse(resp *restful.Response, errorCode int, er
 
 }
 
+func (s *Service) sendNoAuthResp(resp *restful.Response, dataMsg interface{}) {
+	js, err := json.Marshal(dataMsg)
+	if err != nil {
+		if _, err := io.WriteString(resp, "unknown error"); nil != err {
+			blog.Errorf("failed to write no auth resp, err:%s", err.Error())
+		}
+		return
+	}
+	if _, err := io.WriteString(resp, string(js)); nil != err {
+		blog.Errorf("failed to write resp, err:%s", err.Error())
+	}
+	return
+}
+
 func (s *Service) addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
 	s.addActionEx(method, path, handlerFunc, handlerParseOriginDataFunc, false)
 }
@@ -223,6 +238,7 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				ctx, _ := s.Engine.CCCtx.WithCancel()
 				ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+				ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 
 				handlerContext := types.ContextParams{
 					Context:         ctx,
@@ -253,6 +269,11 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				if dataErr == nil {
 					s.sendResponse(resp, common.CCSuccess, data)
+					return
+				}
+
+				if dataErr == auth.NoAuthorizeError {
+					s.sendNoAuthResp(resp, data)
 					return
 				}
 

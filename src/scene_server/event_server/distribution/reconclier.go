@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/storage/dal"
-	
+
 	"github.com/tidwall/gjson"
 	redis "gopkg.in/redis.v5"
 )
@@ -148,7 +148,8 @@ func SubscribeChannel(redisCli *redis.Client) (err error) {
 
 func cleanOutdateEvents(redisCli *redis.Client) {
 	var err error
-	tick := util.NewTicker(time.Hour * 24)
+	timeout := time.Hour * 1
+	tick := util.NewTicker(timeout)
 	tick.Tick()
 	for range tick.C {
 		blog.Infof("starting clean outdate events")
@@ -162,7 +163,7 @@ func cleanOutdateEvents(redisCli *redis.Client) {
 			iter := redisCli.HScan(key, 0, "*", 10).Iterator()
 			for iter.Next() {
 				if strings.HasPrefix(iter.Val(), "{") {
-					if time.Now().Sub(gjson.Get(iter.Val(), "action_time").Time()) > time.Hour*24 {
+					if time.Now().Sub(gjson.Get(iter.Val(), "action_time").Time()) > timeout {
 						if err = redisCli.HDel(gjson.Get(iter.Val(), "event_id").String()).Err(); err != nil {
 							blog.Errorf("remove outdate event %s failed: %v", iter.Val(), err)
 						}

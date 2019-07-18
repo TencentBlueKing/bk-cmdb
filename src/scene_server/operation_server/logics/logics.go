@@ -99,7 +99,7 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	}
 
 	c := cron.New()
-	spec := "0 0 2 * * ?"
+	spec := "0 0 2 * * ?" // 每天凌晨两点，更新定时统计图表数据
 	err := c.AddFunc(spec, func() {
 		if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
 			blog.Error("start collect chart data timer fail, err: %v", err)

@@ -86,5 +86,9 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade x19.05.16.01] addInnerCategory error, err: %s", err.Error())
 		return err
 	}
+	if err := updateFuncIDProperty(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade x19.05.16.01] updateFuncIDProperty error, err: %s", err.Error())
+		return err
+	}
 	return nil
 }

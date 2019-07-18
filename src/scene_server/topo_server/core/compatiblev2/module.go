@@ -52,7 +52,7 @@ func (m *module) hasHost(bizID int64, moduleIDS []int64) (bool, error) {
 		"ModuleID":      moduleIDS,
 	}
 
-	rsp, err := m.client.HostController().Module().GetModulesHostConfig(context.Background(), m.params.Header, cond)
+	rsp, err := m.client.CoreService().Host().GetModulesHostConfig(context.Background(), m.params.Header, cond)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request the object controller, err: %s", err.Error())
 		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

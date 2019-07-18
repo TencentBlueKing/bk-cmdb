@@ -30,15 +30,6 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-// CreateMainlineObjectAssociation used for create association of type bk_mainline, as it can only create by special method,
-// for example add a level to business model
-func (cli *Service) CreateMainlineObjectAssociation(req *restful.Request, resp *restful.Response) {
-	// bk_maineline is a inner association type that can only create in special case,
-	// so we separate bk_mainline association type creation with a independent method,
-	enableMainlineAssociationType := true
-	cli.createObjectAssociation(req, resp, enableMainlineAssociationType)
-}
-
 // CreateObjectAssociation create object association map
 func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.Response) {
 	enableMainlineAssociationType := false

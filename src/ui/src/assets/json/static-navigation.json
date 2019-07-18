@@ -41,7 +41,7 @@
         "classificationId": "bk_business_resource",
         "order": 3,
         "children": [{
-            "i18n": "Nav['主机查询']",
+            "i18n": "Nav['业务主机']",
             "path": "/hosts",
             "id": "host",
             "icon": "icon-cc-host",

@@ -92,7 +92,7 @@ func (phpapi *PHPAPI) GetHostMapByCond(ctx context.Context, condition map[string
 		Fields:    "",
 		Condition: condition,
 	}
-	res, err := phpapi.logic.CoreAPI.HostController().Host().GetHosts(ctx, phpapi.header, searchParams)
+	res, err := phpapi.logic.CoreAPI.CoreService().Host().GetHosts(ctx, phpapi.header, searchParams)
 
 	if nil != err {
 		blog.Errorf("getHostMapByCond error params:%+v, error:%s,rid:%s", condition, err.Error(), phpapi.rid)

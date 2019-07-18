@@ -188,6 +188,7 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 
 	firstBizHostChange := metadata.HostChangeChartData{}
 	now := time.Now()
+
 	for _, info := range bizHost {
 		for _, biz := range bizInfo {
 			if info.Id != biz.BizID {
@@ -195,6 +196,11 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 			}
 			if len(bizHostChange) > 0 {
 				_, ok := bizHostChange[0].Data[biz.BizName]
+				// 上次同步在24小时内，则不同步
+				subHour := now.Sub(bizHostChange[0].Data[biz.BizName][0].Id)
+				if subHour < 24 {
+					return
+				}
 				if ok {
 					bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], metadata.BizHostChart{
 						Id:    now,

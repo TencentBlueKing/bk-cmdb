@@ -13,6 +13,7 @@
 package inst
 
 import (
+	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 
@@ -56,6 +57,8 @@ type Inst interface {
 	ToMapStr() mapstr.MapStr
 
 	IsDefault() bool
+
+	GetBizID() (int64, error)
 }
 
 var _ Inst = (*inst)(nil)
@@ -102,7 +105,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 	}
 
 	// search hosts
-	rsp, err := cli.clientSet.HostController().Host().GetHosts(context.Background(), cli.params.Header, queryInput)
+	rsp, err := cli.clientSet.CoreService().Host().GetHosts(context.Background(), cli.params.Header, queryInput)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -332,4 +335,17 @@ func (cli *inst) IsDefault() bool {
 	}
 
 	return false
+}
+
+func (cli *inst) GetBizID() (int64, error) {
+	switch cli.target.Object().ObjectID {
+	case common.BKInnerObjIDApp:
+		return cli.GetInstID()
+	case common.BKInnerObjIDSet:
+		return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
+	case common.BKInnerObjIDModule:
+		return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
+	default:
+		return metadata.ParseBizIDFromData(cli.datas)
+	}
 }

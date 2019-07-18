@@ -76,7 +76,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: privilege})
 }
 
-//CreateRolePri create role privilege
+// CreateRolePri create role privilege
 func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) {
 
 	language := util.GetLanguage(req.Request.Header)
@@ -118,7 +118,7 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
 }
 
-//UpdateRolePri update role privilege
+// UpdateRolePri update role privilege
 func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) {
 
 	language := util.GetLanguage(req.Request.Header)

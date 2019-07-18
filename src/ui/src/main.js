@@ -14,10 +14,12 @@ import './magicbox'
 import api from './api'
 import './setup/validate'
 import './setup/cookie'
+import './setup/permission'
 import './assets/scss/common.scss'
 import './assets/scss/admin-view.scss'
 import './assets/icon/cc-icon/style.css'
 import './assets/icon/bk-icon-2.0/iconfont.css'
+
 Vue.use(cmdbUI)
 Vue.use(clipboard)
 Vue.mixin(cmdbRequestMixin)

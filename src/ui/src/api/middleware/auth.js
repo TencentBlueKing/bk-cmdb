@@ -2,7 +2,8 @@
 import * as AUTH from '@/dictionary/auth'
 import { 
     isSameRequest,
-    isRedirectResponse
+    isRedirectResponse,
+    getRedirectId
 } from './util.js'
 
 const authActionMap = {
@@ -63,7 +64,8 @@ const origin = {
 }
 const redirect = {
     url: `topo/privilege/user/detail/0/${window.User.name}`,
-    method: 'get'
+    method: 'get',
+    redirectId: getRedirectId()
 }
 
 const isAdmin = window.User.admin === '1'

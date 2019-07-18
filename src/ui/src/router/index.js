@@ -25,6 +25,11 @@ import topology from '@/views/topology/router.config'
 import generalModel from '@/views/general-model/router.config'
 import permission from '@/views/permission/router.config'
 import operation from '@/views/operation/router.config'
+import template from '@/views/service-template/router.config'
+import category from '@/views/service-category/router.config'
+
+import serviceInstance from '@/views/service-instance/router.config'
+import synchronous from '@/views/business-synchronous/router.config'
 
 Vue.use(Router)
 
@@ -43,10 +48,14 @@ export const viewRouters = [
     resource,
     topology,
     operation,
+    ...template,
     ...generalModel,
     ...business,
     ...model,
-    ...permission
+    ...permission,
+    category,
+    synchronous,
+    ...serviceInstance
 ]
 
 const statusRouters = [
@@ -136,6 +145,26 @@ const setMenuState = to => {
     }
 }
 
+const setTitle = to => {
+    const { i18nTitle, title } = to.meta
+    let headerTitle
+    if (!i18nTitle && !title) {
+        return false
+    } else if (i18nTitle) {
+        headerTitle = router.app.$t(i18nTitle)
+    } else if (title) {
+        headerTitle = title
+    }
+    router.app.$store.commit('setHeaderTitle', headerTitle)
+}
+
+const setAuthScope = (to, from) => {
+    const auth = to.meta.auth || {}
+    if (typeof auth.setAuthScope === 'function') {
+        auth.setAuthScope(to, from, router.app)
+    }
+}
+
 const checkAuthDynamicMeta = (to, from) => {
     router.app.$store.commit('auth/clearDynamicMeta')
     const auth = to.meta.auth || {}
@@ -180,6 +209,7 @@ const setupStatus = {
 router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
+            setLoading(true)
             await cancelRequest()
             if (setupStatus.preload) {
                 await preload(router.app)
@@ -187,8 +217,9 @@ router.beforeEach((to, from, next) => {
             if (!isShouldShow(to)) {
                 next({ name: index.name })
             } else {
-                setLoading(true)
                 setMenuState(to)
+                setTitle(to)
+                setAuthScope(to, from)
                 checkAuthDynamicMeta(to, from)
 
                 const isAvailable = checkAvailable(to, from)

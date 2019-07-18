@@ -83,7 +83,7 @@
                         inst_id: this.id
                     }
                     if (this.dateRange.length) {
-                        condition.op_time = this.dateRange
+                        condition.op_time = [this.dateRange[0] + ' 00:00:00', this.dateRange[1] + ' 23:59:59']
                     }
                     if (this.operator) {
                         condition.operator = this.operator

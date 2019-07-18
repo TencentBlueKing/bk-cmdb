@@ -100,8 +100,8 @@
                             id: 'process_template_count',
                             name: this.$t("ServiceManagement['进程数量']")
                         }, {
-                            id: 'service_instance_count',
-                            name: this.$t("ServiceManagement['应用数量']")
+                            id: 'module_count',
+                            name: this.$t("ServiceManagement['应用模块数']")
                         }, {
                             id: 'modifier',
                             name: this.$t("ServiceManagement['修改人']")
@@ -141,6 +141,8 @@
                 return {
                     service_category_id: id,
                     page: {
+                        start: (this.table.pagination.current - 1) * this.table.pagination.size,
+                        limit: this.table.pagination.size,
                         sort: this.table.defaultSort
                     }
                 }
@@ -163,10 +165,10 @@
             ...mapActions('serviceClassification', ['searchServiceCategory']),
             async getTableData () {
                 const templateData = await this.getTemplateData()
+                this.table.pagination.count = templateData.count
                 this.table.allList = templateData.info.map(template => {
                     const result = {
-                        process_template_count: template['process_template_count'],
-                        service_instance_count: template['service_instance_count'],
+                        ...template,
                         ...template['service_template']
                     }
                     const secondaryCategory = this.allSecondaryList.find(classification => classification['id'] === result['service_category_id'])

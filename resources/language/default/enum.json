@@ -41,10 +41,14 @@
     "bk_firewall_property_protocol_enum_1": "待运营",
     "bk_firewall_property_protocol_enum_2": "运营中",
     "bk_firewall_property_protocol_enum_3": "已下架",
-  "host_property_bk_isp_name_enum_0": "其它",
-  "host_property_bk_isp_name_enum_1": "电信",
-  "host_property_bk_isp_name_enum_2": "联通",
-  "host_property_bk_isp_name_enum_3": "移动",
+    "bk_firewall_property_bk_biz_status_enum_1": "待运营",
+    "bk_firewall_property_bk_biz_status_enum_2": "运营中",
+    "bk_firewall_property_bk_biz_status_enum_3": "已下架",
+    
+    "host_property_bk_isp_name_enum_0": "其它",
+    "host_property_bk_isp_name_enum_1": "电信",
+    "host_property_bk_isp_name_enum_2": "联通",
+    "host_property_bk_isp_name_enum_3": "移动",
   
     "": ""
 }

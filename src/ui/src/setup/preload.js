@@ -1,7 +1,3 @@
-import {
-    SYSTEM_MANAGEMENT
-} from '@/dictionary/auth'
-
 import { viewRouters } from '@/router'
 
 const preloadConfig = {
@@ -9,13 +5,12 @@ const preloadConfig = {
     cancelWhenRouteChange: false
 }
 
-export function getSystemAuth (app) {
-    return app.$store.dispatch('auth/getAuth', {
-        type: 'system',
-        list: [SYSTEM_MANAGEMENT],
+export function getAdminEntranceAuth (app) {
+    return app.$store.dispatch('auth/getAdminEntranceAuth', {
+        params: {},
         config: {
             ...preloadConfig,
-            requestId: 'getSystemAuth'
+            requestId: 'getAdminEntranceAuth'
         }
     })
 }
@@ -77,7 +72,7 @@ export function getUserList (app) {
 export default async function (app) {
     try {
         await Promise.all([
-            getSystemAuth(app),
+            getAdminEntranceAuth(app),
             getAuthorizedBusiness(app)
         ])
     } catch (e) {

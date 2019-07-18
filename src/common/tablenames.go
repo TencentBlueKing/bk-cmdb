@@ -162,6 +162,9 @@ var AllTables = []string{
 	BKTableNameServiceInstance,
 	BKTableNameProcessTemplate,
 	BKTableNameProcessInstanceRelation,
+	BKTableNameChartConfig,
+	BKTableNameChartPosition,
+	BKTableNameChartData,
 }
 
 // GetInstTableName returns inst data table name

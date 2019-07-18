@@ -19,12 +19,12 @@ import (
 )
 
 func TestProcStat(t *testing.T) {
-	p, err := getProcFixtures(t).NewProc(26231)
+	p, err := getProcFixtures(t).Proc(26231)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := p.NewStat()
+	s, err := p.Stat()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,10 +118,10 @@ func testProcStat(pid int) (ProcStat, error) {
 	if err != nil {
 		return ProcStat{}, err
 	}
-	p, err := fs.NewProc(pid)
+	p, err := fs.Proc(pid)
 	if err != nil {
 		return ProcStat{}, err
 	}
 
-	return p.NewStat()
+	return p.Stat()
 }

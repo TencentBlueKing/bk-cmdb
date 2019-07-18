@@ -29,8 +29,10 @@ import (
 	"configcenter/src/scene_server/event_server/app/options"
 	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/remote"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/rpc"
 )
@@ -65,19 +67,26 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
-		if err != nil {
-			return fmt.Errorf("connect mongo server failed %s", err.Error())
-		}
-		process.Service.SetDB(db)
 
+		if err != nil {
+			return fmt.Errorf("connect tmserver  failed %s", err.Error())
+		}
+
+		var db dal.RDB
 		var rpccli rpc.Client
-		if process.Config.MongoDB.Transaction == "enable" {
+		if process.Config.MongoDB.Enable == "true" {
+			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+		} else {
 			rpccli, err = rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
 			if err != nil {
 				return fmt.Errorf("connect rpc server failed %s", err.Error())
 			}
+			db, err = remote.NewWithDiscover(process.Core.ServiceManageInterface.TMServer().GetServers)
 		}
+		if err != nil {
+			return fmt.Errorf("connect mongo server failed %s", err.Error())
+		}
+		process.Service.SetDB(db)
 
 		cache, err := redis.NewFromConfig(process.Config.Redis)
 		if err != nil {

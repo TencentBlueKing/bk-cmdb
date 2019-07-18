@@ -39,6 +39,7 @@ func (s *coreService) initProcess() {
 	s.addAction(http.MethodPost, "/findmany/process/service_instance", s.ListServiceInstances, nil)
 	s.addAction(http.MethodPut, "/update/process/service_instance/{service_instance_id}", s.UpdateServiceInstance, nil)
 	s.addAction(http.MethodDelete, "/delete/process/service_instance", s.DeleteServiceInstance, nil)
+	s.addAction(http.MethodPost, "/update/process/service_instance_name/{service_instance_id}", s.ReconstructServiceInstanceName, nil)
 
 	// process template
 	s.addAction(http.MethodPost, "/create/process/process_template", s.CreateProcessTemplate, nil)
@@ -56,4 +57,6 @@ func (s *coreService) initProcess() {
 	s.addAction(http.MethodDelete, "/delete/process/process_instance_relation", s.DeleteProcessInstanceRelation, nil)
 
 	s.addAction(http.MethodGet, "/find/process/business_default_set_module_info/{bk_biz_id}", s.GetBusinessDefaultSetModuleInfo, nil)
+	s.addAction(http.MethodDelete, "/delete/process/module_bound_template/{bk_module_id}", s.RemoveTemplateBindingOnModule, nil)
+	s.addAction(http.MethodPost, "/findmany/process/proc2module", s.GetProc2Module, nil)
 }

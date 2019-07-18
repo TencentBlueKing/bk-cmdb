@@ -21,9 +21,9 @@ var expectSystem = System{
 	SystemName:         SystemNameCMDB,
 	Desc:               "蓝鲸配置平台（CMDB）",
 	ReleatedScopeTypes: strings.Join([]string{ScopeTypeIDBiz, ScopeTypeIDSystem}, ";"),
-	Managers:           "system;admin",
-	Creator:            "system",
-	Updater:            "system",
+	Managers:           "admin",
+	Creator:            "admin",
+	Updater:            "admin",
 }
 
 var expectSystemResourceType = []ResourceType{
