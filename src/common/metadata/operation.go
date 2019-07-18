@@ -27,6 +27,7 @@ type ChartConfig struct {
 	Width      string    `json:"width" bson:"width"`
 	ChartType  string    `json:"chart_type" bson:"chart_type"`
 	Field      string    `json:"field" bson:"field"`
+	XAxisCount int64     `json:"x_axis_count" bson:"x_axis_count"`
 }
 
 type ChartPosition struct {
