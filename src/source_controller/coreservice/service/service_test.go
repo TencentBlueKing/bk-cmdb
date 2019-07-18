@@ -40,7 +40,7 @@ var defaultHeader = func() http.Header {
 
 func startCoreService(t *testing.T, ip string, port uint) {
 
-	// create a core service
+	// create a logics service
 	coreService := service.New()
 
 	// register the server hander

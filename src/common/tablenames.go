@@ -95,17 +95,17 @@ const (
 	BKTableNameCloudResourceConfirm   = "cc_CloudResourceConfirm"
 	BKTableNameResourceConfirmHistory = "cc_ResourceConfirmHistory"
 
+	// Operation tables
+	BKTableNameChartConfig   = "cc_ChartConfig"
+	BKTableNameChartPosition = "cc_ChartPosition"
+	BKTableNameChartData     = "cc_ChartData"
+
 	// process tables
 	BKTableNameServiceCategory         = "cc_ServiceCategory"
 	BKTableNameServiceTemplate         = "cc_ServiceTemplate"
 	BKTableNameServiceInstance         = "cc_ServiceInstance"
 	BKTableNameProcessTemplate         = "cc_ProcessTemplate"
 	BKTableNameProcessInstanceRelation = "cc_ProcessInstanceRelation"
-
-	// Operation tables
-	BKTableNameChartConfig   = "cc_ChartConfig"
-	BKTableNameChartPosition = "cc_ChartPosition"
-	BKTableNameChartData     = "cc_ChartData"
 )
 
 // AllTables alltables
@@ -154,6 +154,9 @@ var AllTables = []string{
 	BKTableNameResourceConfirmHistory,
 	BKTableNameObjUnique,
 	BKTableNameAsstDes,
+	BKTableNameChartConfig,
+	BKTableNameChartPosition,
+	BKTableNameChartData,
 	BKTableNameServiceCategory,
 	BKTableNameServiceTemplate,
 	BKTableNameServiceInstance,

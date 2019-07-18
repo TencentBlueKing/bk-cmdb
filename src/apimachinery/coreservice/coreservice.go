@@ -89,6 +89,7 @@ func (c *coreService) Audit() auditlog.AuditClientInterface {
 
 func (c *coreService) Process() process.ProcessInterface {
 	return process.NewProcessInterfaceClient(c.restCli)
+
 }
 
 func (c *coreService) Operation() operation.OperationClientInterface {

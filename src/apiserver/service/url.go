@@ -18,7 +18,7 @@ import (
 	"regexp"
 	"strings"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 )
 
 // URLPath url path filter

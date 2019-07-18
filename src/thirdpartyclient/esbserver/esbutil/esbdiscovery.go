@@ -46,11 +46,13 @@ func NewEsbConfigServ(srvChan chan EsbConfig) *EsbConfigServ {
 }
 
 func (esb *EsbConfigServ) GetEsbServDiscoveryInterace() EsbServDiscoveryInterace {
+
 	// mabye will deal some core about server
 	return esb
 }
 
 func (esb *EsbConfigServ) GetServers() ([]string, error) {
+
 	// mabye will deal some core about server
 	esb.RLock()
 	defer esb.RUnlock()

@@ -189,8 +189,8 @@ type Core interface {
 	DataSynchronizeOperation() DataSynchronizeOperation
 	HostOperation() HostOperation
 	AuditOperation() AuditOperation
-	ProcessOperation() ProcessOperation
 	StatisticOperation() StatisticOperation
+	ProcessOperation() ProcessOperation
 	LabelOperation() LabelOperation
 }
 
@@ -252,8 +252,8 @@ type core struct {
 	topo            TopoOperation
 	host            HostOperation
 	audit           AuditOperation
-	process         ProcessOperation
 	operation       StatisticOperation
+	process         ProcessOperation
 	label           LabelOperation
 }
 
@@ -269,8 +269,8 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		topo:            topo,
 		host:            host,
 		audit:           audit,
-		process:         process,
 		operation:       operation,
+		process:         process,
 		label:           label,
 	}
 }

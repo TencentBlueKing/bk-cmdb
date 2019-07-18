@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/coreservice/app/options"
@@ -57,6 +58,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	coreService := coresvr.New()
 	coreSvr.Service = coreService
 
+	webhandler := coreService.WebService()
+	webhandler.ServiceErrorHandler(rdapi.ServiceErrorHandler)
+
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: coreSvr.onCoreServiceConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
@@ -91,7 +95,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return err
 	}
-	if err := backbone.StartServer(ctx, engine, coreService.WebService()); err != nil {
+	if err := backbone.StartServer(ctx, engine, webhandler); err != nil {
 		return err
 	}
 	select {
