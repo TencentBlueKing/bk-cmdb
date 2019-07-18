@@ -47,7 +47,7 @@
             :title="`${$t('BusinessTopology[\'添加进程\']')}(${name})`"
             :is-show.sync="processForm.show"
             :before-close="handleBeforeClose">
-            <cmdb-form slot="content"
+            <cmdb-form slot="content" v-if="processForm.show"
                 ref="processForm"
                 :type="processForm.type"
                 :inst="processForm.instance"
