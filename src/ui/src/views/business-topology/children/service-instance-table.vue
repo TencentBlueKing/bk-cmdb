@@ -160,7 +160,6 @@
         },
         data () {
             return {
-                tippyOptions: {},
                 editLabel: {
                     show: false,
                     list: []
@@ -255,9 +254,6 @@
             if (this.expanded) {
                 this.getServiceProcessList()
             }
-        },
-        mounted () {
-            this.tippyOptions.appendTo = this.$refs.tippyContent
         },
         methods: {
             async getProcessProperties () {
@@ -553,7 +549,6 @@
 </style>
 
 <style lang="scss">
-
     .tips-label-list {
         .label-item {
             @include inlineBlock;
