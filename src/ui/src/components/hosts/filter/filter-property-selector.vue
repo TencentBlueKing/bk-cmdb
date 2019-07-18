@@ -35,6 +35,7 @@
 </template>
 
 <script>
+    import { mapState } from 'vuex'
     export default {
         props: {
             properties: {
@@ -51,6 +52,7 @@
             }
         },
         computed: {
+            ...mapState('hosts', ['collection']),
             groups () {
                 return Object.keys(this.properties).map(modelId => {
                     const model = this.$store.getters['objectModelClassify/getModelById'](modelId) || {}
@@ -81,6 +83,9 @@
         watch: {
             properties () {
                 this.setSelection()
+            },
+            collection () {
+                this.setSelectionState()
             }
         },
         created () {
@@ -96,12 +101,31 @@
                 })
                 this.selection = selection
             },
+            setSelectionState () {
+                const collection = this.collection
+                if (collection) {
+                    const selectedCondition = JSON.parse(collection.query_params)
+                    this.selection.forEach(select => {
+                        const selected = selectedCondition.some(condition => {
+                            return condition.field === select.bk_property_id
+                                && condition.bk_obj_id === select.bk_obj_id
+                        })
+                        select.__selected__ = selected
+                    })
+                } else {
+                    this.selection.forEach(select => {
+                        select.__selected__ = false
+                    })
+                }
+            },
             async confirm () {
                 try {
                     const selectedList = this.selectedSelection.map(selection => {
                         return {
                             bk_obj_id: selection.bk_obj_id,
-                            bk_property_id: selection.bk_property_id
+                            bk_property_id: selection.bk_property_id,
+                            operator: '',
+                            value: ''
                         }
                     })
                     const key = this.$route.meta.filterPropertyKey

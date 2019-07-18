@@ -509,7 +509,7 @@
 
 <style lang="scss" scoped>
     .form-objuser {
-        height: 36px;
+        height: 32px;
         font-size: 14px;
         cursor: text;
         .objuser-layout {
