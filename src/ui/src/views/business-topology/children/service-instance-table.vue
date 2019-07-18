@@ -14,10 +14,18 @@
                     <li class="menu-item"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
-                        <button class="menu-button"
-                            @click="menu.handler">
-                            {{menu.name}}
-                        </button>
+                        <span class="menu-span"
+                            v-cursor="{
+                                active: !$isAuthorized($OPERATION[menu.auth]),
+                                auth: [$OPERATION[menu.auth]]
+                            }">
+                            <bk-button class="menu-button"
+                                :text="true"
+                                :disabled="!$isAuthorized($OPERATION[menu.auth])"
+                                @click="menu.handler">
+                                {{menu.name}}
+                            </bk-button>
+                        </span>
                     </li>
                 </ul>
             </cmdb-dot-menu>
@@ -27,17 +35,25 @@
                     <span>{{$t('BusinessTopology["标签"]')}}：</span>
                 </div>
                 <div class="label-list fl">
-                    <span class="label-item" :key="index" v-for="(label, index) in labelShowList">{{`${label.key}：${label.value}`}}</span>
-                    <div class="label-item label-tips"
-                        ref="tipsLabelContainer"
-                        v-if="labelTipsList.length"
-                        @mouseenter="handleShowTipsLabel"
-                        @mouseleave="handleCloseTipsLabel">
-                        <span>...</span>
-                        <div class="tips-label-list" ref="tipsLabel" v-click-outside="handleCloseTipsLabel" v-show="tipsLabel.show">
-                            <span class="label-item" :key="index" v-for="(label, index) in labelTipsList">{{`${label.key}：${label.value}`}}</span>
-                        </div>
+                    <div class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelShowList">
+                        <span>{{label.key}}</span>
+                        <span>:</span>
+                        <span>{{label.value}}</span>
                     </div>
+                    <bk-popover class="label-item label-tips"
+                        v-if="labelTipsList.length"
+                        theme="light"
+                        :width="290"
+                        placement="top-end">
+                        <span>...</span>
+                        <div class="tips-label-list" slot="content">
+                            <span class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelTipsList">
+                                <span>{{label.key}}</span>
+                                <span>:</span>
+                                <span>{{label.value}}</span>
+                            </span>
+                        </div>
+                    </bk-popover>
                 </div>
             </div>
         </div>
@@ -52,14 +68,30 @@
             </bk-table-column>
             <bk-table-column :label="$t('Common[\'操作\']')">
                 <template slot-scope="{ row }">
-                    <button class="text-primary mr10"
-                        @click="handleEditProcess(row)">
-                        {{$t('Common["编辑"]')}}
-                    </button>
-                    <button class="text-primary" v-if="!withTemplate"
-                        @click="handleDeleteProcess(row)">
-                        {{$t('Common["删除"]')}}
-                    </button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_PROCESS),
+                            auth: [$OPERATION.U_PROCESS]
+                        }">
+                        <bk-button class="mr10"
+                            :text="true"
+                            :disabled="!$isAuthorized($OPERATION.U_PROCESS)"
+                            @click="handleEditProcess(row)">
+                            {{$t('Common["编辑"]')}}
+                        </bk-button>
+                    </span>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.D_PROCESS),
+                            auth: [$OPERATION.D_PROCESS]
+                        }">
+                        <bk-button v-if="!withTemplate"
+                            :text="true"
+                            :disabled="!$isAuthorized($OPERATION.D_PROCESS)"
+                            @click="handleDeleteProcess(row)">
+                            {{$t('Common["删除"]')}}
+                        </bk-button>
+                    </span>
                 </template>
             </bk-table-column>
             <template slot="empty">
@@ -71,17 +103,32 @@
                         </button>
                     </i18n>
                 </template>
-                <button class="add-process-button text-primary" v-else
-                    @click.stop="handleAddProcess">
-                    <i class="bk-icon icon-plus"></i>
-                    <span>{{$t('BusinessTopology["添加进程"]')}}</span>
-                </button>
+                <span style="display: inline-block;" v-else
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_PROCESS),
+                        auth: [$OPERATION.C_PROCESS]
+                    }">
+                    <button class="add-process-button text-primary"
+                        :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
+                        @click.stop="handleAddProcess">
+                        <i class="bk-icon icon-plus"></i>
+                        <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+                    </button>
+                </span>
             </template>
             <div class="add-process-options" v-if="!withTemplate && list.length" slot="append">
-                <button class="add-process-button text-primary" @click="handleAddProcess">
-                    <i class="bk-icon icon-plus"></i>
-                    <span>{{$t('BusinessTopology["添加进程"]')}}</span>
-                </button>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_PROCESS),
+                        auth: [$OPERATION.C_PROCESS]
+                    }">
+                    <button class="add-process-button text-primary"
+                        :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
+                        @click="handleAddProcess">
+                        <i class="bk-icon icon-plus"></i>
+                        <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+                    </button>
+                </span>
             </div>
         </bk-table>
         <bk-dialog class="bk-dialog-no-padding"
@@ -113,13 +160,13 @@
         },
         data () {
             return {
+                tippyOptions: {},
                 editLabel: {
                     show: false,
                     list: []
                 },
                 tipsLabel: {
                     show: false,
-                    instance: null,
                     id: null
                 },
                 show: true,
@@ -141,18 +188,22 @@
             instanceMenu () {
                 const menu = [{
                     name: this.$t('BusinessTopology["编辑标签"]'),
-                    handler: this.handleShowEditLabel
+                    handler: this.handleShowEditLabel,
+                    auth: 'U_SERVICE_INSTANCE'
                 }, {
                     name: this.$t('Common["删除"]'),
-                    handler: this.handleDeleteInstance
+                    handler: this.handleDeleteInstance,
+                    auth: 'D_SERVICE_INSTANCE'
                 }]
                 if (!this.withTemplate) {
                     menu.unshift({
                         name: this.$t('BusinessTopology["添加进程"]'),
-                        handler: this.handleAddProcess
+                        handler: this.handleAddProcess,
+                        auth: 'C_PROCESS'
                     }, {
                         name: this.$t('BusinessTopology["克隆"]'),
-                        handler: this.handleCloneInstance
+                        handler: this.handleCloneInstance,
+                        auth: 'C_PROCESS'
                     })
                 }
                 return menu
@@ -173,9 +224,9 @@
             labelList () {
                 const list = []
                 const labels = this.instance.labels
-                labels && Object.keys(labels).forEach(key => {
+                labels && Object.keys(labels).forEach((key, index) => {
                     list.push({
-                        id: this.instance.id,
+                        id: index,
                         key: key,
                         value: labels[key]
                     })
@@ -204,6 +255,9 @@
             if (this.expanded) {
                 this.getServiceProcessList()
             }
+        },
+        mounted () {
+            this.tippyOptions.appendTo = this.$refs.tippyContent
         },
         methods: {
             async getProcessProperties () {
@@ -286,7 +340,12 @@
                         moduleId: this.module.bk_module_id
                     },
                     query: {
-                        from: this.$route.fullPath,
+                        from: {
+                            name: this.$route.name,
+                            query: {
+                                module: this.module.bk_module_id
+                            }
+                        },
                         title: this.instance.name
                     }
                 })
@@ -387,27 +446,6 @@
                 } catch (e) {
                     console.error(e)
                 }
-            },
-            handleCloseTipsLabel () {
-                this.tipsLabel.instance && this.tipsLabel.instance.destroy()
-                this.tipsLabel.show = false
-            },
-            handleShowTipsLabel (event) {
-                if (this.tipsLabel.show) {
-                    this.handleCloseTipsLabel()
-                    return
-                }
-                this.tipsLabel.show = true
-                this.tipsLabel.instance = this.$tooltips({
-                    duration: -1,
-                    theme: 'light',
-                    zIndex: 9999,
-                    width: 290,
-                    placements: ['bottom'],
-                    container: this.$refs.tipsLabelContainer,
-                    target: event.target
-                })
-                this.tipsLabel.instance.$el.append(this.$refs.tipsLabel)
             }
         }
     }
@@ -451,28 +489,31 @@
         min-width: 74px;
         padding: 6px 0;
         .menu-item {
+            .menu-span {
+                display: block;
+            }
             .menu-button {
                 display: block;
                 width: 100%;
                 height: 32px;
-                padding: 0 13px;
                 line-height: 32px;
-                outline: 0;
-                border: none;
-                text-align: left;
                 color: #63656E;
                 font-size: 12px;
-                background-color: #fff;
+                height: 32px;
+                padding: 0 13px;
+                text-align: left;
                 &:hover {
                     background-color: #E1ECFF;
                     color: #3A84FF;
+                }
+                &:disabled {
+                    color: #dcdee5;
                 }
             }
         }
     }
     .instance-label {
-        display: inline-block;
-        vertical-align: middle;
+        @include inlineBlock;
         font-size: 12px;
         .icon-cc-label {
             color: #979ba5;
@@ -481,27 +522,54 @@
         .label-list {
             padding-left: 4px;
             line-height: 38px;
+            font-size: 0;
             .label-item {
-                display: inline-block;
+                @include inlineBlock;
+                font-size: 12px;
                 height: 20px;
                 line-height: 20px;
-                vertical-align: middle;
                 margin-right: 4px;
                 padding: 0 6px;
                 color: #979ba5;
                 background-color: #fafbfd;
                 border-radius: 2px;
-            }
-            .label-tips:hover {
-                background-color: #f0f1f5;
-            }
-            .tips-label-list {
-                .label-item {
-                    line-height: 18px;
-                    color: #979ba5;
-                    border: 1px solid #dcdee5;
-                    margin: 5px 2px;
+                &>span {
+                    @include ellipsis;
+                    display: inline-block;
+                    max-width: 54px;
                 }
+            }
+            .label-tips {
+                padding: 0;
+                .bk-tooltip-ref span {
+                    padding: 0 6px;
+                }
+                &:hover {
+                    background-color: #f0f1f5;
+                }
+            }
+        }
+    }
+</style>
+
+<style lang="scss">
+
+    .tips-label-list {
+        .label-item {
+            @include inlineBlock;
+            font-size: 12px;
+            height: 20px;
+            line-height: 18px;
+            margin: 5px 2px;
+            padding: 0 6px;
+            color: #979ba5;
+            background-color: #fafbfd;
+            border: 1px solid #dcdee5;
+            border-radius: 2px;
+            &>span {
+                @include ellipsis;
+                display: inline-block;
+                max-width: 54px;
             }
         }
     }

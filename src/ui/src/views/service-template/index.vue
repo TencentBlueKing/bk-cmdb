@@ -7,7 +7,18 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="template-filter clearfix">
-            <bk-button class="fl mr10" theme="primary" @click="operationTemplate()">{{$t("Common['新建']")}}</bk-button>
+            <span class="fl mr10"
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
+                    auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                }">
+                <bk-button
+                    theme="primary"
+                    :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
+                    @click="operationTemplate()">
+                    {{$t("Common['新建']")}}
+                </bk-button>
+            </span>
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
@@ -56,21 +67,36 @@
             </bk-table-column>
             <bk-table-column prop="operation" :label="$t('Common[\'操作\']')">
                 <template slot-scope="{ row }">
-                    <button class="text-primary mr10"
-                        @click.stop="operationTemplate(row['id'])">
-                        {{$t('Common["编辑"]')}}
-                    </button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.U_SERVICE_TEMPLATE]
+                        }">
+                        <bk-button class="mr10"
+                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_TEMPLATE)"
+                            :text="true"
+                            @click.stop="operationTemplate(row['id'])">
+                            {{$t('Common["编辑"]')}}
+                        </bk-button>
+                    </span>
                     <span class="text-primary"
                         style="color: #c4c6cc !important; cursor: not-allowed;"
-                        v-if="row['service_instance_count']"
+                        v-if="row['module_count'] && $isAuthorized($OPERATION.D_SERVICE_TEMPLATE)"
                         v-bk-tooltips.top="$t('ServiceManagement[\'不可删除\']')">
                         {{$t('Common["删除"]')}}
                     </span>
-                    <button class="text-primary"
-                        v-else
-                        @click.stop="deleteTemplate(row)">
-                        {{$t('Common["删除"]')}}
-                    </button>
+                    <span v-else
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.D_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.D_SERVICE_TEMPLATE]
+                        }">
+                        <bk-button
+                            :disabled="!$isAuthorized($OPERATION.D_SERVICE_TEMPLATE)"
+                            :text="true"
+                            @click.stop="deleteTemplate(row)">
+                            {{$t('Common["删除"]')}}
+                        </bk-button>
+                    </span>
                 </template>
             </bk-table-column>
         </bk-table>

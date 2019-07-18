@@ -32,11 +32,17 @@
             </bk-table-column>
         </bk-table>
         <div class="page-options">
-            <bk-button class="options-button" theme="primary"
-                :disabled="!!repeatedProcesses.length"
-                @click="doClone">
-                {{$t('Common["确定"]')}}
-            </bk-button>
+            <span
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                    auth: [$OPERATION.C_SERVICE_INSTANCE]
+                }">
+                <bk-button class="options-button" theme="primary"
+                    :disabled="!!repeatedProcesses.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                    @click="doClone">
+                    {{$t('Common["确定"]')}}
+                </bk-button>
+            </span>
             <bk-button class="options-button" @click="backToModule">{{$t('Common["取消"]')}}</bk-button>
         </div>
         <bk-sideslider
