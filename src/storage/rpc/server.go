@@ -17,6 +17,9 @@ import (
 	"io"
 	"net/http"
 	"runtime/debug"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
@@ -28,6 +31,9 @@ type Server struct {
 	codec          Codec
 	handlers       map[string]HandlerFunc
 	streamHandlers map[string]HandlerStreamFunc
+
+	reg             prometheus.Registerer
+	requestDuration *prometheus.HistogramVec
 }
 
 // NewServer returns new server
@@ -89,6 +95,26 @@ func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	blog.V(3).Infof("disconnect from rpc client %s", req.RemoteAddr)
+
+}
+
+// SetPrometheusRegister set prometheus register
+func (s *Server) SetPrometheusRegister(reg prometheus.Registerer) {
+	s.reg = reg
+	if s.reg != nil {
+		reg := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name: "cmdb_txc_requests_duration_millisecond",
+			Help: "txc handle request duration millisecond.",
+		}, []string{"info"})
+
+		if err := s.reg.Register(reg); err != nil {
+			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+				s.requestDuration = are.ExistingCollector.(*prometheus.HistogramVec)
+			} else {
+				panic(err)
+			}
+		}
+	}
 }
 
 // Handle regist new handler
@@ -144,6 +170,7 @@ func (s *ServerSession) Stop() {
 }
 
 func (s *ServerSession) readFromWire() error {
+
 	msg := Message{codec: s.srv.codec}
 	err := s.wire.Read(&msg)
 	if err == io.EOF {
@@ -151,6 +178,11 @@ func (s *ServerSession) readFromWire() error {
 	} else if err != nil {
 		blog.Errorf("Failed to read: %v", err)
 		return err
+	}
+
+	if s.srv.requestDuration != nil {
+		before := time.Now()
+		defer s.srv.requestDuration.WithLabelValues("handle process").Observe(util.ToMillisecond(time.Since(before)))
 	}
 
 	switch msg.typz {

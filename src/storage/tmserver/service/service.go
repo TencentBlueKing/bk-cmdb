@@ -58,6 +58,7 @@ func (s *coreService) SetConfig(engin *backbone.Engine, db mongodb.Client, txnCf
 	s.engine = engin
 	s.dbProxy = db
 	s.rpc = rpc.NewServer()
+	s.rpc.SetPrometheusRegister(s.engine.Metric().Registry())
 
 	// init all handlers
 	s.rpc.Handle(types.CommandRDBOperation, s.DBOperation)
@@ -89,6 +90,8 @@ func (s *coreService) WebService() *restful.WebService {
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 	restful.SetLogger(&blog.GlogWriter{})
 	restful.TraceLogger(&blog.GlogWriter{})
+
+	s.rpc.SetPrometheusRegister(s.engine.Metric().Registry())
 
 	ws := &restful.WebService{}
 	ws.Path("/txn/v3").Filter(s.engine.Metric().RestfulMiddleWare)
