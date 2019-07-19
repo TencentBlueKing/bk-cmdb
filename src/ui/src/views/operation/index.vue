@@ -353,8 +353,8 @@
                 if (item.report_type !== 'model_inst_change_chart') layout.hovermode = 'closest'
                 const options = {
                     displaylogo: false,
-                    displayModeBar: false,
-                    responsive: true
+                    displayModeBar: false
+                    // responsive: true
                 }
                 if (this.editType.openType === 'edit') {
                     Plotly.purge(myDiv)
