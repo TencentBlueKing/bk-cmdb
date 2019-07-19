@@ -276,6 +276,7 @@
                                 this.transData(res)
                             })
                         } else {
+                            this.delKeys(this.chartData, ['data', 'hasData', 'create_time'])
                             this.updateStatisticalCharts({ params: this.chartData }).then(res => {
                                 this.transData(res)
                             })
@@ -295,6 +296,12 @@
                 setTimeout(() => {
                     this.$emit('closeChart')
                 }, 300)
+            },
+            delKeys (obj, keys) {
+                keys.map((key) => {
+                    delete obj[key]
+                })
+                return obj
             }
         }
     }
