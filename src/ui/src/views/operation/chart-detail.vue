@@ -123,7 +123,7 @@
                         </label>
                         <label class="cmdb-form-item">
                             <div class="axis-picker">
-                                <input class="cmdb-form-input form-input" v-model="cal">
+                                <input class="cmdb-form-input form-input" v-model="chartData.x_axis_count">
                                 <i class="bk-icon icon-angle-down" @click="calculate('down')"></i>
                                 <i class="bk-icon icon-angle-up" @click="calculate('up')"></i>
                             </div>
@@ -165,14 +165,14 @@
                         bk_obj_id: 'host',
                         chart_type: 'pie',
                         field: 'bk_os_type',
-                        width: '50'
+                        width: '50',
+                        x_axis_count: 10
                     }
                 }
             }
         },
         data () {
             return {
-                cal: 10,
                 seList: {
                     host: [
                         {
@@ -247,14 +247,14 @@
             ]),
             calculate (flag) {
                 if (flag === 'up') {
-                    this.cal += 1
-                    if (this.cal > 25) {
-                        this.cal = 25
+                    this.chartData.x_axis_count += 1
+                    if (this.chartData.x_axis_count > 25) {
+                        this.chartData.x_axis_count = 25
                     }
                 } else {
-                    this.cal -= 1
-                    if (this.cal < 1) {
-                        this.cal = 1
+                    this.chartData.x_axis_count -= 1
+                    if (this.chartData.x_axis_count < 1) {
+                        this.chartData.x_axis_count = 1
                     }
                 }
             },
