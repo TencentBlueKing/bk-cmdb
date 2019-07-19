@@ -39,28 +39,29 @@
                     {{$t("CustomQuery['查询内容']")}}<span class="color-danger"> * </span>
                 </label>
                 <div class="userapi-content-display">
-                    <div class="text-content"
-                        v-cursor="{
-                            active: !editable,
-                            auth: [$OPERATION.U_CUSTOM_QUERY]
-                        }"
-                        :class="{
-                            open: attribute.isShow,
-                            disabled: !editable
-                        }"
-                        @click="toggleContentSelector(true)">
-                        <span class="default-name">{{attribute.defaultName}}</span><span v-if="selectedName.length">,{{selectedName}}</span>
-                        <i class="bk-icon icon-angle-down"></i>
-                    </div>
-                    <div class="userapi-content-display-mask" v-if="attribute.isShow"></div>
-                    <bk-select class="fl userapi-content-selector"
+                    <!-- <div class="userapi-content-display-mask" v-if="attribute.isShow"></div> -->
+                    <bk-select class="fl"
                         ref="content"
                         searchable
                         multiple
                         v-model="attribute.selected"
+                        :clearable="false"
                         :scroll-height="200"
                         :disabled="!editable"
                         @toggle="toggleContentSelector">
+                        <div class="text-content" slot="trigger"
+                            v-cursor="{
+                                active: !editable,
+                                auth: [$OPERATION.U_CUSTOM_QUERY]
+                            }"
+                            :class="{
+                                open: attribute.isShow,
+                                disabled: !editable
+                            }"
+                            @click="toggleContentSelector(true)">
+                            <span class="default-name">{{attribute.defaultName}}</span><span v-if="selectedName.length">,{{selectedName}}</span>
+                            <i class="bk-icon icon-angle-down"></i>
+                        </div>
                         <bk-option v-for="(option, index) in attribute.list"
                             :key="index"
                             :id="option.bk_property_id"
@@ -686,14 +687,14 @@
                 }
                 return property
             },
-            addUserProperties (key, property) {
+            addUserProperties (key) {
                 const {
                     'bk_property_id': propertyId,
                     'bk_property_name': propertyName,
                     'bk_property_type': propertyType,
                     'bk_asst_obj_id': asstObjId,
                     'bk_obj_id': objId
-                } = property
+                } = this.filterList.find(property => property.filter_id === key)
                 this.userProperties.push({
                     objId,
                     propertyId,
@@ -707,7 +708,7 @@
             },
             toggleContentSelector (isShow) {
                 if (this.editable) {
-                    isShow ? this.$refs.content.show() : this.$refs.content.close()
+                    // isShow ? this.$refs.content.show() : this.$refs.content.close()
                     this.attribute.isShow = isShow
                 }
             },
@@ -734,6 +735,7 @@
         .userapi-group {
             margin-bottom: 15px;
             width: 370px;
+            font-size: 14px;
             &.content {
                 margin-bottom: 30px;
             }
@@ -741,8 +743,16 @@
                 display: block;
                 margin-bottom: 5px;
             }
+            .business-selector {
+                width: 100%;
+            }
             .userapi-content-display {
                 position: relative;
+                height: 32px;
+                .bk-select {
+                    width: 100%;
+                    border: none !important;
+                }
                 .text-content {
                     position: relative;
                     border-radius: 2px;
