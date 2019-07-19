@@ -246,7 +246,7 @@
                             content.y.push(item.count)
                         }
                     })
-                    if (data.chart_type !== 'pie') content.width = (0.013 * content.x.length * (data.width === '50' ? 2 : 1))
+                    if (data.chart_type !== 'pie') content.width = (0.015 * data.x_axis_count * (data.width === '50' ? 2 : 1))
                     returnData.data.push(content)
                 } else if (res && !Array.isArray(res)) {
                     const barModel = {
@@ -337,15 +337,20 @@
                         rangemode: 'tozero'
                     },
                     xaxis: {
+                        type: 'category',
+                        range: [
+                            -0.5,
+                            item.x_axis_count - 0.5
+                        ],
+                        autorange: false,
                         tickformat: '%Y-%m-%d'
                     },
                     bargap: 0.1,
-                    showlegend: false,
-                    hovermode: 'tracename',
-                    bargroupgap: 0.9,
+                    bargroupgap: 1.0044 - (0.0401 * item.x_axis_count),
                     dragmode: 'pan',
                     colorway: ['#3A84FF', '#A3C5FD', '#59D178', '#94F5A4', '#38C1E2', '#A1EDFF', '#4159F9', '#7888F0', '#EFAF4B', '#FEDB89', '#FF5656', '#FD9C9C']
                 }
+                console.log(layout)
                 if (item.report_type !== 'model_inst_change_chart') layout.hovermode = 'closest'
                 const options = {
                     displaylogo: false,
@@ -444,13 +449,15 @@
                         bk_obj_id: host,
                         chart_type: 'pie',
                         field: '',
-                        width: '50'
+                        width: '50',
+                        x_axis_count: 10
                     }
                 }
                 this.editType.openType = type
                 this.isShow = true
             },
             async saveData (data) {
+                console.log(data)
                 let editList = []
                 if (this.editType.hostType === 'host') editList = this.hostData.disList
                 else editList = this.instData.disList
