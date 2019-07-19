@@ -68,6 +68,14 @@
                         this.submitList = []
                         this.removeKeysList = this.originList.map(label => label.key)
                     } else {
+                        const defaultList = this.defaultList
+                        for (let i = 0; i < defaultList.length; i++) {
+                            const index = list.findIndex(item => item.id !== -1 && defaultList[i].id === item.id && (defaultList[i].key !== item.key || defaultList[i].value !== item.value))
+                            if (index !== -1) {
+                                list[index].id = -1
+                                !this.removeKeysList.includes[defaultList[i].key] && this.removeKeysList.push(defaultList[i].key)
+                            }
+                        }
                         this.submitList = list
                     }
                 },

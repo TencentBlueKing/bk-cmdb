@@ -46,6 +46,6 @@ const (
 )
 
 // EventSubscriberCacheKey returns EventSubscriberCacheKey
-func EventSubscriberCacheKey(ownerID, eventtype string) string {
-	return EventCacheSubscribeformKey + ownerID + ":" + eventtype
+func EventSubscriberCacheKey(ownerID, eventType string) string {
+	return EventCacheSubscribeformKey + ownerID + ":" + eventType
 }

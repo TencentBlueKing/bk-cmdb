@@ -21,11 +21,17 @@
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
-                    <bk-button theme="primary"
-                        :disabled="!hosts.length"
-                        @click="handleConfirm">
-                        {{$t('Common["确定"]')}}
-                    </bk-button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                            auth: [$OPERATION.C_SERVICE_INSTANCE]
+                        }">
+                        <bk-button theme="primary"
+                            :disabled="!hosts.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                            @click="handleConfirm">
+                            {{$t('Common["确定"]')}}
+                        </bk-button>
+                    </span>
                     <bk-button @click="handleBackToModule">{{$t('Common["取消"]')}}</bk-button>
                 </div>
             </div>
@@ -135,7 +141,6 @@
     .create-label{
         display: block;
         width: 100px;
-        text-align: right;
         position: relative;
         line-height: 32px;
         &:after {

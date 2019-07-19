@@ -1,26 +1,27 @@
 <template>
-    <v-popover
-        trigger="manual"
+    <bk-popover
+        ref="popover"
+        trigger="click"
         placement="bottom-end"
-        popover-arrow-class=""
-        popover-class="dot-menu-popover"
+        :sticky="true"
+        :arrow="false"
+        theme="light"
         :class="['dot-menu', {
             'is-open': open
         }]"
-        :open="open"
-        @show="setVisible(true)"
-        @hide="setVisible(false)"
-        @click.native="setVisible(true)">
+        :always="open"
+        :on-show="show"
+        :on-hide="hide">
         <i class="menu-trigger"
             :style="{
                 '--color': color,
                 '--hoverColor': hoverColor
             }">
         </i>
-        <div class="menu-content" slot="popover" @click="handleContentClick">
+        <div class="menu-content" slot="content" @click="handleContentClick">
             <slot></slot>
         </div>
-    </v-popover>
+    </bk-popover>
 </template>
 
 <script>
@@ -46,12 +47,15 @@
             }
         },
         methods: {
-            setVisible (open) {
-                this.open = open
+            show () {
+                this.open = true
+            },
+            hide () {
+                this.open = false
             },
             handleContentClick () {
                 if (this.closeWhenMenuClick) {
-                    this.setVisible(false)
+                    this.$refs.popover.$refs.reference._tippy.hide()
                 }
             }
         }
@@ -73,8 +77,13 @@
                 box-shadow: 0 -5px 0 0 var(--hoverColor), 0 5px 0 0 var(--hoverColor);
             }
         }
+        /deep/.bk-tooltip-ref {
+            width: 100%;
+            outline: none;
+        }
         .menu-trigger {
             @include inlineBlock;
+            width: 100%;
             &:before {
                 @include inlineBlock;
                 content: "";

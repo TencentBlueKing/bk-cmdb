@@ -34,20 +34,9 @@
                                     </label>
                                 </div>
                                 <div class="property-value">
-                                    <component class="form-component" v-if="['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])"
+                                    <component class="form-component"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :class="{ error: errors.has(property['bk_property_id']) }"
                                         :disabled="type === 'update' && ['bk_func_name'].includes(property['bk_property_id'])"
-                                        :options="property.option || []"
-                                        :data-vv-name="property['bk_property_id']"
-                                        :data-vv-as="property['bk_property_name']"
-                                        v-validate="getValidateRules(property)"
-                                        v-model.trim="values[property['bk_property_id']]['value']"
-                                        @input="handleFuncNameInput(property['bk_property_id'])"
-                                        @on-change="handleFuncNameChange(property['bk_property_id'])">
-                                    </component>
-                                    <component class="form-component" v-else
-                                        :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
                                         :options="property.option || []"
                                         :allow-clear="['bind_ip'].includes(property['bk_property_id'])"
@@ -68,11 +57,17 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <bk-button class="button-save" theme="primary"
-                    :disabled="saveDisabled || $loading()"
-                    @click="handleSave">
-                    {{$t("Common['保存']")}}
-                </bk-button>
+                <span style="display: inline-block"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_PROCESS_TEMPLATE),
+                        auth: [$OPERATION.C_PROCESS_TEMPLATE]
+                    }">
+                    <bk-button class="button-save" theme="primary"
+                        :disabled="saveDisabled || $loading() || !$isAuthorized($OPERATION.C_PROCESS_TEMPLATE)"
+                        @click="handleSave">
+                        {{$t("Common['保存']")}}
+                    </bk-button>
+                </span>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>
@@ -149,13 +144,14 @@
                     //     'id': '4'
                     // }
                 ],
-                values: {},
+                values: {
+                    bk_func_name: ''
+                },
                 refrenceValues: {},
                 scrollbar: false,
                 groupState: {
                     none: true
-                },
-                autoInput: true
+                }
             }
         },
         computed: {
@@ -183,6 +179,14 @@
             },
             properties () {
                 this.initValues()
+            },
+            'values.bk_func_name.value': {
+                handler (newVal, oldValue) {
+                    if (this.values.bk_process_name.value === oldValue) {
+                        this.values.bk_process_name.value = newVal
+                    }
+                },
+                deep: true
             }
         },
         created () {
@@ -308,14 +312,6 @@
                     rules['float'] = true
                 }
                 return rules
-            },
-            handleFuncNameChange (id) {
-                this.autoInput = !this.values['bk_process_name']['value']
-            },
-            handleFuncNameInput (id) {
-                if (id === 'bk_func_name' && this.autoInput) {
-                    this.values['bk_process_name']['value'] = this.values['bk_func_name']['value']
-                }
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {

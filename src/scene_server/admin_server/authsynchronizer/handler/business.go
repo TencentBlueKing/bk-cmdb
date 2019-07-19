@@ -18,8 +18,8 @@ import (
 
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/synchronizer/meta"
-	"configcenter/src/scene_server/admin_server/synchronizer/utils"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/utils"
 )
 
 // HandleBusinessSync do sync all business to iam
