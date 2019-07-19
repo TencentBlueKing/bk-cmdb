@@ -121,6 +121,7 @@ func (o *OperationServer) UpdateOperationChart(ctx *rest.Contexts) {
 }
 
 func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
+	blog.Debug("111111111111111")
 	srvData := o.newSrvComm(ctx.Kit.Header)
 	inputParams := mapstr.MapStr{}
 	if err := ctx.DecodeInto(&inputParams); err != nil {
@@ -128,6 +129,7 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 		return
 	}
 
+	blog.Debug("input: %v", inputParams)
 	chart, err := o.CoreAPI.CoreService().Operation().SearchChartCommon(ctx.Kit.Ctx, ctx.Kit.Header, inputParams)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
@@ -166,6 +168,7 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 		return
 	}
 
+	blog.Debug("------------")
 	result, err := o.CoreAPI.CoreService().Operation().CommonAggregate(ctx.Kit.Ctx, ctx.Kit.Header, chart.Data.Info)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)

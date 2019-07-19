@@ -21,7 +21,6 @@ import (
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/healthz"
 	"configcenter/src/apimachinery/hostserver"
-	"configcenter/src/apimachinery/objcontroller"
 	"configcenter/src/apimachinery/procserver"
 	"configcenter/src/apimachinery/toposerver"
 	"configcenter/src/apimachinery/util"
@@ -35,7 +34,6 @@ type ClientSetInterface interface {
 	ApiServer() apiserver.ApiServerClientInterface
 	EventServer() eventserver.EventServerClientInterface
 
-	ObjectController() objcontroller.ObjControllerClientInterface
 	CoreService() coreservice.CoreServiceClientInterface
 
 	Healthz() healthz.HealthzInterface
@@ -98,16 +96,6 @@ func (cs *ClientSet) TopoServer() toposerver.TopoServerClientInterface {
 	}
 	cs.Mock.SetMockData = false
 	return toposerver.NewTopoServerClient(c, cs.version)
-}
-
-func (cs *ClientSet) ObjectController() objcontroller.ObjControllerClientInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.ObjectCtrl(),
-		Throttle: cs.throttle,
-		Mock:     cs.Mock,
-	}
-	return objcontroller.NewObjectControllerInterface(c, cs.version)
 }
 
 func (cs *ClientSet) ProcServer() procserver.ProcServerClientInterface {

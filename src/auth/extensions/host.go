@@ -423,7 +423,7 @@ func (am *AuthManager) GenDeleteHostBatchNoPermissionResp(hostIDs []int64) *meta
 	return &resp
 }
 
-func (am *AuthManager) GenMoveHostFromModuleToIdleFaultModuleResp(hostIDs []int64) *metadata.BaseResp {
+func (am *AuthManager) GenMoveBizHostToIdleFaultModule(hostIDs []int64) *metadata.BaseResp {
 	var p metadata.Permission
 	p.SystemID = authcenter.SystemIDCMDB
 	p.SystemName = authcenter.SystemNameCMDB
@@ -431,6 +431,48 @@ func (am *AuthManager) GenMoveHostFromModuleToIdleFaultModuleResp(hostIDs []int6
 	p.ScopeTypeName = authcenter.ScopeTypeIDBizName
 	p.ActionID = string(authcenter.Edit)
 	p.ActionName = authcenter.ActionIDNameMap[authcenter.Edit]
+
+	for _, id := range hostIDs {
+		p.Resources = append(p.Resources, []metadata.Resource{{
+			ResourceType:     string(authcenter.SysHostInstance),
+			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysHostInstance],
+			ResourceID:       strconv.FormatInt(id, 10),
+		}})
+	}
+
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	return &resp
+}
+
+func (am *AuthManager) GenEditBizHostNoPermissionResp(hostIDs []int64) *metadata.BaseResp {
+	var p metadata.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeType = authcenter.ScopeTypeIDBiz
+	p.ScopeTypeName = authcenter.ScopeTypeIDBizName
+	p.ActionID = string(authcenter.Edit)
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.Edit]
+
+	for _, id := range hostIDs {
+		p.Resources = append(p.Resources, []metadata.Resource{{
+			ResourceType:     string(authcenter.BizHostInstance),
+			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.BizHostInstance],
+			ResourceID:       strconv.FormatInt(id, 10),
+		}})
+	}
+
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	return &resp
+}
+
+func (am *AuthManager) GenMoveBizHostToResourcePoolNoPermissionResp(hostIDs []int64) *metadata.BaseResp {
+	var p metadata.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeType = authcenter.ScopeTypeIDBiz
+	p.ScopeTypeName = authcenter.ScopeTypeIDBizName
+	p.ActionID = string(authcenter.Delete)
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.Delete]
 
 	for _, id := range hostIDs {
 		p.Resources = append(p.Resources, []metadata.Resource{{
@@ -491,7 +533,7 @@ func (am *AuthManager) DryRunAuthorizeByHostsIDs(ctx context.Context, header htt
 
 	realResources, err := am.Authorize.DryRunRegisterResource(context.Background(), resources...)
 	if err != nil {
-		blog.Errorf("dry dun register failed, err: %+v", err)
+		blog.Errorf("dry run register failed, err: %+v", err)
 		return nil, err
 	}
 	blog.V(5).Infof("realResources is: %s, rid: %s", realResources, rid)

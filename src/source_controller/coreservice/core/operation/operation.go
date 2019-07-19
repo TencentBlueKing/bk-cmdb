@@ -13,15 +13,14 @@
 package operation
 
 import (
-	"configcenter/src/source_controller/coreservice/core/instances"
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal"
 )
 
@@ -31,7 +30,7 @@ type operationManager struct {
 	dbProxy dal.RDB
 }
 
-type M bson.M
+type M mapstr.MapStr
 
 func New(dbProxy dal.RDB) core.StatisticOperation {
 	return &operationManager{
@@ -78,6 +77,7 @@ func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam me
 
 func (m *operationManager) SearchOperationChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 
+	blog.Debug("here---------------")
 	condition := mapstr.MapStr{}
 	condition[common.OperationReportType] = inputParam.ReportType
 
@@ -94,6 +94,7 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 	commonCount := make([]metadata.StringIDCount, 0)
 	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
 
+	blog.Info("--------------")
 	attribute := metadata.Attribute{}
 	opt := mapstr.MapStr{}
 	opt[common.BKObjIDField] = inputParam.ObjID
@@ -117,7 +118,7 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 		}
 	}
 
-	option, err := instances.ParseEnumOption(attribute.Option)
+	option, err := instances.ParseEnumOption(ctx, attribute.Option)
 	if err != nil {
 		blog.Errorf("parse enum option fail, err:%v", err)
 		return nil, err

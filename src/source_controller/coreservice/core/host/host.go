@@ -26,7 +26,7 @@ var _ core.HostOperation = (*hostManager)(nil)
 type hostManager struct {
 	DbProxy    dal.RDB
 	Cache      *redis.Client
-	EventC     eventclient.Client
+	EventCli   eventclient.Client
 	moduleHost *transfer.TransferManager
 	dependent  transfer.OperationDependence
 }
@@ -37,9 +37,9 @@ func New(dbProxy dal.RDB, cache *redis.Client, dependent transfer.OperationDepen
 	coreMgr := &hostManager{
 		DbProxy:   dbProxy,
 		Cache:     cache,
-		EventC:    eventclient.NewClientViaRedis(cache, dbProxy),
+		EventCli:  eventclient.NewClientViaRedis(cache, dbProxy),
 		dependent: dependent,
 	}
-	coreMgr.moduleHost = transfer.New(dbProxy, cache, coreMgr.EventC, dependent)
+	coreMgr.moduleHost = transfer.New(dbProxy, cache, coreMgr.EventCli, dependent)
 	return coreMgr
 }

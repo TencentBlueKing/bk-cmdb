@@ -147,7 +147,7 @@ var (
 			CleanHostInSetOrModule,
 			MoveHostsToBusinessOrModule,
 			AddHostToResourcePool,
-			MoveHostToModule,
+			MoveBizHostToModule,
 		},
 	}
 

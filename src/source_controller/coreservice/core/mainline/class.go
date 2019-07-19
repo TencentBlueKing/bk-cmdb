@@ -13,6 +13,7 @@
 package mainline
 
 import (
+	"configcenter/src/common/util"
 	"context"
 	"fmt"
 
@@ -35,24 +36,26 @@ func NewModelMainline(proxy dal.RDB) (*ModelMainline, error) {
 	return modelMainline, nil
 }
 
-func (mm *ModelMainline) loadMainlineAssociations() error {
+func (mm *ModelMainline) loadMainlineAssociations(ctx context.Context) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	mongoCondition := mongo.NewCondition()
 	mongoCondition.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: common.AssociationKindMainline})
 
 	err := mm.dbProxy.Table(common.BKTableNameObjAsst).Find(mongoCondition.ToMapStr()).All(context.TODO(), &mm.associations)
 	if err != nil {
-		blog.Errorf("query topo model mainline association from db failed, %+v", err)
+		blog.Errorf("query topo model mainline association from db failed, %+v, rid: %s", err, rid)
 		return fmt.Errorf("query topo model mainline association from db failed, %+v", err)
 	}
-	blog.V(5).Infof("get topo model mainline associations result: %+v", mm.associations)
+	blog.V(5).Infof("get topo model mainline associations result: %+v, rid: %s", mm.associations, rid)
 	return nil
 }
 
-func (mm *ModelMainline) constructTopoTree() error {
+func (mm *ModelMainline) constructTopoTree(ctx context.Context) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	// step2: construct a tree fro associations
 	topoModelNodeMap := map[string]*metadata.TopoModelNode{}
 	for _, association := range mm.associations {
-		blog.V(5).Infof("association: %+v", association)
+		blog.V(5).Infof("association: %+v, rid: %s", association, rid)
 		parentObjectID := association.AsstObjID
 		if _, exist := topoModelNodeMap[parentObjectID]; exist == false {
 			topoModelNodeMap[parentObjectID] = &metadata.TopoModelNode{
@@ -77,18 +80,19 @@ func (mm *ModelMainline) constructTopoTree() error {
 		}
 		parentTopoModelNode.Children = append(parentTopoModelNode.Children, topoModelNodeMap[childObjectID])
 	}
-	blog.V(2).Infof("bizTopoModelNode: %+v", mm.root)
+	blog.V(2).Infof("bizTopoModelNode: %+v, rid: %s", mm.root, rid)
 	return nil
 }
 
-func (mm *ModelMainline) GetRoot(withDetail bool) (*metadata.TopoModelNode, error) {
-	if err := mm.loadMainlineAssociations(); err != nil {
-		blog.Errorf("get topo model failed, load model mainline associations failed, err: %+v", err)
+func (mm *ModelMainline) GetRoot(ctx context.Context, withDetail bool) (*metadata.TopoModelNode, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	if err := mm.loadMainlineAssociations(ctx); err != nil {
+		blog.Errorf("get topo model failed, load model mainline associations failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get topo model failed, load model mainline associations failed, err: %+v", err)
 	}
 
-	if err := mm.constructTopoTree(); err != nil {
-		blog.Errorf("get topo model failed, construct tree from model mainline associations failed, err: %+v", err)
+	if err := mm.constructTopoTree(ctx); err != nil {
+		blog.Errorf("get topo model failed, construct tree from model mainline associations failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get topo model failed, construct tree from model mainline associations failed, err: %+v", err)
 	}
 	if withDetail == true {

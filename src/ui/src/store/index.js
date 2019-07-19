@@ -48,6 +48,7 @@ import businessSynchronous from './modules/api/business-synchronous.js'
 import serviceInstance from './modules/api/service-instance.js'
 import processInstance from './modules/api/process-instance.js'
 import operationChart from './modules/api/operation-chart'
+import fullTextSearch from './modules/api/full-text-search.js'
 
 Vue.use(Vuex)
 
@@ -98,6 +99,7 @@ export default new Vuex.Store({
         businessSynchronous,
         serviceInstance,
         processInstance,
-        operationChart
+        operationChart,
+        fullTextSearch
     }
 })

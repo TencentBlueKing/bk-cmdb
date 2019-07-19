@@ -29,6 +29,8 @@ type Config struct {
 	Mongo                mongo.Config
 	ConfigMap            map[string]string
 	Auth                 authcenter.AuthConfig
+	FullTextSearch       string `json:"es.full_text_search"`
+	EsUrl                string `json:"es.url"`
 }
 
 func NewServerOption() *ServerOption {

@@ -175,7 +175,7 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 	}
 
 	if len(isRequired) > 0 {
-		blog.Errorf("%v", isRequired)
+		blog.Errorf("StartCloudSync required: %v, rid: %s", isRequired, srvData.rid)
 		resp.WriteEntity(meta.NewSuccessResp(isRequired))
 		return
 	}
@@ -220,7 +220,7 @@ func (s *Service) CreateResourceConfirm(req *restful.Request, resp *restful.Resp
 	for _, hostInfo := range cloudHostInfo {
 		addConfirm, ok := hostInfo["bk_confirm"].(bool)
 		if !ok {
-			blog.Errorf("interface convert to bool fail")
+			blog.Errorf("interface convert to bool fail, rid: %s", srvData.rid)
 			continue
 		}
 		if addConfirm {
@@ -229,7 +229,7 @@ func (s *Service) CreateResourceConfirm(req *restful.Request, resp *restful.Resp
 
 		attrConfirm, ok := hostInfo["bk_attr_confirm"].(bool)
 		if !ok {
-			blog.Errorf("interface convert to bool fail")
+			blog.Errorf("interface convert to bool fail, rid: %s", srvData.rid)
 			continue
 		}
 		if attrConfirm {

@@ -690,11 +690,11 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 
 	gResult, err := sh.lgc.CoreAPI.CoreService().Host().GetHosts(sh.ctx, sh.pheader, query)
 	if err != nil {
-		blog.Errorf("get hosts failed, err: %v", err)
+		blog.Errorf("get hosts failed, err: %v, rid: %s", err, sh.ccRid)
 		return err
 	}
 	if !gResult.Result {
-		blog.Errorf("get host failed, error code:%d, error message:%s", gResult.Code, gResult.ErrMsg)
+		blog.Errorf("get host failed, error code:%d, error message:%s, rid: %s", gResult.Code, gResult.ErrMsg, sh.ccRid)
 		return sh.ccErr.New(gResult.Code, gResult.ErrMsg)
 	}
 
@@ -756,7 +756,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	for _, moduleHostConfig := range moduleHostConfigArr {
 		hostIDArrItem, err := sh.lgc.GetHostIDByCond(sh.ctx, moduleHostConfig)
 		if err != nil {
-			blog.Errorf("GetHostIDByCond get hosts failed, err: %v", err)
+			blog.Errorf("GetHostIDByCond get hosts failed, err: %v, rid: %s", err, sh.ccRid)
 			return err
 		}
 		hostIDArr = append(hostIDArr, hostIDArrItem...)

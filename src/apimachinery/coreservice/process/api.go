@@ -134,18 +134,13 @@ func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, cate
 	return nil
 }
 
-func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
+func (p *process) ListServiceCategories(ctx context.Context, h http.Header, option metadata.ListServiceCategoriesOption) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleServiceCategoryWithStatisticsResult)
 	subPath := "/findmany/process/service_category"
 
-	input := map[string]interface{}{
-		"bk_biz_id":       bizID,
-		"with_statistics": withStatistics,
-	}
-
 	err := p.client.Post().
 		WithContext(ctx).
-		Body(input).
+		Body(option).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

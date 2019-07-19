@@ -45,11 +45,12 @@ func NewIdentifier(db dal.DB) *Identifier {
 	dbQuery := hostutil.NewDBExecQuery(db)
 	return &Identifier{
 		dbQuery:          dbQuery,
-		modulehosts:      make(map[int64][]metadata.ModuleHost, 0),
-		sets:             make(map[int64]metadata.SetInst, 0),
-		bizs:             make(map[int64]metadata.BizInst, 0),
-		clouds:           make(map[int64]metadata.CloudInst, 0),
-		hostProcRelation: make(map[int64][]metadata.HostIdentProcess, 0),
+		sets:             make(map[int64]metadata.SetInst),
+		modules:          make(map[int64]*metadata.ModuleInst),
+		bizs:             make(map[int64]metadata.BizInst),
+		clouds:           make(map[int64]metadata.CloudInst),
+		hostProcRelation: make(map[int64][]metadata.HostIdentProcess),
+		modulehosts:      make(map[int64][]metadata.ModuleHost),
 	}
 }
 

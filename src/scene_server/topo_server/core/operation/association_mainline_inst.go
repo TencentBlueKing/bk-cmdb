@@ -144,7 +144,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 	// fetch all parent instances.
 	_, parentInsts, err := cli.inst.FindInst(params, parent, defaultCond, false)
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to find parent object(%s) inst, err: %s", parent.Object().ObjectID, err.Error())
+		blog.Errorf("[operation-asst] failed to find parent object(%s) inst, err: %s, rid: %s", parent.Object().ObjectID, err.Error(), params.ReqID)
 		return err
 	}
 
@@ -154,7 +154,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 
 		id, err := parent.GetInstID()
 		if nil != err {
-			blog.Errorf("[operation-asst] failed to find the inst id, err: %s", err.Error())
+			blog.Errorf("[operation-asst] failed to find the inst id, err: %s, rid: %s", err.Error(), params.ReqID)
 			return err
 		}
 
@@ -174,17 +174,17 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 
 		// create the instance now.
 		if err = currentInst.Create(); nil != err {
-			blog.Errorf("[operation-asst] failed to create object(%s) default inst, err: %s", current.Object().ObjectID, err.Error())
+			blog.Errorf("[operation-asst] failed to create object(%s) default inst, err: %s, rid: %s", current.Object().ObjectID, err.Error(), params.ReqID)
 			return err
 		}
 		instID, err := currentInst.GetInstID()
 		if err != nil {
-			blog.Errorf("create mainline instance for obj: %s, but got invalid instance id, err :%v", current.Object().ObjectID, err)
+			blog.Errorf("create mainline instance for obj: %s, but got invalid instance id, err :%v, rid: %s", current.Object().ObjectID, err, params.ReqID)
 			return err
 		}
 		err = cli.authManager.RegisterInstancesByID(params.Context, params.Header, current.Object().ObjectID, instID)
 		if err != nil {
-			blog.Errorf("create mainline instance for object: %s, but register to auth center failed, err: %v", current.Object().ObjectID, err)
+			blog.Errorf("create mainline instance for object: %s, but register to auth center failed, err: %v, rid: %s", current.Object().ObjectID, err, params.ReqID)
 			return err
 		}
 
@@ -194,13 +194,13 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 			if io.EOF == err {
 				continue
 			}
-			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, err: %s", parent.GetObject().Object().ObjectID, err.Error())
+			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, err: %s, rid: %s", parent.GetObject().Object().ObjectID, err.Error(), params.ReqID)
 			return err
 		}
 
 		curInstID, err := currentInst.GetInstID()
 		if err != nil {
-			blog.Errorf("[operation-asst] failed to get the instID(%#v), err: %s", currentInst.ToMapStr(), err.Error())
+			blog.Errorf("[operation-asst] failed to get the instID(%#v), err: %s, rid: %s", currentInst.ToMapStr(), err.Error(), params.ReqID)
 			return err
 		}
 
@@ -211,7 +211,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 		for _, child := range childs {
 			// set the child's parent
 			if err = child.SetMainlineParentInst(parentID); nil != err {
-				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, err: %s", child.GetObject().Object().ObjectID, err.Error())
+				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, err: %s, rid: %s", child.GetObject().Object().ObjectID, err.Error(), params.ReqID)
 				return err
 			}
 		}
@@ -229,7 +229,7 @@ func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextPa
 
 	_, bizInsts, err := cli.inst.FindInst(params, obj, cond, false)
 	if nil != err {
-		blog.Errorf("[SearchMainlineAssociationInstTopo] FindInst for %+v failed: %v", cond, err)
+		blog.Errorf("[SearchMainlineAssociationInstTopo] FindInst for %+v failed: %v, rid: %s", cond, err, params.ReqID)
 		return nil, err
 	}
 
@@ -237,12 +237,12 @@ func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextPa
 	for _, biz := range bizInsts {
 		instID, err := biz.GetInstID()
 		if nil != err {
-			blog.Errorf("[SearchMainlineAssociationInstTopo] GetInstID for %+v failed: %v", biz, err)
+			blog.Errorf("[SearchMainlineAssociationInstTopo] GetInstID for %+v failed: %v, rid: %s", biz, err, params.ReqID)
 			return nil, err
 		}
 		instName, err := biz.GetInstName()
 		if nil != err {
-			blog.Errorf("[SearchMainlineAssociationInstTopo] GetInstName for %+v failed: %v", biz, err)
+			blog.Errorf("[SearchMainlineAssociationInstTopo] GetInstName for %+v failed: %v, rid: %s", biz, err, params.ReqID)
 			return nil, err
 		}
 
@@ -369,7 +369,7 @@ func (cli *association) fillMainlineChildInst(params types.ContextParams, object
 		return nil
 	}
 	if err != nil {
-		blog.Errorf("[fillMainlineChildInst] GetMainlineChildObject for %+v failed: %v", object, err)
+		blog.Errorf("[fillMainlineChildInst] GetMainlineChildObject for %+v failed: %v, rid: %s", object, err, params.ReqID)
 		return err
 	}
 
@@ -388,7 +388,7 @@ func (cli *association) fillMainlineChildInst(params types.ContextParams, object
 
 	_, childInsts, err := cli.inst.FindInst(params, childObj, &metadata.QueryInput{Condition: cond.ToMapStr()}, false)
 	if err != nil {
-		blog.Errorf("[fillMainlineChildInst] FindInst for %+v failed: %v", cond.ToMapStr(), err)
+		blog.Errorf("[fillMainlineChildInst] FindInst for %+v failed: %v, rid: %s", cond.ToMapStr(), err, params.ReqID)
 		return err
 	}
 
@@ -398,17 +398,17 @@ func (cli *association) fillMainlineChildInst(params types.ContextParams, object
 	for _, childInst := range childInsts {
 		childInstID, err := childInst.GetInstID()
 		if err != nil {
-			blog.Errorf("[fillMainlineChildInst] GetInstID for %+v failed: %v", childInst, err)
+			blog.Errorf("[fillMainlineChildInst] GetInstID for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
 			return err
 		}
 		childInstName, err := childInst.GetInstName()
 		if nil != err {
-			blog.Errorf("[fillMainlineChildInst] GetInstName for %+v failed: %v", childInst, err)
+			blog.Errorf("[fillMainlineChildInst] GetInstName for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
 			return err
 		}
 		parentID, err := childInst.GetParentID()
 		if err != nil {
-			blog.Errorf("[fillMainlineChildInst] GetParentID for %+v failed: %v", childInst, err)
+			blog.Errorf("[fillMainlineChildInst] GetParentID for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
 			return err
 		}
 

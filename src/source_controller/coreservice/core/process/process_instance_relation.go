@@ -108,9 +108,9 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, o
 	filter[common.MetadataField] = md.ToMapStr()
 
 	// filter with matching any sub category
-	if option.ServiceInstanceIDs != nil && len(*option.ServiceInstanceIDs) > 0 {
+	if option.ServiceInstanceIDs != nil && len(option.ServiceInstanceIDs) > 0 {
 		filter[common.BKServiceInstanceIDField] = map[string]interface{}{
-			common.BKDBIN: *option.ServiceInstanceIDs,
+			common.BKDBIN: option.ServiceInstanceIDs,
 		}
 	}
 
@@ -122,13 +122,14 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, o
 		filter[common.BKHostIDField] = option.HostID
 	}
 
-	if option.ProcessIDs != nil && len(*option.ProcessIDs) > 0 {
+	if option.ProcessIDs != nil && len(option.ProcessIDs) > 0 {
 		processIDFilter := map[string]interface{}{
-			common.BKDBIN: *option.ProcessIDs,
+			common.BKDBIN: option.ProcessIDs,
 		}
 		filter[common.BKProcIDField] = processIDFilter
 	}
 
+	blog.Debug("filter: %v", filter)
 	var total uint64
 	var err error
 	if total, err = p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Count(ctx.Context); nil != err {

@@ -16,7 +16,8 @@
             agent: <%= htmlWebpackPlugin.options.config.AGENT_URL %>,
             authscheme: <%= htmlWebpackPlugin.options.config.AUTH_SCHEME %> || 'internal',
             authCenter: <%= htmlWebpackPlugin.options.config.AUTH_CENTER %>,
-            buildVersion: '<%= htmlWebpackPlugin.options.config.BUILD_VERSION %>'
+            buildVersion: '<%= htmlWebpackPlugin.options.config.BUILD_VERSION %>',
+            fullTextSearch: <%= htmlWebpackPlugin.options.config.FULL_TEXT_SEARCH %> || 'off',
         }
         window.User = {
             admin: <%= htmlWebpackPlugin.options.config.USER_ROLE %>,

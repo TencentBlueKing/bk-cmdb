@@ -174,7 +174,7 @@ type ProcessInstanceDetail struct {
 
 type ListProcessTemplateWithServiceTemplateInput struct {
 	Metadata            Metadata `json:"metadata"`
-	ProcessTemplatesIDs *[]int64 `json:"process_template_ids"`
+	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
 	ServiceTemplateID   int64    `json:"service_template_id"`
 	Page                BasePage `json:"page" field:"page" bson:"page"`
 }
@@ -185,9 +185,11 @@ type SyncServiceInstanceByTemplateOption struct {
 }
 
 type ListServiceInstancesWithHostInput struct {
-	Metadata Metadata `json:"metadata"`
-	HostID   int64    `json:"bk_host_id"`
-	WithName bool     `json:"with_name"`
+	Metadata  Metadata           `json:"metadata"`
+	HostID    int64              `json:"bk_host_id"`
+	SearchKey *string            `json:"search_key,omitempty"`
+	Selectors selector.Selectors `json:"selectors,omitempty"`
+	Page      BasePage           `json:"page,omitempty"`
 }
 
 type ListProcessInstancesOption struct {
@@ -1151,4 +1153,9 @@ type Proc2Module struct {
 	ModuleName      string `json:"bk_module_name"`
 	ProcessID       int    `json:"bk_process_id"`
 	SupplierAccount string `json:"bk_supplier_account"`
+}
+
+type LabelAggregationOption struct {
+	Metadata Metadata `json:"metadata"`
+	ModuleID *int64   `json:"bk_module_id" bson:"bk_module_id" field:"bk_module_id"`
 }
