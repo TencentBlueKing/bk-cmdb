@@ -27,7 +27,7 @@ func (s *Service) CreateUserGroup(params types.ContextParams, pathParams, queryP
 	userGroup := &metadata.UserGroup{}
 	_, err := userGroup.Parse(data)
 	if nil != err {
-		blog.Errorf("[api-privilege] failed to parse the input data, error info is %s ", err.Error())
+		blog.Errorf("[api-privilege] failed to parse the input data, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
