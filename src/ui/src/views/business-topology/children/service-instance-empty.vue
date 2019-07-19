@@ -5,17 +5,21 @@
             <p class="empty-text">{{$t('BusinessTopology["模板未定义进程"]', { template: (moduleNode || {}).name })}}</p>
             <p class="empty-tips">{{$t('BusinessTopology["模板未定义进程提示"]')}}</p>
             <div class="empty-options">
-                <bk-button class="empty-button" theme="primary" @click="goToTemplate">跳转模板添加进程</bk-button>
-                <bk-button class="empty-button" theme="default" @click="handleAddHost">添加主机</bk-button>
+                <bk-button class="empty-button" theme="primary" @click="goToTemplate">{{$t("BusinessTopology['跳转模板添加进程']")}}</bk-button>
+                <bk-button class="empty-button" theme="default" @click="handleAddHost">{{$t("BusinessTopology['添加主机']")}}</bk-button>
             </div>
         </div>
-        <div class="empty-content" v-else>
+        <div class="empty-content" v-else
+            v-cursor="{
+                active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                auth: [$OPERATION.C_SERVICE_INSTANCE]
+            }">
             <i class="bk-icon icon-plus empty-plus"
                 @click="handleCreateServiceInstance">
             </i>
             <p class="empty-tips">
-                您还没有创建任何服务实例，
-                <a class="text-primary" href="javascript:void(0)" @click="handleCreateServiceInstance">立即添加</a>
+                {{$t("BusinessTopology['创建实例提示']")}}
+                <a class="text-primary" href="javascript:void(0)" @click="handleCreateServiceInstance">{{$t("Common['立即添加']")}}</a>
             </p>
         </div>
         <host-selector
@@ -139,6 +143,7 @@
                 }
             },
             handleCreateServiceInstance () {
+                if (!this.$isAuthorized(this.$OPERATION.C_SERVICE_INSTANCE)) return
                 if (this.withTemplate) {
                     this.handleAddHost()
                 } else {
@@ -175,7 +180,7 @@
             @include inlineBlock;
         }
         .empty-content {
-            margin: -120px 0 0 0;
+            margin: 104px 0 0 0;
             @include inlineBlock;
         }
         .empty-text {

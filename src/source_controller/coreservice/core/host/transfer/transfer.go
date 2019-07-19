@@ -27,7 +27,7 @@ import (
 
 type genericTransfer struct {
 	dbProxy   dal.DB
-	eventC    eventclient.Client
+	eventCli  eventclient.Client
 	dependent OperationDependence
 
 	// depend parameter
@@ -202,7 +202,7 @@ func (t *genericTransfer) generateEvent(ctx core.ContextParams, originDatas, cur
 		}
 
 	}
-	err := t.eventC.Push(ctx, eventArr...)
+	err := t.eventCli.Push(ctx, eventArr...)
 	if err != nil {
 		blog.Errorf("host relation event push failed, but create event error:%v, rid: %s", err, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCoreServiceEventPushEventFailed)

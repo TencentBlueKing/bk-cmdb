@@ -1,5 +1,18 @@
 import Meta from '@/router/meta'
 import { NAV_SERVICE_MANAGEMENT } from '@/dictionary/menu'
+import {
+    C_SERVICE_CATEGORY,
+    U_SERVICE_CATEGORY,
+    D_SERVICE_CATEGORY,
+    R_SERVICE_CATEGORY
+} from '@/dictionary/auth'
+
+export const OPERATION = {
+    C_SERVICE_CATEGORY,
+    U_SERVICE_CATEGORY,
+    D_SERVICE_CATEGORY,
+    R_SERVICE_CATEGORY
+}
 
 const path = '/service/cagetory'
 
@@ -15,6 +28,12 @@ export default {
             order: 1,
             parent: NAV_SERVICE_MANAGEMENT,
             adminView: false
+        },
+        auth: {
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'business'
+            }
         },
         i18nTitle: 'Nav["服务分类"]'
     })

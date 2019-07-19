@@ -134,7 +134,9 @@
         "请输入关键字": "Please input keyword...",
         "添加": "Add",
         "全部展开": "Expand all",
-        "暂无数据": "No data"
+        "暂无数据": "No data",
+        "选择日期范围": "Select date range",
+        "立即添加": "Add it now"
     },
     "Nav": {
         "首页": "Index",
@@ -919,7 +921,9 @@
         "请填写完整标签键/值": "Please fill in the full tag key/value",
         "已选择实例": "({num} instances have been selected)",
         "服务实例名": "Service Instance Name",
-        "服务实例名重复": "Service instance name can only enter one"
+        "服务实例名重复": "Service instance name can only enter one",
+        "跳转模板添加进程": "Jump template add process",
+        "创建实例提示": "You have not created any service instances yet,"
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",

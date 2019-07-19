@@ -28,7 +28,7 @@ import (
 	"configcenter/src/storage/dal"
 
 	"github.com/tidwall/gjson"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type reconciler struct {
@@ -65,9 +65,9 @@ func (r *reconciler) loadAll() {
 
 func (r *reconciler) loadAllCached() {
 	r.cached = map[string][]string{}
-	for _, formkey := range r.cache.Keys(types.EventCacheSubscribeformKey + "*").Val() {
-		if formkey != "" && formkey != nilstr && formkey != "redis" {
-			r.cached[strings.TrimPrefix(formkey, types.EventCacheSubscribeformKey)] = r.cache.SMembers(formkey).Val()
+	for _, formKey := range r.cache.Keys(types.EventCacheSubscribeformKey + "*").Val() {
+		if formKey != "" && formKey != nilStr && formKey != "redis" {
+			r.cached[strings.TrimPrefix(formKey, types.EventCacheSubscribeformKey)] = r.cache.SMembers(formKey).Val()
 		}
 	}
 }
@@ -75,17 +75,17 @@ func (r *reconciler) loadAllCached() {
 func (r *reconciler) loadAllPersisted() {
 	r.persisted = map[string][]string{}
 	r.persistedSubscribers = []string{}
-	subscriptions := []metadata.Subscription{}
+	subscriptions := make([]metadata.Subscription, 0)
 	if err := r.db.Table(common.BKTableNameSubscription).Find(nil).All(r.ctx, &subscriptions); err != nil {
 		blog.Errorf("reconcile err: %v", err)
 	}
 	blog.Infof("loaded %v subscriptions from persistent", len(subscriptions))
 	for _, sub := range subscriptions {
-		eventnames := strings.Split(sub.SubscriptionForm, ",")
+		eventNames := strings.Split(sub.SubscriptionForm, ",")
 		r.persistedSubscribers = append(r.persistedSubscribers, sub.GetCacheKey())
-		for _, eventname := range eventnames {
-			eventname = sub.OwnerID + ":" + eventname
-			r.persisted[eventname] = append(r.persisted[eventname], fmt.Sprint(sub.SubscriptionID))
+		for _, eventName := range eventNames {
+			eventName = sub.OwnerID + ":" + eventName
+			r.persisted[eventName] = append(r.persisted[eventName], fmt.Sprint(sub.SubscriptionID))
 		}
 	}
 }
@@ -146,16 +146,16 @@ func SubscribeChannel(redisCli *redis.Client) (err error) {
 	}
 }
 
-func cleanOutdateEvents(redisCli *redis.Client) {
+func cleanExpiredEvents(redisCli *redis.Client) {
 	var err error
 	timeout := time.Hour * 1
 	tick := util.NewTicker(timeout)
 	tick.Tick()
 	for range tick.C {
-		blog.Infof("starting clean outdate events")
-		var keys = []string{}
+		blog.Infof("starting clean expired events")
+		var keys = make([]string, 0)
 		if err = redisCli.Keys(types.EventCacheDistDonePrefix + "*").ScanSlice(&keys); err != nil {
-			blog.Errorf("fetch outdate event keys failed: %v", err)
+			blog.Errorf("fetch expired event keys failed: %v", err)
 		}
 		keys = append(keys, types.EventCacheEventDoneKey)
 
@@ -165,13 +165,13 @@ func cleanOutdateEvents(redisCli *redis.Client) {
 				if strings.HasPrefix(iter.Val(), "{") {
 					if time.Now().Sub(gjson.Get(iter.Val(), "action_time").Time()) > timeout {
 						if err = redisCli.HDel(gjson.Get(iter.Val(), "event_id").String()).Err(); err != nil {
-							blog.Errorf("remove outdate event %s failed: %v", iter.Val(), err)
+							blog.Errorf("remove expired event %s failed: %v", iter.Val(), err)
 						}
 					}
 				}
 			}
 			if err := iter.Err(); err != nil {
-				blog.Errorf("scan outdate events failed: %v", err)
+				blog.Errorf("scan expired events failed: %v", err)
 			}
 		}
 	}

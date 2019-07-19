@@ -181,10 +181,9 @@
     .audit-history-layout{
         position: relative;
         height: 100%;
-        padding: 0 20px;
     }
     .history-options{
-        padding: 20px 0;
+        padding: 0 0 20px;
         .options-group{
             white-space: nowrap;
             margin-right: 16px;
@@ -195,7 +194,8 @@
             .options-filter{
                 display: inline-block;
                 vertical-align: middle;
-                width: 240px;
+                width: 240px !important;
+                height: 32px;
             }
         }
     }

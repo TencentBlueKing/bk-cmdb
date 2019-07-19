@@ -18,14 +18,16 @@
                     auth: [$OPERATION.BUSINESS_ARCHIVE]
                 }">
                     <bk-button class="button-history"
+                        icon="icon-cc-history2"
                         v-bk-tooltips.bottom="$t('Common[\'查看删除历史\']')"
                         :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
                         @click="routeToHistory">
-                        <i class="icon-cc-history2"></i>
                     </bk-button>
                 </span>
-                <bk-button class="button-setting" v-bk-tooltips.bottom="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">
-                    <i class="icon-cc-setting"></i>
+                <bk-button class="button-setting"
+                    icon="icon-cc-setting"
+                    v-bk-tooltips.bottom="$t('BusinessTopology[\'列表显示属性配置\']')"
+                    @click="columnsConfig.show = true">
                 </bk-button>
             </div>
             <div class="options-filter clearfix fr">
@@ -109,7 +111,7 @@
                         @on-cancel="handleCancel">
                     </cmdb-form>
                 </bk-tab-panel>
-                <bk-tab-panel name="relevance" :label="$t('HostResourcePool[\'关联\']')" :show="attribute.type !== 'create'">
+                <bk-tab-panel name="relevance" :label="$t('HostResourcePool[\'关联\']')" v-if="attribute.type !== 'create'">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
@@ -117,7 +119,7 @@
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tab-panel>
-                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type !== 'create'">
+                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" v-if="attribute.type !== 'create'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="biz"
                         :inst-id="attribute.inst.details['bk_biz_id']">

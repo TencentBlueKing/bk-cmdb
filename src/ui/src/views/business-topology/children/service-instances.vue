@@ -8,10 +8,17 @@
                     :title="$t('Common[\'全选本页\']')"
                     @change="handleCheckALL">
                 </cmdb-form-bool>
-                <bk-button class="options-button" theme="primary"
-                    @click="handleCreateServiceInstance">
-                    {{$t('BusinessTopology["添加服务实例"]')}}
-                </bk-button>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                        auth: [$OPERATION.C_SERVICE_INSTANCE]
+                    }">
+                    <bk-button class="options-button" theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                        @click="handleCreateServiceInstance">
+                        {{$t('BusinessTopology["添加服务实例"]')}}
+                    </bk-button>
+                </span>
                 <bk-dropdown-menu trigger="click">
                     <bk-button class="options-button clipboard-trigger" theme="default" slot="dropdown-trigger">
                         {{$t('Common["更多"]')}}
@@ -19,17 +26,33 @@
                     </bk-button>
                     <ul class="clipboard-list" slot="dropdown-content">
                         <li v-for="(item, index) in menuItem"
-                            :class="['clipboard-item', { 'is-disabled': item.disabled }]"
+                            :class="['clipboard-item', { 'is-disabled': item.disabled || (item.auth && !$isAuthorized($OPERATION[item.auth])) }]"
                             :key="index"
-                            @click="item.handler(item.disabled)">
-                            {{item.name}}
+                            @click="item.handler(item.disabled, item.auth)">
+                            <span v-if="item.auth"
+                                v-cursor="{
+                                    active: !$isAuthorized($OPERATION[item.auth]),
+                                    auth: [$OPERATION[item.auth]]
+                                }">
+                                {{item.name}}
+                            </span>
+                            <span v-else>{{item.name}}</span>
                         </li>
                     </ul>
                 </bk-dropdown-menu>
-                <bk-button class="options-button sync-template-link" v-show="withTemplate" @click="handleSyncTemplate">
-                    <i class="bk-icon icon-refresh"></i>
-                    {{$t('BusinessTopology["同步模板"]')}}
-                </bk-button>
+                <span class="options-button sync-template-link"
+                    v-show="withTemplate"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                        auth: [$OPERATION.U_SERVICE_INSTANCE]
+                    }">
+                    <bk-button
+                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
+                        @click="handleSyncTemplate">
+                        <i class="bk-icon icon-refresh"></i>
+                        {{$t('BusinessTopology["同步模板"]')}}
+                    </bk-button>
+                </span>
                 <div class="options-right fr">
                     <cmdb-form-bool class="options-checkbox"
                         :size="16"
@@ -200,7 +223,8 @@
                 return [{
                     name: this.$t('BusinessTopology["批量删除"]'),
                     handler: this.batchDelete,
-                    disabled: !this.checked.length
+                    disabled: !this.checked.length,
+                    auth: 'D_SERVICE_INSTANCE'
                 }, {
                     name: this.$t('BusinessTopology["复制IP"]'),
                     handler: this.copyIp,
@@ -208,7 +232,8 @@
                 }, {
                     name: this.$t('BusinessTopology["编辑标签"]'),
                     handler: this.handleShowBatchLabel,
-                    disabled: !this.checked.length
+                    disabled: !this.checked.length,
+                    auth: 'U_SERVICE_INSTANCE'
                 }]
             }
         },
@@ -508,8 +533,8 @@
                     return false
                 }
             },
-            batchDelete (disabled) {
-                if (disabled) {
+            batchDelete (disabled, auth) {
+                if (disabled || !this.$isAuthorized(this.$OPERATION[auth])) {
                     return false
                 }
                 this.$bkInfo({
@@ -554,7 +579,10 @@
                     }
                 })
             },
-            handleShowBatchLabel () {
+            handleShowBatchLabel (disabled, auth) {
+                if (disabled || !this.$isAuthorized(this.$OPERATION[auth])) {
+                    return false
+                }
                 try {
                     this.editLabel.show = true
                     const labelList = []
@@ -739,9 +767,12 @@
             height: 3px;
         }
         .clipboard-item{
-            padding: 0 15px;
             cursor: pointer;
             @include ellipsis;
+            span {
+                display: block;
+                padding: 0 15px;
+            }
             &:not(.is-disabled):hover{
                 background-color: #ebf4ff;
                 color: #3c96ff;
@@ -753,13 +784,15 @@
         }
     }
     .sync-template-link {
+        display: inline-block;
         position: relative;
         margin-left: 18px;
+        padding: 0;
         &::before {
             content: '';
             position: absolute;
-            top: 5px;
-            left: -13px;;
+            top: 7px;
+            left: -11px;;
             width: 1px;
             height: 20px;
             background-color: #dcdee5;
