@@ -350,7 +350,6 @@
                     dragmode: 'pan',
                     colorway: ['#3A84FF', '#A3C5FD', '#59D178', '#94F5A4', '#38C1E2', '#A1EDFF', '#4159F9', '#7888F0', '#EFAF4B', '#FEDB89', '#FF5656', '#FD9C9C']
                 }
-                console.log(layout)
                 if (item.report_type !== 'model_inst_change_chart') layout.hovermode = 'closest'
                 const options = {
                     displaylogo: false,
@@ -457,7 +456,6 @@
                 this.isShow = true
             },
             async saveData (data) {
-                console.log(data)
                 let editList = []
                 if (this.editType.hostType === 'host') editList = this.hostData.disList
                 else editList = this.instData.disList
