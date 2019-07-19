@@ -102,6 +102,7 @@ func (o *OperationServer) UpdateOperationChart(ctx *rest.Contexts) {
 	filterCondition[common.OperationReportType] = opt[common.OperationReportType]
 	filterCondition["field"] = opt["field"]
 	filterCondition["width"] = opt["width"]
+	filterCondition["chart_type"] = opt["chart_type"]
 	filterCondition["x_axis_count"] = opt["x_axis_count"]
 	exist, err := o.CoreAPI.CoreService().Operation().SearchChartCommon(ctx.Kit.Ctx, ctx.Kit.Header, filterCondition)
 	if err != nil {
