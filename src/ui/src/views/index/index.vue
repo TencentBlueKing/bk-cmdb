@@ -3,7 +3,8 @@
         'is-sticky': sticky
     }">
         <div class="sticky-layout" ref="stickyLayout">
-            <the-search></the-search>
+            <the-search v-if="site.fullTextSearch === 'off'"></the-search>
+            <search-input v-else></search-input>
             <the-recently></the-recently>
         </div>
         <div ref="stickyProxy" v-show="sticky"></div>
@@ -17,10 +18,12 @@
 
 <script>
     import theSearch from './children/search'
+    import searchInput from './children/search-input'
     import theRecently from './children/recently'
     import theClassify from './children/classify'
     import theMap from './children/map'
     import cmdbMainInject from '@/components/layout/main-inject'
+    import { mapGetters } from 'vuex'
     import {
         addMainResizeListener,
         removeMainResizeListener,
@@ -31,6 +34,7 @@
         name: 'cmdb-index',
         components: {
             theSearch,
+            searchInput,
             theRecently,
             theClassify,
             theMap,
@@ -43,6 +47,9 @@
                 resizeHandler: null,
                 scrollHandler: null
             }
+        },
+        computed: {
+            ...mapGetters(['site'])
         },
         mounted () {
             this.initResizeListener()

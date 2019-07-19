@@ -83,11 +83,9 @@ func (s *Service) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	api.Path("/host/{version}").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
-	// restful.DefaultRequestContentType(restful.MIME_JSON)
-	// restful.DefaultResponseContentType(restful.MIME_JSON)
+	api.Path("/host/v3").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
-	api.Route(api.DELETE("/hosts/batch").To(s.DeleteHostBatch))
+	api.Route(api.DELETE("/hosts/batch").To(s.DeleteHostBatchFromResourcePool))
 	api.Route(api.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
 	api.Route(api.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
 	api.Route(api.POST("/hosts/add").To(s.AddHost))
@@ -182,22 +180,6 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		zkItem.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, zkItem)
-
-	// object controller
-	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_OBJECTCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_OBJECTCONTROLLER); err != nil {
-		objCtr.IsHealthy = false
-		objCtr.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, objCtr)
-
-	// host controller
-	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
-		hostCtrl.IsHealthy = false
-		hostCtrl.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, hostCtrl)
 
 	// coreservice
 	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CORESERVICE}

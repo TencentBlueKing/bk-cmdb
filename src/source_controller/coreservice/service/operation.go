@@ -143,6 +143,7 @@ func (s *coreService) SearchOperationChartData(params core.ContextParams, pathPa
 		return nil, err
 	}
 
+	blog.Debug("opt: %v", opt)
 	result, err := s.core.StatisticOperation().SearchOperationChartData(params, opt)
 	if err != nil {
 		blog.Errorf("search operation chart data fail, chartName: %v, err: %v", opt.Name, err)

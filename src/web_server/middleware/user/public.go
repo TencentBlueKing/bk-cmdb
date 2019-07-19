@@ -48,6 +48,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		isMultiOwner = true
 	}
 
+	blog.Debug("m.loginPlg: %v", m.loginPlg)
 	if nil == m.loginPlg {
 		user := plugins.CurrentPlugin(c, m.config.LoginVersion)
 		userInfo, loginSucc = user.LoginUser(c, m.config.ConfigMap, isMultiOwner)
@@ -130,7 +131,6 @@ func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 			rspBody.Code = common.CCErrCommHTTPDoRequestFailed
 			rspBody.ErrMsg = err.Error()
 			return 200, rspBody
-
 		}
 		userList, err = getUserListFunc.(func(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, error))(c, m.config.ConfigMap)
 

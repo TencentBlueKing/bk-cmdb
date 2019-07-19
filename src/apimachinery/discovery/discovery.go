@@ -35,9 +35,6 @@ type DiscoveryInterface interface {
 	ProcServer() Interface
 	TopoServer() Interface
 	DataCollect() Interface
-	HostCtrl() Interface
-	ObjectCtrl() Interface
-	ProcCtrl() Interface
 	GseProcServer() Interface
 	CoreService() Interface
 	OperationServer() Interface
@@ -101,18 +98,6 @@ func (d *discover) TopoServer() Interface {
 
 func (d *discover) DataCollect() Interface {
 	return d.servers[types.CC_MODULE_DATACOLLECTION]
-}
-
-func (d *discover) HostCtrl() Interface {
-	return d.servers[types.CC_MODULE_HOSTCONTROLLER]
-}
-
-func (d *discover) ObjectCtrl() Interface {
-	return d.servers[types.CC_MODULE_OBJECTCONTROLLER]
-}
-
-func (d *discover) ProcCtrl() Interface {
-	return d.servers[types.CC_MODULE_PROCCONTROLLER]
 }
 
 func (d *discover) GseProcServer() Interface {

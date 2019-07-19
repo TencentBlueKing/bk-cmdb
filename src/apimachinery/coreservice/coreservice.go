@@ -13,7 +13,6 @@
 package coreservice
 
 import (
-	"configcenter/src/apimachinery/coreservice/operation"
 	"fmt"
 
 	"configcenter/src/apimachinery/coreservice/association"
@@ -24,8 +23,11 @@ import (
 	"configcenter/src/apimachinery/coreservice/label"
 	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
+	"configcenter/src/apimachinery/coreservice/operation"
+	"configcenter/src/apimachinery/coreservice/privilege"
 	"configcenter/src/apimachinery/coreservice/process"
 	"configcenter/src/apimachinery/coreservice/synchronize"
+	"configcenter/src/apimachinery/coreservice/topographics"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 )
@@ -38,10 +40,12 @@ type CoreServiceClientInterface interface {
 	Mainline() mainline.MainlineClientInterface
 	Host() host.HostClientInterface
 	Audit() auditlog.AuditClientInterface
-	Operation() operation.OperationClientInterface
 	Process() process.ProcessInterface
+	Operation() operation.OperationClientInterface
 	Cloud() cloudsync.CloudSyncClientInterface
 	Label() label.LabelInterface
+	Privilege() privilege.PrivilegeInterface
+	TopoGraphics() topographics.TopoGraphicsInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -90,12 +94,20 @@ func (c *coreService) Process() process.ProcessInterface {
 
 func (c *coreService) Operation() operation.OperationClientInterface {
 	return operation.NewOperationClientInterface(c.restCli)
-
 }
+
 func (c *coreService) Cloud() cloudsync.CloudSyncClientInterface {
 	return cloudsync.NewCloudSyncClientInterface(c.restCli)
 }
 
 func (c *coreService) Label() label.LabelInterface {
 	return label.NewLabelInterfaceClient(c.restCli)
+}
+
+func (c *coreService) Privilege() privilege.PrivilegeInterface {
+	return privilege.NewPrivilegeInterface(c.restCli)
+}
+
+func (c *coreService) TopoGraphics() topographics.TopoGraphicsInterface {
+	return topographics.NewTopoGraphicsInterface(c.restCli)
 }

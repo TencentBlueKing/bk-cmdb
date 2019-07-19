@@ -50,9 +50,11 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 
-	if instance.ServiceTemplateID == 0 {
-		instance.ServiceTemplateID = module.ServiceTemplateID
+	if module.ServiceTemplateID != instance.ServiceTemplateID {
+		blog.Errorf("CreateServiceInstance failed, module template id and instance template not equal, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide)
 	}
+
 	// validate service template id field
 	var serviceTemplate *metadata.ServiceTemplate
 	if instance.ServiceTemplateID > 0 {
@@ -62,11 +64,6 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
 		serviceTemplate = st
-	}
-
-	if module.ServiceTemplateID != instance.ServiceTemplateID {
-		blog.Errorf("CreateServiceInstance failed, module template id and instance template not equal, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.CCError(common.CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide)
 	}
 
 	// validate host id field
@@ -209,8 +206,7 @@ func (p *processOperation) UpdateServiceInstance(ctx core.ContextParams, instanc
 		return nil, err
 	}
 
-	// update fields to local object
-	// TODO: fixme with update other fields than name
+	// update fields to original object
 	instance.Name = input.Name
 
 	// do update
@@ -245,7 +241,7 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 
 	if option.ServiceInstanceIDs != nil {
 		filter[common.BKFieldID] = map[string]interface{}{
-			common.BKDBIN: *option.ServiceInstanceIDs,
+			common.BKDBIN: option.ServiceInstanceIDs,
 		}
 	}
 
@@ -574,7 +570,7 @@ func (p *processOperation) RemoveTemplateBindingOnModule(ctx core.ContextParams,
 	}
 	serviceInstanceResult, err := p.ListServiceInstance(ctx, listOption)
 	if err != nil {
-		blog.Errorf("", err)
+		blog.Errorf("ListServiceInstance failed, option: %+v, err: %s, rid: %s", listOption, err.Error(), ctx.ReqID)
 		return err
 	}
 	serviceInstanceIDs := make([]int64, 0)

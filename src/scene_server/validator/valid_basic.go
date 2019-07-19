@@ -52,18 +52,15 @@ func NewValidMapWithKeyFields(ownerID, objID string, ignoreFields []string, phea
 // Init init
 func (valid *ValidMap) Init() error {
 	valid.errif = valid.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(valid.pheader))
-	m := map[string]interface{}{
-		common.BKObjIDField:   valid.objID,
-		common.BKOwnerIDField: valid.ownerID,
-	}
-	result, err := valid.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(valid.ctx, valid.pheader, m)
+	queryParam := &metadata.QueryCondition{}
+	result, err := valid.CoreAPI.CoreService().Model().ReadModelAttr(valid.ctx, valid.pheader, valid.objID, queryParam)
 	if nil != err {
 		return err
 	}
 	if !result.Result {
 		return valid.errif.Error(result.Code)
 	}
-	for _, attr := range result.Data {
+	for _, attr := range result.Data.Info {
 		if attr.PropertyID == common.BKChildStr || attr.PropertyID == common.BKParentStr {
 			continue
 		}

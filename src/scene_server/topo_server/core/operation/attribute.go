@@ -70,7 +70,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 
 	err = att.Parse(data)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to parse the attribute data (%#v), error info is %s", data, err.Error())
+		blog.Errorf("[operation-attr] failed to parse the attribute data (%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -87,7 +87,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 	cond.Field(common.BKPropertyGroupIDField).Eq(att.Attribute().PropertyGroup)
 	groupResult, err := a.grp.FindObjectGroup(params, cond)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to search the attribute group data (%#v), error info is %s", cond.ToMapStr(), err.Error())
+		blog.Errorf("[operation-attr] failed to search the attribute group data (%#v), error info is %s, rid: %s", cond.ToMapStr(), err.Error(), params.ReqID)
 		return nil, err
 	}
 	// create the default group
@@ -107,7 +107,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 
 		data := mapstr.NewFromStruct(group, "field")
 		if _, err := a.grp.CreateObjectGroup(params, data); nil != err {
-			blog.Errorf("[operation-obj] failed to create the default group, err: %s", err.Error())
+			blog.Errorf("[operation-obj] failed to create the default group, err: %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
 		}
 	}
@@ -115,7 +115,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 	// create a new one
 	err = att.Create()
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to save the attribute data (%#v), error info is %s", data, err.Error())
+		blog.Errorf("[operation-attr] failed to save the attribute data (%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -126,7 +126,7 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condi
 
 	attrItems, err := a.FindObjectAttribute(params, cond)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to find the attributes by the cond(%v), err: %v", cond.ToMapStr(), err)
+		blog.Errorf("[operation-attr] failed to find the attributes by the cond(%v), err: %v, rid: %s", cond.ToMapStr(), err, params.ReqID)
 		return params.Err.New(common.CCErrTopoObjectAttributeDeleteFailed, err.Error())
 	}
 
@@ -146,12 +146,12 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condi
 		// delete the attribute
 		rsp, err := a.clientSet.CoreService().Model().DeleteModelAttr(context.Background(), params.Header, attrItem.Attribute().ObjectID, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 		if nil != err {
-			blog.Errorf("[operation-attr] delete object attribute failed, request object controller with err: %v", err)
+			blog.Errorf("[operation-attr] delete object attribute failed, request object controller with err: %v, rid: %s", err, params.ReqID)
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-			blog.Errorf("[operation-attr] failed to delete the attribute by condition(%v), err: %s", cond.ToMapStr(), rsp.ErrMsg)
+			blog.Errorf("[operation-attr] failed to delete the attribute by condition(%v), err: %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, params.ReqID)
 			return params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 	}
@@ -200,12 +200,12 @@ func (a *attribute) FindObjectAttribute(params types.ContextParams, cond conditi
 
 	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-attr] failed to search attribute by the condition(%#v), error info is %s", fCond, rsp.ErrMsg)
+		blog.Errorf("[operation-attr] failed to search attribute by the condition(%#v), error info is %s, rid: %s", fCond, rsp.ErrMsg, params.ReqID)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -221,12 +221,12 @@ func (a *attribute) UpdateObjectAttribute(params types.ContextParams, data mapst
 
 	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(context.Background(), params.Header, &input)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-attr] failed to update the attribute by the attr-id(%d), error info is %s", attID, rsp.ErrMsg)
+		blog.Errorf("[operation-attr] failed to update the attribute by the attr-id(%d), error info is %s, rid: %s", attID, rsp.ErrMsg, params.ReqID)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

@@ -1061,15 +1061,6 @@ const (
 	ContextRequestUserField = "request_user"
 )
 
-// 云同步
-const (
-	CloudSyncTaskID            = "bk_task_id"
-	CloudSyncTaskName          = "bk_task_name"
-	CloudSyncResourceConfirmID = "bk_resource_id"
-	CloudSyncConfirmTime       = "confirm_time"
-	CloudSyncConfirmHistoryID  = "confirm_history_id"
-)
-
 const (
 	OperationCustom      = "custom"
 	OperationReportType  = "report_type"
@@ -1082,4 +1073,13 @@ const (
 	ModelAndInstCount    = "model_and_inst_count"
 	ModelInstChart       = "model_inst_chart"
 	ModelInstChangeChart = "model_inst_change_chart"
+)
+
+// 云同步
+const (
+	CloudSyncTaskID            = "bk_task_id"
+	CloudSyncTaskName          = "bk_task_name"
+	CloudSyncResourceConfirmID = "bk_resource_id"
+	CloudSyncConfirmTime       = "confirm_time"
+	CloudSyncConfirmHistoryID  = "confirm_history_id"
 )

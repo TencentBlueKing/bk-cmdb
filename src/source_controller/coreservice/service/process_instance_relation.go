@@ -74,6 +74,7 @@ func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pat
 		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
+	blog.Debug("fp: %v", fp.ServiceInstanceIDs)
 	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, fp)
 	if err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, err: %+v, rid: %s", err, params.ReqID)

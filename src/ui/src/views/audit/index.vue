@@ -10,7 +10,7 @@
                         :searchable="true"
                         :allow-clear="true"
                         display-key="bk_biz_name"
-                        search-key="bk_biz_id"
+                        search-key="bk_biz_name"
                         setting-key="bk_biz_id"
                     ></bk-selector>
                 </div>
@@ -38,6 +38,7 @@
                 <div class="selector-content">
                     <bk-selector
                         :list="operateTypeList"
+                        :allow-clear="true"
                         :selected.sync="filter.bkOpType"
                     ></bk-selector>
                 </div>

@@ -29,7 +29,6 @@ import (
 
 // helpers
 func (phpapi *PHPAPI) UpdateHostMain(ctx context.Context, hostCondition, data map[string]interface{}, appID int64) (string, errors.CCError) {
-	//blog.V(5).Infof("updateHostMain start")
 	blog.V(5).Infof("hostCondition:%+v, rid:%s", hostCondition, phpapi.rid)
 
 	_, hostIDArr, err := phpapi.GetHostMapByCond(ctx, hostCondition)
