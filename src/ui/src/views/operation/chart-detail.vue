@@ -269,6 +269,7 @@
                 })
             },
             confirm () {
+                // this.chartData = this.chartType ? 'custom' : ''
                 this.$validator.validateAll().then(result => {
                     if (result) {
                         if (this.openType === 'add') {
