@@ -6,15 +6,16 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="verification-selector">
-                <div class="text-content" @click="toggleSelector(true)" :class="{ 'open': attribute.isShow }">
-                    <span>{{selectedName}}</span>
-                    <i class="bk-icon icon-angle-down"></i>
-                </div>
                 <bk-select
                     ref="attrSelector"
                     multiple
+                    :clearable="false"
                     v-model="verificationInfo.selected"
                     @toggle="toggleSelector">
+                    <div class="text-content" slot="trigger" @click="toggleSelector(true)" :class="{ 'open': attribute.isShow }">
+                        <span>{{selectedName}}</span>
+                        <!-- <i class="bk-icon icon-angle-down"></i> -->
+                    </div>
                     <bk-option v-for="(option, index) in attribute.list"
                         :key="index"
                         :id="option.id"
@@ -23,7 +24,7 @@
                 </bk-select>
             </div>
         </div>
-        <div class="verification-selector-mask" v-if="attribute.isShow"></div>
+        <!-- <div class="verification-selector-mask" v-if="attribute.isShow"></div> -->
         <div class="radio-box">
             <label class="label-text">
                 {{$t('ModelManagement["是否为必须校验"]')}}
@@ -129,7 +130,7 @@
             },
             toggleSelector (isShow) {
                 if (!this.isReadOnly) {
-                    isShow ? this.$refs.attrSelector.show() : this.$refs.attrSelector.hide()
+                    // isShow ? this.$refs.attrSelector.show() : this.$refs.attrSelector.hide()
                     this.attribute.isShow = isShow
                 }
             },
@@ -178,21 +179,21 @@
                 position: relative;
                 display: inline-block;
                 width: 100%;
-                .bk-selector {
+                .bk-select {
                     width: 100%;
+                    border: none;
                 }
                 .text-content {
                     border-radius: 2px;
                     border: 1px solid $cmdbBorderColor;
                     padding: 0 32px 0 10px;
-                    height: 36px;
-                    line-height: 34px;
-                    font-size: 14px;
+                    height: 32px;
+                    line-height: 30px;
                     overflow: hidden;
                     &.open {
-                        padding: 5px 28px 5px 10px;
+                        padding: 3px 28px 3px 10px;
                         height: auto;
-                        min-height: 36px;
+                        min-height: 32px;
                         line-height: 24px;
                         overflow: visible;
                         border-color: $cmdbBorderFocusColor;
