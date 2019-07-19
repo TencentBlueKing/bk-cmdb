@@ -23,11 +23,11 @@
                     @click="handleFullScreen">
                     <i class="icon-cc-resize-full"></i>
                 </bk-button>
-                <bk-button class="options-button" :theme="activeComponent === 'cmdbRelationTopology' ? 'primary' : 'default'"
+                <!-- <bk-button class="options-button" :theme="activeComponent === 'cmdbRelationTopology' ? 'primary' : 'default'"
                     @click.prevent="activeComponent = 'cmdbRelationTopology'">
                     <i class="icon-cc-resources"></i>
                     {{$t('Association["拓扑"]')}}
-                </bk-button>
+                </bk-button> -->
             </div>
         </div>
         <div class="relation-component">

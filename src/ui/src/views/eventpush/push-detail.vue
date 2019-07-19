@@ -594,7 +594,7 @@
                 }
                 &.length-short{
                     position: relative;
-                    input{
+                    .cmdb-form-input{
                         width: 97px;
                         margin-right: 10px;
                     }
