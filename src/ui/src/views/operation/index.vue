@@ -211,7 +211,9 @@
             },
             dataDeal (data, res) {
                 const returnData = {
-                    data: []
+                    data: [],
+                    minTime: '',
+                    maxTime: ''
                 }
                 if (res && Array.isArray(res)) {
                     const content = {
@@ -295,6 +297,9 @@
                             barModel.isX = false
                             res[item].forEach(child => {
                                 const time = this.$tools.formatTime(child.id, 'YYYY-MM-DD')
+                                returnData.minTime = returnData.minTime === '' ? time : returnData.minTime
+                                returnData.maxTime = time > returnData.maxTime ? time : returnData.maxTime
+                                returnData.minTime = time < returnData.minTime ? time : returnData.minTime
                                 content.x.push(time)
                                 content.y.push(child.count)
                                 content.mode = 'line'
@@ -322,6 +327,12 @@
                 const myDiv = item.report_type + item.config_id
                 const data = item.data.data
                 if (!item.hasData) this.$set(item, 'noData', true)
+                let type = 'category'
+                let range = [-0.5, item.x_axis_count - 0.5]
+                if (item.report_type === 'host_change_biz_chart') {
+                    type = 'date'
+                    range = [item.data.minTime, item.data.maxTime]
+                }
                 const layout = {
                     title: ``,
                     barmode: 'stack',
@@ -337,11 +348,8 @@
                         rangemode: 'tozero'
                     },
                     xaxis: {
-                        type: 'category',
-                        range: [
-                            -0.5,
-                            item.x_axis_count - 0.5
-                        ],
+                        type: type,
+                        range: range,
                         autorange: false,
                         tickformat: '%Y-%m-%d'
                     },
@@ -353,8 +361,7 @@
                 if (item.report_type !== 'model_inst_change_chart') layout.hovermode = 'closest'
                 const options = {
                     displaylogo: false,
-                    displayModeBar: false,
-                    responsive: true
+                    displayModeBar: false
                 }
                 if (this.editType.openType === 'edit') {
                     Plotly.purge(myDiv)
