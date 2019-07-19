@@ -31,6 +31,7 @@ import (
 
 var _ dal.DB = (*Mongo)(nil)
 var requestDuration *prometheus.HistogramVec
+var maxRetry int = 3
 
 // Mongo implement dal.DB interface
 type Mongo struct {
@@ -47,9 +48,17 @@ type Mongo struct {
 
 // NewWithDiscover returns new DB
 func NewWithDiscover(engine *backbone.Engine) (db *Mongo, err error) {
-	pool, err := rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
-	if err != nil {
-		return nil, err
+	var pool *rpc.Pool
+	for retry := 1; retry <= maxRetry; retry++ {
+		p, err := rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
+		if err == nil {
+			pool = p
+			break
+		}
+		if maxRetry == retry {
+			return nil, err
+		}
+		time.Sleep(time.Millisecond * 100)
 	}
 
 	reg := prometheus.NewHistogramVec(prometheus.HistogramOpts{
