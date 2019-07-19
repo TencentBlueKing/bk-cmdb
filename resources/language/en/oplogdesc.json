@@ -37,5 +37,8 @@
      "auditlog_update module": "Update module information",
      "autitlog_host to other bussiness module":"Transfer host across business",
      "auditlog_delete host from business":"Delete the host under the business",
+     "auditlog_create instance association": "create instance association",
+     "auditlog_delete instance association": "delete instance association",
+     
      "":""
 }
