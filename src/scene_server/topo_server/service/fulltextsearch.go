@@ -1,7 +1,6 @@
 package service
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 
 	"github.com/olivere/elastic"
@@ -49,7 +49,7 @@ type Query struct {
 func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	if s.Es.Client == nil {
 		blog.Errorf("FullTextFind failed, es client is nil, rid: %s", params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+		return nil, params.Err.Error(common.CCErrorTopoFullTextClientNotInitialized)
 	}
 
 	if data.Exists("query_string") {
@@ -61,21 +61,21 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		query.BkBizId = ""
 		if err := data.MarshalJSONInto(query); err != nil {
 			blog.Errorf("full_text_find failed, import query params, but got invalid query params:[%v], err: %+v, rid: %s", query, err, params.ReqID)
-			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+			return nil, params.Err.Error(common.CCErrCommJSONMarshalFailed)
 		}
 
 		// check query string
 		rawString, ok := checkQueryString(query)
 		if !ok {
 			blog.Errorf("full_text_find failed, query string [%s] large than 32, rid: %s", rawString, params.ReqID)
-			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+			return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "query_string")
 		}
 		// get query and search types
 		queryEs, searchTypes := getEsQueryAndSearchTypes(query)
 
 		result, err := s.Es.CmdbSearch(queryEs, searchTypes, query.Paging.Start, query.Paging.Limit)
 		if err != nil {
-			blog.Errorf("full_text_find failed, find failed, err: %+v, rid: %s", err, params.ReqID)
+			blog.Errorf("full_text_find failed, es search failed, err: %+v, rid: %s", err, params.ReqID)
 			return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
 		}
 
