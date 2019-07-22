@@ -170,7 +170,7 @@ func (t *genericTransfer) generateEvent(ctx core.ContextParams, originDatas, cur
 	for _, data := range *originDatas {
 		event := eventclient.NewEventWithHeader(ctx.Header)
 		event.EventType = metadata.EventTypeRelation
-		event.ObjType = "moduletransfer"
+		event.ObjType = metadata.EventObjTypeModuleTransfer
 		event.Action = metadata.EventActionDelete
 		event.Data = []metadata.EventData{
 			{PreData: data},
@@ -181,7 +181,7 @@ func (t *genericTransfer) generateEvent(ctx core.ContextParams, originDatas, cur
 	for _, data := range *curDatas {
 		event := eventclient.NewEventWithHeader(ctx.Header)
 		event.EventType = metadata.EventTypeRelation
-		event.ObjType = "moduletransfer"
+		event.ObjType = metadata.EventObjTypeModuleTransfer
 		event.Action = metadata.EventActionCreate
 		event.Data = []metadata.EventData{
 			{CurData: data},
