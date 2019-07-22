@@ -92,7 +92,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	if s.cfg.Mongo.Enable == "true" {
 		db, dbErr = local.NewMgo(s.cfg.Mongo.BuildURI(), time.Minute)
 	} else {
-		db, dbErr = remote.NewWithDiscover(s.engin.ServiceManageInterface.TMServer().GetServers)
+		db, dbErr = remote.NewWithDiscover(s.engin)
 	}
 	if dbErr != nil {
 		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
