@@ -38,7 +38,7 @@ var (
 	ErrProcessExists = fmt.Errorf("process exists")
 )
 
-func (eh *EventHandler) StartHandleInsts() (err error) {
+func (eh *EventHandler) Run() (err error) {
 	defer func() {
 		sysError := recover()
 		if sysError != nil {
@@ -52,21 +52,22 @@ func (eh *EventHandler) StartHandleInsts() (err error) {
 
 	blog.Info("event inst handle process started")
 	for {
-
-		event := eh.popEventInst()
+		event := eh.popEvent()
 		if event == nil {
 			time.Sleep(time.Second * 2)
 			continue
 		}
-		if err := eh.handleInst(event); err != nil {
-			blog.Errorf("error handle dist: %v, %v", err, event)
+		if err := eh.handleEvent(event); err != nil {
+			blog.Errorf("handle event failed, err: %+v, event: %+v", err, event)
 		}
 	}
 }
 
-func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
+func (eh *EventHandler) handleEvent(event *metadata.EventInstCtx) (err error) {
 	blog.Infof("handling event inst : %v", event.Raw)
-	defer blog.Infof("done event inst : %v", event.ID)
+	defer blog.Infof("done event inst : %d", event.ID)
+
+	// check and set running status on, if event is being deal, then simple ignore this event
 	if err = saveRunning(eh.cache, types.EventCacheEventRunningPrefix+fmt.Sprint(event.ID), timeout); err != nil {
 		if ErrProcessExists == err {
 			blog.Infof("%v process exist, continue", event.ID)
@@ -76,19 +77,19 @@ func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
 		return err
 	}
 
-	previousID := fmt.Sprint(event.ID - 1)
-	previousRunningKey := types.EventCacheEventRunningPrefix + previousID
+	// check and wait previous event finished handling
+	previousID := strconv.FormatInt(event.ID-1, 10)
 	done, err := checkFromDone(eh.cache, types.EventCacheEventDoneKey, previousID)
 	if err != nil {
 		return err
 	}
 	if !done {
+		previousRunningKey := types.EventCacheEventRunningPrefix + previousID
 		running, checkErr := checkFromRunning(eh.cache, previousRunningKey)
 		if checkErr != nil {
 			return checkErr
 		}
 		if !running {
-
 			time.Sleep(time.Second * 3)
 			running, checkErr = checkFromRunning(eh.cache, previousRunningKey)
 			if checkErr != nil {
@@ -96,7 +97,6 @@ func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
 			}
 		}
 		if running {
-
 			if checkErr = waitPreviousDone(eh.cache, types.EventCacheEventDoneKey, previousID, timeout); checkErr != nil {
 				if checkErr == ErrWaitTimeout {
 					return nil
@@ -149,23 +149,24 @@ func (eh *EventHandler) GetDistInst(e *metadata.EventInst) []metadata.DistInst {
 	}
 	distInst.ID = 0
 	var ds []metadata.DistInst
-	var m map[string]interface{}
 	if e.EventType == metadata.EventTypeInstData && e.ObjType == common.BKInnerObjIDObject {
-		var ok bool
-
 		if len(e.Data) <= 0 {
 			return nil
 		}
+
+		var ok bool
+		var m map[string]interface{}
 		if e.Action == metadata.EventActionDelete {
 			m, ok = e.Data[0].PreData.(map[string]interface{})
 		} else {
 			m, ok = e.Data[0].CurData.(map[string]interface{})
 		}
-
 		if !ok {
+			// TODO: just ignore this event without any warnings?
 			return nil
 		}
 
+		// TODO: panic if key not exist?
 		if m[common.BKObjIDField] != nil {
 			distInst.ObjType = m[common.BKObjIDField].(string)
 		}
@@ -239,13 +240,14 @@ func saveRunning(cache *redis.Client, key string, timeout time.Duration) (err er
 	return err
 }
 
-func (eh *EventHandler) findEventTypeSubscribers(eventtype, ownerID string) []string {
-	return eh.cache.SMembers(types.EventSubscriberCacheKey(ownerID, eventtype)).Val()
+func (eh *EventHandler) findEventTypeSubscribers(eventType, ownerID string) []string {
+	return eh.cache.SMembers(types.EventSubscriberCacheKey(ownerID, eventType)).Val()
 }
 
-func (eh *EventHandler) popEventInst() *metadata.EventInstCtx {
+func (eh *EventHandler) popEvent() *metadata.EventInstCtx {
 	var eventStr string
 
+	// push event into types.EventCacheEventQueueDuplicateKey queue so that identifierHandler could deal with it
 	eh.cache.BRPopLPush(types.EventCacheEventQueueKey, types.EventCacheEventQueueDuplicateKey, time.Second*60).Scan(&eventStr)
 
 	if eventStr == "" || eventStr == nilStr {

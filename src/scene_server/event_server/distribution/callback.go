@@ -39,7 +39,7 @@ func (dh *DistHandler) SendCallback(receiver *metadata.Subscription, event strin
 		return fmt.Errorf("event distribute fail, build request error: %v, date=[%s]", err, event)
 	}
 	var duration time.Duration
-	if receiver.TimeOut == 0 {
+	if receiver.TimeOutSeconds == 0 {
 		duration = timeout
 	} else {
 		duration = receiver.GetTimeout()
@@ -55,12 +55,12 @@ func (dh *DistHandler) SendCallback(receiver *metadata.Subscription, event strin
 		increaseFailure(dh.cache, receiver.SubscriptionID)
 		return fmt.Errorf("event distribute fail, read response error: %v, date=[%s]", err, event)
 	}
-	if receiver.ConfirmMode == metadata.ConfirmmodeHttpstatus {
+	if receiver.ConfirmMode == metadata.ConfirmModeHTTPStatus {
 		if strconv.Itoa(resp.StatusCode) != receiver.ConfirmPattern {
 			increaseFailure(dh.cache, receiver.SubscriptionID)
 			return fmt.Errorf("event distribute fail, received response %s, date=[%s]", respData, event)
 		}
-	} else if receiver.ConfirmMode == metadata.ConfirmmodeRegular {
+	} else if receiver.ConfirmMode == metadata.ConfirmModeRegular {
 		pattern, err := regexp.Compile(receiver.ConfirmPattern)
 		if err != nil {
 			return fmt.Errorf("event distribute fail, build regexp error: %v", err)
