@@ -222,7 +222,9 @@ func (r *Request) Do() *Result {
 	}
 	if r.parent.requestDuration != nil {
 		before := time.Now()
-		defer r.parent.requestDuration.WithLabelValues(r.subPath, strconv.Itoa(result.StatusCode)).Observe(commonUtil.ToMillisecond(time.Since(before)))
+		defer func() {
+			r.parent.requestDuration.WithLabelValues(r.subPath, strconv.Itoa(result.StatusCode)).Observe(commonUtil.ToMillisecond(time.Since(before)))
+		}()
 	}
 
 	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)

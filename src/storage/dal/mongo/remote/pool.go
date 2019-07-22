@@ -15,8 +15,10 @@ package remote
 import (
 	"strings"
 	"sync"
+	"time"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/rpc"
 )
@@ -47,6 +49,13 @@ func (p *pool) Option(opt *dal.JoinOption) *client {
 }
 
 func (c *client) Call(cmd string, input interface{}, result interface{}) error {
+	if requestDuration != nil {
+		before := time.Now()
+		defer func() {
+			requestDuration.WithLabelValues("handle process").Observe(util.ToMillisecond(time.Since(before)))
+		}()
+	}
+
 	rpcClient := c.p.conn
 	if c.opt != nil && c.opt.TMAddr != "" {
 		var err error
@@ -61,6 +70,13 @@ func (c *client) Call(cmd string, input interface{}, result interface{}) error {
 }
 
 func (p *pool) CallInfo(cmd string, input interface{}, result interface{}) (addr string, err error) {
+	if requestDuration != nil {
+		before := time.Now()
+		defer func() {
+			requestDuration.WithLabelValues("handle process").Observe(util.ToMillisecond(time.Since(before)))
+		}()
+	}
+
 	addr, err = p.conn.CallInfo(cmd, input, result)
 	return
 }
