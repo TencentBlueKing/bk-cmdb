@@ -65,9 +65,9 @@ func (r *reconciler) loadAll() {
 
 func (r *reconciler) loadAllCached() {
 	r.cached = map[string][]string{}
-	for _, formKey := range r.cache.Keys(types.EventCacheSubscribeformKey + "*").Val() {
+	for _, formKey := range r.cache.Keys(types.EventCacheSubscribeFormKey + "*").Val() {
 		if formKey != "" && formKey != nilStr && formKey != "redis" {
-			r.cached[strings.TrimPrefix(formKey, types.EventCacheSubscribeformKey)] = r.cache.SMembers(formKey).Val()
+			r.cached[strings.TrimPrefix(formKey, types.EventCacheSubscribeFormKey)] = r.cache.SMembers(formKey).Val()
 		}
 	}
 }
@@ -96,13 +96,13 @@ func (r *reconciler) reconcile() {
 		subs, plugs := util.CalSliceDiff(r.cached[k], v)
 		if len(subs) > 0 {
 			subss, _ := util.GetMapInterfaceByInerface(subs)
-			if err := r.cache.SRem(types.EventCacheSubscribeformKey+k, subss...).Err(); err != nil {
+			if err := r.cache.SRem(types.EventCacheSubscribeFormKey+k, subss...).Err(); err != nil {
 				blog.Errorf("reconcile err: %v", err)
 			}
 		}
 		if len(plugs) > 0 {
 			plugss, _ := util.GetMapInterfaceByInerface(plugs)
-			if err := r.cache.SAdd(types.EventCacheSubscribeformKey+k, plugss...).Err(); err != nil {
+			if err := r.cache.SAdd(types.EventCacheSubscribeFormKey+k, plugss...).Err(); err != nil {
 				blog.Errorf("reconcile err: %v", err)
 			}
 		}
@@ -110,7 +110,7 @@ func (r *reconciler) reconcile() {
 	}
 
 	for k := range r.cached {
-		r.cache.Del(types.EventCacheSubscribeformKey + k)
+		r.cache.Del(types.EventCacheSubscribeFormKey + k)
 	}
 
 }
@@ -120,26 +120,30 @@ func SubscribeChannel(redisCli *redis.Client) (err error) {
 	if err != nil {
 		return err
 	}
-	blog.Info("receiving massages")
+	blog.Info("start receiving massages from redis")
 	for {
-		mesg, err := subChan.Receive()
+		msgIf, err := subChan.Receive()
 		if err == redis.Nil || err == io.EOF {
 			continue
 		}
 		if nil != err {
-			blog.Warnf("SubscribeChannel err %s,, continue", err.Error())
-			subChan.Unsubscribe(types.EventCacheProcessChannel)
+			blog.Warnf("SubscribeChannel err %s, continue", err.Error())
+			if err := subChan.Unsubscribe(types.EventCacheProcessChannel); err != nil {
+				blog.Errorf("Unsubscribe channel %s failed, err: %+v", types.EventCacheProcessChannel, err)
+			}
 			time.Sleep(time.Second)
-			subChan.Subscribe(types.EventCacheProcessChannel)
+			if err := subChan.Subscribe(types.EventCacheProcessChannel); err != nil {
+				blog.Errorf("Subscribe channel %s failed, err: %+v", types.EventCacheProcessChannel, err)
+			}
 			continue
 		}
-		msg, ok := mesg.(*redis.Message)
+		msg, ok := msgIf.(*redis.Message)
 		if !ok {
-			blog.Warnf("SubscribeChannel msg not message type but %v, continue", reflect.TypeOf(mesg).String())
+			blog.Warnf("SubscribeChannel receive a message of unexpect type: %v, msg: %+v, continue", reflect.TypeOf(msgIf).String(), msgIf)
 			continue
 		}
 		if "" == msg.Payload {
-			blog.Warnf("SubscribeChannel Payload empty, continue")
+			blog.Warnf("SubscribeChannel ignore empty Payload empty")
 			continue
 		}
 		MsgChan <- msg.Payload

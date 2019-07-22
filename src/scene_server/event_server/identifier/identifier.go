@@ -69,69 +69,73 @@ var hostIndentDiffFields = map[string][]string{
 	},
 }
 
-func (ih *IdentifierHandler) handleInst(e *metadata.EventInstCtx) {
-	if diffFields, ok := hostIndentDiffFields[e.ObjType]; ok && e.Action == metadata.EventActionUpdate && e.EventType == metadata.EventTypeInstData {
-		ih.handleInstFieldChange(e, diffFields)
-	} else if metadata.EventTypeRelation == e.EventType && "moduletransfer" == e.ObjType {
-		ih.handleModuleTransfer(e)
-	} else if metadata.EventTypeRelation == e.EventType && "processmodule" == e.ObjType {
-		ih.handleBindProcess(e)
+func (ih *IdentifierHandler) handleEvent(event *metadata.EventInstCtx) {
+	if diffFields, ok := hostIndentDiffFields[event.ObjType]; ok &&
+		event.Action == metadata.EventActionUpdate &&
+		event.EventType == metadata.EventTypeInstData {
+		ih.handleInstFieldChange(event, diffFields)
+	} else if event.EventType == metadata.EventTypeRelation &&
+		event.ObjType == metadata.EventObjTypeModuleTransfer {
+		ih.handleModuleTransfer(event)
+	} else if event.EventType == metadata.EventTypeRelation &&
+		event.ObjType == metadata.EventObjTypeProcModule {
+		ih.handleBindProcess(event)
 	}
 }
 
-func (ih *IdentifierHandler) handleInstFieldChange(e *metadata.EventInstCtx, diffFields []string) {
+func (ih *IdentifierHandler) handleInstFieldChange(event *metadata.EventInstCtx, diffFields []string) {
 	rid := util.ExtractRequestIDFromContext(ih.ctx)
-	blog.InfoJSON("identifier: handle inst %s, rid: %s", e, rid)
+	blog.InfoJSON("identifier: handle inst %s, rid: %s", event, rid)
 
-	hostIdentify := e.EventInst
+	hostIdentify := event.EventInst
 	hostIdentify.Data = nil
 	hostIdentify.EventType = metadata.EventTypeRelation
 	hostIdentify.ObjType = objectTypeIdentifier
 	hostIdentify.Action = metadata.EventActionUpdate
 
-	for dataIndex := range e.Data {
-		curData := e.Data[dataIndex].CurData.(map[string]interface{})
-		preData := e.Data[dataIndex].PreData.(map[string]interface{})
-		if checkDifferent(curData, preData, diffFields...) {
+	for dataIndex := range event.Data {
+		curData := event.Data[dataIndex].CurData.(map[string]interface{})
+		preData := event.Data[dataIndex].PreData.(map[string]interface{})
+		if hasChanged(curData, preData, diffFields...) == false {
+			continue
+		}
 
-			instIDField := common.GetInstIDField(e.ObjType)
+		instIDField := common.GetInstIDField(event.ObjType)
 
-			instID := getInt(curData, instIDField)
-			if 0 == instID {
+		instID := getInt(curData, instIDField)
+		if 0 == instID {
+			blog.Errorf("identifier: convert instID failed the raw is %+v, rid: %s", curData[instIDField], rid)
+			continue
+		}
 
-				blog.Errorf("identifier: convert instID failed the raw is %+v, rid: %s", curData[instIDField], rid)
-				continue
-			}
+		inst, err := getCache(ih.ctx, ih.cache, ih.db, event.ObjType, instID, false)
+		if err != nil {
+			blog.Errorf("identifier: getCache error %+v, rid: %s", err, rid)
+			continue
+		}
+		if nil == inst {
+			blog.Errorf("identifier: inst == nil, continue, rid:%s", rid)
+			continue
+		}
+		for _, field := range diffFields {
+			inst.set(field, curData[field])
+		}
+		err = inst.saveCache(ih.cache)
+		if err != nil {
+			blog.Errorf("identifier: SaveCache error %+v, rid: %s", err, rid)
+			continue
+		}
 
-			inst, err := getCache(ih.ctx, ih.cache, ih.db, e.ObjType, instID, false)
-			if err != nil {
-				blog.Errorf("identifier: getCache error %+v, rid: %s", err, rid)
-				continue
-			}
-			if nil == inst {
-				blog.Errorf("identifier: inst == nil, continue, rid:%s", rid)
-				continue
-			}
-			for _, field := range diffFields {
-				inst.set(field, curData[field])
-			}
-			err = inst.saveCache(ih.cache)
-			if err != nil {
-				blog.Errorf("identifier: SaveCache error %+v, rid: %s", err, rid)
-				continue
-			}
+		if common.BKInnerObjIDHost == event.ObjType {
+			hostIdentify.ID = ih.cache.Incr(types.EventCacheEventIDKey).Val()
+			d := metadata.EventData{CurData: inst.ident.fillIdentifier(ih.ctx, ih.cache, ih.db)}
+			hostIdentify.Data = append(hostIdentify.Data, d)
 
-			if common.BKInnerObjIDHost == e.ObjType {
-				hostIdentify.ID = ih.cache.Incr(types.EventCacheEventIDKey).Val()
-				d := metadata.EventData{CurData: inst.ident.fillIdentifier(ih.ctx, ih.cache, ih.db)}
-				hostIdentify.Data = append(hostIdentify.Data, d)
-
-				ih.cache.LPush(types.EventCacheEventQueueKey, &hostIdentify)
-				blog.InfoJSON("identifier: pushed event inst %s, rid: %s", hostIdentify, rid)
-			} else {
-				if err := ih.handleRelatedInst(hostIdentify, e.ObjType, instID, false); err != nil {
-					blog.Warnf("handleRelatedInst faile objtype: %s, inst: %d, error: %v, rid: %s", e.ObjType, instID, err, rid)
-				}
+			ih.cache.LPush(types.EventCacheEventQueueKey, &hostIdentify)
+			blog.InfoJSON("identifier: pushed event inst %s, rid: %s", hostIdentify, rid)
+		} else {
+			if err := ih.handleRelatedInst(hostIdentify, event.ObjType, instID, false); err != nil {
+				blog.Warnf("handleRelatedInst failed objType: %s, inst: %d, error: %v, rid: %s", event.ObjType, instID, err, rid)
 			}
 		}
 	}
@@ -150,20 +154,20 @@ func (ih *IdentifierHandler) handleModuleTransfer(e *metadata.EventInstCtx) {
 	go func() {
 		time.Sleep(delayTime)
 		for index := range e.Data {
-			var curdata map[string]interface{}
+			var curData map[string]interface{}
 			var ok bool
 			if metadata.EventActionDelete == e.Action {
-				curdata, ok = e.Data[index].PreData.(map[string]interface{})
+				curData, ok = e.Data[index].PreData.(map[string]interface{})
 			} else {
-				curdata, ok = e.Data[index].CurData.(map[string]interface{})
+				curData, ok = e.Data[index].CurData.(map[string]interface{})
 			}
 			if !ok {
 				continue
 			}
 
-			instID := getInt(curdata, common.BKHostIDField)
+			instID := getInt(curData, common.BKHostIDField)
 			if 0 == instID {
-				blog.Errorf("identifier: conver instID faile the raw is %+v, rid: %s", curdata[common.BKHostIDField], rid)
+				blog.Errorf("identifier: convert instID failed the raw is %+v, rid: %s", curData[common.BKHostIDField], rid)
 				continue
 			}
 
@@ -176,7 +180,9 @@ func (ih *IdentifierHandler) handleModuleTransfer(e *metadata.EventInstCtx) {
 				continue
 			}
 
-			inst.saveCache(ih.cache)
+			if err := inst.saveCache(ih.cache); err != nil {
+				blog.Errorf("saveCache failed, err: %+v", err)
+			}
 			d := metadata.EventData{CurData: inst.ident.fillIdentifier(ih.ctx, ih.cache, ih.db)}
 			hostIdentify.Data = append(hostIdentify.Data, d)
 		}
@@ -201,28 +207,28 @@ func (ih *IdentifierHandler) handleBindProcess(e *metadata.EventInstCtx) {
 	go func() {
 		time.Sleep(delayTime)
 		for index := range e.Data {
-			var curdata map[string]interface{}
+			var curData map[string]interface{}
 			var ok bool
 			if metadata.EventActionDelete == e.Action {
-				curdata, ok = e.Data[index].PreData.(map[string]interface{})
+				curData, ok = e.Data[index].PreData.(map[string]interface{})
 			} else {
-				curdata, ok = e.Data[index].CurData.(map[string]interface{})
+				curData, ok = e.Data[index].CurData.(map[string]interface{})
 			}
 			if !ok {
 				continue
 			}
 
-			instID := getInt(curdata, common.BKProcIDField)
+			instID := getInt(curData, common.BKProcIDField)
 			if 0 == instID {
-				blog.Errorf("identifier: conver instID faile the raw is %+v, rid: %s", curdata[common.BKProcIDField], rid)
+				blog.Errorf("identifier: convert instID failed the raw is %+v, rid: %s", curData[common.BKProcIDField], rid)
 				continue
 			}
 
 			modules := make([]metadata.ModuleInst, 0)
 			filter := map[string]interface{}{
-				common.BKSupplierIDField: curdata[common.BKSupplierIDField],
-				common.BKAppIDField:      curdata[common.BKAppIDField],
-				common.BKModuleNameField: curdata[common.BKModuleNameField],
+				common.BKSupplierIDField: curData[common.BKSupplierIDField],
+				common.BKAppIDField:      curData[common.BKAppIDField],
+				common.BKModuleNameField: curData[common.BKModuleNameField],
 			}
 			if err := ih.db.Table(common.BKTableNameBaseModule).Find(filter).All(ih.ctx, &modules); err != nil {
 				continue
@@ -230,7 +236,7 @@ func (ih *IdentifierHandler) handleBindProcess(e *metadata.EventInstCtx) {
 
 			for _, module := range modules {
 				if err := ih.handleRelatedInst(hostIdentify, common.BKInnerObjIDModule, module.ModuleID, true); err != nil {
-					blog.Warnf("handleRelatedInst faile objtype: %s, inst: %d, error: %v, rid: %s", e.ObjType, instID, err, rid)
+					blog.Warnf("handleRelatedInst failed objtype: %s, inst: %d, error: %v, rid: %s", e.ObjType, instID, err, rid)
 				}
 			}
 
@@ -267,7 +273,9 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 				if nil == inst {
 					continue
 				}
-				inst.saveCache(ih.cache)
+				if err := inst.saveCache(ih.cache); err != nil {
+					blog.Errorf("saveCache failed, err: %+v", err)
+				}
 				d := metadata.EventData{CurData: inst.ident.fillIdentifier(ih.ctx, ih.cache, ih.db)}
 				hostIdentify.Data = append(hostIdentify.Data, d)
 			}
@@ -298,7 +306,9 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 					if nil == inst {
 						continue
 					}
-					inst.saveCache(ih.cache)
+					if err := inst.saveCache(ih.cache); err != nil {
+						blog.Errorf("saveCache failed, err: %+v", err)
+					}
 					d := metadata.EventData{CurData: inst.ident.fillIdentifier(ih.ctx, ih.cache, ih.db)}
 					hostIdentify.Data = append(hostIdentify.Data, d)
 					continue
@@ -467,10 +477,10 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 	inst := Inst{objType: objType, instID: instID, ident: &HostIdentifier{}, data: map[string]interface{}{}}
 	if "" == ret || nilStr == ret || fromdb {
 		blog.Infof("objType %s, instID %d not in cache, fetch it from db", objType, instID)
-		getobjCondition := map[string]interface{}{
+		getObjCondition := map[string]interface{}{
 			common.GetInstIDField(objType): instID,
 		}
-		if err = db.Table(common.GetInstTableName(objType)).Find(getobjCondition).One(ctx, &inst.data); err != nil {
+		if err = db.Table(common.GetInstTableName(objType)).Find(getObjCondition).One(ctx, &inst.data); err != nil {
 			return nil, err
 		}
 		if common.BKInnerObjIDHost == objType {
@@ -504,7 +514,9 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 			inst.ident.Process = hostProcessMap[instID]
 			inst.data["process"] = inst.ident.Process
 		}
-		inst.saveCache(cache)
+		if err := inst.saveCache(cache); err != nil {
+			blog.Errorf("saveCache failed, err: %+v", err)
+		}
 	} else {
 		err := json.Unmarshal([]byte(ret), &inst.data)
 		if nil != err {
@@ -545,8 +557,8 @@ func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64)
 
 	blog.V(5).Infof("findHostServiceInst query host and process relation. hostID:%#v, relation:%#v", hostIDs, relations)
 
-	var procIDs []int64
-	var serviceInstIDs []int64
+	procIDs := make([]int64, 0)
+	serviceInstIDs := make([]int64, 0)
 	// 进程与服务实例的关系
 	procServiceInstMap := make(map[int64][]int64, 0)
 	for _, relation := range relations {
@@ -615,7 +627,7 @@ func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64)
 	return hostProcRelation, nil
 }
 
-func (ih *IdentifierHandler) StartHandleInsts() error {
+func (ih *IdentifierHandler) Run() error {
 	blog.Infof("identifier: handle identifiers started")
 	go func() {
 		ih.fetchHostCache()
@@ -623,41 +635,51 @@ func (ih *IdentifierHandler) StartHandleInsts() error {
 			ih.fetchHostCache()
 		}
 	}()
-	go ih.handleInstLoop()
+	go func() {
+		if err := ih.handleEventLoop(); err != nil {
+			blog.Errorf("handleInstLoop failed, err: %+v", err)
+		}
+	}()
 	select {}
 }
 
-func (ih *IdentifierHandler) handleInstLoop() error {
+func (ih *IdentifierHandler) handleEventLoop() error {
 	rid := util.ExtractRequestIDFromContext(ih.ctx)
 	defer func() {
 		procErr := recover()
 		if procErr != nil {
-			blog.Errorf("identifier: handleInstLoop panic: %v, stack:\n%s, rid: %s", procErr, debug.Stack(), rid)
+			blog.Errorf("identifier: handleEventLoop panic: %v, stack:\n%s, rid: %s", procErr, debug.Stack(), rid)
 		}
-		go ih.handleInstLoop()
+		// keep handleInstLoop run forever
+		go func() {
+			if err := ih.handleEventLoop(); err != nil {
+				blog.Errorf("handleEventLoop failed, err: %+v", err)
+			}
+		}()
 	}()
 	for {
-		event := ih.popEventInst()
+		event := ih.popEvent()
 		if nil == event {
 			time.Sleep(time.Second * 2)
 			continue
 		}
-		ih.handleInst(event)
+		ih.handleEvent(event)
 	}
 }
 
 const nilStr = "nil"
 
-func (ih *IdentifierHandler) popEventInst() *metadata.EventInstCtx {
+func (ih *IdentifierHandler) popEvent() *metadata.EventInstCtx {
 	rid := util.ExtractRequestIDFromContext(ih.ctx)
 
-	eventstrs := ih.cache.BRPop(time.Second*60, types.EventCacheEventQueueDuplicateKey).Val()
+	eventStrs := ih.cache.BRPop(time.Second*60, types.EventCacheEventQueueDuplicateKey).Val()
 
-	if 0 >= len(eventstrs) || nilStr == eventstrs[1] || "" == eventstrs[1] {
+	if len(eventStrs) == 0 || eventStrs[1] == nilStr || len(eventStrs[1]) == 0 {
 		return nil
 	}
 
-	eventStr := eventstrs[1]
+	// eventStrs format is []string{key, event}
+	eventStr := eventStrs[1]
 	event := metadata.EventInst{}
 	if err := json.Unmarshal([]byte(eventStr), &event); err != nil {
 		blog.Errorf("identifier: event distribute fail, unmarshal error: %+v, date=[%s], rid: %s", err, eventStr, rid)
@@ -733,11 +755,11 @@ func (ih *IdentifierHandler) fetchHostCache() {
 			}
 		}
 
-		ident.Process = []Process{}
+		ident.Process = make([]Process, 0)
 		for procID := range hostProcs {
 			bindModules := bindModulesMap[procID]
 			if len(bindModules) == 0 {
-				bindModules = []int64{}
+				bindModules = make([]int64, 0)
 			}
 			ident.Process = append(ident.Process, Process{ProcessID: procID, BindModules: bindModules})
 		}
@@ -767,7 +789,7 @@ func (ih *IdentifierHandler) fetchHostCache() {
 
 }
 
-func checkDifferent(curData, preData map[string]interface{}, fields ...string) (isDifferent bool) {
+func hasChanged(curData, preData map[string]interface{}, fields ...string) (isDifferent bool) {
 	for _, field := range fields {
 		if curData[field] != preData[field] {
 			return true
