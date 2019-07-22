@@ -24,20 +24,28 @@
             <div class="instance-label clearfix" @click.stop v-if="labelShowList.length">
                 <div class="label-title fl">
                     <i class="icon-cc-label"></i>
-                    <span>{{$t('BusinessTopology["标签"]')}}</span>
+                    <span>{{$t('BusinessTopology["标签"]')}}：</span>
                 </div>
                 <div class="label-list fl">
-                    <span class="label-item" :key="index" v-for="(label, index) in labelShowList">{{`${label.key}：${label.value}`}}</span>
-                    <div class="label-item label-tips"
-                        ref="tipsLabelContainer"
-                        v-if="labelTipsList.length"
-                        @mouseenter="handleShowTipsLabel"
-                        @mouseleave="handleCloseTipsLabel">
-                        <span>...</span>
-                        <div class="tips-label-list" ref="tipsLabel" v-click-outside="handleCloseTipsLabel" v-show="tipsLabel.show">
-                            <span class="label-item" :key="index" v-for="(label, index) in labelTipsList">{{`${label.key}：${label.value}`}}</span>
-                        </div>
+                    <div class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelShowList">
+                        <span>{{label.key}}</span>
+                        <span>:</span>
+                        <span>{{label.value}}</span>
                     </div>
+                    <bk-popover class="label-item label-tips"
+                        v-if="labelTipsList.length"
+                        theme="light"
+                        :width="290"
+                        placement="top-end">
+                        <span>...</span>
+                        <div class="tips-label-list" slot="content">
+                            <span class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelTipsList">
+                                <span>{{label.key}}</span>
+                                <span>:</span>
+                                <span>{{label.value}}</span>
+                            </span>
+                        </div>
+                    </bk-popover>
                 </div>
             </div>
         </div>
@@ -67,7 +75,6 @@
             return {
                 tipsLabel: {
                     show: false,
-                    instance: null,
                     id: null
                 },
                 show: true,
@@ -210,27 +217,6 @@
                         }
                     }
                 })
-            },
-            handleCloseTipsLabel () {
-                this.tipsLabel.instance && this.tipsLabel.instance.destroy()
-                this.tipsLabel.show = false
-            },
-            handleShowTipsLabel (event) {
-                if (this.tipsLabel.show) {
-                    this.handleCloseTipsLabel()
-                    return
-                }
-                this.tipsLabel.show = true
-                this.tipsLabel.instance = this.$tooltips({
-                    duration: -1,
-                    theme: 'light',
-                    zIndex: 9999,
-                    width: 290,
-                    placements: ['bottom'],
-                    container: this.$refs.tipsLabelContainer,
-                    target: event.target
-                })
-                this.tipsLabel.instance.$el.append(this.$refs.tipsLabel)
             }
         }
     }
@@ -282,8 +268,7 @@
         }
     }
     .instance-label {
-        display: inline-block;
-        vertical-align: middle;
+        @include inlineBlock;
         font-size: 12px;
         .icon-cc-label {
             color: #979ba5;
@@ -292,27 +277,53 @@
         .label-list {
             padding-left: 4px;
             line-height: 38px;
+            font-size: 0;
             .label-item {
-                display: inline-block;
+                @include inlineBlock;
+                font-size: 12px;
                 height: 20px;
                 line-height: 20px;
-                vertical-align: middle;
                 margin-right: 4px;
                 padding: 0 6px;
                 color: #979ba5;
                 background-color: #fafbfd;
                 border-radius: 2px;
-            }
-            .label-tips:hover {
-                background-color: #f0f1f5;
-            }
-            .tips-label-list {
-                .label-item {
-                    line-height: 18px;
-                    color: #979ba5;
-                    border: 1px solid #dcdee5;
-                    margin: 5px 2px;
+                &>span {
+                    @include ellipsis;
+                    display: inline-block;
+                    max-width: 54px;
                 }
+            }
+            .label-tips {
+                padding: 0;
+                .bk-tooltip-ref span {
+                    padding: 0 6px;
+                }
+                &:hover {
+                    background-color: #f0f1f5;
+                }
+            }
+        }
+    }
+</style>
+
+<style lang="scss">
+    .tips-label-list {
+        .label-item {
+            @include inlineBlock;
+            font-size: 12px;
+            height: 20px;
+            line-height: 18px;
+            margin: 5px 2px;
+            padding: 0 6px;
+            color: #979ba5;
+            background-color: #fafbfd;
+            border: 1px solid #dcdee5;
+            border-radius: 2px;
+            &>span {
+                @include ellipsis;
+                display: inline-block;
+                max-width: 54px;
             }
         }
     }
