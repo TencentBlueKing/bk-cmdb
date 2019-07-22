@@ -38,7 +38,7 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) 
 
 	eh := &EventHandler{cache: cache}
 	go func() {
-		chErr <- eh.StartHandleInsts()
+		chErr <- eh.Run()
 	}()
 
 	dh := &DistHandler{cache: cache, db: db, ctx: ctx}
@@ -48,7 +48,7 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) 
 
 	ih := identifier.NewIdentifierHandler(ctx, cache, db)
 	go func() {
-		chErr <- ih.StartHandleInsts()
+		chErr <- ih.Run()
 	}()
 
 	go cleanExpiredEvents(cache)
