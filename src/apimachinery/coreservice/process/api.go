@@ -552,8 +552,8 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 	return &ret.Data, nil
 }
 
-func (p *process) ListServiceInstanceDetail(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder) {
-	ret := new(metadata.MultipleServiceInstanceResult)
+func (p *process) ListServiceInstanceDetail(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder) {
+	ret := new(metadata.MultipleServiceInstanceDetailResult)
 	subPath := "/findmany/process/service_instance/details"
 
 	err := p.client.Post().

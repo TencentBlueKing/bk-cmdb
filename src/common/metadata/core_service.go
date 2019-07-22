@@ -404,6 +404,11 @@ type MultipleServiceInstanceResult struct {
 	Data     MultipleServiceInstance `json:"data"`
 }
 
+type MultipleServiceInstanceDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceInstanceDetail `json:"data"`
+}
+
 type OneProcessInstanceRelationResult struct {
 	BaseResp `json:",inline"`
 	Data     ProcessInstanceRelation `json:"data"`
