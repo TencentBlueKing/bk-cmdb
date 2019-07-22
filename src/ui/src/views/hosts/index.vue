@@ -1,6 +1,6 @@
 <template>
-    <div class="hosts-layout clearfix">
-        <div class="hosts-topology fl"
+    <div class="hosts-layout">
+        <div class="hosts-topology"
             v-bkloading="{ isLoading: $loading(['getInstTopo', 'getInternalTopo']) }"
             :class="{ 'is-collapse': layout.topologyCollapse }">
             <bk-big-tree class="topology-tree"
@@ -32,6 +32,7 @@
         </div>
         <cmdb-hosts-table class="hosts-main" ref="hostsTable"
             delete-auth=""
+            :show-collection="true"
             :edit-auth="$OPERATION.U_HOST"
             :save-auth="$OPERATION.U_HOST"
             :transfer-resource-auth="$OPERATION.HOST_TO_RESOURCE"
@@ -42,7 +43,7 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapGetters, mapActions, mapState } from 'vuex'
     import cmdbHostsTable from '@/components/hosts/table'
     export default {
         components: {
@@ -57,26 +58,20 @@
                     module: []
                 },
                 filter: {
-                    business: null,
-                    businessResolver: null,
-                    params: null,
-                    paramsResolver: null,
                     selectedNode: null
                 },
                 layout: {
                     topologyCollapse: false
-                }
+                },
+                ready: false
             }
         },
         computed: {
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
-            ...mapGetters('hostFavorites', ['applyingInfo']),
             ...mapGetters('objectBiz', ['bizId']),
+            ...mapState('hosts', ['filterParams']),
             columnsConfigKey () {
                 return `${this.userName}_host_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
-            },
-            filterConfigKey () {
-                return `${this.userName}_host_${this.isAdminView ? 'adminView' : this.bizId}_filter_fields`
             },
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
@@ -86,9 +81,9 @@
             }
         },
         watch: {
-            applyingInfo (info) {
-                if (info) {
-                    this.filter.business = info['bk_biz_id']
+            filterParams () {
+                if (this.ready) {
+                    this.getHostList()
                 }
             }
         },
@@ -104,17 +99,13 @@
                 this.$refs.tree.setSelected(businessNodeId, {
                     emitEvent: true
                 })
+                this.ready = true
             } catch (e) {
                 console.log(e)
             }
         },
-        beforeRouteUpdate (to, from, next) {
-            this.$store.commit('hostFavorites/setApplying', null)
-            next()
-        },
-        beforeRouteLeave (to, from, next) {
-            this.$store.commit('hostFavorites/setApplying', null)
-            next()
+        beforeDestroy () {
+            this.ready = true
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
@@ -185,15 +176,11 @@
                 }
                 const params = {
                     bk_biz_id: this.bizId,
-                    ip: {
-                        flag: 'bk_host_innerip|bk_host_outer',
-                        exact: 0,
-                        data: []
-                    },
+                    ip: this.filterParams.ip,
                     condition: defaultModel.map(model => {
                         return {
                             bk_obj_id: model,
-                            condition: [],
+                            condition: this.filterParams[model] || [],
                             fields: []
                         }
                     })
@@ -220,14 +207,15 @@
     .hosts-layout{
         height: 100%;
         padding: 0;
-        overflow: hidden;
+        display: flex;
         .hosts-topology {
             position: relative;
-            width: 280px;
+            flex: 280px 0 0;
             height: 100%;
             border-right: 1px solid $cmdbLayoutBorderColor;
             &.is-collapse {
                 width: 0;
+                flex: 0 0 0;
                 .topology-collapse-icon:before {
                     display: inline-block;
                     transform: rotate(180deg);
@@ -253,9 +241,9 @@
             }
         }
         .hosts-main{
+            flex: 1;
             height: 100%;
             padding: 20px;
-            overflow: hidden;
         }
     }
     .topology-tree {

@@ -1,8 +1,8 @@
 <template>
     <div class="hosts-table-layout">
         <div class="hosts-options">
-            <slot name="options">
-                <span class="inline-block-middle"
+            <slot name="options-left">
+                <span class="inline-block-middle mr10"
                     v-cursor="{
                         active: !$isAuthorized(editAuth),
                         auth: [editAuth]
@@ -13,7 +13,7 @@
                         {{$t('Common["编辑"]')}}
                     </bk-button>
                 </span>
-                <span class="inline-block-middle"
+                <span class="inline-block-middle mr10"
                     v-cursor="{
                         active: !$isAuthorized(transferAuth),
                         auth: [transferAuth]
@@ -24,7 +24,7 @@
                         {{$t('BusinessTopology["转移"]')}}
                     </bk-button>
                 </span>
-                <bk-button class="options-button"
+                <bk-button class="options-button mr10"
                     theme="default"
                     type="submit"
                     form="exportForm"
@@ -46,15 +46,43 @@
                     :disabled="!table.checked.length"
                     @on-copy="handleCopy">
                 </cmdb-clipboard-selector>
-                <div class="fr">
-                    <cmdb-host-filter :properties="filterProperties"></cmdb-host-filter>
-                    <bk-button class="options-button"
-                        icon="icon-cc-setting"
-                        v-bk-tooltips.top="$t('BusinessTopology[\'列表显示属性配置\']')"
-                        @click="columnsConfig.show = true">
-                    </bk-button>
-                </div>
             </slot>
+            <div class="fr">
+                <bk-select class="options-collection"
+                    v-if="showCollection"
+                    ref="collectionSelector"
+                    v-model="selectedCollection"
+                    :loading="$loading('searchCollection')"
+                    :placeholder="$t('请选择收藏条件')"
+                    @change="handleSelectCollection">
+                    <bk-option v-for="collection in collectionList"
+                        :key="collection.id"
+                        :id="collection.id"
+                        :name="collection.name">
+                    </bk-option>
+                    <div slot="extension">
+                        <a href="javascript:void(0)" class="collection-create" @click="handleCreateCollection">
+                            <i class="bk-icon icon-plus-circle"></i>
+                            {{$t('新增条件')}}
+                        </a>
+                    </div>
+                </bk-select>
+                <cmdb-host-filter class="ml10"
+                    ref="hostFilter"
+                    :properties="filterProperties"
+                    :show-scope="showScope">
+                </cmdb-host-filter>
+                <bk-button class="options-button ml10"
+                    icon="icon-cc-setting"
+                    v-bk-tooltips.top="$t('BusinessTopology[\'列表显示属性配置\']')"
+                    @click="columnsConfig.show = true">
+                </bk-button>
+                <bk-button class="options-button ml10" v-if="showHistory"
+                    v-bk-tooltips="$t('Common[\'查看删除历史\']')"
+                    icon="icon-cc-history"
+                    @click="routeToHistory">
+                </bk-button>
+            </div>
         </div>
         <bk-table class="hosts-table"
             v-bkloading="{ isLoading: $loading() }"
@@ -135,7 +163,7 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapGetters, mapActions, mapState } from 'vuex'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
@@ -179,7 +207,10 @@
             transferResourceAuth: {
                 type: [String, Array],
                 default: ''
-            }
+            },
+            showCollection: Boolean,
+            showHistory: Boolean,
+            showScope: Boolean
         },
         data () {
             return {
@@ -233,12 +264,14 @@
                 },
                 transfer: {
                     show: false
-                }
+                },
+                selectedCollection: ''
             }
         },
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapState('hosts', ['collectionList']),
             customColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
@@ -283,6 +316,9 @@
                     this.getProperties(),
                     this.getHostPropertyGroups()
                 ])
+                if (this.showCollection) {
+                    this.getCollectionList()
+                }
             } catch (e) {
                 console.log(e)
             }
@@ -321,6 +357,55 @@
                     this.propertyGroups = groups
                     return groups
                 })
+            },
+            async getCollectionList () {
+                try {
+                    const data = await this.$store.dispatch('hostFavorites/searchFavorites', {
+                        params: {},
+                        config: {
+                            requestId: 'searchCollection'
+                        }
+                    })
+                    this.$store.commit('hosts/setCollectionList', data.info)
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleSelectCollection (value) {
+                if (value) {
+                    const collection = this.collectionList.find(collection => collection.id === value)
+                    try {
+                        const filterList = JSON.parse(collection.query_params).map(condition => {
+                            return {
+                                bk_obj_id: condition.bk_obj_id,
+                                bk_property_id: condition.field,
+                                operator: condition.operator,
+                                value: condition.value
+                            }
+                        })
+                        const info = JSON.parse(collection.info)
+                        const filterIP = {
+                            text: info.ip_list.join('\n'),
+                            exact: info.exact_search,
+                            inner: info.bk_host_innerip,
+                            outer: info.bk_host_outerip
+                        }
+                        this.$store.commit('hosts/setFilterList', filterList)
+                        this.$store.commit('hosts/setFilterIP', filterIP)
+                        this.$store.commit('hosts/setCollection', collection)
+                        this.$refs.hostFilter.handleSearch(false)
+                    } catch (e) {
+                        this.$error(this.$t('应用收藏条件失败，转换数据错误'))
+                        console.error(e.message)
+                    }
+                } else {
+                    this.$store.commit('hosts/clearFilter')
+                }
+            },
+            handleCreateCollection () {
+                this.selectedCollection = ''
+                this.$refs.collectionSelector.close()
+                this.$refs.hostFilter.handleToggleFilter()
             },
             setTableHeader () {
                 const properties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
@@ -546,6 +631,17 @@
             },
             handleQuickSearch (property, value, operator) {
                 this.$emit('on-quick-search', property, value, operator)
+            },
+            routeToHistory () {
+                this.$router.push({
+                    name: 'history',
+                    params: {
+                        objId: 'host'
+                    },
+                    query: {
+                        from: this.$route.fullPath
+                    }
+                })
             }
         }
     }
@@ -559,7 +655,6 @@
             display: inline-block;
             vertical-align: middle;
             font-size: 14px;
-            margin: 0 5px;
             &.quick-search-button {
                 .icon-angle-down {
                     font-size: 12px;
@@ -574,10 +669,10 @@
             }
         }
     }
-    .hosts-table{
+    .hosts-table {
         margin-top: 20px;
     }
-    .transfer-title{
+    .transfer-title {
         height: 50px;
         line-height: 50px;
         background-color: #f9f9f9;
@@ -589,5 +684,23 @@
     }
     .transfer-content {
         height: 540px;
+    }
+    .options-collection {
+        width: 200px;
+    }
+    .collection-create {
+        display: inline-block;
+        font-size: 12px;
+        color: #63656E;
+        line-height: 16px;
+        cursor: pointer;
+        &:hover {
+            color: #3a84ff;
+        }
+        .bk-icon {
+            font-size: 14px;
+            display: inline-block;
+            vertical-align: -2px;
+        }
     }
 </style>

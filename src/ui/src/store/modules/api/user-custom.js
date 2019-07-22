@@ -33,7 +33,13 @@ const getters = {
         const userName = rootGetters['userName']
         return `${userName}_${isAdminView ? 'adminView' : bizId}_recently`
     },
-    usercustom: state => state.usercustom
+    usercustom: state => state.usercustom,
+    getCustomData: (state) => (key, defaultData = null) => {
+        if (state.usercustom.hasOwnProperty(key)) {
+            return state.usercustom[key]
+        }
+        return defaultData
+    }
 }
 
 const actions = {
