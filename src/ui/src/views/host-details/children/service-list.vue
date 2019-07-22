@@ -23,6 +23,13 @@
                         v-model="searchSelectData"
                         @change="handleSearch">
                     </bk-search-select>
+                    <!-- <bk-search-select
+                        :show-condition="false"
+                        :placeholder="$t('BusinessTopology[\'实例名称/标签\']')"
+                        :data="searchSelect"
+                        v-model="searchSelectData"
+                        @change="handleSearch">
+                    </bk-search-select> -->
                 </div>
             </div>
         </div>
@@ -66,7 +73,9 @@
                     },
                     {
                         name: this.$t('BusinessTopology["标签"]'),
-                        id: 1
+                        id: 1,
+                        multiable: true,
+                        children: []
                     }
                 ],
                 searchSelectData: [],
@@ -97,9 +106,17 @@
                     const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
                         || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
                     const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
-                    const selectors = labels.map(item => {
+                    const labelKeys = []
+                    labels.forEach(label => {
+                        label.values.forEach(value => {
+                            if (!labelKeys.includes(value.name)) {
+                                labelKeys.push(value.name)
+                            }
+                        })
+                    })
+                    const selectors = labelKeys.map(key => {
                         return {
-                            key: item.values[0].name,
+                            key: key,
                             operator: 'exists',
                             values: []
                         }
@@ -183,6 +200,14 @@
             handleSearch (value) {
                 const instanceName = this.searchSelectData.filter(item => (item.id === 0 && item.hasOwnProperty('values'))
                     || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
+                if (instanceName.length) {
+                    this.searchSelect[0].id === 0 && this.searchSelect.shift()
+                } else {
+                    this.searchSelect[0].id !== 0 && this.searchSelect.unshift({
+                        name: this.$t('BusinessTopology["服务实例名"]'),
+                        id: 0
+                    })
+                }
                 if (instanceName.length >= 2) {
                     this.searchSelectData.pop()
                     this.$bkMessage({
@@ -226,6 +251,7 @@
         @include inlineBlock;
         position: relative;
         min-width: 240px;
+        z-index: 99;
     }
     .tables {
         padding-top: 16px;

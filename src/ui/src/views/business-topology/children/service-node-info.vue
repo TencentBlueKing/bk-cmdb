@@ -539,6 +539,9 @@
         color: #63656E;
     }
     .topology-form {
+        /deep/.property-item {
+            max-width: 554px !important;
+        }
         .category-selector {
             width: calc(50% - 5px);
             & + .category-selector {
