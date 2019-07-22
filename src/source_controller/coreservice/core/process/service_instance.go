@@ -284,6 +284,159 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 	return result, nil
 }
 
+func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, option metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder) {
+	if option.BusinessID == 0 {
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	if option.Page.Limit > common.BKMaxPageSize {
+		return nil, ctx.Error.CCError(common.CCErrCommOverLimit)
+	}
+
+	moduleFilter := map[string]interface{}{
+		common.BKAppIDField: option.BusinessID,
+	}
+	if option.SetID != 0 {
+		moduleFilter[common.BKSetIDField] = option.SetID
+	}
+	if option.ModuleID != 0 {
+		moduleFilter[common.BKModuleIDField] = option.ModuleID
+	}
+	modules := make([]metadata.ModuleInst, 0)
+	if err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).All(ctx.Context, modules); err != nil {
+		blog.Errorf("ListServiceInstanceDetail failed, list modules failed, filter: %+v, err: %+v, rid: %s", moduleFilter, err, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	targetModuleIDs := make([]int64, 0)
+	moduleCategoryMap := make(map[int64]int64)
+	for _, module := range modules {
+		targetModuleIDs = append(targetModuleIDs, module.ModuleID)
+		moduleCategoryMap[module.ModuleID] = module.ServiceCategoryID
+	}
+
+	if len(targetModuleIDs) == 0 {
+		result := &metadata.MultipleServiceInstanceDetail{
+			Count: 0,
+			Info:  make([]metadata.ServiceInstanceDetail, 0),
+		}
+		return result, nil
+	}
+
+	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
+	filter := map[string]interface{}{
+		common.MetadataField: md.ToMapStr(),
+		common.BKModuleIDField: map[string]interface{}{
+			common.BKDBIN: targetModuleIDs,
+		},
+	}
+	if option.HostID != 0 {
+		filter[common.BKHostIDField] = option.HostID
+	}
+
+	if key, err := option.Selectors.Validate(); err != nil {
+		blog.Errorf("ListServiceInstance failed, selector validate failed, selectors: %+v, key: %s, err: %+v, rid: %s", option.Selectors, key, err, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, key)
+	}
+	if len(option.Selectors) != 0 {
+		labelFilter, err := option.Selectors.ToMgoFilter()
+		if err != nil {
+			blog.Errorf("ListServiceInstance failed, selectors to filer failed, selectors: %+v, err: %+v, rid: %s", option.Selectors, err, ctx.ReqID)
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "labels")
+		}
+		filter = util.MergeMaps(filter, labelFilter)
+	}
+
+	var total uint64
+	var err error
+	if total, err = p.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(ctx.Context); nil != err {
+		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	serviceInstances := make([]metadata.ServiceInstanceDetail, 0)
+	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(ctx.Context, &serviceInstances); nil != err {
+		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	if len(serviceInstances) == 0 {
+		result := &metadata.MultipleServiceInstanceDetail{
+			Count: total,
+			Info:  serviceInstances,
+		}
+		return result, nil
+	}
+
+	// filter process instances
+	serviceInstanceIDs := make([]int64, 0)
+	for idx, serviceInstance := range serviceInstances {
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
+		// set service_category_id field
+		serviceInstances[idx].ServiceCategoryID = moduleCategoryMap[serviceInstance.ModuleID]
+	}
+
+	relations := make([]metadata.ProcessInstanceRelation, 0)
+	relationFilter := map[string]interface{}{
+		common.BKServiceInstanceIDField: map[string]interface{}{
+			common.BKDBIN: serviceInstanceIDs,
+		},
+	}
+	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).All(ctx.Context, relations); err != nil {
+		blog.Errorf("ListServiceInstanceDetail failed, list processRelations failed, err: %+v, rid: %s", relationFilter, err, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	processIDs := make([]int64, 0)
+	for _, relation := range relations {
+		processIDs = append(processIDs, relation.ProcessID)
+	}
+	processes := make([]metadata.Process, 0)
+	processFilter := map[string]interface{}{
+		common.BKProcessIDField: map[string]interface{}{
+			common.BKDBIN: processIDs,
+		},
+	}
+	if err := p.dbProxy.Table(common.BKTableNameBaseProcess).Find(processFilter).All(ctx.Context, processes); err != nil {
+		blog.Errorf("ListServiceInstanceDetail failed, list process failed, filter: %+v, err: %+v, rid: %s", processFilter, err, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	// processID -> relation
+	processRelationMap := make(map[int64]metadata.ProcessInstanceRelation, 0)
+	for _, relation := range relations {
+		processRelationMap[relation.ProcessID] = relation
+	}
+	// serviceInstanceID -> []ProcessInstance
+	serviceInstanceMap := make(map[int64][]metadata.ProcessInstanceNG, 0)
+	for _, process := range processes {
+		relation, ok := processRelationMap[process.ProcessID]
+		if ok == false {
+			blog.Warnf("ListServiceInstanceDetail got unexpected state, process's relation not found, process: %+v, rid: %s", process, ctx.ReqID)
+			continue
+		}
+		if _, ok := serviceInstanceMap[relation.ServiceInstanceID]; ok == false {
+			serviceInstanceMap[relation.ServiceInstanceID] = make([]metadata.ProcessInstanceNG, 0)
+		}
+		processInstance := metadata.ProcessInstanceNG{
+			Process:  process,
+			Relation: relation,
+		}
+		serviceInstanceMap[relation.ServiceInstanceID] = append(serviceInstanceMap[relation.ServiceInstanceID], processInstance)
+	}
+
+	for idx, serviceInstance := range serviceInstances {
+		processInfo, ok := serviceInstanceMap[serviceInstance.ID]
+		if ok == false {
+			continue
+		}
+		serviceInstances[idx].ProcessInstances = processInfo
+	}
+
+	result := &metadata.MultipleServiceInstanceDetail{
+		Count: total,
+		Info:  serviceInstances,
+	}
+	return result, nil
+}
+
 func (p *processOperation) DeleteServiceInstance(ctx core.ContextParams, serviceInstanceIDs []int64) errors.CCErrorCoder {
 	for _, serviceInstanceID := range serviceInstanceIDs {
 		instance, err := p.GetServiceInstance(ctx, serviceInstanceID)

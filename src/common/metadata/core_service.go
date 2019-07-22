@@ -321,8 +321,17 @@ type ListServiceInstanceOption struct {
 	ModuleID           int64              `json:"module_id,omitempty"`
 	SearchKey          *string            `json:"search_key,omitempty"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
-	Page               BasePage           `json:"page,omitempty"`
 	Selectors          selector.Selectors `json:"selectors,omitempty"`
+	Page               BasePage           `json:"page,omitempty"`
+}
+
+type ListServiceInstanceDetailOption struct {
+	BusinessID int64              `json:"bk_biz_id"`
+	SetID      int64              `json:"bk_set_id"`
+	ModuleID   int64              `json:"bk_module_id"`
+	HostID     int64              `json:"bk_host_id"`
+	Selectors  selector.Selectors `json:"selectors,omitempty"`
+	Page       BasePage           `json:"page,omitempty"`
 }
 
 type ListProcessInstanceRelationOption struct {
@@ -383,6 +392,11 @@ type OneServiceInstanceResult struct {
 type MultipleServiceInstance struct {
 	Count uint64            `json:"count"`
 	Info  []ServiceInstance `json:"info"`
+}
+
+type MultipleServiceInstanceDetail struct {
+	Count uint64                  `json:"count"`
+	Info  []ServiceInstanceDetail `json:"info"`
 }
 
 type MultipleServiceInstanceResult struct {

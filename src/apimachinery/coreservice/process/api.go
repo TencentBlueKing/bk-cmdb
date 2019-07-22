@@ -552,6 +552,29 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 	return &ret.Data, nil
 }
 
+func (p *process) ListServiceInstanceDetail(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder) {
+	ret := new(metadata.MultipleServiceInstanceResult)
+	subPath := "/findmany/process/service_instance/details"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("ListServiceInstanceDetail failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
 /*
 	process instance relation api
 */
