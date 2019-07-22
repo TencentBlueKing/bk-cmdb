@@ -159,7 +159,7 @@ var expectBizResourceType = []ResourceType{
 				IsRelatedResource: false,
 			},
 		},
-	},	
+	},
 	{
 		ResourceTypeID:       BizProcessServiceTemplate,
 		ResourceTypeName:     "服务模板",
@@ -186,6 +186,29 @@ var expectBizResourceType = []ResourceType{
 	{
 		ResourceTypeID:       BizProcessServiceCategory,
 		ResourceTypeName:     "服务分类",
+		ParentResourceTypeID: "",
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: false,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       BizProcessServiceInstance,
+		ResourceTypeName:     "服务实例",
 		ParentResourceTypeID: "",
 		Share:                true,
 		Actions: []Action{
