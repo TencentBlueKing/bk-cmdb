@@ -153,15 +153,17 @@ func (tn *TopoModelNode) LeftestObjectIDList() []string {
 }
 
 type TopoInstanceNodeSimplify struct {
-	ObjectID   string
-	InstanceID int64
+	ObjectID     string
+	InstanceID   int64
+	InstanceName string
 }
 
 type TopoInstanceNode struct {
-	Children   []*TopoInstanceNode
-	ObjectID   string
-	InstanceID int64
-	Detail     map[string]interface{}
+	Children     []*TopoInstanceNode
+	ObjectID     string
+	InstanceID   int64
+	InstanceName string
+	Detail       map[string]interface{}
 }
 
 type SearchTopoInstanceNodeResult struct {
@@ -217,6 +219,7 @@ func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int6
 type TopoInstance struct {
 	ObjectID         string
 	InstanceID       int64
+	InstanceName     string
 	ParentInstanceID int64
 	Detail           map[string]interface{}
 	Default          int64

@@ -807,8 +807,9 @@ func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
 		nodes := make([]metadata.TopoInstanceNodeSimplify, 0)
 		for _, topoNode := range topoPath {
 			node := metadata.TopoInstanceNodeSimplify{
-				ObjectID:   topoNode.ObjectID,
-				InstanceID: topoNode.InstanceID,
+				ObjectID:     topoNode.ObjectID,
+				InstanceID:   topoNode.InstanceID,
+				InstanceName: topoNode.InstanceName,
 			}
 			nodes = append(nodes, node)
 		}
