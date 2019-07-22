@@ -133,6 +133,26 @@ func ParseEnumOption(val interface{}) EnumOption {
 				enumOptions = append(enumOptions, enumOption)
 			}
 		}
+	case []map[string]interface{}:
+		for _, option := range options {
+			enumOption := EnumVal{}
+			enumOption.ID = getString(option["id"])
+			enumOption.Name = getString(option["name"])
+			enumOption.Type = getString(option["type"])
+			enumOption.IsDefault = getBool(option["is_default"])
+			enumOptions = append(enumOptions, enumOption)
+
+		}
+	default:
+		byteArr, err := json.Marshal(options)
+		if nil != err {
+			blog.Errorf("ParseEnumOption Marshal error : %s", err.Error())
+		}
+		err = json.Unmarshal(byteArr, &enumOptions)
+		if nil != err {
+			blog.Errorf("ParseEnumOption Unmarshal error : %s", err.Error())
+		}
+
 	}
 	return enumOptions
 }
