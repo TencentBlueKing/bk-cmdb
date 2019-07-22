@@ -1133,6 +1133,11 @@ type ServiceInstanceDetail struct {
 	ProcessInstances  []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
 }
 
+type ServiceInstanceWithTopoPath struct {
+	ServiceInstance
+	TopoPath []TopoInstanceNodeSimplify `field:"topo_path" json:"topo_path" bson:"topo_path"`
+}
+
 // ProcessInstanceRelation record which service instance and process template are current process binding, process identified by ProcessID
 type ProcessInstanceRelation struct {
 	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`

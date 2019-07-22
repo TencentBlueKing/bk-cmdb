@@ -152,6 +152,11 @@ func (tn *TopoModelNode) LeftestObjectIDList() []string {
 	return objectIDs
 }
 
+type TopoInstanceNodeSimplify struct {
+	ObjectID   string
+	InstanceID int64
+}
+
 type TopoInstanceNode struct {
 	Children   []*TopoInstanceNode
 	ObjectID   string
