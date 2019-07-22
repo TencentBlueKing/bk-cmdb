@@ -1114,12 +1114,6 @@ type ServiceInstance struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
-type ServiceInstanceDetail struct {
-	ServiceInstance
-	ServiceCategoryID int64               `field:"service_category_id" json:"service_category_id" bson:"service_category_id"`
-	ProcessInstances  []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
-}
-
 func (si *ServiceInstance) Validate() (field string, err error) {
 	/*
 		if len(si.Name) == 0 {
@@ -1131,6 +1125,12 @@ func (si *ServiceInstance) Validate() (field string, err error) {
 		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(si.Name), common.NameFieldMaxLength)
 	}
 	return "", nil
+}
+
+type ServiceInstanceDetail struct {
+	ServiceInstance
+	ServiceCategoryID int64               `field:"service_category_id" json:"service_category_id" bson:"service_category_id"`
+	ProcessInstances  []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
 }
 
 // ProcessInstanceRelation record which service instance and process template are current process binding, process identified by ProcessID

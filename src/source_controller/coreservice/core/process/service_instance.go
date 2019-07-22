@@ -303,7 +303,7 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 		moduleFilter[common.BKModuleIDField] = option.ModuleID
 	}
 	modules := make([]metadata.ModuleInst, 0)
-	if err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).All(ctx.Context, modules); err != nil {
+	if err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).All(ctx.Context, &modules); err != nil {
 		blog.Errorf("ListServiceInstanceDetail failed, list modules failed, filter: %+v, err: %+v, rid: %s", moduleFilter, err, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -352,26 +352,32 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
-	serviceInstances := make([]metadata.ServiceInstanceDetail, 0)
+	serviceInstances := make([]metadata.ServiceInstance, 0)
+	serviceInstanceDetails := make([]metadata.ServiceInstanceDetail, 0)
 	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(ctx.Context, &serviceInstances); nil != err {
 		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	for _, serviceInstance := range serviceInstances {
+		serviceInstanceDetails = append(serviceInstanceDetails, metadata.ServiceInstanceDetail{
+			ServiceInstance: serviceInstance,
+		})
 	}
 
 	if len(serviceInstances) == 0 {
 		result := &metadata.MultipleServiceInstanceDetail{
 			Count: total,
-			Info:  serviceInstances,
+			Info:  serviceInstanceDetails,
 		}
 		return result, nil
 	}
 
 	// filter process instances
 	serviceInstanceIDs := make([]int64, 0)
-	for idx, serviceInstance := range serviceInstances {
+	for idx, serviceInstance := range serviceInstanceDetails {
 		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
 		// set service_category_id field
-		serviceInstances[idx].ServiceCategoryID = moduleCategoryMap[serviceInstance.ModuleID]
+		serviceInstanceDetails[idx].ServiceCategoryID = moduleCategoryMap[serviceInstance.ModuleID]
 	}
 
 	relations := make([]metadata.ProcessInstanceRelation, 0)
@@ -380,7 +386,7 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 			common.BKDBIN: serviceInstanceIDs,
 		},
 	}
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).All(ctx.Context, relations); err != nil {
+	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).All(ctx.Context, &relations); err != nil {
 		blog.Errorf("ListServiceInstanceDetail failed, list processRelations failed, err: %+v, rid: %s", relationFilter, err, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -395,7 +401,7 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 			common.BKDBIN: processIDs,
 		},
 	}
-	if err := p.dbProxy.Table(common.BKTableNameBaseProcess).Find(processFilter).All(ctx.Context, processes); err != nil {
+	if err := p.dbProxy.Table(common.BKTableNameBaseProcess).Find(processFilter).All(ctx.Context, &processes); err != nil {
 		blog.Errorf("ListServiceInstanceDetail failed, list process failed, filter: %+v, err: %+v, rid: %s", processFilter, err, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -422,17 +428,17 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 		serviceInstanceMap[relation.ServiceInstanceID] = append(serviceInstanceMap[relation.ServiceInstanceID], processInstance)
 	}
 
-	for idx, serviceInstance := range serviceInstances {
+	for idx, serviceInstance := range serviceInstanceDetails {
 		processInfo, ok := serviceInstanceMap[serviceInstance.ID]
 		if ok == false {
 			continue
 		}
-		serviceInstances[idx].ProcessInstances = processInfo
+		serviceInstanceDetails[idx].ProcessInstances = processInfo
 	}
 
 	result := &metadata.MultipleServiceInstanceDetail{
 		Count: total,
-		Info:  serviceInstances,
+		Info:  serviceInstanceDetails,
 	}
 	return result, nil
 }
