@@ -134,6 +134,36 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 	ctx.RespEntity(instances)
 }
 
+func (ps *ProcServer) ListServiceInstancesDetails(ctx *rest.Contexts) {
+	input := new(metadata.ListServiceInstanceDetailRequest)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil || bizID == 0 {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get service instances in module, but parse biz id failed, err: %v", err)
+		return
+	}
+
+	option := &metadata.ListServiceInstanceDetailOption{
+		BusinessID: bizID,
+		ModuleID:   input.ModuleID,
+		SetID:      input.SetID,
+		HostID:     input.HostID,
+		Page:       input.Page,
+		Selectors:  input.Selectors,
+	}
+	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
+		return
+	}
+
+	ctx.RespEntity(instances)
+}
+
 func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 	input := new(metadata.DeleteServiceInstanceOption)
 	if err := ctx.DecodeInto(input); err != nil {

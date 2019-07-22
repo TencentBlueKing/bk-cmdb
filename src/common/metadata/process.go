@@ -66,10 +66,10 @@ type DeleteServiceTemplatesInput struct {
 }
 
 type CreateServiceInstanceForServiceTemplateInput struct {
-	Metadata  Metadata                `json:"metadata"`
-	Name      string                  `json:"name"`
-	ModuleID  int64                   `json:"bk_module_id"`
-	Instances []ServiceInstanceDetail `json:"instances"`
+	Metadata  Metadata                      `json:"metadata"`
+	Name      string                        `json:"name"`
+	ModuleID  int64                         `json:"bk_module_id"`
+	Instances []CreateServiceInstanceDetail `json:"instances"`
 }
 
 type CreateRawProcessInstanceInput struct {
@@ -94,6 +94,15 @@ type GetServiceInstanceInModuleInput struct {
 	Page      BasePage           `json:"page"`
 	SearchKey *string            `json:"search_key,omitempty"`
 	Selectors selector.Selectors `json:"selectors"`
+}
+
+type ListServiceInstanceDetailRequest struct {
+	Metadata  Metadata           `json:"metadata"`
+	SetID     int64              `json:"bk_set_id"`
+	ModuleID  int64              `json:"bk_module_id"`
+	HostID    int64              `json:"bk_host_id"`
+	Page      BasePage           `json:"page,omitempty"`
+	Selectors selector.Selectors `json:"selectors,omitempty"`
 }
 
 type DiffServiceInstanceWithTemplateOption struct {
@@ -161,7 +170,7 @@ type ServiceDifferenceDetails struct {
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes,omitempty"`
 }
 
-type ServiceInstanceDetail struct {
+type CreateServiceInstanceDetail struct {
 	HostID int64 `json:"bk_host_id"`
 	// Processes parameter usable only when create instance with raw
 	Processes []ProcessInstanceDetail `json:"processes"`
@@ -1105,6 +1114,12 @@ type ServiceInstance struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
+type ServiceInstanceDetail struct {
+	ServiceInstance
+	ServiceCategoryID int64               `field:"service_category_id" json:"service_category_id" bson:"service_category_id"`
+	ProcessInstances  []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
+}
+
 func (si *ServiceInstance) Validate() (field string, err error) {
 	/*
 		if len(si.Name) == 0 {
@@ -1140,6 +1155,11 @@ func (pir *ProcessInstanceRelation) Validate() (field string, err error) {
 
 type ProcessInstance struct {
 	Property mapstr.MapStr           `json:"property"`
+	Relation ProcessInstanceRelation `json:"relation"`
+}
+
+type ProcessInstanceNG struct {
+	Process  Process                 `json:"process"`
 	Relation ProcessInstanceRelation `json:"relation"`
 }
 
