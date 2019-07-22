@@ -420,13 +420,13 @@ func (h *host) GetHostModulesIDs(ctx context.Context, header http.Header, dat *m
 	return
 }
 
-func (h *host) GetModulesHostConfig(ctx context.Context, header http.Header, dat map[string][]int64) (resp *metadata.HostConfig, err error) {
+func (h *host) GetModulesHostConfig(ctx context.Context, header http.Header, option metadata.HostModuleRelationRequest) (resp *metadata.HostConfig, err error) {
 	resp = new(metadata.HostConfig)
 	subPath := "/findmany/meta/hosts/module/config/search"
 
 	err = h.client.Post().
 		WithContext(ctx).
-		Body(dat).
+		Body(option).
 		SubResource(subPath).
 		WithHeaders(header).
 		Do().

@@ -47,12 +47,11 @@ type module struct {
 }
 
 func (m *module) hasHost(bizID int64, moduleIDS []int64) (bool, error) {
-	cond := map[string][]int64{
-		"ApplicationID": []int64{bizID},
-		"ModuleID":      moduleIDS,
+	option := metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		ModuleIDArr:   moduleIDS,
 	}
-
-	rsp, err := m.client.CoreService().Host().GetModulesHostConfig(context.Background(), m.params.Header, cond)
+	rsp, err := m.client.CoreService().Host().GetModulesHostConfig(context.Background(), m.params.Header, option)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request the object controller, err: %s, rid: %s", err.Error(), m.params.ReqID)
 		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

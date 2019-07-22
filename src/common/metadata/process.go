@@ -1069,7 +1069,7 @@ type PropertyBindIP struct {
 }
 
 func (ti *PropertyBindIP) Validate() error {
-	if ti.Value != nil {
+	if ti.Value != nil && len(*ti.Value) != 0 {
 		if err := ti.Value.Validate(); err != nil {
 			return err
 		}
