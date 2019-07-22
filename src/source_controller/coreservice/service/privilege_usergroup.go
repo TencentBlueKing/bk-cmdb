@@ -74,5 +74,5 @@ func (s *coreService) SearchUserGroup(params core.ContextParams, pathParams, que
 		return nil, params.Error.CCError(common.CCErrObjectDBOpErrno)
 	}
 
-	return nil, nil
+	return result, nil
 }
