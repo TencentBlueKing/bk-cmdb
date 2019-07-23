@@ -55,9 +55,9 @@ func (s *coreService) getModuleIDsByHostID(params core.ContextParams, moduleCond
 }
 
 func (s *coreService) GetModulesHostConfig(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	relationRequest := meta.HostModuleRelationRequest{}
+	relationRequest := &meta.HostModuleRelationRequest{}
 	if err := data.MarshalJSONInto(relationRequest); err != nil {
-		blog.Errorf("del module host config failed, err: %v, rid: %s", err, params.ReqID)
+		blog.Errorf("get module host config failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 

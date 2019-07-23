@@ -33,11 +33,14 @@ func (t *meta) SearchTopoGraphics(ctx context.Context, h http.Header, dat *metad
 }
 
 func (t *meta) UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error) {
+	data := map[string]interface{}{
+		"data": dat,
+	}
 	subPath := "/topographics/update"
 	resp = new(metadata.UpdateResult)
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(dat).
+		Body(data).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -61,6 +62,9 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			subMatch := re.FindStringSubmatch(request.URI)
 			for _, subStr := range subMatch {
+				if strings.Contains(subStr, "api") {
+					continue
+				}
 				id, err := strconv.ParseInt(subStr, 10, 64)
 				if err != nil {
 					return nil, fmt.Errorf("parse template id to int64 failed, err: %s", err)
@@ -81,6 +85,9 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			subMatch := re.FindStringSubmatch(request.URI)
 			for _, subStr := range subMatch {
+				if strings.Contains(subStr, "api") {
+					continue
+				}
 				id, err := strconv.ParseInt(subStr, 10, 64)
 				if err != nil {
 					return nil, fmt.Errorf("parse template id to int64 failed, err: %s", err)
