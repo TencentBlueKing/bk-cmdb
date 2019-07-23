@@ -9,6 +9,7 @@
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
+            <i class="bk-icon icon-exclamation" v-if="withTemplate && !flattenList.length" v-bk-tooltips="tooltips"></i>
             <cmdb-dot-menu class="instance-menu" @click.native.stop>
                 <ul class="menu-list">
                     <li class="menu-item"
@@ -173,7 +174,11 @@
                 localExpanded: this.expanded,
                 properties: [],
                 header: [],
-                list: []
+                list: [],
+                tooltips: {
+                    content: this.$t('BusinessTopology["模板未添加进程"]'),
+                    placement: 'right'
+                }
             }
         },
         computed: {
@@ -463,6 +468,16 @@
             font-size: 12px;
             color: #63656E;
             @include inlineBlock;
+        }
+        .icon-exclamation {
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            font-size: 14px;
+            text-align: center;
+            color: #ffffff;
+            background: #f0b659;
+            border-radius: 50%;
         }
         .title-label {
             font-size: 14px;

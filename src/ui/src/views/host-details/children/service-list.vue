@@ -23,13 +23,6 @@
                         v-model="searchSelectData"
                         @change="handleSearch">
                     </bk-search-select>
-                    <!-- <bk-search-select
-                        :show-condition="false"
-                        :placeholder="$t('BusinessTopology[\'实例名称/标签\']')"
-                        :data="searchSelect"
-                        v-model="searchSelectData"
-                        @change="handleSearch">
-                    </bk-search-select> -->
                 </div>
             </div>
         </div>
@@ -99,6 +92,7 @@
         },
         created () {
             this.getHostSeriveInstances()
+            this.getHistoryLabel()
         },
         methods: {
             async getHostSeriveInstances () {
@@ -143,6 +137,22 @@
                     console.error(e)
                     this.instances = []
                 }
+            },
+            async getHistoryLabel () {
+                const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
+                    params: this.$injectMetadata({}),
+                    config: {
+                        requestId: 'getHistoryLabel',
+                        cancelPrevious: true
+                    }
+                })
+                const keys = Object.keys(historyLabels).map(key => {
+                    return {
+                        name: key,
+                        id: key
+                    }
+                })
+                this.$set(this.searchSelect[1], 'children', keys)
             },
             handleDeleteInstance (id) {
                 this.instances = this.instances.filter(instance => instance.id !== id)
@@ -251,6 +261,7 @@
         @include inlineBlock;
         position: relative;
         min-width: 240px;
+        max-width: 500px;
         z-index: 99;
     }
     .tables {
