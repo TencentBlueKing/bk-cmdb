@@ -193,7 +193,7 @@ func (r *Request) WrapURL() *url.URL {
 	}
 
 	if len(r.subPathArgs) > 0 {
-		finalUrl.Path = finalUrl.Path + fmt.Sprintf(r.subPath, r.subPathArgs)
+		finalUrl.Path = finalUrl.Path + fmt.Sprintf(r.subPath, r.subPathArgs...)
 	} else {
 		finalUrl.Path = finalUrl.Path + r.subPath
 	}
