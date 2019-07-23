@@ -923,7 +923,8 @@
         "服务实例名": "Service Instance Name",
         "服务实例名重复": "Service instance name can only enter one",
         "跳转模板添加进程": "Jump template add process",
-        "创建实例提示": "You have not created any service instances yet,"
+        "创建实例提示": "You have not created any service instances yet,",
+        "模板未添加进程": "No process added, please add to the template and sync"
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
