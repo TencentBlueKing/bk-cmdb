@@ -34,6 +34,7 @@ const (
 	BKNoLimit = 999999999
 	// max limit of a page
 	BKMaxPageLimit = 2000
+	BKMaxPageSize  = 500
 
 	// BKDefaultLimit the default limit definition
 	BKDefaultLimit = 20

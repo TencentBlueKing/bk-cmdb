@@ -134,6 +134,36 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 	ctx.RespEntity(instances)
 }
 
+func (ps *ProcServer) ListServiceInstancesDetails(ctx *rest.Contexts) {
+	input := new(metadata.ListServiceInstanceDetailRequest)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil || bizID == 0 {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get service instances in module, but parse biz id failed, err: %v", err)
+		return
+	}
+
+	option := &metadata.ListServiceInstanceDetailOption{
+		BusinessID: bizID,
+		ModuleID:   input.ModuleID,
+		SetID:      input.SetID,
+		HostID:     input.HostID,
+		Page:       input.Page,
+		Selectors:  input.Selectors,
+	}
+	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
+		return
+	}
+
+	ctx.RespEntity(instances)
+}
+
 func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 	input := new(metadata.DeleteServiceInstanceOption)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -726,6 +756,75 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(instances)
+}
+
+// ListServiceInstancesWithHostWeb will return topo level info for each service instance
+// api only for web frontend
+func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
+	input := new(metadata.ListServiceInstancesWithHostInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"list service instances with host, but parse biz id failed, err: %v", err)
+		return
+	}
+
+	if input.HostID == 0 {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"list service instances with host, but got empty host id. input: %+v", err)
+		return
+	}
+
+	option := metadata.ListServiceInstanceOption{
+		BusinessID: bizID,
+		HostID:     input.HostID,
+		SearchKey:  input.SearchKey,
+		Page:       input.Page,
+		Selectors:  input.Selectors,
+	}
+	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, &option)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d", bizID, input.HostID, err)
+		return
+	}
+
+	topoRoot, err := ps.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, bizID, false)
+	if err != nil {
+		blog.Errorf("ListServiceInstancesWithHostWeb failed, search mainline instance topo failed, bizID: %d, err: %+v, riz: %s", bizID, err, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.Errorf(common.CCErrTopoMainlineSelectFailed)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	serviceInstances := make([]metadata.ServiceInstanceWithTopoPath, 0)
+	for _, instance := range instances.Info {
+		topoPath := topoRoot.TraversalFindModule(instance.ModuleID)
+		nodes := make([]metadata.TopoInstanceNodeSimplify, 0)
+		for _, topoNode := range topoPath {
+			node := metadata.TopoInstanceNodeSimplify{
+				ObjectID:     topoNode.ObjectID,
+				InstanceID:   topoNode.InstanceID,
+				InstanceName: topoNode.InstanceName,
+			}
+			nodes = append(nodes, node)
+		}
+		serviceInstance := metadata.ServiceInstanceWithTopoPath{
+			ServiceInstance: instance,
+			TopoPath:        nodes,
+		}
+		serviceInstances = append(serviceInstances, serviceInstance)
+	}
+
+	result := map[string]interface{}{
+		"count": instances.Count,
+		"info":  serviceInstances,
+	}
+	ctx.RespEntity(result)
 }
 
 func (ps *ProcServer) ServiceInstanceAddLabels(ctx *rest.Contexts) {

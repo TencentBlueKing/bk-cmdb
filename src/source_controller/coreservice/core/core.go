@@ -210,6 +210,7 @@ type ProcessOperation interface {
 	GetServiceInstance(ctx ContextParams, templateID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	UpdateServiceInstance(ctx ContextParams, instanceID int64, instance metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	ListServiceInstance(ctx ContextParams, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
+	ListServiceInstanceDetail(ctx ContextParams, option metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder)
 	DeleteServiceInstance(ctx ContextParams, serviceInstanceIDs []int64) errors.CCErrorCoder
 	AutoCreateServiceInstanceModuleHost(ctx ContextParams, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	RemoveTemplateBindingOnModule(ctx ContextParams, moduleID int64) errors.CCErrorCoder
