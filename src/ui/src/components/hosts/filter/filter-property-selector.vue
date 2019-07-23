@@ -25,7 +25,12 @@
             </div>
         </section>
         <footer class="footer clearfix" slot="footer">
-            <div class="selected-count fl">{{$t('已选择条件数', { count: selectedSelection.length })}}</div>
+            <i18n class="selected-count fl"
+                v-if="selectedSelection.length"
+                path="已选择条数"
+                tag="div">
+                <span class="count" place="count">{{selectedSelection.length}}</span>
+            </i18n>
             <div class="selected-options">
                 <bk-button theme="primary" @click="confirm">{{$t('确定')}}</bk-button>
                 <bk-button theme="default" @click="cancel">{{$t('取消')}}</bk-button>
@@ -201,6 +206,14 @@
                 max-width: calc(100% - 25px);
                 @include ellipsis;
             }
+        }
+    }
+    .selected-count {
+        font-size: 14px;
+        line-height: 32px;
+        .count {
+            color: #2DCB56;
+            padding: 0 4px;
         }
     }
 </style>
