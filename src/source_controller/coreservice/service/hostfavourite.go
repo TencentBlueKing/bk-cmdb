@@ -43,8 +43,8 @@ func (s *coreService) AddHostFavourite(params core.ContextParams, pathParams, qu
 	}
 
 	if 0 != rowCount {
-		blog.Errorf("query host favorites fail, not found, params:%v, rid: %s", query, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrHostFavouriteCreateFail)
+		blog.Errorf("AddHostFavourite fail, name duplicated, params:%v, rid: %s", query, params.ReqID)
+		return nil, params.Error.CCErrorf(common.CCErrCommDuplicateItem, paras.Name)
 	}
 
 	id := xid.New().String()

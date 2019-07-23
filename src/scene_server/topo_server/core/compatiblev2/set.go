@@ -47,12 +47,11 @@ type set struct {
 }
 
 func (s *set) hasHost(bizID int64, setIDS []int64) (bool, error) {
-	cond := map[string][]int64{
-		"ApplicationID": []int64{bizID},
-		"SetID":         setIDS,
+	option := metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		SetIDArr:      setIDS,
 	}
-
-	rsp, err := s.client.CoreService().Host().GetModulesHostConfig(context.Background(), s.params.Header, cond)
+	rsp, err := s.client.CoreService().Host().GetModulesHostConfig(context.Background(), s.params.Header, option)
 	if nil != err {
 		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s, rid: %s", err.Error(), s.params.ReqID)
 		return false, s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

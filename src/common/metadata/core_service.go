@@ -152,11 +152,18 @@ func (tn *TopoModelNode) LeftestObjectIDList() []string {
 	return objectIDs
 }
 
+type TopoInstanceNodeSimplify struct {
+	ObjectID     string
+	InstanceID   int64
+	InstanceName string
+}
+
 type TopoInstanceNode struct {
-	Children   []*TopoInstanceNode
-	ObjectID   string
-	InstanceID int64
-	Detail     map[string]interface{}
+	Children     []*TopoInstanceNode
+	ObjectID     string
+	InstanceID   int64
+	InstanceName string
+	Detail       map[string]interface{}
 }
 
 type SearchTopoInstanceNodeResult struct {
@@ -212,6 +219,7 @@ func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int6
 type TopoInstance struct {
 	ObjectID         string
 	InstanceID       int64
+	InstanceName     string
 	ParentInstanceID int64
 	Detail           map[string]interface{}
 	Default          int64
@@ -321,8 +329,17 @@ type ListServiceInstanceOption struct {
 	ModuleID           int64              `json:"module_id,omitempty"`
 	SearchKey          *string            `json:"search_key,omitempty"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
-	Page               BasePage           `json:"page,omitempty"`
 	Selectors          selector.Selectors `json:"selectors,omitempty"`
+	Page               BasePage           `json:"page,omitempty"`
+}
+
+type ListServiceInstanceDetailOption struct {
+	BusinessID int64              `json:"bk_biz_id"`
+	SetID      int64              `json:"bk_set_id"`
+	ModuleID   int64              `json:"bk_module_id"`
+	HostID     int64              `json:"bk_host_id"`
+	Selectors  selector.Selectors `json:"selectors,omitempty"`
+	Page       BasePage           `json:"page,omitempty"`
 }
 
 type ListProcessInstanceRelationOption struct {
@@ -385,9 +402,19 @@ type MultipleServiceInstance struct {
 	Info  []ServiceInstance `json:"info"`
 }
 
+type MultipleServiceInstanceDetail struct {
+	Count uint64                  `json:"count"`
+	Info  []ServiceInstanceDetail `json:"info"`
+}
+
 type MultipleServiceInstanceResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceInstance `json:"data"`
+}
+
+type MultipleServiceInstanceDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceInstanceDetail `json:"data"`
 }
 
 type OneProcessInstanceRelationResult struct {

@@ -31,11 +31,19 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 	}, {
 		Name:                  "findServiceInstancePattern",
 		Description:           "list 服务实例",
-		Pattern:               "/api/v3/find/proc/service_instance",
+		Pattern:               "/api/v3/findmany/proc/service_instance",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceInstance,
-		ResourceAction:        meta.Find,
+		ResourceAction:        meta.FindMany,
+	}, {
+		Name:                  "findServiceInstanceDetailsPattern",
+		Description:           "list 服务实例详情",
+		Pattern:               "/api/v3/findmany/proc/service_instance/details",
+		HTTPMethod:            http.MethodPost,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceInstance,
+		ResourceAction:        meta.FindMany,
 	}, {
 		Name:                  "findServiceInstanceByHostPattern",
 		Description:           "根据主机服务实例",
