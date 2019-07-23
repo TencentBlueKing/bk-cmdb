@@ -397,7 +397,7 @@
 
 <style lang="scss" scoped>
     .group-wrapper {
-        padding: 130px 20px 20px 0;
+        padding: 100px 20px 20px 0;
     }
     .btn-group {
         position: absolute;

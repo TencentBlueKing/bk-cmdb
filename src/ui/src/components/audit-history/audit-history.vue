@@ -7,7 +7,12 @@
             </div>
             <div class="options-group fl" style="margin: 0">
                 <label class="options-label">{{$t("HostResourcePool['操作账号']")}}</label>
-                <cmdb-form-objuser class="options-filter" v-model="operator" :exclude="false" :multiple="false"></cmdb-form-objuser>
+                <cmdb-form-objuser class="options-filter"
+                    v-model="operator"
+                    :exclude="false"
+                    :multiple="false"
+                    :palceholder="$t('操作账号')">
+                </cmdb-form-objuser>
             </div>
             <bk-button class="fr" theme="primary" @click="refresh(true)">{{$t("Common['查询']")}}</bk-button>
         </div>

@@ -21,22 +21,21 @@
                 :max-height="$APP.height - 300"
                 :height="height"
                 :row-border="true"
-                :col-border="true">
+                :col-border="true"
+                :cell-style="getCellStyle">
                 <bk-table-column prop="bk_property_name"></bk-table-column>
                 <bk-table-column v-if="details.op_type !== 1"
                     prop="pre_data"
                     :label="$t('OperationAudit[\'变更前\']')">
                     <template slot-scope="{ row }">
-                        <div :class="['details-data', { 'has-changed': hasChanged(row) }]" v-html="row.pre_data"></div>
+                        <span v-html="row.pre_data"></span>
                     </template>
                 </bk-table-column>
                 <bk-table-column v-if="details.op_type !== 3"
                     prop="cur_data"
                     :label="$t('OperationAudit[\'变更后\']')">
-                    <template slot-scope="{ row }">
-                        <div :class="['details-data', { 'has-changed': hasChanged(row) }]"
-                            v-html="row.cur_data">
-                        </div>
+                    <template slot-scope="{ row }" v-html="row.cur_data">
+                        <span v-html="row.cur_data"></span>
                     </template>
                 </bk-table-column>
             </bk-table>
@@ -213,6 +212,14 @@
                 }
                 return false
             },
+            getCellStyle ({ row, columnIndex }) {
+                if (columnIndex > 0 && this.hasChanged(row)) {
+                    return {
+                        backgroundColor: '#e9faf0'
+                    }
+                }
+                return {}
+            },
             getTopoPath (bizId, module) {
                 const path = [this.options.biz[bizId] || `业务ID：${bizId}`]
                 const set = ((module.set || [])[0] || {}).ref_name
@@ -231,7 +238,7 @@
 <style lang="scss" scoped>
     .history-details-wrapper{
         padding: 32px 50px;
-        height: calc(100% - 60px);
+        height: 100%;
     }
     .info-group{
         width: 50%;
@@ -258,16 +265,6 @@
             padding-left: 4px;
             color: #333948;
             width: 220px;
-        }
-    }
-    .details-data{
-        min-height: 100%;
-        width: calc(100% + 32px);
-        padding: 6px 16px;
-        margin: 0 0 0 -16px;
-        white-space: normal;
-        &.has-changed{
-            background-color: #e9faf0;
         }
     }
     .field-btn{

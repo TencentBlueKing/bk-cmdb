@@ -565,7 +565,7 @@
                 }
             },
             batchUpdate (params) {
-                return this.updateHost(params).then(data => {
+                return this.updateHost({ params }).then(data => {
                     this.$success(this.$t('Common[\'保存成功\']'))
                     this.getHostList()
                     return data

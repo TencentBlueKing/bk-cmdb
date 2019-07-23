@@ -228,7 +228,7 @@
                 this.$store.commit('hosts/setFilterList', customData)
             },
             handleToggleFilter () {
-                const [instance] = this.$refs.filterPopper.instance.instances
+                const instance = this.$refs.filterPopper.instance
                 const state = instance.state
                 if (state.isVisible) {
                     instance.hide()
@@ -247,7 +247,7 @@
                 }
             },
             handleCreateCollection () {
-                const [instance] = this.$refs.collectionPopover.instance.instances
+                const instance = this.$refs.collectionPopover.instance
                 instance.show()
             },
             async handleUpdateCollection () {
@@ -304,7 +304,7 @@
                 }
             },
             handleCancelCollection () {
-                const [instance] = this.$refs.collectionPopover.instance.instances
+                const instance = this.$refs.collectionPopover.instance
                 instance.hide()
                 this.collectionName = ''
             },
