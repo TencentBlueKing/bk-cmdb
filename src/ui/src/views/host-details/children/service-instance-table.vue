@@ -9,6 +9,7 @@
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
+            <span class="topology-path" @click.stop="goTopologyInstance">{{topologyPath}}</span>
             <cmdb-dot-menu class="instance-menu" @click.native.stop>
                 <ul class="menu-list">
                     <li class="menu-item"
@@ -130,6 +131,11 @@
             },
             labelTipsList () {
                 return this.labelList.slice(3)
+            },
+            topologyPath () {
+                const pathArr = this.$tools.clone(this.instance.topo_path).reverse()
+                const path = pathArr.map(path => path.InstanceName).join(' > ')
+                return path
             }
         },
         watch: {
@@ -217,6 +223,15 @@
                         }
                     }
                 })
+            },
+            goTopologyInstance () {
+                this.$router.replace({
+                    name: 'topology',
+                    query: {
+                        module: this.instance.bk_module_id,
+                        instanceName: this.instance.name
+                    }
+                })
             }
         }
     }
@@ -241,6 +256,15 @@
         .title-label {
             font-size: 14px;
             color: #313238;
+            @include inlineBlock;
+        }
+        .topology-path {
+            font-size: 12px;
+            color: #979ba5;
+            height: 20px;
+            line-height: 20px;
+            padding: 0 6px;
+            background-color: #fafbfd;
             @include inlineBlock;
         }
     }

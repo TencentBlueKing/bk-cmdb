@@ -5,6 +5,7 @@
                 <i class="bk-icon icon-down-shape" v-if="localExpanded"></i>
                 <i class="bk-icon icon-right-shape" v-else></i>
                 {{name}}
+                <i class="bk-icon icon-exclamation" v-if="showTips && !processList.length" v-bk-tooltips="tooltips"></i>
             </div>
             <div class="fr">
                 <i class="bk-icon icon-close" v-if="deletable" @click="handleDelete"></i>
@@ -89,6 +90,10 @@
                 default () {
                     return []
                 }
+            },
+            showTips: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -103,6 +108,10 @@
                     rowIndex: null,
                     instance: {},
                     unwatch: null
+                },
+                tooltips: {
+                    content: this.$t('BusinessTopology["请为主机添加进程"]'),
+                    placement: 'right'
                 }
             }
         },
@@ -258,6 +267,13 @@
             text-align: center;
             cursor: pointer;
             @include inlineBlock;
+        }
+        .icon-exclamation {
+            font-size: 14px;
+            color: #ffffff;
+            background: #f0b659;
+            border-radius: 50%;
+            transform: scale(.6);
         }
     }
     .add-process-options {
