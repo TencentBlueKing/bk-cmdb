@@ -194,10 +194,14 @@
                 editLabel: {
                     show: false,
                     list: []
-                }
+                },
+                isCarryParams: false
             }
         },
         computed: {
+            targetInstanceName () {
+                return this.$route.query.instanceName || ''
+            },
             business () {
                 return this.$store.getters['objectBiz/bizId']
             },
@@ -241,7 +245,9 @@
         watch: {
             currentNode (node) {
                 if (node && node.data.bk_obj_id === 'module') {
-                    this.searchSelectData = []
+                    if (!this.isCarryParams) {
+                        this.searchSelectData = []
+                    }
                     this.getServiceInstances()
                 }
             }
@@ -250,6 +256,18 @@
             this.getProcessProperties()
             this.getProcessPropertyGroups()
             this.getHistoryLabel()
+            if (this.targetInstanceName) {
+                this.isCarryParams = true
+                this.searchSelectData.push({
+                    'name': '服务实例名',
+                    'id': 0,
+                    'values': [{
+                        'id': this.targetInstanceName,
+                        'name': this.targetInstanceName
+                    }]
+                })
+                this.searchSelect.shift()
+            }
         },
         methods: {
             async getProcessProperties () {
@@ -324,6 +342,7 @@
                             cancelPrevious: true
                         }
                     })
+                    this.isCarryParams = false
                     this.checked = []
                     this.isCheckAll = false
                     this.isExpandAll = false
@@ -729,7 +748,8 @@
     .options-search {
         @include inlineBlock;
         position: relative;
-        width: 240px;
+        min-width: 240px;
+        max-width: 280px;
         height: 34px;
         z-index: 99;
         .bk-search-select {

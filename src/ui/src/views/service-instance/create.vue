@@ -19,6 +19,7 @@
                     :name="host.bk_host_innerip"
                     :source-processes="sourceProcesses"
                     :templates="templates"
+                    :show-tips="showTips"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
@@ -60,7 +61,8 @@
                 hostSelectorVisible: false,
                 moduleInstance: {},
                 hosts: [],
-                templates: []
+                templates: [],
+                showTips: false
             }
         },
         computed: {
@@ -151,10 +153,7 @@
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
                     if (serviceInstanceTables.some(table => !table.processList.length)) {
-                        this.$bkMessage({
-                            message: this.$t("BusinessTopology['请为主机添加进程']"),
-                            theme: 'warning'
-                        })
+                        this.showTips = true
                         return
                     }
                     if (this.withTemplate) {
