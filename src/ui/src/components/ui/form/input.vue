@@ -54,16 +54,11 @@
     .cmdb-input {
         position: relative;
         @include inlineBlock;
-        .cmdb-form-input {
-            &.has-icon {
-                padding-right: 30px;
-            }
-        }
         .input-icon {
             position: absolute;
             font-size: 14px;
             right: 11px;
-            top: 11px;
+            top: 10px;
             cursor: pointer;
         }
     }

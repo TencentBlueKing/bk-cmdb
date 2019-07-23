@@ -2,10 +2,10 @@
     <bk-popover
         ref="popover"
         trigger="click"
-        placement="bottom-end"
+        placement="bottom-start"
         :sticky="true"
         :arrow="false"
-        theme="light"
+        theme="light dot-menu-popover"
         :class="['dot-menu', {
             'is-open': open
         }]"
@@ -95,20 +95,18 @@
             }
         }
     }
-    .menu-content {
-        font-size: 14px;
-    }
 </style>
 <style lang="scss">
-    .tooltip.popover.dot-menu-popover {
-        margin: 0;
-        top: 5px !important;
-        .popover-inner {
-            border-radius: 2px;
-            box-shadow: 0px 1px 4px 0px rgba(196, 198, 204, 1);
-        }
-        .tooltip-inner {
-            padding: 0;
+    .dot-menu-popover-theme {
+        top: -6px;
+        left: 10px;
+        padding: 0 !important;
+        .menu-content {
+            font-size: 14px !important;
+            background-color: #ffffff;
+            button {
+                font-size: 14px !important;
+            }
         }
     }
 </style>

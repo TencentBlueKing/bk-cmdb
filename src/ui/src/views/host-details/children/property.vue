@@ -260,6 +260,7 @@
             }
             &.form-cancel {
                 color: #979ba5;
+                font-size: 14px;
                 &:before {
                     display: inline-block;
                     transform: scale(0.66);

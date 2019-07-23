@@ -114,6 +114,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            :quick-close="true"
             :is-show.sync="details.isShow"
             :width="800"
             :title="$t('OperationAudit[\'操作详情\']')">
