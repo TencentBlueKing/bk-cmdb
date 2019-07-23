@@ -195,6 +195,14 @@ func (sc *StructCodec) DecodeValue(r DecodeContext, vr bsonrw.ValueReader, val r
 			}
 		}
 
+		// compatible with null value
+		if vr.Type() == bsontype.Null {
+			if err := vr.ReadNull(); err != nil {
+				return err
+			}
+			continue
+		}
+
 		if !field.CanSet() { // Being settable is a super set of being addressable.
 			return fmt.Errorf("cannot decode element '%s' into field %v; it is not settable", name, field)
 		}
@@ -206,13 +214,6 @@ func (sc *StructCodec) DecodeValue(r DecodeContext, vr bsonrw.ValueReader, val r
 		dctx := DecodeContext{Registry: r.Registry, Truncate: fd.truncate}
 		if fd.decoder == nil {
 			return ErrNoDecoder{Type: field.Elem().Type()}
-		}
-		// compatible with null value
-		if vr.Type() == bsontype.Null {
-			if err := vr.ReadNull(); err != nil {
-				return err
-			}
-			continue
 		}
 
 		if decoder, ok := fd.decoder.(ValueDecoder); ok {
