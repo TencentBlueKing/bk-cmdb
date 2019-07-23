@@ -22,7 +22,7 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 	{
 		Name:                  "createProcessInstances",
 		Description:           "创建进程实例",
-		Pattern:               "/create/proc/process_instance",
+		Pattern:               "/api/v3/create/proc/process_instance",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.Process,
@@ -30,7 +30,7 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 	}, {
 		Name:                  "updateProcessInstances",
 		Description:           "更新进程实例",
-		Pattern:               "/update/proc/process_instance",
+		Pattern:               "/api/v3/update/proc/process_instance",
 		HTTPMethod:            http.MethodPut,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.Process,
@@ -38,7 +38,7 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 	}, {
 		Name:                  "deleteProcessInstance",
 		Description:           "删除进程实例",
-		Pattern:               "/delete/proc/process_instance",
+		Pattern:               "/api/v3/delete/proc/process_instance",
 		HTTPMethod:            http.MethodDelete,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.Process,
@@ -46,7 +46,7 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 	}, {
 		Name:                  "listProcessInstances",
 		Description:           "查找进程实例",
-		Pattern:               "/findmany/proc/process_instance",
+		Pattern:               "/api/v3/findmany/proc/process_instance",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.Process,

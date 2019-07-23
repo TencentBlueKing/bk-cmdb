@@ -38,8 +38,8 @@ func (config *AuthConfig) Match(request *RequestContext) bool {
 	if config.HTTPMethod != request.Method {
 		return false
 	}
-	if config.Regex != nil && config.Regex.MatchString(request.URI) == false {
-		return false
+	if config.Regex != nil {
+		return config.Regex.MatchString(request.URI)
 	}
 
 	return config.Pattern == request.URI
