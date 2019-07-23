@@ -169,7 +169,9 @@
                     },
                     {
                         name: this.$t('BusinessTopology["标签"]'),
-                        id: 1
+                        id: 1,
+                        multiable: true,
+                        children: []
                     }
                 ],
                 searchSelectData: [],
@@ -192,8 +194,7 @@
                 editLabel: {
                     show: false,
                     list: []
-                },
-                historyLabls: {}
+                }
             }
         },
         computed: {
@@ -290,9 +291,17 @@
                     const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
                         || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
                     const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
-                    const selectors = labels.map(item => {
+                    const labelKeys = []
+                    labels.forEach(label => {
+                        label.values.forEach(value => {
+                            if (!labelKeys.includes(value.name)) {
+                                labelKeys.push(value.name)
+                            }
+                        })
+                    })
+                    const selectors = labelKeys.map(key => {
                         return {
-                            key: item.values[0].name,
+                            key: key,
                             operator: 'exists',
                             values: []
                         }
@@ -326,18 +335,33 @@
                 }
             },
             async getHistoryLabel () {
-                this.historyLabls = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
+                const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
                     params: this.$injectMetadata({}),
                     config: {
                         requestId: 'getHistoryLabel',
                         cancelPrevious: true
                     }
                 })
+                const keys = Object.keys(historyLabels).map(key => {
+                    return {
+                        name: key,
+                        id: key
+                    }
+                })
+                this.$set(this.searchSelect[1], 'children', keys)
             },
             handleSearch () {
                 this.inSearch = true
                 const instanceName = this.searchSelectData.filter(item => (item.id === 0 && item.hasOwnProperty('values'))
                     || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
+                if (instanceName.length) {
+                    this.searchSelect[0].id === 0 && this.searchSelect.shift()
+                } else {
+                    this.searchSelect[0].id !== 0 && this.searchSelect.unshift({
+                        name: this.$t('BusinessTopology["服务实例名"]'),
+                        id: 0
+                    })
+                }
                 if (instanceName.length >= 2) {
                     this.searchSelectData.pop()
                     this.$bkMessage({
@@ -658,6 +682,7 @@
                         this.searchSelectData = []
                         this.getServiceInstances()
                         this.handleCheckALL(false)
+                        this.getHistoryLabel()
                     }
                     this.handleCloseBatchLable()
                 } catch (e) {
@@ -706,6 +731,7 @@
         position: relative;
         width: 240px;
         height: 34px;
+        z-index: 99;
         .bk-search-select {
             position: absolute;
             top: 0;

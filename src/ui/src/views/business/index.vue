@@ -490,7 +490,7 @@
     .filter-search{
         position: absolute;
         right: 10px;
-        top: 11px;
+        top: 9px;
         cursor: pointer;
     }
 }

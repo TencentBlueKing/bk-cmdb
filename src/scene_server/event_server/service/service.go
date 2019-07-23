@@ -68,12 +68,13 @@ func (s *Service) WebService() *restful.Container {
 	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
 	api.Produces(restful.MIME_JSON)
 
-	api.Route(api.POST("/subscribe/search/{ownerID}/{appID}").To(s.Query))
-	api.Route(api.POST("/subscribe/ping").To(s.Ping))
-	api.Route(api.POST("/subscribe/telnet").To(s.Telnet))
+	api.Route(api.POST("/subscribe/search/{ownerID}/{appID}").To(s.ListSubscriptions))
 	api.Route(api.POST("/subscribe/{ownerID}/{appID}").To(s.Subscribe))
 	api.Route(api.DELETE("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UnSubscribe))
-	api.Route(api.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.Rebook))
+	api.Route(api.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UpdateSubscription))
+
+	api.Route(api.POST("/subscribe/ping").To(s.Ping))
+	api.Route(api.POST("/subscribe/telnet").To(s.Telnet))
 
 	container.Add(api)
 

@@ -437,6 +437,7 @@
                         this.$success(this.$t('Common["保存成功"]'))
                         this.$parent.filter = ''
                         this.$parent.getServiceInstances()
+                        this.$parent.getHistoryLabel()
                     }
                     this.handleCloseEditLable()
                 } catch (e) {
