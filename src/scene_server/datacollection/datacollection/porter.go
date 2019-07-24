@@ -13,7 +13,6 @@
 package datacollection
 
 import (
-	"configcenter/src/common/backbone"
 	"fmt"
 	"io"
 	"net"
@@ -22,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 
@@ -246,6 +246,7 @@ func (p *chanPorter) analyzeCount() {
 // collect 获取待处理消息，当是master时从redis channel获取，当是slave时从 redis queue 获取
 func (p *chanPorter) collect() error {
 	if !p.Engine.ServiceManageInterface.IsMaster() {
+		p.isMaster.UnSet()
 		blog.Infof("[data-collection][%s] %v", p.name, "there is other master")
 		return nil
 	}
@@ -322,6 +323,7 @@ func (p *chanPorter) subscribeLoop() error {
 			ts = time.Now()
 		}
 	}
+	p.isMaster.UnSet()
 	return nil
 }
 
