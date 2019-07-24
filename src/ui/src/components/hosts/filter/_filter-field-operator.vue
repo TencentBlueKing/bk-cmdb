@@ -3,7 +3,10 @@
         v-model="localSelected"
         :clearable="false"
         :popover-min-width="75"
-        :disabled="disabled">
+        :disabled="disabled"
+        :popover-options="{
+            boundary: 'window'
+        }">
         <bk-option
             v-for="(option, index) in list"
             :key="index"

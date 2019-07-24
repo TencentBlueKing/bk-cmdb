@@ -22,7 +22,7 @@
                     :data="list"
                     :height="286"
                     @selection-change="handleSelectHost">
-                    <bk-table-column type="selection" fixed width="60" align="center"></bk-table-column>
+                    <bk-table-column type="selection" fixed width="60" align="center" class-name="bk-table-selection"></bk-table-column>
                     <bk-table-column v-for="column in header"
                         :key="column.id"
                         :prop="column.id"

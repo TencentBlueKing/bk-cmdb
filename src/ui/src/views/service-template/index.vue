@@ -65,7 +65,7 @@
                     {{$tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm')}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="operation" :label="$t('Common[\'操作\']')">
+            <bk-table-column prop="operation" :label="$t('Common[\'操作\']')" fixed="right">
                 <template slot-scope="{ row }">
                     <span
                         v-cursor="{
