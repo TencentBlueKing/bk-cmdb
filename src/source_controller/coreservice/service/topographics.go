@@ -52,20 +52,22 @@ func (s *coreService) SearchTopoGraphics(params core.ContextParams, pathParams, 
 }
 
 func (s *coreService) UpdateTopoGraphics(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	datas := make([]meta.TopoGraphics, 0)
-	if jsErr := data.MarshalJSONInto(&datas); nil != jsErr {
+	inputBody := struct {
+		Data []meta.TopoGraphics `json:"data" field:"data" bson:"data"`
+	}{}
+	if jsErr := data.MarshalJSONInto(&inputBody); nil != jsErr {
 		blog.Errorf("update topo graphics, but failed to unmarshal the data, data: %+v, err: %s, rid: %s", data, jsErr.Error(), params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	for index := range datas {
-		datas[index].SetSupplierAccount(params.SupplierAccount)
+	for index := range inputBody.Data {
+		inputBody.Data[index].SetSupplierAccount(params.SupplierAccount)
 		cond := mapstr.MapStr{
-			"scope_type":          datas[index].ScopeType,
-			"scope_id":            datas[index].ScopeID,
-			"node_type":           datas[index].NodeType,
-			"bk_obj_id":           datas[index].ObjID,
-			"bk_inst_id":          datas[index].InstID,
+			"scope_type":          inputBody.Data[index].ScopeType,
+			"scope_id":            inputBody.Data[index].ScopeID,
+			"node_type":           inputBody.Data[index].NodeType,
+			"bk_obj_id":           inputBody.Data[index].ObjID,
+			"bk_inst_id":          inputBody.Data[index].InstID,
 			"bk_supplier_account": params.SupplierAccount,
 		}
 
@@ -75,13 +77,13 @@ func (s *coreService) UpdateTopoGraphics(params core.ContextParams, pathParams, 
 			return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
 		}
 		if 0 == cnt {
-			err = s.db.Table(common.BKTableNameTopoGraphics).Insert(params.Context, datas[index])
+			err = s.db.Table(common.BKTableNameTopoGraphics).Insert(params.Context, inputBody.Data[index])
 			if nil != err {
 				blog.Errorf("update topo graphics, but insert data failed, err:%s, rid: %s", err.Error(), params.ReqID)
 				return nil, params.Error.CCError(common.CCErrCommDBInsertFailed)
 			}
 		} else {
-			if err = s.db.Table(common.BKTableNameTopoGraphics).Update(context.Background(), cond, datas[index]); err != nil {
+			if err = s.db.Table(common.BKTableNameTopoGraphics).Update(context.Background(), cond, inputBody.Data[index]); err != nil {
 				blog.Errorf("update topo graphics, but update failed, err: %s, rid: %s", err.Error(), params.ReqID)
 				return nil, params.Error.CCError(common.CCErrCommDBUpdateFailed)
 			}

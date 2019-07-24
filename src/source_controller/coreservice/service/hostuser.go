@@ -276,11 +276,12 @@ func (s *coreService) UpdateUserCustomByID(params core.ContextParams, pathParams
 }
 
 func (s *coreService) GetUserCustomByUser(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	conds, result := make(map[string]interface{}), make(map[string]interface{})
+	conds := make(map[string]interface{})
 	conds["bk_user"] = pathParams("bk_user")
 	conds = util.SetModOwner(conds, params.SupplierAccount)
 
-	err := s.db.Table(common.BKTableNameUserCustom).Find(conds).One(params.Context, result)
+	result := make(map[string]interface{})
+	err := s.db.Table(common.BKTableNameUserCustom).Find(conds).One(params.Context, &result)
 	if nil != err && !s.db.IsNotFoundError(err) {
 		blog.Errorf("add  user custom failed, err: %v, params:%v, rid: %s", err, conds, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
@@ -290,11 +291,12 @@ func (s *coreService) GetUserCustomByUser(params core.ContextParams, pathParams,
 }
 
 func (s *coreService) GetDefaultUserCustom(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	conds, result := make(map[string]interface{}), make(map[string]interface{})
+	conds := make(map[string]interface{})
 	conds["is_default"] = 1
 	conds = util.SetModOwner(conds, params.SupplierAccount)
 
-	err := s.db.Table(common.BKTableNameUserCustom).Find(conds).One(params.Context, result)
+	result := make(map[string]interface{})
+	err := s.db.Table(common.BKTableNameUserCustom).Find(conds).One(params.Context, &result)
 	if nil != err && !s.db.IsNotFoundError(err) {
 		blog.Errorf("get default user custom fail, err: %v, params:%v, rid: %s, rid: %s", err, conds, params.ReqID, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)

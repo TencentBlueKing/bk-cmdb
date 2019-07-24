@@ -28,7 +28,7 @@
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange"
             @sort-change="handleSortChange">
-            <bk-table-column type="selection" fixed width="60" align="center"></bk-table-column>
+            <bk-table-column type="selection" fixed width="60" align="center" class-name="bk-table-selection"></bk-table-column>
             <bk-table-column prop="bk_task_name" :label="$t('Cloud[\'任务名称\']')"></bk-table-column>
             <bk-table-column prop="bk_account_type" :label="$t('Cloud[\'账号类型\']')">
                 <template slot-scope="{ row }">

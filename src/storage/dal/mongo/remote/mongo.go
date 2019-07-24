@@ -20,13 +20,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
 )
 
 var _ dal.DB = (*Mongo)(nil)
+var requestDuration *prometheus.HistogramVec
+var maxRetry int = 3
 
 // Mongo implement dal.DB interface
 type Mongo struct {
@@ -37,14 +42,38 @@ type Mongo struct {
 	parent    *Mongo
 
 	tmAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
+
+	reg prometheus.Registerer
 }
 
 // NewWithDiscover returns new DB
-func NewWithDiscover(getServer types.GetServerFunc) (db *Mongo, err error) {
-	pool, err := rpc.NewClientPool("tcp", getServer, "/txn/v3/rpc")
-	if err != nil {
-		return nil, err
+func NewWithDiscover(engine *backbone.Engine) (db *Mongo, err error) {
+	var pool *rpc.Pool
+	for retry := 1; retry <= maxRetry; retry++ {
+		p, err := rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
+		if err == nil {
+			pool = p
+			break
+		}
+		if maxRetry == retry {
+			return nil, err
+		}
+		time.Sleep(time.Millisecond * 100)
 	}
+
+	reg := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "cmdb_txc_requests_duration_millisecond",
+		Help: "txc handle request duration millisecond.",
+	}, []string{"info"})
+
+	if err := engine.Metric().Registry().Register(reg); err != nil {
+		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			reg = are.ExistingCollector.(*prometheus.HistogramVec)
+		} else {
+			return nil, err
+		}
+	}
+	requestDuration = reg
 	return &Mongo{
 		rpc: NewPool(pool),
 	}, nil
