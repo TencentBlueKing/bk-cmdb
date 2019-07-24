@@ -14,6 +14,7 @@ package user
 
 import (
 	"encoding/json"
+	"net/http"
 	"plugin"
 	"strconv"
 
@@ -21,13 +22,14 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type publicUser struct {
@@ -114,35 +116,36 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 
 // GetUserList get user list from paas
 func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	var err error
 	var userList []*metadata.LoginSystemUserInfo
 	rspBody := metadata.LonginSystemUserListResult{}
-	rspBody.Result = false
+	rspBody.Result = true
+	httpStatus := http.StatusOK
 	if nil == m.loginPlg {
 		user := plugins.CurrentPlugin(c, m.config.LoginVersion)
 		userList, err = user.GetUserList(c, m.config.ConfigMap)
 	} else {
-
 		getUserListFunc, err := m.loginPlg.Lookup("GetUserList")
-
 		if nil != err {
-			blog.Error("look get user list error")
+			blog.Error("GetUserList interface not implemented, rid: %s", rid)
 			rspBody.Code = common.CCErrCommHTTPDoRequestFailed
 			rspBody.ErrMsg = err.Error()
-			return 200, rspBody
+			return http.StatusInternalServerError, rspBody
 
 		}
 		userList, err = getUserListFunc.(func(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, error))(c, m.config.ConfigMap)
-
 	}
 	if nil != err {
+		blog.Error("GetUserList failed, err: %+v, rid: %s", err, rid)
 		rspBody.Code = common.CCErrCommHTTPDoRequestFailed
 		rspBody.ErrMsg = err.Error()
 		rspBody.Result = false
+		httpStatus = http.StatusInternalServerError
 	}
 	rspBody.Result = true
 	rspBody.Data = userList
-	return 200, rspBody
+	return httpStatus, rspBody
 }
 
 func (m *publicUser) GetLoginUrl(c *gin.Context) string {

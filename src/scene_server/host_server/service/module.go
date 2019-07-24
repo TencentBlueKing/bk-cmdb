@@ -197,6 +197,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	if err != nil {
 		blog.Errorf("assign host to app, but assign to app http do error. err: %v, input:%+v,rid:%s", err, conf, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err, Data: exceptionArr})
+		return
 	}
 
 	// register host to new business

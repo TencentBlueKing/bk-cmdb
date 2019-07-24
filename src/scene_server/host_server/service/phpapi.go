@@ -140,6 +140,7 @@ func (s *Service) HostSearchByIP(req *restful.Request, resp *restful.Response) {
 	if 0 == len(input.IpList) {
 		blog.Error("input does not contains key IP,input:%+v,rid:%s", input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsLostField, common.BKIPListField)})
+		return
 	}
 
 	orCondition := []map[string]interface{}{
@@ -985,6 +986,7 @@ func (s *Service) GetPlat(req *restful.Request, resp *restful.Response) {
 	if false == res.Result {
 		blog.Errorf("GetPlat http reply error. err code:%d, err msg:%s,rid:%s", res.Code, res.ErrMsg, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
+		return
 
 	}
 	platIDArr := make([]int64, 0)
@@ -1032,6 +1034,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		if se, ok := validErr.(errors.CCErrorCoder); ok {
 			if se.GetCode() == common.CCErrCommDuplicateItem {
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommDuplicateItem, cloudName)})
+				return
 			}
 		}
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)})
@@ -1124,6 +1127,7 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 	if false == res.Result {
 		blog.Errorf("DelPlat http reponse error. err code:%d,err msg:%s,input:%s,rid:%s", res.Code, res.ErrMsg, platID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
+		return
 
 	} else {
 		resp.WriteEntity(meta.Response{

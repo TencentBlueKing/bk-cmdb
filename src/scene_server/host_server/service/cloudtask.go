@@ -83,6 +83,7 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 	if err != nil {
 		blog.Errorf("SearchCloudTask fail, search %v failed, err: %v, rid: %s", opt["bk_task_name"], err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetTaskFail)})
+		return
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(response))
@@ -185,6 +186,7 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 	if err := srvData.lgc.FrontEndSyncSwitch(srvData.ctx, opt, false); err != nil {
 		blog.Errorf("StartCloudSync fail, err: %v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncStartFail)})
+		return
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
@@ -242,6 +244,7 @@ func (s *Service) CreateResourceConfirm(req *restful.Request, resp *restful.Resp
 		if err != nil {
 			blog.Errorf("ResourceConfirm fail, add cloud host failed, err: %v, rid: %s", err, srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudConfirmCreateFail)})
+			return
 		}
 	}
 
@@ -250,6 +253,7 @@ func (s *Service) CreateResourceConfirm(req *restful.Request, resp *restful.Resp
 		if err != nil {
 			blog.Errorf("create resource confirm fail, update cloud hosts failed, err: %v, rid: %s", err, srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudConfirmCreateFail)})
+			return
 		}
 	}
 
@@ -279,6 +283,7 @@ func (s *Service) SearchConfirm(req *restful.Request, resp *restful.Response) {
 	if err != nil {
 		blog.Errorf("search confirm instance failed, err:%v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetConfirmFail)})
+		return
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(response))
@@ -357,6 +362,7 @@ func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response
 		if err != nil {
 			blog.Errorf("AddConfirmHistory failed with search confirm fail, err: %v, rid: %s", err, srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudAddConfirmHistoryFail)})
+			return
 		}
 
 		if response.Count > 0 {
@@ -364,6 +370,7 @@ func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response
 			if _, err := s.CoreAPI.CoreService().Cloud().CreateConfirmHistory(srvData.ctx, srvData.header, opt); err != nil {
 				blog.Errorf("add confirm history failed, err: %v, rid: %s", err, srvData.rid)
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudAddConfirmHistoryFail)})
+				return
 			}
 		}
 	}
@@ -385,6 +392,7 @@ func (s *Service) SearchConfirmHistory(req *restful.Request, resp *restful.Respo
 	if err != nil {
 		blog.Errorf("search confirm history failed, err: %v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetConfirmHistoryFail)})
+		return
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(response))

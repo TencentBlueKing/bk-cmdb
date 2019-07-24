@@ -63,6 +63,7 @@ func (s *Service) AddUserCustomQuery(req *restful.Request, resp *restful.Respons
 	if err := s.AuthManager.RegisterDynamicGroupByID(srvData.ctx, srvData.header, result.Data.ID); err != nil {
 		blog.Errorf("AddUserCustomQuery register user api failed, err: %+v, rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+		return
 	}
 
 	resp.WriteEntity(meta.Response{
@@ -98,8 +99,9 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 
 	id := req.PathParameter("id")
 	if err := s.AuthManager.UpdateRegisteredDynamicGroupByID(srvData.ctx, srvData.header, id); err != nil {
-		blog.Errorf("GetUserCustom update register user api failed, dynamicgroupid:%d, err:%+v, rid:%s", id, err, srvData.rid)
+		blog.Errorf("UpdateRegisteredDynamicGroupByID failed, dynamicgroupid:%d, err:%+v, rid:%s", id, err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+		return
 	}
 
 	resp.WriteEntity(meta.Response{
@@ -144,6 +146,7 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 	if err := s.AuthManager.DeregisterDynamicGroupByID(srvData.ctx, srvData.header, dyResult.Data); err != nil {
 		blog.Errorf("GetUserCustom deregister user api failed, err: %+v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		return
 	}
 
 	resp.WriteEntity(meta.Response{

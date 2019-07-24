@@ -28,19 +28,17 @@ type EsbServDiscoveryInterace interface {
 
 func NewEsbConfigServ(srvChan chan EsbConfig) *EsbConfigServ {
 	esb := &EsbConfigServ{}
-	go func() {
-		if nil == srvChan {
-			return
-		}
-		for {
-			config := <-srvChan
-			esb.Lock()
-			esb.addrs = config.Addrs
-			esb.appCode = config.AppCode
-			esb.appSecret = config.AppSecret
-			esb.Unlock()
-		}
-	}()
+	if nil == srvChan {
+		return esb
+	}
+
+	// sync waiting for config ready
+	config := <-srvChan
+	esb.Lock()
+	esb.addrs = config.Addrs
+	esb.appCode = config.AppCode
+	esb.appSecret = config.AppSecret
+	esb.Unlock()
 
 	return esb
 }
