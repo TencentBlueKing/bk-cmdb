@@ -116,6 +116,16 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		// authorization should implements in scene server
 		ResourceAction: meta.SkipAction,
 	}, {
+		Name:                  "listServiceTemplateDetailPattern",
+		Description:           "查询服务模板详情",
+		Pattern:               "/api/v3/delete/proc/template_binding_on_module",
+		HTTPMethod:            http.MethodDelete,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceTemplate,
+		// authorization should implements in scene server
+		// TODO: implement authorization on scene server
+		ResourceAction: meta.SkipAction,
+	}, {
 		Name:                  "deleteServiceTemplatePattern",
 		Description:           "删除服务模板",
 		Pattern:               "/api/v3/delete/proc/service_template",

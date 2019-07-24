@@ -14,7 +14,6 @@ package service
 
 import (
 	"bytes"
-	"configcenter/src/auth/meta"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -24,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -188,6 +188,7 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 			Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed),
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
+		return
 	}
 
 	subID := fmt.Sprint(id)
@@ -200,6 +201,7 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 				Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed),
 			}
 			resp.WriteError(http.StatusInternalServerError, result)
+			return
 		}
 	}
 

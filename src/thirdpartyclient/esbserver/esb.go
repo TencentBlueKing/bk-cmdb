@@ -22,18 +22,21 @@ import (
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 	"configcenter/src/thirdpartyclient/esbserver/gse"
 	"configcenter/src/thirdpartyclient/esbserver/nodeman"
+	"configcenter/src/thirdpartyclient/esbserver/user"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type EsbClientInterface interface {
 	GseSrv() gse.GseClientInterface
+	User() user.UserClientInterface
 	NodemanSrv() nodeman.NodeManClientInterface
 }
 
 type esbsrv struct {
 	client     rest.ClientInterface
 	gseSrv     gse.GseClientInterface
+	userSrv    user.UserClientInterface
 	nodemanSrv nodeman.NodeManClientInterface
 	sync.RWMutex
 	esbConfig *esbutil.EsbConfigServ
@@ -92,4 +95,17 @@ func (e *esbsrv) NodemanSrv() nodeman.NodeManClientInterface {
 
 func (e *esbsrv) GetEsbConfigSrv() *esbutil.EsbConfigServ {
 	return e.esbConfig
+}
+
+func (e *esbsrv) User() user.UserClientInterface {
+	e.RLock()
+	srv := e.userSrv
+	e.RUnlock()
+	if nil == srv {
+		e.Lock()
+		e.userSrv = user.NewUserClientInterface(e.client, e.esbConfig)
+		srv = e.userSrv
+		e.Unlock()
+	}
+	return srv
 }
