@@ -66,10 +66,10 @@ type DeleteServiceTemplatesInput struct {
 }
 
 type CreateServiceInstanceForServiceTemplateInput struct {
-	Metadata  Metadata                `json:"metadata"`
-	Name      string                  `json:"name"`
-	ModuleID  int64                   `json:"bk_module_id"`
-	Instances []ServiceInstanceDetail `json:"instances"`
+	Metadata  Metadata                      `json:"metadata"`
+	Name      string                        `json:"name"`
+	ModuleID  int64                         `json:"bk_module_id"`
+	Instances []CreateServiceInstanceDetail `json:"instances"`
 }
 
 type CreateRawProcessInstanceInput struct {
@@ -94,6 +94,15 @@ type GetServiceInstanceInModuleInput struct {
 	Page      BasePage           `json:"page"`
 	SearchKey *string            `json:"search_key,omitempty"`
 	Selectors selector.Selectors `json:"selectors"`
+}
+
+type ListServiceInstanceDetailRequest struct {
+	Metadata  Metadata           `json:"metadata"`
+	SetID     int64              `json:"bk_set_id"`
+	ModuleID  int64              `json:"bk_module_id"`
+	HostID    int64              `json:"bk_host_id"`
+	Page      BasePage           `json:"page,omitempty"`
+	Selectors selector.Selectors `json:"selectors,omitempty"`
 }
 
 type DiffServiceInstanceWithTemplateOption struct {
@@ -161,7 +170,7 @@ type ServiceDifferenceDetails struct {
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes,omitempty"`
 }
 
-type ServiceInstanceDetail struct {
+type CreateServiceInstanceDetail struct {
 	HostID int64 `json:"bk_host_id"`
 	// Processes parameter usable only when create instance with raw
 	Processes []ProcessInstanceDetail `json:"processes"`
@@ -1060,7 +1069,7 @@ type PropertyBindIP struct {
 }
 
 func (ti *PropertyBindIP) Validate() error {
-	if ti.Value != nil {
+	if ti.Value != nil && len(*ti.Value) != 0 {
 		if err := ti.Value.Validate(); err != nil {
 			return err
 		}
@@ -1118,6 +1127,17 @@ func (si *ServiceInstance) Validate() (field string, err error) {
 	return "", nil
 }
 
+type ServiceInstanceDetail struct {
+	ServiceInstance
+	ServiceCategoryID int64               `field:"service_category_id" json:"service_category_id" bson:"service_category_id"`
+	ProcessInstances  []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
+}
+
+type ServiceInstanceWithTopoPath struct {
+	ServiceInstance
+	TopoPath []TopoInstanceNodeSimplify `field:"topo_path" json:"topo_path" bson:"topo_path"`
+}
+
 // ProcessInstanceRelation record which service instance and process template are current process binding, process identified by ProcessID
 type ProcessInstanceRelation struct {
 	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
@@ -1140,6 +1160,11 @@ func (pir *ProcessInstanceRelation) Validate() (field string, err error) {
 
 type ProcessInstance struct {
 	Property mapstr.MapStr           `json:"property"`
+	Relation ProcessInstanceRelation `json:"relation"`
+}
+
+type ProcessInstanceNG struct {
+	Process  Process                 `json:"process"`
 	Relation ProcessInstanceRelation `json:"relation"`
 }
 

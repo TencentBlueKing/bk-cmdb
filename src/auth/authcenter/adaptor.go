@@ -126,6 +126,8 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizProcessServiceTemplate
 	case meta.ProcessServiceCategory:
 		iamResourceType = BizProcessServiceCategory
+	case meta.ProcessServiceInstance:
+		iamResourceType = BizProcessServiceInstance
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -152,16 +154,17 @@ const (
 // Business Resource
 const (
 	// the alias name maybe "dynamic classification"
-	BizCustomQuery     ResourceTypeID = "biz_custom_query"
-	BizHostInstance    ResourceTypeID = "biz_host_instance"
-	BizProcessInstance ResourceTypeID = "biz_process_instance"
-	BizTopology        ResourceTypeID = "biz_topology"
-	BizModelGroup      ResourceTypeID = "biz_model_group"
-	BizModel           ResourceTypeID = "biz_model"
-	BizInstance        ResourceTypeID = "biz_instance"
-	BizAuditLog        ResourceTypeID = "biz_audit_log"
+	BizCustomQuery            ResourceTypeID = "biz_custom_query"
+	BizHostInstance           ResourceTypeID = "biz_host_instance"
+	BizProcessInstance        ResourceTypeID = "biz_process_instance"
+	BizTopology               ResourceTypeID = "biz_topology"
+	BizModelGroup             ResourceTypeID = "biz_model_group"
+	BizModel                  ResourceTypeID = "biz_model"
+	BizInstance               ResourceTypeID = "biz_instance"
+	BizAuditLog               ResourceTypeID = "biz_audit_log"
 	BizProcessServiceTemplate ResourceTypeID = "biz_process_service_template"
 	BizProcessServiceCategory ResourceTypeID = "biz_process_service_category"
+	BizProcessServiceInstance ResourceTypeID = "biz_process_service_instance"
 )
 
 const (
