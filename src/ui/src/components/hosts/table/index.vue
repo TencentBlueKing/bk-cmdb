@@ -690,9 +690,10 @@
     }
     .collection-create {
         display: inline-block;
+        width: 60%;
         font-size: 12px;
         color: #63656E;
-        line-height: 16px;
+        line-height: 32px;
         cursor: pointer;
         &:hover {
             color: #3a84ff;
