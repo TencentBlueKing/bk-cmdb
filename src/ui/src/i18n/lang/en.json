@@ -897,7 +897,7 @@
         "服务分类": "Service category",
         "服务模板信息": "Service template info",
         "确认解除模板": "Confirm to unbind template?",
-        "解除模板影响": "Unbind service template will cause those effects：<br><br> &nbsp;&nbsp; 1. Service instance will not synchronous template anymore.<br> &nbsp;&nbsp;2. Can not use template to create instance anymore. ",
+        "解除模板影响": "Unbind the {name} service template will cause those effects：<br><br> &nbsp;&nbsp; 1. Service instance will not synchronous template anymore.<br> &nbsp;&nbsp;2. Can not use template to create instance anymore. ",
         "服务实例": "Service instance",
         "节点信息": "Node info",
         "源实例主机提示": "Please update process, can not repeat with source instance",
