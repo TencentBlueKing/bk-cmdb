@@ -28,6 +28,10 @@ import (
 	"gopkg.in/redis.v5"
 )
 
+/*
+TxnHandler commit all event at db transaction commits, elsewhere clear cached events if db transaction abort
+*/
+
 func (th *TxnHandler) Run() (err error) {
 	th.shouldClose.UnSet()
 	defer func() {
@@ -109,6 +113,7 @@ func (th *TxnHandler) fetchTimeout() {
 			break
 		}
 		txnIDs := make([]string, 0)
+		// TODO: 如果保证集群中多个结点的服务器时间一致
 		opt.Max = strconv.FormatInt(now.UTC().Unix(), 10)
 
 		if err := th.cache.ZRangeByScore(common.EventCacheEventTxnSet, opt).ScanSlice(&txnIDs); err != nil {
