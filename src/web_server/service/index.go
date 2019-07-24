@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/util"
 	"encoding/json"
 	"strconv"
 	"strings"
@@ -27,13 +28,15 @@ import (
 
 // Index html file
 func (s *Service) Index(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromGinContext(c)
 	session := sessions.Default(c)
 	role := session.Get("role")
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
 	language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 
 	if s.Config.Site.AuthScheme == "internal" {
-		userPriviApp, rolePrivilege, modelPrivi, sysPrivi, mainLineObjIDArr := s.Logics.GetUserAppPri(userName, common.BKDefaultOwnerID, language)
+		userPriviApp, rolePrivilege, modelPrivi, sysPrivi, mainLineObjIDArr := s.Logics.GetUserAppPri(ctx, userName, common.BKDefaultOwnerID, language)
 
 		var strUserPriveApp, strRolePrivilege, strModelPrivi, strSysPrivi, mainLineObjIDStr string
 		if nil == userPriviApp {
@@ -54,7 +57,7 @@ func (s *Service) Index(c *gin.Context) {
 		} else {
 			cstrModelPrivi, err := json.Marshal(modelPrivi)
 			if err != nil {
-				blog.Errorf("marshal model privilege failed, model privilege: %+v, err: %v", modelPrivi, err)
+				blog.Errorf("marshal model privilege failed, model privilege: %+v, err: %v, rid: %s", modelPrivi, err, rid)
 			}
 			strModelPrivi = string(cstrModelPrivi)
 		}
@@ -63,14 +66,14 @@ func (s *Service) Index(c *gin.Context) {
 		} else {
 			cstrSysPrivi, err := json.Marshal(sysPrivi)
 			if err != nil {
-				blog.Errorf("marshal system privilege failed, info: %+v, err: %v", sysPrivi, err)
+				blog.Errorf("marshal system privilege failed, info: %+v, err: %v, rid: %s", sysPrivi, err, rid)
 			}
 			strSysPrivi = string(cstrSysPrivi)
 		}
 
 		mainLineObjIDB, err := json.Marshal(mainLineObjIDArr)
 		if err != nil {
-			blog.Errorf("marshal mainline failed, info: %+v, err: %v", mainLineObjIDArr, err)
+			blog.Errorf("marshal mainline failed, info: %+v, err: %v, rid: %s", mainLineObjIDArr, err, rid)
 		}
 		mainLineObjIDStr = string(mainLineObjIDB)
 
@@ -93,7 +96,7 @@ func (s *Service) Index(c *gin.Context) {
 	c.HTML(200, "index.html", gin.H{
 		"site":           s.Config.Site.DomainUrl,
 		"version":        s.Config.Version,
-		"ccversion":   version.CCVersion,
+		"ccversion":      version.CCVersion,
 		"authscheme":     s.Config.Site.AuthScheme,
 		"fullTextSearch": s.Config.Site.FullTextSearch,
 		"role":           role,

@@ -32,6 +32,7 @@ import (
 
 func GetImportNetProperty(
 	header http.Header, defLang language.DefaultCCLanguageIf, f *xlsx.File) (map[int]map[string]interface{}, []string, error) {
+	ctx := util.NewContextFromHTTPHeader(header)
 
 	if 0 == len(f.Sheets) {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
@@ -44,7 +45,7 @@ func GetImportNetProperty(
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	return GetExcelData(sheet, fields, nil, true, 0, defLang)
+	return GetExcelData(ctx, sheet, fields, nil, true, 0, defLang)
 }
 
 func BuildNetPropertyExcelFromData(defLang language.DefaultCCLanguageIf, fields map[string]Property, data []mapstr.MapStr, sheet *xlsx.Sheet) error {
@@ -63,6 +64,7 @@ func BuildNetPropertyExcelFromData(defLang language.DefaultCCLanguageIf, fields 
 
 // get net property data to export
 func (lgc *Logics) GetNetPropertyData(header http.Header, netPropertyIDStr string) ([]mapstr.MapStr, error) {
+	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	netPropertyIDStrArr := strings.Split(netPropertyIDStr, ",")
 	netPropertyIDArr := []int64{}
@@ -82,7 +84,7 @@ func (lgc *Logics) GetNetPropertyData(header http.Header, netPropertyIDStr strin
 
 	propertyResult, err := lgc.Engine.CoreAPI.ApiServer().SearchNetCollectDevice(context.Background(), header, searchCond)
 	if nil != err {
-		blog.Errorf("search net property data inst  error:%#v , search condition:%#v", err, searchCond)
+		blog.Errorf("search net property data inst  error:%#v , search condition:%#v, rid: %s", err, searchCond, rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -90,24 +92,25 @@ func (lgc *Logics) GetNetPropertyData(header http.Header, netPropertyIDStr strin
 		return propertyResult.Data.Info, errors.New("no device")
 	}
 
-	blog.V(5).Infof("[Export Net Device Property] search return device info:%s", propertyResult)
+	blog.V(5).Infof("[Export Net Device Property] search return device info:%s, rid: %s", propertyResult, rid)
 	return propertyResult.Data.Info, nil
 }
 
-//BuildNetPropertyExcelTemplate  return httpcode, error
+// BuildNetPropertyExcelTemplate  return httpcode, error
 func BuildNetPropertyExcelTemplate(header http.Header, defLang language.DefaultCCLanguageIf, filename string) error {
+	rid := util.GetHTTPCCRequestID(header)
 	var file *xlsx.File
 	file = xlsx.NewFile()
 
 	sheet, err := file.AddSheet(common.BKNetProperty)
 	if nil != err {
-		blog.Errorf("[Build NetProperty Excel Template] add comment sheet error, sheet name:%s, error:%s", common.BKNetProperty, err.Error())
+		blog.Errorf("[Build NetProperty Excel Template] add comment sheet error, sheet name:%s, error:%s, rid: %s", common.BKNetProperty, err.Error(), rid)
 		return err
 	}
 
 	fields := GetNetPropertyField(defLang)
 
-	blog.V(5).Infof("[Build NetProperty Excel Template]  fields count:%d", len(fields))
+	blog.V(5).Infof("[Build NetProperty Excel Template]  fields count:%d, rid: %s", len(fields), rid)
 
 	productExcelHealer(fields, nil, sheet, defLang)
 

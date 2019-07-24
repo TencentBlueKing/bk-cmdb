@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/util"
 	"context"
 	"fmt"
 	"math/rand"
@@ -87,6 +88,8 @@ func (s *Service) ImportInst(c *gin.Context) {
 
 // ExportInst export inst
 func (s *Service) ExportInst(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromGinContext(c)
 	logics.SetProxyHeader(c)
 	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
@@ -121,15 +124,15 @@ func (s *Service) ExportInst(c *gin.Context) {
 	customFields := logics.GetCustomFields(nil, customFieldsStr)
 	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, metaInfo)
 	if err != nil {
-		blog.Errorf("export object instance, but get object:%s attribute field failed, err: %v", objID, err)
+		blog.Errorf("export object instance, but get object:%s attribute field failed, err: %v, rid: %s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
 	}
 
-	err = s.Logics.BuildExcelFromData(context.Background(), objID, fields, nil, instInfo, file, pheader, metaInfo)
+	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, metaInfo)
 	if nil != err {
-		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
+		blog.Errorf("ExportHost object:%s error:%s, rid: %s", objID, err.Error(), rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
@@ -141,12 +144,12 @@ func (s *Service) ExportInst(c *gin.Context) {
 	}
 	fileName := fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano())
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
-	logics.ProductExcelCommentSheet(file, defLang)
+	logics.ProductExcelCommentSheet(ctx, file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {
-		blog.Errorf("ExportInst save file error:%s", err.Error())
+		blog.Errorf("ExportInst save file error:%s, rid: %s", err.Error(), rid)
 		if err != nil {
-			blog.Errorf("ExportInst save file error:%s", err.Error())
+			blog.Errorf("ExportInst save file error:%s, rid: %s", err.Error(), rid)
 			reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
 			c.Writer.Write([]byte(reply))
 			return

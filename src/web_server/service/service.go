@@ -42,6 +42,7 @@ type Service struct {
 func (s *Service) WebService() *gin.Engine {
 	ws := gin.Default()
 
+	ws.Use(middleware.RequestIDMiddleware)
 	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))
 	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery()))
 	middleware.Engine = s.Engine

@@ -41,6 +41,7 @@ type publicUser struct {
 
 // LoginUser  user login
 func (m *publicUser) LoginUser(c *gin.Context) bool {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
 	isMultiOwner := false
 	loginSucc := false
@@ -58,7 +59,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		loginUserFunc, err := m.loginPlg.Lookup("LoginUser")
 
 		if nil != err {
-			blog.Error("look login func error")
+			blog.Errorf("look login func error, rid: %s", rid)
 			return false
 
 		}
@@ -76,7 +77,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		ownerM.SetHttpHeader(common.BKHTTPSupplierID, strconv.FormatInt(userInfo.SupplierID, 10))
 		err := ownerM.InitOwner()
 		if nil != err {
-			blog.Errorf("InitOwner error: %v", err)
+			blog.Errorf("InitOwner error: %v, rid: %s", err, rid)
 			return false
 		}
 	}
@@ -149,6 +150,7 @@ func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 }
 
 func (m *publicUser) GetLoginUrl(c *gin.Context) string {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
 	params := new(metadata.LogoutRequestParams)
 	err := json.NewDecoder(c.Request.Body).Decode(params)
@@ -167,7 +169,7 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 		getLoginUrlFunc, err := m.loginPlg.Lookup("GetLoginUrl")
 
 		if nil != err {
-			blog.Error("look get url func error")
+			blog.Errorf("look get url func error, rid: %s", rid)
 			return ""
 
 		}

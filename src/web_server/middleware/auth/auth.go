@@ -20,7 +20,7 @@ type Auth interface {
 	ValidResAccess(pathArr []string, c *gin.Context) bool
 }
 
-//NewUser return user instance by type
+// NewUser return user instance by type
 func NewAuth() Auth {
 	return &publicAuth{}
 }

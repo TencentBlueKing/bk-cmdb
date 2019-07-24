@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
+	"configcenter/src/common/util"
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/auth"
@@ -41,6 +42,7 @@ var LoginPlg *plugin.Plugin
 func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
+		rid := util.GetHTTPCCRequestID(c.Request.Header)
 		pathArr := strings.Split(c.Request.URL.Path, "/")
 		path1 := pathArr[1]
 
@@ -78,7 +80,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			if path1 == "api" {
 				servers, err := disc.ApiServer().GetServers()
 				if nil != err || 0 == len(servers) {
-					blog.Errorf("no api server can be used. err: %v", err)
+					blog.Errorf("no api server can be used. err: %v, rid: %s", err, rid)
 					c.JSON(503, gin.H{
 						"status": "no api server can be used.",
 					})
@@ -112,6 +114,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 
 // IsAuthed check user is authed
 func isAuthed(c *gin.Context, config options.Config) bool {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	if "1" == config.Session.Skip {
 		session := sessions.Default(c)
 		cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
@@ -131,7 +134,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		}
 		session.Set(common.WEBSessionSupplierID, "0")
 
-		blog.V(5).Infof("skip login, cookie language: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
+		blog.V(5).Infof("skip login, cookie language: %s, cookieOwnerID: %s, rid: %s", cookieLanuage, cookieOwnerID, rid)
 		session.Set(common.WEBSessionUinKey, "admin")
 
 		session.Set(common.WEBSessionRoleKey, "1")
@@ -167,7 +170,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		}
 	}
 	bk_token, err := c.Cookie(bkTokenName)
-	blog.V(5).Infof("valid user login session token %s, cookie token %s", cc_token, bk_token)
+	blog.V(5).Infof("valid user login session token %s, cookie token %s, rid: %s", cc_token, bk_token, rid)
 	if nil != err || bk_token != cc_token {
 		return user.LoginUser(c)
 	}

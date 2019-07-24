@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -32,7 +33,7 @@ var (
 	headerRow = common.HostAddMethodExcelIndexOffset
 )
 
-//getFilterFields 不需要展示字段
+// getFilterFields 不需要展示字段
 func getFilterFields(objID string) []string {
 	switch objID {
 	case common.BKInnerObjIDHost:
@@ -57,9 +58,10 @@ func getCustomFields(filterFields []string, customFieldsStr string) []string {
 }
 
 // checkExcelHealer check whether invalid fields exists in header and return headers
-func checkExcelHealer(sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
+func checkExcelHealer(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
-	//rowLen := len(sheet.Rows[headerRow-1].Cells)
+	// rowLen := len(sheet.Rows[headerRow-1].Cells)
 	var errCells []string
 	ret := make(map[int]string)
 	if headerRow > len(sheet.Rows) {
@@ -80,8 +82,8 @@ func checkExcelHealer(sheet *xlsx.Sheet, fields map[string]Property, isCheckHead
 	// excel three row  values  exceeding 1/2 does not appear in the field array,
 	// indicating that the third line of the excel template was deleted
 	if len(errCells) > len(sheet.Rows[headerRow-1].Cells)/2 && true == isCheckHeader {
-		//web_import_field_not_found
-		blog.Errorf(defLang.Languagef("web_import_field_not_found", strings.Join(errCells, ",")))
+		// web_import_field_not_found
+		blog.Errorf(defLang.Languagef("web_import_field_not_found, rid: %s", strings.Join(errCells, ",")), rid)
 		return ret, errors.New(defLang.Languagef("web_import_field_not_found", errCells[0]+"..."))
 	}
 	return ret, nil
@@ -174,9 +176,10 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 
 }
 
-func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Property, defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf) (host map[string]interface{}, errMsg []string) {
+func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fields map[string]Property, defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf) (host map[string]interface{}, errMsg []string) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	host = make(map[string]interface{})
-	//errMsg := make([]string, 0)
+	// errMsg := make([]string, 0)
 	for cellIndex, cell := range row.Cells {
 		fieldName, ok := nameIndexMap[cellIndex]
 		if false == ok {
@@ -198,7 +201,7 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 			cellValue, err := cell.Float()
 			if nil != err {
 				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
-				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
+				blog.Errorf("%d row %s column get content error:%s, rid: %s", rowIndex+1, fieldName, err.Error(), rid)
 				continue
 			}
 			host[fieldName] = cellValue
@@ -209,19 +212,19 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 			cellValue, err := cell.GetTime(true)
 			if nil != err {
 				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
-				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
+				blog.Errorf("%d row %s column get content error:%s, rid: %s", rowIndex+1, fieldName, err.Error(), rid)
 				continue
 			}
 			host[fieldName] = cellValue
 		default:
 			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
-			blog.Errorf("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
+			blog.Errorf("unknown the type, %v,   %v, rid: %s", reflect.TypeOf(cell), cell.Type(), rid)
 			continue
 		}
 
 		field, ok := fields[fieldName]
 		if !ok {
-			blog.Errorf("%d row %s field not found ", rowIndex+1, fieldName)
+			blog.Errorf("%d row %s field not found , rid: %s", rowIndex+1, fieldName, rid)
 			continue
 		}
 		switch field.PropertyType {
@@ -242,18 +245,18 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 			}
 		case common.FieldTypeInt:
 			intVal, err := util.GetInt64ByInterface(host[fieldName])
-			//convertor int not err , set field value to correct type
+			// convertor int not err , set field value to correct type
 			if nil == err {
 				host[fieldName] = intVal
 			} else {
-				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s", fieldName, host[fieldName], err.Error())
+				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], err.Error(), rid)
 			}
 		case common.FieldTypeFloat:
 			floatVal, err := util.GetFloat64ByInterface(host[fieldName])
 			if nil == err {
 				host[fieldName] = floatVal
 			} else {
-				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s", fieldName, host[fieldName], err.Error())
+				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], err.Error(), rid)
 			}
 		default:
 			if util.IsStrProperty(field.PropertyType) {
@@ -293,7 +296,7 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		sheet.Col(index).Width = 18
 		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
 		if true == skip || field.NotExport {
-			//不需要用户输入的类型continue
+			// 不需要用户输入的类型continue
 			continue
 		}
 		isRequire := ""
