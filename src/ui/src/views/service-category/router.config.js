@@ -25,7 +25,7 @@ export default {
             id: 'serviceCagetory',
             i18n: 'Nav["服务分类"]',
             path: path,
-            order: 1,
+            order: 3,
             parent: NAV_SERVICE_MANAGEMENT,
             adminView: false
         },
