@@ -47,7 +47,7 @@
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange"
             @selection-change="handleSelectChange">
-            <bk-table-column type="selection" fixed width="60" align="center"></bk-table-column>
+            <bk-table-column type="selection" fixed width="60" align="center" class-name="bk-table-selection"></bk-table-column>
             <bk-table-column prop="bk_host_innerip" :label="$t('Cloud[\'资源名称\']')"></bk-table-column>
             <bk-table-column prop="bk_resource_type" :label="$t('Cloud[\'资源类型\']')">
                 <template slot-scope="{ row }">

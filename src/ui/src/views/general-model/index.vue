@@ -113,7 +113,7 @@
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange"
             @selection-change="handleSelectChange">
-            <bk-table-column type="selection"></bk-table-column>
+            <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 :key="column.id"
                 :prop="column.id"

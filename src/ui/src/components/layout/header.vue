@@ -180,7 +180,7 @@
     .business-selector {
         display: inline-block;
         width: 200px;
-        margin: 12px 0 0 20px;
+        margin: 14px 0 0 20px;
         vertical-align: top;
     }
     .user{

@@ -3,7 +3,10 @@
         v-model="selected"
         :clearable="allowClear"
         :searchable="searchable"
-        :disabled="disabled">
+        :disabled="disabled"
+        :popover-options="{
+            boundary: 'window'
+        }">
         <bk-option
             v-for="(option, index) in options"
             :key="index"
