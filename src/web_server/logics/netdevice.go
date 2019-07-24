@@ -32,6 +32,7 @@ import (
 // get date from excel file to import device
 func GetImportNetDevices(
 	header http.Header, defLang language.DefaultCCLanguageIf, f *xlsx.File) (map[int]map[string]interface{}, []string, error) {
+	ctx := util.NewContextFromHTTPHeader(header)
 
 	if 0 == len(f.Sheets) {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
@@ -44,7 +45,7 @@ func GetImportNetDevices(
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	return GetExcelData(sheet, fields, nil, true, 0, defLang)
+	return GetExcelData(ctx, sheet, fields, nil, true, 0, defLang)
 }
 
 func BuildNetDeviceExcelFromData(defLang language.DefaultCCLanguageIf, fields map[string]Property, data []mapstr.MapStr, sheet *xlsx.Sheet) error {
@@ -63,6 +64,7 @@ func BuildNetDeviceExcelFromData(defLang language.DefaultCCLanguageIf, fields ma
 
 // get net device data to export
 func (lgc *Logics) GetNetDeviceData(header http.Header, deviceIDStr string) ([]mapstr.MapStr, error) {
+	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	deviceIDStrArr := strings.Split(deviceIDStr, ",")
 	deviceIDArr := []int64{}
@@ -81,7 +83,7 @@ func (lgc *Logics) GetNetDeviceData(header http.Header, deviceIDStr string) ([]m
 	searchCond.AddConditionItem(condItem)
 	deviceResult, err := lgc.Engine.CoreAPI.ApiServer().SearchNetCollectDevice(context.Background(), header, searchCond)
 	if nil != err {
-		blog.Errorf("search net device data inst  error:%#v , search condition:%#v", err, searchCond)
+		blog.Errorf("search net device data inst  error:%#v , search condition:%#v, rid: %s", err, searchCond, rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -89,24 +91,25 @@ func (lgc *Logics) GetNetDeviceData(header http.Header, deviceIDStr string) ([]m
 		return deviceResult.Data.Info, errors.New("no device")
 	}
 
-	blog.V(5).Infof("[Export Net Device] search return device info:%s", deviceResult)
+	blog.V(5).Infof("[Export Net Device] search return device info:%s, rid: %s", deviceResult, rid)
 	return deviceResult.Data.Info, nil
 }
 
-//BuildNetDeviceExcelTemplate  return httpcode, error
+// BuildNetDeviceExcelTemplate  return httpcode, error
 func BuildNetDeviceExcelTemplate(header http.Header, defLang language.DefaultCCLanguageIf, filename string) error {
+	rid := util.GetHTTPCCRequestID(header)
 	var file *xlsx.File
 	file = xlsx.NewFile()
 
 	sheet, err := file.AddSheet(common.BKNetDevice)
 	if nil != err {
-		blog.Errorf("[Build NetDevice Excel Template] add comment sheet error, sheet name:%s, error:%s", common.BKNetDevice, err.Error())
+		blog.Errorf("[Build NetDevice Excel Template] add comment sheet error, sheet name:%s, error:%s, rid: %s", common.BKNetDevice, err.Error(), rid)
 		return err
 	}
 
 	fields := GetNetDevicefield(defLang)
 
-	blog.V(5).Infof("[Build NetDevice Excel Template] fields count:%d", len(fields))
+	blog.V(5).Infof("[Build NetDevice Excel Template] fields count:%d, rid: %s", len(fields), rid)
 
 	productExcelHealer(fields, nil, sheet, defLang)
 

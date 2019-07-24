@@ -60,6 +60,7 @@ func (s *Service) GetUserList(c *gin.Context) {
 }
 
 func (s *Service) UpdateUserLanguage(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
 	language := c.Param("language")
 
@@ -67,7 +68,7 @@ func (s *Service) UpdateUserLanguage(c *gin.Context) {
 	err := session.Save()
 
 	if nil != err {
-		blog.Errorf("user update language error:%s", err.Error())
+		blog.Errorf("user update language error:%s, rid: %s", err.Error(), rid)
 		c.JSON(200, userDataResult{
 			Result:  false,
 			Message: "user update language error",
@@ -90,6 +91,7 @@ func (s *Service) UpdateUserLanguage(c *gin.Context) {
 
 func (s *Service) UserInfo(c *gin.Context) {
 
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
 	resultData := metadata.LoginUserInfoResult{}
 	resultData.Result = true
@@ -110,7 +112,7 @@ func (s *Service) UserInfo(c *gin.Context) {
 		ownerUinList := make([]metadata.LoginUserInfoOwnerUinList, 0)
 		err := json.Unmarshal([]byte(strOwnerUinList), &ownerUinList)
 		if nil != err {
-			blog.Errorf("[UserInfo] json unmarshal error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(c.Request.Header))
+			blog.Errorf("[UserInfo] json unmarshal error:%s, rid: %s", err.Error(), rid)
 		} else {
 			resultData.Data.OwnerUinArr = ownerUinList
 		}
@@ -132,6 +134,7 @@ func (s *Service) UserInfo(c *gin.Context) {
 
 func (s *Service) UpdateSupplier(c *gin.Context) {
 
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
 
 	strOwnerUinList, ok := session.Get(common.WEBSessionOwnerUinListeKey).(string)
@@ -147,7 +150,7 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 	if ok {
 		err := json.Unmarshal([]byte(strOwnerUinList), &ownerUinList)
 		if nil != err {
-			blog.Errorf("[UserInfo] json unmarshal error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(c.Request.Header))
+			blog.Errorf("[UserInfo] json unmarshal error:%s, rid: %s", err.Error(), rid)
 			c.JSON(http.StatusBadRequest, metadata.BaseResp{
 				Result: false,
 				Code:   common.CCErrCommJSONUnmarshalFailed,

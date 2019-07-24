@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -52,6 +53,7 @@ var sortFields = []string{
 func (s *Service) ImportObject(c *gin.Context) {
 	logics.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
+	ctx := util.NewContextFromGinContext(c)
 
 	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
@@ -92,7 +94,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	attrItems, errMsg, err := s.Logics.GetImportInsts(f, objID, pheader, 3, false, defLang, metaInfo)
+	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, pheader, 3, false, defLang, metaInfo)
 	if 0 == len(attrItems) {
 		var msg string
 		if nil != err {
@@ -119,7 +121,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		metadata.BKMetadata: metaInfo,
 	}
 
-	result, err := s.CoreAPI.ApiServer().AddObjectBatch(context.Background(), c.Request.Header, common.BKDefaultOwnerID, objID, params)
+	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, common.BKDefaultOwnerID, objID, params)
 	if nil != err {
 		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -137,31 +139,35 @@ func setExcelSubTitle(row *xlsx.Row) *xlsx.Row {
 	return row
 }
 
-func setExcelTitle(row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Row {
+func setExcelTitle(ctx context.Context, row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Row {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	fields := logics.GetPropertyFieldDesc(defLang)
 	for _, key := range sortFields {
 		cell := row.AddCell()
 		cell.Value = fields[key]
-		blog.V(5).Infof("key:%s value:%v", key, fields[key])
+		blog.V(5).Infof("key:%s value:%v, rid: %s", key, fields[key], rid)
 	}
 	return row
 }
 
-func setExcelTitleType(row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Row {
+func setExcelTitleType(ctx context.Context, row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Row {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	fieldType := logics.GetPropertyFieldType(defLang)
 	for _, key := range sortFields {
 		cell := row.AddCell()
 		cell.Value = fieldType[key]
-		blog.V(5).Infof("key:%s value:%v", key, fieldType[key])
+		blog.V(5).Infof("key:%s value:%v, rid: %s", key, fieldType[key], rid)
 	}
 	return row
 }
 
-func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
+func setExcelRow(ctx context.Context, row *xlsx.Row, item interface{}) *xlsx.Row {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	itemMap, ok := item.(map[string]interface{})
 	if !ok {
-		blog.V(5).Infof("failed to convert to map")
+		blog.V(5).Infof("failed to convert to map, rid: %s", rid)
 		return row
 	}
 
@@ -169,13 +175,13 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 	for _, key := range sortFields {
 
 		cell := row.AddCell()
-		//cell.SetValue([]string{"v1", "v2"})
+		// cell.SetValue([]string{"v1", "v2"})
 		keyVal, ok := itemMap[key]
 		if !ok {
-			blog.Warnf("not fount the key(%s), skip it", key)
+			blog.Warnf("not fount the key(%s), skip it, rid: %s", key, rid)
 			continue
 		}
-		blog.V(5).Infof("key:%s value:%v", key, keyVal)
+		blog.V(5).Infof("key:%s value:%v, rid: %s", key, keyVal, rid)
 		if nil == keyVal {
 			cell.SetString("")
 			continue
@@ -195,7 +201,7 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 
 				bOptions, err := json.Marshal(t)
 				if nil != err {
-					blog.Errorf("option format error:%v", t)
+					blog.Errorf("option format error:%v, rid: %s", t, rid)
 					cell.SetValue("error info:" + err.Error())
 				} else {
 					cell.SetString(string(bOptions))
@@ -222,6 +228,8 @@ type ExportObjectBody struct {
 
 // ExportObject export object
 func (s *Service) ExportObject(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromGinContext(c)
 
 	logics.SetProxyHeader(c)
 
@@ -235,7 +243,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 	requestBody := ExportObjectBody{}
 	err := c.BindJSON(&requestBody)
 	if err != nil {
-		blog.Error("export model failed, parse request body to json failed, err: %v", err)
+		blog.Error("export model failed, parse request body to json failed, err: %v, rid: %s", err, rid)
 		msg := fmt.Sprintf("invalid body, parse json failed, err: %+v", err)
 		c.String(http.StatusBadRequest, msg)
 		return
@@ -245,7 +253,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 	// get the all attribute of the object
 	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header, metaInfo)
 	if nil != err {
-		blog.Error("export model, but get object data failed, err: %v", err)
+		blog.Error("export model, but get object data failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, msg)
 		return
@@ -258,25 +266,25 @@ func (s *Service) ExportObject(c *gin.Context) {
 	file = xlsx.NewFile()
 	sheet, err = file.AddSheet(objID)
 	if err != nil {
-		blog.Error(err.Error())
+		blog.Errorf("ExportObject failed, AddSheet failed, err: %s, rid: %s", err.Error(), rid)
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, msg)
 		return
 	}
 
 	// set the title
-	setExcelTitle(sheet.AddRow(), defLang)
-	setExcelTitleType(sheet.AddRow(), defLang)
+	setExcelTitle(ctx, sheet.AddRow(), defLang)
+	setExcelTitleType(ctx, sheet.AddRow(), defLang)
 	setExcelSubTitle(sheet.AddRow())
 
 	// add the value
 	for _, item := range arrItems {
 
 		innerRow := item.(map[string]interface{})
-		blog.V(5).Infof("object attribute data :%+v", innerRow)
+		blog.V(5).Infof("object attribute data :%+v, rid: %s", innerRow, rid)
 
 		// set row value
-		setExcelRow(sheet.AddRow(), innerRow)
+		setExcelRow(ctx, sheet.AddRow(), innerRow)
 
 	}
 
@@ -289,7 +297,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
 	err = file.Save(dirFileName)
 	if err != nil {
-		blog.Errorf("ExportInst save file error:%s", err.Error())
+		blog.Errorf("ExportInst save file error:%s, rid: %s", err.Error(), rid)
 		fmt.Printf(err.Error())
 	}
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_model_%s.xlsx", objID))
