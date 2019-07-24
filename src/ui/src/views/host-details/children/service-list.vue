@@ -1,5 +1,5 @@
 <template>
-    <div class="service-wrapper" v-if="instances.length">
+    <div class="service-wrapper">
         <div class="options">
             <cmdb-form-bool class="options-checkall"
                 :size="16"
@@ -37,6 +37,7 @@
                 @check-change="handleCheckChange">
             </service-instance-table>
         </div>
+        <bk-table v-if="!instances.length" :data="[]"></bk-table>
         <bk-pagination class="pagination"
             align="right"
             size="small"
@@ -47,7 +48,6 @@
             @limit-change="handleSizeChange">
         </bk-pagination>
     </div>
-    <bk-table v-else :data="[]"></bk-table>
 </template>
 
 <script>

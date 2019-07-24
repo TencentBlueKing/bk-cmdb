@@ -803,6 +803,7 @@
         }
         .userapi-list {
             width: 370px;
+            font-size: 14px;
             .filter-label {
                 display: block;
                 margin-top: 20px;

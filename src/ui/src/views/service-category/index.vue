@@ -544,6 +544,7 @@
                 }
                 .child-input {
                     /deep/.bk-form-input {
+                        vertical-align: top;
                         border: 1px solid #c4c6cc;
                         background-color: #ffffff !important;
                     }

@@ -9,7 +9,11 @@
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
-            <span class="topology-path" @click.stop="goTopologyInstance">{{topologyPath}}</span>
+            <span class="topology-path"
+                v-bk-tooltips="pathToolTips"
+                @click.stop="goTopologyInstance">
+                {{topologyPath}}
+            </span>
             <cmdb-dot-menu class="instance-menu" @click.native.stop>
                 <ul class="menu-list">
                     <li class="menu-item"
@@ -83,7 +87,11 @@
                 localExpanded: this.expanded,
                 properties: [],
                 header: [],
-                list: []
+                list: [],
+                pathToolTips: {
+                    content: this.$t('BusinessTopology["跳转服务拓扑"]'),
+                    placement: 'top'
+                }
             }
         },
         computed: {
