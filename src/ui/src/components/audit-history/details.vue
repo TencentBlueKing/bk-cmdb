@@ -268,6 +268,7 @@
         }
     }
     .field-btn{
+        font-size: 14px;
         margin: 10px 0;
         text-align: right;
         color: #3c96ff;
