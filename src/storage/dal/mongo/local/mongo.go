@@ -13,6 +13,8 @@
 package local
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"context"
 	"strings"
 	"time"
@@ -155,23 +157,30 @@ func (f *Find) Limit(limit uint64) dal.Find {
 
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
+	start := time.Now()
 	f.dbc.Refresh()
 	query := f.dbc.DB(f.dbname).C(f.collName).Find(f.filter)
 	query = query.Select(f.projection)
 	query = query.Skip(int(f.start))
 	query = query.Limit(int(f.limit))
 	query = query.Sort(f.sort...)
-	return query.All(result)
+	err := query.All(result)
+
+	rid := ctx.Value(common.ContextRequestIDField)
+	blog.V(5).InfoDepthf(1, "Find all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	return err
 }
 
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
 	f.dbc.Refresh()
-
+	start := time.Now()
 	err := f.dbc.DB(f.dbname).C(f.collName).Find(f.filter).One(result)
 	if err == mgo.ErrNotFound {
 		err = dal.ErrDocumentNotFound
 	}
+	rid := ctx.Value(common.ContextRequestIDField)
+	blog.V(5).InfoDepthf(1, "Find one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	return err
 }
 
