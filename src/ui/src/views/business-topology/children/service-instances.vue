@@ -252,10 +252,10 @@
                 }
             }
         },
-        created () {
+        async created () {
+            await this.getHistoryLabel()
             this.getProcessProperties()
             this.getProcessPropertyGroups()
-            this.getHistoryLabel()
             if (this.targetInstanceName) {
                 this.isCarryParams = true
                 this.searchSelectData.push({
