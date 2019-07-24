@@ -498,13 +498,17 @@
             },
             handleRemoveTemplate () {
                 const content = this.$createElement('div', {
+                    style: {
+                        'font-size': '14px',
+                        'padding-left': '20px'
+                    },
                     domProps: {
-                        innerHTML: this.$t('BusinessTopology["解除模板影响"]')
+                        innerHTML: this.$tc('BusinessTopology["解除模板影响"]', this.flattenedInstance.__template_name__, { name: this.flattenedInstance.__template_name__ })
                     }
                 })
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认解除模板"]'),
-                    content: content,
+                    subHeader: content,
                     confirmFn: async () => {
                         await this.$store.dispatch('serviceInstance/removeServiceTemplate', {
                             config: {

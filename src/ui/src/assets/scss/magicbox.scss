@@ -29,17 +29,18 @@
     width: 100%;
 }
 
+.bk-dialog-no-tools {
+    .bk-dialog-tool {
+        display: none;
+    }
+}
+.bk-dialog-no-padding {
+    .bk-dialog-body {
+        padding: 0;
+    }
+}
+
 .bk-dialog {
-    &.bk-dialog-no-tools {
-        .bk-dialog-tool {
-            display: none;
-        }
-    }
-    &.bk-dialog-no-padding {
-        .bk-dialog-body {
-            padding: 0;
-        }
-    }
     .bk-dialog-header {
         .bk-dialog-header-inner {
             white-space: normal;
