@@ -34,7 +34,7 @@ type InstanceMainline struct {
 	modelIDs        []string
 	objectParentMap map[string]string
 
-	businessInstances []mapstr.MapStr
+	businessInstance  mapstr.MapStr
 	setInstances      []mapstr.MapStr
 	moduleInstances   []mapstr.MapStr
 	mainlineInstances []mapstr.MapStr
@@ -136,22 +136,19 @@ func (im *InstanceMainline) ConstructBizTopoInstance(ctx context.Context, withDe
 		Detail:           map[string]interface{}{},
 	}
 
+	// get business detail here
+	bizFilter := map[string]interface{}{
+		common.BKAppIDField: im.bkBizID,
+	}
+	err := im.dbProxy.Table(common.BKTableNameBaseApp).Find(bizFilter).One(ctx, &im.businessInstance)
+	if err != nil {
+		blog.Errorf("get business instances by business:%d failed, err: %+v, rid: %s", im.bkBizID, err, rid)
+		return fmt.Errorf("get business instances by business:%d failed, err: %+v", im.bkBizID, err)
+	}
+	blog.V(5).Infof("SearchMainlineInstanceTopo businessInstances: %+v, rid: %s", im.businessInstance, rid)
+	bizTopoInstance.InstanceName = util.GetStrByInterface(im.businessInstance[common.BKAppNameField])
 	if withDetail == true {
-		// get business detail here
-		mongoCondition := mongo.NewCondition()
-		mongoCondition.Element(&mongo.Eq{Key: common.BKAppIDField, Val: im.bkBizID})
-
-		err := im.dbProxy.Table(common.BKTableNameBaseApp).Find(mongoCondition.ToMapStr()).All(ctx, &im.businessInstances)
-		if err != nil {
-			blog.Errorf("get business instances by business:%d failed, err: %+v, rid: %s", im.bkBizID, err, rid)
-			return fmt.Errorf("get business instances by business:%d failed, err: %+v", im.bkBizID, err)
-		}
-		blog.V(5).Infof("SearchMainlineInstanceTopo businessInstances: %+v, rid: %s", im.businessInstances, rid)
-		if len(im.businessInstances) == 0 {
-			blog.Errorf("business instances by business:%d not found, rid: %s", im.bkBizID, rid)
-			return fmt.Errorf("business instances by business:%d not found", im.bkBizID)
-		}
-		bizTopoInstance.Detail = im.businessInstances[0]
+		bizTopoInstance.Detail = im.businessInstance
 	}
 
 	im.allTopoInstances = append(im.allTopoInstances, bizTopoInstance)
@@ -179,10 +176,12 @@ func (im *InstanceMainline) OrganizeSetInstance(ctx context.Context, withDetail 
 			return fmt.Errorf("parse set instance default field failed, default: %+v, err: %+v", instance[common.BKDefaultField], err)
 		}
 
+		instanceName := util.GetStrByInterface(instance[common.BKSetNameField])
 		topoInstance := &metadata.TopoInstance{
 			Default:          defaultFieldValue,
 			ObjectID:         common.BKInnerObjIDSet,
 			InstanceID:       instanceID,
+			InstanceName:     instanceName,
 			ParentInstanceID: parentInstanceID,
 			Detail:           map[string]interface{}{},
 		}
@@ -215,10 +214,13 @@ func (im *InstanceMainline) OrganizeModuleInstance(ctx context.Context, withDeta
 			return fmt.Errorf("parse module instance default field failed, default: %+v, err: %+v", instance[common.BKDefaultField], err)
 		}
 
+		instanceName := util.GetStrByInterface(instance[common.BKModuleNameField])
+
 		topoInstance := &metadata.TopoInstance{
 			Default:          defaultFieldValue,
 			ObjectID:         common.BKInnerObjIDModule,
 			InstanceID:       instanceID,
+			InstanceName:     instanceName,
 			ParentInstanceID: parentInstanceID,
 			Detail:           map[string]interface{}{},
 		}
@@ -244,9 +246,11 @@ func (im *InstanceMainline) OrganizeMainlineInstance(ctx context.Context, withDe
 			blog.Errorf("parse instanceID:%+v to int64 failed, %+v, rid: %s", instance[common.BKInstParentStr], err, rid)
 			return fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
 		}
+		instanceName := util.GetStrByInterface(instance[common.BKInstNameField])
 		topoInstance := &metadata.TopoInstance{
 			ObjectID:         instance[common.BKObjIDField].(string),
 			InstanceID:       instanceID,
+			InstanceName:     instanceName,
 			ParentInstanceID: parentInstanceID,
 			Detail:           map[string]interface{}{},
 		}
@@ -338,6 +342,7 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, wi
 
 		topoInstance := &metadata.TopoInstance{
 			ObjectID:         util.GetStrByInterface(instance[common.BKObjIDField]),
+			InstanceName:     util.GetStrByInterface(instance[common.BKInstNameField]),
 			InstanceID:       instanceID,
 			ParentInstanceID: parentInstanceID,
 			Detail:           map[string]interface{}{},
@@ -401,6 +406,7 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, withD
 					parentInstance = &metadata.TopoInstance{
 						ObjectID:         parentObjectID,
 						InstanceID:       topoInstance.ParentInstanceID,
+						InstanceName:     util.GetStrByInterface(inst),
 						ParentInstanceID: parentParentID,
 						Detail:           inst,
 					}
@@ -409,10 +415,11 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, withD
 				}
 			}
 			topoInstanceNode := &metadata.TopoInstanceNode{
-				ObjectID:   parentInstance.ObjectID,
-				InstanceID: parentInstance.InstanceID,
-				Detail:     parentInstance.Detail,
-				Children:   []*metadata.TopoInstanceNode{},
+				ObjectID:     parentInstance.ObjectID,
+				InstanceID:   parentInstance.InstanceID,
+				InstanceName: parentInstance.InstanceName,
+				Detail:       parentInstance.Detail,
+				Children:     []*metadata.TopoInstanceNode{},
 			}
 			topoInstanceNodeMap[parentKey] = topoInstanceNode
 		}
@@ -426,10 +433,11 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, withD
 
 		if _, exist := topoInstanceNodeMap[topoInstance.Key()]; exist == false {
 			childTopoInstanceNode := &metadata.TopoInstanceNode{
-				ObjectID:   topoInstance.ObjectID,
-				InstanceID: topoInstance.InstanceID,
-				Detail:     topoInstance.Detail,
-				Children:   []*metadata.TopoInstanceNode{},
+				ObjectID:     topoInstance.ObjectID,
+				InstanceID:   topoInstance.InstanceID,
+				InstanceName: topoInstance.InstanceName,
+				Detail:       topoInstance.Detail,
+				Children:     []*metadata.TopoInstanceNode{},
 			}
 			topoInstanceNodeMap[topoInstance.Key()] = childTopoInstanceNode
 		}

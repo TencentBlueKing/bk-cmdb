@@ -94,7 +94,7 @@
             @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
-            <bk-table-column type="selection" width="60" align="center" fixed></bk-table-column>
+            <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 :key="column.id"
                 :label="column.name"

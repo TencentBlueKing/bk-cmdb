@@ -72,7 +72,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		if process.Config.MongoDB.Enable == "true" {
 			mgoCli, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
 		} else {
-			mgoCli, err = remote.NewWithDiscover(process.Core.ServiceManageInterface.TMServer().GetServers)
+			mgoCli, err = remote.NewWithDiscover(process.Core)
 		}
 		if err != nil {
 			return fmt.Errorf("new mongo client failed, err: %s", err.Error())

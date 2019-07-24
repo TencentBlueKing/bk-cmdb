@@ -11,7 +11,7 @@
         <bk-table class="source-table"
             :data="flattenList"
             @selection-change="handleSelectChange">
-            <bk-table-column type="selection" align="center" width="60" fixed></bk-table-column>
+            <bk-table-column type="selection" align="center" width="60" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"

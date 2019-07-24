@@ -100,6 +100,28 @@ func (s *coreService) ListServiceInstances(params core.ContextParams, pathParams
 	return result, nil
 }
 
+func (s *coreService) ListServiceInstanceDetail(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	// filter parameter
+	fp := metadata.ListServiceInstanceDetailOption{}
+
+	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
+		blog.Errorf("ListServiceInstanceDetail failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	if fp.BusinessID == 0 {
+		blog.Errorf("ListServiceInstanceDetail failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	result, err := s.core.ProcessOperation().ListServiceInstanceDetail(params, fp)
+	if err != nil {
+		blog.Errorf("ListServiceInstanceDetail failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+	return result, nil
+}
+
 func (s *coreService) UpdateServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	serviceInstanceIDStr := pathParams(common.BKServiceInstanceIDField)
 	if len(serviceInstanceIDStr) == 0 {

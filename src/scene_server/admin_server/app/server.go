@@ -67,6 +67,17 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	process.Core = engine
 	process.Service = service
 	process.ConfigCenter = configures.NewConfCenter(ctx, engine.ServiceManageClient())
+
+	// adminserver conf not depend discovery
+	err = process.ConfigCenter.Start(
+		pconfig.ConfigMap["confs.dir"],
+		pconfig.ConfigMap["errors.res"],
+		pconfig.ConfigMap["language.res"],
+	)
+	if err != nil {
+		return err
+	}
+
 	for {
 		if process.Config == nil {
 			time.Sleep(time.Second * 2)
@@ -77,21 +88,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		if process.Config.MongoDB.Enable == "true" {
 			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
 		} else {
-			db, err = remote.NewWithDiscover(process.Core.ServiceManageInterface.TMServer().GetServers)
+			db, err = remote.NewWithDiscover(process.Core)
 		}
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
 		process.Service.SetDB(db)
 		process.Service.SetApiSrvAddr(process.Config.ProcSrvConfig.CCApiSrvAddr)
-		err = process.ConfigCenter.Start(
-			process.Config.Configures.Dir,
-			process.Config.Errors.Res,
-			process.Config.Language.Res,
-		)
-		if err != nil {
-			return err
-		}
 
 		if process.Config.AuthCenter.Enable {
 			blog.Info("enable auth center access.")

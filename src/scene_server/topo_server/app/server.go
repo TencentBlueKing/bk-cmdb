@@ -98,7 +98,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	txn, err := remote.NewWithDiscover(engine.ServiceManageInterface.TMServer().GetServers)
+	txn, err := remote.NewWithDiscover(engine)
 	if err != nil {
 		blog.Errorf("failed to connect the txc server, error info is %v", err)
 		return err

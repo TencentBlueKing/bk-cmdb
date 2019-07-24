@@ -26,7 +26,7 @@
                 height: $APP.height - 150 + 'px'
             }">
             <h2 class="filter-title">
-                {{$t('条件筛选')}}
+                {{$t('高级筛选')}}
                 <bk-button class="close-trigger" text icon="close" @click="handleToggleFilter"></bk-button>
             </h2>
             <div class="filter-scroller" ref="scroller">
