@@ -30,20 +30,21 @@
 }
 
 .bk-dialog {
-    &.bk-dialog-no-tools {
-        .bk-dialog-tool {
-            display: none;
-        }
-    }
-    &.bk-dialog-no-padding {
-        .bk-dialog-body {
-            padding: 0;
-        }
-    }
     .bk-dialog-header {
         .bk-dialog-header-inner {
             white-space: normal;
         }
+    }
+}
+
+.bk-dialog-no-tools {
+    .bk-dialog-tool {
+        display: none;
+    }
+}
+.bk-dialog-no-padding {
+    .bk-dialog-body {
+        padding: 0;
     }
 }
 
@@ -82,7 +83,24 @@
 }
 
 .bk-big-tree {
-    .node-options {
-        padding-left: 10px;
+    .bk-big-tree-node {
+        height: 40px;
+        line-height: 40px;
+        &.is-leaf {
+            padding-left: calc(var(--level) * 30px + 28px)
+        }
+        &.is-selected {
+            .node-folder-icon {
+                color: #3a84ff;
+            }
+        }
+        .node-options {
+            padding-left: 10px;
+            .node-folder-icon {
+                width: 24px;
+                height: 40px;
+                line-height: 40px;
+            }
+        }
     }
 }

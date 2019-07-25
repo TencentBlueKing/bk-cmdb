@@ -7,7 +7,7 @@
                 </cmdb-business-selector>
             </div>
             <div class="tree-layout">
-                <cmdb-tree ref="topoTree" class="topo-tree"
+                <bk-big-tree ref="topoTree" class="topo-tree"
                     v-cursor="{
                         active: !$isAuthorized(transferResourceAuth),
                         auth: [transferResourceAuth],
@@ -21,6 +21,7 @@
                         childrenKey: 'child'
                     }"
                     :selectable="false"
+                    :expand-on-click="false"
                     :show-checkbox="shouldShowCheckbox"
                     :before-check="beforeNodeCheck"
                     @node-click="handleNodeClick"
@@ -29,7 +30,7 @@
                         <i :class="['node-model-icon fl', { 'is-checked': node.checked }]">{{modelIconMap[data.bk_obj_id]}}</i>
                         <span class="node-name">{{data.bk_inst_name}}</span>
                     </div>
-                </cmdb-tree>
+                </bk-big-tree>
             </div>
         </div>
         <div class="columns-layout fl">
@@ -238,8 +239,8 @@
             shouldShowCheckbox (data) {
                 return data.bk_obj_id === 'module'
             },
-            handleNodeCheck (checked, nodes) {
-                this.selectedModules = nodes
+            handleNodeCheck (checked) {
+                this.selectedModules = checked.map(id => this.$refs.topoTree.getNodeById(id))
             },
             beforeNodeCheck (node) {
                 let confirmResolver
@@ -253,6 +254,7 @@
                     return !selectedNodeData.default && selectedNodeData.bk_inst_id !== 'resource'
                 })
                 if (isSpecialNode && hasNormalNode) {
+                    debugger
                     this.$bkInfo({
                         title: this.$t('Common[\'转移确认\']', { target: data.bk_inst_name }),
                         confirmFn: () => {
@@ -261,7 +263,8 @@
                         },
                         cancelFn: () => {
                             confirmResolver(false)
-                        }
+                        },
+                        zIndex: 2000
                     })
                 } else {
                     const specialNodes = this.selectedModules.filter(selectedNode => {
@@ -419,7 +422,7 @@
             text-align: center;
             font-style: normal;
             font-size: 12px;
-            margin: 5px 4px 0 6px;
+            margin: 9px 4px 0 6px;
             border-radius: 50%;
             background-color: #c4c6cc;
             color: #fff;

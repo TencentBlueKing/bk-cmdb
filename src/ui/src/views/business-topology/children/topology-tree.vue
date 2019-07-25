@@ -1,6 +1,6 @@
 <template>
     <div>
-        <cmdb-tree class="topology-tree"
+        <bk-big-tree class="topology-tree"
             ref="tree"
             v-bkloading="{
                 isLoading: $loading(['getTopologyData', 'getMainLine'])
@@ -10,6 +10,8 @@
                 nameKey: 'bk_inst_name',
                 childrenKey: 'child'
             }"
+            :expand-on-click="false"
+            selectable
             expand-icon="bk-icon icon-down-shape"
             collapse-icon="bk-icon icon-right-shape"
             @select-change="handleSelectChange">
@@ -23,7 +25,7 @@
                 </bk-button>
                 <span class="node-name">{{data.bk_inst_name}}</span>
             </div>
-        </cmdb-tree>
+        </bk-big-tree>
         <bk-dialog class="bk-dialog-no-padding bk-dialog-no-tools"
             v-model="createInfo.show"
             :show-footer="false"
@@ -257,7 +259,7 @@
             text-align: center;
             font-style: normal;
             font-size: 12px;
-            margin: 5px 4px 0 6px;
+            margin: 9px 4px 0 6px;
             border-radius: 50%;
             background-color: #c4c6cc;
             color: #fff;
@@ -268,14 +270,15 @@
         .node-button {
             height: 24px;
             padding: 0 6px;
-            margin: 4px;
+            margin: 8px 4px;
             line-height: 22px;
             border-radius: 4px;
             font-size: 12px;
+            min-width: auto;
         }
         .node-name {
             display: block;
-            line-height: 32px;
+            line-height: 40px;
             font-size: 14px;
             @include ellipsis;
         }
