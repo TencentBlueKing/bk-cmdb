@@ -350,22 +350,24 @@ func (c *collection) Aggregate(ctx context.Context, pipeline interface{}, opts *
 	}
 	typeItem := outputV.Elem().Type().Elem()
 
-	mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
-		cursor, err := c.innerCollection.Aggregate(mctx, pipeline, aggregateOptions)
-		if nil != err {
-			return err
-		}
-
-		defer cursor.Close(mctx)
-		for cursor.Next(ctx) {
-			item := reflect.New(typeItem)
-			if err := cursor.Decode(item.Interface()); err != nil {
+	if c.innerSession != nil {
+		return mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			cursor, err := c.innerCollection.Aggregate(mctx, pipeline, aggregateOptions)
+			if nil != err {
 				return err
 			}
-			outputV.Elem().Set(reflect.Append(outputV.Elem(), item.Elem()))
-		}
-		return cursor.Err()
-	})
+
+			defer cursor.Close(mctx)
+			for cursor.Next(ctx) {
+				item := reflect.New(typeItem)
+				if err := cursor.Decode(item.Interface()); err != nil {
+					return err
+				}
+				outputV.Elem().Set(reflect.Append(outputV.Elem(), item.Elem()))
+			}
+			return cursor.Err()
+		})
+	}
 
 	// no session
 	cursor, err := c.innerCollection.Aggregate(ctx, pipeline, aggregateOptions)
