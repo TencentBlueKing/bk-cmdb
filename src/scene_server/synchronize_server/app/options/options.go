@@ -71,7 +71,7 @@ func (t TriggerTime) IsTiming() bool {
 type ConfigItem struct {
 	Name string
 	// White list, default false
-	WiteList bool
+	WhiteList bool
 	// White list  = true, need synchronize app list
 	// White list  = true,  out of synchronize business name,
 	AppNames []string

@@ -110,7 +110,7 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 		fieldSign := current.ConfigMap[name+".FieldSign"]
 		dataSign := current.ConfigMap[name+".Flag"]
 		supplerAccount := current.ConfigMap[name+".SupplerAccount"]
-		witeList := current.ConfigMap[name+".WiteList"]
+		whiteList := current.ConfigMap[name+".WhiteList"]
 		objectIDs := current.ConfigMap[name+".ObjectID"]
 		ignoreModelAttr := current.ConfigMap[name+".IgnoreModelAttribute"]
 		strEnableInstFilter := current.ConfigMap[name+".EnableInstFilter"]
@@ -119,8 +119,8 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 		if syncResource == "1" {
 			configItem.SyncResource = true
 		}
-		if witeList == "1" {
-			configItem.WiteList = true
+		if whiteList == "1" {
+			configItem.WhiteList = true
 		}
 		// 使用忽略模型属性变的模式。 模型属性，模型分组 将不做同步
 		// 但是数据源cmdb中满足条件的实例会同步到目标cmdb。
