@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
@@ -28,6 +30,9 @@ func (lgc *Logics) AddLogMulti(ctx context.Context, appID int64, opType auditopl
 	var logRows []interface{}
 
 	for _, content := range contents {
+		if instNotChange(content.Content) {
+			continue
+		}
 		row := &metadata.OperationLog{
 			OwnerID:       ownerID,
 			ApplicationID: appID,
@@ -55,6 +60,9 @@ func (lgc *Logics) AddLogMultiWithExtKey(ctx context.Context, appID int64, opTyp
 	var logRows []interface{}
 
 	for _, content := range contents {
+		if instNotChange(content.Content) {
+			continue
+		}
 		row := &metadata.OperationLog{
 			OwnerID:       ownerID,
 			ApplicationID: appID,
@@ -79,6 +87,9 @@ func (lgc *Logics) AddLogMultiWithExtKey(ctx context.Context, appID int64, opTyp
 
 // AddLogWithStr insert row
 func (lgc *Logics) AddLogWithStr(ctx context.Context, appID, instID int64, opType auditoplog.AuditOpType, opTarget string, content interface{}, extKey, opDesc, ownerID, user string) error {
+	if instNotChange(content) {
+		return nil
+	}
 	logRow := &metadata.OperationLog{
 		OwnerID:       ownerID,
 		ApplicationID: appID,
@@ -117,4 +128,30 @@ func (lgc *Logics) Search(ctx context.Context, dat *metadata.ObjQueryInput) ([]m
 
 	return rows, int(cnt), nil
 
+}
+
+// instNotChange Determine whether the data is consistent before and after the change
+func instNotChange(content interface{}) bool {
+	contentMap, ok := content.(map[string]interface{})
+	if !ok {
+		blog.V(5).Infof("instNotChange content not map[string]interface{}, context:%#v", content)
+		return false
+	}
+	preData, ok := contentMap["pre_data"].(map[string]interface{})
+	if !ok {
+		blog.V(5).Infof("instNotChange content pre_data not map[string]interface{}, context:%#v", content)
+		return false
+	}
+	curData, ok := contentMap["cur_data"].(map[string]interface{})
+	if !ok {
+		blog.V(5).Infof("instNotChange content curData not map[string]interface{}, context:%#v", content)
+		return false
+	}
+	delete(preData, common.LastTimeField)
+	delete(curData, common.LastTimeField)
+	bl := cmp.Equal(preData, curData)
+	if bl {
+		blog.V(5).Infof("inst data same, %#v", content)
+	}
+	return bl
 }
