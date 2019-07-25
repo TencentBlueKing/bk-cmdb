@@ -18,14 +18,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/user"
+
+	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
 )
 
 const BkAccountUrl = "site.bk_account_url"

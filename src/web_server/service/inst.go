@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"fmt"
 	"math/rand"
@@ -25,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 

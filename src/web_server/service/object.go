@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -27,6 +26,7 @@ import (
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 
