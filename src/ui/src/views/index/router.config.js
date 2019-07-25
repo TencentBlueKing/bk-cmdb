@@ -15,7 +15,8 @@ export default [{
         },
         auth: {
             view: null
-        }
+        },
+        i18nTitle: 'Index["首页"]'
     })
 }, {
     name: 'search',

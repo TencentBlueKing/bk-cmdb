@@ -20,13 +20,13 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
@@ -121,7 +121,11 @@ func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
 		cid = getHTTPOtherRequestID(req.Request.Header)
 		if cid == "" {
 			cid = util.GenerateRID()
+		} else {
+			content, _ := util.PeekRequest(req.Request)
+			blog.Infof("ESB Request: uri: %v, header: %v, body: %s", req.Request.RequestURI, req.Request.Header, content)
 		}
+
 		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
 	}
 	resp.Header().Set(common.BKHTTPCCRequestID, cid)

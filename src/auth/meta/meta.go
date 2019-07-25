@@ -21,6 +21,8 @@ type AuthAttribute struct {
 	// the business id that this resource belongs to, but it's not necessary for
 	// a resource that does not belongs to a business.
 	Resources []ResourceAttribute
+
+	// Permissions
 }
 
 type UserInfo struct {
@@ -117,7 +119,7 @@ const (
 	MoveHostToAnotherBizModule     Action = "moveHostToAnotherBizModule"
 	CleanHostInSetOrModule         Action = "cleanHostInSetOrModule"
 	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"
-	MoveHostToModule               Action = "moveHostToModule"
+	MoveBizHostToModule            Action = "moveBizHostToModule"
 	TransferHost                   Action = "transferHost"
 
 	// process actions

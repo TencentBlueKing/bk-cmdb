@@ -1,27 +1,26 @@
 export default class Meta {
     constructor (data = {}) {
-        let menu = false
-        if (data.menu) {
-            menu = Object.assign({
-                id: null,
-                i18n: null,
-                path: null,
-                order: 1,
-                parent: null,
-                adminView: true,
-                businessView: true
-            }, data.menu)
-        }
+        this.title = ''
+        this.i18nTitle = ''
+        this.resetMenu = true
+        Object.keys(data).forEach(key => {
+            this[key] = data[key]
+        })
 
-        const auth = Object.assign({
+        this.menu = !data.menu ? false : Object.assign({
+            id: null,
+            i18n: null,
+            path: null,
+            order: 1,
+            parent: null,
+            adminView: true,
+            businessView: true
+        }, data.menu)
+
+        this.auth = Object.assign({
+            authScope: 'global',
             view: null,
             operation: []
         }, data.auth)
-
-        return {
-            ...data,
-            menu,
-            auth
-        }
     }
 }

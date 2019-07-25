@@ -30,6 +30,7 @@ const (
 	MainlineModel            ResourceType = "mainlineObject"
 	MainlineModelTopology    ResourceType = "mainlineObjectTopology"
 	MainlineInstanceTopology ResourceType = "mainlineInstanceTopology"
+	MainlineInstance         ResourceType = "mainlineInstance"
 	AssociationType          ResourceType = "associationType"
 	ModelAssociation         ResourceType = "modelAssociation"
 	ModelInstanceAssociation ResourceType = "modelInstanceAssociation"
@@ -146,7 +147,7 @@ var (
 			CleanHostInSetOrModule,
 			MoveHostsToBusinessOrModule,
 			AddHostToResourcePool,
-			MoveHostToModule,
+			MoveBizHostToModule,
 		},
 	}
 

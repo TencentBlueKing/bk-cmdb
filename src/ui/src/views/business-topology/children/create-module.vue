@@ -3,15 +3,28 @@
         <h2 class="node-create-title">{{$t('BusinessTopology["新增模块"]')}}</h2>
         <div class="node-create-path" :title="topoPath">{{$t('Common["已选择"]')}}：{{topoPath}}</div>
         <div class="node-create-form">
-            <div class="form-item">
-                <label>{{$t('BusinessTopology["创建方式"]')}}</label>
-                <cmdb-selector
-                    v-model="withTemplate"
-                    :list="createTypeList">
-                </cmdb-selector>
+            <div class="form-item clearfix mt30">
+                <div class="create-type fl">
+                    <input class="type-radio"
+                        type="radio"
+                        id="formTemplate"
+                        name="createType"
+                        v-model="withTemplate"
+                        :value="1">
+                    <label for="formTemplate">{{$t('BusinessTopology["从模板创建"]')}}</label>
+                </div>
+                <div class="create-type fl ml50">
+                    <input class="type-radio"
+                        type="radio"
+                        id="createDirectly"
+                        name="createType"
+                        v-model="withTemplate"
+                        :value="0">
+                    <label for="createDirectly">{{$t('BusinessTopology["直接创建"]')}}</label>
+                </div>
             </div>
             <div class="form-item" v-if="withTemplate">
-                <label>{{$t('BusinessTopology["模板名称"]')}}</label>
+                <label>{{$t('BusinessTopology["服务模板"]')}}</label>
                 <cmdb-selector
                     v-model="template"
                     v-validate.disabled="'required'"
@@ -22,10 +35,17 @@
                 <span class="form-error" v-if="errors.has('template')">{{errors.first('template')}}</span>
             </div>
             <div class="form-item">
-                <label>{{$t('BusinessTopology["模块名称"]')}}</label>
+                <label>
+                    {{$t('BusinessTopology["模块名称"]')}}
+                    <font color="red">*</font>
+                    <i class="icon-cc-tips"
+                        v-tooltip.top="$t('BusinessTopology[\'模块名称提示\']')"
+                        v-if="withTemplate === 1">
+                    </i>
+                </label>
                 <cmdb-form-singlechar
                     v-model="moduleName"
-                    v-validate.disabled="'required|singlechar'"
+                    v-validate="'required|singlechar'"
                     data-vv-name="moduleName"
                     key="moduleName"
                     :disabled="!!withTemplate">
@@ -33,7 +53,7 @@
                 <span class="form-error" v-if="errors.has('moduleName')">{{errors.first('moduleName')}}</span>
             </div>
             <div class="form-item clearfix" v-if="!withTemplate">
-                <label>{{$t('BusinessTopology["服务实例分类"]')}}</label>
+                <label>{{$t('BusinessTopology["服务实例分类"]')}}<font color="red">*</font></label>
                 <cmdb-selector class="service-class fl"
                     v-model="firstClass"
                     v-validate.disabled="'required'"
@@ -194,7 +214,7 @@
                         this.$emit('submit', {
                             bk_module_name: this.moduleName,
                             service_category_id: this.withTemplate ? this.currentTemplate.service_category_id : this.secondClass,
-                            service_template_id: this.withTemplate ? this.template : 2
+                            service_template_id: this.withTemplate ? this.template : 0
                         })
                     }
                 })
@@ -254,11 +274,38 @@
                 left: 270px;
             }
         }
+        .create-type {
+            display: flex;
+            align-items: center;
+            .type-radio {
+                -webkit-appearance: none;
+                width: 16px;
+                height: 16px;
+                padding: 3px;
+                border: 1px solid #979BA5;
+                border-radius: 50%;
+                background-clip: content-box;
+                outline: none;
+                cursor: pointer;
+                &:checked {
+                    border-color: #3A84FF;
+                    background-color: #3A84FF;
+                }
+            }
+            label {
+                padding: 0 0 0 6px;
+                font-size: 14px;
+                cursor: pointer;
+            }
+        }
     }
     .node-create-options {
         padding: 9px 20px;
         border-top: 1px solid $cmdbBorderColor;
         text-align: right;
         background-color: #fafbfd;
+    }
+    font {
+        padding: 0 2px;
     }
 </style>

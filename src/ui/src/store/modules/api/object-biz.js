@@ -39,7 +39,7 @@ const getters = {
 
 const actions = {
     getAuthorizedBusiness ({ commit }) {
-        return $http.get('auth/business-list', {
+        return $http.get('biz/with_reduced', {
             requestId: 'getAuthorizedBusiness',
             fromCache: true,
             cancelWhenRouteChange: false

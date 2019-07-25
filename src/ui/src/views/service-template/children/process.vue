@@ -58,6 +58,10 @@
                             name: this.$t("ProcessManagement['进程名称']"),
                             sortable: false
                         }, {
+                            id: 'bk_process_name',
+                            name: this.$t("ProcessManagement['进程别名']"),
+                            sortable: false
+                        }, {
                             id: 'bind_ip',
                             name: this.$t("ProcessManagement['监听IP']"),
                             sortable: false
@@ -105,7 +109,7 @@
                     result['originData'] = template
                     return result
                 })
-                list = this.$tools.flattenList(this.properties, list)
+                list = this.$tools.flattenList(this.properties, list).sort((prev, next) => prev.process_id - next.process_id)
                 return list
             }
         },

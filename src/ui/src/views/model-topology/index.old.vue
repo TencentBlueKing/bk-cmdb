@@ -2,11 +2,17 @@
     <div class="topo-wrapper" :class="{ 'has-nav': topoEdit.isEdit }">
         <div class="toolbar">
             <template v-if="!topoEdit.isEdit">
-                <bk-button class="edit-button" type="primary"
-                    :disabled="!$isAuthorized(OPERATION.U_MODEL)"
-                    @click="editTopo">
-                    {{$t('ModelManagement["编辑拓扑"]')}}
-                </bk-button>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS),
+                        auth: [$OPERATION.SYSTEM_MODEL_GRAPHICS]
+                    }">
+                    <bk-button class="edit-button" type="primary"
+                        :disabled="!$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS)"
+                        @click="editTopo">
+                        {{$t('ModelManagement["编辑拓扑"]')}}
+                    </bk-button>
+                </span>
             </template>
             <template v-else>
                 <bk-button type="primary" @click="exitEdit">
@@ -154,7 +160,6 @@
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import { mapGetters, mapActions } from 'vuex'
     import throttle from 'lodash.throttle'
-    import { OPERATION } from './router.config'
     const NAV_WIDTH = 200
     const TOOLBAR_HEIHGT = 50
     export default {
@@ -165,7 +170,6 @@
         },
         data () {
             return {
-                OPERATION,
                 specialModel: ['process', 'plat'],
                 associationList: [],
                 slider: {
@@ -305,9 +309,6 @@
                     this.topoEdit.line.y1 = 0
                 }
             }
-        },
-        created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["模型拓扑"]'))
         },
         mounted () {
             this.initNetwork()
@@ -778,7 +779,7 @@
                     edges: this.networkDataSet.edges
                 }, this.network.options)
                 this.networkInstance.setOptions({ nodes: { fixed: true } })
-                if (this.$isAuthorized(OPERATION.U_MODEL)) {
+                if (this.$isAuthorized(this.$OPERATION.SYSTEM_MODEL_GRAPHICS)) {
                     this.initPosition()
                 }
                 this.addListener()

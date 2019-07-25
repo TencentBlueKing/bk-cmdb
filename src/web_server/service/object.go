@@ -142,7 +142,7 @@ func setExcelTitle(row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Row {
 	for _, key := range sortFields {
 		cell := row.AddCell()
 		cell.Value = fields[key]
-		blog.Debug("key:%s value:%v", key, fields[key])
+		blog.V(5).Infof("key:%s value:%v", key, fields[key])
 	}
 	return row
 }
@@ -152,7 +152,7 @@ func setExcelTitleType(row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Ro
 	for _, key := range sortFields {
 		cell := row.AddCell()
 		cell.Value = fieldType[key]
-		blog.Debug("key:%s value:%v", key, fieldType[key])
+		blog.V(5).Infof("key:%s value:%v", key, fieldType[key])
 	}
 	return row
 }
@@ -161,7 +161,7 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 
 	itemMap, ok := item.(map[string]interface{})
 	if !ok {
-		blog.Debug("failed to convert to map")
+		blog.V(5).Infof("failed to convert to map")
 		return row
 	}
 
@@ -175,7 +175,7 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 			blog.Warnf("not fount the key(%s), skip it", key)
 			continue
 		}
-		blog.Debug("key:%s value:%v", key, keyVal)
+		blog.V(5).Infof("key:%s value:%v", key, keyVal)
 		if nil == keyVal {
 			cell.SetString("")
 			continue
@@ -273,7 +273,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 	for _, item := range arrItems {
 
 		innerRow := item.(map[string]interface{})
-		blog.Debug("object attribute data :%+v", innerRow)
+		blog.V(5).Infof("object attribute data :%+v", innerRow)
 
 		// set row value
 		setExcelRow(sheet.AddRow(), innerRow)
@@ -292,7 +292,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 		blog.Errorf("ExportInst save file error:%s", err.Error())
 		fmt.Printf(err.Error())
 	}
-	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("inst_%s.xlsx", objID))
+	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_model_%s.xlsx", objID))
 	c.File(dirFileName)
 
 	os.Remove(dirFileName)

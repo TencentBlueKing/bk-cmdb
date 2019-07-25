@@ -51,9 +51,6 @@
         computed: {
             ...mapGetters(['site'])
         },
-        created () {
-            this.$store.commit('setHeaderTitle', this.$t('Index["首页"]'))
-        },
         mounted () {
             this.initResizeListener()
             this.initScrollListener()

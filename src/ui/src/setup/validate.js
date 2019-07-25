@@ -123,7 +123,9 @@ const dictionary = {
             oid: () => '请输入正确的内容',
             hourFormat: () => '请输入0-59之间的数字',
             dayFormat: () => '请输入00:00-23:59之间的时间',
-            namedCharacter: () => '格式不正确，特殊符号仅支持(:_-)'
+            namedCharacter: () => '格式不正确，特殊符号仅支持(:_-)',
+            min_value: () => '该值小于最小值',
+            max_value: () => '该值大于最大值'
         },
         custom: {
             asst: {
@@ -152,7 +154,9 @@ const dictionary = {
             oid: () => 'Please enter the correct content',
             hourFormat: () => 'Please enter the number between 0-59',
             dayFormat: () => 'Please enter the time between 00:00-23:59',
-            namedCharacter: () => 'Special symbols only support(:_-)'
+            namedCharacter: () => 'Special symbols only support(:_-)',
+            min_value: () => 'This value is less than the minimum',
+            max_value: () => 'This value is greater than the maximum'
         },
         custom: {
             asst: {

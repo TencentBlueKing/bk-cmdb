@@ -14,8 +14,11 @@ package x18_12_12_05
 
 import (
 	"context"
+	"runtime"
+	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -31,30 +34,76 @@ func removeDeletedInstAsst(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		return err
 	}
 
-	for _, asst := range assts {
-		count, err := getInst(ctx, db, asst.ObjectID, asst.InstID, asst.OwnerID)
+	// it take long long time here, so we log every 10s here
+	done := make(chan struct{})
+	errC := make(chan error, 1)
+	bucket := make(chan struct{}, runtime.NumCPU())
+	var runErr error
+	index, asst := 0, metadata.InstAsst{}
+	go func() {
+		start := time.Now()
+		ticker := time.NewTicker(time.Second * 10)
+		for {
+			select {
+			case now := <-ticker.C:
+				speed := (index + 1) / int(now.Sub(start).Seconds())
+				remain := len(assts) - (index + 1)
+				blog.Infof("checking %d/%d, bucket: %v, speed: %d/s, please wait %v", index+1, len(assts), len(bucket), speed, time.Duration(remain/speed)*time.Second)
+			case <-done:
+				blog.Infof("finish %d/%d", index+1, len(assts))
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
+loop:
+	for index, asst = range assts {
+		select {
+		case e := <-errC:
+			runErr = e
+			break loop
+		default:
+			bucket <- struct{}{}
+			go func(asst metadata.InstAsst) {
+				err := handleAsst(ctx, db, asst)
+				<-bucket
+				if err != nil {
+					select {
+					case errC <- err:
+					default:
+					}
+				}
+			}(asst)
+		}
+	}
+
+	close(done)
+	return runErr
+}
+
+func handleAsst(ctx context.Context, db dal.RDB, asst metadata.InstAsst) error {
+	count, err := getInst(ctx, db, asst.ObjectID, asst.InstID, asst.OwnerID)
+	if err != nil {
+		return err
+	}
+	if count <= 0 {
+		err := db.Table(common.BKTableNameInstAsst).Delete(ctx, mapstr.MapStr{common.BKFieldID: asst.ID})
 		if err != nil {
 			return err
 		}
-		if count <= 0 {
-			err := db.Table(common.BKTableNameInstAsst).Delete(ctx, mapstr.MapStr{common.BKFieldID: asst.ID})
-			if err != nil {
-				return err
-			}
-			continue
-		}
+		return nil
+	}
 
-		count, err = getInst(ctx, db, asst.AsstObjectID, asst.AsstInstID, asst.OwnerID)
+	count, err = getInst(ctx, db, asst.AsstObjectID, asst.AsstInstID, asst.OwnerID)
+	if err != nil {
+		return err
+	}
+	if count <= 0 {
+		err := db.Table(common.BKTableNameInstAsst).Delete(ctx, mapstr.MapStr{common.BKFieldID: asst.ID})
 		if err != nil {
 			return err
 		}
-		if count <= 0 {
-			err := db.Table(common.BKTableNameInstAsst).Delete(ctx, mapstr.MapStr{common.BKFieldID: asst.ID})
-			if err != nil {
-				return err
-			}
-		}
-
 	}
 	return nil
 }

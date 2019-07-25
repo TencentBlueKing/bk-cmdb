@@ -13,6 +13,7 @@
 package inst
 
 import (
+	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 
@@ -56,6 +57,8 @@ type Inst interface {
 	ToMapStr() mapstr.MapStr
 
 	IsDefault() bool
+
+	GetBizID() (int64, error)
 }
 
 var _ Inst = (*inst)(nil)
@@ -89,12 +92,12 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 	if targetModel.Object().ObjectID != common.BKInnerObjIDHost {
 		rsp, err := cli.clientSet.CoreService().Instance().ReadInstance(context.Background(), cli.params.Header, targetModel.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 		if nil != err {
-			blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
+			blog.Errorf("[inst-inst] failed to request the object controller , error info is %s, rid: %s", err.Error(), cli.params.ReqID)
 			return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-			blog.Errorf("[inst-inst] failed to search the inst, error info is %s", rsp.ErrMsg)
+			blog.Errorf("[inst-inst] failed to search the inst, error info is %s, rid: %s", rsp.ErrMsg, cli.params.ReqID)
 			return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
@@ -102,14 +105,14 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 	}
 
 	// search hosts
-	rsp, err := cli.clientSet.HostController().Host().GetHosts(context.Background(), cli.params.Header, queryInput)
+	rsp, err := cli.clientSet.CoreService().Host().GetHosts(context.Background(), cli.params.Header, queryInput)
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
+		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s, rid: %s", err.Error(), cli.params.ReqID)
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[inst-inst] failed to search the inst, error info is %s", rsp.ErrMsg)
+		blog.Errorf("[inst-inst] failed to search the inst, error info is %s, rid: %s", rsp.ErrMsg, cli.params.ReqID)
 		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -129,12 +132,12 @@ func (cli *inst) Create() error {
 
 	rsp, err := cli.clientSet.CoreService().Instance().CreateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.CreateModelInstance{Data: cli.datas})
 	if nil != err {
-		blog.Errorf("failed to create object instance, error info is %s", err.Error())
+		blog.Errorf("failed to create object instance, error info is %s, rid: %s", err.Error(), cli.params.ReqID)
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to create object instance ,error info is %v", rsp.ErrMsg)
+		blog.Errorf("failed to create object instance ,error info is %v, rid: %s", rsp.ErrMsg, cli.params.ReqID)
 		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -164,7 +167,7 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 
 		attrs, err := cli.target.GetAttributesExceptInnerFields()
 		if nil != err {
-			blog.Errorf("failed to get attributes for the object(%s), error info is is %s", tObj.ObjectID, err.Error())
+			blog.Errorf("failed to get attributes for the object(%s), error info is is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
 			return err
 		}
 
@@ -188,19 +191,19 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 	updateCond.Condition = cond.ToMapStr()
 	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &updateCond)
 	if nil != err {
-		blog.Errorf("failed to update the object(%s) instances, error info is %s", tObj.ObjectID, err.Error())
+		blog.Errorf("failed to update the object(%s) instances, error info is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to update the object(%s) instances, error info is %s", tObj.ObjectID, rsp.ErrMsg)
+		blog.Errorf("failed to update the object(%s) instances, error info is %s, rid: %s", tObj.ObjectID, rsp.ErrMsg, cli.params.ReqID)
 		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// read the new data
 	instItems, err := cli.searchInsts(cli.target, cond)
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to search the new insts data, error info is %s", err.Error())
+		blog.Errorf("[inst-inst] failed to search the new insts data, error info is %s, rid: %s", err.Error(), cli.params.ReqID)
 		return err
 	}
 
@@ -216,7 +219,7 @@ func (cli *inst) IsExists() (bool, error) {
 	tObj := cli.target.Object()
 	attrs, err := cli.target.GetAttributesExceptInnerFields()
 	if nil != err {
-		blog.Errorf("failed to get attributes for the object(%s), error info is is %s", tObj.ObjectID, err.Error())
+		blog.Errorf("failed to get attributes for the object(%s), error info is is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
 		return false, err
 	}
 
@@ -257,12 +260,12 @@ func (cli *inst) IsExists() (bool, error) {
 		context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()},
 	)
 	if nil != err {
-		blog.Errorf("failed to search object(%s) instances  , error info is %s", tObj.ObjectID, err.Error())
+		blog.Errorf("failed to search object(%s) instances  , error info is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
 		return false, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to search the object (%s) instances, error info is %s", tObj.ObjectID, rsp.ErrMsg)
+		blog.Errorf("failed to search the object (%s) instances, error info is %s, rid: %s", tObj.ObjectID, rsp.ErrMsg, cli.params.ReqID)
 		return false, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -322,7 +325,7 @@ func (cli *inst) IsDefault() bool {
 	if cli.datas.Exists(common.BKDefaultField) {
 		defaultVal, err := cli.datas.Int64(common.BKDefaultField)
 		if nil != err {
-			blog.Errorf("[operation-inst]the default value(%#v) is invalid, error info is %s", cli.datas[common.BKDefaultField], err.Error())
+			blog.Errorf("[operation-inst]the default value(%#v) is invalid, error info is %s, rid: %s", cli.datas[common.BKDefaultField], err.Error(), cli.params.ReqID)
 			return false
 		}
 
@@ -332,4 +335,17 @@ func (cli *inst) IsDefault() bool {
 	}
 
 	return false
+}
+
+func (cli *inst) GetBizID() (int64, error) {
+	switch cli.target.Object().ObjectID {
+	case common.BKInnerObjIDApp:
+		return cli.GetInstID()
+	case common.BKInnerObjIDSet:
+		return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
+	case common.BKInnerObjIDModule:
+		return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
+	default:
+		return metadata.ParseBizIDFromData(cli.datas)
+	}
 }

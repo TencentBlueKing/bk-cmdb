@@ -95,6 +95,12 @@ type FS struct {
 	sys  *fs.FS
 }
 
+// NewDefaultFS returns a new blockdevice fs using the default mountPoints for proc and sys.
+// It will error if either of these mount points can't be read.
+func NewDefaultFS() (FS, error) {
+	return NewFS(fs.DefaultProcMountPoint, fs.DefaultSysMountPoint)
+}
+
 // NewFS returns a new blockdevice fs using the given mountPoints for proc and sys.
 // It will error if either of these mount points can't be read.
 func NewFS(procMountPoint string, sysMountPoint string) (FS, error) {

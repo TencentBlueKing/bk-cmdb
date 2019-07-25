@@ -34,6 +34,7 @@ const (
 	BKNoLimit = 999999999
 	// max limit of a page
 	BKMaxPageLimit = 2000
+	BKMaxPageSize  = 500
 
 	// BKDefaultLimit the default limit definition
 	BKDefaultLimit = 20
@@ -360,6 +361,8 @@ const (
 	// BKPropertyNameField the property name field
 	BKPropertyNameField = "bk_property_name"
 
+	BKPropertyIndexField = "bk_property_index"
+
 	// BKPropertyTypeField the property type field
 	BKPropertyTypeField = "bk_property_type"
 
@@ -468,6 +471,8 @@ const (
 
 	// BKFuncName the function name
 	BKFuncName = "bk_func_name"
+
+	BKStartParamRegex = "bk_start_param_regex"
 
 	// BKBindIP the bind ip
 	BKBindIP = "bind_ip"
@@ -839,9 +844,10 @@ const (
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID  = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime   = "Cc_Request_Time"
-	BKHTTPCCTransactionID = "Cc_Txn_Id"
+	BKHTTPOtherRequestID    = "X-Bkapi-Request-Id"
+	BKHTTPCCRequestTime     = "Cc_Request_Time"
+	BKHTTPCCTransactionID   = "Cc_Txn_Id"
+	BKHTTPCCTxnTMServerAddr = "Cc_Txn_Tm_addr-Ip"
 )
 
 type CCContextKey string
@@ -977,7 +983,6 @@ const (
 	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
 	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
 	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
-	RedisCloudSyncStartLockKey                = BKCacheKeyV3Prefix + "lock:cloudsyncstart"
 )
 
 // association fields
@@ -1053,5 +1058,15 @@ const (
 )
 
 const (
-	ContextRequestIDField = "request_id"
+	ContextRequestIDField   = "request_id"
+	ContextRequestUserField = "request_user"
+)
+
+// 云同步
+const (
+	CloudSyncTaskID            = "bk_task_id"
+	CloudSyncTaskName          = "bk_task_name"
+	CloudSyncResourceConfirmID = "bk_resource_id"
+	CloudSyncConfirmTime       = "confirm_time"
+	CloudSyncConfirmHistoryID  = "confirm_history_id"
 )

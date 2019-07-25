@@ -1,11 +1,12 @@
 import {
     isSameRequest,
-    isRedirectResponse
+    isRedirectResponse,
+    getRedirectId
 } from './util.js'
 import Cookies from 'js-cookie'
 
 const origin = {
-    url: 'auth/business-list',
+    url: 'biz/with_reduced',
     method: 'get'
 }
 const redirect = {
@@ -18,7 +19,8 @@ const redirect = {
                 '$ne': 'disabled'
             }
         }
-    }
+    },
+    redirectId: getRedirectId()
 }
 
 export default {

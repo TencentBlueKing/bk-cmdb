@@ -60,7 +60,7 @@ func (r *RespError) Error() string {
 // data is the data you want to return to client.
 func NewSuccessResp(data interface{}) *Response {
 	return &Response{
-		BaseResp: BaseResp{true, common.CCSuccess, common.CCSuccessStr},
+		BaseResp: BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr},
 		Data:     data,
 	}
 }
@@ -68,6 +68,11 @@ func NewSuccessResp(data interface{}) *Response {
 type Response struct {
 	BaseResp `json:",inline"`
 	Data     interface{} `json:"data"`
+}
+
+type Uint64Response struct {
+	BaseResp `json:",inline"`
+	Count    uint64 `json:"count"`
 }
 
 type MapArrayResponse struct {

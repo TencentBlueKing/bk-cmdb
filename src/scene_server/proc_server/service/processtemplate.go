@@ -13,10 +13,11 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"strconv"
 )
 
 // create a process template for a service template.
@@ -96,10 +97,9 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 	}
 
 	template := metadata.ProcessTemplate{
-		ID:                input.ProcessTemplateID,
-		Metadata:          input.Metadata,
-		ServiceTemplateID: input.ServiceTemplateID,
-		Property:          input.ProcessProperty,
+		ID:       input.ProcessTemplateID,
+		Metadata: input.Metadata,
+		Property: input.ProcessProperty,
 	}
 	tmp, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplateID, &template)
 	if err != nil {
@@ -151,9 +151,12 @@ func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 	}
 
 	option := &metadata.ListProcessTemplatesOption{
-		BusinessID:         bizID,
-		ServiceTemplateID:  input.ServiceTemplateID,
-		ProcessTemplateIDs: &input.ProcessTemplatesIDs,
+		BusinessID:        bizID,
+		ServiceTemplateID: input.ServiceTemplateID,
+		Page:              input.Page,
+	}
+	if input.ProcessTemplatesIDs != nil {
+		option.ProcessTemplateIDs = input.ProcessTemplatesIDs
 	}
 	tmp, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {

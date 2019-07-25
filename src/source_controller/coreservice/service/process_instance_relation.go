@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -125,9 +126,16 @@ func (s *coreService) DeleteProcessInstanceRelation(params core.ContextParams, p
 }
 
 func (s *coreService) CreateProcessInstance(params core.ContextParams, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder) {
-	data := mapstr.NewFromStruct(*process, "field")
+	processBytes, err := json.Marshal(process)
+	if err != nil {
+		return nil, params.Error.CCError(common.CC_ERR_Comm_JSON_ENCODE)
+	}
+	mData := mapstr.MapStr{}
+	if err := json.Unmarshal(processBytes, &mData); nil != err && 0 != len(processBytes) {
+		return nil, params.Error.CCError(common.CC_ERR_Comm_JSON_DECODE)
+	}
 	inputParam := metadata.CreateModelInstance{
-		Data: data,
+		Data: mData,
 	}
 	result, err := s.core.InstanceOperation().CreateModelInstance(params, common.BKProcessObjectName, inputParam)
 	if err != nil {

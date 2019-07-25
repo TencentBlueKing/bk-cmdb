@@ -27,20 +27,17 @@ const (
 // cc modules
 const (
 	// CC_MODULE_AUDITCONTROLLER  = "auditcontroller"
-	CC_MODULE_HOSTCONTROLLER   = "hostcontroller"
-	CC_MODULE_OBJECTCONTROLLER = "objectcontroller"
-	CC_MODULE_PROCCONTROLLER   = "proccontroller"
-	CC_MODULE_DATACOLLECTION   = "datacollection"
-	CC_MODULE_HOST             = "host"
-	CC_MODULE_MIGRATE          = "migrate"
-	CC_MODULE_PROC             = "proc"
-	CC_MODULE_TOPO             = "topo"
-	CC_MODULE_APISERVER        = "apiserver"
-	CC_MODULE_WEBSERVER        = "webserver"
-	CC_MODULE_EVENTSERVER      = "eventserver"
-	CC_MODULE_CORESERVICE      = "coreservice"
-	GSE_MODULE_PROCSERVER      = "gseprocserver"
-	CC_MODULE_TXC              = "txc"
+	CC_MODULE_DATACOLLECTION = "datacollection"
+	CC_MODULE_HOST           = "host"
+	CC_MODULE_MIGRATE        = "migrate"
+	CC_MODULE_PROC           = "proc"
+	CC_MODULE_TOPO           = "topo"
+	CC_MODULE_APISERVER      = "apiserver"
+	CC_MODULE_WEBSERVER      = "webserver"
+	CC_MODULE_EVENTSERVER    = "eventserver"
+	CC_MODULE_CORESERVICE    = "coreservice"
+	GSE_MODULE_PROCSERVER    = "gseprocserver"
+	CC_MODULE_TXC            = "txc"
 	// CC_MODULE_SYNCHRONZESERVER multiple cmdb synchronize data server
 	CC_MODULE_SYNCHRONZESERVER = "sync"
 )
@@ -48,19 +45,16 @@ const (
 // AllModule all cc module
 var AllModule = map[string]bool{
 	// CC_MODULE_AUDITCONTROLLER:  true,
-	CC_MODULE_HOSTCONTROLLER:   true,
-	CC_MODULE_OBJECTCONTROLLER: true,
-	CC_MODULE_PROCCONTROLLER:   true,
-	CC_MODULE_DATACOLLECTION:   true,
-	CC_MODULE_HOST:             true,
-	CC_MODULE_MIGRATE:          true,
-	CC_MODULE_PROC:             true,
-	CC_MODULE_TOPO:             true,
-	CC_MODULE_APISERVER:        true,
-	CC_MODULE_WEBSERVER:        true,
-	CC_MODULE_EVENTSERVER:      true,
-	CC_MODULE_TXC:              true,
-	CC_MODULE_CORESERVICE:      true,
+	CC_MODULE_DATACOLLECTION: true,
+	CC_MODULE_HOST:           true,
+	CC_MODULE_MIGRATE:        true,
+	CC_MODULE_PROC:           true,
+	CC_MODULE_TOPO:           true,
+	CC_MODULE_APISERVER:      true,
+	CC_MODULE_WEBSERVER:      true,
+	CC_MODULE_EVENTSERVER:    true,
+	CC_MODULE_TXC:            true,
+	CC_MODULE_CORESERVICE:    true,
 	// CC_MODULE_SYNCHRONZESERVER: true,
 }
 

@@ -2,13 +2,13 @@ import $http from '@/api'
 
 const actions = {
     getModuleServiceInstances (context, { params, config }) {
-        return $http.post('find/proc/service_instance', params, config)
+        return $http.post('findmany/proc/service_instance', params, config)
     },
     createProcServiceInstanceWithRaw (context, { params, config }) {
-        return $http.post('create/proc/service_instance/with_raw', params, config)
+        return $http.post('create/proc/service_instance', params, config)
     },
     createProcServiceInstanceByTemplate (context, { params, config }) {
-        return $http.post('create/proc/service_instance/with_template', params, config)
+        return $http.post('create/proc/service_instance', params, config)
     },
     deleteServiceInstance (context, { config }) {
         return $http.delete('deletemany/proc/service_instance', config)

@@ -70,7 +70,7 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 		return true
 
 	// topology instance resource types.
-	case rsc.Type == meta.ModelModule || rsc.Type == meta.ModelSet || rsc.Type == meta.ModelInstanceTopology || rsc.Type == meta.MainlineInstanceTopology:
+	case rsc.Type == meta.ModelInstanceTopology || rsc.Type == meta.MainlineInstanceTopology:
 		return true
 	case rsc.Type == meta.ProcessServiceInstance && IsReadAction(rsc.Action):
 		return true
@@ -80,6 +80,26 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 		return true
 	case rsc.Type == meta.ProcessTemplate && IsReadAction(rsc.Action):
 		return true
+
+	case rsc.Type == meta.MainlineInstance && IsReadAction(rsc.Action):
+		return true
+	case rsc.Type == meta.Process && IsReadAction(rsc.Action):
+		return true
+	case rsc.Type == meta.ModelSet && IsReadAction(rsc.Action):
+		return true
+	case rsc.Type == meta.ModelModule && IsReadAction(rsc.Action):
+		return true
+
+	case rsc.Type == meta.HostInstance:
+		// all these actions is batch operation, authorize has already been done
+		// in host server. so skip auth in apiserver.
+		if rsc.Action == meta.MoveResPoolHostToBizIdleModule ||
+			rsc.Action == meta.AddHostToResourcePool ||
+			rsc.Action == meta.MoveHostFromModuleToResPool ||
+			rsc.Action == meta.MoveHostToBizFaultModule ||
+			rsc.Action == meta.MoveHostToBizIdleModule {
+			return true
+		}
 
 	default:
 		return false

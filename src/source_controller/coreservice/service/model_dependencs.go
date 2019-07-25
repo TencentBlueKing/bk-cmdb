@@ -74,7 +74,7 @@ func (s *coreService) CascadeDeleteAssociation(ctx core.ContextParams, objIDS []
 	// execute delete command
 	_, err := s.core.AssociationOperation().CascadeDeleteModelAssociation(ctx, metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("request(%s): it is aborted to cascade the model associations by the condition (%v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("aborted to cascade the model associations by the condition (%v), err: %s, rid: %s", cond.ToMapStr(), err.Error(), ctx.ReqID)
 		return err
 	}
 
@@ -88,7 +88,7 @@ func (s *coreService) CascadeDeleteInstances(ctx core.ContextParams, objIDS []st
 	for _, objID := range objIDS {
 		_, err := s.core.InstanceOperation().CascadeDeleteModelInstance(ctx, objID, metadata.DeleteOption{})
 		if nil != err {
-			blog.Errorf("request(%s): it is aborted to cascade delete the association for the model objectID(%s), error info is %s", ctx.ReqID, objID, err.Error())
+			blog.Errorf("aborted to cascade delete the association for the model objectID(%s), err: %s, rid: %s", objID, err.Error(), ctx.ReqID)
 			return err
 		}
 	}

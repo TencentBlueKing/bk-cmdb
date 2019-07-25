@@ -233,7 +233,7 @@ func (lgc *Logics) GetObjectInstByCond(ctx context.Context, objID string, cond [
 	instIDArr := make([]int64, 0)
 	condc := make(map[string]interface{})
 	if err := parse.ParseCommonParams(cond, condc); err != nil {
-		blog.Errorf("GetObjectInstByCond failed, ParseCommonParams failed, err: %+v", err)
+		blog.Errorf("GetObjectInstByCond failed, ParseCommonParams failed, err: %+v, rid: %s", err, lgc.rid)
 		return nil, err
 	}
 

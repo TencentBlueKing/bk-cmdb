@@ -23,8 +23,6 @@ import (
 
 var _ mongodb.CommonClient = (*client)(nil)
 
-type collectionName string
-
 type client struct {
 	createdByPool bool
 	uri           string
