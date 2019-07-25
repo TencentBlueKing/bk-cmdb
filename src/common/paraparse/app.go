@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 //common search struct
@@ -83,7 +84,8 @@ func SpeceialCharChange(targetStr string) string {
 	return targetStr
 }
 
-func ParseAppSearchParams(input map[string]interface{}) map[string]interface{} {
+// ParseAppSearchParams parse search app parameter. input user parameter, userFieldArr Fields in the business are user-type fields
+func ParseAppSearchParams(input map[string]interface{}, userFieldArr []string) map[string]interface{} {
 	output := make(map[string]interface{})
 	for i, j := range input {
 		objtype := reflect.TypeOf(j)
@@ -91,8 +93,15 @@ func ParseAppSearchParams(input map[string]interface{}) map[string]interface{} {
 		case reflect.String:
 			d := make(map[string]interface{})
 			targetStr := j.(string)
-			d[common.BKDBLIKE] = SpeceialCharChange(targetStr)
+			if util.InStrArr(userFieldArr, i) {
+				// field type is user, use regex
+				userName := SpeceialCharChange(targetStr)
+				d[common.BKDBLIKE] = fmt.Sprintf("^%s,|,%s,|,%s$|^%s$", userName, userName, userName, userName)
+			} else {
+				d[common.BKDBLIKE] = SpeceialCharChange(targetStr)
+			}
 			output[i] = d
+
 		default:
 			output[i] = j
 		}
