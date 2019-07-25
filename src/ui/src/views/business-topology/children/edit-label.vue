@@ -22,7 +22,7 @@
                     v-show="list.length - 1 === index"
                     @click="handleAddLabel(index)">
                 </i>
-                <i :class="['bk-icon', 'icon-minus-circle-shape', 'icon-btn', { 'disabled': list.length === 1 }]"
+                <i :class="['bk-icon', 'icon-minus-circle-shape', 'icon-btn']"
                     @click="handleRemoveLabel(index)">
                 </i>
             </div>
@@ -113,7 +113,11 @@
                 })
             },
             handleRemoveLabel (index) {
-                if (this.list.length === 1) return
+                if (this.list.length === 1) {
+                    this.$set(this.list[0], 'key', '')
+                    this.$set(this.list[0], 'value', '')
+                    return
+                }
                 const currentTag = this.list[index]
                 if (currentTag.id !== -1) {
                     this.removeKeysList.push(currentTag.key)

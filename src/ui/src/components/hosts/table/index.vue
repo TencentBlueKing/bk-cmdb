@@ -68,6 +68,7 @@
                     </div>
                 </bk-select>
                 <cmdb-host-filter class="ml10"
+                    v-if="showCollection"
                     ref="hostFilter"
                     :properties="filterProperties"
                     :show-scope="showScope">
