@@ -224,7 +224,9 @@
                 if (!businessId) return
                 if (this.hasSelectAssignedHost()) {
                     this.$error(this.$t('Hosts["请勿选择已分配主机"]'))
-                    this.assignBusiness = ''
+                    this.$nextTick(() => {
+                        this.assignBusiness = ''
+                    })
                 } else {
                     this.$bkInfo({
                         title: this.$t("HostResourcePool['请确认是否转移']"),

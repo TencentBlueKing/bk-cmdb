@@ -3,21 +3,20 @@
         <div class="history-options clearfix">
             <label class="fl">{{$t('Common["已删除历史"]')}}</label>
             <bk-button class="fr" theme="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
-            <bk-date-range class="history-date-range fr"
-                :ranges="ranges"
-                :range-separator="'-'"
-                :quick-select="true"
+            <bk-date-picker class="history-date-range fr"
+                placement="bottom-end"
+                type="daterange"
+                :shortcuts="ranges"
+                :clearable="false"
                 :start-date="startDate"
-                :end-date="endDate"
-                position="bottom-left"
+                v-model="defaultDate"
                 @change="setFilterTime">
-            </bk-date-range>
+            </bk-date-picker>
         </div>
         <bk-table class="history-table"
             v-bkloading="{ isLoading: $loading() }"
             :pagination="pagination"
             :data="list"
-            :max-height="157"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column v-for="column in header"
@@ -34,8 +33,10 @@
     import moment from 'moment'
     export default {
         data () {
-            const startDate = this.$tools.formatTime(moment().subtract(1, 'month'), 'YYYY-MM-DD')
-            const endDate = this.$tools.formatTime(moment(), 'YYYY-MM-DD')
+            const startDate = moment().subtract(1, 'month').toDate()
+            const endDate = moment().toDate()
+            const opSatrtTime = this.$tools.formatTime(startDate, 'YYYY-MM-DD') + ' 00:00:00'
+            const opEndTime = this.$tools.formatTime(endDate, 'YYYY-MM-DD') + ' 23:59:59'
             return {
                 properties: [],
                 header: [],
@@ -45,10 +46,11 @@
                     limit: 10,
                     count: 0
                 },
-                opTime: [],
+                opTime: [opSatrtTime, opEndTime],
                 startDate,
                 endDate,
-                opTimeResolver: null
+                opTimeResolver: null,
+                defaultDate: [startDate, endDate]
             }
         },
         computed: {
@@ -68,19 +70,49 @@
             ranges () {
                 const language = this.$i18n.locale
                 if (language === 'en') {
-                    return {
-                        'Yesterday': [moment().subtract(1, 'days'), moment()],
-                        'Last Week': [moment().subtract(7, 'days'), moment()],
-                        'Last Month': [moment().subtract(1, 'month'), moment()],
-                        'Last Three Month': [moment().subtract(3, 'month'), moment()]
+                    return [{
+                        text: 'Yesterday',
+                        value () {
+                            return [moment().subtract(1, 'days').toDate(), moment().toDate()]
+                        }
+                    }, {
+                        text: 'Last Week',
+                        value () {
+                            return [moment().subtract(7, 'days').toDate(), moment().toDate()]
+                        }
+                    }, {
+                        text: 'Last Month',
+                        value () {
+                            return [moment().subtract(1, 'month').toDate(), moment().toDate()]
+                        }
+                    }, {
+                        text: 'Last Three Month',
+                        value () {
+                            return [moment().subtract(3, 'month').toDate(), moment().toDate()]
+                        }
+                    }]
+                }
+                return [{
+                    text: '昨天',
+                    value () {
+                        return [moment().subtract(1, 'days').toDate(), moment().toDate()]
                     }
-                }
-                return {
-                    昨天: [moment().subtract(1, 'days'), moment()],
-                    最近一周: [moment().subtract(7, 'days'), moment()],
-                    最近一个月: [moment().subtract(1, 'month'), moment()],
-                    最近三个月: [moment().subtract(3, 'month'), moment()]
-                }
+                }, {
+                    text: '最近一周',
+                    value () {
+                        return [moment().subtract(7, 'days').toDate(), moment().toDate()]
+                    }
+                }, {
+                    text: '最近一个月',
+                    value () {
+                        return [moment().subtract(1, 'month').toDate(), moment().toDate()]
+                    }
+                }, {
+                    text: '最近三个月',
+                    value () {
+                        return [moment().subtract(3, 'month').toDate(), moment().toDate()]
+                    }
+                }]
             }
         },
         watch: {
@@ -94,7 +126,7 @@
         },
         async created () {
             try {
-                await this.setTimeResolver()
+                // await this.setTimeResolver()
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: this.objId,
@@ -156,8 +188,8 @@
                 }])
                 return Promise.resolve(this.header)
             },
-            setFilterTime (oldVal, newVal) {
-                this.opTime = newVal.split(' - ').map((date, index) => {
+            setFilterTime (daterange) {
+                this.opTime = daterange.map((date, index) => {
                     return index === 0 ? (date + ' 00:00:00') : (date + ' 23:59:59')
                 })
             },

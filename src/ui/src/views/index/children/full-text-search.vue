@@ -32,7 +32,7 @@
         </div>
         <div class="results-wrapper" ref="resultsWrapper"
             :class="{ 'searching': searching }"
-            v-bkloading="{ 'isLoading': searching }">
+            v-bkloading="{ 'isLoading': $loading(requestId), 'afterLeave': loadingClose }">
             <div v-show="hasData">
                 <div class="results-list" ref="resultsList">
                     <div class="results-item"
@@ -68,11 +68,19 @@
                         </template>
                     </div>
                 </div>
-                <full-text-pagination
-                    :pagination="pagination"
-                    @limit-change="handleLimitChange"
-                    @page-change="handlePageChange">
-                </full-text-pagination>
+                <div class="pagination-info">
+                    <span class="mr10">{{$tc("Common['共计N条']", pagination['total'], { N: pagination['total'] })}}</span>
+                    <bk-pagination
+                        size="small"
+                        align="right"
+                        :type="'compact'"
+                        :current.sync="pagination['current']"
+                        :limit="pagination['limit']"
+                        :count="pagination['total']"
+                        @limit-change="handleLimitChange"
+                        @change="handlePageChange">
+                    </bk-pagination>
+                </div>
             </div>
         </div>
         <div class="no-data" v-show="!hasData && showNoData && !searching">
@@ -87,12 +95,8 @@
         addMainScrollListener,
         removeMainScrollListener
     } from '@/utils/main-scroller'
-    import fullTextPagination from './full-text-pagination.vue'
     import { mapGetters, mapActions } from 'vuex'
     export default {
-        components: {
-            fullTextPagination
-        },
         data () {
             return {
                 toggleTips: null,
@@ -155,7 +159,7 @@
                 }
             },
             'query.queryString' (queryString) {
-                window.location.hash = this.hash.substring(0, this.hash.search(/=/) + 1) + this.query.queryString
+                window.location.hash = `${this.hash.substring(0, this.hash.search(/=/) + 1)}${this.query.queryString}&from=${this.$route.query.from}`
                 let delay = 0
                 if (this.searchTriggerType === 'click') {
                     this.query.objId = this.query.objId
@@ -288,19 +292,21 @@
                         } else {
                             this.hasData = false
                         }
-                        this.searching = false
                         this.$nextTick(() => {
                             this.initScrollListener(this.$refs.topSticky)
+                            this.$parent.$refs.mainScroller.scrollTop = 0
                         })
                     }).catch((e) => {
                         if (!e.hasOwnProperty('message')) {
                             this.searching = false
                             this.hasData = false
                         }
-                    }).finally(() => {
-                        this.showNoData = true
                     })
                 }, wait)
+            },
+            loadingClose () {
+                this.showNoData = true
+                this.searching = false
             },
             async processArray (data) {
                 this.propertyMap = {}
@@ -374,10 +380,9 @@
             handleLimitChange (limit) {
                 if (this.pagination.limit === limit) return
                 this.pagination.limit = limit
-                this.handlePageChange(1, 'limitChange')
+                this.handlePageChange(1)
             },
             handlePageChange (current, type) {
-                if (!type && this.pagination.current === current) return
                 this.pagination.start = (current - 1) * this.pagination.limit
                 this.pagination.current = current
                 this.handleSearch()
@@ -519,6 +524,15 @@
                         }
                     }
                 }
+            }
+        }
+        .pagination-info {
+            font-size: 14px;
+            line-height: 30px;
+            color: #737987;
+            display: flex;
+            .bk-page {
+                flex: 1;
             }
         }
         .no-data {

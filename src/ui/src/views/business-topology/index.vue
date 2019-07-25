@@ -11,7 +11,7 @@
             <bk-tab :active="active" type="unborder-card">
                 <bk-tab-panel name="serviceInstances"
                     :label="$t('BusinessTopology[\'服务实例\']')"
-                    :show="isModuleNode">
+                    :visible="isModuleNode">
                     <cmdb-service-instances></cmdb-service-instances>
                 </bk-tab-panel>
                 <bk-tab-panel name="nodeInfo" :label="$t('BusinessTopology[\'节点信息\']')">

@@ -27,7 +27,7 @@
         <!-- <div class="verification-selector-mask" v-if="attribute.isShow"></div> -->
         <div class="radio-box">
             <label class="label-text">
-                {{$t('ModelManagement["是否为必须校验"]')}}
+                {{$t('ModelManagement["属性为空值是否校验"]')}}
             </label>
             <label class="cmdb-form-radio cmdb-radio-small">
                 <input type="radio" name="required" :value="true" :disabled="isReadOnly" v-model="verificationInfo['must_check']">

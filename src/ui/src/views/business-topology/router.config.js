@@ -41,7 +41,7 @@ export default {
             id: 'topology',
             i18n: 'Nav["服务拓扑"]',
             path: path,
-            order: 3,
+            order: 1,
             parent: NAV_SERVICE_MANAGEMENT,
             adminView: false
         },

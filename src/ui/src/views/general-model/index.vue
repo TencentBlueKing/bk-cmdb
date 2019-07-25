@@ -156,7 +156,7 @@
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
                 </bk-tab-panel>
-                <bk-tab-panel name="relevance" :label="$t('HostResourcePool[\'关联\']')" :show="['update', 'details'].includes(attribute.type)">
+                <bk-tab-panel name="relevance" :label="$t('HostResourcePool[\'关联\']')" :visible="['update', 'details'].includes(attribute.type)">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         :auth="$OPERATION.U_INST"
@@ -164,7 +164,7 @@
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tab-panel>
-                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :show="['update', 'details'].includes(attribute.type)">
+                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :visible="['update', 'details'].includes(attribute.type)">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         :target="objId"
                         :inst-id="attribute.inst.details['bk_inst_id']">

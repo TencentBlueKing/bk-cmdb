@@ -607,7 +607,6 @@
     }
     .new-association-table{
         margin: 20px 0 0;
-        border: none;
     }
     .confirm-tips {
         padding: 9px 22px;
