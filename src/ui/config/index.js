@@ -27,7 +27,8 @@ const dev = {
         'AUTH_CENTER': '{}',
         'BUILD_VERSION': 'dev',
         'USER_ROLE': '"1"',
-        'USER_NAME': '"admin"'
+        'USER_NAME': '"admin"',
+        'FULL_TEXT_SEARCH': '"off"'
     }),
 
     // Paths
