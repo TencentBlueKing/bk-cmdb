@@ -7,6 +7,7 @@
             :disabled="disabled"
             @input="handleInput($event)"
             @change="handleChange">
+        <slot></slot>
     </div>
 </template>
 

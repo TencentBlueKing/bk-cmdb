@@ -1,10 +1,15 @@
 <template>
     <div class="model-relation-wrapper">
-        <bk-button class="create-btn" type="primary"
-            :disabled="isReadOnly || !updateAuth"
-            @click="createRelation">
-            {{$t('ModelManagement["新建关联"]')}}
-        </bk-button>
+        <span v-cursor="{
+            active: !$isAuthorized($OPERATION.U_MODEL),
+            auth: [$OPERATION.U_MODEL]
+        }">
+            <bk-button class="create-btn" type="primary"
+                :disabled="isReadOnly || !updateAuth"
+                @click="createRelation">
+                {{$t('ModelManagement["新建关联"]')}}
+            </bk-button>
+        </span>
         <cmdb-table
             class="relation-table"
             :loading="$loading()"
@@ -68,7 +73,6 @@
 <script>
     import theRelationDetail from './relation-detail'
     import { mapGetters, mapActions } from 'vuex'
-    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             theRelationDetail
@@ -132,7 +136,7 @@
                     return false
                 }
                 const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(OPERATION.U_MODEL)
+                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         created () {

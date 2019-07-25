@@ -94,7 +94,7 @@ func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (b
 		HostID:        hostID,
 	}
 
-	result, err := lgc.CoreAPI.HostController().Module().GetHostModulesIDs(ctx, lgc.header, &conf)
+	result, err := lgc.CoreAPI.CoreService().Host().GetHostModulesIDs(ctx, lgc.header, &conf)
 	if err != nil {
 		blog.Errorf("IsHostExistInApp http do error, err:%s, input:%+v, rid:%s", err.Error(), hostID, lgc.rid)
 		return false, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

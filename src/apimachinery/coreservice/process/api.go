@@ -17,15 +17,16 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
-func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
+func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := "/create/process/service_category"
 
-	err = p.client.Post().
+	err := p.client.Post().
 		WithContext(ctx).
 		Body(category).
 		SubResource(subPath).
@@ -34,7 +35,8 @@ func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, cate
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("CreateServiceCategory failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -43,11 +45,11 @@ func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, cate
 	return &ret.Data, nil
 }
 
-func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categoryID int64) (resp *metadata.ServiceCategory, err error) {
+func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categoryID int64) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := fmt.Sprintf("/find/process/service_category/%d", categoryID)
 
-	err = p.client.Get().
+	err := p.client.Get().
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).
@@ -55,7 +57,8 @@ func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categor
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("GetServiceCategory failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -64,11 +67,11 @@ func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categor
 	return &ret.Data, nil
 }
 
-func (p *process) GetDefaultServiceCategory(ctx context.Context, h http.Header) (resp *metadata.ServiceCategory, err error) {
+func (p *process) GetDefaultServiceCategory(ctx context.Context, h http.Header) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := "/find/process/default_service_category"
 
-	err = p.client.Get().
+	err := p.client.Get().
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).
@@ -76,7 +79,8 @@ func (p *process) GetDefaultServiceCategory(ctx context.Context, h http.Header) 
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("GetDefaultServiceCategory failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -85,11 +89,11 @@ func (p *process) GetDefaultServiceCategory(ctx context.Context, h http.Header) 
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
+func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category *metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := fmt.Sprintf("/update/process/service_category/%d", categoryID)
 
-	err = p.client.Put().
+	err := p.client.Put().
 		WithContext(ctx).
 		Body(category).
 		SubResource(subPath).
@@ -98,7 +102,8 @@ func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, cate
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("UpdateServiceCategory failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -107,7 +112,7 @@ func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, cate
 	return &ret.Data, nil
 }
 
-func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, categoryID int64) error {
+func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, categoryID int64) errors.CCErrorCoder {
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := fmt.Sprintf("/delete/process/service_category/%d", categoryID)
 
@@ -119,7 +124,8 @@ func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, cate
 		Into(ret)
 
 	if err != nil {
-		return err
+		blog.Errorf("DeleteServiceCategory failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -128,25 +134,21 @@ func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, cate
 	return nil
 }
 
-func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.MultipleServiceCategoryWithStatistics, err error) {
+func (p *process) ListServiceCategories(ctx context.Context, h http.Header, option metadata.ListServiceCategoriesOption) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleServiceCategoryWithStatisticsResult)
 	subPath := "/findmany/process/service_category"
 
-	input := map[string]interface{}{
-		"bk_biz_id":       bizID,
-		"with_statistics": withStatistics,
-	}
-
-	err = p.client.Post().
+	err := p.client.Post().
 		WithContext(ctx).
-		Body(input).
+		Body(option).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("ListServiceCategories failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -158,11 +160,11 @@ func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizI
 /*
 	service template api
 */
-func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error) {
+func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, template *metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := "/create/process/service_template"
 
-	err = p.client.Post().
+	err := p.client.Post().
 		WithContext(ctx).
 		Body(template).
 		SubResource(subPath).
@@ -171,7 +173,8 @@ func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, temp
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("CreateServiceTemplate failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -180,11 +183,11 @@ func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, temp
 	return &ret.Data, nil
 }
 
-func (p *process) GetServiceTemplateDetail(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceTemplateDetail, err error) {
+func (p *process) GetServiceTemplateDetail(ctx context.Context, h http.Header, templateID int64) (*metadata.ServiceTemplateDetail, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceTemplateDetailResult)
 	subPath := fmt.Sprintf("/find/process/service_template/%d/detail", templateID)
 
-	err = p.client.Get().
+	err := p.client.Get().
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).
@@ -192,7 +195,8 @@ func (p *process) GetServiceTemplateDetail(ctx context.Context, h http.Header, t
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("GetServiceTemplateDetail failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -201,11 +205,11 @@ func (p *process) GetServiceTemplateDetail(ctx context.Context, h http.Header, t
 	return &ret.Data, nil
 }
 
-func (p *process) GetServiceTemplate(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceTemplate, err error) {
+func (p *process) GetServiceTemplate(ctx context.Context, h http.Header, templateID int64) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := fmt.Sprintf("/find/process/service_template/%d", templateID)
 
-	err = p.client.Get().
+	err := p.client.Get().
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).
@@ -213,7 +217,8 @@ func (p *process) GetServiceTemplate(ctx context.Context, h http.Header, templat
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("GetServiceTemplate failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -222,11 +227,11 @@ func (p *process) GetServiceTemplate(ctx context.Context, h http.Header, templat
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error) {
+func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := fmt.Sprintf("/update/process/service_template/%d", templateID)
 
-	err = p.client.Put().
+	err := p.client.Put().
 		WithContext(ctx).
 		Body(template).
 		SubResource(subPath).
@@ -235,7 +240,8 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("UpdateServiceTemplate failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -244,7 +250,7 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 	return &ret.Data, nil
 }
 
-func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, templateID int64) error {
+func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, templateID int64) errors.CCErrorCoder {
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := fmt.Sprintf("/delete/process/service_template/%d", templateID)
 
@@ -256,7 +262,8 @@ func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, temp
 		Into(ret)
 
 	if err != nil {
-		return err
+		blog.Errorf("DeleteServiceTemplate failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -265,11 +272,11 @@ func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, temp
 	return nil
 }
 
-func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (resp *metadata.MultipleServiceTemplate, err error) {
+func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleServiceTemplateResult)
 	subPath := "/findmany/process/service_template"
 
-	err = p.client.Post().
+	err := p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
@@ -278,7 +285,8 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, optio
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("ListServiceTemplates failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -287,11 +295,11 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, optio
 	return &ret.Data, nil
 }
 
-func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
+func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := "/create/process/process_template"
 
-	err = p.client.Post().
+	err := p.client.Post().
 		WithContext(ctx).
 		Body(template).
 		SubResource(subPath).
@@ -300,7 +308,8 @@ func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, temp
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("CreateProcessTemplate failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -309,11 +318,11 @@ func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, temp
 	return &ret.Data, nil
 }
 
-func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ProcessTemplate, err error) {
+func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templateID int64) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := fmt.Sprintf("/find/process/process_template/%d", templateID)
 
-	err = p.client.Get().
+	err := p.client.Get().
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).
@@ -321,7 +330,8 @@ func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templat
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("GetProcessTemplate failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -330,11 +340,11 @@ func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templat
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
+func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := fmt.Sprintf("/update/process/process_template/%d", templateID)
 
-	err = p.client.Put().
+	err := p.client.Put().
 		WithContext(ctx).
 		Body(template).
 		SubResource(subPath).
@@ -343,7 +353,8 @@ func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, temp
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("UpdateProcessTemplate failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -352,7 +363,7 @@ func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, temp
 	return &ret.Data, nil
 }
 
-func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, templateID int64) error {
+func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, templateID int64) errors.CCErrorCoder {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := fmt.Sprintf("/delete/process/process_template/%d", templateID)
 
@@ -364,7 +375,8 @@ func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, temp
 		Into(ret)
 
 	if err != nil {
-		return err
+		blog.Errorf("DeleteProcessTemplate failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -373,7 +385,7 @@ func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, temp
 	return nil
 }
 
-func (p *process) DeleteProcessTemplateBatch(ctx context.Context, h http.Header, templateIDs []int64) error {
+func (p *process) DeleteProcessTemplateBatch(ctx context.Context, h http.Header, templateIDs []int64) errors.CCErrorCoder {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := "/delete/process/process_template"
 
@@ -390,7 +402,8 @@ func (p *process) DeleteProcessTemplateBatch(ctx context.Context, h http.Header,
 		Into(ret)
 
 	if err != nil {
-		return err
+		blog.Errorf("DeleteProcessTemplateBatch failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -399,11 +412,11 @@ func (p *process) DeleteProcessTemplateBatch(ctx context.Context, h http.Header,
 	return nil
 }
 
-func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, option *metadata.ListProcessTemplatesOption) (resp *metadata.MultipleProcessTemplate, err error) {
+func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, option *metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleProcessTemplateResult)
 	subPath := "/findmany/process/process_template"
 
-	err = p.client.Post().
+	err := p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
@@ -412,7 +425,8 @@ func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, optio
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("ListProcessTemplates failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -424,11 +438,11 @@ func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, optio
 /*
 	service instance api
 */
-func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, instance *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error) {
+func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, instance *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceInstanceResult)
 	subPath := "/create/process/service_instance"
 
-	err = p.client.Post().
+	err := p.client.Post().
 		WithContext(ctx).
 		Body(instance).
 		SubResource(subPath).
@@ -437,7 +451,8 @@ func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, inst
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("CreateServiceInstance failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -446,11 +461,11 @@ func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, inst
 	return &ret.Data, nil
 }
 
-func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanceID int64) (resp *metadata.ServiceInstance, err error) {
+func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanceID int64) (*metadata.ServiceInstance, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceInstanceResult)
 	subPath := fmt.Sprintf("/find/process/service_instance/%d", instanceID)
 
-	err = p.client.Get().
+	err := p.client.Get().
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).
@@ -458,7 +473,8 @@ func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanc
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("GetServiceInstance failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -467,11 +483,11 @@ func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanc
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, instanceID int64, instance *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error) {
+func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, instanceID int64, instance *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceInstanceResult)
 	subPath := fmt.Sprintf("/update/process/service_instance/%d", instanceID)
 
-	err = p.client.Put().
+	err := p.client.Put().
 		WithContext(ctx).
 		Body(instance).
 		SubResource(subPath).
@@ -480,7 +496,8 @@ func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, inst
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("UpdateServiceInstance failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -489,7 +506,7 @@ func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, inst
 	return &ret.Data, nil
 }
 
-func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, option *metadata.DeleteServiceInstanceOption) error {
+func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, option *metadata.DeleteServiceInstanceOption) errors.CCErrorCoder {
 	ret := new(metadata.OneServiceInstanceResult)
 	subPath := "/delete/process/service_instance"
 
@@ -502,7 +519,8 @@ func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, opti
 		Into(ret)
 
 	if err != nil {
-		return err
+		blog.Errorf("DeleteServiceInstance failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -511,11 +529,11 @@ func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, opti
 	return nil
 }
 
-func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (resp *metadata.MultipleServiceInstance, err error) {
+func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleServiceInstanceResult)
 	subPath := "/findmany/process/service_instance"
 
-	err = p.client.Post().
+	err := p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
@@ -524,7 +542,31 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("ListServiceInstance failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
+func (p *process) ListServiceInstanceDetail(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder) {
+	ret := new(metadata.MultipleServiceInstanceDetailResult)
+	subPath := "/findmany/process/service_instance/details"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("ListServiceInstanceDetail failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -536,11 +578,11 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 /*
 	process instance relation api
 */
-func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Header, instance *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error) {
+func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Header, instance *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessInstanceRelationResult)
 	subPath := "/create/process/process_instance_relation"
 
-	err = p.client.Post().
+	err := p.client.Post().
 		WithContext(ctx).
 		Body(instance).
 		SubResource(subPath).
@@ -549,7 +591,8 @@ func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Head
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("CreateProcessInstanceRelation failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -558,11 +601,11 @@ func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Head
 	return &ret.Data, nil
 }
 
-func (p *process) GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (resp *metadata.ProcessInstanceRelation, err error) {
+func (p *process) GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessInstanceRelationResult)
 	subPath := fmt.Sprintf("/find/process/process_instance_relation/%d", processID)
 
-	err = p.client.Get().
+	err := p.client.Get().
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).
@@ -570,7 +613,8 @@ func (p *process) GetProcessInstanceRelation(ctx context.Context, h http.Header,
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("GetProcessInstanceRelation failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -579,11 +623,11 @@ func (p *process) GetProcessInstanceRelation(ctx context.Context, h http.Header,
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Header, instanceID int64, instance *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error) {
+func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Header, instanceID int64, instance *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessInstanceRelationResult)
 	subPath := fmt.Sprintf("/update/process/process_instance_relation/%d", instanceID)
 
-	err = p.client.Put().
+	err := p.client.Put().
 		WithContext(ctx).
 		Body(instance).
 		SubResource(subPath).
@@ -592,7 +636,8 @@ func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Head
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("UpdateProcessInstanceRelation failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -601,7 +646,7 @@ func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Head
 	return &ret.Data, nil
 }
 
-func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Header, option metadata.DeleteProcessInstanceRelationOption) error {
+func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Header, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder {
 	ret := new(metadata.OneProcessInstanceRelationResult)
 	subPath := "/delete/process/process_instance_relation"
 
@@ -614,7 +659,8 @@ func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Head
 		Into(ret)
 
 	if err != nil {
-		return err
+		blog.Errorf("DeleteProcessInstanceRelation failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -623,11 +669,11 @@ func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Head
 	return nil
 }
 
-func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header, option *metadata.ListProcessInstanceRelationOption) (resp *metadata.MultipleProcessInstanceRelation, err error) {
+func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header, option *metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleProcessInstanceRelationResult)
 	subPath := "/findmany/process/process_instance_relation"
 
-	err = p.client.Post().
+	err := p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
@@ -636,7 +682,8 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 		Into(ret)
 
 	if err != nil {
-		return nil, err
+		blog.Errorf("ListProcessInstanceRelation failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
@@ -645,12 +692,12 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 	return &ret.Data, nil
 }
 
-func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.Header, bizID int64) (info metadata.BusinessDefaultSetModuleInfo, err error) {
+func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.Header, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder) {
 	ret := new(metadata.BusinessDefaultSetModuleInfoResult)
 	subPath := "/find/process/business_default_set_module_info"
 
 	emptyInfo := metadata.BusinessDefaultSetModuleInfo{}
-	err = p.client.Get().
+	err := p.client.Get().
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).
@@ -658,10 +705,78 @@ func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.He
 		Into(ret)
 
 	if err != nil {
-		return emptyInfo, err
+		blog.Errorf("GetBusinessDefaultSetModuleInfo failed, http request failed, err: %+v", err)
+		return emptyInfo, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
 		return emptyInfo, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}
+
+func (p *process) RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, moduleID int64) (*metadata.RemoveTemplateBoundOnModuleResult, errors.CCErrorCoder) {
+	ret := new(metadata.RemoveTemplateBoundOnModuleResult)
+	subPath := fmt.Sprintf("/delete/process/module_bound_template/%d", moduleID)
+
+	err := p.client.Delete().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("GetBusinessDefaultSetModuleInfo failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return nil, nil
+}
+
+func (p *process) ReconstructServiceInstanceName(ctx context.Context, h http.Header, instanceID int64) errors.CCErrorCoder {
+	ret := new(metadata.RemoveTemplateBoundOnModuleResult)
+	subPath := fmt.Sprintf("/update/process/service_instance_name/%d", instanceID)
+
+	err := p.client.Post().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("ReconstructServiceInstanceName failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return nil
+}
+
+func (p *process) GetProc2Module(ctx context.Context, h http.Header, option metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder) {
+	ret := new(metadata.GetProc2ModuleResult)
+	subPath := "/findmany/process/proc2module"
+
+	err := p.client.Post().
+		Body(option).
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("GetProc2Module failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return ret.Data, nil

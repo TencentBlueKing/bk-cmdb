@@ -13,13 +13,12 @@
 package process
 
 import (
-	"strconv"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"strconv"
 )
 
 func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
@@ -109,9 +108,9 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, o
 	filter[common.MetadataField] = md.ToMapStr()
 
 	// filter with matching any sub category
-	if option.ServiceInstanceIDs != nil && len(*option.ServiceInstanceIDs) > 0 {
+	if option.ServiceInstanceIDs != nil && len(option.ServiceInstanceIDs) > 0 {
 		filter[common.BKServiceInstanceIDField] = map[string]interface{}{
-			common.BKDBIN: *option.ServiceInstanceIDs,
+			common.BKDBIN: option.ServiceInstanceIDs,
 		}
 	}
 
@@ -120,12 +119,12 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, o
 	}
 
 	if option.HostID > 0 {
-		filter[common.BKProcessIDField] = option.HostID
+		filter[common.BKHostIDField] = option.HostID
 	}
 
-	if option.ProcessIDs != nil && len(*option.ProcessIDs) > 0 {
+	if option.ProcessIDs != nil && len(option.ProcessIDs) > 0 {
 		processIDFilter := map[string]interface{}{
-			common.BKDBIN: *option.ProcessIDs,
+			common.BKDBIN: option.ProcessIDs,
 		}
 		filter[common.BKProcIDField] = processIDFilter
 	}
@@ -155,26 +154,37 @@ func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams,
 	if option.BusinessID != nil {
 		deleteFilter[common.BKAppIDField] = option.BusinessID
 	}
+	parameterEnough := false
 	if option.ProcessIDs != nil {
+		parameterEnough = true
 		deleteFilter[common.BKProcIDField] = map[string]interface{}{
 			common.BKDBIN: option.ProcessIDs,
 		}
 	}
 	if option.ProcessTemplateIDs != nil {
+		parameterEnough = true
 		deleteFilter[common.BKProcessTemplateIDField] = map[string]interface{}{
 			common.BKDBIN: option.ProcessTemplateIDs,
 		}
 	}
 	if option.ServiceInstanceIDs != nil {
+		parameterEnough = true
 		deleteFilter[common.BKServiceInstanceIDField] = map[string]interface{}{
 			common.BKDBIN: option.ServiceInstanceIDs,
 		}
 	}
 	if option.ModuleIDs != nil {
+		parameterEnough = true
 		deleteFilter[common.BKModuleIDField] = map[string]interface{}{
 			common.BKDBIN: option.ModuleIDs,
 		}
 	}
+
+	if parameterEnough == false {
+		blog.Errorf("DeleteProcessInstanceRelation failed, filter parameters not enough, filter: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommParametersCountNotEnough)
+	}
+
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(ctx, deleteFilter); nil != err {
 		blog.Errorf("DeleteProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, err, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)

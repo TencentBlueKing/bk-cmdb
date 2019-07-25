@@ -53,6 +53,25 @@ func TestTimeRoundTrip(t *testing.T) {
 	if !rtval.Value.IsZero() {
 		t.Errorf("Did not get zero time as expected.")
 	}
+
+	beforeTimeVal := time.Now()
+	beforeTimeMap := map[string]interface{}{"ts": beforeTimeVal}
+	before, err := Marshal(beforeTimeMap)
+	noerr(t, err)
+
+	afterTimeMap := map[string]interface{}{}
+	err = Unmarshal(before, &afterTimeMap)
+	noerr(t, err)
+	afterTime, ok := afterTimeMap["ts"].(time.Time)
+	if !ok {
+		t.Errorf("after time format error. after time info:%#v", afterTimeMap)
+		return
+	}
+	if afterTime.Unix() != beforeTimeVal.Unix() {
+		t.Errorf("after time not equal before time. befere:%#v, after:%#v", beforeTimeVal, afterTime)
+		return
+	}
+
 }
 
 func TestNonNullTimeRoundTrip(t *testing.T) {

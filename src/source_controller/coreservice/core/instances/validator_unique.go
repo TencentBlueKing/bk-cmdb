@@ -28,12 +28,12 @@ import (
 func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData mapstr.MapStr, instMedataData metadata.Metadata, instanceManager *instanceManager) error {
 	uniqueAttr, err := valid.dependent.SearchUnique(ctx, valid.objID)
 	if nil != err {
-		blog.Errorf("[validCreateUnique] search [%s] unique error %v", valid.objID, err)
+		blog.Errorf("[validCreateUnique] search [%s] unique error %v, rid: %s", valid.objID, err, ctx.ReqID)
 		return err
 	}
 
 	if 0 >= len(uniqueAttr) {
-		blog.Warnf("[validCreateUnique] there're not unique constraint for %s, return", valid.objID)
+		blog.Warnf("[validCreateUnique] there're not unique constraint for %s, return, rid: %s", valid.objID, ctx.ReqID)
 		return nil
 	}
 
@@ -45,12 +45,12 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
-					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
+					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v, rid: %s", valid.objID, key.ID, ctx.ReqID)
 					return valid.errif.Errorf(common.CCErrTopoObjectPropertyNotFound, key.ID)
 				}
 				uniquekeys[property.PropertyID] = true
 			default:
-				blog.Errorf("[validCreateUnique] find [%s] property [%d] unique kind invalid [%d]", valid.objID, key.ID, key.Kind)
+				blog.Errorf("[validCreateUnique] find [%s] property [%d] unique kind invalid [%d], rid: %s", valid.objID, key.ID, key.Kind, ctx.ReqID)
 				return valid.errif.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
 			}
 		}
@@ -86,12 +86,12 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 		searchCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
 		result, err := instanceManager.SearchModelInstance(ctx, valid.objID, searchCond)
 		if nil != err {
-			blog.Errorf("[validCreateUnique] search [%s] inst error %v", valid.objID, err)
+			blog.Errorf("[validCreateUnique] search [%s] inst error %v, rid: %s", valid.objID, err, ctx.ReqID)
 			return err
 		}
 
 		if 0 < result.Count {
-			blog.Errorf("[validCreateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s", cond.ToMapStr(), uniquekeys, valid.objID)
+			blog.Errorf("[validCreateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s, rid: %s", cond.ToMapStr(), uniquekeys, valid.objID, ctx.ReqID)
 			propertyNames := []string{}
 			for key := range uniquekeys {
 				propertyNames = append(propertyNames, util.FirstNotEmptyString(ctx.Lang.Language(valid.objID+"_property_"+key), valid.propertys[key].PropertyName, key))
@@ -109,7 +109,7 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData mapstr.MapStr, instMedataData metadata.Metadata, instID uint64, instanceManager *instanceManager) error {
 	mapData, err := instanceManager.getInstDataByID(ctx, valid.objID, instID, instanceManager)
 	if nil != err {
-		blog.Errorf("[validUpdateUnique] search [%s] inst error %v", valid.objID, err)
+		blog.Errorf("[validUpdateUnique] search [%s] inst error %v, rid: %s", valid.objID, err, ctx.ReqID)
 		return err
 	}
 
@@ -120,12 +120,12 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData m
 
 	uniqueAttr, err := valid.dependent.SearchUnique(ctx, valid.objID)
 	if nil != err {
-		blog.Errorf("[validUpdateUnique] search [%s] unique error %v", valid.objID, err)
+		blog.Errorf("[validUpdateUnique] search [%s] unique error %v, rid: %s", valid.objID, err, ctx.ReqID)
 		return err
 	}
 
 	if 0 >= len(uniqueAttr) {
-		blog.Warnf("[validUpdateUnique] there're not unique constraint for %s, return", valid.objID)
+		blog.Warnf("[validUpdateUnique] there're not unique constraint for %s, return, rid: %s", valid.objID, ctx.ReqID)
 		return nil
 	}
 
@@ -137,12 +137,12 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData m
 			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
-					blog.Errorf("[validUpdateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
+					blog.Errorf("[validUpdateUnique] find [%s] property [%d] error %v, rid: %s", valid.objID, key.ID, ctx.ReqID)
 					return valid.errif.Errorf(common.CCErrTopoObjectPropertyNotFound, property.ID)
 				}
 				uniquekeys[property.PropertyID] = true
 			default:
-				blog.Errorf("[validUpdateUnique] find [%s] property [%d] unique kind invalid [%d]", valid.objID, key.ID, key.Kind)
+				blog.Errorf("[validUpdateUnique] find [%s] property [%d] unique kind invalid [%d], rid: %s", valid.objID, key.ID, key.Kind, ctx.ReqID)
 				return valid.errif.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
 			}
 		}
@@ -177,12 +177,12 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData m
 		searchCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
 		result, err := instanceManager.SearchModelInstance(ctx, valid.objID, searchCond)
 		if nil != err {
-			blog.Errorf("[validUpdateUnique] search [%s] inst error %v", valid.objID, err)
+			blog.Errorf("[validUpdateUnique] search [%s] inst error %v, rid: %s", valid.objID, err, ctx.ReqID)
 			return err
 		}
 
 		if 0 < result.Count {
-			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, unique keys: %v, objID: %s, instID %v count %d", cond.ToMapStr(), mapData, uniquekeys, valid.objID, instID, result.Count)
+			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, unique keys: %v, objID: %s, instID %v count %d, rid: %s", cond.ToMapStr(), mapData, uniquekeys, valid.objID, instID, result.Count, ctx.ReqID)
 			propertyNames := []string{}
 			for key := range uniquekeys {
 				propertyNames = append(propertyNames, util.FirstNotEmptyString(ctx.Lang.Language(valid.objID+"_property_"+key), valid.propertys[key].PropertyName, key))

@@ -1,3 +1,4 @@
+
 import Meta from '@/router/meta'
 import { NAV_BASIC_RESOURCE } from '@/dictionary/menu'
 import {
@@ -27,7 +28,11 @@ export default {
             parent: NAV_BASIC_RESOURCE
         },
         auth: {
-            operation: Object.values(OPERATION)
-        }
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'global'
+            }
+        },
+        i18nTitle: 'Nav["主机"]'
     })
 }

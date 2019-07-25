@@ -152,7 +152,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 			return
 		}
 	}
-	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("inst_%s.xlsx", objID))
+	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
 	c.File(dirFileName)
 	os.Remove(dirFileName)
 }

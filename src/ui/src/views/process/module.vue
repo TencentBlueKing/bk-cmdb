@@ -28,7 +28,6 @@
 
 <script>
     import { mapActions } from 'vuex'
-    import { OPERATION } from './router.config.js'
     export default {
         props: {
             processId: {
@@ -60,10 +59,10 @@
         },
         computed: {
             bindModuleAuth () {
-                return this.$isAuthorized(OPERATION.PROCESS_BIND_MODULE)
+                return this.$isAuthorized(this.$OPERATION.PROCESS_BIND_MODULE)
             },
             unbindModuleAuth () {
-                return this.$isAuthorized(OPERATION.PROCESS_UNBIND_MODULE)
+                return this.$isAuthorized(this.$OPERATION.PROCESS_UNBIND_MODULE)
             }
         },
         created () {

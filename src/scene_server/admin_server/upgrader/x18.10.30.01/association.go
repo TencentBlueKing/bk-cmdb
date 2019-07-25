@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -94,7 +95,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			AssociationKindName:     "默认关联",
 			OwnerID:                 conf.OwnerID,
 			SourceToDestinationNote: "关联",
-			DestinationToSourceNote: "关联",
+			DestinationToSourceNote: "被关联",
 			Direction:               metadata.DestinationToSource,
 			IsPre:                   ptrue(),
 		},
@@ -130,6 +131,14 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		return err
 	}
 
+	properyMap := map[string]metadata.ObjAttDes{}
+	buildObjPropertyMapKey := func(objID string, propertyID string) string { return fmt.Sprintf("%s:%s", objID, propertyID) }
+	for _, property := range propertys {
+		properyMap[buildObjPropertyMapKey(property.ObjectID, property.PropertyID)] = property
+		blog.Infof("key %s: %+v", buildObjPropertyMapKey(property.ObjectID, property.PropertyID), property)
+	}
+
+	flag := "updateflag"
 	for _, asst := range assts {
 		if asst.ObjectAttID == common.BKChildStr {
 			asst.AsstKindID = common.AssociationKindMainline
@@ -142,30 +151,87 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			} else {
 				asst.IsPre = pfalse()
 			}
+
+			// update ObjAsst
+			updateCond := condition.CreateCondition()
+			updateCond.Field("id").Eq(asst.ID)
+			if err = db.Table(common.BKTableNameObjAsst).Update(ctx, updateCond.ToMapStr(), asst); err != nil {
+				return err
+			}
+
+			// update InstAsst
+			updateInst := mapstr.New()
+			updateInst.Set("bk_obj_asst_id", asst.AssociationName)
+			updateInst.Set("bk_asst_id", asst.AsstKindID)
+			updateInst.Set("last_time", time.Now())
+			err = db.Table(common.BKTableNameInstAsst).Update(ctx, updateCond.ToMapStr(), updateInst)
+			if err != nil {
+				return err
+			}
+
 		} else {
 			asst.AsstKindID = common.AssociationTypeDefault
-			asst.AssociationName = buildObjAsstID(asst)
-			asst.Mapping = metadata.OneToManyMapping
+			property := properyMap[buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID)]
+			switch property.PropertyType {
+			case common.FieldTypeSingleAsst:
+				asst.Mapping = metadata.OneToManyMapping
+			case common.FieldTypeMultiAsst:
+				asst.Mapping = metadata.ManyToManyMapping
+			default:
+				blog.Warnf("property: %+v, asst: %+v, for key: %v", property, asst, buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID))
+				asst.Mapping = metadata.ManyToManyMapping
+			}
+			// 交换 源<->目标
+			asst.AssociationAliasName = property.PropertyName
+			asst.ObjectID, asst.AsstObjID = asst.AsstObjID, asst.ObjectID
 			asst.OnDelete = metadata.NoAction
 			asst.IsPre = pfalse()
-		}
-		_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
-		if err != nil {
-			return err
-		}
+			asst.AssociationName = buildObjAsstID(asst)
 
-		updateInst := mapstr.New()
-		updateInst.Set("bk_obj_asst_id", asst.AssociationName)
-		updateInst.Set("bk_asst_id", asst.AsstKindID)
-		updateInst.Set("last_time", time.Now())
+			blog.InfoJSON("obj: %s, att: %s to asst %s", asst.ObjectID, asst.ObjectAttID, asst)
+			// update ObjAsst
+			updateCond := condition.CreateCondition()
+			updateCond.Field("id").Eq(asst.ID)
+			if err = db.Table(common.BKTableNameObjAsst).Update(ctx, updateCond.ToMapStr(), asst); err != nil {
+				return err
+			}
 
-		updateInstCond := condition.CreateCondition()
-		updateInstCond.Field("bk_obj_id").Eq(asst.ObjectID)
-		updateInstCond.Field("bk_asst_obj_id").Eq(asst.AsstObjID)
-		err = db.Table(common.BKTableNameInstAsst).Update(ctx, updateInstCond.ToMapStr(), updateInst)
-		if err != nil {
-			return err
+			// update ObjAsst
+			instAssts := []metadata.InstAsst{}
+
+			instCond := condition.CreateCondition()
+			instCond.Field("bk_obj_id").Eq(asst.AsstObjID)
+			instCond.Field("bk_asst_obj_id").Eq(asst.ObjectID)
+			instCond.Field(flag).NotEq(true)
+
+			if err = db.Table(common.BKTableNameInstAsst).Find(instCond.ToMapStr()).All(ctx, &instAssts); err != nil {
+				return err
+			}
+			for _, instAsst := range instAssts {
+				updateInst := mapstr.New()
+				updateInst.Set("bk_obj_asst_id", asst.AssociationName)
+				updateInst.Set("bk_asst_id", asst.AsstKindID)
+
+				// 交换 源<->目标
+				updateInst.Set("bk_obj_id", instAsst.AsstObjectID)
+				updateInst.Set("bk_asst_obj_id", instAsst.ObjectID)
+				updateInst.Set("bk_inst_id", instAsst.AsstInstID)
+				updateInst.Set("bk_asst_inst_id", instAsst.InstID)
+
+				updateInst.Set(flag, true)
+
+				updateInst.Set("last_time", time.Now())
+				if err = db.Table(common.BKTableNameInstAsst).Update(ctx,
+					mapstr.MapStr{
+						"id": instAsst.ID,
+					}, updateInst); err != nil {
+					return err
+				}
+			}
 		}
+	}
+	if err = db.Table(common.BKTableNameInstAsst).DropColumn(ctx, flag); err != nil {
+		return err
 	}
 
 	// update bk_cloud_id to int
@@ -200,11 +266,17 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			return err
 		}
 	}
+
+	delCond := condition.CreateCondition()
+	delCond.Field(common.AssociationKindIDField).Eq(nil)
+	if err = db.Table(common.BKTableNameObjAsst).Delete(ctx, delCond.ToMapStr()); err != nil {
+		return err
+	}
 	return nil
 }
 
 func buildObjAsstID(asst Association) string {
-	return fmt.Sprintf("%s_%s_%s_%s", asst.ObjectID, asst.AsstKindID, asst.AsstObjID, asst.ObjectAttID)
+	return fmt.Sprintf("%s_%s_%s", asst.ObjectID, asst.AsstKindID, asst.AsstObjID)
 }
 
 func ptrue() *bool {

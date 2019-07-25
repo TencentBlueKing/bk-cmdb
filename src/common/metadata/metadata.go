@@ -13,12 +13,12 @@
 package metadata
 
 import (
-	"configcenter/src/common/json"
 	"errors"
 	"fmt"
 	"strconv"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 )
@@ -174,6 +174,14 @@ type MetadataWrapper struct {
 // Metadata  used to define the metadata for the resources
 type Metadata struct {
 	Label Label `field:"label" json:"label" bson:"label"`
+}
+
+func (md *Metadata) ParseBizID() (int64, error) {
+	bizID, err := BizIDFromMetadata(*md)
+	if err != nil {
+		return 0, err
+	}
+	return bizID, nil
 }
 
 func (md *Metadata) ToMapStr() mapstr.MapStr {

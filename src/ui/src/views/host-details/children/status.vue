@@ -1,5 +1,5 @@
 <template>
-    <div class="status" v-bkloading="{ isLoading: $loading('getHostSnapshot') }">
+    <div :class="['status', { 'is-offline': !snapshot }]" v-bkloading="{ isLoading: $loading('getHostSnapshot') }">
         <div class="status-info" v-if="snapshot">
             <h2 class="info-title">
                 <span>{{$t('HostDetails["基本值"]')}}</span>
@@ -68,7 +68,8 @@
         },
         computed: {
             isWindows () {
-                return false
+                const info = this.$store.state.hostDetails.info || {}
+                return info.bk_os_type === 'windows'
             },
             id () {
                 return this.$route.params.id
@@ -82,8 +83,11 @@
                 ])
                 this.Echarts = Echarts
                 this.snapshot = snapshot
-                this.initCharts()
+                this.$nextTick(() => {
+                    this.initCharts()
+                })
             } catch (e) {
+                console.log(e)
                 this.snapshot = null
             }
         },
@@ -226,17 +230,19 @@
 <style lang="scss" scoped>
     .status {
         height: 100%;
-        text-align: center;
-        &:before {
-            content: "";
-            display: inline-block;
-            vertical-align: middle;
-            height: 100%;
+        &.is-offline {
+            text-align: center;
+            &:before {
+                content: "";
+                display: inline-block;
+                vertical-align: middle;
+                height: 100%;
+            }
         }
     }
     .status-info {
         width: 720px;
-        margin: 22px 0 0 0;
+        padding: 22px 0 0 0;
         text-align: left;
         .info-title {
             color: #333948;

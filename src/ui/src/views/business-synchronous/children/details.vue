@@ -4,6 +4,12 @@
             :header="header"
             :list="attributeList"
             :wrapper-minus-height="300">
+            <template slot="before_value" slot-scope="{ item }">
+                <span>{{item.before_value ? item.before_value : '--'}}</span>
+            </template>
+            <template slot="show_value" slot-scope="{ item }">
+                <span>{{item.show_value ? item.show_value : '--'}}</span>
+            </template>
         </cmdb-table>
     </div>
 </template>
@@ -26,11 +32,11 @@
                         name: this.$t("BusinessSynchronous['属性名称']"),
                         sortable: false
                     }, {
-                        id: 'property_value',
+                        id: 'before_value',
                         name: this.$t("BusinessSynchronous['变更前']"),
                         sortable: false
                     }, {
-                        id: 'template_property_value',
+                        id: 'show_value',
                         name: this.$t("BusinessSynchronous['变更后']"),
                         sortable: false
                     }

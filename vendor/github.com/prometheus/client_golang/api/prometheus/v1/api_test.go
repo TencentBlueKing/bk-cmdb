@@ -15,9 +15,9 @@ package v1
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -25,13 +25,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/api"
+	json "github.com/json-iterator/go"
+
 	"github.com/prometheus/common/model"
-	"github.com/prometheus/tsdb/testutil"
+
+	"github.com/prometheus/client_golang/api"
 )
 
 type apiTest struct {
-	do           func() (interface{}, api.Error)
+	do           func() (interface{}, api.Warnings, error)
 	inWarnings   []string
 	inErr        error
 	inStatusCode int
@@ -41,6 +43,7 @@ type apiTest struct {
 	reqParam  url.Values
 	reqMethod string
 	res       interface{}
+	warnings  api.Warnings
 	err       error
 }
 
@@ -61,7 +64,7 @@ func (c *apiTestClient) URL(ep string, args map[string]string) *url.URL {
 	return u
 }
 
-func (c *apiTestClient) Do(ctx context.Context, req *http.Request) (*http.Response, []byte, api.Error) {
+func (c *apiTestClient) Do(ctx context.Context, req *http.Request) (*http.Response, []byte, api.Warnings, error) {
 
 	test := c.curTest
 
@@ -86,7 +89,7 @@ func (c *apiTestClient) Do(ctx context.Context, req *http.Request) (*http.Respon
 		resp.StatusCode = http.StatusOK
 	}
 
-	return resp, b, api.NewErrorAPI(test.inErr, test.inWarnings)
+	return resp, b, test.inWarnings, test.inErr
 }
 
 func TestAPIs(t *testing.T) {
@@ -99,75 +102,94 @@ func TestAPIs(t *testing.T) {
 		client: client,
 	}
 
-	doAlertManagers := func() func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
-			return promAPI.AlertManagers(context.Background())
+	doAlertManagers := func() func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
+			v, err := promAPI.AlertManagers(context.Background())
+			return v, nil, err
 		}
 	}
 
-	doCleanTombstones := func() func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
-			return nil, promAPI.CleanTombstones(context.Background())
+	doCleanTombstones := func() func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
+			return nil, nil, promAPI.CleanTombstones(context.Background())
 		}
 	}
 
-	doConfig := func() func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
-			return promAPI.Config(context.Background())
+	doConfig := func() func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
+			v, err := promAPI.Config(context.Background())
+			return v, nil, err
 		}
 	}
 
-	doDeleteSeries := func(matcher string, startTime time.Time, endTime time.Time) func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
-			return nil, promAPI.DeleteSeries(context.Background(), []string{matcher}, startTime, endTime)
+	doDeleteSeries := func(matcher string, startTime time.Time, endTime time.Time) func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
+			return nil, nil, promAPI.DeleteSeries(context.Background(), []string{matcher}, startTime, endTime)
 		}
 	}
 
-	doFlags := func() func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
-			return promAPI.Flags(context.Background())
+	doFlags := func() func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
+			v, err := promAPI.Flags(context.Background())
+			return v, nil, err
 		}
 	}
 
-	doLabelValues := func(label string) func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
+	doLabelNames := func(label string) func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
+			return promAPI.LabelNames(context.Background())
+		}
+	}
+
+	doLabelValues := func(label string) func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
 			return promAPI.LabelValues(context.Background(), label)
 		}
 	}
 
-	doQuery := func(q string, ts time.Time) func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
+	doQuery := func(q string, ts time.Time) func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
 			return promAPI.Query(context.Background(), q, ts)
 		}
 	}
 
-	doQueryRange := func(q string, rng Range) func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
+	doQueryRange := func(q string, rng Range) func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
 			return promAPI.QueryRange(context.Background(), q, rng)
 		}
 	}
 
-	doSeries := func(matcher string, startTime time.Time, endTime time.Time) func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
+	doSeries := func(matcher string, startTime time.Time, endTime time.Time) func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
 			return promAPI.Series(context.Background(), []string{matcher}, startTime, endTime)
 		}
 	}
 
-	doSnapshot := func(skipHead bool) func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
-			return promAPI.Snapshot(context.Background(), skipHead)
+	doSnapshot := func(skipHead bool) func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
+			v, err := promAPI.Snapshot(context.Background(), skipHead)
+			return v, nil, err
 		}
 	}
 
-	doRules := func() func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
-			return promAPI.Rules(context.Background())
+	doRules := func() func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
+			v, err := promAPI.Rules(context.Background())
+			return v, nil, err
 		}
 	}
 
-	doTargets := func() func() (interface{}, api.Error) {
-		return func() (interface{}, api.Error) {
-			return promAPI.Targets(context.Background())
+	doTargets := func() func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
+			v, err := promAPI.Targets(context.Background())
+			return v, nil, err
+		}
+	}
+
+	doTargetsMetadata := func(matchTarget string, metric string, limit string) func() (interface{}, api.Warnings, error) {
+		return func() (interface{}, api.Warnings, error) {
+			v, err := promAPI.TargetsMetadata(context.Background(), matchTarget, metric, limit)
+			return v, nil, err
 		}
 	}
 
@@ -241,6 +263,51 @@ func TestAPIs(t *testing.T) {
 			},
 			err: errors.New("client_error: client error: 404"),
 		},
+		// Warning only.
+		{
+			do:         doQuery("2", testTime),
+			inWarnings: []string{"warning"},
+			inRes: &queryResult{
+				Type: model.ValScalar,
+				Result: &model.Scalar{
+					Value:     2,
+					Timestamp: model.TimeFromUnix(testTime.Unix()),
+				},
+			},
+
+			reqMethod: "POST",
+			reqPath:   "/api/v1/query",
+			reqParam: url.Values{
+				"query": []string{"2"},
+				"time":  []string{testTime.Format(time.RFC3339Nano)},
+			},
+			res: &model.Scalar{
+				Value:     2,
+				Timestamp: model.TimeFromUnix(testTime.Unix()),
+			},
+			warnings: []string{"warning"},
+		},
+		// Warning + error.
+		{
+			do:           doQuery("2", testTime),
+			inWarnings:   []string{"warning"},
+			inRes:        "some body",
+			inStatusCode: 404,
+			inErr: &Error{
+				Type:   ErrClient,
+				Msg:    "client error: 404",
+				Detail: "some body",
+			},
+
+			reqMethod: "POST",
+			reqPath:   "/api/v1/query",
+			reqParam: url.Values{
+				"query": []string{"2"},
+				"time":  []string{testTime.Format(time.RFC3339Nano)},
+			},
+			err:      errors.New("client_error: client error: 404"),
+			warnings: []string{"warning"},
+		},
 
 		{
 			do: doQueryRange("2", Range{
@@ -262,11 +329,54 @@ func TestAPIs(t *testing.T) {
 		},
 
 		{
+			do:        doLabelNames("mylabel"),
+			inRes:     []string{"val1", "val2"},
+			reqMethod: "GET",
+			reqPath:   "/api/v1/labels",
+			res:       []string{"val1", "val2"},
+		},
+		{
+			do:         doLabelNames("mylabel"),
+			inRes:      []string{"val1", "val2"},
+			inWarnings: []string{"a"},
+			reqMethod:  "GET",
+			reqPath:    "/api/v1/labels",
+			res:        []string{"val1", "val2"},
+			warnings:   []string{"a"},
+		},
+
+		{
+			do:        doLabelNames("mylabel"),
+			inErr:     fmt.Errorf("some error"),
+			reqMethod: "GET",
+			reqPath:   "/api/v1/labels",
+			err:       fmt.Errorf("some error"),
+		},
+		{
+			do:         doLabelNames("mylabel"),
+			inErr:      fmt.Errorf("some error"),
+			inWarnings: []string{"a"},
+			reqMethod:  "GET",
+			reqPath:    "/api/v1/labels",
+			err:        fmt.Errorf("some error"),
+			warnings:   []string{"a"},
+		},
+
+		{
 			do:        doLabelValues("mylabel"),
 			inRes:     []string{"val1", "val2"},
 			reqMethod: "GET",
 			reqPath:   "/api/v1/label/mylabel/values",
 			res:       model.LabelValues{"val1", "val2"},
+		},
+		{
+			do:         doLabelValues("mylabel"),
+			inRes:      []string{"val1", "val2"},
+			inWarnings: []string{"a"},
+			reqMethod:  "GET",
+			reqPath:    "/api/v1/label/mylabel/values",
+			res:        model.LabelValues{"val1", "val2"},
+			warnings:   []string{"a"},
 		},
 
 		{
@@ -275,6 +385,15 @@ func TestAPIs(t *testing.T) {
 			reqMethod: "GET",
 			reqPath:   "/api/v1/label/mylabel/values",
 			err:       fmt.Errorf("some error"),
+		},
+		{
+			do:         doLabelValues("mylabel"),
+			inErr:      fmt.Errorf("some error"),
+			inWarnings: []string{"a"},
+			reqMethod:  "GET",
+			reqPath:    "/api/v1/label/mylabel/values",
+			err:        fmt.Errorf("some error"),
+			warnings:   []string{"a"},
 		},
 
 		{
@@ -293,12 +412,38 @@ func TestAPIs(t *testing.T) {
 				"end":   []string{testTime.Format(time.RFC3339Nano)},
 			},
 			res: []model.LabelSet{
-				model.LabelSet{
+				{
 					"__name__": "up",
 					"job":      "prometheus",
 					"instance": "localhost:9090",
 				},
 			},
+		},
+		// Series with data + warning.
+		{
+			do: doSeries("up", testTime.Add(-time.Minute), testTime),
+			inRes: []map[string]string{
+				{
+					"__name__": "up",
+					"job":      "prometheus",
+					"instance": "localhost:9090"},
+			},
+			inWarnings: []string{"a"},
+			reqMethod:  "GET",
+			reqPath:    "/api/v1/series",
+			reqParam: url.Values{
+				"match": []string{"up"},
+				"start": []string{testTime.Add(-time.Minute).Format(time.RFC3339Nano)},
+				"end":   []string{testTime.Format(time.RFC3339Nano)},
+			},
+			res: []model.LabelSet{
+				{
+					"__name__": "up",
+					"job":      "prometheus",
+					"instance": "localhost:9090",
+				},
+			},
+			warnings: []string{"a"},
 		},
 
 		{
@@ -312,6 +457,21 @@ func TestAPIs(t *testing.T) {
 				"end":   []string{testTime.Format(time.RFC3339Nano)},
 			},
 			err: fmt.Errorf("some error"),
+		},
+		// Series with error and warning.
+		{
+			do:         doSeries("up", testTime.Add(-time.Minute), testTime),
+			inErr:      fmt.Errorf("some error"),
+			inWarnings: []string{"a"},
+			reqMethod:  "GET",
+			reqPath:    "/api/v1/series",
+			reqParam: url.Values{
+				"match": []string{"up"},
+				"start": []string{testTime.Add(-time.Minute).Format(time.RFC3339Nano)},
+				"end":   []string{testTime.Format(time.RFC3339Nano)},
+			},
+			err:      fmt.Errorf("some error"),
+			warnings: []string{"a"},
 		},
 
 		{
@@ -490,7 +650,7 @@ func TestAPIs(t *testing.T) {
 											"severity":  "page",
 										},
 										"state": "firing",
-										"value": 1,
+										"value": "1e+00",
 									},
 								},
 								"annotations": map[string]interface{}{
@@ -534,7 +694,7 @@ func TestAPIs(t *testing.T) {
 											"severity":  "page",
 										},
 										State: AlertStateFiring,
-										Value: 1,
+										Value: "1e+00",
 									},
 								},
 								Annotations: model.LabelSet{
@@ -642,6 +802,52 @@ func TestAPIs(t *testing.T) {
 			inErr:     fmt.Errorf("some error"),
 			err:       fmt.Errorf("some error"),
 		},
+
+		{
+			do: doTargetsMetadata("{job=\"prometheus\"}", "go_goroutines", "1"),
+			inRes: []map[string]interface{}{
+				{
+					"target": map[string]interface{}{
+						"instance": "127.0.0.1:9090",
+						"job":      "prometheus",
+					},
+					"type": "gauge",
+					"help": "Number of goroutines that currently exist.",
+					"unit": "",
+				},
+			},
+			reqMethod: "GET",
+			reqPath:   "/api/v1/targets/metadata",
+			reqParam: url.Values{
+				"match_target": []string{"{job=\"prometheus\"}"},
+				"metric":       []string{"go_goroutines"},
+				"limit":        []string{"1"},
+			},
+			res: []MetricMetadata{
+				{
+					Target: map[string]string{
+						"instance": "127.0.0.1:9090",
+						"job":      "prometheus",
+					},
+					Type: "gauge",
+					Help: "Number of goroutines that currently exist.",
+					Unit: "",
+				},
+			},
+		},
+
+		{
+			do:        doTargetsMetadata("{job=\"prometheus\"}", "go_goroutines", "1"),
+			inErr:     fmt.Errorf("some error"),
+			reqMethod: "GET",
+			reqPath:   "/api/v1/targets/metadata",
+			reqParam: url.Values{
+				"match_target": []string{"{job=\"prometheus\"}"},
+				"metric":       []string{"go_goroutines"},
+				"limit":        []string{"1"},
+			},
+			err: fmt.Errorf("some error"),
+		},
 	}
 
 	var tests []apiTest
@@ -651,7 +857,11 @@ func TestAPIs(t *testing.T) {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			client.curTest = test
 
-			res, err := test.do()
+			res, warnings, err := test.do()
+
+			if (test.inWarnings == nil) != (warnings == nil) && !reflect.DeepEqual(test.inWarnings, warnings) {
+				t.Fatalf("mismatch in warnings expected=%v actual=%v", test.inWarnings, warnings)
+			}
 
 			if test.err != nil {
 				if err == nil {
@@ -686,17 +896,18 @@ type testClient struct {
 }
 
 type apiClientTest struct {
-	code         int
-	response     interface{}
-	expectedBody string
-	expectedErr  *Error
+	code             int
+	response         interface{}
+	expectedBody     string
+	expectedErr      *Error
+	expectedWarnings api.Warnings
 }
 
 func (c *testClient) URL(ep string, args map[string]string) *url.URL {
 	return nil
 }
 
-func (c *testClient) Do(ctx context.Context, req *http.Request) (*http.Response, []byte, api.Error) {
+func (c *testClient) Do(ctx context.Context, req *http.Request) (*http.Response, []byte, api.Warnings, error) {
 	if ctx == nil {
 		c.Fatalf("context was not passed down")
 	}
@@ -723,7 +934,7 @@ func (c *testClient) Do(ctx context.Context, req *http.Request) (*http.Response,
 		StatusCode: test.code,
 	}
 
-	return resp, b, nil
+	return resp, b, test.expectedWarnings, nil
 }
 
 func TestAPIClientDo(t *testing.T) {
@@ -792,7 +1003,7 @@ func TestAPIClientDo(t *testing.T) {
 			response: "bad json",
 			expectedErr: &Error{
 				Type: ErrBadResponse,
-				Msg:  "invalid character 'b' looking for beginning of value",
+				Msg:  "readObjectStart: expect { or n, but found b, error found in #1 byte of ...|bad json|..., bigger context ...|bad json|...",
 			},
 		},
 		{
@@ -842,10 +1053,10 @@ func TestAPIClientDo(t *testing.T) {
 				Warnings:  []string{"a"},
 			},
 			expectedErr: &Error{
-				Type:     ErrBadResponse,
-				Msg:      "inconsistent body for response code",
-				warnings: []string{"a"},
+				Type: ErrBadResponse,
+				Msg:  "inconsistent body for response code",
 			},
+			expectedWarnings: []string{"a"},
 		},
 	}
 
@@ -861,24 +1072,140 @@ func TestAPIClientDo(t *testing.T) {
 
 			tc.ch <- test
 
-			_, body, err := client.Do(context.Background(), tc.req)
+			_, body, warnings, err := client.Do(context.Background(), tc.req)
+
+			if test.expectedWarnings != nil {
+				if !reflect.DeepEqual(test.expectedWarnings, warnings) {
+					t.Fatalf("mismatch in warnings expected=%v actual=%v", test.expectedWarnings, warnings)
+				}
+			} else {
+				if warnings != nil {
+					t.Fatalf("unexpexted warnings: %v", warnings)
+				}
+			}
 
 			if test.expectedErr != nil {
-				testutil.NotOk(t, err)
-				testutil.Equals(t, test.expectedErr.Error(), err.Error())
+				if err == nil {
+					t.Fatal("expected error, but got none")
+				}
+
+				if test.expectedErr.Error() != err.Error() {
+					t.Fatalf("expected error:%v, but got:%v", test.expectedErr.Error(), err.Error())
+				}
 
 				if test.expectedErr.Detail != "" {
 					apiErr := err.(*Error)
-					testutil.Equals(t, apiErr.Detail, test.expectedErr.Detail)
+					if apiErr.Detail != test.expectedErr.Detail {
+						t.Fatalf("expected error detail :%v, but got:%v", apiErr.Detail, test.expectedErr.Detail)
+					}
 				}
 
-				testutil.Equals(t, test.expectedErr.Warnings(), err.Warnings())
 				return
 			}
-			testutil.Ok(t, err)
 
-			testutil.Equals(t, test.expectedBody, string(body))
+			if err != nil {
+				t.Fatalf("unexpected error:%v", err)
+			}
+			if test.expectedBody != string(body) {
+				t.Fatalf("expected body :%v, but got:%v", test.expectedBody, string(body))
+			}
 		})
 
+	}
+}
+
+func TestSamplesJsonSerialization(t *testing.T) {
+	tests := []struct {
+		point    model.SamplePair
+		expected string
+	}{
+		{
+			point:    model.SamplePair{0, 0},
+			expected: `[0,"0"]`,
+		},
+		{
+			point:    model.SamplePair{1, 20},
+			expected: `[0.001,"20"]`,
+		},
+		{
+			point:    model.SamplePair{10, 20},
+			expected: `[0.010,"20"]`,
+		},
+		{
+			point:    model.SamplePair{100, 20},
+			expected: `[0.100,"20"]`,
+		},
+		{
+			point:    model.SamplePair{1001, 20},
+			expected: `[1.001,"20"]`,
+		},
+		{
+			point:    model.SamplePair{1010, 20},
+			expected: `[1.010,"20"]`,
+		},
+		{
+			point:    model.SamplePair{1100, 20},
+			expected: `[1.100,"20"]`,
+		},
+		{
+			point:    model.SamplePair{12345678123456555, 20},
+			expected: `[12345678123456.555,"20"]`,
+		},
+		{
+			point:    model.SamplePair{-1, 20},
+			expected: `[-0.001,"20"]`,
+		},
+		{
+			point:    model.SamplePair{0, model.SampleValue(math.NaN())},
+			expected: `[0,"NaN"]`,
+		},
+		{
+			point:    model.SamplePair{0, model.SampleValue(math.Inf(1))},
+			expected: `[0,"+Inf"]`,
+		},
+		{
+			point:    model.SamplePair{0, model.SampleValue(math.Inf(-1))},
+			expected: `[0,"-Inf"]`,
+		},
+		{
+			point:    model.SamplePair{0, model.SampleValue(1.2345678e6)},
+			expected: `[0,"1234567.8"]`,
+		},
+		{
+			point:    model.SamplePair{0, 1.2345678e-6},
+			expected: `[0,"0.0000012345678"]`,
+		},
+		{
+			point:    model.SamplePair{0, 1.2345678e-67},
+			expected: `[0,"1.2345678e-67"]`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.expected, func(t *testing.T) {
+			b, err := json.Marshal(test.point)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(b) != test.expected {
+				t.Fatalf("Mismatch marshal expected=%s actual=%s", test.expected, string(b))
+			}
+
+			// To test Unmarshal we will Unmarshal then re-Marshal this way we
+			// can do a string compare, otherwise Nan values don't show equivalence
+			// properly.
+			var sp model.SamplePair
+			if err = json.Unmarshal(b, &sp); err != nil {
+				t.Fatal(err)
+			}
+
+			b, err = json.Marshal(sp)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(b) != test.expected {
+				t.Fatalf("Mismatch marshal expected=%s actual=%s", test.expected, string(b))
+			}
+		})
 	}
 }

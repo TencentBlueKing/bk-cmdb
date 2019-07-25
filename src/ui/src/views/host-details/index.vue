@@ -72,13 +72,10 @@
             active (active) {
                 if (active !== 'association') {
                     this.$store.commit('hostDetails/toggleExpandAll', false)
-                    this.$store.commit('hostDetails/setExpandIndeterminate', true)
                 }
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('HostDetails["主机详情"]'))
-            this.$store.commit('setHeaderStatus', { back: true })
             this.getData()
         },
         methods: {

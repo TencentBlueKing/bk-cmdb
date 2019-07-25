@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/common/eventclient"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/host/modulehost"
+	"configcenter/src/source_controller/coreservice/core/host/transfer"
 	"configcenter/src/storage/dal"
 )
 
@@ -26,20 +26,20 @@ var _ core.HostOperation = (*hostManager)(nil)
 type hostManager struct {
 	DbProxy    dal.RDB
 	Cache      *redis.Client
-	EventC     eventclient.Client
-	moduleHost *modulehost.ModuleHost
-	dependent  modulehost.OperationDependence
+	EventCli   eventclient.Client
+	moduleHost *transfer.TransferManager
+	dependent  transfer.OperationDependence
 }
 
 // New create a new model manager instance
-func New(dbProxy dal.RDB, cache *redis.Client, dependent modulehost.OperationDependence) core.HostOperation {
+func New(dbProxy dal.RDB, cache *redis.Client, dependent transfer.OperationDependence) core.HostOperation {
 
 	coreMgr := &hostManager{
 		DbProxy:   dbProxy,
 		Cache:     cache,
-		EventC:    eventclient.NewClientViaRedis(cache, dbProxy),
+		EventCli:  eventclient.NewClientViaRedis(cache, dbProxy),
 		dependent: dependent,
 	}
-	coreMgr.moduleHost = modulehost.New(dbProxy, cache, coreMgr.EventC, dependent)
+	coreMgr.moduleHost = transfer.New(dbProxy, cache, coreMgr.EventCli, dependent)
 	return coreMgr
 }

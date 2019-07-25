@@ -163,7 +163,7 @@ func TestIPVSStats(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	stats, err := fs.NewIPVSStats()
+	stats, err := fs.IPVSStats()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +217,7 @@ func TestParseIPPortIPv6(t *testing.T) {
 }
 
 func TestIPVSBackendStatus(t *testing.T) {
-	backendStats, err := getProcFixtures(t).NewIPVSBackendStatus()
+	backendStats, err := getProcFixtures(t).IPVSBackendStatus()
 	if err != nil {
 		t.Fatal(err)
 	}

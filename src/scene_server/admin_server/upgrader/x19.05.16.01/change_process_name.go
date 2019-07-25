@@ -27,7 +27,7 @@ func changeProcessName(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 
 	mapping := map[string]string{
 		common.BKProcessNameField: "进程别名",
-		common.BKFuncName:         "进程运行名称",
+		common.BKFuncName:         "进程名称",
 		common.BKDescriptionField: "备注",
 	}
 

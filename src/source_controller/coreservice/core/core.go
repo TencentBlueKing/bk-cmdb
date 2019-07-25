@@ -16,6 +16,8 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/selector"
+	"context"
 )
 
 // ModelAttributeGroup model attribute group methods definitions
@@ -129,19 +131,29 @@ type DataSynchronizeOperation interface {
 
 // TopoOperation methods
 type TopoOperation interface {
-	SearchMainlineModelTopo(withDetail bool) (*metadata.TopoModelNode, error)
-	SearchMainlineInstanceTopo(objID int64, withDetail bool) (*metadata.TopoInstanceNode, error)
+	SearchMainlineModelTopo(ctx context.Context, withDetail bool) (*metadata.TopoModelNode, error)
+	SearchMainlineInstanceTopo(ctx context.Context, objID int64, withDetail bool) (*metadata.TopoInstanceNode, error)
 }
 
 // HostOperation methods
 type HostOperation interface {
-	TransferHostToInnerModule(ctx ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error)
-	TransferHostModule(ctx ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
-	RemoveHostFromModule(ctx ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error)
-	TransferHostCrossBusiness(ctx ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
+	TransferToInnerModule(ctx ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error)
+	TransferToNormalModule(ctx ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
+	TransferToAnotherBusiness(ctx ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
+	RemoveFromModule(ctx ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error)
+	DeleteFromSystem(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
 	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error)
-	DeleteHost(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
 	Identifier(ctx ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
+
+	LockHost(params ContextParams, input *metadata.HostLockRequest) errors.CCError
+	UnlockHost(params ContextParams, input *metadata.HostLockRequest) errors.CCError
+	QueryHostLock(params ContextParams, input *metadata.QueryHostLockRequest) ([]metadata.HostLockData, errors.CCError)
+
+	// cloud sync
+	CreateCloudSyncTask(ctx ContextParams, input *metadata.CloudTaskList) (uint64, error)
+	CreateResourceConfirm(ctx ContextParams, input *metadata.ResourceConfirm) (uint64, error)
+	CreateCloudSyncHistory(ctx ContextParams, input *metadata.CloudHistory) (uint64, error)
+	CreateConfirmHistory(ctx ContextParams, input mapstr.MapStr) (uint64, error)
 }
 
 // AssociationOperation association methods
@@ -166,6 +178,7 @@ type Core interface {
 	HostOperation() HostOperation
 	AuditOperation() AuditOperation
 	ProcessOperation() ProcessOperation
+	LabelOperation() LabelOperation
 }
 
 // ProcessOperation methods
@@ -197,8 +210,11 @@ type ProcessOperation interface {
 	GetServiceInstance(ctx ContextParams, templateID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	UpdateServiceInstance(ctx ContextParams, instanceID int64, instance metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	ListServiceInstance(ctx ContextParams, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
+	ListServiceInstanceDetail(ctx ContextParams, option metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder)
 	DeleteServiceInstance(ctx ContextParams, serviceInstanceIDs []int64) errors.CCErrorCoder
 	AutoCreateServiceInstanceModuleHost(ctx ContextParams, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	RemoveTemplateBindingOnModule(ctx ContextParams, moduleID int64) errors.CCErrorCoder
+	ReconstructServiceInstanceName(ctx ContextParams, instanceID int64) errors.CCErrorCoder
 
 	// process instance relation
 	CreateProcessInstanceRelation(ctx ContextParams, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
@@ -208,6 +224,12 @@ type ProcessOperation interface {
 	DeleteProcessInstanceRelation(ctx ContextParams, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
 
 	GetBusinessDefaultSetModuleInfo(ctx ContextParams, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder)
+	GetProc2Module(ctx ContextParams, option *metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder)
+}
+
+type LabelOperation interface {
+	AddLabel(ctx ContextParams, tableName string, option selector.LabelAddOption) errors.CCErrorCoder
+	RemoveLabel(ctx ContextParams, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder
 }
 
 type core struct {
@@ -219,10 +241,13 @@ type core struct {
 	host            HostOperation
 	audit           AuditOperation
 	process         ProcessOperation
+	label           LabelOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, process ProcessOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation,
+	dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation,
+	audit AuditOperation, process ProcessOperation, label LabelOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -232,6 +257,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		host:            host,
 		audit:           audit,
 		process:         process,
+		label:           label,
 	}
 }
 
@@ -265,4 +291,8 @@ func (m *core) AuditOperation() AuditOperation {
 
 func (m *core) ProcessOperation() ProcessOperation {
 	return m.process
+}
+
+func (m *core) LabelOperation() LabelOperation {
+	return m.label
 }

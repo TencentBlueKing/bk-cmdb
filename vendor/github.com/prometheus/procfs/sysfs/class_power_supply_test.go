@@ -16,26 +16,26 @@
 package sysfs
 
 import (
-	"encoding/json"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
-func TestNewPowerSupplyClass(t *testing.T) {
+func TestPowerSupplyClass(t *testing.T) {
 	fs, err := NewFS(sysTestFixtures)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("failed to open filesystem: %v", err)
 	}
 
-	psc, err := fs.NewPowerSupplyClass()
+	got, err := fs.PowerSupplyClass()
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("failed to parse power supply class: %v", err)
 	}
 
 	var (
-		acOnline             int64 = 0
+		acOnline             int64
 		bat0Capacity         int64 = 98
-		bat0CycleCount       int64 = 0
+		bat0CycleCount       int64
 		bat0EnergyFull       int64 = 50060000
 		bat0EnergyFullDesign int64 = 47520000
 		bat0EnergyNow        int64 = 49450000
@@ -45,7 +45,7 @@ func TestNewPowerSupplyClass(t *testing.T) {
 		bat0VoltageNow       int64 = 12229000
 	)
 
-	powerSupplyClass := PowerSupplyClass{
+	want := PowerSupplyClass{
 		"AC": {
 			Name:   "AC",
 			Type:   "Mains",
@@ -72,9 +72,7 @@ func TestNewPowerSupplyClass(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(powerSupplyClass, psc) {
-		want, _ := json.Marshal(powerSupplyClass)
-		get, _ := json.Marshal(psc)
-		t.Errorf("Result not correct: want %v, have %v.", string(want), string(get))
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("unexpected power supply class (-want +got):\n%s", diff)
 	}
 }
