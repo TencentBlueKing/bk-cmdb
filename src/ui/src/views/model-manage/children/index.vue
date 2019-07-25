@@ -101,7 +101,7 @@
             <bk-tab-panel name="field" :label="$t('ModelManagement[\'模型字段\']')">
                 <the-field ref="field" v-if="tab.active === 'field'"></the-field>
             </bk-tab-panel>
-            <bk-tab-panel name="relation" :label="$t('ModelManagement[\'模型关联\']')" :show="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
+            <bk-tab-panel name="relation" :label="$t('ModelManagement[\'模型关联\']')" :visible="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
             </bk-tab-panel>
             <bk-tab-panel name="verification" :label="$t('ModelManagement[\'唯一校验\']')">
