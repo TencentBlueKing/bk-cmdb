@@ -13,13 +13,13 @@
 package service
 
 import (
-	"configcenter/src/common/util"
 	"encoding/json"
 	"strconv"
 	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/common/version"
 
 	"github.com/gin-gonic/gin"
