@@ -63,7 +63,7 @@ func (lgc *Logics) NewSynchronizeItem(version int64, syncConfig *options.ConfigI
 }
 
 func (s *synchronizeItem) configPretreatment() {
-	if len(s.config.ObjectIDArr) > 0 && s.config.WiteList {
+	if len(s.config.ObjectIDArr) > 0 && s.config.WhiteList {
 		objectIDArr := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
 		s.config.ObjectIDArr = append(s.config.ObjectIDArr, objectIDArr...)
 	}
@@ -261,7 +261,7 @@ func (s *synchronizeItem) synchronizeModelTask(ctx context.Context) ([]metadata.
 	var errorInfoArr []metadata.ExceptionResult
 	baseCondition := condition.CreateCondition()
 	if len(s.config.ObjectIDArr) > 0 {
-		if s.config.WiteList {
+		if s.config.WhiteList {
 			baseCondition.Field(common.BKObjIDField).In(s.config.ObjectIDArr)
 		} else {
 			baseCondition.Field(common.BKObjIDField).NotIn(s.config.ObjectIDArr)
