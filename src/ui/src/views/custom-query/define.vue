@@ -39,7 +39,6 @@
                     {{$t("CustomQuery['查询内容']")}}<span class="color-danger"> * </span>
                 </label>
                 <div class="userapi-content-display">
-                    <!-- <div class="userapi-content-display-mask" v-if="attribute.isShow"></div> -->
                     <bk-select class="fl"
                         ref="content"
                         searchable
@@ -48,6 +47,9 @@
                         :clearable="false"
                         :scroll-height="200"
                         :disabled="!editable"
+                        :popover-options="{
+                            offset: 100
+                        }"
                         @toggle="toggleContentSelector">
                         <div class="text-content" slot="trigger"
                             v-cursor="{

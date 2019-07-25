@@ -178,7 +178,9 @@
                 filterCondition: [],
                 defaultIpConfig,
                 isScrolling: false,
-                collectionName: ''
+                collectionName: '',
+                propertyPromise: null,
+                propertyResolver: null
             }
         },
         computed: {
@@ -205,9 +207,18 @@
             },
             filterCondition () {
                 this.checkIsScrolling()
+            },
+            properties (properties) {
+                this.propertyResolver && this.propertyResolver()
             }
         },
         created () {
+            this.propertyPromise = new Promise((resolve, reject) => {
+                this.propertyResolver = () => {
+                    this.propertyResolver = null
+                    resolve()
+                }
+            })
             this.initCustomFilterIP()
             this.initCustomFilterList()
         },
@@ -366,8 +377,9 @@
                 })
                 return list
             },
-            setFilterCondition () {
+            async setFilterCondition () {
                 try {
+                    await this.propertyPromise
                     const filterCondition = []
                     const oldCondition = this.filterCondition
                     this.filterList.forEach(filter => {

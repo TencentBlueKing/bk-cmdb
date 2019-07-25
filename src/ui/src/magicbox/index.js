@@ -24,7 +24,7 @@ import {
     bkInfoBox,
     bkSearchSelect,
     locale as magicboxLocale
-} from '@tencent/bk-magic-vue'
+} from 'bk-magic-vue'
 
 Vue.use(bkButton)
 Vue.use(bkInput)
