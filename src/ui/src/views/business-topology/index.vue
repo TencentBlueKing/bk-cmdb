@@ -68,7 +68,7 @@
     .tree-layout {
         width: 280px;
         height: 100%;
-        padding: 20px 0 20px 20px;
+        padding: 20px 0;
         border-right: 1px solid $cmdbBorderColor;
     }
     .tab-layout {
