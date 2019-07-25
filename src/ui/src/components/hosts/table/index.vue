@@ -68,6 +68,7 @@
                     </div>
                 </bk-select>
                 <cmdb-host-filter class="ml10"
+                    v-if="showCollection"
                     ref="hostFilter"
                     :properties="filterProperties"
                     :show-scope="showScope">
@@ -99,7 +100,8 @@
                 :key="column.id"
                 :label="column.name"
                 :sortable="column.sortable"
-                :prop="column.id">
+                :prop="column.id"
+                :fixed="column.id === 'bk_host_innerip'">
                 <template slot-scope="{ row }">
                     {{getHostCellText(column, row)}}
                 </template>
@@ -690,9 +692,10 @@
     }
     .collection-create {
         display: inline-block;
+        width: 60%;
         font-size: 12px;
         color: #63656E;
-        line-height: 16px;
+        line-height: 32px;
         cursor: pointer;
         &:hover {
             color: #3a84ff;

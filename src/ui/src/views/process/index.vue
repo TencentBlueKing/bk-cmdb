@@ -87,13 +87,13 @@
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
                 </bk-tab-panel>
-                <bk-tab-panel name="moduleBind" :label="$t('ProcessManagement[\'模块绑定\']')" :show="attribute.type === 'details'">
+                <bk-tab-panel name="moduleBind" :label="$t('ProcessManagement[\'模块绑定\']')" :visible="attribute.type === 'details'">
                     <v-module v-if="tab.active === 'moduleBind'"
                         :process-id="attribute.inst.details['bk_process_id']"
                         :biz-id="bizId">
                     </v-module>
                 </bk-tab-panel>
-                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type === 'details'">
+                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :visible="attribute.type === 'details'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="process"
                         :inst-id="attribute.inst.details['bk_process_id']">

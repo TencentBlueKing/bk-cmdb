@@ -414,6 +414,7 @@
         "唯一校验": "Unique check",
         "校验规则": "Regex",
         "是否为必须校验": "Is required",
+        "属性为空值是否校验": "Whether to check the null value",
         "新建校验": "New rule",
         "编辑校验": "Modify rule",
         "是": "Yes",
@@ -432,7 +433,8 @@
         "停用模型提示": "No model disabled",
         "模型顶部提示": "The model can view and dynamically change the current data structure of the CMDB. For example, a new device needs to be recorded to the CMDB, which can be implemented by creating a new corresponding model.",
         "业务层级提示": "The service level shows the hierarchical settings of the current service topology. You can modify the attributes of each layer or increase the topology level according to the needs of the enterprise.",
-        "关联关系提示": "The “association type” is the classification associated with the model. For example, the relationship between the host and the switch can be classified as “uplink” type."
+        "关联关系提示": "The “association type” is the classification associated with the model. For example, the relationship between the host and the switch can be classified as “uplink” type.",
+        "添加字段": "Add field"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
@@ -895,7 +897,7 @@
         "服务分类": "Service category",
         "服务模板信息": "Service template info",
         "确认解除模板": "Confirm to unbind template?",
-        "解除模板影响": "Unbind service template will cause those effects：<br><br> &nbsp;&nbsp; 1. Service instance will not synchronous template anymore.<br> &nbsp;&nbsp;2. Can not use template to create instance anymore. ",
+        "解除模板影响": "Unbind the {name} service template will cause those effects：<br><br> &nbsp;&nbsp; 1. Service instance will not synchronous template anymore.<br> &nbsp;&nbsp;2. Can not use template to create instance anymore. ",
         "服务实例": "Service instance",
         "节点信息": "Node info",
         "源实例主机提示": "Please update process, can not repeat with source instance",
@@ -924,7 +926,8 @@
         "服务实例名重复": "Service instance name can only enter one",
         "跳转模板添加进程": "Jump template add process",
         "创建实例提示": "You have not created any service instances yet,",
-        "模板未添加进程": "No process added, please add to the template and sync"
+        "模板未添加进程": "No process added, please add to the template and sync",
+        "跳转服务拓扑": "Jump service topology"
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",

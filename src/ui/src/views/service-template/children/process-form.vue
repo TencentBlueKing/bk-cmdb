@@ -122,7 +122,7 @@
                     {
                         'name': '127.0.0.1',
                         'type': 'text',
-                        'is_default': false,
+                        'is_default': true,
                         'id': '1'
                     },
                     {

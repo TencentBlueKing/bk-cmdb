@@ -38,7 +38,7 @@
                         @click="handleDropGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-plus-circle-shape"
-                        v-bk-tooltips="$t('ModelManagement[\'新建字段\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'添加字段\']')"
                         @click="handleAddProperty(group)">
                     </i>
                     <i class="options-icon bk-icon icon-delete"
@@ -72,7 +72,7 @@
                 <template v-if="!group.properties.length">
                     <li class="property-empty" v-if="updateAuth && isEditable(group.info)"
                         @click="handleAddProperty(group)">
-                        {{$t('ModelManagement["立即添加"]')}}
+                        {{$t('ModelManagement["添加字段"]')}}
                     </li>
                     <li class="property-empty disabled" v-else>{{$t('ModelManagement["暂无字段"]')}}</li>
                 </template>

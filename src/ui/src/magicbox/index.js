@@ -24,13 +24,16 @@ import {
     bkInfoBox,
     bkSearchSelect,
     locale as magicboxLocale
-} from 'bk-magic-vue'
+} from '@tencent/bk-magic-vue'
 
 Vue.use(bkButton)
 Vue.use(bkInput)
 Vue.use(bkTab)
 Vue.use(bkTabPanel)
-Vue.use(bkSideslider)
+Vue.use(bkSideslider, {
+    quickClose: true,
+    width: 800
+})
 Vue.use(bkSelect)
 Vue.use(bkOption)
 Vue.use(bkOptionGroup)

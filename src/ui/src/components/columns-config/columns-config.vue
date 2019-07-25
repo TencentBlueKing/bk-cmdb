@@ -186,6 +186,7 @@
 <style lang="scss" scoped>
     .config-layout{
         height: 100%;
+        font-size: 14px;
     }
     .config-wrapper{
         width: 50%;
