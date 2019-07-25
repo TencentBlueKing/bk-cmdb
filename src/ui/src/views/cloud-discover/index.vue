@@ -130,7 +130,7 @@
                             @cancel="closeSlider">
                         </v-task-details>
                     </bk-tab-panel>
-                    <bk-tab-panel name="history" :label="$t('Cloud[\'同步历史\']')" :show="['update', 'details'].includes(attribute.type)">
+                    <bk-tab-panel name="history" :label="$t('Cloud[\'同步历史\']')" :visible="['update', 'details'].includes(attribute.type)">
                         <v-sync-history
                             :cur-push="curPush">
                         </v-sync-history>

@@ -111,7 +111,7 @@
                         @on-cancel="handleCancel">
                     </cmdb-form>
                 </bk-tab-panel>
-                <bk-tab-panel name="relevance" :label="$t('HostResourcePool[\'关联\']')" v-if="attribute.type !== 'create'">
+                <bk-tab-panel name="relevance" :label="$t('HostResourcePool[\'关联\']')" :visible="attribute.type !== 'create'">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
@@ -119,7 +119,7 @@
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tab-panel>
-                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" v-if="attribute.type !== 'create'">
+                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :visible="attribute.type !== 'create'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="biz"
                         :inst-id="attribute.inst.details['bk_biz_id']">
