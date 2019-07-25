@@ -34,6 +34,7 @@ import (
 
 // ImportInst import inst
 func (s *Service) ImportInst(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	logics.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
 	language := logics.GetLanguageByHTTPRequest(c)
@@ -58,7 +59,12 @@ func (s *Service) ImportInst(c *gin.Context) {
 	dir := webCommon.ResourcePath + "/import/"
 	_, err = os.Stat(dir)
 	if nil != err {
-		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
+		if err != nil {
+			blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %+v, rid: %s", dir, err, rid)
+		}
+		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
+		}
 	}
 	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
 	err = c.SaveUploadedFile(file, filePath)
@@ -67,7 +73,11 @@ func (s *Service) ImportInst(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	defer os.Remove(filePath)
+	defer func() {
+		if err := os.Remove(filePath); err != nil {
+			blog.Errorf("os.Remove failed, filename: %s, err: %+v, rid: %s", filePath, err, rid)
+		}
+	}()
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
@@ -140,7 +150,10 @@ func (s *Service) ExportInst(c *gin.Context) {
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	_, err = os.Stat(dirFileName)
 	if nil != err {
-		os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm)
+		blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %+v, rid: %s", dirFileName, err, rid)
+		if err := os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
+		}
 	}
 	fileName := fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano())
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
@@ -157,5 +170,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 	}
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
 	c.File(dirFileName)
-	os.Remove(dirFileName)
+	if err := os.Remove(dirFileName); err != nil {
+		blog.Errorf("remove file %s failed, err: %+v, rid: %s", dirFileName, err, rid)
+	}
 }

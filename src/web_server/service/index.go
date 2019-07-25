@@ -82,7 +82,9 @@ func (s *Service) Index(c *gin.Context) {
 		session.Set("modelPrivi", string(strModelPrivi))
 		session.Set("sysPrivi", string(strSysPrivi))
 		session.Set("mainLineObjID", string(mainLineObjIDStr))
-		session.Save()
+		if err := session.Save(); err != nil {
+			blog.Errorf("save session failed, err: %+v, rid: %s", err, rid)
+		}
 
 		// set cookie
 		appIDArr := make([]string, 0)

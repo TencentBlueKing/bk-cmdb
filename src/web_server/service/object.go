@@ -51,6 +51,7 @@ var sortFields = []string{
 
 // ImportObject import object attribute
 func (s *Service) ImportObject(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	logics.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
 	ctx := util.NewContextFromGinContext(c)
@@ -58,7 +59,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-	pheader := c.Request.Header
+	header := c.Request.Header
 
 	file, err := c.FormFile("file")
 	if nil != err {
@@ -77,7 +78,12 @@ func (s *Service) ImportObject(c *gin.Context) {
 	dir := webCommon.ResourcePath + "/import/"
 	_, err = os.Stat(dir)
 	if nil != err {
-		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
+		if err != nil {
+			blog.Warnf("os.Stat failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
+		}
+		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
+		}
 	}
 	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
 	err = c.SaveUploadedFile(file, filePath)
@@ -86,7 +92,11 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	defer os.Remove(filePath)
+	defer func() {
+		if err := os.Remove(filePath); err != nil {
+			blog.Errorf("os.Remove failed, filename: %s, err: %+v, rid: %s", filePath, err, rid)
+		}
+	}()
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
@@ -94,7 +104,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, pheader, 3, false, defLang, metaInfo)
+	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, header, 3, false, defLang, metaInfo)
 	if 0 == len(attrItems) {
 		var msg string
 		if nil != err {
@@ -291,7 +301,10 @@ func (s *Service) ExportObject(c *gin.Context) {
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	_, err = os.Stat(dirFileName)
 	if nil != err {
-		os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm)
+		blog.Warnf("os.Stat failed, will retry with os.MkdirAll, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
+		if err := os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
+		}
 	}
 	fileName := fmt.Sprintf("%d_%s.xlsx", time.Now().UnixNano(), objID)
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
@@ -303,6 +316,8 @@ func (s *Service) ExportObject(c *gin.Context) {
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_model_%s.xlsx", objID))
 	c.File(dirFileName)
 
-	os.Remove(dirFileName)
+	if err := os.Remove(dirFileName); err != nil {
+		blog.Errorf("os.Remove failed, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
+	}
 
 }

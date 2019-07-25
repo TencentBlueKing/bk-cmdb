@@ -281,7 +281,8 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 }
 
 // ProductExcelHealer Excel文件头部，
-func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+func productExcelHealer(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	type excelHeader struct {
 		first  string
@@ -302,7 +303,8 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		isRequire := ""
 
 		if field.IsRequire {
-			isRequire = defLang.Language("web_excel_header_required") //"(必填)"
+			// "(必填)"
+			isRequire = defLang.Language("web_excel_header_required")
 		}
 		if util.Contains(filter, field.ID) {
 			continue
@@ -331,7 +333,9 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 			if ok {
 				enumVals := getEnumNames(optionArr)
 				dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-				dd.SetDropList(enumVals)
+				if err := dd.SetDropList(enumVals); err != nil {
+					blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
+				}
 				sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
 
 			}
@@ -339,7 +343,9 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 
 		case common.FieldTypeBool:
 			dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-			dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse})
+			if err := dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse}); err != nil {
+				blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
+			}
 			sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
 			sheet.Col(index).SetType(xlsx.CellTypeString)
 		default:
@@ -351,7 +357,8 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 }
 
 // ProductExcelHealer Excel文件头部，
-func productExcelAssociationHealer(sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+func productExcelAssociationHealer(ctx context.Context, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	cellAsstID := sheet.Cell(0, assciationAsstObjIDIndex)
 	cellAsstID.SetString(defLang.Language("excel_association_object_id"))
@@ -361,7 +368,9 @@ func productExcelAssociationHealer(sheet *xlsx.Sheet, defLang lang.DefaultCCLang
 	cellOpID.SetString(defLang.Language("excel_association_op"))
 	cellOpID.SetStyle(getHeaderFirstRowCellStyle(false))
 	dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-	dd.SetDropList([]string{associationOPAdd, associationOPDelete})
+	if err := dd.SetDropList([]string{associationOPAdd, associationOPDelete}); err != nil {
+		blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
+	}
 	sheet.Col(associationOPColIndex).SetDataValidationWithStart(dd, 1)
 
 	cellSrcID := sheet.Cell(0, assciationSrcInstIndex)

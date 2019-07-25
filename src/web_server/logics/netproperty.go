@@ -48,8 +48,8 @@ func GetImportNetProperty(
 	return GetExcelData(ctx, sheet, fields, nil, true, 0, defLang)
 }
 
-func BuildNetPropertyExcelFromData(defLang language.DefaultCCLanguageIf, fields map[string]Property, data []mapstr.MapStr, sheet *xlsx.Sheet) error {
-	productExcelHealer(fields, nil, sheet, defLang)
+func BuildNetPropertyExcelFromData(ctx context.Context, defLang language.DefaultCCLanguageIf, fields map[string]Property, data []mapstr.MapStr, sheet *xlsx.Sheet) error {
+	productExcelHealer(ctx, fields, nil, sheet, defLang)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
 	for _, row := range data {
@@ -98,6 +98,7 @@ func (lgc *Logics) GetNetPropertyData(header http.Header, netPropertyIDStr strin
 
 // BuildNetPropertyExcelTemplate  return httpcode, error
 func BuildNetPropertyExcelTemplate(header http.Header, defLang language.DefaultCCLanguageIf, filename string) error {
+	ctx := util.NewContextFromHTTPHeader(header)
 	rid := util.GetHTTPCCRequestID(header)
 	var file *xlsx.File
 	file = xlsx.NewFile()
@@ -112,7 +113,7 @@ func BuildNetPropertyExcelTemplate(header http.Header, defLang language.DefaultC
 
 	blog.V(5).Infof("[Build NetProperty Excel Template]  fields count:%d, rid: %s", len(fields), rid)
 
-	productExcelHealer(fields, nil, sheet, defLang)
+	productExcelHealer(ctx, fields, nil, sheet, defLang)
 
 	if err = file.Save(filename); nil != err {
 		return err

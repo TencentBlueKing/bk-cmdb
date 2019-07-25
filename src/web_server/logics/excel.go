@@ -51,7 +51,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 	}
 
 	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
-	productExcelHealer(fields, filter, sheet, ccLang)
+	productExcelHealer(ctx, fields, filter, sheet, ccLang)
 	// indexID := getFieldsIDIndexMap(fields)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
@@ -97,7 +97,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	fields = addExtFields(fields, extFields)
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang)
 
-	productExcelHealer(fields, filter, sheet, ccLang)
+	productExcelHealer(ctx, fields, filter, sheet, ccLang)
 
 	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
 	// indexID := getFieldsIDIndexMap(fields)
@@ -155,7 +155,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		blog.Errorf("setExcelRowDataByIndex add excel  assocation sheet error. err:%s, rid:%s", err.Error(), rid)
 		return err
 	}
-	productExcelAssociationHealer(sheet, lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header)))
+	productExcelAssociationHealer(ctx, sheet, lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header)))
 
 	rowIndex := common.HostAddMethodExcelAssociationIndexOffset
 	for _, inst := range instAsst {
@@ -215,11 +215,11 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 		return err
 	}
 	blog.V(5).Infof("BuildExcelTemplate fields count:%d, rid: %s", fields, rid)
-	productExcelHealer(fields, filterFields, sheet, defLang)
+	productExcelHealer(ctx, fields, filterFields, sheet, defLang)
 	ProductExcelCommentSheet(ctx, file, defLang)
 
-	err = file.Save(filename)
-	if nil != err {
+	if err = file.Save(filename); nil != err {
+		blog.Errorf("save file failed, filename: %s, err: %+v, rid: %s", filename, err, rid)
 		return err
 	}
 
@@ -233,13 +233,13 @@ func AddDownExcelHttpHeader(c *gin.Context, name string) {
 		c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	}
 	c.Header("Accept-Ranges", "bytes")
-	c.Header("Content-Disposition", "attachment; filename="+name) //文件名
+	c.Header("Content-Disposition", "attachment; filename="+name) // 文件名
 	c.Header("Cache-Control", "must-revalidate, post-check=0, pre-check=0")
 	c.Header("Pragma", "no-cache")
 	c.Header("Expires", "0")
 }
 
-//GetExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
+// GetExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
 func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, defFields common.KvMap, isCheckHeader bool, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
 
 	var err error
@@ -338,12 +338,12 @@ func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) map[int]metadata.E
 	return asstInfoArr
 }
 
-//GetFilterFields 不需要展示字段
+// GetFilterFields 不需要展示字段
 func GetFilterFields(objID string) []string {
 	return getFilterFields(objID)
 }
 
-//GetCustomFields 用户展示字段export时优先排序
+// GetCustomFields 用户展示字段export时优先排序
 func GetCustomFields(filterFields []string, customFieldsStr string) []string {
 	return getCustomFields(filterFields, customFieldsStr)
 }
