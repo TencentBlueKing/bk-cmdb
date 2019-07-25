@@ -117,7 +117,7 @@ func (s *Service) ExportNetDevice(c *gin.Context) {
 	fields := logics.GetNetDevicefield(defLang)
 	logics.AddNetDeviceExtFields(fields, defLang)
 
-	if err = logics.BuildNetDeviceExcelFromData(defLang, fields, deviceInfo, sheet); nil != err {
+	if err = logics.BuildNetDeviceExcelFromData(ctx, defLang, fields, deviceInfo, sheet); nil != err {
 		blog.Errorf("[Export Net Device] build net device excel data error:%s, rid: %s", err.Error(), rid)
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
@@ -219,7 +219,12 @@ func openDeviceUploadedFile(c *gin.Context, defErr errors.DefaultCCErrorIf) (fil
 		return nil, err, errMsg
 	}
 
-	defer os.Remove(filePath) // del file
+	defer func() {
+		// del file
+		if err := os.Remove(filePath); err != nil {
+			blog.Errorf("os.Remove failed, filename: %s, err: %+v, rid: %s", filePath, err, rid)
+		}
+	}()
 
 	file, err = xlsx.OpenFile(filePath)
 	if nil != err {

@@ -37,9 +37,9 @@ func SetProxyHeader(c *gin.Context) {
 func GetLanguageByHTTPRequest(c *gin.Context) string {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
-	cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
-	if "" != cookieLanuage && nil == err {
-		return cookieLanuage
+	cookieLanguage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
+	if "" != cookieLanguage && nil == err {
+		return cookieLanguage
 	}
 
 	session := sessions.Default(c)
