@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div class="operate-menus" v-if="!editModel">
+        <div class="operate-menus">
             <div class="menu-items menu-items-blue" @click="goRouter('business')">
                 <div class="item-left">
                     <span>{{ navData.biz }}</span>
@@ -28,10 +28,14 @@
                     <i class="menu-icon icon-cc-nav-model"></i>
                 </div>
             </div>
-            <div class="menu-items menu-items-white" @click="goRouter('index')">
+            <div class="menu-items menu-items-white">
                 <div class="item-left">
                     <span>{{ navData.inst }}</span>
-                    <span>{{$t('Operation["实例总数"]')}}<bk-tooltip :content="tooltip" :width="'100px'" :placement="'right'"><i class="menu-icon icon-cc-attribute"></i></bk-tooltip></span>
+                    <span>{{$t('Operation["实例总数"]')}}
+                        <bk-tooltip :content="tooltip" :width="'100px'" :placement="'right'">
+                            <i class="menu-icon icon-cc-attribute"></i>
+                        </bk-tooltip>
+                    </span>
                 </div>
                 <div class="item-right item-right-right">
                     <i class="icon icon-cc-op-example"></i>
@@ -39,13 +43,10 @@
             </div>
         </div>
         <div class="operation-top">
-            <span class="operation-edit" v-if="!editModel" @click="editModel = true">
-                <i class="icon icon-cc-edit"></i>{{$t('Operation["编辑图表"]')}}</span>
-            <div class="exit-edit" v-if="editModel">
-                <span>{{$t('Operation["所有更改已实时保存"]')}}</span>
-                <span @click="editCancel()"> {{$t('Operation["退出编辑"]')}}</span>
-            </div>
             <span class="operation-title">{{$t('Operation["主机统计"]')}}</span>
+            <i class="icon icon-cc-rect-add" @click="openNew('add', 'host')">
+                <div class="title-block">{{$t('Operation["添加主机图表"]')}}</div>
+            </i>
         </div>
         <div v-for="(item, key) in hostData.disList"
             :key="item.report_type + item.config_id"
@@ -57,9 +58,18 @@
                 </div>
                 <div class="operation-charts" :id="item.report_type + item.config_id"></div>
                 <div v-if="item.noData" class="null-data">
-                    <span>暂无数据</span>
+                    <span>{{$t('Common["暂无数据"]')}}</span>
                 </div>
-                <div class="charts-options" v-if="editModel">
+                <div class="chart-date" v-if="item.showDate">
+                    <cmdb-form-date-range
+                        class="options-filter"
+                        :auto-close="true"
+                        :position="'left'"
+                        v-model="dateRange"
+                        @on-change="dateChange">
+                    </cmdb-form-date-range>
+                </div>
+                <div class="charts-options">
                     <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
                         @click="moveChart('host', 'up', key, hostData.disList)"></i>
                     <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === hostData.disList.length - 1 }"
@@ -71,13 +81,11 @@
                 </div>
             </div>
         </div>
-        <div class="add-parent">
-            <div class="operation-add" v-if="editModel" @click="openNew('add', 'host')">
-                <span><i class="bk-icon icon-plus"></i>{{$t('Operation["新增图表"]')}}</span>
-            </div>
-        </div>
         <div class="operation-top">
             <span class="operation-title">{{$t('Operation["实例统计"]')}}</span>
+            <i class="icon icon-cc-rect-add" @click="openNew('add', 'inst')">
+                <div class="title-block">{{$t('Operation["添加实例图表"]')}}</div>
+            </i>
         </div>
         <div v-for="(item, key) in instData.disList"
             :key="item.report_type + item.config_id"
@@ -89,9 +97,9 @@
                 </div>
                 <div class="operation-charts" :id="item.report_type + item.config_id"></div>
                 <div v-if="item.noData" class="null-data">
-                    <span>暂无数据</span>
+                    <span>{{$t('Common["暂无数据"]')}}</span>
                 </div>
-                <div class="charts-options" v-if="editModel">
+                <div class="charts-options">
                     <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
                         @click="moveChart('inst', 'up', key, instData.disList)"></i>
                     <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === instData.disList.length - 1 }"
@@ -100,11 +108,6 @@
                     <i class="icon icon-cc-tips-close"
                         @click="deleteChart('inst', key, instData.disList, item.config_id)"></i>
                 </div>
-            </div>
-        </div>
-        <div class="add-parent">
-            <div class="operation-add" v-if="editModel" @click="openNew('add', 'inst')">
-                <span><i class="bk-icon icon-plus"></i>{{$t('Operation["新增图表"]')}}</span>
             </div>
         </div>
         <v-detail v-if="isShow"
@@ -128,8 +131,7 @@
         },
         data () {
             return {
-                tooltip: '不包含业务、主机模型及实例',
-                editModel: false,
+                tooltip: this.$t('Operation["不包含业务、主机模型及实例"]'),
                 isShow: false,
                 newChart: {},
                 editType: {
@@ -149,7 +151,9 @@
                     module: '',
                     inst: '',
                     model: ''
-                }
+                },
+                dateRange: [],
+                dateChart: {}
             }
         },
         created () {
@@ -213,7 +217,8 @@
                 const returnData = {
                     data: [],
                     minTime: '',
-                    maxTime: ''
+                    maxTime: '',
+                    maxRange: 0
                 }
                 if (res && Array.isArray(res)) {
                     const content = {
@@ -230,7 +235,10 @@
                                 size: '12'
                             }
                         },
-                        marker: { size: 16, color: [] },
+                        marker: {
+                            size: 16,
+                            color: []
+                        },
                         mode: 'markers',
                         textinfo: 'none',
                         hole: 0.7,
@@ -321,17 +329,46 @@
                         }
                     }
                 }
+                returnData.maxRange = this.computeRange(returnData.minTime, returnData.maxTime)
                 return returnData
             },
             drawCharts (item) {
+                const layConfig = {
+                    type: 'category',
+                    nticks: 0,
+                    range: [-0.5, item.x_axis_count - 0.5],
+                    fixRange: item.x_axis_count > item.data.data[0].x.length,
+                    colorway: ['#3A84FF', '#A3C5FD', '#59D178', '#94F5A4', '#38C1E2', '#A1EDFF', '#4159F9', '#7888F0', '#EFAF4B', '#FEDB89', '#FF5656', '#FD9C9C'],
+                    legend: {
+                        orientation: 'h',
+                        xanchor: 'auto',
+                        yanchor: 'bottom',
+                        valign: 'bottom',
+                        x: 0.48,
+                        y: -0.5
+                    }
+                }
                 const myDiv = item.report_type + item.config_id
                 const data = item.data.data
                 if (!item.hasData) this.$set(item, 'noData', true)
-                let type = 'category'
-                let range = [-0.5, item.x_axis_count - 0.5]
+                if (item.chart_type === 'pie') {
+                    layConfig.legend = {
+                        xanchor: 'auto',
+                        yanchor: 'auto',
+                        valign: 'right',
+                        y: 0.5
+                    }
+                }
                 if (item.report_type === 'host_change_biz_chart') {
-                    type = 'date'
-                    range = [item.data.minTime, item.data.maxTime]
+                    layConfig.type = 'date'
+                    layConfig.range = [item.data.minTime, item.data.maxTime]
+                    this.dateRange = layConfig.range
+                    this.dateChart = item
+                    this.$set(item, 'showDate', true)
+                    const minus = this.computeRange(item.data.minTime, item.data.maxTime)
+                    layConfig.fixRange = item.data.maxRange <= minus
+                    layConfig.nticks = minus % 2 === 0 ? minus : (minus + 1)
+                    layConfig.colorway = ['#3A84FF', '#59D178', '#38C1E2', '#4159F9', '#EFAF4B', '#FF5656', '#904DF7', '#CA78F0', '#B9E145', '#F6E354']
                 }
                 const layout = {
                     title: ``,
@@ -340,7 +377,7 @@
                     margin: {
                         l: 50,
                         r: 50,
-                        t: 50,
+                        t: 30,
                         b: 50
                     },
                     yaxis: {
@@ -348,15 +385,21 @@
                         rangemode: 'tozero'
                     },
                     xaxis: {
-                        type: type,
-                        range: range,
+                        showline: true,
+                        linecolor: '#BFBFBF',
+                        type: layConfig.type,
+                        nticks: 20,
+                        range: layConfig.range,
+                        showgrid: false,
                         autorange: false,
-                        tickformat: '%Y-%m-%d'
+                        tickformat: '%Y-%m-%d',
+                        fixedrange: layConfig.fixRange
                     },
                     bargap: 0.1,
                     bargroupgap: 1.0044 - (0.0401 * item.x_axis_count),
                     dragmode: 'pan',
-                    colorway: ['#3A84FF', '#A3C5FD', '#59D178', '#94F5A4', '#38C1E2', '#A1EDFF', '#4159F9', '#7888F0', '#EFAF4B', '#FEDB89', '#FF5656', '#FD9C9C']
+                    colorway: layConfig.colorway,
+                    legend: layConfig.legend
                 }
                 if (item.report_type !== 'model_inst_change_chart') layout.hovermode = 'closest'
                 const options = {
@@ -415,9 +458,6 @@
                     Plotly.restyle(myDiv, update, [0, 2])
                 }
             },
-            editCancel () {
-                this.editModel = false
-            },
             moveChart (type, dire, key, list) {
                 if (dire === 'up' && key !== 0) {
                     list[key] = list.splice(key - 1, 1, list[key])[0]
@@ -431,6 +471,7 @@
             deleteChart (type, key, list, id) {
                 this.$bkInfo({
                     title: this.$tc('Operation["是否确认删除"]'),
+                    content: '确定要删除【主机-操作系统占比图表】',
                     confirmFn: () => {
                         list.splice(key, 1)
                         if (type === 'host') this.hostData.disList = list
@@ -447,6 +488,7 @@
                 this.editType.key = key
                 if (type === 'edit') {
                     this.newChart = this.$tools.clone(data)
+                    this.newChart.title = data.name
                 } else {
                     this.newChart = {
                         report_type: 'custom',
@@ -499,6 +541,18 @@
             },
             goRouter (route) {
                 this.$router.push(route)
+            },
+            dateChange (date) {
+                this.dateChart.data.maxTime = date[1]
+                this.dateChart.data.minTime = date[0]
+                this.editType.openType = 'edit'
+                this.drawCharts(this.dateChart)
+            },
+            computeRange (date1, date2) {
+                const time1 = new Date(date1)
+                const time2 = new Date(date2)
+                const minus = Math.abs(time1.getTime() - time2.getTime())
+                return minus / 86400000
             }
         }
     }
@@ -509,64 +563,54 @@
         margin: 0;
         padding: 0
     }
+    .title-block{
+        display: none;
+        position: absolute;
+        width: max-content;
+        top: -140%;
+        left: -50%;
+        color: #fff;
+        height: 24px;
+        padding: 0 5px;
+        line-height: 22px;
+        font-size: 12px;
+        border-radius: 3px;
+        transform: translate(-20px);
+        background: rgba(0,0,0,0.8);
+    }
+    .title-block:before{
+        position: absolute;
+        content: "";
+        width: 0;
+        height: 0;
+        left: 50%;
+        transform: translate(-5px);
+        bottom: -5px;
+        border-left: 5px solid transparent;
+        border-top: 5px solid rgba(0,0,0,0.8);
+        border-right: 5px solid transparent;
+    }
     .operation-top{
-        margin-top: 33px;
-        margin-left: 10px;
+        padding: 10px 15px;
+        margin-top: 30px;
         .operation-title{
             display: inline-block;
-            width: 64px;
-            height: 21px;
             font-size: 16px;
             font-weight: bold;
-            color: rgba(49,50,56,1);
-            line-height: 21px;
+            color: #313238;
+            vertical-align: middle;
         }
-        .exit-edit{
-            width: calc(100% - 60px);
-            height: 46px;
-            text-align: center;
-            background: rgba(225,236,255,1);
-            border: 1px solid rgba(220,222,229,1);
-            line-height: 46px;
-            position: fixed;
-            z-index: 1;
-            top: 60px;
-            left: 60px;
-            span{
-                &:first-child{
-                    width: 126px;
-                    height: 19px;
-                    font-size: 14px;
-                    color: rgba(49,50,56,1);
-                    line-height: 19px;
-                 }
-                &:last-child{
-                    display: inline-block;
-                    position: absolute;
-                    top: 7px;
-                    right: 15px;
-                    width: 86px;
-                    height: 32px;
-                    background: rgba(58,132,255,1);
-                    border-radius: 2px;
-                    font-size: 14px;
-                    font-weight: 400;
-                    color: rgba(255,255,255,1);
-                    line-height: 32px;
-                 }
-            }
-        }
-        .operation-edit{
-            display: inline-block;
+        i{
+            position: relative;
+            color: #3A84FF;
+            font-size: 22px;
             cursor: pointer;
-            float: right;
-            margin-right: 10px;
-            height: 19px;
-            font-size: 14px;
-            color: rgba(58,132,255,1);
-            line-height: 19px;
-            i{
-                margin-right: 5px;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+        i:hover{
+            .title-block {
+                display: block;
             }
         }
     }
@@ -587,6 +631,7 @@
             height: 100%;
             margin: 10px;
             float: left;
+            cursor: pointer;
             box-shadow: 0 2px 4px 0 rgba(220,222,229,1);
             border-radius: 4px;
             position: relative;
@@ -639,7 +684,7 @@
                  border-radius: 50%;
                i{
                    color: white;
-                   font-size: 34px;
+                   font-size: 24px;
                }
             }
         }
@@ -647,8 +692,9 @@
     .operation-layout{
         display: inline-block;
         position: relative;
-        padding: 10px;
+        padding: 10px 10px;
         .chart-child{
+             padding: 0 10px;
              background: rgba(255,255,255,1);
              border-radius: 2px;
              border: 1px solid rgba(220,222,229,1);
@@ -658,36 +704,55 @@
                 width: 100%;
              }
         }
+        .chart-child:hover{
+            .charts-options{
+                display: block;
+            }
+            .chart-date{
+                line-height: 48px;
+                position: absolute;
+                right: 160px;
+                top: 0;
+            }
+        }
         .chart-title{
             display: block;
             height: 50px;
             border-bottom: 1px solid rgba(240,241,245,1);
             span{
-            line-height: 50px;
-            font-size: 14px;
-            font-weight: bold;
-            color: rgba(99,101,110,1);
-            margin-left: 21px;
+                line-height: 50px;
+                font-size: 14px;
+                font-weight: bold;
+                color: rgba(99,101,110,1);
+                margin-left: 21px;
             }
         }
         .charts-options{
+            display: none;
             position: absolute;
             right: 15px;
-            top: 10px;
-            color: $cmdbMainBtnColor;
+            top: 0;
+            line-height: 48px;
+            color: #3A84FF;
             i{
                 box-sizing: border-box;
                 cursor: pointer;
                 margin-left: 3px;
                 border: 1px solid rgba(99,101,110,0);
                 padding: 1px;
-                &:hover{
-                     border: 1px dashed #3A84FF;
-                 }
+            }
+        }
+        .chart-date{
+            line-height: 48px;
+            position: absolute;
+            right: 15px;
+            top: 0;
+            .options-filter{
+                width: 300px;
             }
         }
         .icon-disable{
-            color: grey;
+            color: #DCDEE5;
         }
         .icon-weight{
             padding: 0!important;
@@ -706,32 +771,6 @@
                 font-size: 14px;
                 color: rgba(151,155,165,1);
                 line-height: 19px;
-            }
-        }
-    }
-    .add-parent{
-        width: 100%;
-        padding: 10px;
-        .operation-add{
-            width: 100%;
-            height: 49px;
-            line-height: 49px;
-            border: 1px dashed rgba(58,132,255,1);
-            font-size: 15px;
-            color: rgba(58,132,255,1);
-            box-shadow: 1px 2px 4px 0 rgba(51, 60, 72, 0.06);
-            text-align: center;
-            cursor: pointer;
-            &:hover{
-                background: rgba(225,236,255,1);
-             }
-            span{
-                display: inline-block;
-                i{
-                    font-weight: bold;
-                    vertical-align: baseline;
-                    margin-right: 10px;
-                }
             }
         }
     }
