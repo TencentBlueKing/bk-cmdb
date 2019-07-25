@@ -78,7 +78,7 @@ func (fi *FetchInst) Fetch(ctx context.Context, objID string, start, limit int64
 			conds.Field(common.BKDefaultField).Eq(0)
 		}
 		if len(fi.syncConfig.AppNames) > 0 {
-			if fi.syncConfig.WiteList {
+			if fi.syncConfig.WhiteList {
 				conds.Field(common.BKAppNameField).In(fi.syncConfig.AppNames)
 			} else {
 				conds.Field(common.BKAppNameField).NotIn(fi.syncConfig.AppNames)
