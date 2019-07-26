@@ -57,6 +57,9 @@ type HostClientInterface interface {
 
 	GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error)
 	GetModulesHostConfig(ctx context.Context, h http.Header, option metadata.HostModuleRelationRequest) (resp *metadata.HostConfig, err error)
+
+	// search host
+	ListHostByTopoNode(ctx context.Context, header http.Header, option metadata.ListHostByTopoNodeOption) (resp metadata.ListHostResult, err error)
 }
 
 func NewHostClientInterface(client rest.ClientInterface) HostClientInterface {
