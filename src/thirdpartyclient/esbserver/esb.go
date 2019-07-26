@@ -39,7 +39,7 @@ type esbsrv struct {
 	userSrv    user.UserClientInterface
 	nodemanSrv nodeman.NodeManClientInterface
 	sync.RWMutex
-	esbConfig *esbutil.EsbConfigServ
+	esbConfig *esbutil.EsbConfigSrv
 	c         *util.Capability
 }
 
@@ -51,7 +51,7 @@ func NewEsb(apiMachineryConfig *util.APIMachineryConfig, config chan esbutil.Esb
 		return nil, err
 	}
 	flowcontrol := flowctrl.NewRateLimiter(apiMachineryConfig.QPS, apiMachineryConfig.Burst)
-	esbConfig := esbutil.NewEsbConfigServ(config)
+	esbConfig := esbutil.NewEsbConfigSrv(config)
 
 	esbCapability := &util.Capability{
 		Client:   client,
@@ -93,7 +93,7 @@ func (e *esbsrv) NodemanSrv() nodeman.NodeManClientInterface {
 	return srv
 }
 
-func (e *esbsrv) GetEsbConfigSrv() *esbutil.EsbConfigServ {
+func (e *esbsrv) GetEsbConfigSrv() *esbutil.EsbConfigSrv {
 	return e.esbConfig
 }
 

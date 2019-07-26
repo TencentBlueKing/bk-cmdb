@@ -15,47 +15,50 @@ import (
 	"sync"
 )
 
-type EsbConfigServ struct {
+type EsbConfigSrv struct {
 	addrs     string
 	appCode   string
 	appSecret string
 	sync.RWMutex
 }
 
-type EsbServDiscoveryInterace interface {
+type EsbSrvDiscoveryInterface interface {
 	GetServers() ([]string, error)
 }
 
-func NewEsbConfigServ(srvChan chan EsbConfig) *EsbConfigServ {
-	esb := &EsbConfigServ{}
-	if nil == srvChan {
-		return esb
-	}
+func NewEsbConfigSrv(srvChan chan EsbConfig) *EsbConfigSrv {
+	esb := &EsbConfigSrv{}
 
-	// sync waiting for config ready
-	config := <-srvChan
-	esb.Lock()
-	esb.addrs = config.Addrs
-	esb.appCode = config.AppCode
-	esb.appSecret = config.AppSecret
-	esb.Unlock()
+	go func() {
+		if nil == srvChan {
+			return
+		}
+		for {
+			config := <-srvChan
+			esb.Lock()
+			esb.addrs = config.Addrs
+			esb.appCode = config.AppCode
+			esb.appSecret = config.AppSecret
+			esb.Unlock()
+		}
+	}()
 
 	return esb
 }
 
-func (esb *EsbConfigServ) GetEsbServDiscoveryInterace() EsbServDiscoveryInterace {
-	// mabye will deal some logic about server
+func (esb *EsbConfigSrv) GetEsbServDiscoveryInterace() EsbSrvDiscoveryInterface {
+	// maybe will deal some logic about server
 	return esb
 }
 
-func (esb *EsbConfigServ) GetServers() ([]string, error) {
-	// mabye will deal some logic about server
+func (esb *EsbConfigSrv) GetServers() ([]string, error) {
+	// maybe will deal some logic about server
 	esb.RLock()
 	defer esb.RUnlock()
 	return []string{esb.addrs}, nil
 }
 
-func (esb *EsbConfigServ) GetConfig() EsbConfig {
+func (esb *EsbConfigSrv) GetConfig() EsbConfig {
 	esb.RLock()
 	defer esb.RUnlock()
 	return EsbConfig{
