@@ -101,7 +101,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	httpCli := httpclient.NewHttpClient()
 	httpCli.SetTimeOut(30 * time.Second)
 	if err := httpCli.SetTlsNoVerity(); err != nil {
-		blog.Warnf("", err, rid)
+		blog.Warnf("httpCli.SetTlsNoVerity failed, err: %+v, rid: %s", err, rid)
 	}
 	loginResultByteArr, err := httpCli.GET(loginURL, nil, nil)
 
