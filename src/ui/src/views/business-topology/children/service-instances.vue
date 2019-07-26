@@ -524,7 +524,9 @@
                 if (Object.keys(changedValues).length) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('Common["确认退出"]'),
+                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.handleCloseProcessForm()
                             },
@@ -582,7 +584,8 @@
                 }
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认删除实例"]'),
-                    content: this.$t('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
+                    subTitle: this.$t('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
+                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         try {
                             const serviceInstanceIds = this.checked.map(instance => instance.id)

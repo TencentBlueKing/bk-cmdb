@@ -354,7 +354,8 @@
             handleDeleteInstance () {
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认删除实例"]'),
-                    content: this.$t('BusinessTopology["即将删除实例"]', { name: this.instance.name }),
+                    subTitle: this.$t('BusinessTopology["即将删除实例"]', { name: this.instance.name }),
+                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         try {
                             await this.$store.dispatch('serviceInstance/deleteServiceInstance', {

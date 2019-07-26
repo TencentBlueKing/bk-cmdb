@@ -235,7 +235,7 @@
             deleteTemplate (template) {
                 this.$bkInfo({
                     title: this.$t("ServiceManagement['确认删除模版']"),
-                    content: this.$tc("ServiceManagement['即将删除服务模版']", name, { name: template.name }),
+                    subTitle: this.$tc("ServiceManagement['即将删除服务模版']", name, { name: template.name }),
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({
                             params: {

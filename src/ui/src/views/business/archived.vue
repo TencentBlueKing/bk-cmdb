@@ -130,7 +130,7 @@
             handleRecovery (biz) {
                 this.$bkInfo({
                     title: this.$t('Inst["是否确认恢复业务？"]'),
-                    content: this.$t('Inst["恢复业务提示"]', { bizName: biz['bk_biz_name'] }),
+                    subTitle: this.$t('Inst["恢复业务提示"]', { bizName: biz['bk_biz_name'] }),
                     confirmFn: () => {
                         this.recoveryBiz(biz)
                     }

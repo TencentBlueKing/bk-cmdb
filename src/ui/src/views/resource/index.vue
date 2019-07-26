@@ -230,7 +230,7 @@
                 } else {
                     this.$bkInfo({
                         title: this.$t("HostResourcePool['请确认是否转移']"),
-                        content: this.getConfirmContent(business),
+                        subTitle: this.getConfirmContent(business),
                         confirmFn: () => {
                             this.assignHosts(business)
                         },
