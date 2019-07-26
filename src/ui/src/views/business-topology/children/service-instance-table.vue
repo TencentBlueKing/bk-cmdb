@@ -117,7 +117,7 @@
                     </button>
                 </span>
             </template>
-            <div class="add-process-options" v-if="!withTemplate && list.length" slot="append">
+            <!-- <div class="add-process-options" v-if="!withTemplate && list.length" slot="append">
                 <span style="display: inline-block;"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.C_PROCESS),
@@ -130,7 +130,7 @@
                         <span>{{$t('BusinessTopology["添加进程"]')}}</span>
                     </button>
                 </span>
-            </div>
+            </div> -->
         </bk-table>
         <bk-dialog class="bk-dialog-no-padding"
             v-model="editLabel.show"
