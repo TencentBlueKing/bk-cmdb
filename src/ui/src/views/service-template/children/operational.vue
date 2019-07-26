@@ -440,7 +440,9 @@
                 if (hasChanged) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('Common["确认退出"]'),
+                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 resolve(true)
                             },

@@ -414,7 +414,7 @@
                 if (asstNum) {
                     this.$bkInfo({
                         title: this.$t('ModelManagement["移除失败"]'),
-                        content: this.$tc('ModelManagement["移除失败提示"]', asstNum, { asstNum })
+                        subTitle: this.$tc('ModelManagement["移除失败提示"]', asstNum, { asstNum })
                     })
                 }
                 return !!asstNum
@@ -428,7 +428,7 @@
                 }
                 this.$bkInfo({
                     title: this.$t('ModelManagement["确定移除模型?"]'),
-                    content: this.$t('ModelManagement["移除模型提示"]'),
+                    subTitle: this.$t('ModelManagement["移除模型提示"]'),
                     confirmFn: () => {
                         const node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
                         node.position = { x: null, y: null }

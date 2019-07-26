@@ -204,7 +204,7 @@
                 params['bk_resource_id'] = this.table.checked
                 this.$bkInfo({
                     title: this.$t("Cloud['批量资源确认']"),
-                    content: this.batchConfirmTips,
+                    subTitle: this.batchConfirmTips,
                     confirmFn: async () => {
                         await this.handleConfirm(params)
                         this.$success(this.$t('Cloud["资源批量确认确认成功"]'))
@@ -219,7 +219,7 @@
                 params['bk_resource_id'] = arr
                 this.$bkInfo({
                     title: this.$t("Cloud['资源确认']"),
-                    content: this.$t("Cloud['确认后的资源实例将被录入到主机资源池中']"),
+                    subTitle: this.$t("Cloud['确认后的资源实例将被录入到主机资源池中']"),
                     confirmFn: async () => {
                         await this.handleConfirm(params)
                         this.$success(this.$t('Cloud["确认成功"]'))

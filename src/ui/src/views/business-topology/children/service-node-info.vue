@@ -443,9 +443,10 @@
             handleDelete () {
                 this.$bkInfo({
                     title: `${this.$t('Common["确定删除"]')} ${this.selectedNode.name}?`,
-                    content: this.modelId === 'module'
+                    subTitle: this.modelId === 'module'
                         ? this.$t('BusinessTopology["删除模块提示"]')
                         : this.$t('Common[\'下属层级都会被删除，请先转移其下所有的主机\']'),
+                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         const promiseMap = {
                             set: this.deleteSetInstance,

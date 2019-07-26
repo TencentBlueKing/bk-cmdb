@@ -177,7 +177,7 @@
                 }
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认删除实例"]'),
-                    content: this.$t('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
+                    subTitle: this.$t('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
                     confirmFn: async () => {
                         try {
                             const serviceInstanceIds = this.checked.map(instance => instance.id)
