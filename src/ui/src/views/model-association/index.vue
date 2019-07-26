@@ -83,15 +83,17 @@
             class="relation-slider"
             :width="450"
             :title="slider.title"
-            :is-show.sync="slider.isShow">
+            :is-show.sync="slider.isShow"
+            :before-close="handleSliderBeforeClose">
             <the-relation
+                ref="relationForm"
                 slot="content"
                 class="slider-content"
                 v-if="slider.isShow"
                 :is-edit="slider.isEdit"
                 :relation="slider.relation"
                 @saved="saveRelation"
-                @cancel="slider.isShow = false">
+                @cancel="handleSliderBeforeClose">
             </the-relation>
         </bk-sideslider>
     </div>
@@ -234,6 +236,27 @@
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)
                 this.searchRelation()
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["确认退出"]'),
+                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            extCls: 'bk-dialog-sub-header-center',
+                            confirmFn: () => {
+                                this.slider.isShow = false
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.slider.isShow = false
+                return true
             }
         }
     }
