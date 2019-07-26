@@ -92,7 +92,7 @@ func (d *DataCollection) Run() error {
 		blog.Infof("[data-collection][RUN]connected to snap-redis %+v", d.Config.SnapRedis.Config)
 		snapChanName := d.getSnapChanName(defaultAppID)
 		hostsnapCollector := hostsnap.NewHostSnap(d.ctx, redisCli, db)
-		snapPorter := BuildChanPorter("hostsnap", hostsnapCollector, redisCli, snapcli, snapChanName, hostsnap.MockMessage, d.registry)
+		snapPorter := BuildChanPorter("hostsnap", hostsnapCollector, redisCli, snapcli, snapChanName, hostsnap.MockMessage, d.registry, d.Engine)
 		man.AddPorter(snapPorter)
 	}
 
@@ -106,7 +106,7 @@ func (d *DataCollection) Run() error {
 		blog.Infof("[data-collection][RUN]connected to discover-redis %+v", d.Config.DiscoverRedis.Config)
 		discoverChanName := d.getDiscoverChanName(defaultAppID)
 		middlewareCollector := middleware.NewDiscover(d.ctx, redisCli, d.Engine)
-		middlewarePorter := BuildChanPorter("middleware", middlewareCollector, redisCli, disCli, discoverChanName, middleware.MockMessage, d.registry)
+		middlewarePorter := BuildChanPorter("middleware", middlewareCollector, redisCli, disCli, discoverChanName, middleware.MockMessage, d.registry, d.Engine)
 		man.AddPorter(middlewarePorter)
 	}
 
@@ -120,7 +120,7 @@ func (d *DataCollection) Run() error {
 		blog.Infof("[data-collection][RUN]connected to netcollect-redis %+v", d.Config.NetCollectRedis.Config)
 		netDevChanName := d.getNetcollectChanName(defaultAppID)
 		netCollector := netcollect.NewNetCollect(d.ctx, db)
-		netCollectPorter := BuildChanPorter("netcollect", netCollector, redisCli, netCli, netDevChanName, netcollect.MockMessage, d.registry)
+		netCollectPorter := BuildChanPorter("netcollect", netCollector, redisCli, netCli, netDevChanName, netcollect.MockMessage, d.registry, d.Engine)
 		man.AddPorter(netCollectPorter)
 	}
 

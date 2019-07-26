@@ -62,7 +62,10 @@ func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		return err
 	}
 
-	enumOpts := validator.ParseEnumOption(ostypeProperty.Option)
+	enumOpts, err := validator.ParseEnumOption(ostypeProperty.Option)
+	if err != nil {
+		return err
+	}
 	for _, enum := range enumOpts {
 		if enum.ID == "3" {
 			return nil
