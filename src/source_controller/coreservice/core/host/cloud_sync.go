@@ -19,56 +19,56 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (h *hostManager) CreateCloudSyncTask(ctx core.ContextParams, input *metadata.CloudTaskList) (uint64, error) {
-	id, err := h.DbProxy.NextSequence(ctx, common.BKTableNameCloudTask)
+func (hm *hostManager) CreateCloudSyncTask(ctx core.ContextParams, input *metadata.CloudTaskList) (uint64, error) {
+	id, err := hm.DbProxy.NextSequence(ctx, common.BKTableNameCloudTask)
 	if err != nil {
 		return 0, err
 	}
 
 	input.TaskID = int64(id)
-	if err := h.DbProxy.Table(common.BKTableNameCloudTask).Insert(ctx, input); err != nil {
+	if err := hm.DbProxy.Table(common.BKTableNameCloudTask).Insert(ctx, input); err != nil {
 		return 0, err
 	}
 
 	return id, nil
 }
 
-func (h *hostManager) CreateResourceConfirm(ctx core.ContextParams, input *metadata.ResourceConfirm) (uint64, error) {
-	id, err := h.DbProxy.NextSequence(ctx, common.BKTableNameCloudResourceConfirm)
+func (hm *hostManager) CreateResourceConfirm(ctx core.ContextParams, input *metadata.ResourceConfirm) (uint64, error) {
+	id, err := hm.DbProxy.NextSequence(ctx, common.BKTableNameCloudResourceConfirm)
 	if err != nil {
 		return 0, err
 	}
 
 	input.ResourceID = int64(id)
-	if err := h.DbProxy.Table(common.BKTableNameCloudResourceConfirm).Insert(ctx, input); err != nil {
+	if err := hm.DbProxy.Table(common.BKTableNameCloudResourceConfirm).Insert(ctx, input); err != nil {
 		return 0, err
 	}
 
 	return id, nil
 }
 
-func (h *hostManager) CreateCloudSyncHistory(ctx core.ContextParams, input *metadata.CloudHistory) (uint64, error) {
-	id, err := h.DbProxy.NextSequence(ctx, common.BKTableNameCloudSyncHistory)
+func (hm *hostManager) CreateCloudSyncHistory(ctx core.ContextParams, input *metadata.CloudHistory) (uint64, error) {
+	id, err := hm.DbProxy.NextSequence(ctx, common.BKTableNameCloudSyncHistory)
 	if err != nil {
 		return 0, err
 	}
 
 	input.HistoryID = int64(id)
-	if err := h.DbProxy.Table(common.BKTableNameCloudSyncHistory).Insert(ctx, input); err != nil {
+	if err := hm.DbProxy.Table(common.BKTableNameCloudSyncHistory).Insert(ctx, input); err != nil {
 		return 0, err
 	}
 
 	return id, nil
 }
 
-func (h *hostManager) CreateConfirmHistory(ctx core.ContextParams, input mapstr.MapStr) (uint64, error) {
-	id, err := h.DbProxy.NextSequence(ctx, common.BKTableNameResourceConfirmHistory)
+func (hm *hostManager) CreateConfirmHistory(ctx core.ContextParams, input mapstr.MapStr) (uint64, error) {
+	id, err := hm.DbProxy.NextSequence(ctx, common.BKTableNameResourceConfirmHistory)
 	if err != nil {
 		return 0, err
 	}
 
 	input[common.CloudSyncConfirmHistoryID] = id
-	if err := h.DbProxy.Table(common.BKTableNameResourceConfirmHistory).Insert(ctx, input); err != nil {
+	if err := hm.DbProxy.Table(common.BKTableNameResourceConfirmHistory).Insert(ctx, input); err != nil {
 		return 0, err
 	}
 

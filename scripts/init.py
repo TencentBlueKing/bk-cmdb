@@ -328,11 +328,11 @@ check_url = ${paas_url}/login/accounts/get_user/?bk_token=
 bk_account_url = ${paas_url}/login/accounts/get_all_user/?bk_token=%s
 resources_path = /tmp/
 html_root = $ui_root
-authscheme = $auth_scheme
 full_text_search = $full_text_search
 
 [app]
 agent_app_url = ${agent_url}/console/?app=bk_agent_setup
+authscheme = $auth_scheme
 '''
     template = FileTemplate(webserver_file_template_str)
     result = template.substitute(**context)
