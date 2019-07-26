@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gse
+package user
 
 import (
 	"context"
@@ -20,22 +20,18 @@ import (
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
-type GseClientInterface interface {
-	OperateProcess(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
-	QueryProcOperateResult(ctx context.Context, h http.Header, taskid string) (resp *metadata.GseProcessOperateTaskResult, err error)
-	QueryProcStatus(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
-	RegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
-	UnRegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
+type UserClientInterface interface {
+	GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.EsbUserListResponse, err error)
 }
 
-func NewGsecClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) GseClientInterface {
-	return &gse{
+func NewUserClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) UserClientInterface {
+	return &user{
 		client: client,
 		config: config,
 	}
 }
 
-type gse struct {
+type user struct {
 	config *esbutil.EsbConfigSrv
 	client rest.ClientInterface
 }

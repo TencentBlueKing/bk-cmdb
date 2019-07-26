@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
@@ -432,4 +433,28 @@ func (h *host) GetModulesHostConfig(ctx context.Context, header http.Header, opt
 		Do().
 		Into(resp)
 	return
+}
+
+func (h *host) ListHostByTopoNode(ctx context.Context, header http.Header, option metadata.ListHostByTopoNodeOption) (metadata.ListHostResult, error) {
+	type Result struct {
+		metadata.BaseResp `json:",inline"`
+		Data              metadata.ListHostResult `json:"data"`
+	}
+	result := Result{}
+	subPath := "/findmany/hosts/list_by_topo_node"
+
+	err := h.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&result)
+	if err != nil {
+		return result.Data, err
+	}
+	if result.Code > 0 || result.Result == false {
+		return result.Data, errors.NewCCError(result.Code, result.ErrMsg)
+	}
+	return result.Data, nil
 }

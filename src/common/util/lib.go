@@ -15,6 +15,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -72,6 +73,16 @@ func ExtractRequestIDFromContext(ctx context.Context) string {
 		return ridValue
 	}
 	return ""
+}
+
+func NewContextFromGinContext(c *gin.Context) context.Context {
+	return NewContextFromHTTPHeader(c.Request.Header)
+}
+
+func NewContextFromHTTPHeader(header http.Header) context.Context {
+	rid := GetHTTPCCRequestID(header)
+	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+	return ctx
 }
 
 func ExtractRequestUserFromContext(ctx context.Context) string {

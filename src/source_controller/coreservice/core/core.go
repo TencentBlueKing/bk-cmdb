@@ -154,6 +154,9 @@ type HostOperation interface {
 	CreateResourceConfirm(ctx ContextParams, input *metadata.ResourceConfirm) (uint64, error)
 	CreateCloudSyncHistory(ctx ContextParams, input *metadata.CloudHistory) (uint64, error)
 	CreateConfirmHistory(ctx ContextParams, input mapstr.MapStr) (uint64, error)
+
+	// host search
+	ListHostByTopoNode(ctx ContextParams, input metadata.ListHostByTopoNodeOption) (*metadata.ListHostResult, error)
 }
 
 // AssociationOperation association methods

@@ -34,6 +34,13 @@ type BasePage struct {
 	Start int    `json:"start,omitempty"`
 }
 
+func (page BasePage) Validate() (string, error) {
+	if page.Limit > common.BKMaxPageSize {
+		return "limit", fmt.Errorf("exceed max page size: %d", common.BKMaxPageSize)
+	}
+	return "", nil
+}
+
 func ParsePage(origin interface{}) BasePage {
 	if origin == nil {
 		return BasePage{Limit: common.BKNoLimit}
