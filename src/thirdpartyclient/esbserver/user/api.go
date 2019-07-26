@@ -9,26 +9,28 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package user
 
 import (
-	"plugin"
+	"context"
+	"net/http"
 
-	"configcenter/src/common/backbone"
-	"configcenter/src/web_server/app/options"
-
-	"github.com/gin-gonic/gin"
-	redis "gopkg.in/redis.v5"
+	"configcenter/src/common/metadata"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
-type User interface {
-	LoginUser(c *gin.Context) (isLogin bool)
-	GetUserList(c *gin.Context) (int, interface{})
-	GetLoginUrl(c *gin.Context) string
-}
+func (p *user) GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.EsbUserListResponse, err error) {
+	resp = &metadata.EsbUserListResponse{}
+	subPath := "/v2/usermanage/get_all_users/"
+	h.Set("Accept", "application/json")
 
-// NewUser return user instance by type
-func NewUser(config options.Config, engin *backbone.Engine, cacheCli *redis.Client, loginPlg *plugin.Plugin) User {
-	return &publicUser{config, engin, cacheCli, loginPlg}
+	err = p.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
 }

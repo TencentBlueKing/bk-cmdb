@@ -13,6 +13,7 @@
 package user
 
 import (
+	"configcenter/src/common/util"
 	"context"
 	"fmt"
 	"net/http"
@@ -53,7 +54,8 @@ func (m *OwnerManager) SetHttpHeader(key, val string) {
 }
 
 func (m *OwnerManager) InitOwner() error {
-	blog.V(5).Infof("init owner %s", m.OwnerID)
+	rid := util.GetHTTPCCRequestID(m.header)
+	blog.V(5).Infof("init owner %s, rid: %s", m.OwnerID, rid)
 
 	exist, err := m.defaultAppIsExist()
 	if err != nil {
@@ -64,13 +66,13 @@ func (m *OwnerManager) InitOwner() error {
 		for {
 			ok, err := rediscli.SetNX(common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID, m.OwnerID, 60*time.Second).Result()
 			if nil != err {
-				blog.Errorf("owner_init_lock error %s", err.Error())
+				blog.Errorf("owner_init_lock error %s, rid: %s", err.Error(), rid)
 				return err
 			}
 			if ok {
 				defer func() {
 					if err := rediscli.Del(common.BKCacheKeyV3Prefix + "owner_init_lock:" + m.OwnerID).Err(); err != nil {
-						blog.Errorf("owner_init_lock error %s", err.Error())
+						blog.Errorf("owner_init_lock error %s, rid: %s", err.Error(), rid)
 					}
 				}()
 				break
@@ -92,7 +94,8 @@ func (m *OwnerManager) InitOwner() error {
 }
 
 func (m *OwnerManager) addDefaultApp() error {
-	blog.V(5).Infof("addDefaultApp %s", m.OwnerID)
+	rid := util.GetHTTPCCRequestID(m.header)
+	blog.V(5).Infof("addDefaultApp %s, rid: %s", m.OwnerID, rid)
 	params, err := m.getObjectFields(common.BKInnerObjIDApp)
 	if err != nil {
 		return err

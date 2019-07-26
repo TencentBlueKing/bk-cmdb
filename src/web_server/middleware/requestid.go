@@ -10,25 +10,24 @@
  * limitations under the License.
  */
 
-package user
+package middleware
 
 import (
-	"plugin"
-
-	"configcenter/src/common/backbone"
-	"configcenter/src/web_server/app/options"
-
+	"configcenter/src/common"
+	"configcenter/src/common/rdapi"
+	"configcenter/src/common/util"
 	"github.com/gin-gonic/gin"
-	redis "gopkg.in/redis.v5"
 )
 
-type User interface {
-	LoginUser(c *gin.Context) (isLogin bool)
-	GetUserList(c *gin.Context) (int, interface{})
-	GetLoginUrl(c *gin.Context) string
-}
-
-// NewUser return user instance by type
-func NewUser(config options.Config, engin *backbone.Engine, cacheCli *redis.Client, loginPlg *plugin.Plugin) User {
-	return &publicUser{config, engin, cacheCli, loginPlg}
+func RequestIDMiddleware(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	if len(rid) == 0 {
+		rid = rdapi.GetHTTPOtherRequestID(c.Request.Header)
+		if len(rid) == 0 {
+			rid = util.GenerateRID()
+		}
+		c.Request.Header.Set(common.BKHTTPCCRequestID, rid)
+	}
+	c.Header(common.BKHTTPCCRequestID, rid)
+	c.Next()
 }

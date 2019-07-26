@@ -15,13 +15,14 @@ package logics
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
 )
 
 func SetProxyHeader(c *gin.Context) {
-	//http request header add user
+	// http request header add user
 	session := sessions.Default(c)
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
 	language, _ := session.Get(common.WEBSessionLanguageKey).(string)
@@ -34,10 +35,11 @@ func SetProxyHeader(c *gin.Context) {
 }
 
 func GetLanguageByHTTPRequest(c *gin.Context) string {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
-	cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
-	if "" != cookieLanuage && nil == err {
-		return cookieLanuage
+	cookieLanguage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
+	if "" != cookieLanguage && nil == err {
+		return cookieLanguage
 	}
 
 	session := sessions.Default(c)
@@ -48,7 +50,7 @@ func GetLanguageByHTTPRequest(c *gin.Context) string {
 	strLang, ok := language.(string)
 
 	if false == ok {
-		blog.Errorf("get language from session error, %v", language)
+		blog.Errorf("get language from session error, %v, rid: %s", language, rid)
 		return strLang
 	}
 

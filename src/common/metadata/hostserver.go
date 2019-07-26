@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -112,14 +114,44 @@ type HostModuleFind struct {
 	Page      BasePage `json:"page"`
 }
 
-//ip search info
+type ListHostByTopoNodeParameter struct {
+	Metadata  Metadata `json:"metadata"`
+	SetIDs    []int64  `json:"bk_set_ids"`
+	ModuleIDs []int64  `json:"bk_module_ids"`
+	Page      BasePage `json:"page"`
+}
+
+type ListHostByTopoNodeOption struct {
+	BizID     int64    `json:"bk_biz_id,omitempty"`
+	SetIDs    []int64  `json:"bk_set_ids"`
+	ModuleIDs []int64  `json:"bk_module_ids"`
+	Page      BasePage `json:"page"`
+}
+
+func (option ListHostByTopoNodeOption) Validate() (string, error) {
+	if option.SetIDs != nil && option.ModuleIDs != nil {
+		if len(option.SetIDs) > 0 && len(option.ModuleIDs) > 0 {
+			return "bk_set_ids + bk_module_ids", errors.New("set and module condition are mutually exclusive")
+		}
+	}
+	if option.BizID == 0 {
+		return "bk_biz_id", errors.New("bk_biz_id field shouldn't be empty")
+	}
+
+	if key, err := option.Page.Validate(); err != nil {
+		return fmt.Sprintf("page.%s", key), err
+	}
+	return "", nil
+}
+
+// ip search info
 type IPInfo struct {
 	Data  []string `json:"data"`
 	Exact int64    `json:"exact"`
 	Flag  string   `json:"flag"`
 }
 
-//search condition
+// search condition
 type SearchCondition struct {
 	Fields    []string        `json:"fields"`
 	Condition []ConditionItem `json:"condition"`
@@ -129,6 +161,11 @@ type SearchCondition struct {
 type SearchHost struct {
 	Count int             `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
+}
+
+type ListHostResult struct {
+	Count int                      `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
 }
 
 func (sh SearchHost) ExtractHostIDs() *[]int64 {
