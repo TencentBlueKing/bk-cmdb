@@ -24,7 +24,7 @@ type UserClientInterface interface {
 	GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.EsbUserListResponse, err error)
 }
 
-func NewUserClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigServ) UserClientInterface {
+func NewUserClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) UserClientInterface {
 	return &user{
 		client: client,
 		config: config,
@@ -32,6 +32,6 @@ func NewUserClientInterface(client rest.ClientInterface, config *esbutil.EsbConf
 }
 
 type user struct {
-	config *esbutil.EsbConfigServ
+	config *esbutil.EsbConfigSrv
 	client rest.ClientInterface
 }
