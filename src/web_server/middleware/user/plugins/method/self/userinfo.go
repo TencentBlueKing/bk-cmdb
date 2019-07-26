@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 	webCommon "configcenter/src/web_server/common"
@@ -38,7 +39,7 @@ func init() {
 		Version:    common.BKDefaultLoginUserPluginVersion,
 		HandleFunc: &user{},
 	}
-	manager.RegisterPlugin(plugin) //("blueking login system", "self", "")
+	manager.RegisterPlugin(plugin) // ("blueking login system", "self", "")
 }
 
 type loginResultData struct {
@@ -82,39 +83,42 @@ type user struct {
 
 // LoginUser  user login
 func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo, loginSucc bool) {
+	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
 
-	bk_token, err := c.Cookie(common.HTTPCookieBKToken)
+	bkToken, err := c.Cookie(common.HTTPCookieBKToken)
 	if nil != err {
 		return nil, false
 	}
-	if nil != err || 0 == len(bk_token) {
+	if nil != err || 0 == len(bkToken) {
 		return nil, false
 	}
 	checkUrl, ok := config["site.check_url"]
 	if !ok {
-		blog.Errorf("get login url config item not found")
+		blog.Errorf("get login url config item not found, rid: %s", rid)
 		return nil, false
 	}
-	loginURL := checkUrl + bk_token
+	loginURL := checkUrl + bkToken
 	httpCli := httpclient.NewHttpClient()
 	httpCli.SetTimeOut(30 * time.Second)
-	httpCli.SetTlsNoVerity()
+	if err := httpCli.SetTlsNoVerity(); err != nil {
+		blog.Warnf("", err, rid)
+	}
 	loginResultByteArr, err := httpCli.GET(loginURL, nil, nil)
 
 	if nil != err {
-		blog.Errorf("get user info return error: %v", err)
+		blog.Errorf("get user info return error: %v, rid: %s", err, rid)
 		return nil, false
 	}
-	blog.V(3).Infof("get user info cond %v, return: %s ", string(loginURL), string(loginResultByteArr))
+	blog.V(3).Infof("get user info cond %v, return: %s, rid: %s", string(loginURL), string(loginResultByteArr), rid)
 	var resultData loginResult
 	err = json.Unmarshal(loginResultByteArr, &resultData)
 	if nil != err {
-		blog.Errorf("get user info json error: %v, rawData:%s", err, string(loginResultByteArr))
+		blog.Errorf("get user info json error: %v, rawData:%s, rid: %s", err, string(loginResultByteArr), rid)
 		return nil, false
 	}
 
 	if !resultData.Result {
-		blog.Errorf("get user info return error , error code: %s, error message: %s", resultData.Code, resultData.Message)
+		blog.Errorf("get user info return error , error code: %s, error message: %s, rid: %s", resultData.Code, resultData.Message, rid)
 		return nil, false
 	}
 
@@ -128,7 +132,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 		Phone:    userDetail.Phone,
 		Email:    userDetail.Email,
 		Role:     userDetail.Role,
-		BkToken:  bk_token,
+		BkToken:  bkToken,
 		OnwerUin: userDetail.OwnerUin,
 		IsOwner:  false,
 		Language: userDetail.Language,
@@ -166,17 +170,18 @@ func (m *user) getEsbClient(config map[string]string) (esbserver.EsbClientInterf
 
 // GetUserList get user list from paas
 func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, error) {
+	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
 	accountURL, ok := config["site.bk_account_url"]
 	if !ok {
 		// try to use esb user list api
 		esbClient, err := m.getEsbClient(config)
 		if err != nil {
-			blog.Warnf("get esb client failed, err: %+v", err)
+			blog.Warnf("get esb client failed, err: %+v, rid: %s", err, rid)
 			return nil, fmt.Errorf("config site.bk_account_url not found")
 		}
 		result, err := esbClient.User().GetAllUsers(context.Background(), c.Request.Header)
 		if err != nil {
-			blog.Warnf("get users by esb client failed, http failed, err: %+v", err)
+			blog.Warnf("get users by esb client failed, http failed, err: %+v, rid: %s", err, rid)
 			return nil, fmt.Errorf("get users by esb client failed, http failed")
 		}
 		users := make([]*metadata.LoginSystemUserInfo, 0)
@@ -190,12 +195,12 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 		return users, nil
 	}
 	session := sessions.Default(c)
-	skiplogin := session.Get(webCommon.IsSkipLogin)
-	skiplogins, ok := skiplogin.(string)
-	if ok && "1" == skiplogins {
-		blog.V(5).Infof("use skip login flag: %v", skiplogin)
+	skipLogin := session.Get(webCommon.IsSkipLogin)
+	skipLogins, ok := skipLogin.(string)
+	if ok && "1" == skipLogins {
+		blog.V(5).Infof("use skip login flag: %v, rid: %s", skipLogin, rid)
 		adminData := []*metadata.LoginSystemUserInfo{
-			&metadata.LoginSystemUserInfo{
+			{
 				CnName: "admin",
 				EnName: "admin",
 			},
@@ -208,18 +213,20 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	getURL := fmt.Sprintf(accountURL, token)
 	httpClient := httpclient.NewHttpClient()
 
-	httpClient.SetTlsNoVerity()
+	if err := httpClient.SetTlsNoVerity(); err != nil {
+		blog.Warnf("httpClient.SetTlsNoVerity failed, err: %s, rid: %s", err.Error(), rid)
+	}
 	reply, err := httpClient.GET(getURL, nil, nil)
 
 	if nil != err {
-		blog.Errorf("get user list error：%v", err)
+		blog.Errorf("get user list error：%v, rid: %s", err, rid)
 		return nil, fmt.Errorf("http do error:%s", err.Error())
 	}
-	blog.V(5).Infof("get user list url: %s, return：%s", getURL, reply)
+	blog.V(5).Infof("get user list url: %s, return：%s, rid: %s", getURL, reply, rid)
 	var result userListResult
 	err = json.Unmarshal([]byte(reply), &result)
 	if nil != err || false == result.Result {
-		blog.Errorf("get user list error：%v, error code:%s, error messsage:%s", err, result.Code, result.Message)
+		blog.Errorf("get user list error：%v, error code:%s, error message: %s, rid: %s", err, result.Code, result.Message, rid)
 		return nil, fmt.Errorf("get user list reply error")
 	}
 	userListArr := make([]*metadata.LoginSystemUserInfo, 0)

@@ -32,8 +32,6 @@ import (
 	"gopkg.in/redis.v5"
 )
 
-var sLoginURL string
-
 var Engine *backbone.Engine
 var CacheCli *redis.Client
 var LoginPlg *plugin.Plugin
@@ -55,8 +53,8 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 		if isAuthed(c, config) {
 			// valid resource access privilege
 			if config.Site.AuthScheme == "internal" {
-				auth := auth.NewAuth()
-				ok := auth.ValidResAccess(pathArr, c)
+				author := auth.NewAuth()
+				ok := author.ValidResAccess(pathArr, c)
 				if false == ok {
 					c.JSON(403, gin.H{
 						"status": "access forbidden",
@@ -139,13 +137,15 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 
 		session.Set(common.WEBSessionRoleKey, "1")
 		session.Set(webCommon.IsSkipLogin, "1")
-		session.Save()
+		if err := session.Save(); err != nil {
+			blog.Warnf("save session failed, err: %s, rid: %s", err.Error(), rid)
+		}
 		return true
 	}
 	session := sessions.Default(c)
-	cc_token := session.Get(common.HTTPCookieBKToken)
+	ccToken := session.Get(common.HTTPCookieBKToken)
 	user := user.NewUser(config, Engine, CacheCli, LoginPlg)
-	if nil == cc_token {
+	if nil == ccToken {
 		return user.LoginUser(c)
 	}
 	userName, ok := session.Get(common.WEBSessionUinKey).(string)
@@ -169,9 +169,9 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 			bkTokenName = *bkPluginTokenName.(*string)
 		}
 	}
-	bk_token, err := c.Cookie(bkTokenName)
-	blog.V(5).Infof("valid user login session token %s, cookie token %s, rid: %s", cc_token, bk_token, rid)
-	if nil != err || bk_token != cc_token {
+	bkToken, err := c.Cookie(bkTokenName)
+	blog.V(5).Infof("valid user login session token %s, cookie token %s, rid: %s", ccToken, bkToken, rid)
+	if nil != err || bkToken != ccToken {
 		return user.LoginUser(c)
 	}
 	return true
