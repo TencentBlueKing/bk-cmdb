@@ -131,7 +131,8 @@
                     src_des: '',
                     dest_des: '',
                     direction: 'src_to_dest' // none, src_to_dest, bidirectional
-                }
+                },
+                originInfo: {}
             }
         },
         computed: {
@@ -144,6 +145,15 @@
                 const updateParams = { ...this.relationInfo }
                 delete updateParams['bk_asst_id']
                 return updateParams
+            },
+            changedValues () {
+                const values = {}
+                Object.keys(this.relationInfo).forEach(key => {
+                    if (this.relationInfo[key] !== this.originInfo[key]) {
+                        values[key] = this.relationInfo[key]
+                    }
+                })
+                return values
             }
         },
         created () {
@@ -152,6 +162,7 @@
                     this.relationInfo[key] = this.$tools.clone(this.relation[key])
                 }
             }
+            this.originInfo = this.$tools.clone(this.relationInfo)
         },
         methods: {
             ...mapActions('objectAssociation', [
