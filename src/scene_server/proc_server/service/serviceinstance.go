@@ -148,12 +148,13 @@ func (ps *ProcServer) ListServiceInstancesDetails(ctx *rest.Contexts) {
 	}
 
 	option := &metadata.ListServiceInstanceDetailOption{
-		BusinessID: bizID,
-		ModuleID:   input.ModuleID,
-		SetID:      input.SetID,
-		HostID:     input.HostID,
-		Page:       input.Page,
-		Selectors:  input.Selectors,
+		BusinessID:         bizID,
+		ModuleID:           input.ModuleID,
+		SetID:              input.SetID,
+		HostID:             input.HostID,
+		ServiceInstanceIDs: input.ServiceInstanceIDs,
+		Page:               input.Page,
+		Selectors:          input.Selectors,
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
