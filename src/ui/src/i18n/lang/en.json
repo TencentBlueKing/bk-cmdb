@@ -137,7 +137,8 @@
         "全部展开": "Expand all",
         "暂无数据": "No data",
         "选择日期范围": "Select date range",
-        "立即添加": "Add it now"
+        "立即添加": "Add it now",
+        "您暂无创建权限": "You have no permission to create"
     },
     "Nav": {
         "首页": "Index",
@@ -497,7 +498,7 @@
         "修改人": "Modified Person",
         "修改时间": "Update Time",
         "查询定义": "Group Definition",
-        "确认要删除": "Confirm to delete {name}?",
+        "确认要删除": "Confirm to delete {name} group?",
         "保存后的查询可通过接口调用生效": "The saved group can be validated through an interface call",
         "动态分组提示": "Dynamic grouping is mainly used to define commonly used conditional queries, and can quickly retrieve target hosts based on dynamic grouping when operating platforms or standard operations"
     },
@@ -928,7 +929,8 @@
         "跳转模板添加进程": "Jump template add process",
         "创建实例提示": "You have not created any service instances yet,",
         "模板未添加进程": "No process added, please add to the template and sync",
-        "跳转服务拓扑": "Jump service topology"
+        "跳转服务拓扑": "Jump service topology",
+        "暂无实例": "No instance"
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
