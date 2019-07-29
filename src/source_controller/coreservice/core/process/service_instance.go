@@ -21,8 +21,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+
+	"github.com/imdario/mergo"
 )
 
 func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instance metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder) {
@@ -261,7 +262,10 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 			blog.Errorf("ListServiceInstance failed, selectors to filer failed, selectors: %+v, err: %+v, rid: %s", option.Selectors, err, ctx.ReqID)
 			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "labels")
 		}
-		filter = util.MergeMaps(filter, labelFilter)
+		if err := mergo.Merge(&filter, labelFilter); err != nil {
+			blog.Errorf("ListServiceInstance failed, merge label filter to common filter failed, err: %+v, rid: %s", err, ctx.ReqID)
+			return nil, ctx.Error.CCError(common.CCErrConstructDBFilterFailed)
+		}
 	}
 
 	var total uint64
@@ -349,7 +353,10 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 			blog.Errorf("ListServiceInstance failed, selectors to filer failed, selectors: %+v, err: %+v, rid: %s", option.Selectors, err, ctx.ReqID)
 			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "labels")
 		}
-		filter = util.MergeMaps(filter, labelFilter)
+		if err := mergo.Merge(&filter, labelFilter); err != nil {
+			blog.Errorf("ListServiceInstance failed, merge label filter to common filter failed, err: %+v, rid: %s", option.Selectors, err, ctx.ReqID)
+			return nil, ctx.Error.CCError(common.CCErrConstructDBFilterFailed)
+		}
 	}
 
 	var total uint64

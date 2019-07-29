@@ -431,7 +431,7 @@ func (valid *ValidMap) validEnum(val interface{}, key string) error {
 	enumOption, err := ParseEnumOption(option.Option)
 	if err != nil {
 		blog.ErrorJSON("validEnum ParseEnumOption error:%s, option:%s", err.Error(), option.Option)
-		return valid.errif.Errorf(common.CCErrParseAttrOptionEumuFailed)
+		return valid.errif.Errorf(common.CCErrParseAttrOptionEnumFailed)
 	}
 	match := false
 	for _, k := range enumOption {
