@@ -26,6 +26,7 @@ var _ = BeforeSuite(func() {
 
 var _ = Describe("event server test", func() {
 	var _ = Describe("subscribe event test", func() {
+		var subscriptionId1, subscriptionId2 string
 		/*
 			It("ping subscription", func() {
 				input := map[string]interface{}{}
@@ -55,6 +56,10 @@ var _ = Describe("event server test", func() {
 			rsp, err := eventServerClient.Subscribe(context.Background(), "0", "0", header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
+			j, err := json.Marshal(rsp)
+			data := metadata.RspSubscriptionCreate{}
+			json.Unmarshal(j, &data)
+			subscriptionId1 = fmt.Sprintf("%d", data.Data.SubscriptionID)
 		})
 
 		It("subscribe event bk_biz_id = 0 and subscription_name = 'dwe'", func() {
@@ -70,6 +75,10 @@ var _ = Describe("event server test", func() {
 			rsp, err := eventServerClient.Subscribe(context.Background(), "0", "0", header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
+			j, err := json.Marshal(rsp)
+			data := metadata.RspSubscriptionCreate{}
+			json.Unmarshal(j, &data)
+			subscriptionId2 = fmt.Sprintf("%d", data.Data.SubscriptionID)
 		})
 
 		It("search subscribe bk_biz_id = 0", func() {
@@ -121,13 +130,13 @@ var _ = Describe("event server test", func() {
 				ConfirmPattern:   "",
 				TimeOutSeconds:   60,
 			}
-			rsp, err := eventServerClient.Rebook(context.Background(), "0", "0", "1", header, input)
+			rsp, err := eventServerClient.Rebook(context.Background(), "0", "0", subscriptionId1, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("unsubscribe event bk_biz_id = 0 and subscription_id = 2", func() {
-			rsp, err := eventServerClient.UnSubscribe(context.Background(), "0", "0", "2", header)
+			rsp, err := eventServerClient.UnSubscribe(context.Background(), "0", "0", subscriptionId2, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -157,7 +166,7 @@ var _ = Describe("event server test", func() {
 		})
 
 		It("unsubscribe event bk_biz_id = 0 and subscription_id = 1", func() {
-			rsp, err := eventServerClient.UnSubscribe(context.Background(), "0", "0", "1", header)
+			rsp, err := eventServerClient.UnSubscribe(context.Background(), "0", "0", subscriptionId1, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -224,7 +233,7 @@ var _ = Describe("event server test", func() {
 				rsp, err := eventServerClient.Subscribe(context.Background(), "0", "0", header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
-				j, err := json.Marshal(rsp.Data)
+				j, err := json.Marshal(rsp)
 				data := metadata.RspSubscriptionCreate{}
 				json.Unmarshal(j, &data)
 				subscriptionId = data.Data.SubscriptionID
@@ -453,5 +462,6 @@ var _ = Describe("event server test", func() {
 				Expect(rsp.Result).To(Equal(false))
 			})
 		})
+		test.ClearDatabase()
 	})
 })
