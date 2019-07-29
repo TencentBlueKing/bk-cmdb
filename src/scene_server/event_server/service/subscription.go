@@ -47,9 +47,25 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
+	if len(sub.SubscriptionName) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionName")})
+		return
+	}
+	if len(sub.CallbackURL) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "CallbackURL")})
+		return
+	}
+	if len(sub.SubscriptionForm) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionForm")})
+		return
+	}
 	sub.Operator = util.GetUser(req.Request.Header)
 	if sub.TimeOutSeconds <= 0 {
 		sub.TimeOutSeconds = 10
+	}
+	if sub.ConfirmMode != metadata.ConfirmModeHTTPStatus && sub.ConfirmMode != metadata.ConfirmModeRegular {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "ConfirmMode")})
+		return
 	}
 	if sub.ConfirmMode == metadata.ConfirmModeHTTPStatus && sub.ConfirmPattern == "" {
 		sub.ConfirmPattern = strconv.FormatInt(http.StatusOK, 10)
@@ -235,6 +251,25 @@ func (s *Service) UpdateSubscription(req *restful.Request, resp *restful.Respons
 		}
 		resp.WriteError(http.StatusBadRequest, result)
 		return
+	}
+	if len(sub.SubscriptionName) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionName")})
+		return
+	}
+	if len(sub.CallbackURL) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "CallbackURL")})
+		return
+	}
+	if len(sub.SubscriptionForm) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionForm")})
+		return
+	}
+	if sub.ConfirmMode != metadata.ConfirmModeHTTPStatus && sub.ConfirmMode != metadata.ConfirmModeRegular {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "ConfirmMode")})
+		return
+	}
+	if sub.ConfirmMode == metadata.ConfirmModeHTTPStatus && sub.ConfirmPattern == "" {
+		sub.ConfirmPattern = strconv.FormatInt(http.StatusOK, 10)
 	}
 	sub.Operator = util.GetUser(req.Request.Header)
 	if err = s.updateSubscription(header, id, ownerID, sub); err != nil {
