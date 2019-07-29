@@ -131,11 +131,10 @@
                                     </i>
                                     <i class="icon-cc-tips-close" v-else
                                         style="color: #c4c6cc; cursor: not-allowed;"
-                                        v-bktooltips="tooltips">
+                                        v-bk-tooltips.bottom="tooltips">
                                     </i>
                                 </div>
                             </div>
-                            <!-- <span>{{childCategory['usage_amount']}}</span> -->
                         </template>
                     </div>
                 </div>
@@ -182,8 +181,7 @@
         data () {
             return {
                 tooltips: {
-                    content: this.$t("ServiceCategory['二级分类删除提示']"),
-                    arrowsSize: 5
+                    content: this.$t("ServiceCategory['二级分类删除提示']")
                 },
                 showFeatureTips: false,
                 showAddMianCategory: false,

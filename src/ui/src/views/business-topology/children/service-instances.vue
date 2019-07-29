@@ -95,7 +95,7 @@
             </bk-pagination>
             <div class="filter-empty" v-if="!instances.length">
                 <div class="filter-empty-content">
-                    <i class="bk-icon icon-empty"></i>
+                    <img class="img-empty" src="../../../assets/images/empty-content.png" alt="">
                     <span>{{$t('BusinessTopology["暂无符合条件的实例"]')}}</span>
                 </div>
             </div>
@@ -865,11 +865,9 @@
             display: table-cell;
             vertical-align: middle;
             text-align: center;
-            .icon-empty {
+            .img-empty {
                 display: block;
-                margin: 0 0 10px 0;
-                font-size: 65px;
-                color: #c3cdd7;
+                margin: 0 auto;
             }
         }
     }

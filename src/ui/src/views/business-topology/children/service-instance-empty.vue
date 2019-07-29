@@ -1,27 +1,33 @@
 <template>
     <div class="empty">
-        <div class="empty-content" v-if="withTemplate && !templates.length">
-            <img src="../../../../static/svg/cc-empty.svg" alt="">
-            <p class="empty-text">{{$t('BusinessTopology["模板未定义进程"]', { template: (moduleNode || {}).name })}}</p>
-            <p class="empty-tips">{{$t('BusinessTopology["模板未定义进程提示"]')}}</p>
-            <div class="empty-options">
-                <bk-button class="empty-button" theme="primary" @click="goToTemplate">{{$t("BusinessTopology['跳转模板添加进程']")}}</bk-button>
-                <bk-button class="empty-button" theme="default" @click="handleAddHost">{{$t("BusinessTopology['添加主机']")}}</bk-button>
+        <div class="empty-content" v-if="isBlueKing">
+            <img class="empty-img" src="../../../assets/images/empty-content.png" alt="">
+            <span>{{$t('BusinessTopology["暂无实例"]')}}</span>
+        </div>
+        <template v-else v-bkloading="{ isLoading: $loading('getBatchProcessTemplate') }">
+            <div class="empty-content" v-if="withTemplate && !templates.length && !isSearching">
+                <img src="../../../../static/svg/cc-empty.svg" alt="">
+                <p class="empty-text">{{$t('BusinessTopology["模板未定义进程"]', { template: (moduleNode || {}).name })}}</p>
+                <p class="empty-tips">{{$t('BusinessTopology["模板未定义进程提示"]')}}</p>
+                <div class="empty-options">
+                    <bk-button class="empty-button" theme="primary" @click="goToTemplate">{{$t("BusinessTopology['跳转模板添加进程']")}}</bk-button>
+                    <bk-button class="empty-button" theme="default" @click="handleAddHost">{{$t("BusinessTopology['添加主机']")}}</bk-button>
+                </div>
             </div>
-        </div>
-        <div class="empty-content" v-else
-            v-cursor="{
-                active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
-                auth: [$OPERATION.C_SERVICE_INSTANCE]
-            }">
-            <i class="bk-icon icon-plus empty-plus"
-                @click="handleCreateServiceInstance">
-            </i>
-            <p class="empty-tips">
-                {{$t("BusinessTopology['创建实例提示']")}}
-                <a class="text-primary" href="javascript:void(0)" @click="handleCreateServiceInstance">{{$t("Common['立即添加']")}}</a>
-            </p>
-        </div>
+            <div class="empty-content" v-else-if="!isSearching"
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                    auth: [$OPERATION.C_SERVICE_INSTANCE]
+                }">
+                <i class="bk-icon icon-plus empty-plus"
+                    @click="handleCreateServiceInstance">
+                </i>
+                <p class="empty-tips">
+                    {{$t("BusinessTopology['创建实例提示']")}}
+                    <a class="text-primary" href="javascript:void(0)" @click="handleCreateServiceInstance">{{$t("Common['立即添加']")}}</a>
+                </p>
+            </div>
+        </template>
         <host-selector
             :visible.sync="visible"
             :module-instance="moduleInstance"
@@ -39,7 +45,8 @@
         data () {
             return {
                 visible: false,
-                templates: []
+                templates: [],
+                isSearching: true
             }
         },
         computed: {
@@ -62,23 +69,35 @@
             },
             withTemplate () {
                 return this.moduleNode && this.moduleInstance.service_template_id
+            },
+            isBlueKing () {
+                const node = this.$store.state.businessTopology.selectedNode
+                if (node) {
+                    return node.tree.nodes[0].data.bk_inst_name === '蓝鲸'
+                }
+                return false
             }
         },
         watch: {
             withTemplate (withTemplate) {
                 if (withTemplate) {
                     this.getTemplate()
+                } else {
+                    this.isSearching = false
                 }
             }
         },
         created () {
             if (this.withTemplate) {
                 this.getTemplate()
+            } else {
+                this.isSearching = false
             }
         },
         methods: {
             async getTemplate () {
                 try {
+                    this.isSearching = true
                     const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
                         params: this.$injectMetadata({
                             service_template_id: this.moduleInstance.service_template_id
@@ -89,8 +108,10 @@
                         }
                     })
                     this.templates = data.info
+                    this.isSearching = false
                 } catch (e) {
                     console.error(e)
+                    this.isSearching = false
                 }
             },
             goToTemplate () {
@@ -180,8 +201,7 @@
             @include inlineBlock;
         }
         .empty-content {
-            margin: 104px 0 0 0;
-            @include inlineBlock;
+            display: inline-block;
         }
         .empty-text {
             margin-top: 20px;
@@ -217,6 +237,10 @@
                 border-style: solid;
                 box-shadow: 0 0 2px #3A84FF;
             }
+        }
+        .empty-img {
+            display: block;
+            margin: 0 auto;
         }
     }
 </style>
