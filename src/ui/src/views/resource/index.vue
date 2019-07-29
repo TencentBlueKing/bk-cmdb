@@ -8,6 +8,7 @@
             :delete-auth="$OPERATION.D_RESOURCE_HOST"
             :save-auth="$OPERATION.U_RESOURCE_HOST"
             :show-scope="true"
+            :show-history="true"
             @on-checked="handleChecked"
             @on-set-header="handleSetHeader">
             <template slot="options-left">
@@ -33,34 +34,45 @@
                     v-model="assignBusiness"
                     @on-selected="handleAssignHosts">
                 </cmdb-selector>
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_RESOURCE_HOST),
-                        auth: [$OPERATION.U_RESOURCE_HOST]
-                    }">
-                    <bk-button class="options-button" theme="default"
-                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_RESOURCE_HOST)"
-                        @click="handleMultipleEdit">
-                        {{$t('BusinessTopology[\'修改\']')}}
+                <bk-dropdown-menu
+                    trigger="click"
+                    @show="isDropdownShow = true"
+                    @hide="isDropdownShow = false">
+                    <bk-button slot="dropdown-trigger">
+                        <span>{{$t('更多')}}</span>
+                        <i :class="['bk-icon icon-angle-down', { 'icon-flip': isDropdownShow }]"></i>
                     </bk-button>
-                </span>
-                <span style="display: inline-block;" v-if="isAdminView"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.D_RESOURCE_HOST),
-                        auth: [$OPERATION.D_RESOURCE_HOST]
-                    }">
-                    <bk-button class="options-button options-button-delete" theme="default"
-                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_RESOURCE_HOST)"
-                        @click="handleMultipleDelete">
-                        {{$t('Common[\'删除\']')}}
-                    </bk-button>
-                </span>
-                <bk-button class="options-button" theme="default"
-                    form="exportForm"
-                    :disabled="!table.checked.length"
-                    @click="exportField">
-                    {{$t('HostResourcePool[\'导出选中\']')}}
-                </bk-button>
+                    <ul class="bk-dropdown-list" slot="dropdown-content">
+                        <li v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_RESOURCE_HOST),
+                            auth: [$OPERATION.U_RESOURCE_HOST]
+                        }">
+                            <bk-button class="dropdown-button"
+                                :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_RESOURCE_HOST)"
+                                @click="handleMultipleEdit">
+                                {{$t('修改')}}
+                            </bk-button>
+                        </li>
+                        <li v-if="isAdminView"
+                            v-cursor="{
+                                active: !$isAuthorized($OPERATION.D_RESOURCE_HOST),
+                                auth: [$OPERATION.D_RESOURCE_HOST]
+                            }">
+                            <bk-button class="dropdown-button"
+                                :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_RESOURCE_HOST)"
+                                @click="handleMultipleDelete">
+                                {{$t('删除')}}
+                            </bk-button>
+                        </li>
+                        <li>
+                            <bk-button class="dropdown-button" form="exportForm"
+                                :disabled="!table.checked.length"
+                                @click="exportField">
+                                {{$t('导出')}}
+                            </bk-button>
+                        </li>
+                    </ul>
+                </bk-dropdown-menu>
                 <cmdb-clipboard-selector class="options-clipboard"
                     :list="clipboardList"
                     :disabled="!table.checked.length"
@@ -128,6 +140,7 @@
                     templateUrl: `${window.API_HOST}importtemplate/host`,
                     importUrl: `${window.API_HOST}hosts/import`
                 },
+                isDropdownShow: false,
                 ready: false
             }
         },
@@ -241,7 +254,7 @@
                 }
             },
             hasSelectAssignedHost () {
-                const allList = this.$refs.resourceTable.table.allList
+                const allList = this.$refs.resourceTable.table.list
                 const list = allList.filter(item => this.table.checked.includes(item['host']['bk_host_id']))
                 const existAssigned = list.some(item => item['biz'].some(biz => biz.default !== 1))
                 return existAssigned
@@ -438,6 +451,18 @@
         display: inline-block;
         vertical-align: middle;
         width: 180px;
+    }
+    .dropdown-button {
+        display: block;
+        width: 100%;
+        height: 40px;
+        line-height: 40px;
+        border: none;
+        text-align: left;
+        &:not(:disabled):hover {
+            background-color: #ebf4ff;
+            color: #3c96ff;
+        }
     }
     .resource-table{
         margin-top: 20px;

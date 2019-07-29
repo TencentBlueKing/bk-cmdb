@@ -67,8 +67,15 @@
                         </a>
                     </div>
                 </bk-select>
+                <bk-select class="options-collection"
+                    v-if="showScope"
+                    v-model="scope"
+                    :clearable="false">
+                    <bk-option id="all" :name="$t('全部')"></bk-option>
+                    <bk-option :id="0" :name="$t('已分配主机')"></bk-option>
+                    <bk-option :id="1" :name="$t('未分配主机')"></bk-option>
+                </bk-select>
                 <cmdb-host-filter class="ml10"
-                    v-if="showCollection"
                     ref="hostFilter"
                     :properties="filterProperties"
                     :show-scope="showScope">
@@ -228,7 +235,6 @@
                     checked: [],
                     header: [],
                     list: [],
-                    allList: [],
                     pagination: {
                         current: 1,
                         limit: 10,
@@ -267,7 +273,8 @@
                 transfer: {
                     show: false
                 },
-                selectedCollection: ''
+                selectedCollection: '',
+                scope: 'all'
             }
         },
         computed: {
@@ -281,7 +288,7 @@
                 return this.table.header.filter(header => header.type !== 'checkbox')
             },
             selectedHosts () {
-                return this.table.allList.filter(host => this.table.checked.includes(host['host']['bk_host_id']))
+                return this.table.list.filter(host => this.table.checked.includes(host['host']['bk_host_id']))
             },
             filterProperties () {
                 const { module, set, host } = this.properties
@@ -310,6 +317,9 @@
             },
             columnsConfigProperties () {
                 this.setTableHeader()
+            },
+            scope () {
+                this.handlePageChange(1)
             }
         },
         async created () {
@@ -421,18 +431,6 @@
                 })
                 this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
             },
-            setAllHostList (list) {
-                const newList = []
-                list.forEach(item => {
-                    const existItem = this.table.allList.find(existItem => existItem['host']['bk_host_id'] === item['host']['bk_host_id'])
-                    if (existItem) {
-                        Object.assign(existItem, item)
-                    } else {
-                        newList.push(item)
-                    }
-                })
-                this.table.allList = [...this.table.allList, ...newList]
-            },
             getHostCellText (header, item) {
                 const objId = header.objId
                 const propertyId = header.id
@@ -447,7 +445,7 @@
             },
             getHostList () {
                 this.searchHost({
-                    params: {
+                    params: this.injectScope({
                         ...this.filter.condition,
                         'bk_biz_id': this.filter.business,
                         page: {
@@ -455,7 +453,7 @@
                             limit: this.table.pagination.limit,
                             sort: this.table.sort
                         }
-                    },
+                    }),
                     config: {
                         requestId: 'searchHosts',
                         cancelPrevious: true
@@ -463,7 +461,6 @@
                 }).then(data => {
                     this.table.pagination.count = data.count
                     this.table.list = data.info
-                    this.setAllHostList(data.info)
                     return data
                 }).catch(e => {
                     this.table.checked = []
@@ -471,21 +468,16 @@
                     this.table.pagination.count = 0
                 })
             },
-            getAllHostList () {
-                return this.searchHost({
-                    params: {
-                        ...this.filter.condition,
-                        'bk_biz_id': this.filter.business,
-                        page: {}
-                    },
-                    config: {
-                        requestId: 'searchAllHosts',
-                        cancelPrevious: true
-                    }
-                }).then(data => {
-                    this.table.allList = data.info
-                    return data
-                })
+            injectScope (params) {
+                const biz = params.condition.find(condition => condition.bk_obj_id === 'biz')
+                if (this.scope !== 'all') {
+                    biz.condition.push({
+                        field: 'default',
+                        operator: '$eq',
+                        value: this.scope
+                    })
+                }
+                return params
             },
             search (business, condition, resetPage = false) {
                 this.filter.business = business
@@ -508,7 +500,7 @@
                 this.handlePageChange(1)
             },
             handleCopy (target) {
-                const copyList = this.table.allList.filter(item => {
+                const copyList = this.table.list.filter(item => {
                     return this.table.checked.includes(item['host']['bk_host_id'])
                 })
                 const copyText = []
@@ -527,16 +519,6 @@
                 } else {
                     this.$info(this.$t('Common["该字段无可复制的值"]'))
                 }
-            },
-            async handleCheckAll (type) {
-                let list
-                if (type === 'current') {
-                    list = this.table.list
-                } else {
-                    const data = await this.getAllHostList()
-                    list = data.info
-                }
-                this.table.checked = list.map(item => item['host']['bk_host_id'])
             },
             handleSelectionChange (selection) {
                 this.table.checked = selection.map(item => item.host.bk_host_id)
