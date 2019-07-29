@@ -37,7 +37,7 @@ func (lgc *Logics) GetObjectAttributes(ctx context.Context, ownerID, objID strin
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetObjectAttributes http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, objID, query, lgc.rid)
+		blog.Errorf("GetObjectAttributes http response error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, objID, query, lgc.rid)
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
@@ -290,7 +290,7 @@ func (lgc *Logics) GetHostIDByInstID(ctx context.Context, asstObjId string, inst
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetHostIDByInstID http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, common.BKTableNameInstAsst, query, lgc.rid)
+		blog.Errorf("GetHostIDByInstID http response error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, common.BKTableNameInstAsst, query, lgc.rid)
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 

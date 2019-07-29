@@ -75,7 +75,9 @@ func (lgc *Logics) GetNormalModuleByModuleID(ctx context.Context, appID, moduleI
 
 func (lgc *Logics) GetModuleIDByCond(ctx context.Context, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
 	condc := make(map[string]interface{})
-	parse.ParseCommonParams(cond, condc)
+	if err := parse.ParseCommonParams(cond, condc); err != nil {
+		blog.Warnf("ParseCommonParams failed, err: %+v, rid: %s", err, lgc.rid)
+	}
 
 	query := &metadata.QueryCondition{
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
@@ -311,7 +313,9 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 	}
 
 	audit := lgc.NewHostModuleLog(conf.HostID)
-	audit.WithPrevious(ctx)
+	if err := audit.WithPrevious(ctx); err != nil {
+		blog.Warnf("WithPrevious failed, err: %+v, rid: %s", err, lgc.rid)
+	}
 
 	result, err := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(ctx, lgc.header, assignParams) //.AssignHostToApp(ctx, srvData.header, params)
 	if err != nil {
