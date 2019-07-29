@@ -12,6 +12,7 @@
 package esbutil
 
 import (
+	"configcenter/src/common/blog"
 	"sync"
 )
 
@@ -26,11 +27,17 @@ type EsbSrvDiscoveryInterface interface {
 	GetServers() ([]string, error)
 }
 
-func NewEsbConfigSrv(srvChan chan EsbConfig) *EsbConfigSrv {
+func NewEsbConfigSrv(srvChan chan EsbConfig, defaultCfg *EsbConfig) *EsbConfigSrv {
 	esb := &EsbConfigSrv{}
 
+	if defaultCfg != nil {
+		esb.addrs = defaultCfg.Addrs
+		esb.appCode = defaultCfg.AppCode
+		esb.appSecret = defaultCfg.AppSecret
+	}
+
 	go func() {
-		if nil == srvChan {
+		if srvChan == nil {
 			return
 		}
 		for {
@@ -39,6 +46,7 @@ func NewEsbConfigSrv(srvChan chan EsbConfig) *EsbConfigSrv {
 			esb.addrs = config.Addrs
 			esb.appCode = config.AppCode
 			esb.appSecret = config.AppSecret
+			blog.Infof("cmdb config changed, config: %+v", config)
 			esb.Unlock()
 		}
 	}()
@@ -46,7 +54,7 @@ func NewEsbConfigSrv(srvChan chan EsbConfig) *EsbConfigSrv {
 	return esb
 }
 
-func (esb *EsbConfigSrv) GetEsbServDiscoveryInterace() EsbSrvDiscoveryInterface {
+func (esb *EsbConfigSrv) GetEsbSrvDiscoveryInterface() EsbSrvDiscoveryInterface {
 	// maybe will deal some logic about server
 	return esb
 }
