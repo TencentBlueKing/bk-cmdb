@@ -239,3 +239,17 @@ type RoleAction struct {
 	ResourceTypeID ResourceTypeID `json:"resource_type_id"`
 	ActionID       ActionID       `json:"action_id"`
 }
+
+type RegisterRoleResult struct {
+	BaseResponse
+	Data struct {
+		TemplateID int64 `json:"perm_template_id"`
+	} `json:"data"`
+}
+
+type GetSkipUrlResult struct {
+	BaseResponse
+	Data struct {
+		Url string `json:"url"`
+	} `json:"data"`
+}

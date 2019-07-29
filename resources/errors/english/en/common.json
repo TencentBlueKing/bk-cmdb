@@ -49,7 +49,8 @@
     "1199051": "inappropriate calling, auth is disabled",
     "1199052": "get multiple objects",
     "1199053": "blueking auth center is not enabled",
-
+    "1199054": "get skip to bk auth center url failed, please refer to bk auth center", 
+            
     "1199999":"'%s' Internal Server Error",
     "":""
 }
