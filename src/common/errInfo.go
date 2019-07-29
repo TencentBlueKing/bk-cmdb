@@ -164,6 +164,7 @@ const (
 
 	CCErrCommGetMultipleObject      = 1199052
 	CCErrCommAuthCenterIsNotEnabled = 1199053
+	CCErrGetNoAuthSkipUrlFailed     = 1199054
 
 	// CCErrCommInternalServerError %s Internal Server Error
 	CCErrCommInternalServerError = 1199999

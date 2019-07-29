@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
@@ -488,19 +489,14 @@ func (a *authClient) RegisterUserRole(ctx context.Context, header http.Header, r
 	util.CopyHeader(a.basicHeader, header)
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/perm-templates", a.Config.SystemID)
 
-	resp := struct {
-		BaseResponse
-		Data struct {
-			TemplateID int64 `json:"perm_template_id"`
-		}
-	}{}
+	resp := new(RegisterRoleResult)
 
 	err := a.client.Post().
 		SubResource(url).
 		WithContext(ctx).
 		WithHeaders(header).
 		Body(roles).
-		Do().Into(&resp)
+		Do().Into(resp)
 	if err != nil {
 		return 0, err
 	}
@@ -509,4 +505,29 @@ func (a *authClient) RegisterUserRole(ctx context.Context, header http.Header, r
 	}
 
 	return resp.Data.TemplateID, nil
+}
+
+// returns the url which can helps to launch the bk-auth-center when a user do not
+// have the authorize to access resource(s).
+func (a *authClient) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p []metadata.Permission) (skipUrl string, err error) {
+	util.CopyHeader(a.basicHeader, header)
+	url := "/o/bk_iam_app/api/v1/apply-permission/url/"
+	req := map[string]interface{}{
+		"permission": p,
+	}
+	resp := new(GetSkipUrlResult)
+	err = a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(req).
+		Do().Into(&resp)
+	if err != nil {
+		return "", err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return "", fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data.Url, nil
 }
