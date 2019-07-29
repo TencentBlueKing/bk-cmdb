@@ -17,9 +17,18 @@
             @select-change="handleSelectChange">
             <div class="node-info clearfix" slot-scope="{ node, data }">
                 <i :class="['node-model-icon fl', { 'is-selected': node.selected }]">{{modelIconMap[data.bk_obj_id]}}</i>
+                <span class="fr" v-if="isBlueKing && showCreate(node, data)"
+                    v-bk-tooltips.top="$t('Common[\'您暂无创建权限\']')">
+                    <bk-button class="node-button"
+                        theme="primary"
+                        :disabled="true"
+                        @click.stop="showCreateDialog(node)">
+                        {{$t('Common[\'新建\']')}}
+                    </bk-button>
+                </span>
                 <bk-button class="node-button fr"
                     theme="primary"
-                    v-if="showCreate(node, data)"
+                    v-else-if="showCreate(node, data)"
                     @click.stop="showCreateDialog(node)">
                     {{$t('Common[\'新建\']')}}
                 </bk-button>
@@ -92,6 +101,9 @@
                     map[model.bk_obj_id] = model.bk_obj_name[0]
                 })
                 return map
+            },
+            isBlueKing () {
+                return this.treeData[0].bk_inst_name === '蓝鲸'
             }
         },
         async created () {
@@ -138,8 +150,7 @@
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
-                const isBlueKing = this.treeData[0].bk_inst_name === '蓝鲸'
-                return node.selected && !isModule && !isBlueKing
+                return node.selected && !isModule
             },
             async showCreateDialog (node) {
                 const nodeModel = this.mainLine.find(data => data.bk_obj_id === node.data.bk_obj_id)
