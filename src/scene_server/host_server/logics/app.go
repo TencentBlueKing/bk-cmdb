@@ -30,7 +30,7 @@ import (
 func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, errors.CCError) {
 	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(util.GetOwnerID(lgc.header)).Data()
 	cond[common.BKDBAND] = []mapstr.MapStr{
-		mapstr.MapStr{common.BKOwnerIDField: util.GetOwnerID(lgc.header)},
+		{common.BKOwnerIDField: util.GetOwnerID(lgc.header)},
 	}
 	appDetails, err := lgc.GetAppDetails(ctx, common.BKAppIDField, cond)
 	if err != nil {
@@ -48,7 +48,7 @@ func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, erro
 func (lgc *Logics) GetDefaultAppID(ctx context.Context) (int64, errors.CCError) {
 	cond := hutil.NewOperation().WithOwnerID(lgc.ownerID).WithDefaultField(int64(common.DefaultAppFlag)).Data()
 	cond[common.BKDBAND] = []mapstr.MapStr{
-		mapstr.MapStr{common.BKOwnerIDField: util.GetOwnerID(lgc.header)},
+		{common.BKOwnerIDField: util.GetOwnerID(lgc.header)},
 	}
 	appDetails, err := lgc.GetAppDetails(ctx, common.BKAppIDField, cond)
 	if err != nil {
@@ -174,7 +174,9 @@ func (lgc *Logics) GetSingleApp(ctx context.Context, cond mapstr.MapStr) (mapstr
 
 func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
 	condc := make(map[string]interface{})
-	params.ParseCommonParams(cond, condc)
+	if err := params.ParseCommonParams(cond, condc); err != nil {
+		blog.Errorf("ParseCommonParams failed, err: %+v, rid: %s", err, lgc.rid)
+	}
 	condMap := mapstr.NewFromMap(condc)
 	condMap.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
 
