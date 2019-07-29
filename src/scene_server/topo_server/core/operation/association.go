@@ -34,28 +34,32 @@ import (
 var (
 	InstanceAssociationAuditHeaders = []metadata.Header{
 		{
-			PropertyName: "ObjectAsstID",
-			PropertyID:   "ObjectAsstID",
+			PropertyName: common.AssociationKindIDField,
+			PropertyID:   "association kind",
 		},
 		{
-			PropertyName: "InstID",
-			PropertyID:   "InstID",
+			PropertyName: common.BKAsstInstIDField,
+			PropertyID:   "association instance id",
 		},
 		{
-			PropertyName: "AsstInstID",
-			PropertyID:   "AsstInstID",
+			PropertyName: common.BKAsstObjIDField,
+			PropertyID:   "association model id",
 		},
 		{
-			PropertyName: "ObjectID",
-			PropertyID:   "ObjectID",
+			PropertyName: common.BKInstIDField,
+			PropertyID:   "instance id",
 		},
 		{
-			PropertyName: "AsstObjectID",
-			PropertyID:   "AsstObjectID",
+			PropertyName: common.AssociationObjAsstIDField,
+			PropertyID:   "association id",
 		},
 		{
-			PropertyName: "AssociationKindID",
-			PropertyID:   "AssociationKindID",
+			PropertyName: common.BKObjIDField,
+			PropertyID:   "model id",
+		},
+		{
+			PropertyName: "name",
+			PropertyID:   "association name",
 		},
 	}
 )
@@ -852,12 +856,14 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 	instanceAssociationID := int64(createResult.Data.Created.ID)
 	resp.Data.ID = instanceAssociationID
 
+	curData := mapstr.NewFromStruct(input.Data, "json")
+	curData.Set("name", objectAsst.AssociationAliasName)
 	// record audit log
 	auditlog := metadata.SaveAuditLogParams{
-		ID:    instanceAssociationID,
-		Model: "instance_association",
+		ID:    request.InstID,
+		Model: objID,
 		Content: metadata.Content{
-			CurData: input,
+			CurData: curData,
 			Headers: InstanceAssociationAuditHeaders,
 		},
 		OpDesc: "create instance association",
@@ -904,7 +910,21 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 		blog.Errorf("DeleteInst failed, get instance association with id:%d get multiple, err: %+v, rid: %s", assoID, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
+
 	instanceAssociation := data.Data.Info[0]
+
+	cond := condition.CreateCondition()
+	cond.Field(common.AssociationObjAsstIDField).Eq(instanceAssociation.ObjectAsstID)
+	assInfoResult, err := a.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %v, rid: %s", cond, err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !assInfoResult.Result {
+		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, params.ReqID)
+		return nil, params.Err.New(resp.Code, resp.ErrMsg)
+	}
 
 	input := metadata.DeleteOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),
@@ -914,11 +934,15 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 		BaseResp: rsp.BaseResp,
 	}
 
+	preData := mapstr.NewFromStruct(instanceAssociation, "json")
+	if len(assInfoResult.Data) > 0 {
+		preData.Set("name", assInfoResult.Data[0].AssociationAliasName)
+	}
 	auditlog := metadata.SaveAuditLogParams{
-		ID:    assoID,
-		Model: "instance_association",
+		ID:    instanceAssociation.InstID,
+		Model: instanceAssociation.ObjectID,
 		Content: metadata.Content{
-			PreData: instanceAssociation,
+			PreData: preData,
 			Headers: InstanceAssociationAuditHeaders,
 		},
 		OpDesc: "delete instance association",

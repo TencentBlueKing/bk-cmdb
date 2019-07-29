@@ -122,7 +122,8 @@ func fillEmptyFields(data map[string]interface{}, rows []*Attribute) []string {
 		case common.FieldTypeInt:
 			data[fieldName] = nil
 		case common.FieldTypeEnum:
-			enumOptions := validator.ParseEnumOption(option)
+			// parse enum option failure. not set default value
+			enumOptions, _ := validator.ParseEnumOption(option)
 			v := ""
 			if len(enumOptions) > 0 {
 				var defaultOption *validator.EnumVal
