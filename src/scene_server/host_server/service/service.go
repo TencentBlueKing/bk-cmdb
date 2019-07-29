@@ -131,7 +131,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.DELETE("/host/lock").To(s.UnlockHost))
 	api.Route(api.POST("/host/lock/search").To(s.QueryHostLock))
 
-	api.Route(api.GET("/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}").To(s.getHostListByAppidAndField))
+	api.Route(api.GET("/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}").To(s.getHostListByAppIDAndField))
 	api.Route(api.PUT("/openapi/host/{" + common.BKAppIDField + "}").To(s.UpdateHost))
 	api.Route(api.PUT("/host/updateHostByAppID/{appid}").To(s.UpdateHostByAppID))
 	api.Route(api.POST("/gethostlistbyip").To(s.HostSearchByIP))
@@ -214,7 +214,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Message: meta.Message,
 	}
 	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteEntity(answer)
+	_ = resp.WriteEntity(answer)
 }
 
 func (s *Service) InitBackground() {
