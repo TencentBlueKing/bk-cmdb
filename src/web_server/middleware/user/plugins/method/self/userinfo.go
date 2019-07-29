@@ -86,30 +86,31 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
 
 	bkToken, err := c.Cookie(common.HTTPCookieBKToken)
-	if nil != err {
+	if err != nil || len(bkToken) == 0 {
+		blog.Infof("LoginUser failed, bk_token empty, rid: %s", rid)
 		return nil, false
 	}
-	if nil != err || 0 == len(bkToken) {
-		return nil, false
-	}
+
 	checkUrl, ok := config["site.check_url"]
 	if !ok {
 		blog.Errorf("get login url config item not found, rid: %s", rid)
 		return nil, false
 	}
+
 	loginURL := checkUrl + bkToken
 	httpCli := httpclient.NewHttpClient()
 	httpCli.SetTimeOut(30 * time.Second)
 	if err := httpCli.SetTlsNoVerity(); err != nil {
 		blog.Warnf("httpCli.SetTlsNoVerity failed, err: %+v, rid: %s", err, rid)
 	}
-	loginResultByteArr, err := httpCli.GET(loginURL, nil, nil)
 
-	if nil != err {
+	loginResultByteArr, err := httpCli.GET(loginURL, nil, nil)
+	if err != nil {
 		blog.Errorf("get user info return error: %v, rid: %s", err, rid)
 		return nil, false
 	}
 	blog.V(3).Infof("get user info cond %v, return: %s, rid: %s", string(loginURL), string(loginResultByteArr), rid)
+
 	var resultData loginResult
 	err = json.Unmarshal(loginResultByteArr, &resultData)
 	if nil != err {
@@ -123,7 +124,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	}
 
 	userDetail := resultData.Data
-	if "" == userDetail.OwnerUin {
+	if len(userDetail.OwnerUin) == 0 {
 		userDetail.OwnerUin = common.BKDefaultOwnerID
 	}
 	user = &metadata.LoginUserInfo{

@@ -51,23 +51,20 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		isMultiOwner = true
 	}
 
-	if nil == m.loginPlg {
-		user := plugins.CurrentPlugin(c, m.config.LoginVersion)
-		userInfo, loginSuccess = user.LoginUser(c, m.config.ConfigMap, isMultiOwner)
-	} else {
-
+	if m.loginPlg != nil {
 		loginUserFunc, err := m.loginPlg.Lookup("LoginUser")
-
-		if nil != err {
+		if err != nil {
 			blog.Errorf("look login func error, rid: %s", rid)
 			return false
-
 		}
 		userInfo, loginSuccess = loginUserFunc.(func(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo, loginSuccess bool))(c, m.config.ConfigMap, isMultiOwner)
-
+	} else {
+		user := plugins.CurrentPlugin(c, m.config.LoginVersion)
+		userInfo, loginSuccess = user.LoginUser(c, m.config.ConfigMap, isMultiOwner)
 	}
 
 	if !loginSuccess {
+		blog.Infof("login user with plugin failed, rid: %s", rid)
 		return false
 	}
 	if true == isMultiOwner || true == userInfo.MultiSupplier {

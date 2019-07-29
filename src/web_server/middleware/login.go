@@ -142,21 +142,29 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		}
 		return true
 	}
-	session := sessions.Default(c)
-	ccToken := session.Get(common.HTTPCookieBKToken)
 	user := user.NewUser(config, Engine, CacheCli, LoginPlg)
-	if nil == ccToken {
+	session := sessions.Default(c)
+
+	// check bk_token
+	ccToken := session.Get(common.HTTPCookieBKToken)
+	if ccToken == nil {
+		blog.Infof("session key %s not found, rid: %s", common.HTTPCookieBKToken, rid)
 		return user.LoginUser(c)
 	}
-	userName, ok := session.Get(common.WEBSessionUinKey).(string)
 
+	// check username
+	userName, ok := session.Get(common.WEBSessionUinKey).(string)
 	if !ok || "" == userName {
 		return user.LoginUser(c)
 	}
+
+	// check owner_uin
 	ownerID, ok := session.Get(common.WEBSessionOwnerUinKey).(string)
 	if !ok || "" == ownerID {
 		return user.LoginUser(c)
 	}
+
+	// check supplier_id
 	supplierID, ok := session.Get(common.WEBSessionSupplierID).(string)
 	if !ok || "" == supplierID {
 		return user.LoginUser(c)
