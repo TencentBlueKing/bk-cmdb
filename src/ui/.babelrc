@@ -12,7 +12,7 @@
     "transform-vue-jsx",
     "transform-runtime",
     ["import-bk-magic-vue", {
-      "baseLibName": "bk-magic-vue"
+        "baseLibName": "bk-magic-vue"
     }]
   ]
 }

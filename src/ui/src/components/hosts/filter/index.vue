@@ -47,19 +47,6 @@
                     </bk-checkbox>
                     <bk-checkbox class="filter-checkbox" v-model="ip.exact">{{$t('精确')}}</bk-checkbox>
                 </div>
-                <div class="filter-group" v-if="showScope">
-                    <label class="filter-label">{{$t('搜索范围')}}</label>
-                    <bk-checkbox class="filter-checkbox mr20"
-                        v-model="scope.resource"
-                        :disabled="!scope.business">
-                        {{$t('未分配主机')}}
-                    </bk-checkbox>
-                    <bk-checkbox class="filter-checkbox"
-                        v-model="scope.business"
-                        :disabled="!scope.resource">
-                        {{$t('已分配主机')}}
-                    </bk-checkbox>
-                </div>
                 <div class="filter-group"
                     v-for="(filterItem, index) in filterCondition"
                     :key="index">
@@ -157,8 +144,7 @@
                 default () {
                     return {}
                 }
-            },
-            showScope: Boolean
+            }
         },
         data () {
             const defaultIpConfig = {
@@ -170,10 +156,6 @@
             return {
                 ip: {
                     ...defaultIpConfig
-                },
-                scope: {
-                    resource: true,
-                    business: true
                 },
                 filterCondition: [],
                 defaultIpConfig,
@@ -194,8 +176,7 @@
                         && filterValue !== undefined
                         && !!String(filterValue).length
                 })
-                const hasScope = !this.scope.resource || !this.scope.business
-                return hasIP || hasField || hasScope
+                return hasIP || hasField
             }
         },
         watch: {
@@ -352,19 +333,6 @@
                         })
                     }
                 })
-                if (this.scope.resource && !this.scope.business) {
-                    params.biz.push({
-                        field: 'default',
-                        operator: '$eq',
-                        value: 1
-                    })
-                } else if (!this.scope.resource && this.scope.business) {
-                    params.biz.push({
-                        field: 'default',
-                        operator: '$eq',
-                        value: 0
-                    })
-                }
                 return params
             },
             getIPList () {
