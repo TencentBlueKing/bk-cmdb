@@ -148,11 +148,6 @@ func (m *user) getEsbClient(config map[string]string) (esbserver.EsbClientInterf
 	if addrOk == false || appCodeOk == false || appSecretOk == false {
 		return nil, fmt.Errorf("esb config not found or incomplete, %+v", config)
 	}
-	esbConfigChn := make(chan esbutil.EsbConfig, 1)
-	defer func() {
-		close(esbConfigChn)
-	}()
-	esbConfigChn <- esbutil.EsbConfig{Addrs: esbAddr, AppCode: esbAppCode, AppSecret: esbAppSecret}
 	tlsConfig, err := util.NewTLSClientConfigFromConfig("esb", config)
 	if err != nil {
 		return nil, fmt.Errorf("parse esb tls config failed, config: %+v, err: %+v", config, err)
@@ -162,7 +157,12 @@ func (m *user) getEsbClient(config map[string]string) (esbserver.EsbClientInterf
 		Burst:     1000,
 		TLSConfig: &tlsConfig,
 	}
-	esbSrv, err := esbserver.NewEsb(apiMachineryConfig, esbConfigChn, nil)
+	defaultCfg := &esbutil.EsbConfig{
+		Addrs:     esbAddr,
+		AppCode:   esbAppCode,
+		AppSecret: esbAppSecret,
+	}
+	esbSrv, err := esbserver.NewEsb(apiMachineryConfig, nil, defaultCfg, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create esb client failed. err: %v", err)
 	}

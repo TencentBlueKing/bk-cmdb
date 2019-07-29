@@ -43,20 +43,22 @@ type esbsrv struct {
 	c         *util.Capability
 }
 
-func NewEsb(apiMachineryConfig *util.APIMachineryConfig, config chan esbutil.EsbConfig, reg prometheus.Registerer) (EsbClientInterface, error) {
+// NewEsb new a esb client
+//
+func NewEsb(apiMachineryConfig *util.APIMachineryConfig, cfgChan chan esbutil.EsbConfig, defaultCfg *esbutil.EsbConfig, reg prometheus.Registerer) (EsbClientInterface, error) {
 	base := fmt.Sprintf("/api/c/compapi")
 
 	client, err := util.NewClient(apiMachineryConfig.TLSConfig)
 	if nil != err {
 		return nil, err
 	}
-	flowcontrol := flowctrl.NewRateLimiter(apiMachineryConfig.QPS, apiMachineryConfig.Burst)
-	esbConfig := esbutil.NewEsbConfigSrv(config)
+	flowControl := flowctrl.NewRateLimiter(apiMachineryConfig.QPS, apiMachineryConfig.Burst)
+	esbConfig := esbutil.NewEsbConfigSrv(cfgChan, defaultCfg)
 
 	esbCapability := &util.Capability{
 		Client:   client,
 		Discover: esbConfig,
-		Throttle: flowcontrol,
+		Throttle: flowControl,
 		Reg:      reg,
 	}
 
