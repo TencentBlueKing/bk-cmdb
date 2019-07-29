@@ -94,9 +94,13 @@ func StrArrDiff(slice1 []string, slice2 []string) []string {
 
 func IntArrIntersection(slice1 []int64, slice2 []int64) []int64 {
 	var intersectInt []int64
+	intMap := make(map[int64]bool)
 	for _, i := range slice1 {
-		if InArray(i, slice2) {
-			intersectInt = append(intersectInt, i)
+		intMap[i] = true
+	}
+	for _, j := range slice2 {
+		if _, ok := intMap[j]; ok == true {
+			intersectInt = append(intersectInt, j)
 		}
 	}
 	return intersectInt

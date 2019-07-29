@@ -14,6 +14,7 @@ package searcher
 
 import (
 	"context"
+	"github.com/imdario/mergo"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -57,14 +58,6 @@ func (s *Searcher) ListHostByTopoNode(ctx context.Context, option metadata.ListH
 			common.BKDBIN: option.SetIDs,
 		}
 	}
-	total, err := s.DbProxy.Table(common.BKTableNameModuleHostConfig).Find(filter).Count(ctx)
-	if err != nil {
-		blog.Errorf("ListHostByTopoNode failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, rid)
-		return nil, err
-	}
-
-	searchResult = &metadata.ListHostResult{}
-	searchResult.Count = int(total)
 
 	relations := make([]metadata.ModuleHost, 0)
 	if err := s.DbProxy.Table(common.BKTableNameModuleHostConfig).Find(filter).All(ctx, &relations); err != nil {
@@ -78,21 +71,42 @@ func (s *Searcher) ListHostByTopoNode(ctx context.Context, option metadata.ListH
 	}
 	hostIDs = util.IntArrayUnique(hostIDs)
 
+	if option.StdProperty.HostID != nil {
+		hostIDs = util.IntArrIntersection(option.StdProperty.HostID, hostIDs)
+	}
 	hostFilter := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
 			common.BKDBIN: hostIDs,
 		},
 	}
+	hostPropertyFilter, err := option.GetHostPropertyFilter(ctx)
+	if err != nil {
+		blog.Errorf("ListHostByTopoNode failed, GetHostPropertyFilter failed, err: %s, rid: rid", err.Error(), rid)
+		return nil, err
+	}
+	if err := mergo.Merge(&hostPropertyFilter, hostFilter); err != nil {
+		blog.Errorf("ListHostByTopoNode failed, merge host filter failed, err: %s, rid: rid", err.Error(), rid)
+		return nil, err
+	}
+
+	total, err := s.DbProxy.Table(common.BKTableNameBaseHost).Find(hostPropertyFilter).Count(ctx)
+	if err != nil {
+		blog.Errorf("ListHostByTopoNode failed, db select failed, filter: %+v, err: %+v, rid: %s", hostPropertyFilter, err, rid)
+		return nil, err
+	}
+	searchResult = &metadata.ListHostResult{}
+	searchResult.Count = int(total)
+
 	limit := uint64(option.Page.Limit)
 	start := uint64(option.Page.Start)
-	query := s.DbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).Limit(limit).Start(start)
+	query := s.DbProxy.Table(common.BKTableNameBaseHost).Find(hostPropertyFilter).Limit(limit).Start(start)
 	if len(option.Page.Sort) > 0 {
 		query = query.Sort(option.Page.Sort)
 	}
 
 	hosts := make([]map[string]interface{}, 0)
 	if err := query.All(ctx, &hosts); err != nil {
-		blog.Errorf("ListHostByTopoNode failed, db select hosts failed, filter: %+v, err: %+v, rid: %s", hostFilter, err, rid)
+		blog.Errorf("ListHostByTopoNode failed, db select hosts failed, filter: %+v, err: %+v, rid: %s", hostPropertyFilter, err, rid)
 		return nil, err
 	}
 	searchResult.Info = hosts

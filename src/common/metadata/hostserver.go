@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,6 +23,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+
+	"github.com/imdario/mergo"
 )
 
 type DeleteHostBatchOpt struct {
@@ -115,25 +118,263 @@ type HostModuleFind struct {
 }
 
 type ListHostByTopoNodeParameter struct {
-	Metadata  Metadata `json:"metadata"`
-	SetIDs    []int64  `json:"bk_set_ids"`
-	ModuleIDs []int64  `json:"bk_module_ids"`
-	Page      BasePage `json:"page"`
+	Metadata           Metadata                 `json:"metadata"`
+	SetIDs             []int64                  `json:"bk_set_ids"`
+	ModuleIDs          []int64                  `json:"bk_module_ids"`
+	StdProperty        HostStdPropertyCondition `json:"std_property"`
+	ExcludeStdProperty HostStdPropertyCondition `json:"exclude_std_property"`
+	Page               BasePage                 `json:"page"`
+}
+
+type TimeRange struct {
+	Start *time.Time
+	End   *time.Time
+}
+type HostStdPropertyCondition struct {
+	Memory          []int64   `json:"bk_mem"`
+	CPUMhz          []int64   `json:"bk_cpu_mhz"`
+	InnerIP         []string  `json:"bk_host_innerip"`
+	HostID          []int64   `json:"bk_host_id"`
+	OsVersion       []string  `json:"bk_os_version"`
+	CPUModule       []string  `json:"bk_cpu_module" `
+	Sn              []string  `json:"bk_sn" `
+	Operator        []string  `json:"operator"`
+	Disk            []int64   `json:"bk_disk"`
+	Sla             []string  `json:"bk_sla"`
+	HostName        []string  `json:"bk_host_name"`
+	AssetID         []int64   `json:"bk_asset_id"`
+	OuterIP         []string  `json:"bk_host_outerip" `
+	ImportFrom      []string  `json:"import_from"`
+	CPU             []int     `json:"bk_cpu"`
+	ProvinceName    []string  `json:"bk_province_name"`
+	OSBit           []int     `json:"bk_os_bit"`
+	OSType          []string  `json:"bk_os_type"`
+	Comment         []string  `json:"bk_comment"`
+	Mac             []string  `json:"bk_mac"`
+	CloudID         []int64   `json:"bk_cloud_id"`
+	OSName          []string  `json:"bk_os_name"`
+	StateName       []string  `json:"bk_state_name"`
+	OuterMac        []string  `json:"bk_outer_mac"`
+	ServiceTerm     []string  `json:"bk_service_term"`
+	BakOperator     []string  `json:"bk_bak_operator"`
+	ISPName         []string  `json:"bk_isp_name"`
+	SupplierAccount []string  `json:"bk_supplier_account"`
+	CreateTime      TimeRange `json:"create_time"`
+	LastTime        TimeRange `json:"last_time"`
+}
+
+func (hspc HostStdPropertyCondition) Validate(operator string) (string, error) {
+	switch operator {
+	case common.BKDBIN:
+	case common.BKDBNIN:
+	default:
+		return "operator", fmt.Errorf("unexpected operator %s", operator)
+	}
+	return "", nil
+}
+
+func (hspc HostStdPropertyCondition) ToHostFilter(operator string) map[string]interface{} {
+	filter := make(map[string]interface{})
+	if hspc.Memory != nil {
+		filter["bk_mem"] = map[string]interface{}{
+			operator: hspc.Memory,
+		}
+	}
+	if hspc.CPUMhz != nil {
+		filter["bk_cpu_mhz"] = map[string]interface{}{
+			operator: hspc.CPUMhz,
+		}
+	}
+	if hspc.InnerIP != nil {
+		filter["bk_host_innerip"] = map[string]interface{}{
+			operator: hspc.InnerIP,
+		}
+	}
+	if hspc.HostID != nil {
+		filter["bk_host_id"] = map[string]interface{}{
+			operator: hspc.HostID,
+		}
+	}
+	if hspc.OsVersion != nil {
+		filter["bk_os_version"] = map[string]interface{}{
+			operator: hspc.OsVersion,
+		}
+	}
+	if hspc.CPUModule != nil {
+		filter["bk_cpu_module"] = map[string]interface{}{
+			operator: hspc.CPUModule,
+		}
+	}
+	if hspc.Sn != nil {
+		filter["bk_sn"] = map[string]interface{}{
+			operator: hspc.Sn,
+		}
+	}
+	if hspc.Operator != nil {
+		filter["operator"] = map[string]interface{}{
+			operator: hspc.Operator,
+		}
+	}
+	if hspc.Disk != nil {
+		filter["bk_disk"] = map[string]interface{}{
+			operator: hspc.Disk,
+		}
+	}
+	if hspc.Sla != nil {
+		filter["bk_sla"] = map[string]interface{}{
+			operator: hspc.Sla,
+		}
+	}
+	if hspc.HostName != nil {
+		filter["bk_host_name"] = map[string]interface{}{
+			operator: hspc.HostName,
+		}
+	}
+	if hspc.AssetID != nil {
+		filter["bk_asset_id"] = map[string]interface{}{
+			operator: hspc.AssetID,
+		}
+	}
+	if hspc.OuterIP != nil {
+		filter["bk_host_outerip"] = map[string]interface{}{
+			operator: hspc.OuterIP,
+		}
+	}
+	if hspc.ImportFrom != nil {
+		filter["import_from"] = map[string]interface{}{
+			operator: hspc.ImportFrom,
+		}
+	}
+	if hspc.CPU != nil {
+		filter["bk_cpu"] = map[string]interface{}{
+			operator: hspc.CPU,
+		}
+	}
+	if hspc.ProvinceName != nil {
+		filter["bk_province_name"] = map[string]interface{}{
+			operator: hspc.ProvinceName,
+		}
+	}
+	if hspc.OSBit != nil {
+		filter["bk_os_bit"] = map[string]interface{}{
+			operator: hspc.OSBit,
+		}
+	}
+	if hspc.OSType != nil {
+		filter["bk_os_type"] = map[string]interface{}{
+			operator: hspc.OSType,
+		}
+	}
+	if hspc.Comment != nil {
+		filter["bk_comment"] = map[string]interface{}{
+			operator: hspc.Comment,
+		}
+	}
+	if hspc.Mac != nil {
+		filter["bk_mac"] = map[string]interface{}{
+			operator: hspc.Mac,
+		}
+	}
+	if hspc.CloudID != nil {
+		filter["bk_cloud_id"] = map[string]interface{}{
+			operator: hspc.CloudID,
+		}
+	}
+	if hspc.OSName != nil {
+		filter["bk_os_name"] = map[string]interface{}{
+			operator: hspc.OSName,
+		}
+	}
+	if hspc.StateName != nil {
+		filter["bk_state_name"] = map[string]interface{}{
+			operator: hspc.StateName,
+		}
+	}
+	if hspc.OuterMac != nil {
+		filter["bk_outer_mac"] = map[string]interface{}{
+			operator: hspc.OuterMac,
+		}
+	}
+	if hspc.ServiceTerm != nil {
+		filter["bk_service_term"] = map[string]interface{}{
+			operator: hspc.ServiceTerm,
+		}
+	}
+	if hspc.BakOperator != nil {
+		filter["bk_bak_operator"] = map[string]interface{}{
+			operator: hspc.BakOperator,
+		}
+	}
+	if hspc.ISPName != nil {
+		filter["bk_isp_name"] = map[string]interface{}{
+			operator: hspc.ISPName,
+		}
+	}
+	if hspc.SupplierAccount != nil {
+		filter["bk_supplier_account"] = map[string]interface{}{
+			operator: hspc.SupplierAccount,
+		}
+	}
+
+	switch operator {
+	case common.BKDBIN:
+		if hspc.LastTime.Start != nil {
+			filter["last_time"] = map[string]interface{}{
+				common.BKDBGTE: hspc.LastTime.Start,
+			}
+		}
+		if hspc.LastTime.End != nil {
+			filter["last_time"] = map[string]interface{}{
+				common.BKDBLTE: hspc.LastTime.End,
+			}
+		}
+		if hspc.CreateTime.Start != nil {
+			filter["create_time"] = map[string]interface{}{
+				common.BKDBGTE: hspc.CreateTime.Start,
+			}
+		}
+		if hspc.CreateTime.End != nil {
+			filter["create_time"] = map[string]interface{}{
+				common.BKDBLTE: hspc.CreateTime.End,
+			}
+		}
+	case common.BKDBNIN:
+		if hspc.LastTime.Start != nil {
+			filter["last_time"] = map[string]interface{}{
+				common.BKDBLT: hspc.LastTime.Start,
+			}
+		}
+		if hspc.LastTime.End != nil {
+			filter["last_time"] = map[string]interface{}{
+				common.BKDBGT: hspc.LastTime.End,
+			}
+		}
+		if hspc.CreateTime.Start != nil {
+			filter["create_time"] = map[string]interface{}{
+				common.BKDBLT: hspc.CreateTime.Start,
+			}
+		}
+		if hspc.CreateTime.End != nil {
+			filter["create_time"] = map[string]interface{}{
+				common.BKDBGT: hspc.CreateTime.End,
+			}
+		}
+	default:
+		panic(fmt.Errorf("unexpected operator: %s", operator))
+	}
+	return filter
 }
 
 type ListHostByTopoNodeOption struct {
-	BizID     int64    `json:"bk_biz_id,omitempty"`
-	SetIDs    []int64  `json:"bk_set_ids"`
-	ModuleIDs []int64  `json:"bk_module_ids"`
-	Page      BasePage `json:"page"`
+	BizID              int64                    `json:"bk_biz_id,omitempty"`
+	SetIDs             []int64                  `json:"bk_set_ids"`
+	ModuleIDs          []int64                  `json:"bk_module_ids"`
+	StdProperty        HostStdPropertyCondition `json:"std_property"`
+	ExcludeStdProperty HostStdPropertyCondition `json:"exclude_std_property"`
+	Page               BasePage                 `json:"page"`
 }
 
 func (option ListHostByTopoNodeOption) Validate() (string, error) {
-	if option.SetIDs != nil && option.ModuleIDs != nil {
-		if len(option.SetIDs) > 0 && len(option.ModuleIDs) > 0 {
-			return "bk_set_ids + bk_module_ids", errors.New("set and module condition are mutually exclusive")
-		}
-	}
 	if option.BizID == 0 {
 		return "bk_biz_id", errors.New("bk_biz_id field shouldn't be empty")
 	}
@@ -141,7 +382,27 @@ func (option ListHostByTopoNodeOption) Validate() (string, error) {
 	if key, err := option.Page.Validate(); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
+
+	if key, err := option.StdProperty.Validate(common.BKDBIN); err != nil {
+		return fmt.Sprintf("std_property.%s", key), err
+	}
+
+	if key, err := option.ExcludeStdProperty.Validate(common.BKDBNIN); err != nil {
+		return fmt.Sprintf("std_property.%s", key), err
+	}
 	return "", nil
+}
+
+func (option ListHostByTopoNodeOption) GetHostPropertyFilter(ctx context.Context) (map[string]interface{}, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	includePropertyFilter := option.StdProperty.ToHostFilter(common.BKDBIN)
+	excludePropertyFilter := option.ExcludeStdProperty.ToHostFilter(common.BKDBNIN)
+	if err := mergo.Merge(&includePropertyFilter, excludePropertyFilter); err != nil {
+		blog.Errorf("GetHostPropertyFilter failed, err: %+v, rid: %s", err, rid)
+		return nil, err
+	}
+	return includePropertyFilter, nil
 }
 
 // ip search info

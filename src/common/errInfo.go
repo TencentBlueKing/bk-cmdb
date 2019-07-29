@@ -189,7 +189,9 @@ const (
 	CCErrCommAbortTranscationFailed = 1199067
 
 	CCErrCommListAuthorizedResourcedFromIAMFailed = 1199068
-	CCErrParseAttrOptionEumuFailed                = 1199069
+	CCErrParseAttrOptionEnumFailed                = 1199069
+
+	CCErrConstructDBFilterFailed = 1199070
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
