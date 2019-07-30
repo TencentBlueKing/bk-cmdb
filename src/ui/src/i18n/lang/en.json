@@ -138,7 +138,9 @@
         "暂无数据": "No data",
         "选择日期范围": "Select date range",
         "立即添加": "Add it now",
-        "您暂无创建权限": "You have no permission to create"
+        "您暂无创建权限": "You have no permission to create",
+        "添加成功": "Added successfully",
+        "克隆成功": "Cloned successfully"
     },
     "Nav": {
         "首页": "Index",
