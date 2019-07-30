@@ -53,13 +53,13 @@ func (g *graphics) SetProxy(obj ObjectOperationInterface, asst AssociationOperat
 
 func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeType, scopeID string) ([]metadata.TopoGraphics, error) {
 
-	graphcondition := &metadata.TopoGraphics{}
-	graphcondition.SetScopeType(scopeType)
-	graphcondition.SetScopeID(scopeID)
+	graphCondition := &metadata.TopoGraphics{}
+	graphCondition.SetScopeType(scopeType)
+	graphCondition.SetScopeID(scopeID)
 	if nil != params.MetaData {
-		graphcondition.SetMetaData(*params.MetaData)
+		graphCondition.SetMetaData(*params.MetaData)
 	}
-	rsp, err := g.clientSet.CoreService().TopoGraphics().SearchTopoGraphics(context.Background(), params.Header, graphcondition)
+	rsp, err := g.clientSet.CoreService().TopoGraphics().SearchTopoGraphics(context.Background(), params.Header, graphCondition)
 	if nil != err {
 		return nil, err
 	}
@@ -69,14 +69,14 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 		return nil, params.Err.New(common.CCErrTopoGraphicsSearchFailed, rsp.ErrMsg)
 	}
 
-	dbnodes := rsp.Data
+	dbNodes := rsp.Data
 
-	graphnodes := map[string]*metadata.TopoGraphics{}
-	for index, node := range dbnodes {
-		graphnodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)] = &dbnodes[index]
+	graphNodes := map[string]*metadata.TopoGraphics{}
+	for index, node := range dbNodes {
+		graphNodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)] = &dbNodes[index]
 	}
 
-	nodes := []metadata.TopoGraphics{}
+	nodes := make([]metadata.TopoGraphics, 0)
 	if scopeType == "global" {
 
 		objs, err := g.obj.FindObject(params, condition.CreateCondition())
@@ -109,10 +109,10 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 			node.SetIsPre(object.IsPre)
 			node.SetIcon(object.ObjIcon)
 
-			oldnode := graphnodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)]
-			if oldnode != nil {
-				node.SetPosition(oldnode.Position)
-				node.SetExt(oldnode.Ext)
+			oldNode := graphNodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)]
+			if oldNode != nil {
+				node.SetPosition(oldNode.Position)
+				node.SetExt(oldNode.Ext)
 			} else {
 				node.SetPosition(metadata.Position{})
 				node.SetExt(map[string]interface{}{})

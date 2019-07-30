@@ -26,24 +26,24 @@ type CompatibleV2OperationInterface interface {
 	Set(params types.ContextParams) compatiblev2.SetInterface
 }
 
-// NewCompatibleV2Operation create a new compatiblev2 operation instance
+// NewCompatibleV2Operation create a new compatibleV2 operation instance
 func NewCompatibleV2Operation(client apimachinery.ClientSetInterface) CompatibleV2OperationInterface {
-	return &compatiblev2Operation{
+	return &compatibleV2Operation{
 		client: client,
 	}
 }
 
-type compatiblev2Operation struct {
+type compatibleV2Operation struct {
 	client apimachinery.ClientSetInterface
 }
 
-func (c *compatiblev2Operation) Business(params types.ContextParams) compatiblev2.BusinessInterface {
+func (c *compatibleV2Operation) Business(params types.ContextParams) compatiblev2.BusinessInterface {
 	return compatiblev2.NewBusiness(params, c.client)
 }
-func (c *compatiblev2Operation) Module(params types.ContextParams) compatiblev2.ModuleInterface {
+func (c *compatibleV2Operation) Module(params types.ContextParams) compatiblev2.ModuleInterface {
 	return compatiblev2.NewModule(params, c.client)
 }
 
-func (c *compatiblev2Operation) Set(params types.ContextParams) compatiblev2.SetInterface {
+func (c *compatibleV2Operation) Set(params types.ContextParams) compatiblev2.SetInterface {
 	return compatiblev2.NewSet(params, c.client)
 }

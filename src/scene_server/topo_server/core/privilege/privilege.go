@@ -27,7 +27,7 @@ import (
 
 // PermissionInterface the permission methods
 type PermissionInterface interface {
-	SetUserGroupPermission(supplierAccount, gourpID string, permission *metadata.PrivilegeUserGroup) error
+	SetUserGroupPermission(supplierAccount, groupID string, permission *metadata.PrivilegeUserGroup) error
 	GetUserGroupPermission(supplierAccount, groupID string) (*metadata.GroupPrivilege, error)
 	GetUserPermission(supplierAccount, userName string) (*metadata.Gprivilege, error)
 }
@@ -64,7 +64,7 @@ func (u *userGroupPermission) SetUserGroupPermission(supplierAccount, groupID st
 
 	// create a new privilege
 	if !rsp.Result {
-		blog.Errorf("[privilege] failed to get user group privi, error info is %s, rid: %s", rsp.ErrMsg, u.params.ReqID)
+		blog.Errorf("[privilege] failed to get user group privilege, error info is %s, rid: %s", rsp.ErrMsg, u.params.ReqID)
 		return u.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -145,8 +145,6 @@ func (u *userGroupPermission) GetUserPermission(supplierAccount, userName string
 	modelClsConfig := make(map[string]string)
 	// construct the result
 	for _, item := range rspSearchGroup.Data {
-		//item.GroupID
-
 		grpPrivilege, err := u.client.CoreService().Privilege().GetUserGroupPrivi(context.Background(), supplierAccount, item.GroupID, u.params.Header)
 		if nil != err {
 			blog.Errorf("[privilege] failed to get the user group(%s) privilege, error info is %s, rid: %s", item.GroupID, err.Error(), u.params.ReqID)
@@ -154,7 +152,7 @@ func (u *userGroupPermission) GetUserPermission(supplierAccount, userName string
 		}
 
 		if !grpPrivilege.Result {
-			blog.Errorf("[privige] failed to search the user group, error info is %s, rid: %s", grpPrivilege.ErrMsg, u.params.ReqID)
+			blog.Errorf("[privilege] failed to search the user group, error info is %s, rid: %s", grpPrivilege.ErrMsg, u.params.ReqID)
 			continue
 		}
 
