@@ -531,12 +531,13 @@
                             value: filterValue
                         })
                     }
-                } else if (this.$route.query.instId) {
+                } else if (this.$route.params.instId) {
                     params.condition[this.objId].push({
                         field: 'bk_inst_id',
                         operator: '$in',
-                        value: [Number(this.$route.query.instId)]
+                        value: [Number(this.$route.params.instId)]
                     })
+                    this.$route.params.instId = null
                 }
                 return params
             },

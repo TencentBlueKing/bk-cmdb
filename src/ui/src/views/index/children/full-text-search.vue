@@ -66,6 +66,19 @@
                                 </span>
                             </div>
                         </template>
+                        <template v-else-if="source.hitsType === 'biz'">
+                            <div class="results-title"
+                                v-html="`${modelClassifyName['biz']} - ${source.bk_biz_name.toString()}`"
+                                @click="jumpPage(source)"></div>
+                            <div class="results-desc" v-if="propertyMap['biz']" @click="jumpPage(source)">
+                                <span class="desc-item"
+                                    v-for="(property, childIndex) in propertyMap['biz']"
+                                    :key="childIndex"
+                                    v-if="source[property['bk_property_id']]"
+                                    v-html="`${property['bk_property_name']}：${getShowPropertyText(property, source, property['bk_property_id'])}`">
+                                </span>
+                            </div>
+                        </template>
                     </div>
                 </div>
                 <div class="pagination-info">
@@ -159,7 +172,6 @@
                 }
             },
             'query.queryString' (queryString) {
-                window.location.hash = `${this.hash.substring(0, this.hash.search(/=/) + 1)}${this.query.queryString}&from=${this.$route.query.from}`
                 let delay = 0
                 if (this.searchTriggerType === 'click') {
                     this.query.objId = this.query.objId
@@ -250,6 +262,7 @@
                 }
                 this.debounceTimer = setTimeout(() => {
                     if (!this.query.queryString) return
+                    window.location.hash = `${this.hash.substring(0, this.hash.search(/=/) + 1)}${this.query.queryString}&from=${this.$route.query.from}`
                     this.searching = true
                     this.$store.dispatch('fullTextSearch/search', {
                         params: this.params,
@@ -260,7 +273,7 @@
                     }).then(async data => {
                         this.pagination.total = data.total
                         const hitsData = data.hits
-                        const modelData = data.aggregations
+                        const modelData = data.aggregations || []
                         if (data.total) {
                             if (!this.query.objId) {
                                 this.currentClassify = -1
@@ -297,6 +310,7 @@
                             this.$parent.$refs.mainScroller.scrollTop = 0
                         })
                     }).catch((e) => {
+                        console.error(e)
                         if (!e.hasOwnProperty('message')) {
                             this.searching = false
                             this.hasData = false
@@ -325,18 +339,17 @@
                 }
             },
             jumpPage (source) {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 if (source['hitsType'] === 'host') {
                     this.$router.push({
                         name: 'resource',
-                        query: {
-                            ip: source['bk_host_innerip'].toString().replace(/(\<\/?em\>)/g, ''),
-                            outer: false,
+                        params: {
+                            text: source['bk_host_innerip'].toString().replace(/(\<\/?em\>)/g, ''),
+                            outer: true,
                             inner: true,
-                            exact: 1,
-                            assigned: true
+                            exact: false
+                        },
+                        query: {
+                            from: this.$route.fullPath
                         }
                     })
                 } else if (source['hitsType'] === 'object') {
@@ -358,10 +371,21 @@
                     this.$router.push({
                         name: 'generalModel',
                         params: {
-                            objId: source['bk_obj_id']
+                            objId: source['bk_obj_id'],
+                            instId: source['bk_inst_id'].toString().replace(/(\<\/?em\>)/g, '')
                         },
                         query: {
-                            instId: source['bk_inst_id'].toString().replace(/(\<\/?em\>)/g, '')
+                            from: this.$route.fullPath
+                        }
+                    })
+                } else if (source['hitsType'] === 'biz') {
+                    this.$router.push({
+                        name: 'business',
+                        params: {
+                            bizName: source['bk_biz_name'].toString().replace(/(\<\/?em\>)/g, '')
+                        },
+                        query: {
+                            from: this.$route.fullPath
                         }
                     })
                 }
