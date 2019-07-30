@@ -484,6 +484,7 @@
                     this.processForm.instance = null
                     this.processForm.referenceService = null
                     this.processForm.disabledProperties = []
+                    this.$success(this.$t('Common[\'保存成功\']'))
                 } catch (e) {
                     console.error(e)
                 }
@@ -601,6 +602,7 @@
                                     requestId: 'batchDeleteServiceInstance'
                                 }
                             })
+                            this.$success(this.$t('Common[\'删除成功\']'))
                             this.instances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
                             this.checked = []
                         } catch (e) {
