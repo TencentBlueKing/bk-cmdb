@@ -247,6 +247,7 @@
                             ]
                         })
                     })
+                    this.$success(this.$t('Common[\'克隆成功\']'))
                     this.backToModule()
                 } catch (e) {
                     console.error(e)

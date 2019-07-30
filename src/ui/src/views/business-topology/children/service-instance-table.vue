@@ -333,6 +333,7 @@
                             })
                         }
                     })
+                    this.$success(this.$t('Common[\'删除成功\']'))
                     this.getServiceProcessList()
                 } catch (e) {
                     console.error(e)
@@ -373,6 +374,7 @@
                                     requestId: this.requestId.deleteProcess
                                 }
                             })
+                            this.$success(this.$t('Common[\'删除成功\']'))
                             this.$emit('delete-instance', this.instance.id)
                         } catch (e) {
                             console.error(e)

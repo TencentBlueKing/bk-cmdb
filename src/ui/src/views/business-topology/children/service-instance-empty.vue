@@ -158,6 +158,7 @@
                         })
                     })
                     this.visible = false
+                    this.$success(this.$t('Common[\'添加成功\']'))
                     this.$emit('create-instance-success', data)
                 } catch (e) {
                     console.error(e)
