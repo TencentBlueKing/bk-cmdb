@@ -815,3 +815,10 @@ func (ac *AuthCenter) GetNoAuthSkipUrl(ctx context.Context, header http.Header, 
 
 	return ac.authClient.GetNoAuthSkipUrl(ctx, header, p)
 }
+
+func (ac *AuthCenter) GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]UserGroupMembers, error) {
+	if !ac.Config.Enable {
+		return nil, errors.New("auth center not enabled")
+	}
+	return ac.authClient.GetUserGroupMembers(ctx, header, bizID, groups)
+}
