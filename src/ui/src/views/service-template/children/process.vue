@@ -16,11 +16,11 @@
                 <template slot-scope="{ row }">
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_PROCESS_TEMPLATE),
-                            auth: [$OPERATION.U_PROCESS_TEMPLATE]
+                            active: !$isAuthorized($OPERATION.U_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.U_SERVICE_TEMPLATE]
                         }">
                         <bk-button class="mr10"
-                            :disabled="!$isAuthorized($OPERATION.U_PROCESS_TEMPLATE)"
+                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_TEMPLATE)"
                             :text="true"
                             @click.stop="handleEdite(row['originData'])">
                             {{$t('Common["编辑"]')}}
@@ -28,11 +28,11 @@
                     </span>
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.D_PROCESS_TEMPLATE),
-                            auth: [$OPERATION.D_PROCESS_TEMPLATE]
+                            active: !$isAuthorized($OPERATION.D_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.D_SERVICE_TEMPLATE]
                         }">
                         <bk-button
-                            :disabled="!$isAuthorized($OPERATION.D_PROCESS_TEMPLATE)"
+                            :disabled="!$isAuthorized($OPERATION.D_SERVICE_TEMPLATE)"
                             :text="true"
                             @click.stop="handleDelete(row['originData'])">
                             {{$t('Common["删除"]')}}

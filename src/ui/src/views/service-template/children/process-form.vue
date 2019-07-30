@@ -59,11 +59,11 @@
             <slot name="form-options">
                 <span style="display: inline-block"
                     v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_PROCESS_TEMPLATE),
-                        auth: [$OPERATION.C_PROCESS_TEMPLATE]
+                        active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
+                        auth: [$OPERATION.C_SERVICE_TEMPLATE]
                     }">
                     <bk-button class="button-save" theme="primary"
-                        :disabled="saveDisabled || $loading() || !$isAuthorized($OPERATION.C_PROCESS_TEMPLATE)"
+                        :disabled="saveDisabled || $loading() || !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
                         @click="handleSave">
                         {{$t("Common['保存']")}}
                     </bk-button>
