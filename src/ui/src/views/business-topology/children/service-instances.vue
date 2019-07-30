@@ -125,12 +125,15 @@
             :mask-close="false"
             :width="580"
             @confirm="handleSubmitBatchLabel"
-            @cancel="handleCloseBatchLable">
+            @cancel="handleCloseBatchLable"
+            @after-leave="handleSetEditBox">
             <div class="reset-header" slot="header">
                 {{$t("BusinessTopology['批量编辑']")}}
                 <span>{{$tc("BusinessTopology['已选择实例']", checked.length, { num: checked.length })}}</span>
             </div>
-            <batch-edit-label ref="batchLabel" :exisiting-label="editLabel.list">
+            <batch-edit-label ref="batchLabel"
+                v-if="editLabel.visiable"
+                :exisiting-label="editLabel.list">
                 <cmdb-edit-label
                     ref="instanceLabel"
                     slot="batch-add-label"
@@ -193,6 +196,7 @@
                 },
                 editLabel: {
                     show: false,
+                    visiable: false,
                     list: []
                 },
                 isCarryParams: false
@@ -631,6 +635,7 @@
                 }
                 try {
                     this.editLabel.show = true
+                    this.editLabel.visiable = true
                     const labelList = []
                     const existingKeys = []
                     for (const instance of this.checked) {
@@ -707,12 +712,18 @@
                         this.getHistoryLabel()
                     }
                     this.handleCloseBatchLable()
+                    setTimeout(() => {
+                        this.handleSetEditBox()
+                    }, 200)
                 } catch (e) {
                     console.error(e)
                 }
             },
             handleCloseBatchLable () {
                 this.editLabel.show = false
+            },
+            handleSetEditBox () {
+                this.editLabel.visiable = false
                 this.editLabel.list = []
             }
         }
