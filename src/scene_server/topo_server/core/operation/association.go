@@ -194,8 +194,8 @@ func (a *association) SearchObjectsAssociation(params types.ContextParams, objID
 }
 
 func (a *association) SearchInstAssociation(params types.ContextParams, query *metadata.QueryInput) ([]metadata.InstAsst, error) {
-	intput, err := mapstr.NewFromInterface(query.Condition)
-	rsp, err := a.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: intput})
+	input, err := mapstr.NewFromInterface(query.Condition)
+	rsp, err := a.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: input})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
