@@ -253,3 +253,16 @@ type GetSkipUrlResult struct {
 		Url string `json:"url"`
 	} `json:"data"`
 }
+
+type UserGroupMembersResult struct {
+	BaseResponse
+	Data []UserGroupMembers `json:"data"`
+}
+
+type UserGroupMembers struct {
+	ID int64 `json:"group_id"`
+	// user's group name, should be one of follows:
+	// bk_biz_maintainer, bk_biz_productor, bk_biz_test, bk_biz_developer, operator
+	Name  string   `json:"group_code"`
+	Users []string `json:"users"`
+}

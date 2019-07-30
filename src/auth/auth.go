@@ -39,6 +39,7 @@ type Authorizer interface {
 	AdminEntrance(ctx context.Context, user meta.UserInfo) ([]string, error)
 	GetAuthorizedAuditList(ctx context.Context, user meta.UserInfo, businessID int64) ([]authcenter.AuthorizedResource, error)
 	GetNoAuthSkipUrl(ctx context.Context, header http.Header, permission []metadata.Permission) (skipUrl string, err error)
+	GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]authcenter.UserGroupMembers, error)
 	Enabled() bool
 }
 

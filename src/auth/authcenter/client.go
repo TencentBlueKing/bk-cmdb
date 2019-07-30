@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/auth/meta"
@@ -530,4 +531,25 @@ func (a *authClient) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p
 	}
 
 	return resp.Data.Url, nil
+}
+
+// get user's group members from auth center
+func (a *authClient) GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]UserGroupMembers, error) {
+	util.CopyHeader(a.basicHeader, header)
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/scope-types/%s/scopes/%d/group-users?group_codes=%s",
+		SystemIDCMDB, "biz", bizID, strings.Join(groups, ","))
+	resp := new(UserGroupMembersResult)
+	err := a.client.Get().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Do().Into(&resp)
+	if err != nil {
+		return nil, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }

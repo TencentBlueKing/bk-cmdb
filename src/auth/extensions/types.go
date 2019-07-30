@@ -27,9 +27,9 @@ type AuthManager struct {
 
 	RegisterModelAttributeEnabled bool
 	RegisterModelUniqueEnabled    bool
-	RegisterModuleEnabled    bool
-	RegisterSetEnabled    bool
-	RegisterAuditCategoryEnabled    bool
+	RegisterModuleEnabled         bool
+	RegisterSetEnabled            bool
+	RegisterAuditCategoryEnabled  bool
 	SkipReadAuthorization         bool
 }
 
@@ -111,6 +111,12 @@ type BusinessSimplify struct {
 	BKSupplierIDField int64  `field:"bk_supplier_id"`
 	BKOwnerIDField    string `field:"bk_supplier_account"`
 	IsDefault         int64  `field:"default"`
+
+	Maintainer string `field:"bk_biz_maintainer"`
+	Producer   string `field:"bk_biz_productor"`
+	Tester     string `field:"bk_biz_tester"`
+	Developer  string `field:"bk_biz_developer"`
+	Operator   string `field:"operator"`
 }
 
 // Parse load the data from mapstr attribute into ObjectUnique instance
@@ -208,9 +214,9 @@ func (is *AuditCategorySimplify) Parse(data mapstr.MapStr) (*AuditCategorySimpli
 }
 
 type ModelUniqueSimplify struct {
-	ID    uint64 `field:"id" json:"id" bson:"id"`
-	ObjID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
-	Ispre bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	ID         uint64 `field:"id" json:"id" bson:"id"`
+	ObjID      string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	Ispre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
 	BusinessID int64
 }
 
@@ -220,7 +226,7 @@ func (cls *ModelUniqueSimplify) Parse(data mapstr.MapStr) (*ModelUniqueSimplify,
 	if nil != err {
 		return nil, err
 	}
-	
+
 	// parse business id
 	cls.BusinessID, err = metadata.ParseBizIDFromData(data)
 	if nil != err {
