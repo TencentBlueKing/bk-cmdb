@@ -25,13 +25,23 @@
             </div>
             <div class="form-item" v-if="withTemplate">
                 <label>{{$t('BusinessTopology["服务模板"]')}}</label>
-                <cmdb-selector style="width: 100%;"
+                <bk-select style="width: 100%;"
+                    :clearable="false"
+                    :searchable="templateList.length > 7"
                     v-model="template"
                     v-validate.disabled="'required'"
                     data-vv-name="template"
-                    key="template"
-                    :list="templateList">
-                </cmdb-selector>
+                    key="template">
+                    <bk-option v-for="(option, index) in templateList"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                    <div class="add-template" slot="extension" @click="jumpServiceTemplate" v-if="!templateList.length">
+                        <i class="bk-icon icon-plus-circle"></i>
+                        <span>{{$t("BusinessTopology['新建模板']")}}</span>
+                    </div>
+                </bk-select>
                 <span class="form-error" v-if="errors.has('template')">{{errors.first('template')}}</span>
             </div>
             <div class="form-item">
@@ -175,6 +185,7 @@
                         this.templateList = []
                     }
                 }
+                this.template = this.templateList[0] ? this.templateList[0].id : ''
             },
             async getServiceCategories () {
                 if (this.categoryMap.hasOwnProperty(this.business)) {
@@ -221,6 +232,9 @@
             },
             handleCancel () {
                 this.$emit('cancel')
+            },
+            jumpServiceTemplate () {
+                this.$router.push({ name: 'serviceTemplate' })
             }
         }
     }
@@ -304,5 +318,19 @@
     }
     font {
         padding: 0 2px;
+    }
+</style>
+
+<style lang="scss">
+    .add-template {
+        width: 20%;
+        cursor: pointer;
+        .icon-plus-circle {
+            @include inlineBlock;
+            font-size: 14px;
+        }
+        span {
+            @include inlineBlock;
+        }
     }
 </style>
