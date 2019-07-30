@@ -101,12 +101,6 @@ export const U_SERVICE_TEMPLATE = 'processServiceTemplate.update'
 export const D_SERVICE_TEMPLATE = 'processServiceTemplate.delete'
 export const R_SERVICE_TEMPLATE = 'processServiceTemplate.findMany'
 
-// 进程模板
-export const C_PROCESS_TEMPLATE = 'processTemplate.create'
-export const U_PROCESS_TEMPLATE = 'processTemplate.update'
-export const D_PROCESS_TEMPLATE = 'processTemplate.delete'
-export const R_PROCESS_TEMPLATE = 'processTemplate.findMany'
-
 // 服务实例
 export const C_SERVICE_INSTANCE = 'processServiceInstance.create'
 export const U_SERVICE_INSTANCE = 'processServiceInstance.update'
@@ -148,11 +142,6 @@ export const STATIC_BUSINESS_MODE = [
     U_SERVICE_TEMPLATE,
     D_SERVICE_TEMPLATE,
     R_SERVICE_TEMPLATE,
-
-    C_PROCESS_TEMPLATE,
-    U_PROCESS_TEMPLATE,
-    D_PROCESS_TEMPLATE,
-    R_PROCESS_TEMPLATE,
 
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
