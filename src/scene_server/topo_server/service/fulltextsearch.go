@@ -106,8 +106,8 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		typeAggs, found := result.Aggregations.Terms(common.TypeAggName)
 		if found == true && typeAggs != nil {
 			for _, bucket := range typeAggs.Buckets {
-				// only cc_HostBase currently
-				if bucket.Key == common.BKTableNameBaseHost {
+				// only cc_HostBase, cc_ApplicationBase currently
+				if bucket.Key == common.BKTableNameBaseHost || bucket.Key == common.BKTableNameBaseApp {
 					agg := Aggregation{}
 					agg.setAgg(bucket)
 					searchResults.Aggregations = append(searchResults.Aggregations, agg)
@@ -161,10 +161,15 @@ func getEsQueryAndSearchTypes(query *Query) (elastic.Query, []string) {
 	if query.BkObjId == "" {
 		// get search types from filter
 		indexTypes := getEsIndexTypes(query.TypeFilter)
+		indexTypes = append(indexTypes, common.BKTableNameBaseApp)
 		return qBool.Must(qString), indexTypes
 	} else if query.BkObjId == common.TypeHost {
 		// if bk_obj_id is host, we search only from type cc_HostBase
 		indexTypes := []string{common.BKTableNameBaseHost}
+		return qBool.Must(qString), indexTypes
+	} else if query.BkObjId == common.TypeApplication {
+		// if bk_obj_id is biz, we search only from type cc_ApplicationBase
+		indexTypes := []string{common.BKTableNameBaseApp}
 		return qBool.Must(qString), indexTypes
 	} else {
 		// if define bk_obj_id, we use bool query include must(bk_obj_id=xxx) and should(query string)
@@ -214,6 +219,8 @@ func inTypes(val string, types []string) bool {
 func (agg *Aggregation) setAgg(bucket *elastic.AggregationBucketKeyItem) {
 	if bucket.Key == common.BKTableNameBaseHost {
 		agg.Key = common.TypeHost
+	} else if bucket.Key == common.BKTableNameBaseApp {
+		agg.Key = common.TypeApplication
 	} else {
 		agg.Key = bucket.Key
 	}
