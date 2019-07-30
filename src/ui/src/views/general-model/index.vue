@@ -2,47 +2,7 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <div class="fl" v-bk-tooltips="$t('ModelManagement[\'导入\']')"
-                    v-cursor="{
-                        active: !$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST]),
-                        auth: [$OPERATION.C_INST, $OPERATION.U_INST]
-                    }">
-                    <bk-button class="models-button"
-                        :disabled="!$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST])"
-                        @click="importSlider.show = true">
-                        <i class="icon-cc-import"></i>
-                    </bk-button>
-                </div>
-                <div class="fl" v-bk-tooltips="$t('ModelManagement[\'导出\']')">
-                    <bk-button class="models-button" theme="default"
-                        :disabled="!table.checked.length"
-                        @click="handleExport">
-                        <i class="icon-cc-derivation"></i>
-                    </bk-button>
-                </div>
-                <div class="fl" v-bk-tooltips="$t('Inst[\'批量更新\']')"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_INST),
-                        auth: [$OPERATION.U_INST]
-                    }">
-                    <bk-button class="models-button"
-                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_INST)"
-                        @click="handleMultipleEdit">
-                        <i class="icon-cc-edit"></i>
-                    </bk-button>
-                </div>
-                <div class="fl" v-bk-tooltips="$t('Common[\'删除\']')"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.D_INST),
-                        auth: [$OPERATION.D_INST]
-                    }">
-                    <bk-button class="models-button button-delete"
-                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_INST)"
-                        @click="handleMultipleDelete">
-                        <i class="icon-cc-del"></i>
-                    </bk-button>
-                </div>
-                <div class="fl" style="margin-left: 20px;"
+                <div class="fl mr10"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.C_INST),
                         auth: [$OPERATION.C_INST]
@@ -51,6 +11,46 @@
                         :disabled="!$isAuthorized($OPERATION.C_INST)"
                         @click="handleCreate">
                         {{$t("Common['新建']")}}
+                    </bk-button>
+                </div>
+                <div class="fl mr10"
+                    v-cursor="{
+                        active: !$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST]),
+                        auth: [$OPERATION.C_INST, $OPERATION.U_INST]
+                    }">
+                    <bk-button class="models-button"
+                        :disabled="!$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST])"
+                        @click="importSlider.show = true">
+                        {{$t('ModelManagement[\'导入\']')}}
+                    </bk-button>
+                </div>
+                <div class="fl mr10">
+                    <bk-button class="models-button" theme="default"
+                        :disabled="!table.checked.length"
+                        @click="handleExport">
+                        {{$t('ModelManagement[\'导出\']')}}
+                    </bk-button>
+                </div>
+                <div class="fl mr10"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_INST),
+                        auth: [$OPERATION.U_INST]
+                    }">
+                    <bk-button class="models-button"
+                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_INST)"
+                        @click="handleMultipleEdit">
+                        {{$t('Inst[\'批量更新\']')}}
+                    </bk-button>
+                </div>
+                <div class="fl mr10"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.D_INST),
+                        auth: [$OPERATION.D_INST]
+                    }">
+                    <bk-button class="models-button button-delete"
+                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_INST)"
+                        @click="handleMultipleDelete">
+                        {{$t('Common[\'删除\']')}}
                     </bk-button>
                 </div>
             </div>
@@ -755,14 +755,16 @@
 }
 .models-button{
     display: inline-block;
-    border-radius: 0;
-    margin-left: -1px;
     position: relative;
     &:hover{
         z-index: 1;
         &.button-delete {
             color: $cmdbDangerColor;
             border-color: $cmdbDangerColor;
+        }
+        /deep/ &.bk-button.bk-default[disabled] {
+            border-color: #dcdee5 !important;
+            color: #c4c6cc !important;
         }
     }
 }

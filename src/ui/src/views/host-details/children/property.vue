@@ -296,6 +296,10 @@
                     height: 30px ;
                     font-size: 14px !important;
                 }
+                .bk-form-input {
+                    height: 30px;
+                    float: left;
+                }
                 .bk-date-picker:after {
                     width: 30px;
                     height: 30px;
