@@ -161,6 +161,7 @@ func getEsQueryAndSearchTypes(query *Query) (elastic.Query, []string) {
 	if query.BkObjId == "" {
 		// get search types from filter
 		indexTypes := getEsIndexTypes(query.TypeFilter)
+		// add search cc_ApplicationBase type
 		indexTypes = append(indexTypes, common.BKTableNameBaseApp)
 		return qBool.Must(qString), indexTypes
 	} else if query.BkObjId == common.TypeHost {
