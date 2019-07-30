@@ -46,6 +46,7 @@
                 v-if="hasAdminEntrance && !isAdminView && showTips"
                 :always="true"
                 :width="275"
+                theme="custom-color"
                 placement="bottom-end">
                 <div slot="content" class="tooltips-main clearfix">
                     <h3>管理员后台搬到这里了</h3>
@@ -277,8 +278,16 @@
             background-color: #f7f7f7;
         }
     }
-    .tooltips-main {
+</style>
+
+<style lang="scss">
+    .custom-color-theme {
         font-size: 14px;
+        background-color: #699df4;
+        padding: 10px 14px;
+        .tippy-arrow {
+            border-bottom-color: #699df4 !important;
+        }
         h3 {
             font-size: 16px;
         }
