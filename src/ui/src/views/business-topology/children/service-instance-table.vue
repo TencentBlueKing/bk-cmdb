@@ -9,7 +9,7 @@
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
-            <i class="bk-icon icon-exclamation" v-if="withTemplate && !flattenList.length" v-bk-tooltips="tooltips"></i>
+            <i class="bk-icon icon-exclamation" v-if="localExpanded && withTemplate && showTips" v-bk-tooltips="tooltips"></i>
             <cmdb-dot-menu class="instance-menu" @click.native.stop>
                 <ul class="menu-list">
                     <li class="menu-item"
@@ -30,10 +30,15 @@
                     </li>
                 </ul>
             </cmdb-dot-menu>
-            <div class="instance-label clearfix" @click.stop v-if="labelShowList.length">
-                <div class="label-title fl">
+            <div class="instance-label fr" @click.stop>
+                <div :class="['label-title', 'fl', { 'disabled': !$isAuthorized($OPERATION.U_SERVICE_INSTANCE) }]"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                        auth: [$OPERATION.U_SERVICE_INSTANCE]
+                    }"
+                    @click.stop="handleShowEditLabel">
                     <i class="icon-cc-label"></i>
-                    <span>{{$t('BusinessTopology["标签"]')}}：</span>
+                    <span v-if="!labelShowList.length"> + </span>
                 </div>
                 <div class="label-list fl">
                     <div class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelShowList">
@@ -43,9 +48,9 @@
                     </div>
                     <bk-popover class="label-item label-tips"
                         v-if="labelTipsList.length"
-                        theme="light"
+                        theme="light label-tips"
                         :width="290"
-                        placement="top-end">
+                        placement="bottom-end">
                         <span>...</span>
                         <div class="tips-label-list" slot="content">
                             <span class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelTipsList">
@@ -136,14 +141,17 @@
             v-model="editLabel.show"
             :width="580"
             @confirm="handleSubmitEditLable"
-            @cancel="handleCloseEditLable">
+            @cancel="handleCloseEditLable"
+            @after-leave="handleSetEditBox">
             <div slot="header">
                 {{$t("BusinessTopology['编辑标签']")}}
             </div>
-            <cmdb-edit-label
-                ref="instanceLabel"
-                :default-list="editLabel.list">
-            </cmdb-edit-label>
+            <template v-if="editLabel.visiable">
+                <cmdb-edit-label
+                    ref="instanceLabel"
+                    :default-list="editLabel.list">
+                </cmdb-edit-label>
+            </template>
         </bk-dialog>
     </div>
 </template>
@@ -167,8 +175,10 @@
                 },
                 tipsLabel: {
                     show: false,
+                    visiable: false,
                     id: null
                 },
+                showTips: false,
                 show: true,
                 checked: false,
                 localExpanded: this.expanded,
@@ -191,10 +201,6 @@
             },
             instanceMenu () {
                 const menu = [{
-                    name: this.$t('BusinessTopology["编辑标签"]'),
-                    handler: this.handleShowEditLabel,
-                    auth: 'U_SERVICE_INSTANCE'
-                }, {
                     name: this.$t('Common["删除"]'),
                     handler: this.handleDeleteInstance,
                     auth: 'D_SERVICE_INSTANCE'
@@ -286,6 +292,7 @@
                             requestId: this.requestId.processList
                         }
                     })
+                    this.showTips = !this.list.length
                 } catch (e) {
                     this.list = []
                     console.error(e)
@@ -390,12 +397,17 @@
                 })
             },
             handleShowEditLabel () {
+                if (!this.$isAuthorized(this.$OPERATION.U_SERVICE_INSTANCE)) return
                 this.editLabel.list = this.labelList
                 this.editLabel.show = true
+                this.editLabel.visiable = true
             },
             handleCloseEditLable () {
-                this.editLabel.list = []
                 this.editLabel.show = false
+            },
+            handleSetEditBox () {
+                this.editLabel.list = []
+                this.editLabel.visiable = false
             },
             async handleSubmitEditLable () {
                 try {
@@ -446,6 +458,9 @@
                         this.$parent.getHistoryLabel()
                     }
                     this.handleCloseEditLable()
+                    setTimeout(() => {
+                        this.handleSetEditBox()
+                    }, 200)
                 } catch (e) {
                     console.error(e)
                 }
@@ -528,9 +543,19 @@
     .instance-label {
         @include inlineBlock;
         font-size: 12px;
-        .icon-cc-label {
+        .label-title {
             color: #979ba5;
+            margin-right: 4px;
+            &:hover {
+                color: #3a84ff;
+            }
+            &.disabled {
+                color: #979ba5 !important;
+            }
+        }
+        .icon-cc-label {
             font-size: 16px;
+            margin-top: -4px;
         }
         .label-list {
             padding-left: 4px;
@@ -554,11 +579,16 @@
             }
             .label-tips {
                 padding: 0;
-                .bk-tooltip-ref span {
+                /deep/.bk-tooltip-ref {
                     padding: 0 6px;
+                    span {
+                        line-height: 16px;
+                        display: inline-block;
+                        vertical-align: top;
+                    }
                 }
                 &:hover {
-                    background-color: #f0f1f5;
+                    background-color: #e1ecff;
                 }
             }
         }
@@ -584,5 +614,8 @@
                 max-width: 54px;
             }
         }
+    }
+    .tippy-tooltip.label-tips-theme {
+        padding: 8px 6px !important;
     }
 </style>
