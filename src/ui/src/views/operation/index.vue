@@ -55,6 +55,16 @@
             <div class="chart-child">
                 <div class="chart-title">
                     <span>{{item.name}}</span>
+                    <div class="charts-options">
+                        <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
+                            @click="moveChart('host', 'up', key, hostData.disList)"></i>
+                        <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === hostData.disList.length - 1 }"
+                            @click="moveChart('host', 'down', key, hostData.disList)"></i>
+                        <i class="icon icon-cc-edit-shape"
+                            @click="openNew('edit', 'host', item, key)"></i>
+                        <i class="icon icon-cc-tips-close"
+                            @click="deleteChart('host', key, hostData.disList, item.config_id)"></i>
+                    </div>
                 </div>
                 <div class="operation-charts" :id="item.report_type + item.config_id"></div>
                 <div v-if="item.noData" class="null-data">
@@ -68,16 +78,6 @@
                         v-model="dateRange"
                         @on-change="dateChange">
                     </cmdb-form-date-range>
-                </div>
-                <div class="charts-options">
-                    <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
-                        @click="moveChart('host', 'up', key, hostData.disList)"></i>
-                    <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === hostData.disList.length - 1 }"
-                        @click="moveChart('host', 'down', key, hostData.disList)"></i>
-                    <i class="icon icon-cc-edit-shape"
-                        @click="openNew('edit', 'host', item, key)"></i>
-                    <i class="icon icon-cc-tips-close"
-                        @click="deleteChart('host', key, hostData.disList, item.config_id)"></i>
                 </div>
             </div>
         </div>
@@ -94,19 +94,19 @@
             <div class="chart-child">
                 <div class="chart-title">
                     <span>{{item.name}}</span>
+                    <div class="charts-options">
+                        <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
+                            @click="moveChart('inst', 'up', key, instData.disList)"></i>
+                        <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === instData.disList.length - 1 }"
+                            @click="moveChart('inst', 'down', key, instData.disList)"></i>
+                        <i class="icon icon-cc-edit-shape" @click="openNew('edit', 'inst', item, key)"></i>
+                        <i class="icon icon-cc-tips-close"
+                            @click="deleteChart('inst', key, instData.disList, item.config_id)"></i>
+                    </div>
                 </div>
                 <div class="operation-charts" :id="item.report_type + item.config_id"></div>
                 <div v-if="item.noData" class="null-data">
                     <span>{{$t('Common["暂无数据"]')}}</span>
-                </div>
-                <div class="charts-options">
-                    <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
-                        @click="moveChart('inst', 'up', key, instData.disList)"></i>
-                    <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === instData.disList.length - 1 }"
-                        @click="moveChart('inst', 'down', key, instData.disList)"></i>
-                    <i class="icon icon-cc-edit-shape" @click="openNew('edit', 'inst', item, key)"></i>
-                    <i class="icon icon-cc-tips-close"
-                        @click="deleteChart('inst', key, instData.disList, item.config_id)"></i>
                 </div>
             </div>
         </div>
@@ -706,40 +706,32 @@
         }
         .chart-child:hover{
             .charts-options{
-                display: block;
-            }
-            .chart-date{
-                line-height: 48px;
-                position: absolute;
-                right: 160px;
-                top: 0;
+                display: inline-block;
             }
         }
         .chart-title{
             display: block;
             height: 50px;
             border-bottom: 1px solid rgba(240,241,245,1);
+            .charts-options{
+                display: none;
+                margin-left: 15px;
+                line-height: 48px;
+                color: #3A84FF;
+                i{
+                    box-sizing: border-box;
+                    cursor: pointer;
+                    margin-left: 3px;
+                    border: 1px solid rgba(99,101,110,0);
+                    padding: 1px;
+                }
+            }
             span{
                 line-height: 50px;
                 font-size: 14px;
                 font-weight: bold;
                 color: rgba(99,101,110,1);
                 margin-left: 21px;
-            }
-        }
-        .charts-options{
-            display: none;
-            position: absolute;
-            right: 15px;
-            top: 0;
-            line-height: 48px;
-            color: #3A84FF;
-            i{
-                box-sizing: border-box;
-                cursor: pointer;
-                margin-left: 3px;
-                border: 1px solid rgba(99,101,110,0);
-                padding: 1px;
             }
         }
         .chart-date{
