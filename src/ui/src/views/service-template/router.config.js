@@ -30,6 +30,7 @@ export default [{
             adminView: false
         },
         auth: {
+            view: OPERATION.R_SERVICE_TEMPLATE,
             operation: Object.values(OPERATION),
             setAuthScope () {
                 this.authScope = 'business'
