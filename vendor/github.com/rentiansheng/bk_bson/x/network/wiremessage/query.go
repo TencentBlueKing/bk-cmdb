@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"strings"
 
-	"bk_bson/bson"
-	"bk_bson/mongo/writeconcern"
-	"bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bsonmongo/writeconcern"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
 )
 
 // Query represents the OP_QUERY message of the MongoDB wire protocol.

@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"bk_bson/x/network/address"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 )
 
 const testTimeout = 2 * time.Second

@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"sync"
 
-	"bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
 )
 
 // ErrNilType is returned when nil is passed to either LookupEncoder or LookupDecoder.

@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"bk_bson/x/mongo/driver/topology"
-	"bk_bson/x/network/connection"
-	"bk_bson/x/network/connstring"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/network/connection"
+	"github.com/rentiansheng/bk_bsonx/network/connstring"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 )
 
 func TestTopologyTopology(t *testing.T) {

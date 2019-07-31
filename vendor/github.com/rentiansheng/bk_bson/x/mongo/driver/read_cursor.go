@@ -9,13 +9,13 @@ package driver
 import (
 	"context"
 
-	"bk_bson/x/bsonx"
-	"bk_bson/x/bsonx/bsoncore"
-	"bk_bson/x/mongo/driver/session"
-	"bk_bson/x/mongo/driver/topology"
-	"bk_bson/x/mongo/driver/uuid"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/session"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/uuid"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 )
 
 // ReadCursor handles the full dispatch cycle and execution of a read command against the provided topology and returns

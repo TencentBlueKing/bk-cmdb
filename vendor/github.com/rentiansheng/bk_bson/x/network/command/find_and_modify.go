@@ -9,9 +9,9 @@ package command
 import (
 	"errors"
 
-	"bk_bson/bson"
-	"bk_bson/x/bsonx/bsoncore"
-	"bk_bson/x/network/result"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bsonx/network/result"
 )
 
 // unmarshalFindAndModifyResult turns the provided bson.Reader into a findAndModify result.

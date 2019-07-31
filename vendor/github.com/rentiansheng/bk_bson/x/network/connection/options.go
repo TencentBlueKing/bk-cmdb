@@ -10,8 +10,8 @@ import (
 	"net"
 	"time"
 
-	"bk_bson/event"
-	"bk_bson/x/network/compressor"
+	"github.com/rentiansheng/bk_bsonevent"
+	"github.com/rentiansheng/bk_bsonx/network/compressor"
 )
 
 type config struct {

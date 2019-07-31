@@ -11,9 +11,9 @@ import (
 	"reflect"
 	"testing"
 
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/bson/bsontype"
-	"bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
 )
 
 func TestRawValue(t *testing.T) {

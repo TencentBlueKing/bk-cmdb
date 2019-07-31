@@ -9,7 +9,7 @@ package bson
 import (
 	"reflect"
 
-	"bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
 )
 
 type unmarshalingTestCase struct {

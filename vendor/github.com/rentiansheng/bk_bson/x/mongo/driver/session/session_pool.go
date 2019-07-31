@@ -9,8 +9,8 @@ package session
 import (
 	"sync"
 
-	"bk_bson/x/bsonx"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 )
 
 // Node represents a server session in a linked list

@@ -9,8 +9,8 @@ package auth
 import (
 	"context"
 
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 func newDefaultAuthenticator(cred *Cred) (Authenticator, error) {

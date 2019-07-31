@@ -9,8 +9,8 @@ package session
 import (
 	"testing"
 
-	"bk_bson/internal/testutil/helpers"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bsoninternal/testutil/helpers"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 )
 
 func TestSessionPool(t *testing.T) {

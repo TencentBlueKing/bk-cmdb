@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"bk_bson/x/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/address"
 )
 
 // Topology represents a description of a mongodb topology

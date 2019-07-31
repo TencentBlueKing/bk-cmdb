@@ -13,11 +13,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/bson/bsonrw"
-	"bk_bson/bson/bsonrw/bsonrwtest"
-	"bk_bson/bson/bsontype"
-	"bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw/bsonrwtest"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
 )
 
 func TestBasicDecode(t *testing.T) {

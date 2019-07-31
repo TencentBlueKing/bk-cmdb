@@ -11,7 +11,7 @@ import (
 	"log"
 
 	"github.com/kr/pretty"
-	"bk_bson/x/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
 )
 
 func main() {

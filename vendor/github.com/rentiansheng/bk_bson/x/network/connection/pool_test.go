@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"bk_bson/x/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/address"
 )
 
 func TestPool(t *testing.T) {

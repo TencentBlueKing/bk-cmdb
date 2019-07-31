@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"sync"
 
-	"bk_bson/bson/bsonrw"
-	"bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
 )
 
 var defaultPointerCodec = &PointerCodec{

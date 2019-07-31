@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"strings"
 
-	"bk_bson/bson"
-	"bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
 )
 
 // Reply represents the OP_REPLY message of the MongoDB wire protocol.

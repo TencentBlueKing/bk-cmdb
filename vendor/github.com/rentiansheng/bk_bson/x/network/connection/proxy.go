@@ -6,7 +6,7 @@
 
 package connection
 
-import "bk_bson/x/network/wiremessage"
+import "github.com/rentiansheng/bk_bsonx/network/wiremessage"
 
 // Proxy implements a MongoDB proxy. It will use the given pool to connect to a
 // MongoDB server and proxy the traffic between connections it is given and the

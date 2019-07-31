@@ -13,11 +13,11 @@ import (
 	"reflect"
 	"time"
 
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/bson/bsonrw"
-	"bk_bson/bson/bsontype"
-	"bk_bson/bson/primitive"
-	"bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
 )
 
 // ErrNilContext is returned when the provided DecodeContext is nil.

@@ -7,10 +7,10 @@
 package command
 
 import (
-	"bk_bson/internal/testutil/helpers"
-	"bk_bson/mongo/writeconcern"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bsoninternal/testutil/helpers"
+	"github.com/rentiansheng/bk_bsonmongo/writeconcern"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 	"testing"
 )
 

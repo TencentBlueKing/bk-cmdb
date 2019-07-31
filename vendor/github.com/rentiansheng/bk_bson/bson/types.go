@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"time"
 
-	"bk_bson/bson/bsontype"
-	"bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
 )
 
 // These constants uniquely refer to each BSON type.

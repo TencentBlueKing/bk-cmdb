@@ -7,7 +7,7 @@
 package driver
 
 import (
-	"bk_bson/mongo/options"
+	"github.com/rentiansheng/bk_bsonmongo/options"
 )
 
 // WriteModel is the interface satisfied by all models for bulk writes.

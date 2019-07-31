@@ -9,8 +9,8 @@ package wiremessage
 import (
 	"errors"
 
-	"bk_bson/bson"
-	"bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
 )
 
 // Msg represents the OP_MSG message of the MongoDB wire protocol.

@@ -9,12 +9,12 @@ package command
 import (
 	"context"
 
-	"bk_bson/bson"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/mongo/driver/session"
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/result"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/session"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/result"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 // StartSession represents a startSession command

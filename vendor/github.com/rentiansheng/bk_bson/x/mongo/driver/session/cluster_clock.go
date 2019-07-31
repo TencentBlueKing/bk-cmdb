@@ -9,7 +9,7 @@ package session
 import (
 	"sync"
 
-	"bk_bson/bson"
+	"github.com/rentiansheng/bk_bsonbson"
 )
 
 // ClusterClock represents a logical clock for keeping track of cluster time.
