@@ -46,7 +46,7 @@ func (fm *FetchModel) Pretreatment() errors.CCError {
 }
 
 // Fetch  get model info
-func (fm *FetchModel) Fetch(ctx context.Context, dataClassify string, start, limit int64) (*metadata.InstDataInfo, errors.CCError) {
+func (fm *FetchModel) Fetch(ctx context.Context, dataClassify string, cond mapstr.MapStr, start, limit int64) (*metadata.InstDataInfo, errors.CCError) {
 	input := &metadata.SynchronizeFindInfoParameter{
 		Condition: mapstr.New(),
 	}
@@ -55,6 +55,7 @@ func (fm *FetchModel) Fetch(ctx context.Context, dataClassify string, start, lim
 	input.Limit = uint64(limit)
 	input.Start = uint64(start)
 	input.Condition.Merge(fm.baseCondition)
+	input.Condition.Merge(cond)
 	result, err := fm.lgc.synchronizeSrv.SynchronizeSrv(fm.syncConfig.Name).Find(ctx, fm.lgc.header, input)
 	blog.V(5).Infof("SynchronizeSrv %s conditon:%#v, rid:%s", fm.syncConfig.Name, input, fm.lgc.rid)
 	blog.V(6).Infof("SynchronizeSrv %s result:%#v, rid:%s", fm.syncConfig.Name, result, fm.lgc.rid)
