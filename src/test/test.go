@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -68,6 +69,7 @@ func GetClientSet() apimachinery.ClientSetInterface {
 func GetHeader() http.Header {
 	header = make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
+	header.Add(common.BKSupplierIDField, "0")
 	header.Add(common.BKHTTPHeaderUser, "admin")
 	header.Add("Content-Type", "application/json")
 	return header
@@ -81,4 +83,5 @@ func ClearDatabase() {
 		db.DropTable(tableName)
 	}
 	db.Close()
+	clientSet.AdminServer().Migrate(context.Background(), "0", "community", header)
 }
