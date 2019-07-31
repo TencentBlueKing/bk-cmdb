@@ -362,7 +362,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		return err
 	}
 
-	deleteIDS := []deletedInst{}
+	deleteIDS := make([]deletedInst, 0)
 	for _, inst := range insts {
 		ids, exists, err := c.hasHost(params, inst, needCheckHost)
 		if nil != err {
@@ -479,7 +479,7 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 	query.Condition = cond.ToMapStr()
 
 	_, insts, err := c.FindInst(params, obj, query, false)
-	instIDs := []int64{}
+	instIDs := make([]int64, 0)
 	for _, inst := range insts {
 		instID, _ := inst.GetInstID()
 		instIDs = append(instIDs, instID)
@@ -619,12 +619,12 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 	tmpResults := map[string]*CommonInstTopo{}
 	for _, inst := range insts {
 
-		childs, err := inst.GetChildObjectWithInsts()
+		children, err := inst.GetChildObjectWithInsts()
 		if nil != err {
 			return 0, nil, err
 		}
 
-		for _, child := range childs {
+		for _, child := range children {
 			object := child.Object.Object()
 			commonInst, exists := tmpResults[object.ObjectID]
 			if !exists {

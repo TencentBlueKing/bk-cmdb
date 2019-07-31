@@ -26,12 +26,12 @@ import (
 // CreateObjectAssociation create a new object association
 func (s *Service) CreateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	asso := &metadata.Association{}
-	if err := data.MarshalJSONInto(asso); err != nil {
+	assoc := &metadata.Association{}
+	if err := data.MarshalJSONInto(assoc); err != nil {
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
-	params.MetaData = &asso.Metadata
-	association, err := s.Core.AssociationOperation().CreateCommonAssociation(params, asso)
+	params.MetaData = &assoc.Metadata
+	association, err := s.Core.AssociationOperation().CreateCommonAssociation(params, assoc)
 	if nil != err {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (s *Service) DeleteObjectAssociation(params types.ContextParams, pathParams
 	}
 
 	if id <= 0 {
-		blog.Errorf("delete object association failed, got a invalid objasst id[%d], rid: %s", id, params.ReqID)
+		blog.Errorf("delete object association failed, got a invalid objAsst id[%d], rid: %s", id, params.ReqID)
 		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociationID)
 	}
 

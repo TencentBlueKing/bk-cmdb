@@ -28,7 +28,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// ClassificationOperationInterface classification opoeration methods
+// ClassificationOperationInterface classification operation methods
 type ClassificationOperationInterface interface {
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
 
@@ -128,7 +128,7 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		}
 
 		if 0 != len(objs) {
-			blog.Warnf("[operation-cls] the classification(%s) has some obejcts, forbidden to delete, rid: %s", cls.Classify().ClassificationID, params.ReqID)
+			blog.Warnf("[operation-cls] the classification(%s) has some objects, forbidden to delete, rid: %s", cls.Classify().ClassificationID, params.ReqID)
 			return params.Err.Error(common.CCErrTopoObjectClassificationHasObject)
 		}
 
@@ -273,7 +273,7 @@ func (c *classification) FindClassification(params types.ContextParams, cond con
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-cls] failed to search the clssificaiton by the condition(%#v), error info is %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, params.ReqID)
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, params.ReqID)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

@@ -44,7 +44,7 @@ func (h *health) Health(params types.ContextParams) (*metric.HealthResponse, err
 	}
 	meta.Items = append(meta.Items, zkItem)
 
-	// coreservice
+	// core service
 	coreSrv := metric.HealthItem{IsHealthy: true, Name: gtypes.CC_MODULE_CORESERVICE}
 	if _, err := h.clientSet.Healthz().HealthCheck(gtypes.CC_MODULE_CORESERVICE); err != nil {
 		coreSrv.IsHealthy = false
