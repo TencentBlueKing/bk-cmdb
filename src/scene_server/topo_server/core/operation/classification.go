@@ -28,7 +28,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// ClassificationOperationInterface classification opoeration methods
+// ClassificationOperationInterface classification operation methods
 type ClassificationOperationInterface interface {
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
 
@@ -128,7 +128,7 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		}
 
 		if 0 != len(objs) {
-			blog.Warnf("[operation-cls] the classification(%s) has some obejcts, forbidden to delete, rid: %s", cls.Classify().ClassificationID, params.ReqID)
+			blog.Warnf("[operation-cls] the classification(%s) has some objects, forbidden to delete, rid: %s", cls.Classify().ClassificationID, params.ReqID)
 			return params.Err.Error(common.CCErrTopoObjectClassificationHasObject)
 		}
 
@@ -172,7 +172,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	clsIDs := []string{}
+	clsIDs := make([]string, 0)
 	for _, cls := range rsp.Data.Info {
 		clsIDs = append(clsIDs, cls.ClassificationID)
 	}
@@ -188,7 +188,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		return nil, params.Err.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
 	}
 	objMap := make(map[string][]metadata.Object)
-	objIDs := []string{}
+	objIDs := make([]string, 0)
 	for _, info := range queryObjectResp.Data.Info {
 		objIDs = append(objIDs, info.Spec.ObjectID)
 		objMap[info.Spec.ObjCls] = append(objMap[info.Spec.ObjCls], info.Spec)
@@ -198,7 +198,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
 	}
-	asstIDs := []string{}
+	asstIDs := make([]string, 0)
 	for _, asstItem := range asstItems {
 		asstIDs = append(asstIDs, asstItem.AsstObjID)
 	}
@@ -238,7 +238,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		asstMap[info.Spec.ObjCls] = asstObjMap
 	}
 
-	datas := []metadata.ClassificationWithObject{}
+	datas := make([]metadata.ClassificationWithObject, 0)
 	for _, cls := range rsp.Data.Info {
 		clsItem := metadata.ClassificationWithObject{
 			Classification: cls,
@@ -248,7 +248,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		if obj, ok := objMap[cls.ClassificationID]; ok {
 			clsItem.Objects = obj
 		}
-		if asst, ok := asstMap[cls.ClassificationID] ; ok {
+		if asst, ok := asstMap[cls.ClassificationID]; ok {
 			clsItem.AsstObjects = asst
 		}
 		datas = append(datas, clsItem)
@@ -273,7 +273,7 @@ func (c *classification) FindClassification(params types.ContextParams, cond con
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-cls] failed to search the clssificaiton by the condition(%#v), error info is %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, params.ReqID)
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, params.ReqID)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

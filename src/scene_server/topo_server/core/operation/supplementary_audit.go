@@ -98,9 +98,9 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 		case auditoplog.AuditOpTypeModify:
 			if currDataTmp[common.BKDataStatusField] != preDataTmp[common.BKDataStatusField] {
 				switch currDataTmp[common.BKDataStatusField] {
-				case common.DataStatusDisabled, string(common.DataStatusDisabled):
+				case common.DataStatusDisabled:
 					desc = "disabled " + a.obj.GetObjectType()
-				case common.DataStatusEnable, string(common.DataStatusEnable):
+				case common.DataStatusEnable:
 					desc = "enable " + a.obj.GetObjectType()
 				default:
 					desc = "update " + a.obj.GetObjectType()
