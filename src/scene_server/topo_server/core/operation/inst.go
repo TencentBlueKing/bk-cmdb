@@ -129,7 +129,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		// check if this instance name is already exist.
 		if _, ok := instNameMap[name]; ok {
 			blog.Errorf("create object[%s] instance batch, but bk_inst_name %s is duplicated., rid: %s", object.ObjectID, name, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrorTopoMutipleObjectInstanceName, name)
+			return nil, params.Err.Errorf(common.CCErrorTopoMultipleObjectInstanceName, name)
 		}
 
 		instNameMap[name] = struct{}{}
@@ -451,10 +451,10 @@ func (c *commonInst) DeleteMainlineInstWithID(params types.ContextParams, obj mo
 	if obj.IsCommon() {
 		delCond.Field(common.BKObjIDField).Eq(object.ObjectID)
 	}
-	
+
 	ops := metadata.DeleteOption{
-	    Condition: delCond.ToMapStr(),
-    }
+		Condition: delCond.ToMapStr(),
+	}
 	rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(context.Background(), params.Header, object.ObjectID, &ops)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())

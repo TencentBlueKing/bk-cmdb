@@ -583,7 +583,7 @@ func (a *association) CreateType(params types.ContextParams, request *metadata.A
 	rsp, err := a.clientSet.CoreService().Association().CreateAssociationType(context.Background(), params.Header, &metadata.CreateAssociationKind{Data: *request})
 	if err != nil {
 		blog.Errorf("create association type failed, kind id: %s, err: %v, rid: %s", request.AssociationKindID, err, params.ReqID)
-		return nil, params.Err.New(common.CCErrTopoCreateAssoKindFailed, err.Error())
+		return nil, params.Err.New(common.CCErrTopoCreateAssocKindFailed, err.Error())
 	}
 	resp = &metadata.CreateAssociationTypeResult{BaseResp: rsp.BaseResp}
 	resp.Data.ID = int64(rsp.Data.Created.ID)
@@ -613,7 +613,7 @@ func (a *association) UpdateType(params types.ContextParams, asstTypeID int64, r
 	rsp, err := a.clientSet.CoreService().Association().UpdateAssociationType(context.Background(), params.Header, &input)
 	if err != nil {
 		blog.Errorf("update association type failed, kind id: %d, err: %v, rid: %s", asstTypeID, err, params.ReqID)
-		return nil, params.Err.New(common.CCErrTopoCreateAssoKindFailed, err.Error())
+		return nil, params.Err.New(common.CCErrTopoCreateAssocKindFailed, err.Error())
 	}
 	resp = &metadata.UpdateAssociationTypeResult{BaseResp: rsp.BaseResp}
 	return resp, nil
@@ -644,7 +644,7 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int64) (
 
 	if len(result.Data.Info) > 1 {
 		blog.Errorf("delete association kind[%d], but get multiple instance, rid: %s", asstTypeID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrorTopoGetMultipleAssoKindInstWithOneID)
+		return nil, params.Err.Error(common.CCErrorTopoGetMultipleAssocKindInstWithOneID)
 	}
 
 	if len(result.Data.Info) == 0 {
@@ -682,7 +682,7 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int64) (
 	)
 	if err != nil {
 		blog.Errorf("delete association type failed, kind id: %d, err: %v, rid: %s", asstTypeID, err, params.ReqID)
-		return nil, params.Err.New(common.CCErrTopoCreateAssoKindFailed, err.Error())
+		return nil, params.Err.New(common.CCErrTopoCreateAssocKindFailed, err.Error())
 	}
 
 	return &metadata.DeleteAssociationTypeResult{BaseResp: rsp.BaseResp}, nil
@@ -873,7 +873,7 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 	auditresp, err := a.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
 	if err != nil {
 		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrAuditSaveLogFaile)
+		return nil, params.Err.Error(common.CCErrAuditSaveLogFailed)
 	}
 	if !auditresp.Result {
 		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
@@ -952,7 +952,7 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 	auditresp, err := a.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
 	if err != nil {
 		blog.Errorf("DeleteInst finished, but save audit log failed, delete inst response: %+v, err: %v, rid: %s", auditresp, err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrAuditSaveLogFaile)
+		return nil, params.Err.Error(common.CCErrAuditSaveLogFailed)
 	}
 	if !auditresp.Result {
 		blog.Errorf("DeleteInst finished, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)

@@ -207,13 +207,13 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 			processBytes, err := json.Marshal(process)
 			if err != nil {
 				blog.Errorf("UpdateProcessInstances failed, json Marshal process failed, process: %+v, err: %+v, rid: %s", process, err, ctx.Kit.Rid)
-				err := ctx.Kit.CCError.CCError(common.CC_ERR_Comm_JSON_ENCODE)
-				ctx.RespWithError(err, common.CC_ERR_Comm_JSON_DECODE, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
+				err := ctx.Kit.CCError.CCError(common.CCErrCommJsonEncode)
+				ctx.RespWithError(err, common.CCErrCommJsonDecode, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
 			}
 			if err := json.Unmarshal(processBytes, &processData); nil != err && 0 != len(processBytes) {
 				blog.Errorf("UpdateProcessInstances failed, json Unmarshal process failed, processData: %s, err: %+v, rid: %s", processData, err, ctx.Kit.Rid)
-				err := ctx.Kit.CCError.CCError(common.CC_ERR_Comm_JSON_DECODE)
-				ctx.RespWithError(err, common.CC_ERR_Comm_JSON_DECODE, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
+				err := ctx.Kit.CCError.CCError(common.CCErrCommJsonDecode)
+				ctx.RespWithError(err, common.CCErrCommJsonDecode, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
 			}
 			processData.Remove(common.BKProcessIDField)
 			processData.Remove(common.MetadataField)

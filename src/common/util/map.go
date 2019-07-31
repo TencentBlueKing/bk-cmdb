@@ -9,19 +9,14 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package util
 
-package service
-
-import (
-	"net/http"
-)
-
-func (s *coreService) initDataSynchronize() {
-
-	s.addAction(http.MethodPost, "/set/synchronize/instance", s.SynchronizeInstance, nil)
-	s.addAction(http.MethodPost, "/set/synchronize/model", s.SynchronizeModel, nil)
-	s.addAction(http.MethodPost, "/set/synchronize/association", s.SynchronizeAssociation, nil)
-	s.addAction(http.MethodPost, "/read/synchronize", s.SynchronizeFind, nil)
-	s.addAction(http.MethodDelete, "/clear/synchronize/data", s.SynchronizeClearData, nil)
-	s.addAction(http.MethodPost, "/set/synchronize/identifier/flag", s.SetIdentifierFlag, nil)
+func MergeMaps(maps ...map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+	for _, m := range maps {
+		for k, v := range m {
+			result[k] = v
+		}
+	}
+	return result
 }

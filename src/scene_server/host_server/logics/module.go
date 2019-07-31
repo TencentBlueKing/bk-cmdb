@@ -101,7 +101,7 @@ func (lgc *Logics) GetModuleIDByCond(ctx context.Context, cond []metadata.Condit
 		moduleID, err := i.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.Errorf("GetModuleIDByCond convert  module id to int error, err:%s, module:%+v,input:%+v,rid:%s", err.Error(), i, query, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
 		}
 		moduleIDArr = append(moduleIDArr, moduleID)
 	}
@@ -132,7 +132,7 @@ func (lgc *Logics) GetModuleMapByCond(ctx context.Context, fields []string, cond
 		id, err := info.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.Errorf("GetModuleMapByCond convert  module id to int error, err:%s, module:%+v,input:%+v,rid:%s", err.Error(), info, query, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
 		}
 		moduleMap[id] = info
 	}

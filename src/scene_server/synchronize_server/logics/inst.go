@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/synchronize_server/app/options"
 )
 
@@ -47,18 +47,20 @@ func (lgc *Logics) NewFetchInst(syncConfig *options.ConfigItem, baseConds mapstr
 // Pretreatment pretreatment handle
 func (fi *FetchInst) Pretreatment() errors.CCError {
 	conds := condition.CreateCondition()
-	if fi.syncConfig.SynchronizeFlag != "" {
-		conds.Field(combineMongoDBKey(metadata.BKMetadata, common.MetaDataSynchronizeFlagField)).Eq(fi.syncConfig.SynchronizeFlag)
-	}
 	if len(fi.syncConfig.SupplerAccount) > 0 {
 		conds.Field(common.BKOwnerIDField).In(fi.syncConfig.SupplerAccount)
 	}
-	fi.baseConds = conds.ToMapStr()
-	return nil
-}
 
-func combineMongoDBKey(keys ...string) string {
-	return strings.Join(keys, ".")
+	// 是否开启实例数据根据同步身份过滤
+	if fi.syncConfig.EnableInstFilter {
+		conds.Field(util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField)).In([]string{fi.syncConfig.SynchronizeFlag, common.MetaDataSynchronIdentifierFlagSyncAllValue})
+	}
+
+	if fi.baseConds == nil {
+		fi.baseConds = mapstr.New()
+	}
+	fi.baseConds.Merge(conds.ToMapStr())
+	return nil
 }
 
 // Fetch fetch instance data
@@ -76,7 +78,7 @@ func (fi *FetchInst) Fetch(ctx context.Context, objID string, start, limit int64
 			conds.Field(common.BKDefaultField).Eq(0)
 		}
 		if len(fi.syncConfig.AppNames) > 0 {
-			if fi.syncConfig.WiteList {
+			if fi.syncConfig.WhiteList {
 				conds.Field(common.BKAppNameField).In(fi.syncConfig.AppNames)
 			} else {
 				conds.Field(common.BKAppNameField).NotIn(fi.syncConfig.AppNames)
@@ -106,6 +108,8 @@ func (fi *FetchInst) Fetch(ctx context.Context, objID string, start, limit int64
 	input.DataType = metadata.SynchronizeOperateDataTypeInstance
 
 	result, err := fi.lgc.synchronizeSrv.SynchronizeSrv(fi.syncConfig.Name).Find(ctx, fi.lgc.header, input)
+	blog.V(5).Infof("SynchronizeSrv %s conditon:%#v, rid:%s", fi.syncConfig.Name, input, fi.lgc.rid)
+	blog.V(6).Infof("SynchronizeSrv %s result:%#v, rid:%s", fi.syncConfig.Name, result, fi.lgc.rid)
 	if err != nil {
 		blog.Errorf("fetchInst http do error. err:%s,objID:%s,input:%#v,rid:%s", err.Error(), objID, input, fi.lgc.rid)
 		return nil, fi.lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

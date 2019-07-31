@@ -12,8 +12,9 @@
 package esbutil
 
 import (
-	"configcenter/src/common/blog"
 	"sync"
+
+	"configcenter/src/common/blog"
 )
 
 type EsbConfigSrv struct {
