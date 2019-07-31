@@ -171,7 +171,7 @@ func (lgc *Logics) FindHostIDsByAppID(ctx context.Context, input *meta.UpdateHos
 			if nil != err {
 				blog.Errorf("UpdateHostByAppID failed, getHostByIPAndSource result not found, hostInfo: %+v, input:%v, innerIP:%v, platID:%v error:%s, rid:%s",
 					hostData[0], input, innerIP, input.CloudID, err.Error(), lgc.rid)
-				return nil, http.StatusInternalServerError, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+				return nil, http.StatusInternalServerError, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 			}
 
 		}
@@ -248,7 +248,7 @@ func (lgc *Logics) UpdateHostByAppID(ctx context.Context, input *meta.UpdateHost
 			hostID, err = hostData[0].Int64(common.BKHostIDField)
 			if nil != err {
 				blog.Errorf("UpdateHostByAppID getHostByIPAndSource not found hostID, hostInfo:%v, input:%v, innerIP:%v, platID:%v error:%s, rid:%s", hostData[0], input, innerIP, input.CloudID, err.Error(), lgc.rid)
-				return nil, http.StatusInternalServerError, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+				return nil, http.StatusInternalServerError, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 			}
 
 		}
@@ -295,7 +295,7 @@ func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, c
 		hostID, err := host.Int64(common.BKHostIDField)
 		if nil != err {
 			blog.Errorf("GetIPAndProxyByCompany hostID not integer, error:%v, ip:%s, cloudID:%d, appID:%d, hostInfo:%+v,rid:%s", err.Error(), ipArr, cloudID, appID, host, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 		}
 		hostIDArr = append(hostIDArr, hostID)
 		hostMap[fmt.Sprintf("%v", hostID)] = host
@@ -434,7 +434,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 	srcHostID, err := util.GetInt64ByInterface(hostMapData[common.BKHostIDField])
 	if nil != err {
 		blog.Errorf("CloneHostProperty clone source host host id  not found hostmap:%+v input:%+v,rid:%s", hostMapData, input, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+		return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 	}
 	configCond := meta.HostModuleRelationRequest{
 		HostIDArr:     []int64{srcHostID},
@@ -482,14 +482,14 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 			ip, ok := dstHostMapData[common.BKHostInnerIPField].(string)
 			if false == ok {
 				blog.Errorf("CloneHostProperty not found innerIP , raw data format hostMap:%+v, input:%+v, rid:%s", dstHostMapData, input, lgc.rid)
-				return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "convert fail")
+				return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "convert fail")
 
 			}
 
 			hostID, err := util.GetInt64ByInterface(dstHostMapData[common.BKHostIDField])
 			if nil != err {
 				blog.Errorf("CloneHostProperty not found host id  , raw data format hostMap:%+v, input:%+v, rid:%s", dstHostMapData, input, lgc.rid)
-				return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", "convert fail")
+				return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", "convert fail")
 			}
 			existIPMap[ip] = hostID
 		} else {

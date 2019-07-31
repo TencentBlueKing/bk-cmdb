@@ -222,9 +222,9 @@ func (s *synchronizeItem) sycnhronizePartInstance(ctx context.Context, input *me
 		id, err := item.Int64(IDField)
 		if err != nil {
 			//  CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
-			ccErrInst := lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, input.DataClassify, IDField, "int64", err.Error())
+			ccErrInst := lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, input.DataClassify, IDField, "int64", err.Error())
 			errorInfoArr = append(errorInfoArr, metadata.ExceptionResult{
-				Code:        common.CCErrCommInstFieldConvFail,
+				Code:        common.CCErrCommInstFieldConvertFail,
 				Message:     ccErrInst.Error(),
 				Data:        item,
 				OriginIndex: 0,
@@ -343,9 +343,9 @@ func (s *synchronizeItem) sycnhronizePartModel(ctx context.Context, input *metad
 		id, err := item.Int64(common.BKFieldID)
 		if err != nil {
 			//  CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
-			ccErrInst := s.lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, "model attribute", common.BKFieldID, "int64", err.Error())
+			ccErrInst := s.lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, "model attribute", common.BKFieldID, "int64", err.Error())
 			errorInfoArr = append(errorInfoArr, metadata.ExceptionResult{
-				Code:        common.CCErrCommInstFieldConvFail,
+				Code:        common.CCErrCommInstFieldConvertFail,
 				Message:     ccErrInst.Error(),
 				Data:        item,
 				OriginIndex: 0,
@@ -456,9 +456,9 @@ func (s *synchronizeItem) sycnhronizePartAssociation(ctx context.Context, input 
 		id, err := item.Int64(common.BKFieldID)
 		if err != nil {
 			//  CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
-			ccErrInst := s.lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, "model associate", common.BKFieldID, "int64", err.Error())
+			ccErrInst := s.lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, "model associate", common.BKFieldID, "int64", err.Error())
 			errorInfoArr = append(errorInfoArr, metadata.ExceptionResult{
-				Code:        common.CCErrCommInstFieldConvFail,
+				Code:        common.CCErrCommInstFieldConvertFail,
 				Message:     ccErrInst.Error(),
 				Data:        item,
 				OriginIndex: 0,

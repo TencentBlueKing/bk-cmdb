@@ -50,7 +50,7 @@ func (s *Service) TransferHostModule(req *restful.Request, resp *restful.Respons
 
 		if len(module) == 0 {
 			blog.Errorf("add host and module relation, but get empty module with id[%d],input:%+v,rid:%s", moduleID, config, srvData.rid)
-			_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoMulueIDNotfoundFailed)})
+			_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoModuleIDNotfoundFailed)})
 			return
 		}
 	}

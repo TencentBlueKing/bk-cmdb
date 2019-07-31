@@ -186,11 +186,11 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 	for _, appInfo := range appInfoArr {
 		instID, err := appInfo.Int64(common.BKAppIDField)
 		if err != nil {
-			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 		name, err := appInfo.String(common.BKAppNameField)
 		if err != nil {
-			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppNameField, "string", err.Error())
+			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppNameField, "string", err.Error())
 		}
 		appIDNameMap[instID] = name
 	}
@@ -214,7 +214,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 
 		appID, err := moduleInfo.Int64(common.BKAppIDField)
 		if err != nil {
-			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 		moduleRef := ModuleRef{}
 		moduleRef.Set = append(moduleRef.Set, setMap[sID])
