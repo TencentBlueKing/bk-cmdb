@@ -1,18 +1,20 @@
 <template>
-    <bk-dialog
-        :is-show.sync="isShow"
-        :has-header="false"
-        :has-footer="false"
-        :quick-close="false"
+    <bk-dialog class="bk-dialog-no-padding"
+        v-model="isShow"
+        :show-footer="false"
+        :mask-close="false"
         :width="565"
-        :padding="0"
         @cancel="closeRoleForm">
-        <form class="role-form" slot="content">
+        <form class="role-form">
             <h2 class="role-form-title">{{title}}</h2>
             <div class="role-form-content">
                 <div class="content-group clearfix">
                     <label for="groupName" class="fl">{{$t('Permission["角色名"]')}}</label>
-                    <input type="text" class="cmdb-form-input fl" id="groupName" v-model.trim="data['group_name']" maxlength="50">
+                    <bk-input type="text" class="fl" style="width: 350px;"
+                        id="groupName"
+                        maxlength="50"
+                        v-model.trim="data['group_name']">
+                    </bk-input>
                 </div>
                 <div class="content-group clearfix">
                     <label for="userList" class="fl">{{$t('Permission["角色成员"]')}}</label>
@@ -21,8 +23,8 @@
             </div>
             <div class="role-form-btn">
                 <div class="fr">
-                    <bk-button :loading="$loading('saveRole')" type="primary" class="form-btn" :disabled="!data['group_name'] || !data['user_list']" @click.prevent="submitRoleForm">{{$t('Common["确定"]')}}</bk-button>
-                    <bk-button type="default" class="form-btn vice-btn" @click.prevent="closeRoleForm">{{$t('Common["取消"]')}}</bk-button>
+                    <bk-button :loading="$loading('saveRole')" theme="primary" class="form-btn" :disabled="!data['group_name'] || !data['user_list']" @click.prevent="submitRoleForm">{{$t('Common["确定"]')}}</bk-button>
+                    <bk-button theme="default" class="form-btn vice-btn" @click.prevent="closeRoleForm">{{$t('Common["取消"]')}}</bk-button>
                 </div>
             </div>
         </form>

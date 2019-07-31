@@ -20,23 +20,53 @@
                             name="categoryName"
                             v-validate="'required|namedCharacter'"
                             v-model="mainCategoryName"
-                            @on-confirm="handleEditCategory(mainCategory, 'main')"
+                            @on-confirm="handleEditCategory(mainCategory, 'main', index)"
                             @on-cancel="handleCloseEditMain">
                         </category-input>
                     </div>
                     <template v-else>
                         <div class="category-name">
                             <span>{{mainCategory['name']}}</span>
-                            <i v-if="!mainCategory['is_built_in']"
-                                class="property-edit icon-cc-edit-shape"
-                                @click.stop="handleEditMain(mainCategory['id'], mainCategory['name'])">
-                            </i>
+                            <span
+                                v-if="!mainCategory['is_built_in']"
+                                v-cursor="{
+                                    active: !$isAuthorized($OPERATION.U_SERVICE_CATEGORY),
+                                    auth: [$OPERATION.U_SERVICE_CATEGORY]
+                                }">
+                                <bk-button
+                                    :disabled="!$isAuthorized($OPERATION.U_SERVICE_CATEGORY)"
+                                    :text="true"
+                                    @click.stop="handleEditMain(mainCategory['id'], mainCategory['name'])">
+                                    <i class="icon-cc-edit-shape"></i>
+                                </bk-button>
+                            </span>
                         </div>
                         <cmdb-dot-menu class="dot-menu" v-if="!mainCategory['is_built_in']">
                             <div class="menu-operational">
-                                <i @click="handleShowAddChild(mainCategory['id'])">{{$t("ServiceCategory['添加二级分类']")}}</i>
-                                <i class="not-allowed" v-if="mainCategory['child_category_list'].length">{{$t("Common['删除']")}}</i>
-                                <i v-else @click="handleDeleteCategory(mainCategory['id'], 'main', index)">{{$t("Common['删除']")}}</i>
+                                <span
+                                    v-cursor="{
+                                        active: !$isAuthorized($OPERATION.C_SERVICE_CATEGORY),
+                                        auth: [$OPERATION.C_SERVICE_CATEGORY]
+                                    }">
+                                    <bk-button class="menu-btn"
+                                        :disabled="!$isAuthorized($OPERATION.C_SERVICE_CATEGORY)"
+                                        :text="true"
+                                        @click="handleShowAddChild(mainCategory['id'])">
+                                        {{$t("ServiceCategory['添加二级分类']")}}
+                                    </bk-button>
+                                </span>
+                                <span
+                                    v-cursor="{
+                                        active: !$isAuthorized($OPERATION.D_SERVICE_CATEGORY),
+                                        auth: [$OPERATION.D_SERVICE_CATEGORY]
+                                    }">
+                                    <bk-button class="menu-btn"
+                                        :text="true"
+                                        :disabled="!!mainCategory['child_category_list'].length || !$isAuthorized($OPERATION.D_SERVICE_CATEGORY)"
+                                        @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
+                                        {{$t("Common['删除']")}}
+                                    </bk-button>
+                                </span>
                             </div>
                         </cmdb-dot-menu>
                     </template>
@@ -44,6 +74,7 @@
                 <div class="child-category">
                     <div class="child-item child-edit" v-if="addChildStatus === mainCategory['id']">
                         <category-input
+                            class="child-input"
                             ref="editInput"
                             :input-ref="'categoryInput'"
                             :placeholder="$t('ServiceCategory[\'请输入二级分类\']')"
@@ -60,6 +91,7 @@
                         :key="childIndex">
                         <category-input
                             v-if="editChildStatus === childCategory['id']"
+                            class="child-input"
                             ref="editInput"
                             :input-ref="'categoryInput'"
                             :placeholder="$t('ServiceCategory[\'请输入二级分类\']')"
@@ -73,20 +105,37 @@
                             <div class="child-title">
                                 <span>{{childCategory['name']}}</span>
                                 <div class="child-edit" v-if="!childCategory['is_built_in']">
-                                    <i class="property-edit icon-cc-edit-shape mr10"
-                                        @click.stop="handleEditChild(childCategory['id'], childCategory['name'])">
+                                    <i
+                                        class="mr10"
+                                        v-cursor="{
+                                            active: !$isAuthorized($OPERATION.U_SERVICE_CATEGORY),
+                                            auth: [$OPERATION.U_SERVICE_CATEGORY]
+                                        }">
+                                        <bk-button class="child-edit-btn"
+                                            :text="true"
+                                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_CATEGORY)"
+                                            @click.stop="handleEditChild(childCategory['id'], childCategory['name'])">
+                                            <i class="icon-cc-edit-shape"></i>
+                                        </bk-button>
                                     </i>
-                                    <i class="icon-cc-tips-close"
-                                        v-if="!childCategory['usage_amount']"
-                                        @click.stop="handleDeleteCategory(childCategory['id'], 'child', index)">
+                                    <i v-if="!childCategory['usage_amount']"
+                                        v-cursor="{
+                                            active: !$isAuthorized($OPERATION.D_SERVICE_CATEGORY),
+                                            auth: [$OPERATION.D_SERVICE_CATEGORY]
+                                        }">
+                                        <bk-button class="child-edit-btn"
+                                            :text="true"
+                                            :disabled="!$isAuthorized($OPERATION.D_SERVICE_CATEGORY)"
+                                            @click.stop="handleDeleteCategory(childCategory['id'], 'child', index)">
+                                            <i class="icon-cc-tips-close"></i>
+                                        </bk-button>
                                     </i>
                                     <i class="icon-cc-tips-close" v-else
                                         style="color: #c4c6cc; cursor: not-allowed;"
-                                        v-bktooltips="tooltips">
+                                        v-bk-tooltips.bottom="tooltips">
                                     </i>
                                 </div>
                             </div>
-                            <!-- <span>{{childCategory['usage_amount']}}</span> -->
                         </template>
                     </div>
                 </div>
@@ -108,7 +157,14 @@
                     </div>
                 </div>
                 <div class="child-category"></div>
-                <span class="add-box" v-if="!showAddMianCategory" @click="handleAddBox"></span>
+                <span class="add-box"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_SERVICE_CATEGORY),
+                        auth: [$OPERATION.C_SERVICE_CATEGORY]
+                    }"
+                    v-if="!showAddMianCategory"
+                    @click="handleAddBox">
+                </span>
             </div>
         </div>
     </div>
@@ -126,8 +182,7 @@
         data () {
             return {
                 tooltips: {
-                    content: this.$t("ServiceCategory['二级分类删除提示']"),
-                    arrowsSize: 5
+                    content: this.$t("ServiceCategory['二级分类删除提示']")
                 },
                 showFeatureTips: false,
                 showAddMianCategory: false,
@@ -228,7 +283,7 @@
                         this.$success(this.$t('Common["保存成功"]'))
                         this.handleCloseEditChild()
                         this.handleCloseEditMain()
-                        if (mainIndex !== undefined) {
+                        if (mainIndex !== undefined && type === 'child') {
                             const childList = this.list[mainIndex].child_category_list.map(child => {
                                 if (child.id === res.id) {
                                     return res
@@ -236,6 +291,8 @@
                                 return child
                             })
                             this.$set(this.list[mainIndex], 'child_category_list', childList)
+                        } else {
+                            this.$set(this.list[mainIndex], 'name', res.name)
                         }
                     })
                 }
@@ -294,6 +351,7 @@
                 this.editChildStatus = null
             },
             handleAddBox () {
+                if (!this.$isAuthorized(this.$OPERATION.C_SERVICE_CATEGORY)) return
                 this.showAddMianCategory = true
                 this.$nextTick(() => {
                     this.$refs.addCategoryInput.$refs.categoryInput.focus()
@@ -329,6 +387,7 @@
             border: 1px solid #dcdee5;
             margin-right: 30px;
             margin-bottom: 20px;
+            overflow: hidden;
             &.add-item {
                 .category-name {
                     color: #dcdee5 !important;
@@ -396,7 +455,6 @@
                 .icon-cc-edit-shape {
                     display: none;
                     cursor: pointer;
-                    color: #3a84ff;
                 }
                 &:hover .icon-cc-edit-shape {
                     display: inline !important;
@@ -475,14 +533,20 @@
                 }
                 .child-edit {
                     display: none;
-                    i {
+                    .child-edit-btn:disabled {
+                        color: #dcdee5;
                         font-size: 14px;
-                        color: #3a84ff;
-                        cursor: pointer;
                     }
                 }
                 .edit-box {
                     width: 100%;
+                }
+                .child-input {
+                    /deep/.bk-form-input {
+                        vertical-align: top;
+                        border: 1px solid #c4c6cc;
+                        background-color: #ffffff !important;
+                    }
                 }
             }
         }
@@ -490,20 +554,21 @@
     .menu-operational {
         padding: 6px 0;
         line-height: 32px;
-        color: #63656e;
-        i {
+        .menu-btn {
             display: block;
-            font-style: normal;
+            width: 100%;
+            height: 32px;
+            line-height: 32px;
             padding: 0 8px;
-            cursor: pointer;
+            text-align: left;
+            color: #63656e;
             &:hover {
                 color: #3a84ff;
                 background-color: #e1ecff;
             }
-            &.not-allowed {
-                color: #c4c6cc;
+            &:disabled {
+                color: #dcdee5;
                 background-color: transparent;
-                cursor: not-allowed;
             }
         }
     }

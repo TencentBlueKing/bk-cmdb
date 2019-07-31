@@ -9,29 +9,98 @@
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
+            <i class="bk-icon icon-exclamation" v-if="localExpanded && withTemplate && showTips" v-bk-tooltips="tooltips"></i>
             <cmdb-dot-menu class="instance-menu" @click.native.stop>
                 <ul class="menu-list">
                     <li class="menu-item"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
-                        <button class="menu-button"
-                            @click="menu.handler">
-                            {{menu.name}}
-                        </button>
+                        <span class="menu-span"
+                            v-cursor="{
+                                active: !$isAuthorized($OPERATION[menu.auth]),
+                                auth: [$OPERATION[menu.auth]]
+                            }">
+                            <bk-button class="menu-button"
+                                :text="true"
+                                :disabled="!$isAuthorized($OPERATION[menu.auth])"
+                                @click="menu.handler">
+                                {{menu.name}}
+                            </bk-button>
+                        </span>
                     </li>
                 </ul>
             </cmdb-dot-menu>
+            <div class="instance-label fr" @click.stop>
+                <div :class="['label-title', 'fl', { 'disabled': !$isAuthorized($OPERATION.U_SERVICE_INSTANCE) }]"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                        auth: [$OPERATION.U_SERVICE_INSTANCE]
+                    }"
+                    @click.stop="handleShowEditLabel">
+                    <i class="icon-cc-label"></i>
+                    <span v-if="!labelShowList.length"> + </span>
+                </div>
+                <div class="label-list fl">
+                    <div class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelShowList">
+                        <span>{{label.key}}</span>
+                        <span>:</span>
+                        <span>{{label.value}}</span>
+                    </div>
+                    <bk-popover class="label-item label-tips"
+                        v-if="labelTipsList.length"
+                        theme="light label-tips"
+                        :width="290"
+                        placement="bottom-end">
+                        <span>...</span>
+                        <div class="tips-label-list" slot="content">
+                            <span class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelTipsList">
+                                <span>{{label.key}}</span>
+                                <span>:</span>
+                                <span>{{label.value}}</span>
+                            </span>
+                        </div>
+                    </bk-popover>
+                </div>
+            </div>
         </div>
-        <cmdb-table
+        <bk-table
             v-show="localExpanded"
-            :loading="$loading(Object.values(requestId))"
-            :header="header"
-            :list="flattenList"
-            :empty-height="42"
-            :visible="localExpanded"
-            :sortable="false"
-            :reference-document-height="false">
-            <template slot="data-empty">
+            v-bkloading="{ isLoading: $loading(Object.values(requestId)) }"
+            :data="flattenList">
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('Common[\'操作\']')">
+                <template slot-scope="{ row }">
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_PROCESS),
+                            auth: [$OPERATION.U_PROCESS]
+                        }">
+                        <bk-button class="mr10"
+                            :text="true"
+                            :disabled="!$isAuthorized($OPERATION.U_PROCESS)"
+                            @click="handleEditProcess(row)">
+                            {{$t('Common["编辑"]')}}
+                        </bk-button>
+                    </span>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.D_PROCESS),
+                            auth: [$OPERATION.D_PROCESS]
+                        }">
+                        <bk-button v-if="!withTemplate"
+                            :text="true"
+                            :disabled="!$isAuthorized($OPERATION.D_PROCESS)"
+                            @click="handleDeleteProcess(row)">
+                            {{$t('Common["删除"]')}}
+                        </bk-button>
+                    </span>
+                </template>
+            </bk-table-column>
+            <template slot="empty">
                 <template v-if="withTemplate">
                     <i18n path="BusinessTopology['暂无模板进程']">
                         <button class="add-process-button text-primary" place="link"
@@ -40,34 +109,57 @@
                         </button>
                     </i18n>
                 </template>
-                <button class="add-process-button text-primary" v-else
-                    @click.stop="handleAddProcess">
-                    <i class="bk-icon icon-plus"></i>
-                    <span>{{$t('BusinessTopology["添加进程"]')}}</span>
-                </button>
+                <span style="display: inline-block;" v-else
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_PROCESS),
+                        auth: [$OPERATION.C_PROCESS]
+                    }">
+                    <button class="add-process-button text-primary"
+                        :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
+                        @click.stop="handleAddProcess">
+                        <i class="bk-icon icon-plus"></i>
+                        <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+                    </button>
+                </span>
             </template>
-            <template slot="__operation__" slot-scope="{ item }">
-                <button class="text-primary mr10"
-                    @click="handleEditProcess(item)">
-                    {{$t('Common["编辑"]')}}
-                </button>
-                <button class="text-primary" v-if="!withTemplate"
-                    @click="handleDeleteProcess(item)">
-                    {{$t('Common["删除"]')}}
-                </button>
+            <!-- <div class="add-process-options" v-if="!withTemplate && list.length" slot="append">
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_PROCESS),
+                        auth: [$OPERATION.C_PROCESS]
+                    }">
+                    <button class="add-process-button text-primary"
+                        :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
+                        @click="handleAddProcess">
+                        <i class="bk-icon icon-plus"></i>
+                        <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+                    </button>
+                </span>
+            </div> -->
+        </bk-table>
+        <bk-dialog class="bk-dialog-no-padding"
+            v-model="editLabel.show"
+            :width="580"
+            @confirm="handleSubmitEditLable"
+            @cancel="handleCloseEditLable"
+            @after-leave="handleSetEditBox">
+            <div slot="header">
+                {{$t("BusinessTopology['编辑标签']")}}
+            </div>
+            <template v-if="editLabel.visiable">
+                <cmdb-edit-label
+                    ref="instanceLabel"
+                    :default-list="editLabel.list">
+                </cmdb-edit-label>
             </template>
-        </cmdb-table>
-        <div class="add-process-options" v-if="!withTemplate && localExpanded && list.length">
-            <button class="add-process-button text-primary" @click="handleAddProcess">
-                <i class="bk-icon icon-plus"></i>
-                <span>{{$t('BusinessTopology["添加进程"]')}}</span>
-            </button>
-        </div>
+        </bk-dialog>
     </div>
 </template>
 
 <script>
+    import cmdbEditLabel from './edit-label.vue'
     export default {
+        components: { cmdbEditLabel },
         props: {
             instance: {
                 type: Object,
@@ -77,12 +169,26 @@
         },
         data () {
             return {
+                editLabel: {
+                    show: false,
+                    list: []
+                },
+                tipsLabel: {
+                    show: false,
+                    visiable: false,
+                    id: null
+                },
+                showTips: false,
                 show: true,
                 checked: false,
                 localExpanded: this.expanded,
                 properties: [],
                 header: [],
-                list: []
+                list: [],
+                tooltips: {
+                    content: this.$t('BusinessTopology["模板未添加进程"]'),
+                    placement: 'right'
+                }
             }
         },
         computed: {
@@ -96,15 +202,18 @@
             instanceMenu () {
                 const menu = [{
                     name: this.$t('Common["删除"]'),
-                    handler: this.handleDeleteInstance
+                    handler: this.handleDeleteInstance,
+                    auth: 'D_SERVICE_INSTANCE'
                 }]
                 if (!this.withTemplate) {
                     menu.unshift({
                         name: this.$t('BusinessTopology["添加进程"]'),
-                        handler: this.handleAddProcess
+                        handler: this.handleAddProcess,
+                        auth: 'C_PROCESS'
                     }, {
                         name: this.$t('BusinessTopology["克隆"]'),
-                        handler: this.handleCloneInstance
+                        handler: this.handleCloneInstance,
+                        auth: 'C_PROCESS'
                     })
                 }
                 return menu
@@ -121,6 +230,24 @@
                     properties: 'get_service_process_properties',
                     deleteProcess: 'delete_service_process'
                 }
+            },
+            labelList () {
+                const list = []
+                const labels = this.instance.labels
+                labels && Object.keys(labels).forEach((key, index) => {
+                    list.push({
+                        id: index,
+                        key: key,
+                        value: labels[key]
+                    })
+                })
+                return list
+            },
+            labelShowList () {
+                return this.labelList.slice(0, 3)
+            },
+            labelTipsList () {
+                return this.labelList.slice(3)
             }
         },
         watch: {
@@ -165,6 +292,7 @@
                             requestId: this.requestId.processList
                         }
                     })
+                    this.showTips = !this.list.length
                 } catch (e) {
                     this.list = []
                     console.error(e)
@@ -186,10 +314,6 @@
                         name: property.bk_property_name
                     }
                 })
-                header.push({
-                    id: '__operation__',
-                    name: this.$t('Common["操作"]')
-                })
                 this.header = header
             },
             handleAddProcess () {
@@ -209,6 +333,7 @@
                             })
                         }
                     })
+                    this.$success(this.$t('Common[\'删除成功\']'))
                     this.getServiceProcessList()
                 } catch (e) {
                     console.error(e)
@@ -224,7 +349,12 @@
                         moduleId: this.module.bk_module_id
                     },
                     query: {
-                        from: this.$route.fullPath,
+                        from: {
+                            name: this.$route.name,
+                            query: {
+                                module: this.module.bk_module_id
+                            }
+                        },
                         title: this.instance.name
                     }
                 })
@@ -232,7 +362,8 @@
             handleDeleteInstance () {
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认删除实例"]'),
-                    content: this.$t('BusinessTopology["即将删除实例"]', { name: this.instance.name }),
+                    subTitle: this.$t('BusinessTopology["即将删除实例"]', { name: this.instance.name }),
+                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         try {
                             await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
@@ -243,6 +374,7 @@
                                     requestId: this.requestId.deleteProcess
                                 }
                             })
+                            this.$success(this.$t('Common[\'删除成功\']'))
                             this.$emit('delete-instance', this.instance.id)
                         } catch (e) {
                             console.error(e)
@@ -265,6 +397,75 @@
                         }
                     }
                 })
+            },
+            handleShowEditLabel () {
+                if (!this.$isAuthorized(this.$OPERATION.U_SERVICE_INSTANCE)) return
+                this.editLabel.list = this.labelList
+                this.editLabel.show = true
+                this.editLabel.visiable = true
+            },
+            handleCloseEditLable () {
+                this.editLabel.show = false
+            },
+            handleSetEditBox () {
+                this.editLabel.list = []
+                this.editLabel.visiable = false
+            },
+            async handleSubmitEditLable () {
+                try {
+                    let status = ''
+                    const validator = this.$refs.instanceLabel.$validator
+                    const removeKeysList = this.$refs.instanceLabel.removeKeysList
+                    const list = this.$refs.instanceLabel.submitList
+                    const originList = this.$refs.instanceLabel.originList
+                    const hasChange = JSON.stringify(this.$refs.instanceLabel.list) !== JSON.stringify(originList)
+
+                    if (list.length && !await validator.validateAll()) {
+                        return
+                    }
+
+                    if (removeKeysList.length) {
+                        status = await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
+                            config: {
+                                data: this.$injectMetadata({
+                                    instance_ids: [this.instance.id],
+                                    keys: removeKeysList
+                                }),
+                                requestId: 'deleteInstanceLabel',
+                                transformData: false
+                            }
+                        })
+                    }
+
+                    if (list.length && hasChange) {
+                        const labelSet = {}
+                        list.forEach(label => {
+                            labelSet[label.key] = label.value
+                        })
+                        status = await this.$store.dispatch('instanceLabel/createInstanceLabel', {
+                            params: this.$injectMetadata({
+                                instance_ids: [this.instance.id],
+                                labels: labelSet
+                            }),
+                            config: {
+                                requestId: 'createInstanceLabel',
+                                transformData: false
+                            }
+                        })
+                    }
+                    if (status && status.bk_error_msg === 'success') {
+                        this.$success(this.$t('Common["保存成功"]'))
+                        this.$parent.filter = ''
+                        this.$parent.getServiceInstances()
+                        this.$parent.getHistoryLabel()
+                    }
+                    this.handleCloseEditLable()
+                    setTimeout(() => {
+                        this.handleSetEditBox()
+                    }, 200)
+                } catch (e) {
+                    console.error(e)
+                }
             }
         }
     }
@@ -286,6 +487,16 @@
             color: #63656E;
             @include inlineBlock;
         }
+        .icon-exclamation {
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            font-size: 14px;
+            text-align: center;
+            color: #ffffff;
+            background: #f0b659;
+            border-radius: 50%;
+        }
         .title-label {
             font-size: 14px;
             color: #313238;
@@ -293,8 +504,6 @@
         }
     }
     .add-process-options {
-        border: 1px solid $cmdbTableBorderColor;
-        border-top: none;
         line-height: 42px;
         font-size: 12px;
         text-align: center;
@@ -310,23 +519,105 @@
         min-width: 74px;
         padding: 6px 0;
         .menu-item {
+            .menu-span {
+                display: block;
+            }
             .menu-button {
                 display: block;
                 width: 100%;
                 height: 32px;
-                padding: 0 13px;
                 line-height: 32px;
-                outline: 0;
-                border: none;
-                text-align: left;
                 color: #63656E;
                 font-size: 12px;
-                background-color: #fff;
+                height: 32px;
+                padding: 0 13px;
+                text-align: left;
                 &:hover {
                     background-color: #E1ECFF;
                     color: #3A84FF;
                 }
+                &:disabled {
+                    color: #dcdee5;
+                }
             }
         }
+    }
+    .instance-label {
+        @include inlineBlock;
+        font-size: 12px;
+        .label-title {
+            color: #979ba5;
+            margin-right: 4px;
+            &:hover {
+                color: #3a84ff;
+            }
+            &.disabled {
+                color: #979ba5 !important;
+            }
+        }
+        .icon-cc-label {
+            font-size: 16px;
+            margin-top: -4px;
+        }
+        .label-list {
+            padding-left: 4px;
+            line-height: 38px;
+            font-size: 0;
+            .label-item {
+                @include inlineBlock;
+                font-size: 12px;
+                height: 20px;
+                line-height: 20px;
+                margin-right: 4px;
+                padding: 0 6px;
+                color: #979ba5;
+                background-color: #fafbfd;
+                border-radius: 2px;
+                &>span {
+                    @include ellipsis;
+                    display: inline-block;
+                    max-width: 54px;
+                }
+            }
+            .label-tips {
+                padding: 0;
+                /deep/.bk-tooltip-ref {
+                    padding: 0 6px;
+                    span {
+                        line-height: 16px;
+                        display: inline-block;
+                        vertical-align: top;
+                    }
+                }
+                &:hover {
+                    background-color: #e1ecff;
+                }
+            }
+        }
+    }
+</style>
+
+<style lang="scss">
+    .tips-label-list {
+        .label-item {
+            @include inlineBlock;
+            font-size: 12px;
+            height: 20px;
+            line-height: 18px;
+            margin: 5px 2px;
+            padding: 0 6px;
+            color: #979ba5;
+            background-color: #fafbfd;
+            border: 1px solid #dcdee5;
+            border-radius: 2px;
+            &>span {
+                @include ellipsis;
+                display: inline-block;
+                max-width: 54px;
+            }
+        }
+    }
+    .tippy-tooltip.label-tips-theme {
+        padding: 8px 6px !important;
     }
 </style>

@@ -1,31 +1,39 @@
 <template>
     <div class="device-wrapper">
         <div class="title">
-            <bk-button type="primary" @click="showPropertyDialog('create')">
+            <bk-button theme="primary" @click="showPropertyDialog('create')">
                 {{$t('NetworkDiscovery["新增属性"]')}}
             </bk-button>
-            <bk-button type="default"
+            <bk-button theme="default"
                 :loading="$loading('deleteNetcollectProperty')"
                 :disabled="!table.checked.length"
                 @click="deleteProperty">
                 {{$t('Common["删除"]')}}
             </bk-button>
-            <bk-button type="default" @click="importSlider.isShow = true">
+            <bk-button theme="default" @click="importSlider.isShow = true">
                 {{$t('ModelManagement["导入"]')}}
             </bk-button>
-            <bk-button type="default" form="exportForm" :disabled="!table.checked.length">
+            <bk-button theme="default" form="exportForm" :disabled="!table.checked.length">
                 {{$t('ModelManagement["导出"]')}}
             </bk-button>
             <form id="exportForm" :action="url.export" method="POST" hidden>
                 <input type="hidden" name="netcollect_property_id" :value="table.checked.join(',')">
             </form>
             <div class="filter">
-                <bk-selector
-                    class="search-selector"
-                    :list="filter.typeList"
-                    :selected.sync="filter.type"
-                ></bk-selector>
-                <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" v-model.trim="filter.text" @keyup.enter="getTableData">
+                <bk-select class="search-selector"
+                    v-model="filter.type">
+                    <bk-option v-for="(option, index) in filter.typeList"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
+                <bk-input class="cmdb-form-input"
+                    type="text"
+                    :placeholder="$t('Common[\'请输入\']')"
+                    v-model.trim="filter.text"
+                    @enter="getTableData">
+                </bk-input>
                 <i class="bk-icon icon-search"
                     @click="getTableData"></i>
             </div>
@@ -45,72 +53,90 @@
         </cmdb-table>
         <bk-dialog
             class="create-dialog"
-            :is-show.sync="propertyDialog.isShow"
+            v-model="propertyDialog.isShow"
             :title="propertyDialog.title"
-            :has-footer="false"
+            :show-footer="false"
             :close-icon="false"
             :width="424">
-            <div slot="content">
+            <div>
                 <div>
                     <label class="label first">
                         <span>{{$t('NetworkDiscovery["所属设备"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <bk-selector
-                        :list="propertyDialog.deviceList"
-                        :searchable="true"
-                        search-key="device_name"
-                        setting-key="device_id"
-                        display-key="device_name"
-                        :selected.sync="propertyDialog.data.device_id"
-                    ></bk-selector>
-                    <input type="text" hidden name="device_id" v-model="propertyDialog.data['device_id']" v-validate="'required'">
+                    <bk-select
+                        searchable
+                        v-model="propertyDialog.data.device_id">
+                        <bk-option v-for="(option, index) in propertyDialog.deviceList"
+                            :key="index"
+                            :id="option.device_id"
+                            :name="option.device_name">
+                        </bk-option>
+                    </bk-select>
+                    <bk-input type="text" hidden name="device_id"
+                        v-model="propertyDialog.data['device_id']"
+                        v-validate="'required'">
+                    </bk-input>
                     <div v-show="errors.has('device_id')" class="color-danger">{{ errors.first('device_id') }}</div>
                 </div>
                 <div>
                     <label class="label">
                         <span>oid<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text" class="cmdb-form-input" name="oid" v-model="propertyDialog.data.oid" v-validate="'required|oid'">
+                    <bk-input type="text" class="cmdb-form-input" name="oid"
+                        v-model="propertyDialog.data.oid"
+                        v-validate="'required|oid'">
+                    </bk-input>
                     <div v-show="errors.has('oid')" class="color-danger">{{ errors.first('oid') }}</div>
                 </div>
                 <div>
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["采集方式"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <bk-selector
-                        :list="propertyDialog.actionList"
-                        :selected.sync="propertyDialog.data.action"
-                    ></bk-selector>
-                    <input type="text" hidden name="action" v-model="propertyDialog.data.action" v-validate="'required'">
+                    <bk-select v-model="propertyDialog.data.action">
+                        <bk-option v-for="(option, index) in propertyDialog.actionList"
+                            :key="index"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
+                    <bk-input type="text" hidden name="action"
+                        v-model="propertyDialog.data.action"
+                        v-validate="'required'">
+                    </bk-input>
                     <div v-show="errors.has('action')" class="color-danger">{{ errors.first('action') }}</div>
                 </div>
                 <div>
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["模型属性"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <bk-selector
-                        search-key="bk_property_name"
-                        setting-key="bk_property_id"
-                        display-key="bk_property_name"
-                        :searchable="true"
-                        :content-max-height="200"
-                        :list="propertyDialog.attrList"
-                        :selected.sync="propertyDialog.data.bk_property_id"
-                    ></bk-selector>
-                    <input type="text" hidden name="bk_property_id" v-model="propertyDialog.data['bk_property_id']" v-validate="'required'">
+                    <bk-select
+                        searchable
+                        v-model="propertyDialog.data.bk_property_id"
+                        :scroll-height="200">
+                        <bk-option v-for="(option, index) in propertyDialog.attrList"
+                            :key="index"
+                            :id="option.bk_property_id"
+                            :name="option.bk_property_name">
+                        </bk-option>
+                    </bk-select>
+                    <bk-input type="text" hidden name="bk_property_id"
+                        v-model="propertyDialog.data['bk_property_id']"
+                        v-validate="'required'">
+                    </bk-input>
                     <div v-show="errors.has('bk_property_id')" class="color-danger">{{ errors.first('bk_property_id') }}</div>
                 </div>
                 <div class="footer">
-                    <bk-button type="primary" @click="saveProperty" :loading="$loading(['createNetcollectProperty', 'updateNetcollectProperty'])">
+                    <bk-button theme="primary" @click="saveProperty" :loading="$loading(['createNetcollectProperty', 'updateNetcollectProperty'])">
                         {{$t('Common["保存"]')}}
                     </bk-button>
-                    <bk-button type="default" @click="hidePropertyDialog">
+                    <bk-button theme="default" @click="hidePropertyDialog">
                         {{$t('Common["取消"]')}}
                     </bk-button>
                 </div>
             </div>
         </bk-dialog>
-        <cmdb-slider
+        <bk-sideslider
+            :width="800"
             :is-show.sync="importSlider.isShow"
             :title="$t('HostResourcePool[\'批量导入\']')">
             <cmdb-import v-if="importSlider.isShow" slot="content"
@@ -119,7 +145,7 @@
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

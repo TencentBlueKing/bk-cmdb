@@ -184,7 +184,7 @@
                 if (edgeCount) {
                     this.$bkInfo({
                         title: this.$t('ModelManagement["移除失败"]'),
-                        content: this.$tc('ModelManagement["移除失败提示"]', edgeCount, { asstNum: edgeCount })
+                        subTitle: this.$tc('ModelManagement["移除失败提示"]', edgeCount, { asstNum: edgeCount })
                     })
                     return false
                 } else {
@@ -194,7 +194,7 @@
                     })
                     this.$bkInfo({
                         title: this.$t('ModelManagement["确定移除模型?"]'),
-                        content: this.$t('ModelManagement["移除模型提示"]'),
+                        subTitle: this.$t('ModelManagement["移除模型提示"]'),
                         confirmFn: () => {
                             const data = this.topologyMap[nodeId]
                             this.updateSavedPosition([{

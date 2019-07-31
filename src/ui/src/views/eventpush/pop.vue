@@ -19,9 +19,9 @@
                         <pre>{{example}}</pre>
                     </div>
                     <div class="btn-group">
-                        <bk-button type="primary" class="btn" @click="testTelnet" :loading="$loading(['testPing', 'testTelnet'])">{{$t('EventPush["只测试连通性"]')}}</bk-button>
-                        <bk-button type="primary" class="btn" @click="testPing" :loading="$loading(['testPing', 'testTelnet'])">{{$t('EventPush["推送测试"]')}}</bk-button>
-                        <bk-button type="default" class="btn vice-btn" @click="closePop">{{$t('Common["取消"]')}}</bk-button>
+                        <bk-button theme="primary" class="btn" @click="testTelnet" :loading="$loading(['testPing', 'testTelnet'])">{{$t('EventPush["只测试连通性"]')}}</bk-button>
+                        <bk-button theme="primary" class="btn" @click="testPing" :loading="$loading(['testPing', 'testTelnet'])">{{$t('EventPush["推送测试"]')}}</bk-button>
+                        <bk-button theme="default" class="btn vice-btn" @click="closePop">{{$t('Common["取消"]')}}</bk-button>
                     </div>
                 </div>
             </div>

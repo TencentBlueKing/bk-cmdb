@@ -12,38 +12,46 @@
                 active: !$isAuthorized($OPERATION.C_CUSTOM_QUERY),
                 auth: [$OPERATION.C_CUSTOM_QUERY]
             }">
-                <bk-button type="primary" class="api-btn"
+                <bk-button theme="primary" class="api-btn"
                     :disabled="!$isAuthorized($OPERATION.C_CUSTOM_QUERY)"
                     @click="showUserAPISlider('create')">
                     {{$t("Common['新建']")}}
                 </bk-button>
             </span>
             <div class="api-input fr">
-                <input type="text" class="cmdb-form-input" :placeholder="$t('Inst[\'快速查询\']')" v-model="filter.name" @keyup.enter="getUserAPIList">
+                <bk-input type="text" class="cmdb-form-input"
+                    v-model="filter.name"
+                    :placeholder="$t('Inst[\'快速查询\']')"
+                    @enter="getUserAPIList">
+                </bk-input>
             </div>
         </div>
-        <cmdb-table
+        <bk-table
             class="api-table"
-            :loading="$loading('searchCustomQuery')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :wrapper-minus-height="220"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange"
-            @handleRowClick="showUserAPIDetails">
-            <template slot="create_time" slot-scope="{ item }">
-                {{$tools.formatTime(item['create_time'])}}
-            </template>
-            <template slot="last_time" slot-scope="{ item }">
-                {{$tools.formatTime(item['last_time'])}}
-            </template>
-            <div class="empty-info" slot="data-empty">
-                <p>{{$t("Common['暂时没有数据']")}}</p>
-            </div>
-        </cmdb-table>
-        <cmdb-slider
+            v-bkloading="{ isLoading: $loading('searchCustomQuery') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 220"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange"
+            @row-click="showUserAPIDetails">
+            <bk-table-column prop="id" label="ID"></bk-table-column>
+            <bk-table-column prop="name" :label="$t('CustomQuery[\'查询名称\']')"></bk-table-column>
+            <bk-table-column prop="create_user" :label="$t('CustomQuery[\'创建用户\']')"></bk-table-column>
+            <bk-table-column prop="create_time" :label="$t('CustomQuery[\'创建时间\']')">
+                <template slot-scope="{ row }">
+                    {{$tools.formatTime(row['create_time'])}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="modify_user" :label="$t('CustomQuery[\'修改人\']')"></bk-table-column>
+            <bk-table-column prop="last_time" :label="$t('CustomQuery[\'修改时间\']')">
+                <template slot-scope="{ row }">
+                    {{$tools.formatTime(row['last_time'])}}
+                </template>
+            </bk-table-column>
+        </bk-table>
+        <bk-sideslider
             :is-show.sync="slider.isShow"
             :has-quick-close="true"
             :width="430"
@@ -51,6 +59,7 @@
             :before-close="handleSliderBeforeClose">
             <v-define slot="content"
                 ref="define"
+                v-if="slider.isShow"
                 :id="slider.id"
                 :biz-id="bizId"
                 :type="slider.type"
@@ -59,7 +68,7 @@
                 @update="getUserAPIList"
                 @cancel="hideUserAPISlider">
             </v-define>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -79,32 +88,13 @@
                     name: ''
                 },
                 table: {
-                    header: [{
-                        id: 'id',
-                        name: 'ID'
-                    }, {
-                        id: 'name',
-                        name: this.$t("CustomQuery['查询名称']")
-                    }, {
-                        id: 'create_user',
-                        name: this.$t("CustomQuery['创建用户']")
-                    }, {
-                        id: 'create_time',
-                        name: this.$t("CustomQuery['创建时间']")
-                    }, {
-                        id: 'modify_user',
-                        name: this.$t("CustomQuery['修改人']")
-                    }, {
-                        id: 'last_time',
-                        name: this.$t("CustomQuery['修改时间']")
-                    }],
                     list: [],
                     sort: '-last_time',
                     defaultSort: '-last_time',
                     pagination: {
                         current: 1,
                         count: 0,
-                        size: 10
+                        limit: 10
                     }
                 },
                 slider: {
@@ -121,8 +111,8 @@
             ...mapGetters('objectBiz', ['bizId']),
             searchParams () {
                 const params = {
-                    start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                    limit: this.table.pagination.size,
+                    start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                    limit: this.table.pagination.limit,
                     sort: this.table.sort
                 }
                 this.filter.name ? params['condition'] = { 'name': this.filter.name } : void (0)
@@ -145,7 +135,9 @@
                 if (this.$refs.define.isCloseConfirmShow()) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('Common["确认退出"]'),
+                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 resolve(true)
                             },
@@ -195,11 +187,11 @@
                 this.getUserAPIList()
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.getUserAPIList()
             }
         }

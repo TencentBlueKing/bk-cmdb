@@ -33,6 +33,7 @@ export default {
                 this.authScope = 'global'
             }
         },
-        i18nTitle: 'Nav["主机"]'
+        i18nTitle: 'Nav["主机"]',
+        filterPropertyKey: 'resource_host_filter_properties'
     })
 }

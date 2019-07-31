@@ -39,10 +39,11 @@
                     </template>
                     <template v-else>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelName') }">
-                            <input type="text" class="cmdb-form-input"
+                            <bk-input type="text" class="cmdb-form-input"
                                 name="modelName"
                                 v-validate="'required|singlechar'"
                                 v-model.trim="modelInfo.objName">
+                            </bk-input>
                         </div>
                         <span class="text-primary" @click="saveModel">{{$t("Common['保存']")}}</span>
                         <span class="text-primary" @click="isEditName = false">{{$t("Common['取消']")}}</span>
@@ -73,7 +74,7 @@
                                 auth: [$OPERATION.U_MODEL]
                             }"
                             v-if="!isMainLine"
-                            v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
+                            v-bk-tooltips="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
                             <i class="bk-icon icon-minus-circle-shape"></i>
                             <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
                                 {{$t('ModelManagement["启用"]')}}
@@ -87,7 +88,7 @@
                                 active: !$isAuthorized($OPERATION.D_MODEL),
                                 auth: [$OPERATION.D_MODEL]
                             }"
-                            v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
+                            v-bk-tooltips="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
                             @click="dialogConfirm('delete')">
                             <i class="icon-cc-del"></i>
                             <span>{{$t("Common['删除']")}}</span>
@@ -96,19 +97,19 @@
                 </div>
             </template>
         </div>
-        <bk-tab class="model-details-tab" :active-name.sync="tab.active">
-            <bk-tabpanel name="field" :title="$t('ModelManagement[\'模型字段\']')">
+        <bk-tab class="model-details-tab" type="unborder-card" :active.sync="tab.active">
+            <bk-tab-panel name="field" :label="$t('ModelManagement[\'模型字段\']')">
                 <the-field ref="field" v-if="tab.active === 'field'"></the-field>
-            </bk-tabpanel>
-            <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')" :show="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
+            </bk-tab-panel>
+            <bk-tab-panel name="relation" :label="$t('ModelManagement[\'模型关联\']')" :visible="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
-            </bk-tabpanel>
-            <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="verification" :label="$t('ModelManagement[\'唯一校验\']')">
                 <the-verification v-if="tab.active === 'verification'"></the-verification>
-            </bk-tabpanel>
-            <bk-tabpanel name="propertyGroup" :title="$t('ModelManagement[\'字段分组\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="propertyGroup" :label="$t('ModelManagement[\'字段分组\']')">
                 <the-property-group v-if="tab.active === 'propertyGroup'"></the-property-group>
-            </bk-tabpanel>
+            </bk-tab-panel>
         </bk-tab>
     </div>
 </template>

@@ -1,7 +1,5 @@
 <template>
-    <div class="form-bool-input">
-        <input class="cmdb-form-input" type="text" v-model.trim="localValue">
-    </div>
+    <bk-input class="cmdb-form-input" type="text" v-model.trim="localValue"></bk-input>
 </template>
 
 <script>

@@ -3,9 +3,6 @@ import Vue from 'vue'
 import businessSelector from './selector/business.vue'
 import clipboardSelector from './selector/clipboard.vue'
 import selector from './selector/selector.vue'
-import table from './table/table.vue'
-import tableSelector from './table/table-selector.vue'
-import slider from './slider/slider.vue'
 import details from './details/details.vue'
 import form from './form/form.vue'
 import formMultiple from './form/form-multiple.vue'
@@ -21,7 +18,6 @@ import singlechar from './form/singlechar.vue'
 import timezone from './form/timezone.vue'
 import enumeration from './form/enum.vue'
 import objuser from './form/objuser.vue'
-import associateInput from './form/associate-input.vue'
 import tree from './tree/tree.vue'
 import resize from './other/resize.vue'
 import collapseTransition from './transition/collapse.js'
@@ -33,9 +29,6 @@ const install = (Vue, opts = {}) => {
         businessSelector,
         clipboardSelector,
         selector,
-        table,
-        tableSelector,
-        slider,
         details,
         form,
         formMultiple,
@@ -51,7 +44,6 @@ const install = (Vue, opts = {}) => {
         timezone,
         enumeration,
         objuser,
-        associateInput,
         tree,
         resize,
         collapseTransition,
@@ -69,9 +61,6 @@ export default {
     businessSelector,
     clipboardSelector,
     selector,
-    table,
-    tableSelector,
-    slider,
     details,
     form,
     formMultiple,
@@ -87,7 +76,6 @@ export default {
     timezone,
     enumeration,
     objuser,
-    associateInput,
     tree,
     resize,
     collapseTransition,

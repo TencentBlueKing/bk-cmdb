@@ -1,6 +1,6 @@
 <template>
     <div>
-        <cmdb-tree class="topology-tree"
+        <bk-big-tree class="topology-tree"
             ref="tree"
             v-bkloading="{
                 isLoading: $loading(['getTopologyData', 'getMainLine'])
@@ -10,38 +10,47 @@
                 nameKey: 'bk_inst_name',
                 childrenKey: 'child'
             }"
+            :expand-on-click="false"
+            selectable
             expand-icon="bk-icon icon-down-shape"
             collapse-icon="bk-icon icon-right-shape"
             @select-change="handleSelectChange">
             <div class="node-info clearfix" slot-scope="{ node, data }">
                 <i :class="['node-model-icon fl', { 'is-selected': node.selected }]">{{modelIconMap[data.bk_obj_id]}}</i>
+                <span class="fr" v-if="isBlueKing && showCreate(node, data)"
+                    v-bk-tooltips.top="$t('Common[\'您暂无创建权限\']')">
+                    <bk-button class="node-button"
+                        theme="primary"
+                        :disabled="true"
+                        @click.stop="showCreateDialog(node)">
+                        {{$t('Common[\'新建\']')}}
+                    </bk-button>
+                </span>
                 <bk-button class="node-button fr"
-                    type="primary"
-                    v-if="showCreate(node, data)"
+                    theme="primary"
+                    v-else-if="showCreate(node, data)"
                     @click.stop="showCreateDialog(node)">
                     {{$t('Common[\'新建\']')}}
                 </bk-button>
                 <span class="node-name">{{data.bk_inst_name}}</span>
             </div>
-        </cmdb-tree>
-        <bk-dialog
-            :is-show.sync="createInfo.show"
-            :has-header="false"
-            :has-footer="false"
-            :padding="0"
-            :quick-close="false"
+        </bk-big-tree>
+        <bk-dialog class="bk-dialog-no-padding bk-dialog-no-tools"
+            v-model="createInfo.show"
+            :show-footer="false"
+            :mask-close="false"
             :width="createInfo.nextModelId === 'module' ? 580 : 400"
-            @after-transition-leave="handleAfterCancelCreateNode"
+            @after-leave="handleAfterCancelCreateNode"
             @cancel="handleCancelCreateNode">
             <template v-if="createInfo.nextModelId === 'module'">
-                <create-module v-if="createInfo.visible" slot="content"
+                <create-module v-if="createInfo.visible"
                     :parent-node="createInfo.parentNode"
                     @submit="handleCreateNode"
                     @cancel="handleCancelCreateNode">
                 </create-module>
             </template>
             <template v-else>
-                <create-node v-if="createInfo.visible" slot="content"
+                <create-node v-if="createInfo.visible"
                     :properties="createInfo.properties"
                     :parent-node="createInfo.parentNode"
                     @submit="handleCreateNode"
@@ -92,6 +101,9 @@
                     map[model.bk_obj_id] = model.bk_obj_name[0]
                 })
                 return map
+            },
+            isBlueKing () {
+                return this.treeData[0].bk_inst_name === '蓝鲸'
             }
         },
         async created () {
@@ -138,8 +150,7 @@
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
-                const isBlueKing = this.treeData[0].bk_inst_name === '蓝鲸'
-                return node.selected && !isModule && !isBlueKing
+                return node.selected && !isModule
             },
             async showCreateDialog (node) {
                 const nodeModel = this.mainLine.find(data => data.bk_obj_id === node.data.bk_obj_id)
@@ -259,7 +270,7 @@
             text-align: center;
             font-style: normal;
             font-size: 12px;
-            margin: 5px 4px 0 6px;
+            margin: 9px 4px 0 6px;
             border-radius: 50%;
             background-color: #c4c6cc;
             color: #fff;
@@ -270,14 +281,15 @@
         .node-button {
             height: 24px;
             padding: 0 6px;
-            margin: 4px;
+            margin: 8px 4px;
             line-height: 22px;
             border-radius: 4px;
             font-size: 12px;
+            min-width: auto;
         }
         .node-name {
             display: block;
-            line-height: 32px;
+            line-height: 40px;
             font-size: 14px;
             @include ellipsis;
         }

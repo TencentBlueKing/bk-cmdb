@@ -1,8 +1,9 @@
 <template>
     <div class="relation-topology-layout" :class="{ 'full-screen': fullScreen }">
-        <bk-button class="exit-full-screen icon-cc-resize-small" size="small" type="default"
+        <bk-button class="exit-full-screen" size="small" theme="default"
             v-show="fullScreen"
             @click="toggleFullScreen(false)">
+            <i class="icon-cc-resize-small"></i>
             {{$t('Common["退出"]')}}
         </bk-button>
         <div class="tolology-loading" v-bkloading="{ isLoading: $loading(getRelationRequestId) }">

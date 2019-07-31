@@ -2,14 +2,14 @@
     <div class="graphics-toolbar clearfix">
         <div class="toolbar-left fl">
             <template v-if="isEditMode">
-                <bk-button type="primary"
+                <bk-button theme="primary"
                     @click="handleToggleMode">
                     {{$t('Common["返回"]')}}
                 </bk-button>
                 <span class="edit-tips">{{$t('ModelManagement["所有更改已自动保存"]')}}</span>
             </template>
             <template v-else>
-                <bk-button type="primary"
+                <bk-button theme="primary"
                     @click="handleToggleMode">
                     {{$t('ModelManagement["编辑拓扑"]')}}
                 </bk-button>
@@ -17,19 +17,19 @@
         </div>
         <div class="toolbar-right">
             <i class="toolbar-icon bk-icon icon-full-screen"
-                v-tooltip="$t('ModelManagement[\'还原\']')"
+                v-bk-tooltips="$t('ModelManagement[\'还原\']')"
                 @click="handleResize">
             </i>
             <i class="toolbar-icon bk-icon icon-plus"
-                v-tooltip="$t('ModelManagement[\'放大\']')"
+                v-bk-tooltips="$t('ModelManagement[\'放大\']')"
                 @click="handleZoom('in')">
             </i>
             <i class="toolbar-icon bk-icon icon-minus"
-                v-tooltip="$t('ModelManagement[\'缩小\']')"
+                v-bk-tooltips="$t('ModelManagement[\'缩小\']')"
                 @click="handleZoom('out')">
             </i>
             <i class="toolbar-icon icon-cc-setting"
-                v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"
+                v-bk-tooltips="$t('ModelManagement[\'拓扑显示设置\']')"
                 @click="handleSetConfig">
             </i>
         </div>

@@ -6,50 +6,54 @@
                 active: !$isAuthorized($OPERATION.U_MODEL),
                 auth: [$OPERATION.U_MODEL]
             }">
-            <bk-button class="create-btn" type="primary"
+            <bk-button class="create-btn" theme="primary"
                 :disabled="isReadOnly || !updateAuth"
                 @click="createVerification">
                 {{$t('ModelManagement["新建校验"]')}}
             </bk-button>
         </span>
-        <cmdb-table
+        <bk-table
             class="verification-table"
-            :loading="$loading(['searchObjectUniqueConstraints', 'deleteObjectUniqueConstraints'])"
-            :sortable="false"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :wrapper-minus-height="220">
-            <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                <div :key="index" :class="{ 'disabled': isReadOnly }">
-                    <template v-if="header.id === 'keys'">
-                        {{getRuleName(item.keys)}}
-                    </template>
-                    <template v-else-if="header.id === 'must_check'">
-                        {{item['must_check'] ? $t('ModelManagement["是"]') : $t('ModelManagement["否"]')}}
-                    </template>
-                    <template v-else-if="header.id === 'operation'">
-                        <button class="text-primary mr10"
-                            :disabled="!isEditable(item)"
-                            @click.stop="editVerification(item)">
-                            {{$t('Common["编辑"]')}}
-                        </button>
-                        <button class="text-primary"
-                            :disabled="!isEditable(item)"
-                            @click.stop="deleteVerification(item)">
-                            {{$t('Common["删除"]')}}
-                        </button>
-                    </template>
-                </div>
-            </template>
-        </cmdb-table>
-        <cmdb-slider
+            v-bkloading="{
+                isLoading: $loading(['searchObjectUniqueConstraints', 'deleteObjectUniqueConstraints'])
+            }"
+            :data="table.list"
+            :max-height="$APP.height - 220">
+            <bk-table-column :label="$t('ModelManagement[\'校验规则\']')">
+                <template slot-scope="{ row }">
+                    {{getRuleName(row.keys)}}
+                </template>
+            </bk-table-column>
+            <bk-table-column :label="$t('ModelManagement[\'是否为必须校验\']')">
+                <template slot-scope="{ row }">
+                    {{row.must_check ? $t('ModelManagement["是"]') : $t('ModelManagement["否"]')}}
+                </template>
+            </bk-table-column>
+            <bk-table-column
+                v-if="updateAuth && !isTopoModel"
+                :label="$t('Common[\'操作\']')">
+                <template slot-scope="{ row }">
+                    <button class="text-primary mr10"
+                        :disabled="!isEditable(row)"
+                        @click.stop="editVerification(row)">
+                        {{$t('Common["编辑"]')}}
+                    </button>
+                    <button class="text-primary"
+                        :disabled="!isEditable(row)"
+                        @click.stop="deleteVerification(row)">
+                        {{$t('Common["删除"]')}}
+                    </button>
+                </template>
+            </bk-table-column>
+        </bk-table>
+        <bk-sideslider
             :width="450"
             :title="slider.title"
             :is-show.sync="slider.isShow">
             <the-verification-detail
                 class="slider-content"
                 slot="content"
+                v-if="slider.isShow"
                 :is-read-only="isReadOnly"
                 :is-edit="slider.isEdit"
                 :verification="slider.verification"
@@ -57,7 +61,7 @@
                 @save="saveVerification"
                 @cancel="slider.isShow = false">
             </the-verification-detail>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -76,16 +80,6 @@
                     verification: {}
                 },
                 table: {
-                    header: [{
-                        id: 'keys',
-                        name: this.$t('ModelManagement["校验规则"]')
-                    }, {
-                        id: 'must_check',
-                        name: this.$t('ModelManagement["是否为必须校验"]')
-                    }, {
-                        id: 'operation',
-                        name: this.$t('Common["操作"]')
-                    }],
                     list: []
                 },
                 attributeList: []
@@ -116,9 +110,6 @@
             }
         },
         async created () {
-            if (!this.updateAuth || this.isTopoModel) {
-                this.table.header.pop()
-            }
             this.initAttrList()
             this.searchVerification()
         },

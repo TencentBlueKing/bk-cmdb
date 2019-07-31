@@ -8,12 +8,13 @@
                     <span class="color-danger">*</span>
                 </label>
                 <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('templateName') }">
-                    <input type="text" class="cmdb-form-input" id="templateName"
+                    <bk-input type="text" class="cmdb-form-input" id="templateName"
                         name="templateName"
                         :placeholder="$t('ServiceManagement[\'请输入模版名称\']')"
                         :disabled="!isCreatedType"
                         v-model.trim="formData.templateName"
                         v-validate="'required|singlechar'">
+                    </bk-input>
                     <p class="form-error">{{errors.first('templateName')}}</p>
                 </div>
             </div>
@@ -54,10 +55,16 @@
             <h3>{{$t("ProcessManagement['服务进程']")}}</h3>
             <div class="precess-box">
                 <div class="process-create">
-                    <bk-button class="create-btn" @click="handleCreateProcess">
-                        <i class="bk-icon icon-plus"></i>
-                        <span>{{$t("ServiceManagement['新建进程']")}}</span>
-                    </bk-button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                        }">
+                        <bk-button class="create-btn" :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)" @click="handleCreateProcess">
+                            <i class="bk-icon icon-plus"></i>
+                            <span>{{$t("ServiceManagement['新建进程']")}}</span>
+                        </bk-button>
+                    </span>
                     <span class="create-tips">{{$t("ServiceManagement['新建进程提示']")}}</span>
                 </div>
                 <process-table
@@ -69,13 +76,27 @@
                     :list="processList">
                 </process-table>
                 <div class="btn-box">
-                    <bk-button type="primary" @click="handleSubmit">{{$t("Common['确定']")}}</bk-button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                        }">
+                        <bk-button theme="primary"
+                            :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
+                            @click="handleSubmit">
+                            {{$t("Common['确定']")}}
+                        </bk-button>
+                    </span>
                     <bk-button @click="handleCancelOperation">{{$t("Common['取消']")}}</bk-button>
                 </div>
             </div>
         </div>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
-            <template slot="content">
+        <bk-sideslider
+            :is-show.sync="slider.show"
+            :title="slider.title"
+            :width="800"
+            :before-close="handleSliderBeforeClose">
+            <template slot="content" v-if="slider.show">
                 <process-form
                     ref="processForm"
                     :properties="properties"
@@ -89,16 +110,14 @@
                     @on-cancel="handleCancelProcess">
                 </process-form>
             </template>
-        </cmdb-slider>
+        </bk-sideslider>
         <bk-dialog
-            :is-show.sync="createdSucess.show"
+            v-model="createdSucess.show"
             :width="490"
             :close-icon="false"
-            :has-footer="false"
-            :has-header="false"
-            :title="createdSucess.title"
-            :content="createdSucess.content">
-            <div class="created-success" slot="content">
+            :show-footer="false"
+            :title="createdSucess.title">
+            <div class="created-success">
                 <div class="content">
                     <i class="bk-icon icon-check-1"></i>
                     <p>{{$t("ServiceManagement['服务模板创建成功']")}}</p>
@@ -106,7 +125,7 @@
                 </div>
                 <div class="btn-box">
                     <bk-button
-                        type="primary"
+                        theme="primary"
                         class="mr10"
                         @click="handleGoInstance">
                         {{$t("ServiceManagement['创建服务实例']")}}
@@ -421,7 +440,9 @@
                 if (hasChanged) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('Common["确认退出"]'),
+                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 resolve(true)
                             },
@@ -439,29 +460,6 @@
 
 <style lang="scss" scoped>
     .create-template-wrapper {
-        .created-success {
-            font-size: 14px;
-            text-align: center;
-            color: #444444;
-            .bk-icon {
-                width: 60px;
-                height: 60px;
-                line-height: 60px;
-                font-size: 30px;
-                font-weight: bold;
-                color: #ffffff;
-                border-radius: 50%;
-                background-color: #2dcb56;
-                margin-top: 12px;
-            }
-            p {
-                font-size: 24px;
-                padding: 14px 0 24px;
-            }
-            .btn-box {
-                padding: 32px 0 36px;
-            }
-        }
         .info-group {
             h3 {
                 color: #63656e;
@@ -479,7 +477,7 @@
                 .cmdb-form-item {
                     width: 520px;
                 }
-                .bk-selector {
+                .bk-select {
                     width: 254px;
                     margin-right: 10px;
                 }
@@ -509,6 +507,29 @@
             .btn-box {
                 padding-top: 30px;
             }
+        }
+    }
+    .created-success {
+        font-size: 14px;
+        text-align: center;
+        color: #444444;
+        .bk-icon {
+            width: 60px;
+            height: 60px;
+            line-height: 60px;
+            font-size: 30px;
+            font-weight: bold;
+            color: #ffffff;
+            border-radius: 50%;
+            background-color: #2dcb56;
+            margin-top: 12px;
+        }
+        p {
+            font-size: 24px;
+            padding: 14px 0 24px;
+        }
+        .btn-box {
+            padding: 32px 0 36px;
         }
     }
 </style>

@@ -5,41 +5,50 @@
                 <i class="bk-icon icon-down-shape" v-if="localExpanded"></i>
                 <i class="bk-icon icon-right-shape" v-else></i>
                 {{name}}
+                <i class="bk-icon icon-exclamation" v-if="showTips && !processList.length" v-bk-tooltips="tooltips"></i>
             </div>
             <div class="fr">
                 <i class="bk-icon icon-close" v-if="deletable" @click="handleDelete"></i>
             </div>
         </div>
-        <cmdb-table
-            :header="header"
-            :list="processFlattenList"
-            :empty-height="58"
-            :sortable="false"
-            :reference-document-height="false">
-            <template slot="data-empty">
+        <bk-table
+            :data="processFlattenList">
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('Common[\'操作\']')" fixed="right">
+                <template slot-scope="{ row, $index }">
+                    <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess($index)">
+                        {{$t('Common["编辑"]')}}
+                    </a>
+                    <a href="javascript:void(0)" class="text-primary"
+                        v-if="!sourceProcesses.length"
+                        @click="handleDeleteProcess($index)">
+                        {{$t('Common["删除"]')}}
+                    </a>
+                </template>
+            </bk-table-column>
+            <template slot="empty">
                 <button class="add-process-button text-primary" @click="handleAddProcess">
                     <i class="bk-icon icon-plus"></i>
                     <span>{{$t('BusinessTopology["添加进程"]')}}</span>
                 </button>
             </template>
-            <template slot="__operation__" slot-scope="{ rowIndex }">
-                <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess(rowIndex)">{{$t('Common["编辑"]')}}</a>
-                <a href="javascript:void(0)" class="text-primary" v-if="!sourceProcesses.length"
-                    @click="handleDeleteProcess(rowIndex)">{{$t('Common["删除"]')}}
-                </a>
-            </template>
-        </cmdb-table>
+        </bk-table>
         <div class="add-process-options" v-if="!sourceProcesses.length && processList.length">
             <button class="add-process-button text-primary" @click="handleAddProcess">
                 <i class="bk-icon icon-plus"></i>
                 <span>{{$t('BusinessTopology["添加进程"]')}}</span>
             </button>
         </div>
-        <cmdb-slider
+        <bk-sideslider
+            :width="800"
             :title="`${$t('BusinessTopology[\'添加进程\']')}(${name})`"
             :is-show.sync="processForm.show"
             :before-close="handleBeforeClose">
-            <cmdb-form slot="content"
+            <cmdb-form slot="content" v-if="processForm.show"
                 ref="processForm"
                 :type="processForm.type"
                 :inst="processForm.instance"
@@ -49,7 +58,7 @@
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleBeforeClose">
             </cmdb-form>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -81,6 +90,10 @@
                 default () {
                     return []
                 }
+            },
+            showTips: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -95,6 +108,10 @@
                     rowIndex: null,
                     instance: {},
                     unwatch: null
+                },
+                tooltips: {
+                    content: this.$t('BusinessTopology["请为主机添加进程"]'),
+                    placement: 'right'
                 }
             }
         },
@@ -109,7 +126,7 @@
                     'work_path'
                 ]
                 const header = []
-                display.map(id => {
+                display.forEach(id => {
                     const property = this.processProperties.find(property => property.bk_property_id === id)
                     if (property) {
                         header.push({
@@ -117,10 +134,6 @@
                             name: property.bk_property_name
                         })
                     }
-                })
-                header.push({
-                    id: '__operation__',
-                    name: this.$t('Common["操作"]')
                 })
                 return header
             },
@@ -213,7 +226,9 @@
                 if (Object.keys(changedValues).length) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('Common["确认退出"]'),
+                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.handleCancelCreateProcess()
                             },
@@ -254,6 +269,13 @@
             text-align: center;
             cursor: pointer;
             @include inlineBlock;
+        }
+        .icon-exclamation {
+            font-size: 14px;
+            color: #ffffff;
+            background: #f0b659;
+            border-radius: 50%;
+            transform: scale(.6);
         }
     }
     .add-process-options {
