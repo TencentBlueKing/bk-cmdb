@@ -309,6 +309,18 @@ export function getValidateRules (property) {
     return rules
 }
 
+export function getSort (sort) {
+    const order = sort.order
+    const prop = sort.prop
+    if (!prop) {
+        return ''
+    }
+    if (order === 'descending') {
+        return `-${prop}`
+    }
+    return prop
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -325,5 +337,6 @@ export default {
     clone,
     getInstFormValues,
     getMetadataBiz,
-    getValidateRules
+    getValidateRules,
+    getSort
 }

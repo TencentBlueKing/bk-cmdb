@@ -6,9 +6,10 @@
             <div class="group-header clearfix">
                 <div class="header-title fl">
                     <template v-if="group.info['bk_group_id'] !== 'none' && group === groupInEditing">
-                        <input type="text" class="title-input cmdb-form-input"
+                        <bk-input type="text" class="title-input cmdb-form-input"
                             ref="titleInput"
                             v-model.trim="groupNameInEditing">
+                        </bk-input>
                         <a class="title-input-button" href="javascript:void(0)" @click="handleUpdateGroupName(group)">{{$t('Common["保存"]')}}</a>
                         <a class="title-input-button" href="javascript:void(0)" @click="handleCancelEditGroupName">{{$t('Common["取消"]')}}</a>
                     </template>
@@ -23,25 +24,25 @@
                 </div>
                 <div class="header-options fr" v-if="updateAuth && isEditable(group.info)">
                     <i class="options-icon bk-icon icon-arrows-up"
-                        v-tooltip="$t('ModelManagement[\'上移\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'上移\']')"
                         :class="{
                             disabled: !canRiseGroup(index, group)
                         }"
                         @click="handleRiseGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-arrows-down"
-                        v-tooltip="$t('ModelManagement[\'下移\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'下移\']')"
                         :class="{
                             disabled: !canDropGroup(index, group)
                         }"
                         @click="handleDropGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-plus-circle-shape"
-                        v-tooltip="$t('ModelManagement[\'新建字段\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'添加字段\']')"
                         @click="handleAddProperty(group)">
                     </i>
                     <i class="options-icon bk-icon icon-delete"
-                        v-tooltip="$t('ModelManagement[\'删除分组\']')"
+                        v-bk-tooltips="$t('ModelManagement[\'删除分组\']')"
                         :class="{ disabled: ['none', 'default'].includes(group.info['bk_group_id']) }"
                         @click="handleDeleteGroup(group, index)">
                     </i>
@@ -71,7 +72,7 @@
                 <template v-if="!group.properties.length">
                     <li class="property-empty" v-if="updateAuth && isEditable(group.info)"
                         @click="handleAddProperty(group)">
-                        {{$t('ModelManagement["立即添加"]')}}
+                        {{$t('ModelManagement["添加字段"]')}}
                     </li>
                     <li class="property-empty disabled" v-else>{{$t('ModelManagement["暂无字段"]')}}</li>
                 </template>
@@ -85,27 +86,26 @@
                         <i class="icon icon-cc-edit"></i>
                     </a>
                     <template v-else>
-                        <input type="text" class="add-group-input cmdb-form-input"
+                        <bk-input type="text" class="add-group-input cmdb-form-input"
                             ref="addGroupInput"
                             v-model.trim="newGroupName">
+                        </bk-input>
                         <a class="add-group-button" href="javascript:void(0)" @click="handleCreateGroup">{{$t('Common["保存"]')}}</a>
                         <a class="add-group-button" href="javascript:void(0)" @click="handleCancelCreateGroup">{{$t('Common["取消"]')}}</a>
                     </template>
                 </div>
             </template>
         </div>
-        <bk-dialog
-            :is-show.sync="dialog.isShow"
-            :has-header="false"
-            :quick-close="false"
+        <bk-dialog class="bk-dialog-no-padding"
+            v-model="dialog.isShow"
+            :mask-close="false"
             :width="600"
             @cancel="handleCancelAddProperty"
             @confirm="handleConfirmAddProperty">
             <div class="dialog-title" slot="tools">{{$t('ModelManagement["新建字段"]')}}</div>
-            <div class="dialog-content" slot="content">
+            <div class="dialog-content">
                 <div class="dialog-filter">
-                    <input type="text" class="cmdb-form-input" v-model.trim="dialog.filter">
-                    <i class="bk-icon icon-search"></i>
+                    <bk-input type="text" class="cmdb-form-input" v-model.trim="dialog.filter" right-icon="bk-icon icon-search"></bk-input>
                 </div>
                 <ul class="dialog-property clearfix" ref="dialogProperty">
                     <li class="property-item fl"
@@ -757,6 +757,7 @@
     }
     .dialog-content {
         width: 470px;
+        padding: 0 0 20px 0;
         margin: 0 auto;
     }
     .dialog-filter {

@@ -8,39 +8,51 @@
                 {{$t('Common["批量编辑"]')}}
             </bk-button>
         </div>
-        <cmdb-table class="source-table"
-            :sortable="false"
-            :cross-page-check="false"
-            :empty-height="42"
-            :header="header"
-            :list="flattenList"
-            :checked.sync="checked">
-            <template slot="__operation__" slot-scope="{ item }">
-                <button class="text-primary mr10" v-if="isRepeat(item)"
-                    @click="handleEditProcess(item)">
-                    <i class="bk-icon icon-exclamation-circle"></i>
-                    {{$t('Common["请编辑"]')}}
-                </button>
-                <button class="text-primary mr10" v-else
-                    @click="handleEditProcess(item)">
-                    {{$t('Common["编辑"]')}}
-                </button>
-            </template>
-        </cmdb-table>
+        <bk-table class="source-table"
+            :data="flattenList"
+            @selection-change="handleSelectChange">
+            <bk-table-column type="selection" align="center" width="60" fixed class-name="bk-table-selection"></bk-table-column>
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('Common[\'操作\']')" fixed="right">
+                <template slot-scope="{ row }">
+                    <button class="text-primary mr10" v-if="isRepeat(row)"
+                        @click="handleEditProcess(row)">
+                        <i class="bk-icon icon-exclamation-circle"></i>
+                        {{$t('Common["请编辑"]')}}
+                    </button>
+                    <button class="text-primary mr10" v-else
+                        @click="handleEditProcess(row)">
+                        {{$t('Common["编辑"]')}}
+                    </button>
+                </template>
+            </bk-table-column>
+        </bk-table>
         <div class="page-options">
-            <bk-button class="options-button" type="primary"
-                :disabled="!!repeatedProcesses.length"
-                @click="doClone">
-                {{$t('Common["确定"]')}}
-            </bk-button>
+            <span
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                    auth: [$OPERATION.C_SERVICE_INSTANCE]
+                }">
+                <bk-button class="options-button" theme="primary"
+                    :disabled="!!repeatedProcesses.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                    @click="doClone">
+                    {{$t('Common["确定"]')}}
+                </bk-button>
+            </span>
             <bk-button class="options-button" @click="backToModule">{{$t('Common["取消"]')}}</bk-button>
         </div>
-        <cmdb-slider
+        <bk-sideslider
             :is-show.sync="processForm.show"
             :title="processForm.title"
+            :width="800"
             :before-close="handleBeforeClose">
             <cmdb-form slot="content"
                 ref="processForm"
+                v-if="processForm.show"
                 :properties="properties"
                 :property-groups="propertyGroups"
                 :object-unique="processForm.type === 'single' ? [] : propertyUnique"
@@ -48,7 +60,7 @@
                 @on-submit="handleSubmit"
                 @on-cancel="handleBeforeClose">
             </cmdb-form>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -94,14 +106,6 @@
                         id: property.bk_property_id,
                         name: property.bk_property_name
                     }
-                })
-                header.unshift({
-                    id: 'bk_process_id',
-                    type: 'checkbox'
-                })
-                header.push({
-                    id: '__operation__',
-                    name: this.$t('Common["操作"]')
                 })
                 return header
             },
@@ -181,6 +185,9 @@
             isRepeat (item) {
                 return this.repeatedProcesses.some(process => process.bk_process_id === item.bk_process_id)
             },
+            handleSelectChange (selection) {
+                this.checked = selection.map(row => row.bk_process_id)
+            },
             handleBatchEdit () {
                 this.processForm.type = 'batch'
                 this.processForm.title = this.$t('Common["批量编辑"]')
@@ -212,7 +219,9 @@
                 if (Object.keys(changedValues).length) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('Common["确认退出"]'),
+                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.handleCloseProcessForm()
                             },
@@ -238,6 +247,7 @@
                             ]
                         })
                     })
+                    this.$success(this.$t('Common[\'克隆成功\']'))
                     this.backToModule()
                 } catch (e) {
                     console.error(e)

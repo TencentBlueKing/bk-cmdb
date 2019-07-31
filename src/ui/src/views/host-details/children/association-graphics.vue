@@ -1,6 +1,6 @@
 <template>
     <div class="relation-topology-layout" :class="{ 'full-screen': fullScreen }">
-        <bk-button class="exit-full-screen icon-cc-resize-small" size="small" type="default"
+        <bk-button class="exit-full-screen icon-cc-resize-small" size="small" theme="default"
             v-show="fullScreen"
             @click="toggleFullScreen(false)">
             {{$t('Common["退出"]')}}
@@ -28,16 +28,18 @@
                 {{$t('Common["详情信息"]')}}
             </a>
         </div>
-        <cmdb-slider
+        <bk-sideslider
+            :width="800"
             :is-show.sync="details.show"
             :title="details.title">
             <cmdb-details slot="content"
+                v-if="details.show"
                 :show-options="false"
                 :inst="details.inst"
                 :properties="details.properties"
                 :property-groups="details.propertyGroups">
             </cmdb-details>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

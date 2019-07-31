@@ -82,7 +82,7 @@
             </ul>
         </div>
         <div class="task-detail-btn">
-            <bk-button type="primary" :loading="$loading('savePush')" class="btn" @click="edit">{{$t('Common["编辑"]')}}</bk-button>
+            <bk-button theme="primary" :loading="$loading('savePush')" class="btn" @click="edit">{{$t('Common["编辑"]')}}</bk-button>
         </div>
     </div>
 </template>

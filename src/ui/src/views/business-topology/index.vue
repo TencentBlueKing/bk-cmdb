@@ -8,15 +8,15 @@
             <cmdb-topology-tree></cmdb-topology-tree>
         </cmdb-resize-layout>
         <div class="tab-layout">
-            <bk-tab :active-name="active">
-                <bk-tabpanel name="serviceInstances"
-                    :title="$t('BusinessTopology[\'服务实例\']')"
-                    :show="isModuleNode">
+            <bk-tab :active="active" type="unborder-card">
+                <bk-tab-panel name="serviceInstances"
+                    :label="$t('BusinessTopology[\'服务实例\']')"
+                    :visible="isModuleNode">
                     <cmdb-service-instances></cmdb-service-instances>
-                </bk-tabpanel>
-                <bk-tabpanel name="nodeInfo" :title="$t('BusinessTopology[\'节点信息\']')">
+                </bk-tab-panel>
+                <bk-tab-panel name="nodeInfo" :label="$t('BusinessTopology[\'节点信息\']')">
                     <cmdb-service-node-info></cmdb-service-node-info>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
         </div>
     </div>
@@ -68,11 +68,20 @@
     .tree-layout {
         width: 280px;
         height: 100%;
-        padding: 20px 0 20px 20px;
+        padding: 20px 0;
         border-right: 1px solid $cmdbBorderColor;
     }
     .tab-layout {
         height: 100%;
         overflow: hidden;
+        .bk-tab {
+            height: 100%;
+        }
+        /deep/.bk-tab-section {
+            height: calc(100% - 42px);
+        }
+        /deep/.bk-tab-content {
+            height: 100%;
+        }
     }
 </style>

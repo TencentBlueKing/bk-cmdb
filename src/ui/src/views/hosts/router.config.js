@@ -33,6 +33,7 @@ export default {
             }
         },
         requireBusiness: true,
-        i18nTitle: 'Nav["业务主机"]'
+        i18nTitle: 'Nav["业务主机"]',
+        filterPropertyKey: 'business_host_filter_properties'
     })
 }

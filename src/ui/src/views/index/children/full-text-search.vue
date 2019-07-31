@@ -32,7 +32,7 @@
         </div>
         <div class="results-wrapper" ref="resultsWrapper"
             :class="{ 'searching': searching }"
-            v-bkloading="{ 'isLoading': searching }">
+            v-bkloading="{ 'isLoading': $loading(requestId), 'afterLeave': loadingClose }">
             <div v-show="hasData">
                 <div class="results-list" ref="resultsList">
                     <div class="results-item"
@@ -66,13 +66,34 @@
                                 </span>
                             </div>
                         </template>
+                        <template v-else-if="source.hitsType === 'biz'">
+                            <div class="results-title"
+                                v-html="`${modelClassifyName['biz']} - ${source.bk_biz_name.toString()}`"
+                                @click="jumpPage(source)"></div>
+                            <div class="results-desc" v-if="propertyMap['biz']" @click="jumpPage(source)">
+                                <span class="desc-item"
+                                    v-for="(property, childIndex) in propertyMap['biz']"
+                                    :key="childIndex"
+                                    v-if="source[property['bk_property_id']]"
+                                    v-html="`${property['bk_property_name']}：${getShowPropertyText(property, source, property['bk_property_id'])}`">
+                                </span>
+                            </div>
+                        </template>
                     </div>
                 </div>
-                <full-text-pagination
-                    :pagination="pagination"
-                    @limit-change="handleLimitChange"
-                    @page-change="handlePageChange">
-                </full-text-pagination>
+                <div class="pagination-info">
+                    <span class="mr10">{{$tc("Common['共计N条']", pagination['total'], { N: pagination['total'] })}}</span>
+                    <bk-pagination
+                        size="small"
+                        align="right"
+                        :type="'compact'"
+                        :current.sync="pagination['current']"
+                        :limit="pagination['limit']"
+                        :count="pagination['total']"
+                        @limit-change="handleLimitChange"
+                        @change="handlePageChange">
+                    </bk-pagination>
+                </div>
             </div>
         </div>
         <div class="no-data" v-show="!hasData && showNoData && !searching">
@@ -87,12 +108,8 @@
         addMainScrollListener,
         removeMainScrollListener
     } from '@/utils/main-scroller'
-    import fullTextPagination from './full-text-pagination.vue'
     import { mapGetters, mapActions } from 'vuex'
     export default {
-        components: {
-            fullTextPagination
-        },
         data () {
             return {
                 toggleTips: null,
@@ -155,7 +172,6 @@
                 }
             },
             'query.queryString' (queryString) {
-                window.location.hash = this.hash.substring(0, this.hash.search(/=/) + 1) + this.query.queryString
                 let delay = 0
                 if (this.searchTriggerType === 'click') {
                     this.query.objId = this.query.objId
@@ -246,6 +262,7 @@
                 }
                 this.debounceTimer = setTimeout(() => {
                     if (!this.query.queryString) return
+                    window.location.hash = `${this.hash.substring(0, this.hash.search(/=/) + 1)}${this.query.queryString}&from=${this.$route.query.from}`
                     this.searching = true
                     this.$store.dispatch('fullTextSearch/search', {
                         params: this.params,
@@ -256,7 +273,7 @@
                     }).then(async data => {
                         this.pagination.total = data.total
                         const hitsData = data.hits
-                        const modelData = data.aggregations
+                        const modelData = data.aggregations || []
                         if (data.total) {
                             if (!this.query.objId) {
                                 this.currentClassify = -1
@@ -288,19 +305,22 @@
                         } else {
                             this.hasData = false
                         }
-                        this.searching = false
                         this.$nextTick(() => {
                             this.initScrollListener(this.$refs.topSticky)
+                            this.$parent.$refs.mainScroller.scrollTop = 0
                         })
                     }).catch((e) => {
+                        console.error(e)
                         if (!e.hasOwnProperty('message')) {
                             this.searching = false
                             this.hasData = false
                         }
-                    }).finally(() => {
-                        this.showNoData = true
                     })
                 }, wait)
+            },
+            loadingClose () {
+                this.showNoData = true
+                this.searching = false
             },
             async processArray (data) {
                 this.propertyMap = {}
@@ -319,18 +339,17 @@
                 }
             },
             jumpPage (source) {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 if (source['hitsType'] === 'host') {
                     this.$router.push({
                         name: 'resource',
-                        query: {
-                            ip: source['bk_host_innerip'].toString().replace(/(\<\/?em\>)/g, ''),
-                            outer: false,
+                        params: {
+                            text: source['bk_host_innerip'].toString().replace(/(\<\/?em\>)/g, ''),
+                            outer: true,
                             inner: true,
-                            exact: 1,
-                            assigned: true
+                            exact: false
+                        },
+                        query: {
+                            from: this.$route.fullPath
                         }
                     })
                 } else if (source['hitsType'] === 'object') {
@@ -352,10 +371,21 @@
                     this.$router.push({
                         name: 'generalModel',
                         params: {
-                            objId: source['bk_obj_id']
+                            objId: source['bk_obj_id'],
+                            instId: source['bk_inst_id'].toString().replace(/(\<\/?em\>)/g, '')
                         },
                         query: {
-                            instId: source['bk_inst_id'].toString().replace(/(\<\/?em\>)/g, '')
+                            from: this.$route.fullPath
+                        }
+                    })
+                } else if (source['hitsType'] === 'biz') {
+                    this.$router.push({
+                        name: 'business',
+                        params: {
+                            bizName: source['bk_biz_name'].toString().replace(/(\<\/?em\>)/g, '')
+                        },
+                        query: {
+                            from: this.$route.fullPath
                         }
                     })
                 }
@@ -374,10 +404,9 @@
             handleLimitChange (limit) {
                 if (this.pagination.limit === limit) return
                 this.pagination.limit = limit
-                this.handlePageChange(1, 'limitChange')
+                this.handlePageChange(1)
             },
             handlePageChange (current, type) {
-                if (!type && this.pagination.current === current) return
                 this.pagination.start = (current - 1) * this.pagination.limit
                 this.pagination.current = current
                 this.handleSearch()
@@ -519,6 +548,15 @@
                         }
                     }
                 }
+            }
+        }
+        .pagination-info {
+            font-size: 14px;
+            line-height: 30px;
+            color: #737987;
+            display: flex;
+            .bk-page {
+                flex: 1;
             }
         }
         .no-data {

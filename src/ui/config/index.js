@@ -6,7 +6,6 @@ const path = require('path')
 const fs = require('fs')
 
 const config = {
-    'BUILD_VERSION': '',
     'BUILD_TITLE': '配置平台 | 蓝鲸智云企业版',
     'BUILD_OUTPUT': '../bin/enterprise/cmdb'
 }
@@ -89,6 +88,7 @@ module.exports = {
         config: Object.assign({}, config, {
             'API_URL': '{{.site}}',
             'API_VERSION': '{{.version}}',
+            'BUILD_VERSION': '{{.ccversion}}',
             'API_LOGIN': '{{.curl}}',
             'AGENT_URL': '{{.agentAppUrl}}',
             'AUTH_SCHEME': '{{.authscheme}}',

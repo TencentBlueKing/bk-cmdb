@@ -13,7 +13,7 @@
                     active: !$isAuthorized($OPERATION.U_PROCESS),
                     auth: [$OPERATION.U_PROCESS]
                 }">
-                <bk-button type="default"
+                <bk-button theme="default"
                     :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_PROCESS)"
                     @click="handleMultipleEdit">
                     <i class="icon-cc-edit"></i>
@@ -25,15 +25,18 @@
                     active: !$isAuthorized($OPERATION.C_PROCESS),
                     auth: [$OPERATION.C_PROCESS]
                 }">
-                <bk-button type="primary"
+                <bk-button theme="primary"
                     :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
                     @click="handleCreate">
                     {{$t("Common['新建']")}}
                 </bk-button>
             </span>
             <div class="filter-text fr">
-                <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')"
-                    v-model.trim="filter.text" @keyup.enter="handlePageChange(1)">
+                <bk-input type="text" class="bk-form-input"
+                    :placeholder="$t('ProcessManagement[\'进程名称搜索\']')"
+                    v-model.trim="filter.text"
+                    @enter="handlePageChange(1)">
+                </bk-input>
                 <i class="bk-icon icon-search" @click="handlePageChange(1)"></i>
             </div>
         </div>
@@ -51,9 +54,12 @@
             @handlePageChange="handlePageChange"
             @handleCheckAll="handleCheckAll">
         </cmdb-table>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title">
-            <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+        <bk-sideslider
+            :is-show.sync="slider.show"
+            :title="slider.title"
+            :width="800">
+            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content">
+                <bk-tab-panel name="attribute" :label="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
                         :property-groups="propertyGroups"
@@ -80,21 +86,21 @@
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
-                </bk-tabpanel>
-                <bk-tabpanel name="moduleBind" :title="$t('ProcessManagement[\'模块绑定\']')" :show="attribute.type === 'details'">
+                </bk-tab-panel>
+                <bk-tab-panel name="moduleBind" :label="$t('ProcessManagement[\'模块绑定\']')" :visible="attribute.type === 'details'">
                     <v-module v-if="tab.active === 'moduleBind'"
                         :process-id="attribute.inst.details['bk_process_id']"
                         :biz-id="bizId">
                     </v-module>
-                </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type === 'details'">
+                </bk-tab-panel>
+                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :visible="attribute.type === 'details'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="process"
                         :inst-id="attribute.inst.details['bk_process_id']">
                     </cmdb-audit-history>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

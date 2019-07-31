@@ -21,7 +21,7 @@ export const U_CUSTOM_QUERY = 'dynamicGrouping.update'
 export const D_CUSTOM_QUERY = 'dynamicGrouping.delete'
 export const R_CUSTOM_QUERY = 'dynamicGrouping.findMany'
 
-// 进程管理
+// 进程管理/进程实例
 export const C_PROCESS = 'process.create'
 export const U_PROCESS = 'process.update'
 export const D_PROCESS = 'process.delete'
@@ -89,6 +89,24 @@ export const R_CLOUD_CONFIRM = 'cloudConfirm.findMany'
 // 确认历史
 export const R_CONFIRM_HISTORY = 'cloudConfirmHistory.findMany'
 
+// 服务分类
+export const C_SERVICE_CATEGORY = 'processServiceCategory.create'
+export const U_SERVICE_CATEGORY = 'processServiceCategory.update'
+export const D_SERVICE_CATEGORY = 'processServiceCategory.delete'
+export const R_SERVICE_CATEGORY = 'processServiceCategory.findMany'
+
+// 服务模板
+export const C_SERVICE_TEMPLATE = 'processServiceTemplate.create'
+export const U_SERVICE_TEMPLATE = 'processServiceTemplate.update'
+export const D_SERVICE_TEMPLATE = 'processServiceTemplate.delete'
+export const R_SERVICE_TEMPLATE = 'processServiceTemplate.findMany'
+
+// 服务实例
+export const C_SERVICE_INSTANCE = 'processServiceInstance.create'
+export const U_SERVICE_INSTANCE = 'processServiceInstance.update'
+export const D_SERVICE_INSTANCE = 'processServiceInstance.delete'
+export const R_SERVICE_INSTANCE = 'processServiceInstance.findMany'
+
 export const STATIC_BUSINESS_MODE = [
     C_MODEL,
     R_MODEL,
@@ -113,7 +131,22 @@ export const STATIC_BUSINESS_MODE = [
     C_HOST,
     U_HOST,
     D_HOST,
-    HOST_TO_RESOURCE
+    HOST_TO_RESOURCE,
+
+    C_SERVICE_CATEGORY,
+    U_SERVICE_CATEGORY,
+    D_SERVICE_CATEGORY,
+    R_SERVICE_CATEGORY,
+
+    C_SERVICE_TEMPLATE,
+    U_SERVICE_TEMPLATE,
+    D_SERVICE_TEMPLATE,
+    R_SERVICE_TEMPLATE,
+
+    C_SERVICE_INSTANCE,
+    U_SERVICE_INSTANCE,
+    D_SERVICE_INSTANCE,
+    R_SERVICE_INSTANCE
 ]
 
 export const DYNAMIC_BUSINESS_MODE = [

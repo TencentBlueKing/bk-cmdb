@@ -1,14 +1,17 @@
 <template>
-    <bk-selector style="text-align: left;"
-        :list="authorizedBusiness"
-        :placeholder="$t('请选择业务')"
-        :selected.sync="localSelected"
+    <bk-select style="text-align: left;"
+        v-model="localSelected"
         :searchable="authorizedBusiness.length > 5"
-        :disabled="disabled"
-        setting-key="bk_biz_id"
-        display-key="bk_biz_name"
-        search-key="bk_biz_name">
-    </bk-selector>
+        :clearable="false"
+        :placeholder="$t('请选择业务')"
+        :disabled="disabled">
+        <bk-option
+            v-for="(option, index) in authorizedBusiness"
+            :key="index"
+            :id="option.bk_biz_id"
+            :name="option.bk_biz_name">
+        </bk-option>
+    </bk-select>
 </template>
 
 <script>

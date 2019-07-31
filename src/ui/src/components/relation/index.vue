@@ -7,7 +7,7 @@
                         active: !$isAuthorized(auth),
                         auth: [auth]
                     }">
-                    <bk-button class="options-button options-button-update" size="small" type="primary"
+                    <bk-button class="options-button options-button-update" size="small" theme="primary"
                         :disabled="!hasRelation || !$isAuthorized(auth)"
                         :class="{ active: activeComponent === 'cmdbRelationUpdate' }"
                         @click="handleShowUpdate">
@@ -17,17 +17,17 @@
                 </span>
             </div>
             <div class="fr">
-                <bk-button type="default" class="options-full-screen"
+                <bk-button theme="default" class="options-full-screen"
                     v-show="activeComponent === 'cmdbRelationTopology'"
-                    v-tooltip="$t('Common[\'全屏\']')"
+                    v-bk-tooltips="$t('Common[\'全屏\']')"
                     @click="handleFullScreen">
                     <i class="icon-cc-resize-full"></i>
                 </bk-button>
-                <bk-button class="options-button" :type="activeComponent === 'cmdbRelationTopology' ? 'primary' : 'default'"
+                <!-- <bk-button class="options-button" :theme="activeComponent === 'cmdbRelationTopology' ? 'primary' : 'default'"
                     @click.prevent="activeComponent = 'cmdbRelationTopology'">
                     <i class="icon-cc-resources"></i>
                     {{$t('Association["拓扑"]')}}
-                </bk-button>
+                </bk-button> -->
             </div>
         </div>
         <div class="relation-component">
@@ -148,8 +148,8 @@
     }
     .relation-options {
         .options-full-screen {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             padding: 0;
             text-align: center;
             margin-right: 10px;

@@ -87,10 +87,10 @@
                 :selected="ignore"
                 @change="toggleSwitcher">
             </bk-switcher>
-            <bk-button type="default" :disabled="detailPage.prev" @click="updateView('prev')">
+            <bk-button theme="default" :disabled="detailPage.prev" @click="updateView('prev')">
                 {{$t('NetworkDiscovery["上一个"]')}}
             </bk-button>
-            <bk-button type="default" :disabled="detailPage.next" @click="updateView('next')">
+            <bk-button theme="default" :disabled="detailPage.next" @click="updateView('next')">
                 {{$t('NetworkDiscovery["下一个"]')}}
             </bk-button>
         </div>

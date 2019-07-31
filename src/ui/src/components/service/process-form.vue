@@ -23,7 +23,7 @@
                                     <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                     <i class="property-name-tooltips icon-cc-tips"
                                         v-if="property['placeholder'] && property['bk_property_id'] === 'bk_start_param_regex'"
-                                        v-tooltip="htmlEncode(property['placeholder'])">
+                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
                                     </i>
                                     <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="property['isLocking'] !== undefined && property['bk_property_id'] !== 'bk_func_name'">
                                         <input type="checkbox">
@@ -53,7 +53,7 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <bk-button class="button-save" type="primary"
+                <bk-button class="button-save" theme="primary"
                     :disabled="saveDisabled || !hasChange || $loading()"
                     @click="handleSave">
                     {{$t("Common['保存']")}}

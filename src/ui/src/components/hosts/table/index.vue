@@ -1,30 +1,32 @@
 <template>
     <div class="hosts-table-layout">
         <div class="hosts-options">
-            <slot name="options">
-                <span class="inline-block-middle"
+            <slot name="options-left">
+                <span class="inline-block-middle mr10"
                     v-cursor="{
                         active: !$isAuthorized(editAuth),
                         auth: [editAuth]
                     }">
-                    <bk-button class="options-button" type="primary"
+                    <bk-button class="options-button" theme="primary"
                         :disabled="!table.checked.length || !$isAuthorized(editAuth)"
                         @click="handleMultipleEdit">
                         {{$t('Common["编辑"]')}}
                     </bk-button>
                 </span>
-                <span class="inline-block-middle"
+                <span class="inline-block-middle mr10"
                     v-cursor="{
                         active: !$isAuthorized(transferAuth),
                         auth: [transferAuth]
                     }">
-                    <bk-button class="options-button" type="default"
+                    <bk-button class="options-button" theme="default"
                         :disabled="!table.checked.length || !$isAuthorized(transferAuth)"
                         @click="transfer.show = true">
                         {{$t('BusinessTopology["转移"]')}}
                     </bk-button>
                 </span>
-                <bk-button class="options-button" type="submit default"
+                <bk-button class="options-button mr10"
+                    theme="default"
+                    type="submit"
                     form="exportForm"
                     :disabled="!table.checked.length">
                     {{$t('ModelManagement["导出"]')}}
@@ -44,59 +46,81 @@
                     :disabled="!table.checked.length"
                     @on-copy="handleCopy">
                 </cmdb-clipboard-selector>
-                <bk-button class="options-button quick-search-button" type="default"
-                    v-if="quickSearch"
-                    ref="quickSearchButton"
-                    @click="quickSearchStatus.active = true">
-                    {{$t('HostResourcePool["筛选"]')}}
-                    <i class="bk-icon icon-angle-down"></i>
-                </bk-button>
-                <div class="fr" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
-                    <bk-button class="options-button" type="default" style="margin-right: 0"
-                        @click="columnsConfig.show = true">
-                        <i class="icon-cc-setting"></i>
-                    </bk-button>
-                </div>
             </slot>
+            <div class="fr">
+                <bk-select class="options-collection"
+                    v-if="showCollection"
+                    ref="collectionSelector"
+                    v-model="selectedCollection"
+                    :loading="$loading('searchCollection')"
+                    :placeholder="$t('请选择收藏条件')"
+                    @change="handleSelectCollection">
+                    <bk-option v-for="collection in collectionList"
+                        :key="collection.id"
+                        :id="collection.id"
+                        :name="collection.name">
+                    </bk-option>
+                    <div slot="extension">
+                        <a href="javascript:void(0)" class="collection-create" @click="handleCreateCollection">
+                            <i class="bk-icon icon-plus-circle"></i>
+                            {{$t('新增条件')}}
+                        </a>
+                    </div>
+                </bk-select>
+                <bk-select class="options-collection"
+                    v-if="showScope"
+                    v-model="scope"
+                    :clearable="false">
+                    <bk-option id="all" :name="$t('全部')"></bk-option>
+                    <bk-option :id="0" :name="$t('已分配主机')"></bk-option>
+                    <bk-option :id="1" :name="$t('未分配主机')"></bk-option>
+                </bk-select>
+                <cmdb-host-filter class="ml10"
+                    ref="hostFilter"
+                    :properties="filterProperties"
+                    :show-scope="showScope">
+                </cmdb-host-filter>
+                <bk-button class="options-button ml10"
+                    icon="icon-cc-setting"
+                    v-bk-tooltips.top="$t('BusinessTopology[\'列表显示属性配置\']')"
+                    @click="columnsConfig.show = true">
+                </bk-button>
+                <bk-button class="options-button ml10" v-if="showHistory"
+                    v-bk-tooltips="$t('Common[\'查看删除历史\']')"
+                    icon="icon-cc-history"
+                    @click="routeToHistory">
+                </bk-button>
+            </div>
         </div>
-        <cmdb-collapse-transition @after-enter="handleQuickSearchToggle" @after-leave="handleQuickSearchToggle">
-            <cmdb-host-quick-search
-                v-if="quickSearch && quickSearchStatus.active"
-                :properties="properties.host"
-                @on-toggle="quickSearchStatus.active = false"
-                @on-search="handleQuickSearch">
-            </cmdb-host-quick-search>
-        </cmdb-collapse-transition>
-        <cmdb-table class="hosts-table" ref="hostsTable"
-            :loading="$loading()"
-            :checked.sync="table.checked"
-            :header="table.header"
-            :list="table.list"
-            :default-sort="table.defaultSort"
-            :pagination.sync="table.pagination"
-            :wrapper-minus-height="table.tableMinusHeight"
-            @handleRowClick="handleRowClick"
-            @handleSortChange="handleSortChange"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleCheckAll="handleCheckAll">
-            <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                <label class="table-checkbox bk-form-checkbox bk-checkbox-small"
-                    :key="index"
-                    v-if="header.id === 'bk_host_id'"
-                    @click.stop>
-                    <input type="checkbox"
-                        :value="item['host']['bk_host_id']"
-                        v-model="table.checked">
-                </label>
-                <span v-else :key="index">
-                    {{getHostCellText(header, item)}}
-                </span>
-            </template>
-        </cmdb-table>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
-            <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+        <bk-table class="hosts-table"
+            v-bkloading="{ isLoading: $loading() }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 150"
+            @selection-change="handleSelectionChange"
+            @row-click="handleRowClick"
+            @sort-change="handleSortChange"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange">
+            <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
+            <bk-table-column v-for="column in table.header"
+                :key="column.id"
+                :label="column.name"
+                :sortable="column.sortable"
+                :prop="column.id"
+                :fixed="column.id === 'bk_host_innerip'">
+                <template slot-scope="{ row }">
+                    {{getHostCellText(column, row)}}
+                </template>
+            </bk-table-column>
+        </bk-table>
+        <bk-sideslider
+            :is-show.sync="slider.show"
+            :title="slider.title"
+            :width="800"
+            :before-close="handleSliderBeforeClose">
+            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.show">
+                <bk-tab-panel name="attribute" :label="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-form-multiple v-if="tab.attribute.type === 'multiple'"
                         ref="multipleForm"
                         :properties="properties.host"
@@ -106,14 +130,15 @@
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
-        </cmdb-slider>
-        <cmdb-slider
+        </bk-sideslider>
+        <bk-sideslider
             :is-show.sync="columnsConfig.show"
             :width="600"
             :title="$t('BusinessTopology[\'列表显示属性配置\']')">
             <cmdb-columns-config slot="content"
+                v-if="columnsConfig.show"
                 :properties="columnsConfigProperties"
                 :selected="columnsConfig.selected"
                 :disabled-columns="columnsConfig.disabledColumns"
@@ -121,21 +146,20 @@
                 @on-cancel="columnsConfig.show = false"
                 @on-reset="handleResetColumnsConfig">
             </cmdb-columns-config>
-        </cmdb-slider>
-        <bk-dialog
-            :is-show.sync="transfer.show"
-            :draggable="true"
+        </bk-sideslider>
+        <bk-dialog class="bk-dialog-no-padding"
+            v-model="transfer.show"
+            draggable
             :close-icon="false"
-            :has-footer="false"
-            :has-header="false"
-            :padding="0"
+            :show-footer="false"
+            :show-header="false"
             :width="720">
             <div class="transfer-title" slot="tools">
                 <i class="icon icon-cc-shift mr5"></i>
                 <span>{{$t('Common[\'主机转移\']')}}</span>
                 <span v-if="selectedHosts.length === 1">{{selectedHosts[0]['host']['bk_host_innerip']}}</span>
             </div>
-            <div class="transfer-content" slot="content">
+            <div class="transfer-content">
                 <cmdb-transfer-host v-if="transfer.show"
                     :transfer-resource-auth="transferResourceAuth"
                     :selected-hosts="selectedHosts"
@@ -148,17 +172,15 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
-    // import cmdbHostsFilter from '@/components/hosts/filter'
+    import { mapGetters, mapActions, mapState } from 'vuex'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbTransferHost from '@/components/hosts/transfer'
-    import cmdbHostQuickSearch from './_quick-search.vue'
+    import cmdbHostFilter from '@/components/hosts/filter/index.vue'
     export default {
         components: {
-            // cmdbHostsFilter,
             cmdbColumnsConfig,
             cmdbTransferHost,
-            cmdbHostQuickSearch
+            cmdbHostFilter
         },
         props: {
             columnsConfigProperties: {
@@ -174,10 +196,6 @@
                 default () {
                     return ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name']
                 }
-            },
-            quickSearch: {
-                type: Boolean,
-                default: false
             },
             saveAuth: {
                 type: [String, Array],
@@ -198,7 +216,10 @@
             transferResourceAuth: {
                 type: [String, Array],
                 default: ''
-            }
+            },
+            showCollection: Boolean,
+            showHistory: Boolean,
+            showScope: Boolean
         },
         data () {
             return {
@@ -210,18 +231,15 @@
                     module: []
                 },
                 propertyGroups: [],
-                quickSearchStatus: {
-                    active: false
-                },
                 table: {
                     checked: [],
                     header: [],
                     list: [],
-                    allList: [],
                     pagination: {
                         current: 1,
-                        size: 10,
-                        count: 0
+                        limit: 10,
+                        count: 0,
+                        limitList: [10, 50, 100, 500]
                     },
                     defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
@@ -254,12 +272,15 @@
                 },
                 transfer: {
                     show: false
-                }
+                },
+                selectedCollection: '',
+                scope: 'all'
             }
         },
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapState('hosts', ['collectionList']),
             customColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
@@ -267,7 +288,16 @@
                 return this.table.header.filter(header => header.type !== 'checkbox')
             },
             selectedHosts () {
-                return this.table.allList.filter(host => this.table.checked.includes(host['host']['bk_host_id']))
+                return this.table.list.filter(host => this.table.checked.includes(host['host']['bk_host_id']))
+            },
+            filterProperties () {
+                const { module, set, host } = this.properties
+                const filterProperty = ['bk_host_innerip', 'bk_host_outerip', 'bk_cloud_id']
+                return {
+                    host: host.filter(property => !filterProperty.includes(property.bk_property_id)),
+                    module,
+                    set
+                }
             }
         },
         watch: {
@@ -287,6 +317,9 @@
             },
             columnsConfigProperties () {
                 this.setTableHeader()
+            },
+            scope () {
+                this.handlePageChange(1)
             }
         },
         async created () {
@@ -295,22 +328,18 @@
                     this.getProperties(),
                     this.getHostPropertyGroups()
                 ])
+                if (this.showCollection) {
+                    this.getCollectionList()
+                }
             } catch (e) {
                 console.log(e)
             }
-        },
-        mounted () {
-            this.calcTableMinusHeight()
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('hostUpdate', ['updateHost']),
             ...mapActions('hostSearch', ['searchHost', 'searchHostByInnerip']),
-            calcTableMinusHeight () {
-                const $table = this.$refs.hostsTable.$el
-                this.table.tableMinusHeight = $table.getBoundingClientRect().top + 20
-            },
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
@@ -341,33 +370,66 @@
                     return groups
                 })
             },
+            async getCollectionList () {
+                try {
+                    const data = await this.$store.dispatch('hostFavorites/searchFavorites', {
+                        params: {},
+                        config: {
+                            requestId: 'searchCollection'
+                        }
+                    })
+                    this.$store.commit('hosts/setCollectionList', data.info)
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleSelectCollection (value) {
+                if (value) {
+                    const collection = this.collectionList.find(collection => collection.id === value)
+                    try {
+                        const filterList = JSON.parse(collection.query_params).map(condition => {
+                            return {
+                                bk_obj_id: condition.bk_obj_id,
+                                bk_property_id: condition.field,
+                                operator: condition.operator,
+                                value: condition.value
+                            }
+                        })
+                        const info = JSON.parse(collection.info)
+                        const filterIP = {
+                            text: info.ip_list.join('\n'),
+                            exact: info.exact_search,
+                            inner: info.bk_host_innerip,
+                            outer: info.bk_host_outerip
+                        }
+                        this.$store.commit('hosts/setFilterList', filterList)
+                        this.$store.commit('hosts/setFilterIP', filterIP)
+                        this.$store.commit('hosts/setCollection', collection)
+                        this.$refs.hostFilter.handleSearch(false)
+                    } catch (e) {
+                        this.$error(this.$t('应用收藏条件失败，转换数据错误'))
+                        console.error(e.message)
+                    }
+                } else {
+                    this.$store.commit('hosts/clearFilter')
+                }
+            },
+            handleCreateCollection () {
+                this.selectedCollection = ''
+                this.$refs.collectionSelector.close()
+                this.$refs.hostFilter.handleToggleFilter()
+            },
             setTableHeader () {
                 const properties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
-                this.table.header = [{
-                    id: 'bk_host_id',
-                    type: 'checkbox',
-                    objId: 'host'
-                }].concat(properties.map(property => {
+                this.table.header = properties.map(property => {
                     return {
                         id: property['bk_property_id'],
                         name: property['bk_property_name'],
                         objId: property['bk_obj_id'],
                         sortable: property['bk_obj_id'] === 'host' && !['foreignkey'].includes(property['bk_property_type'])
                     }
-                }))
-                this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
-            },
-            setAllHostList (list) {
-                const newList = []
-                list.forEach(item => {
-                    const existItem = this.table.allList.find(existItem => existItem['host']['bk_host_id'] === item['host']['bk_host_id'])
-                    if (existItem) {
-                        Object.assign(existItem, item)
-                    } else {
-                        newList.push(item)
-                    }
                 })
-                this.table.allList = [...this.table.allList, ...newList]
+                this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
             },
             getHostCellText (header, item) {
                 const objId = header.objId
@@ -383,15 +445,15 @@
             },
             getHostList () {
                 this.searchHost({
-                    params: {
+                    params: this.injectScope({
                         ...this.filter.condition,
                         'bk_biz_id': this.filter.business,
                         page: {
-                            start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                            limit: this.table.pagination.size,
+                            start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                            limit: this.table.pagination.limit,
                             sort: this.table.sort
                         }
-                    },
+                    }),
                     config: {
                         requestId: 'searchHosts',
                         cancelPrevious: true
@@ -399,7 +461,6 @@
                 }).then(data => {
                     this.table.pagination.count = data.count
                     this.table.list = data.info
-                    this.setAllHostList(data.info)
                     return data
                 }).catch(e => {
                     this.table.checked = []
@@ -407,21 +468,16 @@
                     this.table.pagination.count = 0
                 })
             },
-            getAllHostList () {
-                return this.searchHost({
-                    params: {
-                        ...this.filter.condition,
-                        'bk_biz_id': this.filter.business,
-                        page: {}
-                    },
-                    config: {
-                        requestId: 'searchAllHosts',
-                        cancelPrevious: true
-                    }
-                }).then(data => {
-                    this.table.allList = data.info
-                    return data
-                })
+            injectScope (params) {
+                const biz = params.condition.find(condition => condition.bk_obj_id === 'biz')
+                if (this.scope !== 'all') {
+                    biz.condition.push({
+                        field: 'default',
+                        operator: '$eq',
+                        value: this.scope
+                    })
+                }
+                return params
             },
             search (business, condition, resetPage = false) {
                 this.filter.business = business
@@ -435,16 +491,16 @@
                 this.table.pagination.current = current
                 this.getHostList()
             },
-            handleSizeChange (size) {
-                this.table.pagination.size = size
+            handleSizeChange (limit) {
+                this.table.pagination.limit = limit
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
             handleCopy (target) {
-                const copyList = this.table.allList.filter(item => {
+                const copyList = this.table.list.filter(item => {
                     return this.table.checked.includes(item['host']['bk_host_id'])
                 })
                 const copyText = []
@@ -464,15 +520,8 @@
                     this.$info(this.$t('Common["该字段无可复制的值"]'))
                 }
             },
-            async handleCheckAll (type) {
-                let list
-                if (type === 'current') {
-                    list = this.table.list
-                } else {
-                    const data = await this.getAllHostList()
-                    list = data.info
-                }
-                this.table.checked = list.map(item => item['host']['bk_host_id'])
+            handleSelectionChange (selection) {
+                this.table.checked = selection.map(item => item.host.bk_host_id)
             },
             handleRowClick (item) {
                 const business = item.biz[0]
@@ -500,7 +549,7 @@
                 }
             },
             batchUpdate (params) {
-                return this.updateHost(params).then(data => {
+                return this.updateHost({ params }).then(data => {
                     this.$success(this.$t('Common[\'保存成功\']'))
                     this.getHostList()
                     return data
@@ -550,7 +599,9 @@
                     if (Object.keys(changedValues).length) {
                         return new Promise((resolve, reject) => {
                             this.$bkInfo({
-                                title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                                title: this.$t('Common["确认退出"]'),
+                                subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                                extCls: 'bk-dialog-sub-header-center',
                                 confirmFn: () => {
                                     resolve(true)
                                 },
@@ -564,11 +615,19 @@
                 }
                 return true
             },
-            handleQuickSearchToggle () {
-                this.calcTableMinusHeight()
-            },
             handleQuickSearch (property, value, operator) {
                 this.$emit('on-quick-search', property, value, operator)
+            },
+            routeToHistory () {
+                this.$router.push({
+                    name: 'history',
+                    params: {
+                        objId: 'host'
+                    },
+                    query: {
+                        from: this.$route.fullPath
+                    }
+                })
             }
         }
     }
@@ -581,9 +640,7 @@
             position: relative;
             display: inline-block;
             vertical-align: middle;
-            border-radius: 0;
             font-size: 14px;
-            margin: 0 5px;
             &.quick-search-button {
                 .icon-angle-down {
                     font-size: 12px;
@@ -598,10 +655,10 @@
             }
         }
     }
-    .hosts-table{
+    .hosts-table {
         margin-top: 20px;
     }
-    .transfer-title{
+    .transfer-title {
         height: 50px;
         line-height: 50px;
         background-color: #f9f9f9;
@@ -613,5 +670,24 @@
     }
     .transfer-content {
         height: 540px;
+    }
+    .options-collection {
+        width: 200px;
+    }
+    .collection-create {
+        display: inline-block;
+        width: 60%;
+        font-size: 12px;
+        color: #63656E;
+        line-height: 32px;
+        cursor: pointer;
+        &:hover {
+            color: #3a84ff;
+        }
+        .bk-icon {
+            font-size: 14px;
+            display: inline-block;
+            vertical-align: -2px;
+        }
     }
 </style>

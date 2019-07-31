@@ -509,7 +509,7 @@
 
 <style lang="scss" scoped>
     .form-objuser {
-        height: 36px;
+        height: 32px;
         font-size: 14px;
         cursor: text;
         .objuser-layout {
@@ -518,7 +518,7 @@
             .objuser-container {
                 position: relative;
                 min-width: 100%;
-                min-height: 36px;
+                min-height: 32px;
                 padding: 3px 0;
                 line-height: 1;
                 border: 1px solid $cmdbBorderColor;
@@ -555,7 +555,7 @@
                     top: 0;
                     height: 100%;
                     padding: 0 0 0 10px;
-                    line-height: 34px;
+                    line-height: 30px;
                     content: attr(data-placeholder);
                     font-size: 12px;
                     color: #c3cdd7;
@@ -565,11 +565,11 @@
     }
     .objuser-selected {
         display: inline-block;
-        height: 22px;
-        margin: 3px;
+        height: 20px;
+        margin: 2px 3px;
         max-width: calc(100% - 4px);
         padding: 0 4px;
-        line-height: 20px;
+        line-height: 18px;
         vertical-align: top;
         border: 1px solid #d9d9d9;
         border-radius: 2px;
@@ -579,11 +579,11 @@
     .objuser-input {
         display: inline-block;
         max-width: 100%;
-        height: 22px;
-        margin: 3px 0 0;
+        height: 20px;
+        margin: 1px 0 0;
         padding: 0 4px;
         white-space: nowrap;
-        line-height: 22px;
+        line-height: 20px;
         vertical-align: top;
         outline: none;
         overflow: hidden;
