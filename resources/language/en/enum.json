@@ -30,7 +30,7 @@
     "process_property_bind_ip_enum_1": "127.0.0.1",
     "process_property_bind_ip_enum_2": "0.0.0.0",
     "process_property_bind_ip_enum_3": "1st Inner IP",
-    "process_property_bind_ip_enum_4": "2nd Outer IP",
+    "process_property_bind_ip_enum_4": "1st Outer IP",
 
     "process_property_protocol_enum_1": "TCP",
     "process_property_protocol_enum_2": "UDP",
