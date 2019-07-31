@@ -31,7 +31,7 @@ func (c *Mongo) AutoRun(ctx context.Context, opt dal.TxnWrapperOption, f func(he
 	txn, err := c.Start(ctx)
 	if err != nil {
 		blog.ErrorfDepth(1, "wrapper stranscation start error. err:%s, rid:%s", err.Error(), rid)
-		return opt.CCErr.Errorf(common.CCErrCommStartTranscationFailed, err.Error())
+		return opt.CCErr.Errorf(common.CCErrCommStartTransactionFailed, err.Error())
 	}
 	header := txn.TxnInfo().IntoHeader(opt.Header)
 	newCtx := util.GetDBContext(context.Background(), header)
@@ -48,7 +48,7 @@ func (c *Mongo) AutoRun(ctx context.Context, opt dal.TxnWrapperOption, f func(he
 	err = txn.Commit(newCtx)
 	if err != nil {
 		blog.ErrorfDepth(1, "wrapper stranscation commit error. err:%s, rid:%s", err.Error(), rid)
-		return opt.CCErr.Errorf(common.CCErrCommCommitTranscationFailed, err.Error())
+		return opt.CCErr.Errorf(common.CCErrCommCommitTransactionFailed, err.Error())
 	}
 	return nil
 

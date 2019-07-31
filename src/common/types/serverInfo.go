@@ -26,8 +26,7 @@ const (
 
 // cc modules
 const (
-	// CC_MODULE_AUDITCONTROLLER  = "auditcontroller"
-	CC_MODULE_DATACOLLECTION = "datacollection"
+    CC_MODULE_DATACOLLECTION = "datacollection"
 	CC_MODULE_HOST           = "host"
 	CC_MODULE_MIGRATE        = "migrate"
 	CC_MODULE_PROC           = "proc"

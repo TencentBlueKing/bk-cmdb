@@ -50,25 +50,21 @@ func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensi
 
 // Start do main loop
 func (p *Producer) Start() {
-	start := time.Now()
-	finished := false
+	ticker := time.NewTicker(5 * time.Minute)
 	go func(producer *Producer) {
 		for {
-			if start.Add(time.Minute * 5).Before(time.Now()) {
-				start = start.Add(time.Minute * 5)
-				finished = false
-			}
-
-			if finished == false {
+			select {
+			case <-ticker.C:
 				// get jobs
 				jobs := producer.generateJobs()
 
 				for _, job := range *jobs {
 					p.WorkerQueue <- job
 				}
-				finished = true
+			case <-p.QuitChan:
+				ticker.Stop()
+				return
 			}
-			time.Sleep(time.Millisecond * 100)
 		}
 	}(p)
 }
