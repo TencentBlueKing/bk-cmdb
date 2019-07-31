@@ -193,15 +193,22 @@
                 this.propertyResolver && this.propertyResolver()
             }
         },
-        created () {
+        async created () {
             this.propertyPromise = new Promise((resolve, reject) => {
                 this.propertyResolver = () => {
                     this.propertyResolver = null
                     resolve()
                 }
             })
-            this.initCustomFilterIP()
-            this.initCustomFilterList()
+            const formFullTextSearch = Object.keys(this.$route.params).length
+            if (formFullTextSearch) {
+                this.defaultIpConfig = Object.assign(this.defaultIpConfig, this.$route.params)
+            }
+            await this.initCustomFilterIP()
+            await this.initCustomFilterList()
+            if (formFullTextSearch) {
+                this.handleSearch()
+            }
         },
         beforeDestroy () {
             this.$store.commit('hosts/clearFilter')

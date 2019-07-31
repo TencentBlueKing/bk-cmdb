@@ -57,10 +57,10 @@
                 <div class="process-create">
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_PROCESS_TEMPLATE),
-                            auth: [$OPERATION.C_PROCESS_TEMPLATE]
+                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
                         }">
-                        <bk-button class="create-btn" :disabled="!$isAuthorized($OPERATION.C_PROCESS_TEMPLATE)" @click="handleCreateProcess">
+                        <bk-button class="create-btn" :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)" @click="handleCreateProcess">
                             <i class="bk-icon icon-plus"></i>
                             <span>{{$t("ServiceManagement['新建进程']")}}</span>
                         </bk-button>

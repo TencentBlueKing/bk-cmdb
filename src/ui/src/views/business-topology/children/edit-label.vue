@@ -82,7 +82,22 @@
                 deep: true
             }
         },
+        created () {
+            this.initValue()
+        },
         methods: {
+            initValue () {
+                let cloneList = this.$tools.clone(this.defaultList)
+                if (!cloneList.length) {
+                    cloneList = cloneList.concat([{
+                        id: -1,
+                        key: '',
+                        value: ''
+                    }])
+                }
+                this.list = cloneList
+                this.originList = this.$tools.clone(this.defaultList)
+            },
             getValidateRules (currentIndex, type) {
                 const rules = {}
                 if (this.list.length === 1 && !this.list[0].key && !this.list[0].value) {

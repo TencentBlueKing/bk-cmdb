@@ -251,6 +251,10 @@
                     this.setTableHeader(),
                     this.setFilterOptions()
                 ])
+                if (this.$route.params.bizName) {
+                    this.filter.sendValue = this.$route.params.bizName
+                    this.filter.value = this.$route.params.bizName
+                }
                 this.getTableData()
             } catch (e) {
                 // ignore

@@ -2,7 +2,7 @@
     <div class="info">
         <div class="info-basic">
             <i :class="['info-icon', model.bk_obj_icon]"></i>
-            <span class="info-ip">{{host.bk_host_innerip}}</span>
+            <span class="info-ip">{{hostIp}}</span>
         </div>
         <div class="info-topology clearfix">
             <div class="topology-label fl">{{$t("BusinessTopology['业务拓扑']")}}：</div>
@@ -51,6 +51,15 @@
             ...mapState('hostDetails', ['info']),
             host () {
                 return this.info.host || {}
+            },
+            hostIp () {
+                if (Object.keys(this.host).length) {
+                    const hostList = this.host.bk_host_innerip.split(',')
+                    const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
+                    return host
+                } else {
+                    return ''
+                }
             },
             topology () {
                 const topology = []

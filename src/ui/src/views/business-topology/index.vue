@@ -74,5 +74,14 @@
     .tab-layout {
         height: 100%;
         overflow: hidden;
+        .bk-tab {
+            height: 100%;
+        }
+        /deep/.bk-tab-section {
+            height: calc(100% - 42px);
+        }
+        /deep/.bk-tab-content {
+            height: 100%;
+        }
     }
 </style>

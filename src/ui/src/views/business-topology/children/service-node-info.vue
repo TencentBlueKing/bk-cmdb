@@ -20,7 +20,10 @@
             :show-options="modelId !== 'biz'"
             @on-edit="handleEdit">
             <span class="property-value fl" slot="__template_name__">
-                {{flattenedInstance.__template_name__}}
+                <span class="link"
+                    v-if="withTemplate"
+                    @click="goServiceTemplate">{{flattenedInstance.__template_name__}}</span>
+                <span v-else>{{flattenedInstance.__template_name__}}</span>
                 <bk-button class="unbind-button"
                     v-if="withTemplate"
                     @click="handleRemoveTemplate">
@@ -218,7 +221,7 @@
             getModuleServiceTemplateGroup () {
                 return {
                     bk_group_id: '__service_template_info__',
-                    bk_group_index: Infinity,
+                    bk_group_index: -1,
                     bk_group_name: this.$t('BusinessTopology["服务模板信息"]'),
                     bk_obj_id: 'module',
                     ispre: true
@@ -500,8 +503,7 @@
             handleRemoveTemplate () {
                 const content = this.$createElement('div', {
                     style: {
-                        'font-size': '14px',
-                        'padding-left': '20px'
+                        'font-size': '14px'
                     },
                     domProps: {
                         innerHTML: this.$tc('BusinessTopology["解除模板影响"]', this.flattenedInstance.__template_name__, { name: this.flattenedInstance.__template_name__ })
@@ -524,6 +526,22 @@
                         this.disabledProperties = []
                     }
                 })
+            },
+            goServiceTemplate () {
+                this.$router.push({
+                    name: 'operationalTemplate',
+                    params: {
+                        templateId: this.instance.service_template_id
+                    },
+                    query: {
+                        from: {
+                            name: this.$route.name,
+                            query: {
+                                module: this.instance.bk_module_id
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -531,9 +549,13 @@
 
 <style lang="scss" scoped>
     .property-value {
-        height: 16px;
-        line-height: 16px;
+        height: 26px;
+        line-height: 26px;
         overflow: visible;
+        .link {
+            color: #3a84ff;
+            cursor: pointer;
+        }
     }
     .unbind-button {
         height: 26px;

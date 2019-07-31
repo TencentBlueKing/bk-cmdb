@@ -18,10 +18,9 @@
             :data="table.list"
             :max-height="$APP.height - 300"
             @sort-change="handleSortChange">
-            <bk-table-column prop="isrequired" :label="$t('ModelManagement[\'必填\']')">
+            <bk-table-column prop="isrequired" :label="$t('ModelManagement[\'必填\']')" width="60">
                 <template slot-scope="{ row }">
                     <i class="field-required-icon bk-icon icon-check-1" v-if="row.isrequired"></i>
-                    <i class="field-required-icon bk-icon icon-close" v-else></i>
                 </template>
             </bk-table-column>
             <bk-table-column prop="bk_property_id"

@@ -254,7 +254,6 @@
                     return !selectedNodeData.default && selectedNodeData.bk_inst_id !== 'resource'
                 })
                 if (isSpecialNode && hasNormalNode) {
-                    debugger
                     this.$bkInfo({
                         title: this.$t('Common[\'转移确认\']', { target: data.bk_inst_name }),
                         confirmFn: () => {
