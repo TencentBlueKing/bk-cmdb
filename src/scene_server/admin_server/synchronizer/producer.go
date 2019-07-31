@@ -105,14 +105,15 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 
 	// job of synchronize business scope resources to iam
 	resourceTypes := []meta.ResourceType{
-		meta.HostResource, 
-		meta.SetResource, 
-		meta.ModuleResource, 
-		meta.ModelResource, 
-		meta.ProcessResource, 
-		meta.DynamicGroupResource, 
+		meta.HostResource,
+		meta.SetResource,
+		meta.ModuleResource,
+		meta.ModelResource,
+		meta.ProcessResource,
+		meta.DynamicGroupResource,
 		meta.AuditCategory,
 		meta.ClassificationResource,
+		meta.UserGroupSyncResource,
 	}
 	for _, resourceType := range resourceTypes {
 		for _, businessSimplify := range businessList {

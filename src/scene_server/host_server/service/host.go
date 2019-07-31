@@ -75,7 +75,12 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 			resp.WriteEntity(&meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
-		resp.WriteEntity(s.AuthManager.GenDeleteHostBatchNoPermissionResp(iHostIDArr))
+		perm, err := s.AuthManager.GenDeleteHostBatchNoPermissionResp(srvData.ctx, srvData.header, iHostIDArr)
+		if err != nil {
+			resp.WriteEntity(&meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
+			return
+		}
+		resp.WriteEntity(perm)
 		return
 	}
 
@@ -498,7 +503,12 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 			resp.WriteEntity(&meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
-		resp.WriteEntity(s.AuthManager.GenDeleteHostBatchNoPermissionResp(hostIDArr))
+		perm, err := s.AuthManager.GenDeleteHostBatchNoPermissionResp(srvData.ctx, srvData.header, hostIDArr)
+		if err != auth.NoAuthorizeError {
+			resp.WriteEntity(&meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
+			return
+		}
+		resp.WriteEntity(perm)
 		return
 	}
 
@@ -987,10 +997,15 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, dstHostID); err != nil {
 		if err != auth.NoAuthorizeError {
 			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", dstHostID, err, srvData.rid)
-			resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp([]int64{dstHostID}))
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, []int64{dstHostID})
+		if err != nil {
+			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(perm)
 		return
 	}
 
