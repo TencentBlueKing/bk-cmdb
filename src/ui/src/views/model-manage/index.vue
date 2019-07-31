@@ -379,6 +379,7 @@
                     this.updateClassify({ ...params, ...{ id: res.id } })
                 }
                 this.hideGroupDialog()
+                this.searchModel = ''
             },
             deleteGroup (group) {
                 if (!this.$isAuthorized(this.$OPERATION.D_MODEL_GROUP)) return
@@ -394,6 +395,7 @@
                             }
                         })
                         this.$store.commit('objectModelClassify/deleteClassify', group['bk_classification_id'])
+                        this.searchModel = ''
                     }
                 })
             },
@@ -415,6 +417,7 @@
                     params: this.$injectMetadata()
                 })
                 this.modelDialog.isShow = false
+                this.searchModel = ''
             },
             modelClick (model) {
                 const fullPath = this.searchModel ? `${this.$route.fullPath}?searchModel=${this.searchModel}` : this.$route.fullPath
