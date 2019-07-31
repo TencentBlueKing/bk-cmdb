@@ -82,7 +82,7 @@ func (s *synchronizeAdapter) PreSynchronizeFilter(ctx core.ContextParams) errors
 					blog.Errorf("preSynchronizeFilter get %s field error, inst info:%#v,rid:%s", common.MetadataField, item, ctx.ReqID)
 					s.errorArray[item.ID] = synchronizeAdapterError{
 						instInfo: item,
-						err:      ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, s.syncData.DataClassify, common.MetadataField, "mapstr", err.Error()),
+						err:      ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, s.syncData.DataClassify, common.MetadataField, "mapstr", err.Error()),
 					}
 					continue
 				}
@@ -271,7 +271,7 @@ func (s *synchronizeAdapter) getSameInfo(ctx core.ContextParams, instIDField, ta
 	instID, err := inst.Int64(instIDField)
 	if err != nil {
 		blog.Errorf("buildSameInfoBaseCond get inst error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
-		return 0, false, ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery data", instIDField, "int", err.Error())
+		return 0, false, ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, "propery data", instIDField, "int", err.Error())
 	}
 	return instID, true, nil
 
@@ -297,13 +297,13 @@ func (bsi *buildSameInfo) BuildSameInfoBaseCond(ctx core.ContextParams) errors.C
 		metadataVal, err := info.Info.MapStr(common.MetadataField)
 		if err != nil {
 			blog.Errorf("buildSameInfoBaseCond get metadata error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
-			return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery", common.MetadataField, "map", err.Error())
+			return ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, "propery", common.MetadataField, "map", err.Error())
 		}
 		if metadataVal.Exists(metadata.LabelBusinessID) {
 			str, err := metadataVal.String(metadata.LabelBusinessID)
 			if err != nil {
 				blog.Errorf("buildSameInfoBaseCond get metadata.bk_biz_id error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
-				return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery", common.MetadataField, "map", err.Error())
+				return ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, "propery", common.MetadataField, "map", err.Error())
 			}
 			bsi.cond.Set("metadata.label.bk_biz_id", str)
 		} else {
@@ -316,7 +316,7 @@ func (bsi *buildSameInfo) BuildSameInfoBaseCond(ctx core.ContextParams) errors.C
 	ownerID, err := info.Info.String(common.BKOwnerIDField)
 	if err != nil {
 		blog.Errorf("buildSameInfoBaseCond get ownerID error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery", common.BKOwnerIDField, "string", err.Error())
+		return ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, "propery", common.BKOwnerIDField, "string", err.Error())
 	}
 	bsi.cond = util.SetQueryOwner(bsi.cond, ownerID)
 	return nil
@@ -327,7 +327,7 @@ func (bsi *buildSameInfo) BuildSameInfoObjDescCond(ctx core.ContextParams) error
 	objID, err := info.Info.String(common.BKObjIDField)
 	if err != nil {
 		blog.Errorf("buildSameInfoObjDescCond get bk_obj_id error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery", common.BKObjIDField, "string", err.Error())
+		return ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, "propery", common.BKObjIDField, "string", err.Error())
 	}
 
 	bsi.cond.Set(common.BKObjIDField, objID)
@@ -339,12 +339,12 @@ func (bsi *buildSameInfo) BuildSameInfoObjAttrDescCond(ctx core.ContextParams) e
 	objID, err := info.Info.String(common.BKObjIDField)
 	if err != nil {
 		blog.Errorf("buildSameInfoObjAttrDescCond get bk_obj_id error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery", common.BKObjIDField, "string", err.Error())
+		return ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, "propery", common.BKObjIDField, "string", err.Error())
 	}
 	propertyID, err := info.Info.String(common.BKPropertyIDField)
 	if err != nil {
 		blog.Errorf("buildSameInfoObjAttrDescCond get bk_obj_name error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery", common.BKPropertyIDField, "string", err.Error())
+		return ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, "propery", common.BKPropertyIDField, "string", err.Error())
 	}
 
 	bsi.cond.Set(common.BKObjIDField, objID)
@@ -357,12 +357,12 @@ func (bsi *buildSameInfo) BuildSameInfoObjAttrGroupCond(ctx core.ContextParams) 
 	objID, err := info.Info.String(common.BKObjIDField)
 	if err != nil {
 		blog.Errorf("existSameInfo get bk_obj_id error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery", common.BKObjIDField, "string", err.Error())
+		return ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, "propery", common.BKObjIDField, "string", err.Error())
 	}
 	groupID, err := info.Info.String(common.BKPropertyGroupIDField)
 	if err != nil {
 		blog.Errorf("existSameInfo get bk_group_id error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery", common.BKPropertyGroupIDField, "string", err.Error())
+		return ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, "propery", common.BKPropertyGroupIDField, "string", err.Error())
 	}
 
 	bsi.cond.Set(common.BKObjIDField, objID)
@@ -375,7 +375,7 @@ func (bsi *buildSameInfo) BuildSameInfoObjClassificationCond(ctx core.ContextPar
 	classificationID, err := info.Info.String(common.BKClassificationIDField)
 	if err != nil {
 		blog.Errorf("existSameInfo get bk_classification_id error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery", common.BKClassificationIDField, "string", err.Error())
+		return ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, "propery", common.BKClassificationIDField, "string", err.Error())
 	}
 
 	bsi.cond.Set(common.BKClassificationIDField, classificationID)

@@ -276,7 +276,7 @@ func (t *genericTransfer) validParameterModule(ctx core.ContextParams) errors.CC
 			defaultVal, err := moduleInfo.Int64(common.BKDefaultField)
 			if err != nil {
 				blog.ErrorJSON("validParameter module info field default  not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfo, ctx.ReqID)
-				return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKDefaultField, "int", err.Error())
+				return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKDefaultField, "int", err.Error())
 			}
 			if defaultVal != 0 {
 				blog.ErrorJSON("validParameter module info field  has default module.  moduleInfo:%s,rid:%s", defaultVal, ctx.ReqID)
@@ -286,12 +286,12 @@ func (t *genericTransfer) validParameterModule(ctx core.ContextParams) errors.CC
 		moduleID, err := moduleInfo.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.ErrorJSON("validParameter module info field module id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfoArr, ctx.ReqID)
-			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
+			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
 		}
 		setID, err := moduleInfo.Int64(common.BKSetIDField)
 		if err != nil {
 			blog.ErrorJSON("validParameter module info field set id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfoArr, ctx.ReqID)
-			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKSetIDField, "int", err.Error())
+			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKSetIDField, "int", err.Error())
 		}
 		t.moduleIDSetIDMap[moduleID] = setID
 
@@ -490,7 +490,7 @@ func (t *genericTransfer) getInnerModuleIDArr(ctx core.ContextParams) errors.CCE
 		moduleID, err := moduleInfo.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.ErrorJSON("getInnerModuleIDArr module info field module id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfo, ctx.ReqID)
-			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
+			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
 		}
 		t.innerModuleID = append(t.innerModuleID, moduleID)
 	}

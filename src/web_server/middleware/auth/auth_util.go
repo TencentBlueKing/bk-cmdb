@@ -184,7 +184,7 @@ func validAppAccessPrivi(c *gin.Context, appResource string) bool {
 		return false
 	}
 
-	//valid opearion under biz
+	// valid opearion under biz
 	var userPriviApp, rolePrivi map[string][]string
 	err := json.Unmarshal([]byte(userPriviAppStr), &userPriviApp)
 	if nil != err {
@@ -196,7 +196,7 @@ func validAppAccessPrivi(c *gin.Context, appResource string) bool {
 		blog.Errorf("no user privi app , rid: %s", rid)
 		return false
 	}
-	//maintainer role pass the valid
+	// maintainer role pass the valid
 	if util.InArray(types.BK_CC_MAINTAINERS, appRole) {
 		return true
 	}

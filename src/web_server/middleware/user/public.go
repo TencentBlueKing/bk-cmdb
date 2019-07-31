@@ -44,30 +44,27 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
 	isMultiOwner := false
-	loginSucc := false
+	loginSuccess := false
 	var userInfo *metadata.LoginUserInfo
 	multipleOwner := m.config.Session.MultipleOwner
 	if common.LoginSystemMultiSupplierTrue == multipleOwner {
 		isMultiOwner = true
 	}
 
-	if nil == m.loginPlg {
-		user := plugins.CurrentPlugin(c, m.config.LoginVersion)
-		userInfo, loginSucc = user.LoginUser(c, m.config.ConfigMap, isMultiOwner)
-	} else {
-
+	if m.loginPlg != nil {
 		loginUserFunc, err := m.loginPlg.Lookup("LoginUser")
-
-		if nil != err {
+		if err != nil {
 			blog.Errorf("look login func error, rid: %s", rid)
 			return false
-
 		}
-		userInfo, loginSucc = loginUserFunc.(func(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo, loginSucc bool))(c, m.config.ConfigMap, isMultiOwner)
-
+		userInfo, loginSuccess = loginUserFunc.(func(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo, loginSuccess bool))(c, m.config.ConfigMap, isMultiOwner)
+	} else {
+		user := plugins.CurrentPlugin(c, m.config.LoginVersion)
+		userInfo, loginSuccess = user.LoginUser(c, m.config.ConfigMap, isMultiOwner)
 	}
 
-	if !loginSucc {
+	if !loginSuccess {
+		blog.Infof("login user with plugin failed, rid: %s", rid)
 		return false
 	}
 	if true == isMultiOwner || true == userInfo.MultiSupplier {
@@ -81,12 +78,12 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 			return false
 		}
 	}
-	strOwnerUinlist := []byte("")
+	strOwnerUinList := []byte("")
 	if 0 != len(userInfo.OwnerUinArr) {
-		strOwnerUinlist, _ = json.Marshal(userInfo.OwnerUinArr)
+		strOwnerUinList, _ = json.Marshal(userInfo.OwnerUinArr)
 	}
 
-	cookielanguage, _ := c.Cookie("blueking_language")
+	cookieLanguage, _ := c.Cookie("blueking_language")
 	session := sessions.Default(c)
 
 	session.Set(common.WEBSessionUinKey, userInfo.UserName)
@@ -97,7 +94,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	session.Set(common.HTTPCookieBKToken, userInfo.BkToken)
 	session.Set(common.WEBSessionOwnerUinKey, userInfo.OnwerUin)
 	session.Set(common.WEBSessionAvatarUrlKey, userInfo.AvatarUrl)
-	session.Set(common.WEBSessionOwnerUinListeKey, string(strOwnerUinlist))
+	session.Set(common.WEBSessionOwnerUinListeKey, string(strOwnerUinList))
 	session.Set(common.WEBSessionSupplierID, strconv.FormatInt(userInfo.SupplierID, 10))
 	if userInfo.MultiSupplier {
 		session.Set(common.WEBSessionMultiSupplierKey, common.LoginSystemMultiSupplierTrue)
@@ -106,16 +103,18 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	}
 
 	session.Set(webCommon.IsSkipLogin, "0")
-	if "" != cookielanguage {
-		session.Set(common.WEBSessionLanguageKey, cookielanguage)
+	if "" != cookieLanguage {
+		session.Set(common.WEBSessionLanguageKey, cookieLanguage)
 	} else {
 		session.Set(common.WEBSessionLanguageKey, userInfo.Language)
 	}
-	session.Save()
+	if err := session.Save(); err != nil {
+		blog.Warnf("save session failed, err: %s, rid: %s", err.Error(), rid)
+	}
 	return true
 }
 
-// GetUserList get user list from paas
+// GetUserList get user list from PaaS
 func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	var err error

@@ -27,9 +27,9 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (a *association) ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error) {
+func (assoc *association) ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error) {
 
-	ia := NewImportAssociation(ctx, a, params, objID, importData)
+	ia := NewImportAssociation(ctx, assoc, params, objID, importData)
 	err = ia.ParsePrimaryKey()
 	if err != nil {
 		return resp, err

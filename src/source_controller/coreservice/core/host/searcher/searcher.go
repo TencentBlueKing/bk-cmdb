@@ -57,14 +57,6 @@ func (s *Searcher) ListHostByTopoNode(ctx context.Context, option metadata.ListH
 			common.BKDBIN: option.SetIDs,
 		}
 	}
-	total, err := s.DbProxy.Table(common.BKTableNameModuleHostConfig).Find(filter).Count(ctx)
-	if err != nil {
-		blog.Errorf("ListHostByTopoNode failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, rid)
-		return nil, err
-	}
-
-	searchResult = &metadata.ListHostResult{}
-	searchResult.Count = int(total)
 
 	relations := make([]metadata.ModuleHost, 0)
 	if err := s.DbProxy.Table(common.BKTableNameModuleHostConfig).Find(filter).All(ctx, &relations); err != nil {
@@ -83,6 +75,15 @@ func (s *Searcher) ListHostByTopoNode(ctx context.Context, option metadata.ListH
 			common.BKDBIN: hostIDs,
 		},
 	}
+
+	total, err := s.DbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).Count(ctx)
+	if err != nil {
+		blog.Errorf("ListHostByTopoNode failed, db select failed, filter: %+v, err: %+v, rid: %s", hostFilter, err, rid)
+		return nil, err
+	}
+	searchResult = &metadata.ListHostResult{}
+	searchResult.Count = int(total)
+
 	limit := uint64(option.Page.Limit)
 	start := uint64(option.Page.Start)
 	query := s.DbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).Limit(limit).Start(start)

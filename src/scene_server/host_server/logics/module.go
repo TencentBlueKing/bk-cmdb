@@ -75,7 +75,9 @@ func (lgc *Logics) GetNormalModuleByModuleID(ctx context.Context, appID, moduleI
 
 func (lgc *Logics) GetModuleIDByCond(ctx context.Context, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
 	condc := make(map[string]interface{})
-	parse.ParseCommonParams(cond, condc)
+	if err := parse.ParseCommonParams(cond, condc); err != nil {
+		blog.Warnf("ParseCommonParams failed, err: %+v, rid: %s", err, lgc.rid)
+	}
 
 	query := &metadata.QueryCondition{
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
@@ -99,7 +101,7 @@ func (lgc *Logics) GetModuleIDByCond(ctx context.Context, cond []metadata.Condit
 		moduleID, err := i.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.Errorf("GetModuleIDByCond convert  module id to int error, err:%s, module:%+v,input:%+v,rid:%s", err.Error(), i, query, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
 		}
 		moduleIDArr = append(moduleIDArr, moduleID)
 	}
@@ -130,7 +132,7 @@ func (lgc *Logics) GetModuleMapByCond(ctx context.Context, fields []string, cond
 		id, err := info.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.Errorf("GetModuleMapByCond convert  module id to int error, err:%s, module:%+v,input:%+v,rid:%s", err.Error(), info, query, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
 		}
 		moduleMap[id] = info
 	}
@@ -311,7 +313,9 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 	}
 
 	audit := lgc.NewHostModuleLog(conf.HostID)
-	audit.WithPrevious(ctx)
+	if err := audit.WithPrevious(ctx); err != nil {
+		blog.Warnf("WithPrevious failed, err: %+v, rid: %s", err, lgc.rid)
+	}
 
 	result, err := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(ctx, lgc.header, assignParams) //.AssignHostToApp(ctx, srvData.header, params)
 	if err != nil {
