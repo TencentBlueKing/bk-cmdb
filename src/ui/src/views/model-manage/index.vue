@@ -47,7 +47,14 @@
                     </bk-button>
                 </span>
             </div>
-            <div class="model-type-options fr">
+            <div class="model-search-options fr">
+                <bk-input class="search-model"
+                    :clearable="true"
+                    :right-icon="'bk-icon icon-search'"
+                    v-model.trim="searchModel">
+                </bk-input>
+            </div>
+            <div class="model-type-options">
                 <bk-button class="model-type-button enable"
                     size="small"
                     :theme="modelType === 'enable' ? 'primary' : 'default'"
@@ -211,7 +218,9 @@
                 modelDialog: {
                     isShow: false
                 },
-                modelType: 'enable'
+                modelType: 'enable',
+                searchModel: '',
+                filterClassifications: []
             }
         },
         computed: {
@@ -247,7 +256,30 @@
                 return disabledClassifications
             },
             currentClassifications () {
-                return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+                if (!this.searchModel) {
+                    return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+                } else {
+                    return this.filterClassifications
+                }
+            }
+        },
+        watch: {
+            searchModel (value) {
+                if (!value) {
+                    return
+                }
+                const searchResult = []
+                const reg = new RegExp(value, 'gi')
+                const currentClassifications = this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+                const classifications = this.$tools.clone(currentClassifications)
+                for (let i = 0; i < classifications.length; i++) {
+                    classifications[i].bk_objects = classifications[i].bk_objects.filter(model => reg.test(model.bk_obj_name) || reg.test(model.bk_obj_id))
+                    searchResult.push(classifications[i])
+                }
+                this.filterClassifications = searchResult
+            },
+            modelType () {
+                this.searchModel = ''
             }
         },
         created () {
@@ -258,6 +290,11 @@
             this.searchClassificationsObjects({
                 params: this.$injectMetadata()
             })
+            if (this.$route.query.searchModel) {
+                const hash = window.location.hash
+                this.searchModel = this.$route.query.searchModel
+                window.location.hash = hash.substring(0, hash.indexOf('?'))
+            }
             this.showFeatureTips = this.featureTipsParams['model']
         },
         beforeDestroy () {
@@ -380,6 +417,7 @@
                 this.modelDialog.isShow = false
             },
             modelClick (model) {
+                const fullPath = this.searchModel ? `${this.$route.fullPath}?searchModel=${this.searchModel}` : this.$route.fullPath
                 this.$store.commit('objectModel/setActiveModel', model)
                 this.$router.push({
                     name: 'modelDetails',
@@ -387,7 +425,7 @@
                         modelId: model['bk_obj_id']
                     },
                     query: {
-                        from: this.$route.fullPath
+                        from: fullPath
                     }
                 })
             }
@@ -397,7 +435,7 @@
 
 <style lang="scss" scoped>
     .group-wrapper {
-        padding: 100px 20px 20px 0;
+        padding: 100px 0 20px 0;
     }
     .btn-group {
         position: absolute;
@@ -415,11 +453,18 @@
             box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
         }
     }
+    .model-search-options {
+        .search-model {
+            width: 240px;
+        }
+    }
     .model-type-options {
         margin: 6px 0;
         font-size: 0;
         text-align: right;
-        position: relative;
+        position: absolute;
+        right: 20px;
+        bottom: -30px;
         z-index: 1;
         .model-type-button {
             position: relative;
