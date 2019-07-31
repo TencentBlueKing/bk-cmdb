@@ -43,6 +43,10 @@ const (
 	ModelUnique              ResourceType = "modelUnique"
 	HostFavorite             ResourceType = "hostFavorite"
 	Process                  ResourceType = "process"
+	ProcessServiceCategory   ResourceType = "processServiceCategory"
+	ProcessServiceTemplate   ResourceType = "processServiceTemplate"
+	ProcessTemplate          ResourceType = "processTemplate"
+	ProcessServiceInstance   ResourceType = "processServiceInstance"
 	HostInstance             ResourceType = "hostInstance"
 	NetDataCollector         ResourceType = "netDataCollector"
 	DynamicGrouping          ResourceType = "dynamicGrouping" // 动态分组
@@ -143,7 +147,7 @@ var (
 			CleanHostInSetOrModule,
 			MoveHostsToBusinessOrModule,
 			AddHostToResourcePool,
-			MoveHostToModule,
+			MoveBizHostToModule,
 		},
 	}
 

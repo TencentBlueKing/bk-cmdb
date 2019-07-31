@@ -25,6 +25,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -57,6 +58,8 @@ const (
 )
 
 type Request struct {
+	parent *RESTClient
+
 	capability *util.Capability
 
 	verb    VerbType
@@ -69,6 +72,8 @@ type Request struct {
 	baseURL string
 	// sub path of the url, will be append to baseURL
 	subPath string
+	// sub path format args
+	subPathArgs []interface{}
 
 	// request timeout value
 	timeout time.Duration
@@ -122,6 +127,11 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 func (r *Request) WithTimeout(d time.Duration) *Request {
 	r.timeout = d
 	return r
+}
+
+func (r *Request) SubResourcef(subPath string, args ...interface{}) *Request {
+	r.subPathArgs = args
+	return r.SubResource(subPath)
 }
 
 func (r *Request) SubResource(subPath string) *Request {
@@ -182,7 +192,11 @@ func (r *Request) WrapURL() *url.URL {
 		*finalUrl = *u
 	}
 
-	finalUrl.Path = finalUrl.Path + r.subPath
+	if len(r.subPathArgs) > 0 {
+		finalUrl.Path = finalUrl.Path + fmt.Sprintf(r.subPath, r.subPathArgs...)
+	} else {
+		finalUrl.Path = finalUrl.Path + r.subPath
+	}
 
 	query := url.Values{}
 	for key, values := range r.params {
@@ -200,12 +214,24 @@ func (r *Request) WrapURL() *url.URL {
 }
 
 func (r *Request) Do() *Result {
+	result := new(Result)
+
+	if r.parent.requestInflight != nil {
+		r.parent.requestInflight.Inc()
+		defer r.parent.requestInflight.Dec()
+	}
+	if r.parent.requestDuration != nil {
+		before := time.Now()
+		defer func() {
+			r.parent.requestDuration.WithLabelValues(r.subPath, strconv.Itoa(result.StatusCode)).Observe(commonUtil.ToMillisecond(time.Since(before)))
+		}()
+	}
+
 	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)
 	if rid == "" {
 		rid = commonUtil.GetHTTPCCRequestID(r.headers)
 	}
 
-	result := new(Result)
 	if r.err != nil {
 		result.Err = r.err
 		return result
@@ -336,7 +362,7 @@ func (r *Result) Into(obj interface{}) error {
 			if r.StatusCode >= 300 {
 				return fmt.Errorf("http request err: %s", string(r.Body))
 			}
-			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", string(r.Body), err.Error())
+			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", r.Body, err.Error())
 			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
 		}
 	} else if r.StatusCode >= 300 {

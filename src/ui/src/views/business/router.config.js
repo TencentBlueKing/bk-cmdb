@@ -33,7 +33,8 @@ export default [{
             setAuthScope () {
                 this.authScope = 'global'
             }
-        }
+        },
+        i18nTitle: 'Nav["业务"]'
     })
 }, {
     name: 'businessHistory',
@@ -46,6 +47,7 @@ export default [{
             setAuthScope () {
                 this.authScope = 'global'
             }
-        }
+        },
+        i18nTitle: 'Nav["业务"]'
     })
 }]

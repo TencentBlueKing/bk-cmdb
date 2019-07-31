@@ -27,8 +27,15 @@ func (ps *parseStream) processRelated() *parseStream {
 	}
 
 	ps.process().
+		ServiceInstance().
+		ServiceTemplate().
+		ServiceCategory().
 		processTemplate().
-		processTemplateBound()
+		ProcessTemplate().
+		ProcessInstance()
+		// remove process template and process template bound related api
+		// processTemplate()
+		// processTemplateBound()
 
 	return ps
 }
@@ -355,6 +362,8 @@ var (
 	updateProcessTemplateVersionRegexp = regexp.MustCompile(`^/api/v3/template/version/[^\s/]+/[0-9]+/[0-9]+/[0-9]+/?$`)
 	previewProcessConfigRegexp         = regexp.MustCompile(`^/api/v3/proc/template/[^\s/]+/[0-9]+/[0-9]+/?$`)
 )
+
+// Deprecated: unused apis
 
 func (ps *parseStream) processTemplate() *parseStream {
 	if ps.shouldReturn() {

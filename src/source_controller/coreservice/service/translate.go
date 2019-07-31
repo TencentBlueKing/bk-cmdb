@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core/instances"
+	"context"
 )
 
 var defaultNameLanguagePkg = map[string]map[string][]string{
@@ -49,10 +50,11 @@ func (s *coreService) TranslatePlaceholder(defLang language.DefaultCCLanguageIf,
 	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_placeholder_"+att.PropertyID), att.Placeholder)
 }
 
-func (s *coreService) TranslateEnumName(defLang language.DefaultCCLanguageIf, att *metadata.Attribute, val interface{}) interface{} {
-	options, err := instances.ParseEnumOption(val)
+func (s *coreService) TranslateEnumName(ctx context.Context, defLang language.DefaultCCLanguageIf, att *metadata.Attribute, val interface{}) interface{} {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	options, err := instances.ParseEnumOption(ctx, val)
 	if err != nil {
-		blog.Warnf("TranslateEnumName failed: %v", err)
+		blog.Warnf("TranslateEnumName failed: %v, rid: %s", err, rid)
 		return val
 	}
 	for index := range options {

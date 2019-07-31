@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core"
-	"configcenter/src/storage/tmserver/core/transaction"
+	"configcenter/src/storage/tmserver/core/session"
 	"configcenter/src/storage/types"
 )
 
@@ -27,10 +27,10 @@ func init() {
 var _ core.SetTransaction = (*abortTransaction)(nil)
 
 type abortTransaction struct {
-	txn *transaction.Manager
+	txn *session.Manager
 }
 
-func (d *abortTransaction) SetTxn(txn *transaction.Manager) {
+func (d *abortTransaction) SetTxn(txn *session.Manager) {
 	d.txn = txn
 }
 

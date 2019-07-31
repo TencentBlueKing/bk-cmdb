@@ -12,6 +12,8 @@
 
 package errors
 
+import "configcenter/src/common"
+
 // ccDefaultErrorHelper regular language code helper
 type ccDefaultErrorHelper struct {
 	language    string
@@ -28,6 +30,23 @@ func (cli *ccDefaultErrorHelper) New(errorCode int, msg string) error {
 			return msg
 		},
 	}
+}
+
+func NewCCError(errorCode int, msg string) CCErrorCoder {
+	err := &ccError{
+		code: errorCode,
+		callback: func() string {
+			return msg
+		},
+	}
+	return err
+}
+
+var CCHttpError = &ccError{
+	code: common.CCErrCommHTTPDoRequestFailed,
+	callback: func() string {
+		return "http request failed"
+	},
 }
 
 // Error returns an error for specific language

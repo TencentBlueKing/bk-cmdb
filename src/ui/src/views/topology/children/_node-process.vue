@@ -123,7 +123,7 @@
                     }
                 }).then(data => {
                     this.pagination.count = data.count
-                    this.list = this.$tools.flatternList(this.properties, data.info)
+                    this.list = this.$tools.flattenList(this.properties, data.info)
                 })
             },
             handlePageChange (page) {

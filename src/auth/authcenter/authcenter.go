@@ -28,6 +28,8 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
 	commonutil "configcenter/src/common/util"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -102,7 +104,7 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 }
 
 // NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
-func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, error) {
+func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer) (*AuthCenter, error) {
 	blog.V(5).Infof("new auth center client with parameters tls: %+v, cfg: %+v", tls, cfg)
 	if !cfg.Enable {
 		return new(AuthCenter), nil
@@ -121,6 +123,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, erro
 		Mock: util.MockInfo{
 			Mocked: false,
 		},
+		Reg: reg,
 	}
 
 	header := http.Header{}

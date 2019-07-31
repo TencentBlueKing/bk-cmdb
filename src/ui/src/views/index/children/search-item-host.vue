@@ -28,7 +28,8 @@
                         outer: false,
                         inner: true,
                         exact: 1,
-                        assigned: true
+                        assigned: true,
+                        from: this.$route.fullPath
                     }
                 })
             },

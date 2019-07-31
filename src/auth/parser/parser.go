@@ -54,6 +54,7 @@ func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAt
 	}
 
 	requestContext := &RequestContext{
+		Rid:      util.GetHTTPCCRequestID(req.Request.Header),
 		Header:   req.Request.Header,
 		Method:   req.Request.Method,
 		URI:      req.Request.URL.Path,

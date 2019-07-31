@@ -29,7 +29,6 @@ import (
 
 // helpers
 func (phpapi *PHPAPI) UpdateHostMain(ctx context.Context, hostCondition, data map[string]interface{}, appID int64) (string, errors.CCError) {
-	//blog.V(5).Infof("updateHostMain start")
 	blog.V(5).Infof("hostCondition:%+v, rid:%s", hostCondition, phpapi.rid)
 
 	_, hostIDArr, err := phpapi.GetHostMapByCond(ctx, hostCondition)
@@ -125,7 +124,7 @@ func (phpapi *PHPAPI) AddModuleHostConfig(ctx context.Context, hostID, appID int
 	}
 	blog.V(5).Infof("addModuleHostConfig start, data: %+v,rid:%s", data, phpapi.rid)
 
-	res, err := phpapi.logic.CoreAPI.CoreService().Host().TransferHostModule(ctx, phpapi.header, data)
+	res, err := phpapi.logic.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, phpapi.header, data)
 	if nil != err {
 		blog.Errorf("AddModuleHostConfig http do error.err:%s,param:%+v,rid:%s", err.Error(), data, phpapi.rid)
 		return phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

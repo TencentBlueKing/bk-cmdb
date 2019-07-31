@@ -26,10 +26,11 @@ import (
 // SetSystemConfiguration used for set variable in cc_System table
 func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
+	rid := util.GetHTTPCCRequestID(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
 
-	blog.Errorf("modify data for  %s table ", "cc_System")
+	blog.Infof("set system configuration on table %s start, rid: %s", common.BKTableNameSystem, rid)
 	cond := map[string]interface{}{
 		common.HostCrossBizField: common.HostCrossBizValue,
 	}
@@ -37,10 +38,13 @@ func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Res
 		common.HostCrossBizField: common.HostCrossBizValue + ownerID,
 	}
 
-	err := s.db.Table("cc_System").Update(s.ctx, cond, data)
+	err := s.db.Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
 	if nil != err {
-		blog.Errorf("modify data for  %s table error  %s", "cc_System", err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommMigrateFailed)})
+		blog.Errorf("set system configuration on table %s failed, err: %+v, rid: %s", common.BKTableNameSystem, err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrCommMigrateFailed),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp("modify system config success"))
