@@ -32,7 +32,10 @@
                     @click.stop="showCreateDialog(node)">
                     {{$t('Common[\'新建\']')}}
                 </bk-button>
-                <span class="node-name">{{data.bk_inst_name}}</span>
+                <div class="info-content">
+                    <span class="node-name">{{data.bk_inst_name}}</span>
+                    <span class="instance-num">{{data.service_instance_count}}</span>
+                </div>
             </div>
         </bk-big-tree>
         <bk-dialog class="bk-dialog-no-padding bk-dialog-no-tools"
@@ -111,6 +114,7 @@
                 this.getTopologyData(),
                 this.getMainLine()
             ])
+            this.getTopologyInstanceNum()
             this.treeData = data
             this.mainLine = mainLine
             this.$nextTick(() => {
@@ -142,6 +146,31 @@
                 return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
                     config: {
                         requestId: 'getMainLine'
+                    }
+                })
+            },
+            getTopologyInstanceNum () {
+                this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
+                    bizId: this.business,
+                    config: {
+                        requestId: 'getTopologyInstanceNum'
+                    }
+                }).then(data => {
+                    this.setNodeNum(data)
+                })
+            },
+            setNodeNum (data) {
+                data.forEach((datum, index) => {
+                    const id = this.idGenerator(datum)
+                    const node = this.$refs.tree.getNodeById(id)
+                    if (node) {
+                        const num = datum.service_instance_count
+                        datum.service_instance_count = num > 999 ? '999+' : num
+                        node.data = datum
+                    }
+                    const child = datum.child
+                    if (Array.isArray(child) && child.length) {
+                        this.setNodeNum(child)
                     }
                 })
             },
@@ -287,11 +316,34 @@
             font-size: 12px;
             min-width: auto;
         }
-        .node-name {
-            display: block;
+        .info-content {
+            display: flex;
+            align-items: center;
             line-height: 40px;
             font-size: 14px;
-            @include ellipsis;
+            .node-name {
+                @include ellipsis;
+                margin-right: 4px;
+            }
+            .instance-num {
+                margin-right: 5px;
+                padding: 0 5px;
+                height: 18px;
+                line-height: 17px;
+                border-radius: 2px;
+                background-color: #f0f1f5;
+                color: #979ba5;
+                font-size: 12px;
+                text-align: center;
+            }
+        }
+    }
+    .topology-tree {
+        .bk-big-tree-node.is-selected {
+            .instance-num {
+                background-color: #a2c5fd;
+                color: #fff;
+            }
         }
     }
 </style>
