@@ -172,7 +172,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	clsIDs := []string{}
+	clsIDs := make([]string, 0)
 	for _, cls := range rsp.Data.Info {
 		clsIDs = append(clsIDs, cls.ClassificationID)
 	}
@@ -188,7 +188,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		return nil, params.Err.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
 	}
 	objMap := make(map[string][]metadata.Object)
-	objIDs := []string{}
+	objIDs := make([]string, 0)
 	for _, info := range queryObjectResp.Data.Info {
 		objIDs = append(objIDs, info.Spec.ObjectID)
 		objMap[info.Spec.ObjCls] = append(objMap[info.Spec.ObjCls], info.Spec)
@@ -198,7 +198,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
 	}
-	asstIDs := []string{}
+	asstIDs := make([]string, 0)
 	for _, asstItem := range asstItems {
 		asstIDs = append(asstIDs, asstItem.AsstObjID)
 	}
@@ -238,7 +238,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		asstMap[info.Spec.ObjCls] = asstObjMap
 	}
 
-	datas := []metadata.ClassificationWithObject{}
+	datas := make([]metadata.ClassificationWithObject, 0)
 	for _, cls := range rsp.Data.Info {
 		clsItem := metadata.ClassificationWithObject{
 			Classification: cls,
@@ -248,7 +248,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		if obj, ok := objMap[cls.ClassificationID]; ok {
 			clsItem.Objects = obj
 		}
-		if asst, ok := asstMap[cls.ClassificationID] ; ok {
+		if asst, ok := asstMap[cls.ClassificationID]; ok {
 			clsItem.AsstObjects = asst
 		}
 		datas = append(datas, clsItem)

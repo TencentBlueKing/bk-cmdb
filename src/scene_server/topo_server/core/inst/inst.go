@@ -48,7 +48,7 @@ type Inst interface {
 	SetAssoID(id int64)
 	GetAssoID() int64
 
-	SetValue(key string, value interface{}) error
+	SetValue(key string, value interface{})
 
 	SetValues(values mapstr.MapStr)
 
@@ -308,9 +308,8 @@ func (cli *inst) ToMapStr() mapstr.MapStr {
 	return cli.datas
 }
 
-func (cli *inst) SetValue(key string, value interface{}) error {
+func (cli *inst) SetValue(key string, value interface{}) {
 	cli.datas.Set(key, value)
-	return nil
 }
 
 func (cli *inst) SetValues(values mapstr.MapStr) {

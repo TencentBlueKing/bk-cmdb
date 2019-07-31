@@ -85,7 +85,7 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 
-	err = s.Core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
+	err = s.Core.AssociationOperation().DeleteMainlineAssociation(params, objID)
 
 	if err != nil {
 		if txerr := tx.Abort(context.Background()); txerr != nil {
@@ -219,7 +219,7 @@ func (s *Service) SearchObjectAssoWithAssoKindList(params types.ContextParams, p
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
 
-	return s.Core.AssociationOperation().SearchObjectAssoWithAssoKindList(params, ids.AsstIDs)
+	return s.Core.AssociationOperation().SearchObjectAssocWithAssocKindList(params, ids.AsstIDs)
 }
 
 func (s *Service) CreateAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
