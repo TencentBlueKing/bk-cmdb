@@ -15,10 +15,12 @@ package auth
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/metadata"
 )
 
 type Authorize interface {
@@ -36,6 +38,8 @@ type Authorizer interface {
 	GetExactAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error)
 	AdminEntrance(ctx context.Context, user meta.UserInfo) ([]string, error)
 	GetAuthorizedAuditList(ctx context.Context, user meta.UserInfo, businessID int64) ([]authcenter.AuthorizedResource, error)
+	GetNoAuthSkipUrl(ctx context.Context, header http.Header, permission []metadata.Permission) (skipUrl string, err error)
+	GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]authcenter.UserGroupMembers, error)
 	Enabled() bool
 }
 
