@@ -180,18 +180,17 @@ const (
 	CCErrCommGetBusinessDefaultSetModuleFailed = 1199062
 
 	CCErrCommParametersCountNotEnough = 1199063
-
 	CCErrCommFuncCalledWithInappropriateParam = 1199064
 
 	// CCErrCommStartTranscationFailed start transcation failed
-	CCErrCommStartTranscationFailed = 1199065
+	CCErrCommStartTransactionFailed = 1199065
 	// CCErrCommCommitTranscationFailed commit transcation failed
-	CCErrCommCommitTranscationFailed = 1199066
+	CCErrCommCommitTransactionFailed = 1199066
 	// CCErrCommcommitTranscationFailed abort transcation failed
-	CCErrCommAbortTranscationFailed = 1199067
+	CCErrCommAbortTransactionFailed = 1199067
 
 	CCErrCommListAuthorizedResourcedFromIAMFailed = 1199068
-	CCErrParseAttrOptionEumuFailed                = 1199069
+	CCErrParseAttrOptionEnumFailed                = 1199069
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
