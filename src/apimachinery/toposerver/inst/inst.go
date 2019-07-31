@@ -105,8 +105,8 @@ func (t *instanceClient) InstSearch(ctx context.Context, ownerID string, objID s
 	return
 }
 
-func (t *instanceClient) SelectInstsByAssociation(ctx context.Context, ownerID string, objID string, h http.Header, p *metadata.AssociationParams) (resp *metadata.SearchInstResult, err error) {
-	resp = new(metadata.SearchInstResult)
+func (t *instanceClient) SelectInstsByAssociation(ctx context.Context, ownerID string, objID string, h http.Header, p *metadata.AssociationParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/inst/association/search/owner/%s/object/%s", ownerID, objID)
 
 	err = t.client.Post().

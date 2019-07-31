@@ -39,7 +39,7 @@ type InstanceInterface interface {
 	SelectInsts(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
 	SelectInstsAndAsstDetail(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
 	InstSearch(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
-	SelectInstsByAssociation(ctx context.Context, ownerID string, objID string, h http.Header, p *metadata.AssociationParams) (resp *metadata.SearchInstResult, err error)
+	SelectInstsByAssociation(ctx context.Context, ownerID string, objID string, h http.Header, p *metadata.AssociationParams) (resp *metadata.Response, err error)
 	SelectInst(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
 	SelectTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
 	SelectAssociationTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
