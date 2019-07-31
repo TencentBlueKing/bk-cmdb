@@ -81,19 +81,19 @@ const (
 	// CCErrCommDBInsertFailed database cannot add data
 	CCErrCommDBInsertFailed = 1199018
 
-	//CCErrCommNotFound the goal does not exist
+	// CCErrCommNotFound the goal does not exist
 	CCErrCommNotFound = 1199019
 
-	//CCErrCommDBUpdateFailed database cannot update data
+	// CCErrCommDBUpdateFailed database cannot update data
 	CCErrCommDBUpdateFailed = 1199020
 
-	//CCErrCommDBDeleteFailed database cannot delete data
+	// CCErrCommDBDeleteFailed database cannot delete data
 	CCErrCommDBDeleteFailed = 1199021
 
-	//CCErrCommRelyOnServerAddressFailed dependent service did not start
+	// CCErrCommRelyOnServerAddressFailed dependent service did not start
 	CCErrCommRelyOnServerAddressFailed = 1199022
 
-	//CCErrCommExcelTemplateFailed unable to generate and download
+	// CCErrCommExcelTemplateFailed unable to generate and download
 	CCErrCommExcelTemplateFailed = 1199023
 
 	// CCErrCommParamsNeedTimeZone the parameter must be time zone type
@@ -108,13 +108,13 @@ const (
 	// CCErrCommNotAuthItem failed to get authorization information
 	CCErrCommNotAuthItem = 1199027
 
-	// CCErrCommNotAuthItem field valide failed
+	// CCErrCommNotAuthItem field validate failed
 	CCErrCommFieldNotValid = 1199028
 
-	//CCErrCommReplyDataFormatError Return data format error
+	// CCErrCommReplyDataFormatError Return data format error
 	CCErrCommReplyDataFormatError = 1199029
 
-	//CCErrCommReplyDataFormatError Return data format error
+	// CCErrCommReplyDataFormatError Return data format error
 	CCErrCommPostInputParseError = 1199030
 
 	// CCErrCommResourceInitFailed %s init failed
@@ -139,8 +139,8 @@ const (
 	CCErrCommInstDataNil = 1199038
 	// CCErrCommInstFieldNotFound  %s field does not exist in %s
 	CCErrCommInstFieldNotFound = 1199039
-	// CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
-	CCErrCommInstFieldConvFail = 1199040
+	// CCErrCommInstFieldConvertFail  convert %s  field %s to %s error %s
+	CCErrCommInstFieldConvertFail = 1199040
 	// CCErrCommUtilFail  handle %s error %s
 	CCErrCommUtilHandleFail = 1199041
 	// CCErrCommParamsNeedFloat the parameter must be float type
@@ -149,7 +149,7 @@ const (
 	CCErrCommFieldNotValidFail = 1199043
 
 	CCErrCommNotAllSuccess = 1199044
-	// parse auth attribute in apiserver rest filter failed.
+	// parse auth attribute in api server rest filter failed.
 	CCErrCommParseAuthAttributeFailed = 1199045
 
 	// authorize request to auth center failed
@@ -180,17 +180,21 @@ const (
 	CCErrCommParametersCountNotEnough         = 1199063
 	CCErrCommFuncCalledWithInappropriateParam = 1199064
 
-	// CCErrCommStartTranscationFailed start transcation failed
+	// CCErrCommStartTransactionFailed start transaction failed
 	CCErrCommStartTransactionFailed = 1199065
-	// CCErrCommCommitTranscationFailed commit transcation failed
+	// CCErrCommCommitTransactionFailed commit transaction failed
 	CCErrCommCommitTransactionFailed = 1199066
-	// CCErrCommcommitTranscationFailed abort transcation failed
+	// CCErrCommAbortTransactionFailed abort transaction failed
 	CCErrCommAbortTransactionFailed = 1199067
 
 	CCErrCommListAuthorizedResourcedFromIAMFailed = 1199068
 	CCErrParseAttrOptionEnumFailed                = 1199069
+
 	// CCErrCommParamsNotSupportXXErr 参数%s的值%s 无效
 	CCErrCommParamsValueInvalidError = 1199070
+
+	// 构造DB查询条件失败
+	CCErrConstructDBFilterFailed = 1199071
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -291,7 +295,7 @@ const (
 	// CCErrTopoObjectGroupSelectFailed unable to select a object group
 	CCErrTopoObjectGroupSelectFailed = 1101028
 
-	// CCErrTopoObjectClassificationHasObject the object classification can't be deleted under clssification
+	// CCErrTopoObjectClassificationHasObject the object classification can't be deleted under classification
 	CCErrTopoObjectClassificationHasObject = 1101029
 
 	// CCErrTopoHasHostCheckFailed cannot detect if host information is included
@@ -300,12 +304,12 @@ const (
 	// CCErrTopoHasHost include host
 	CCErrTopoHasHost = 1101030
 
-	// CCErrTopoGetCloudErrStrFaild get cloud error
-	CCErrTopoGetCloudErrStrFaild = 1101031
+	// CCErrTopoGetCloudErrStrFailed get cloud error
+	CCErrTopoGetCloudErrStrFailed = 1101031
 	// CCErrTopoCloudNotFound   cloud area not found
 	CCErrTopoCloudNotFound = 1101032
 
-	// CCErrTopoGetAppFaild search app err %s
+	// CCErrTopoGetAppFailed search app err %s
 	CCErrTopoGetAppFailed = 1101033
 	// CCErrTopoGetModuleFailed search  module err %s
 	CCErrTopoGetModuleFailed = 1101034
@@ -340,7 +344,7 @@ const (
 	// CCErrorTopoImportAssociation  import association error
 	CCErrorTopoImportAssociation = 1101049
 	// got multiple association kind with a id
-	CCErrorTopoGetMultipleAssoKindInstWithOneID = 1101050
+	CCErrorTopoGetMultipleAssocKindInstWithOneID = 1101050
 	// delete a pre-defined association kind.
 	CCErrorTopoDeletePredefinedAssociationKind = 1101051
 	// create new instance for a new association, but association map is 1:1
@@ -358,7 +362,7 @@ const (
 	// object instance's bk_inst_name filed is not string
 	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
 	// create model's instance patch, but instance's name is duplicate.
-	CCErrorTopoMutipleObjectInstanceName = 1101059
+	CCErrorTopoMultipleObjectInstanceName = 1101059
 
 	CCErrorTopoAssociationKindHasBeenUsed                     = 1101060
 	CCErrorTopoCreateMultipleInstancesForOneToManyAssociation = 1101061
@@ -391,7 +395,7 @@ const (
 	CCErrTopoObjectPropertyUsedByUnique                       = 1001065
 	CCErrTopoObjectUniqueKeyKindInvalid                       = 1001066
 	CCErrTopoObjectUniquePresetCouldNotDelOrEdit              = 1001067
-	CCErrTopoObjectUniqueCanNotHasMutiMustCheck               = 1001068
+	CCErrTopoObjectUniqueCanNotHasMultipleMustCheck           = 1001068
 	CCErrTopoObjectUniqueShouldHaveMoreThanOne                = 1001069
 	// association kind has been apply to object
 	CCErrorTopoAssKindHasApplyToObject = 1101070
@@ -401,17 +405,17 @@ const (
 	CCErrorAsstInstIsNotExist           = 1101073
 	CCErrorInstToAsstIsNotExist         = 1101074
 	CCErrorInstHasAsst                  = 1101075
-	CCErrTopoCreateAssoKindFailed       = 1101076
+	CCErrTopoCreateAssocKindFailed      = 1101076
 	CCErrTopoUpdateAssoKindFailed       = 1101077
 	CCErrTopoDeleteAssoKindFailed       = 1101078
-	CCErrTopoMulueIDNotfoundFailed      = 1101080
+	CCErrTopoModuleIDNotfoundFailed     = 1101080
 	CCErrTopoBkAppNotAllowedDelete      = 1101081
 	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
 	CCErrorTopoAssociationKindMainlineUnavailable = 1101082
 	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
 	CCErrorTopoAssociationKindInconsistent = 1101083
-	// CCErrorTopoModleStopped means model have been stopped to use
-	CCErrorTopoModleStopped = 1101084
+	// CCErrorTopoModelStopped means model have been stopped to use
+	CCErrorTopoModelStopped = 1101084
 	// mainline's object unique can not be updated, deleted or create new rules.
 	CCErrorTopoMainlineObjectCanNotBeChanged   = 1101085
 	CCErrorTopoGetAuthorizedBusinessListFailed = 1101086
@@ -467,7 +471,7 @@ const (
 	// migrate 1105XXX
 	//  CCErrCommMigrateFailed failed to migrate
 	CCErrCommMigrateFailed        = 1105000
-	CCErrCommInitAuthcenterFailed = 1105001
+	CCErrCommInitAuthCenterFailed = 1105001
 
 	// host controller 1106XXX
 	CCErrHostSelectInst                  = 1106000
@@ -554,8 +558,8 @@ const (
 	CCErrProcReconstructServiceInstanceNameFailed         = 1108041
 
 	// audit log 1109XXX
-	CCErrAuditSaveLogFaile      = 1109001
-	CCErrAuditTakeSnapshotFaile = 1109001
+	CCErrAuditSaveLogFailed      = 1109001
+	CCErrAuditTakeSnapshotFailed = 1109001
 
 	// host server
 	CCErrHostGetFail              = 1110001
@@ -600,17 +604,17 @@ const (
 	CCErrCloudSyncStartFail         = 1110039
 
 	// hostserver api machinery new error code
-	CCErrAddUserCustomQueryFaild       = 1110040
-	CCErrUpdateUserCustomQueryFaild    = 1110041
-	CCErrDeleteUserCustomQueryFaild    = 1110042
-	CCErrSearchUserCustomQueryFaild    = 1110043
-	CCErrGetUserCustomQueryDetailFaild = 1110044
-	CCErrHostModuleConfigFaild         = 1110045
-	CCErrHostGetSetFaild               = 1110046
-	CCErrHostGetAPPFail                = 1110047
-	CCErrHostAPPNotFoundFail           = 1110048
-	CCErrHostGetModuleFail             = 1110049
-	CCErrHostAgentStatusFail           = 1110050
+	CCErrAddUserCustomQueryFailed       = 1110040
+	CCErrUpdateUserCustomQueryFailed    = 1110041
+	CCErrDeleteUserCustomQueryFailed    = 1110042
+	CCErrSearchUserCustomQueryFailed    = 1110043
+	CCErrGetUserCustomQueryDetailFailed = 1110044
+	CCErrHostModuleConfigFailed         = 1110045
+	CCErrHostGetSetFailed               = 1110046
+	CCErrHostGetAPPFail                 = 1110047
+	CCErrHostAPPNotFoundFail            = 1110048
+	CCErrHostGetModuleFail              = 1110049
+	CCErrHostAgentStatusFail            = 1110050
 	// CCErrHostNotResourceFail The resource pool was not found"
 	CCErrHostNotResourceFail = 1110051
 	// CCErrHostBelongResourceFail The host is already in the resource pool
@@ -623,11 +627,11 @@ const (
 	CCErrDeleteHostFromBusiness = 1110055
 	// CCErrHostNotBelongIDLEModuleErr hostID[%#v] not belong to business
 	CCErrHostNotBelongIDLEModuleErr = 1110056
-	// CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed Module does not exist or there are multiple built-in modules
-	CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed = 1110057
-	CCErrHostSearchNeedObjectInstIDErr                    = 1110058
+	// CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed Module does not exist or there are multiple built-in modules
+	CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed = 1110057
+	CCErrHostSearchNeedObjectInstIDErr                        = 1110058
 
-	//web  1111XXX
+	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001
 	CCErrWebFileSaveFail                = 1111002
 	CCErrWebOpenFileFail                = 1111003
@@ -736,12 +740,12 @@ const (
 
 	/** TODO: 以下错误码需要改造 **/
 
-	//json
-	CC_ERR_Comm_JSON_DECODE     = 3001
-	CC_ERR_Comm_JSON_DECODE_STR = "json decode failed!"
-	CC_ERR_Comm_JSON_ENCODE     = 3002
-	CC_ERR_Comm_JSON_ENCODE_STR = "json encode failed!"
+	// json
+	CCErrCommJsonDecode    = 3001
+	CCErrCommJsonDecodeStr = "json decode failed!"
+	CCErrCommJsonEncode    = 3002
+	CCErrCommJsonEncodeStr = "json encode failed!"
 
-	Json_Marshal_ERR     = 9000
-	Json_Marshal_ERR_STR = "json marshal error"
+	JsonMarshalErr    = 9000
+	JsonMarshalErrStr = "json marshal error"
 )

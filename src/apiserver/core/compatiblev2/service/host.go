@@ -402,7 +402,7 @@ func (s *service) updateHostModule(req *restful.Request, resp *restful.Response)
 		moduleName, err := moduleMap[moduleIDArr[0]].String(common.BKModuleNameField)
 		if err != nil {
 			blog.Errorf("convert res to v2  key:%s, error:%v, moduleInfo:%+v,input:%+v,rid:%s", common.BKModuleNameField, err.Error(), moduleMap, formData, srvData.rid)
-			converter.RespFailV2Error(defErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "ModuleName", "int", err.Error()), resp)
+			converter.RespFailV2Error(defErr.Errorf(common.CCErrCommInstFieldConvertFail, "module", "ModuleName", "int", err.Error()), resp)
 			return
 		}
 		if moduleName == common.DefaultFaultModuleName {

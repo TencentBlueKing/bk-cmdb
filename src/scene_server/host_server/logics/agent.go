@@ -64,7 +64,7 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 	diskUsed = diskUsed / unitGB
 	if 0 != diskTotal {
 		// 获取使用百分比 保留两位小数
-		diskUsage = (10000 * diskUsed / diskTotal)
+		diskUsage = 10000 * diskUsed / diskTotal
 	} else {
 		diskUsage = 0
 	}
@@ -78,7 +78,7 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 	// crontab info
 	cronInfos, err := js.Get("env").Get("crontab").Array()
 
-	var crontabs common.KvMap = make(common.KvMap)
+	crontabs := make(common.KvMap)
 	if nil != err {
 		for _, cronI := range cronInfos {
 			cron, ok := cronI.(map[string]string)

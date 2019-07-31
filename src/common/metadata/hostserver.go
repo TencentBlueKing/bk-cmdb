@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -121,6 +122,11 @@ type ListHostByTopoNodeParameter struct {
 	Page      BasePage `json:"page"`
 }
 
+type TimeRange struct {
+	Start *time.Time
+	End   *time.Time
+}
+
 type ListHostByTopoNodeOption struct {
 	BizID     int64    `json:"bk_biz_id,omitempty"`
 	SetIDs    []int64  `json:"bk_set_ids"`
@@ -129,19 +135,20 @@ type ListHostByTopoNodeOption struct {
 }
 
 func (option ListHostByTopoNodeOption) Validate() (string, error) {
-	if option.SetIDs != nil && option.ModuleIDs != nil {
-		if len(option.SetIDs) > 0 && len(option.ModuleIDs) > 0 {
-			return "bk_set_ids + bk_module_ids", errors.New("set and module condition are mutually exclusive")
-		}
-	}
 	if option.BizID == 0 {
-		return "bk_biz_id", errors.New("bk_biz_id field shouldn't be empty")
+		return common.BKAppIDField, errors.New("bk_biz_id field shouldn't be empty")
 	}
 
 	if key, err := option.Page.Validate(); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
+
 	return "", nil
+}
+
+func (option ListHostByTopoNodeOption) GetHostPropertyFilter(ctx context.Context) (map[string]interface{}, error) {
+	_ = util.ExtractRequestIDFromContext(ctx)
+	return make(map[string]interface{}), nil
 }
 
 // ip search info

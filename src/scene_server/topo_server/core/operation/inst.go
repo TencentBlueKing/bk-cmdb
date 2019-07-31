@@ -129,7 +129,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		// check if this instance name is already exist.
 		if _, ok := instNameMap[name]; ok {
 			blog.Errorf("create object[%s] instance batch, but bk_inst_name %s is duplicated., rid: %s", object.ObjectID, name, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrorTopoMutipleObjectInstanceName, name)
+			return nil, params.Err.Errorf(common.CCErrorTopoMultipleObjectInstanceName, name)
 		}
 
 		instNameMap[name] = struct{}{}
