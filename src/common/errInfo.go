@@ -162,8 +162,6 @@ const (
 	CCErrCommRegistResourceToIAMFailed   = 1199049
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 	CCErrCommInappropriateVisitToIAM     = 1199051
-	// CCErrCommParamsNotSupportXXErr 参数%s的值%s 无效
-	CCErrCommParamsValueInvalidError = 1199053
 
 	CCErrCommGetMultipleObject                = 1199052
 	CCErrCommAuthCenterIsNotEnabled           = 1199053
@@ -179,7 +177,7 @@ const (
 	CCErrCommParseDBFailed                     = 1199061
 	CCErrCommGetBusinessDefaultSetModuleFailed = 1199062
 
-	CCErrCommParametersCountNotEnough = 1199063
+	CCErrCommParametersCountNotEnough         = 1199063
 	CCErrCommFuncCalledWithInappropriateParam = 1199064
 
 	// CCErrCommStartTranscationFailed start transcation failed
@@ -191,6 +189,8 @@ const (
 
 	CCErrCommListAuthorizedResourcedFromIAMFailed = 1199068
 	CCErrParseAttrOptionEnumFailed                = 1199069
+	// CCErrCommParamsNotSupportXXErr 参数%s的值%s 无效
+	CCErrCommParamsValueInvalidError = 1199070
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
