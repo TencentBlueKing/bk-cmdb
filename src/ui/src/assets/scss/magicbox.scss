@@ -110,3 +110,13 @@
         }
     }
 }
+
+.bk-tab {
+    height: 100%;
+    .bk-tab-section {
+        height: calc(100% - 42px);
+        .bk-tab-content {
+            height: 100%;
+        }
+    }
+}
