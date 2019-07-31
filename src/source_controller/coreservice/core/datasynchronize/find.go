@@ -57,10 +57,9 @@ func (a *associationFindData) Find(ctx core.ContextParams) ([]mapstr.MapStr, uin
 }
 
 func (a *associationFindData) findModel(ctx core.ContextParams) ([]mapstr.MapStr, uint64, errors.CCError) {
+
 	switch a.dataClassify {
 	case common.SynchronizeModelTypeBase:
-		return a.dbQueryModel(ctx, common.BKTableNameBaseModule)
-	case common.SynchronizeModelTypeModelClassificationRelation:
 		return a.dbQueryModel(ctx, common.BKTableNameObjDes)
 	case common.SynchronizeModelTypeAttribute:
 		return a.dbQueryModel(ctx, common.BKTableNameObjAttDes)
