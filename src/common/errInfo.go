@@ -81,19 +81,19 @@ const (
 	// CCErrCommDBInsertFailed database cannot add data
 	CCErrCommDBInsertFailed = 1199018
 
-	//CCErrCommNotFound the goal does not exist
+	// CCErrCommNotFound the goal does not exist
 	CCErrCommNotFound = 1199019
 
-	//CCErrCommDBUpdateFailed database cannot update data
+	// CCErrCommDBUpdateFailed database cannot update data
 	CCErrCommDBUpdateFailed = 1199020
 
-	//CCErrCommDBDeleteFailed database cannot delete data
+	// CCErrCommDBDeleteFailed database cannot delete data
 	CCErrCommDBDeleteFailed = 1199021
 
-	//CCErrCommRelyOnServerAddressFailed dependent service did not start
+	// CCErrCommRelyOnServerAddressFailed dependent service did not start
 	CCErrCommRelyOnServerAddressFailed = 1199022
 
-	//CCErrCommExcelTemplateFailed unable to generate and download
+	// CCErrCommExcelTemplateFailed unable to generate and download
 	CCErrCommExcelTemplateFailed = 1199023
 
 	// CCErrCommParamsNeedTimeZone the parameter must be time zone type
@@ -111,10 +111,10 @@ const (
 	// CCErrCommNotAuthItem field valide failed
 	CCErrCommFieldNotValid = 1199028
 
-	//CCErrCommReplyDataFormatError Return data format error
+	// CCErrCommReplyDataFormatError Return data format error
 	CCErrCommReplyDataFormatError = 1199029
 
-	//CCErrCommReplyDataFormatError Return data format error
+	// CCErrCommReplyDataFormatError Return data format error
 	CCErrCommPostInputParseError = 1199030
 
 	// CCErrCommResourceInitFailed %s init failed
@@ -180,11 +180,11 @@ const (
 	CCErrCommParametersCountNotEnough         = 1199063
 	CCErrCommFuncCalledWithInappropriateParam = 1199064
 
-	// CCErrCommStartTranscationFailed start transcation failed
+	// CCErrCommStartTransactionFailed start transaction failed
 	CCErrCommStartTransactionFailed = 1199065
-	// CCErrCommCommitTranscationFailed commit transcation failed
+	// CCErrCommCommitTransactionFailed commit transaction failed
 	CCErrCommCommitTransactionFailed = 1199066
-	// CCErrCommcommitTranscationFailed abort transcation failed
+	// CCErrCommAbortTransactionFailed abort transaction failed
 	CCErrCommAbortTransactionFailed = 1199067
 
 	CCErrCommListAuthorizedResourcedFromIAMFailed = 1199068
@@ -304,12 +304,12 @@ const (
 	// CCErrTopoHasHost include host
 	CCErrTopoHasHost = 1101030
 
-	// CCErrTopoGetCloudErrStrFaild get cloud error
-	CCErrTopoGetCloudErrStrFaild = 1101031
+	// CCErrTopoGetCloudErrStrFailed get cloud error
+	CCErrTopoGetCloudErrStrFailed = 1101031
 	// CCErrTopoCloudNotFound   cloud area not found
 	CCErrTopoCloudNotFound = 1101032
 
-	// CCErrTopoGetAppFaild search app err %s
+	// CCErrTopoGetAppFailed search app err %s
 	CCErrTopoGetAppFailed = 1101033
 	// CCErrTopoGetModuleFailed search  module err %s
 	CCErrTopoGetModuleFailed = 1101034
@@ -362,7 +362,7 @@ const (
 	// object instance's bk_inst_name filed is not string
 	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
 	// create model's instance patch, but instance's name is duplicate.
-	CCErrorTopoMutipleObjectInstanceName = 1101059
+	CCErrorTopoMultipleObjectInstanceName = 1101059
 
 	CCErrorTopoAssociationKindHasBeenUsed                     = 1101060
 	CCErrorTopoCreateMultipleInstancesForOneToManyAssociation = 1101061
@@ -415,7 +415,7 @@ const (
 	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
 	CCErrorTopoAssociationKindInconsistent = 1101083
 	// CCErrorTopoModleStopped means model have been stopped to use
-	CCErrorTopoModleStopped = 1101084
+	CCErrorTopoModelStopped = 1101084
 	// mainline's object unique can not be updated, deleted or create new rules.
 	CCErrorTopoMainlineObjectCanNotBeChanged   = 1101085
 	CCErrorTopoGetAuthorizedBusinessListFailed = 1101086
@@ -471,7 +471,7 @@ const (
 	// migrate 1105XXX
 	//  CCErrCommMigrateFailed failed to migrate
 	CCErrCommMigrateFailed        = 1105000
-	CCErrCommInitAuthcenterFailed = 1105001
+	CCErrCommInitAuthCenterFailed = 1105001
 
 	// host controller 1106XXX
 	CCErrHostSelectInst                  = 1106000
@@ -558,8 +558,8 @@ const (
 	CCErrProcReconstructServiceInstanceNameFailed         = 1108041
 
 	// audit log 1109XXX
-	CCErrAuditSaveLogFaile      = 1109001
-	CCErrAuditTakeSnapshotFaile = 1109001
+	CCErrAuditSaveLogFailed      = 1109001
+	CCErrAuditTakeSnapshotFailed = 1109001
 
 	// host server
 	CCErrHostGetFail              = 1110001
@@ -631,7 +631,7 @@ const (
 	CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed = 1110057
 	CCErrHostSearchNeedObjectInstIDErr                    = 1110058
 
-	//web  1111XXX
+	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001
 	CCErrWebFileSaveFail                = 1111002
 	CCErrWebOpenFileFail                = 1111003
@@ -740,7 +740,7 @@ const (
 
 	/** TODO: 以下错误码需要改造 **/
 
-	//json
+	// json
 	CC_ERR_Comm_JSON_DECODE     = 3001
 	CC_ERR_Comm_JSON_DECODE_STR = "json decode failed!"
 	CC_ERR_Comm_JSON_ENCODE     = 3002

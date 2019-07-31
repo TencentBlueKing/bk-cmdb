@@ -279,7 +279,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 	result, err := h.logic.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), h.header, logs...)
 	if err != nil {
 		blog.Errorf("AddHostLogs http do error, err:%s,input:%+v,rid:%s", err.Error(), logs, h.logic.rid)
-		return h.logic.ccErr.Error(common.CCErrAuditSaveLogFaile)
+		return h.logic.ccErr.Error(common.CCErrAuditSaveLogFailed)
 	}
 	if !result.Result {
 		blog.Errorf("AddHostLogs  http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, logs, h.logic.rid)

@@ -122,7 +122,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 
 func (cli *inst) Create() error {
 	if cli.target.Object().IsPaused {
-		return cli.params.Err.Error(common.CCErrorTopoModleStopped)
+		return cli.params.Err.Error(common.CCErrorTopoModelStopped)
 	}
 	if cli.target.IsCommon() {
 		cli.datas.Set(common.BKObjIDField, cli.target.Object().ObjectID)
@@ -148,7 +148,7 @@ func (cli *inst) Create() error {
 
 func (cli *inst) Update(data mapstr.MapStr) error {
 	if cli.target.Object().IsPaused {
-		return cli.params.Err.Error(common.CCErrorTopoModleStopped)
+		return cli.params.Err.Error(common.CCErrorTopoModelStopped)
 	}
 	instIDName := cli.target.GetInstIDFieldName()
 	instID, exists := cli.datas.Get(instIDName)
