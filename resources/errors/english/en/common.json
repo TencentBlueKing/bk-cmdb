@@ -65,6 +65,7 @@
     "1199067":"abort transaction failed, error:%s",
     "1199068":"list authorized %s resource from iam failed",
     "1199069":"parsing property enumeration failed",
+    "1199070": "invalid parameter %s with value %s",
     
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",
