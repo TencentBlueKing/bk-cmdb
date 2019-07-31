@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"bk_bson/bson/bsontype"
-	"bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
 )
 
 // ErrNilArray indicates that an operation was attempted on a nil *Array.

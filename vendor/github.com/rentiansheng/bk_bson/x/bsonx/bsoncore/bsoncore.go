@@ -31,8 +31,8 @@ import (
 	"math"
 	"time"
 
-	"bk_bson/bson/bsontype"
-	"bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
 )
 
 // AppendType will append t to dst and return the extended buffer.

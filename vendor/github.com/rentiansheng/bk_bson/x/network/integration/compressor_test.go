@@ -12,12 +12,12 @@ import (
 	"context"
 	"os"
 
-	"bk_bson/bson"
-	"bk_bson/internal/testutil"
-	"bk_bson/mongo/writeconcern"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bsoninternal/testutil"
+	"github.com/rentiansheng/bk_bsonmongo/writeconcern"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 	"github.com/stretchr/testify/require"
 )
 

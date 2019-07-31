@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"bk_bson/bson/bsontype"
-	"bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
 )
 
 func TestValue(t *testing.T) {

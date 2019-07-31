@@ -10,8 +10,8 @@ import (
 	"errors"
 	"reflect"
 
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/bson/bsonrw"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw"
 )
 
 var primitiveCodecs PrimitiveCodecs

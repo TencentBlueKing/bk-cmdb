@@ -9,7 +9,7 @@ package wiremessage
 import (
 	"errors"
 	"fmt"
-	"bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
 	"strings"
 )
 

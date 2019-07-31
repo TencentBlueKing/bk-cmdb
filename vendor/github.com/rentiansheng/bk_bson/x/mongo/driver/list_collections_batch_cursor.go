@@ -6,8 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"bk_bson/x/bsonx/bsoncore"
-	"bk_bson/x/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
 )
 
 // ListCollectionsBatchCursor is a special batch cursor returned from ListCollections that properly

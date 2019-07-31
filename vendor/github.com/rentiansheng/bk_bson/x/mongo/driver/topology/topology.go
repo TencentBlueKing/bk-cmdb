@@ -20,10 +20,10 @@ import (
 
 	"fmt"
 
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/x/mongo/driver/session"
-	"bk_bson/x/network/address"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/session"
+	"github.com/rentiansheng/bk_bsonx/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 )
 
 // ErrSubscribeAfterClosed is returned when a user attempts to subscribe to a

@@ -3,8 +3,8 @@ package command
 import (
 	"testing"
 
-	"bk_bson/mongo/writeconcern"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bsonmongo/writeconcern"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 )
 
 func TestDropDatabase(t *testing.T) {

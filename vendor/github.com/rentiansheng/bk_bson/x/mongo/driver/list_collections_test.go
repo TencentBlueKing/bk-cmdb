@@ -7,7 +7,7 @@
 package driver
 
 import (
-	"bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

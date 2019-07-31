@@ -10,7 +10,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
 	"io"
 	"math"
 	"sort"

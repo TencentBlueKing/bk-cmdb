@@ -9,9 +9,9 @@ package bson
 import (
 	"bytes"
 
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/bson/bsonrw"
-	"bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
 )
 
 // Unmarshaler is an interface implemented by types that can unmarshal a BSON

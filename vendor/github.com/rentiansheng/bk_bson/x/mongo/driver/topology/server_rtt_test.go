@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"bk_bson/internal/testutil/helpers"
+	"github.com/rentiansheng/bk_bsoninternal/testutil/helpers"
 	"github.com/stretchr/testify/require"
 )
 

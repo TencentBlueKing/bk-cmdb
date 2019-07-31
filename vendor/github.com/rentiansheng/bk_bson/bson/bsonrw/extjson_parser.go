@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"io"
 
-	"bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
 )
 
 const maxNestingDepth = 200

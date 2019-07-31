@@ -13,15 +13,15 @@ import (
 
 	"flag"
 
-	"bk_bson/bson"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/mongo/driver"
-	"bk_bson/x/mongo/driver/session"
-	"bk_bson/x/mongo/driver/topology"
-	"bk_bson/x/mongo/driver/uuid"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/connstring"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/session"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/uuid"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/connstring"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 )
 
 var uri = flag.String("uri", "mongodb://localhost:27017", "the mongodb uri to use")
