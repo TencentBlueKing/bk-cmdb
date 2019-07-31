@@ -70,6 +70,11 @@ type Response struct {
 	Data     interface{} `json:"data"`
 }
 
+type Uint64Response struct {
+	BaseResp `json:",inline"`
+	Count    uint64 `json:"count"`
+}
+
 type MapArrayResponse struct {
 	BaseResp `json:",inline"`
 	Data     []mapstr.MapStr `json:"data"`

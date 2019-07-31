@@ -1,12 +1,13 @@
 <template>
     <div class="cmdb-form form-singlechar">
         <input class="cmdb-form-input form-singlechar-input" type="text"
-            :placeholder="placeholder || $t('Form[\'请输入短字符\']')"
+            :placeholder="localPlaceholder"
             :maxlength="maxlength"
             :value="value"
             :disabled="disabled"
             @input="handleInput($event)"
             @change="handleChange">
+        <slot></slot>
     </div>
 </template>
 
@@ -29,6 +30,11 @@
             placeholder: {
                 type: String,
                 default: ''
+            }
+        },
+        computed: {
+            localPlaceholder () {
+                return this.placeholder || this.$t('Form["请输入短字符"]')
             }
         },
         methods: {

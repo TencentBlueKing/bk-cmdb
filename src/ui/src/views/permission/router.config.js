@@ -18,7 +18,8 @@ export default [{
             order: 1,
             parent: NAV_PERMISSION,
             businessView: false
-        }
+        },
+        i18nTitle: 'Nav["业务权限管理"]'
     })
 }, {
     name: 'systemPermission',
@@ -32,6 +33,7 @@ export default [{
             order: 2,
             parent: NAV_PERMISSION,
             businessView: false
-        }
+        },
+        i18nTitle: 'Nav["系统权限管理"]'
     })
 }]

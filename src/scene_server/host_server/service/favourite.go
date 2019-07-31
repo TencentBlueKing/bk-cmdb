@@ -31,10 +31,11 @@ func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	result, err := s.CoreAPI.HostController().Favorite().GetHostFavourites(srvData.ctx, srvData.user, srvData.header, query)
+	result, err := s.CoreAPI.CoreService().Host().GetHostFavourites(srvData.ctx, srvData.user, srvData.header, query)
 	if err != nil {
 		blog.Errorf("GetHostFavourites http do error,err:%s,input:%+v,rid:%s", err.Error(), query, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
 	}
 	if !result.Result {
 		blog.Errorf("GetHostFavourites http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, srvData.rid)
@@ -64,10 +65,11 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	result, err := s.CoreAPI.HostController().Favorite().AddHostFavourite(srvData.ctx, srvData.user, srvData.header, param)
+	result, err := s.CoreAPI.CoreService().Host().AddHostFavourite(srvData.ctx, srvData.user, srvData.header, param)
 	if err != nil {
 		blog.Errorf("AddHostFavourite http do error,err:%s,input:%+v,rid:%s", err.Error(), param, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
 	}
 	if !result.Result {
 		blog.Errorf("AddHostFavourite http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, param, srvData.rid)
@@ -104,10 +106,11 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	result, err := s.CoreAPI.HostController().Favorite().UpdateHostFavouriteByID(srvData.ctx, srvData.user, ID, srvData.header, data)
+	result, err := s.CoreAPI.CoreService().Host().UpdateHostFavouriteByID(srvData.ctx, srvData.user, ID, srvData.header, data)
 	if err != nil {
 		blog.Errorf("UpdateHostFavouriteByID http do error,err:%s,input:%+v,rid:%s", err.Error(), data, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
 	}
 	if !result.Result {
 		blog.Errorf("UpdateHostFavouriteByID http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, data, srvData.rid)
@@ -128,10 +131,11 @@ func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	result, err := s.CoreAPI.HostController().Favorite().DeleteHostFavouriteByID(srvData.ctx, srvData.user, ID, srvData.header)
+	result, err := s.CoreAPI.CoreService().Host().DeleteHostFavouriteByID(srvData.ctx, srvData.user, ID, srvData.header)
 	if err != nil {
 		blog.Errorf("DeleteHostFavouriteByID http do error,err:%s,input:%+v,rid:%s", err.Error(), ID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
 	}
 	if !result.Result {
 		blog.Errorf("DeleteHostFavouriteByID http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, ID, srvData.rid)
@@ -151,10 +155,11 @@ func (s *Service) IncrHostFavouritesCount(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	result, err := s.CoreAPI.HostController().Favorite().GetHostFavouriteByID(srvData.ctx, srvData.user, ID, srvData.header)
+	result, err := s.CoreAPI.CoreService().Host().GetHostFavouriteByID(srvData.ctx, srvData.user, ID, srvData.header)
 	if err != nil {
 		blog.Errorf("IncrHostFavouritesCount GetHostFavouriteByID http do error,err:%s,input:%+v,rid:%s", err.Error(), ID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
 	}
 	if !result.Result {
 		blog.Errorf("IncrHostFavouritesCount GetHostFavouriteByID http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, ID, srvData.rid)
@@ -164,10 +169,11 @@ func (s *Service) IncrHostFavouritesCount(req *restful.Request, resp *restful.Re
 
 	count := result.Data.Count + 1
 	data := map[string]interface{}{"count": count}
-	uResult, err := s.CoreAPI.HostController().Favorite().UpdateHostFavouriteByID(srvData.ctx, srvData.user, ID, srvData.header, data)
+	uResult, err := s.CoreAPI.CoreService().Host().UpdateHostFavouriteByID(srvData.ctx, srvData.user, ID, srvData.header, data)
 	if err != nil {
 		blog.Errorf("IncrHostFavouritesCount UpdateHostFavouriteByID http do error,err:%s,input:%+v,rid:%s", err.Error(), data, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
 	}
 	if !uResult.Result {
 		blog.Errorf("IncrHostFavouritesCount UpdateHostFavouriteByID http response error,err code:%d,err msg:%s,input:%+v,rid:%s", uResult.Code, uResult.ErrMsg, data, srvData.rid)

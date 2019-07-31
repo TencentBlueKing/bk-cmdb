@@ -13,6 +13,7 @@
 package instances
 
 import (
+	"context"
 	"regexp"
 	"strconv"
 
@@ -22,10 +23,11 @@ import (
 )
 
 // validTime valid object Attribute that is time type
-func (valid *validator) validTime(val interface{}, key string) error {
+func (valid *validator) validTime(ctx context.Context, val interface{}, key string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if valid.require[key] {
-			blog.Error("params can not be null")
+			blog.Errorf("params can not be null, rid: %s", rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
@@ -34,23 +36,24 @@ func (valid *validator) validTime(val interface{}, key string) error {
 
 	valStr, ok := val.(string)
 	if false == ok {
-		blog.Error("date can shoule be string")
+		blog.Errorf("date can should be string, rid: %s", rid)
 		return valid.errif.Errorf(common.CCErrCommParamsShouldBeString, key)
 	}
 
 	result := util.IsTime(valStr)
 	if !result {
-		blog.Error("params   not valid")
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		blog.Errorf("params not valid, rid: %s", rid)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
 
 // validDate valid object Attribute that is date type
-func (valid *validator) validDate(val interface{}, key string) error {
+func (valid *validator) validDate(ctx context.Context, val interface{}, key string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if valid.require[key] {
-			blog.Error("params can not be null")
+			blog.Errorf("params can not be null, rid: %s", rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
@@ -58,24 +61,25 @@ func (valid *validator) validDate(val interface{}, key string) error {
 	}
 	valStr, ok := val.(string)
 	if false == ok {
-		blog.Error("date can shoule be string")
+		blog.Errorf("date can should be string, rid: %s", rid)
 		return valid.errif.Errorf(common.CCErrCommParamsShouldBeString, key)
 
 	}
 	result := util.IsDate(valStr)
 	if !result {
-		blog.Error("params  is not valid")
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		blog.Errorf("params is not valid, rid: %s", rid)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
 
 // validEnum valid object attribute that is enum type
-func (valid *validator) validEnum(val interface{}, key string) error {
+func (valid *validator) validEnum(ctx context.Context, val interface{}, key string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	// validate require
 	if nil == val {
 		if valid.require[key] {
-			blog.Error("params can not be null")
+			blog.Errorf("params can not be null, rid: %s", rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
@@ -85,7 +89,7 @@ func (valid *validator) validEnum(val interface{}, key string) error {
 	// validate type
 	valStr, ok := val.(string)
 	if !ok {
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 
 	option, ok := valid.propertys[key]
@@ -93,10 +97,10 @@ func (valid *validator) validEnum(val interface{}, key string) error {
 		return nil
 	}
 	// validate within enum
-	enumOption, err := ParseEnumOption(option.Option)
+	enumOption, err := ParseEnumOption(ctx, option.Option)
 	if err != nil {
-		blog.Warnf("ParseEnumOption failed: %v", err)
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		blog.Warnf("ParseEnumOption failed: %v, rid: %s", err, rid)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	match := false
 	for _, k := range enumOption {
@@ -106,18 +110,19 @@ func (valid *validator) validEnum(val interface{}, key string) error {
 		}
 	}
 	if !match {
-		blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v", key, enumOption, option, val)
-		blog.Errorf("params %s not valid , enum value: %#v", key, val)
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v, rid: %s", key, enumOption, option, val, rid)
+		blog.Errorf("params %s not valid , enum value: %#v, rid: %s", key, val, rid)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
 
-//validBool valid object attribute that is bool type
-func (valid *validator) validBool(val interface{}, key string) error {
+// validBool valid object attribute that is bool type
+func (valid *validator) validBool(ctx context.Context, val interface{}, key string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if valid.require[key] {
-			blog.Error("params can not be null")
+			blog.Errorf("params can not be null, rid: %s", rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
@@ -127,17 +132,18 @@ func (valid *validator) validBool(val interface{}, key string) error {
 	switch val.(type) {
 	case bool:
 	default:
-		blog.Error("params should be  bool")
+		blog.Errorf("params should be bool, rid: %s", rid)
 		return valid.errif.Errorf(common.CCErrCommParamsNeedBool, key)
 	}
 	return nil
 }
 
-//valid char valid object attribute that is timezone type
-func (valid *validator) validTimeZone(val interface{}, key string) error {
+// valid char valid object attribute that is timezone type
+func (valid *validator) validTimeZone(ctx context.Context, val interface{}, key string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if valid.require[key] {
-			blog.Error("params can not be null")
+			blog.Errorf("params can not be null, rid: %s", rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
@@ -148,21 +154,22 @@ func (valid *validator) validTimeZone(val interface{}, key string) error {
 	case string:
 		isMatch := util.IsTimeZone(value)
 		if false == isMatch {
-			blog.Error("params should be  timezone")
+			blog.Errorf("params should be timezone, rid: %s", rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedTimeZone, key)
 		}
 	default:
-		blog.Error("params should be  timezone")
+		blog.Errorf("params should be timezone, rid: %s", rid)
 		return valid.errif.Errorf(common.CCErrCommParamsNeedTimeZone, key)
 	}
 	return nil
 }
 
 // validForeignKey valid object attribute that is foreign key type
-func (valid *validator) validForeignKey(val interface{}, key string) error {
+func (valid *validator) validForeignKey(ctx context.Context, val interface{}, key string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if valid.require[key] {
-			blog.Error("params can not be null")
+			blog.Errorf("params can not be null, rid: %s", rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
@@ -171,7 +178,7 @@ func (valid *validator) validForeignKey(val interface{}, key string) error {
 
 	_, ok := util.GetTypeSensitiveUInt64(val)
 	if !ok {
-		blog.Errorf("params %s:%#v not int", key, val)
+		blog.Errorf("params %s:%#v not int, rid: %s", key, val, rid)
 		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
 	}
 
@@ -179,10 +186,11 @@ func (valid *validator) validForeignKey(val interface{}, key string) error {
 }
 
 // validInt valid object attribute that is int type
-func (valid *validator) validInt(val interface{}, key string) error {
+func (valid *validator) validInt(ctx context.Context, val interface{}, key string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if valid.require[key] {
-			blog.Error("params can not be null")
+			blog.Errorf("params can not be null, rid: %s", rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
@@ -192,7 +200,7 @@ func (valid *validator) validInt(val interface{}, key string) error {
 	var value int64
 	value, err := util.GetInt64ByInterface(val)
 	if nil != err {
-		blog.Errorf("params %s:%#v not int", key, val)
+		blog.Errorf("params %s:%#v not int, rid: %s", key, val, rid)
 		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
 	}
 
@@ -200,7 +208,7 @@ func (valid *validator) validInt(val interface{}, key string) error {
 	if !ok {
 		return nil
 	}
-	intObjOption := parseIntOption(property.Option)
+	intObjOption := parseIntOption(ctx, property.Option)
 	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
 		return nil
 	}
@@ -214,17 +222,18 @@ func (valid *validator) validInt(val interface{}, key string) error {
 		minValue = common.MinInt64
 	}
 	if value > maxValue || value < minValue {
-		blog.Errorf("params %s:%#v not valid", key, val)
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		blog.Errorf("params %s:%#v not valid, rid: %s", key, val, rid)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
 
 // validFloat valid object attribute that is float type
-func (valid *validator) validFloat(val interface{}, key string) error {
+func (valid *validator) validFloat(ctx context.Context, val interface{}, key string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if valid.require[key] {
-			blog.Error("params can not be null")
+			blog.Errorf("params can not be null, rid: %s", rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
@@ -234,7 +243,7 @@ func (valid *validator) validFloat(val interface{}, key string) error {
 	var value float64
 	value, err := util.GetFloat64ByInterface(val)
 	if nil != err {
-		blog.Errorf("params %s:%#v not float", key, val)
+		blog.Errorf("params %s:%#v not float, rid: %s", key, val, rid)
 		return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
 	}
 
@@ -242,7 +251,7 @@ func (valid *validator) validFloat(val interface{}, key string) error {
 	if !ok {
 		return nil
 	}
-	intObjOption := parseFloatOption(property.Option)
+	intObjOption := parseFloatOption(ctx, property.Option)
 	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
 		return nil
 	}
@@ -256,17 +265,18 @@ func (valid *validator) validFloat(val interface{}, key string) error {
 		minValue = float64(common.MinInt64)
 	}
 	if value > maxValue || value < minValue {
-		blog.Errorf("params %s:%#v not valid", key, val)
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		blog.Errorf("params %s:%#v not valid, rid: %s", key, val, rid)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
 
 // validInt valid object attribute that is long char type
-func (valid *validator) validLongChar(val interface{}, key string) error {
+func (valid *validator) validLongChar(ctx context.Context, val interface{}, key string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val || "" == val {
 		if valid.require[key] {
-			blog.Error("params in need")
+			blog.Errorf("params in need, rid: %s", rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
@@ -276,12 +286,12 @@ func (valid *validator) validLongChar(val interface{}, key string) error {
 	switch value := val.(type) {
 	case string:
 		if len(value) > common.FieldTypeLongLenChar {
-			blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
+			blog.Errorf("params over length %d, rid: %s", common.FieldTypeSingleLenChar, rid)
 			return valid.errif.Errorf(common.CCErrCommOverLimit, key)
 		}
 		if 0 == len(value) {
 			if valid.require[key] {
-				blog.Error("params can not be empty")
+				blog.Errorf("params can not be empty, rid: %s", rid)
 				return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 			}
 			return nil
@@ -294,16 +304,16 @@ func (valid *validator) validLongChar(val interface{}, key string) error {
 			}
 			strReg, err := regexp.Compile(option)
 			if nil != err {
-				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
+				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
 				return valid.errif.Error(common.CCErrFieldRegValidFailed)
 			}
 			if !strReg.MatchString(value) {
-				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
+				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
 				return valid.errif.Error(common.CCErrFieldRegValidFailed)
 			}
 		}
 	default:
-		blog.Error("params should be  string")
+		blog.Errorf("params should be string, rid: %s", rid)
 		return valid.errif.Errorf(common.CCErrCommParamsNeedString, key)
 	}
 
@@ -311,24 +321,25 @@ func (valid *validator) validLongChar(val interface{}, key string) error {
 }
 
 // validChar valid object attribute that is  char type
-func (valid *validator) validChar(val interface{}, key string) error {
+func (valid *validator) validChar(ctx context.Context, val interface{}, key string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val || "" == val {
 		if valid.require[key] {
-			blog.Error("params in need")
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			blog.Errorf("params in need, rid: %s", rid)
+			return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 		}
 		return nil
 	}
 	switch value := val.(type) {
 	case string:
 		if len(value) > common.FieldTypeSingleLenChar {
-			blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
-			return valid.errif.Errorf(common.CCErrCommOverLimit, key)
+			blog.Errorf("params over length %d, rid: %s", common.FieldTypeSingleLenChar, rid)
+			return valid.errif.CCErrorf(common.CCErrCommOverLimit, key)
 		}
 		if 0 == len(value) {
 			if valid.require[key] {
-				blog.Error("params can not be empty")
-				return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+				blog.Errorf("params can not be empty, rid: %s", rid)
+				return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 			}
 			return nil
 		}
@@ -340,16 +351,16 @@ func (valid *validator) validChar(val interface{}, key string) error {
 			}
 			strReg, err := regexp.Compile(option)
 			if nil != err {
-				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
-				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+				blog.Errorf(`params "%s" not match regexp "%s", rid:  %s`, val, option, rid)
+				return valid.errif.CCError(common.CCErrFieldRegValidFailed)
 			}
 			if !strReg.MatchString(value) {
-				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
-				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
+				return valid.errif.CCError(common.CCErrFieldRegValidFailed)
 			}
 		}
 	default:
-		blog.Error("params should be  string")
+		blog.Errorf("params should be string, rid: %s", rid)
 		return valid.errif.Errorf(common.CCErrCommParamsNeedString, key)
 	}
 

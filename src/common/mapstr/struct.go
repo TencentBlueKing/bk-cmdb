@@ -79,7 +79,7 @@ func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, value
 			innerValue := dealPointer(fieldValue, tags[0], tagName)
 			values.Set(tags[0], innerValue)
 		default:
-			blog.Infof("[mapstr] invalide kind: %v for field %v", structField.Type.Kind(), tags[0])
+			blog.Infof("[mapstr] invalid kind: %v for field %v", structField.Type.Kind(), tags[0])
 		}
 
 	}

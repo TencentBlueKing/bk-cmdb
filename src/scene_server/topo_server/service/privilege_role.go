@@ -44,7 +44,7 @@ func (s *Service) CreatePrivilege(params types.ContextParams, pathParams, queryP
 
 	datas, ok := val.([]string)
 	if !ok {
-		blog.Infof("CreatePrivilege param invalide type : %#v", val)
+		blog.Infof("CreatePrivilege param invalide type : %#v, rid: %s", val, params.ReqID)
 	}
 
 	err := s.Core.PermissionOperation().Role(params).CreatePermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"), datas)

@@ -40,7 +40,8 @@ export default [{
                 const isAdminView = app.$store.getters.isAdminView
                 this.authScope = isAdminView ? 'global' : 'business'
             }
-        }
+        },
+        i18Title: 'Nav["模型"]'
     })
 }, {
     name: 'modelDetails',

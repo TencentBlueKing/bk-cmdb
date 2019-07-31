@@ -22,6 +22,7 @@ export default [{
     meta: {
         auth: {
             view: null,
+
             operation: [U_RESOURCE_HOST],
             setDynamicMeta (to, from, app) {
                 const meta = GET_AUTH_META(U_RESOURCE_HOST)
@@ -33,7 +34,8 @@ export default [{
             setAuthScope () {
                 this.authScope = 'global'
             }
-        }
+        },
+        i18nTitle: 'HostDetails["主机详情"]'
     }
 }, {
     name: BUSINESS_HOST,
@@ -54,6 +56,7 @@ export default [{
             setAuthScope () {
                 this.authScope = 'business'
             }
-        }
+        },
+        i18nTitle: 'HostDetails["主机详情"]'
     }
 }]

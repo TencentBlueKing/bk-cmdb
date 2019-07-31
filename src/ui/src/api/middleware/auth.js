@@ -83,7 +83,7 @@ const defaultMeta = {
 
 const transformResponse = data => {
     const payload = origin.data
-    const modelConfig = flatternModelConfig(data.model_config)
+    const modelConfig = flattenModelConfig(data.model_config)
     const backConfig = data.sys_config.back_config || []
     const globalBusi = data.sys_config.global_busi || []
     return payload.resources.map(resource => {
@@ -129,7 +129,7 @@ const setSystemMeta = (type, meta, config) => {
     meta.is_pass = config.includes(type)
 }
 
-const flatternModelConfig = (modelConfig = {}) => {
+const flattenModelConfig = (modelConfig = {}) => {
     const config = {}
     Object.values(modelConfig).forEach(group => {
         Object.keys(group).forEach(model => {

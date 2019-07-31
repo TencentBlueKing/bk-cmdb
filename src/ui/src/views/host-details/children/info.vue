@@ -82,15 +82,6 @@
                 return this.$store.getters['objectModelClassify/getModelById']('host')
             }
         },
-        watch: {
-            info (info) {
-                this.$store.commit('setHeaderTitle', `${this.$t('HostDetails["主机详情"]')}(${info.host.bk_host_innerip})`)
-            }
-        },
-        created () {
-            this.$store.commit('setHeaderTitle', this.$t('HostDetails["主机详情"]'))
-            this.$store.commit('setHeaderStatus', { back: true })
-        },
         methods: {
             viewAll () {
                 this.showAll = !this.showAll

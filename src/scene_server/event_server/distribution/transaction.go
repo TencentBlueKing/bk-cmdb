@@ -28,16 +28,20 @@ import (
 	"gopkg.in/redis.v5"
 )
 
+/*
+TxnHandler commit all event at db transaction commits, elsewhere clear cached events if db transaction abort
+*/
+
 func (th *TxnHandler) Run() (err error) {
 	th.shouldClose.UnSet()
 	defer func() {
 		th.shouldClose.Set()
-		syserror := recover()
-		if syserror != nil {
-			err = fmt.Errorf("system error: %v", syserror)
+		sysError := recover()
+		if sysError != nil {
+			err = fmt.Errorf("system error: %v", sysError)
 		}
 		if err != nil {
-			blog.Infof("event inst handle process stoped by %v", err)
+			blog.Infof("event inst handle process stopped by %v", err)
 			blog.Errorf("%s", debug.Stack())
 		}
 		th.wg.Wait()
@@ -81,7 +85,7 @@ func (th *TxnHandler) watchTransaction() {
 	for !th.shouldClose.IsSet() {
 		stream, err := th.rc.CallStream(daltypes.CommandWatchTransactionOperation, nil)
 		if err != nil {
-			blog.Errorf("WatchTransaction faile %v", err)
+			blog.Errorf("WatchTransaction failed %v", err)
 			return
 		}
 		txn := daltypes.Transaction{}
@@ -90,7 +94,7 @@ func (th *TxnHandler) watchTransaction() {
 			go th.handleTxn(txn)
 		}
 		if recvErr != nil {
-			blog.Errorf("watch stream stoped with error: %v", recvErr)
+			blog.Errorf("watch stream stopped with error: %v", recvErr)
 		}
 		stream.Close()
 	}
@@ -108,22 +112,23 @@ func (th *TxnHandler) fetchTimeout() {
 			ticker.Stop()
 			break
 		}
-		txnIDs := []string{}
+		txnIDs := make([]string, 0)
+		// TODO: 如果保证集群中多个结点的服务器时间一致
 		opt.Max = strconv.FormatInt(now.UTC().Unix(), 10)
 
 		if err := th.cache.ZRangeByScore(common.EventCacheEventTxnSet, opt).ScanSlice(&txnIDs); err != nil {
 			blog.Warnf("fetch timeout txnID from redis failed: %v, we will try again later", err)
 			continue
 		}
-
-		txns := []daltypes.Transaction{} //Transaction
+		// Transaction
+		txns := make([]daltypes.Transaction, 0)
 		tranCond := mongo.NewCondition()
 		tranCond.Element(&mongo.In{Key: common.BKTxnIDField, Val: txnIDs})
 		if err := th.db.Table(common.BKTableNameTransaction).Find(tranCond.ToMapStr()).All(th.ctx, &txns); err != nil {
 			blog.Warnf("fetch transaction from mongo failed: %v, we will try again later", err)
 			continue
 		}
-		blog.V(4).Infof("fetch transaction by score %v, resturns %v, txns: %v", opt.Max, txnIDs, txns)
+		blog.V(4).Infof("fetch transaction by score %v, txnIDs %v, txns: %v", opt.Max, txnIDs, txns)
 		if len(txnIDs) != len(txns) {
 			m := map[string]bool{}
 			for index := range txns {
@@ -140,7 +145,7 @@ func (th *TxnHandler) fetchTimeout() {
 }
 
 func (th *TxnHandler) handleTxn(txns ...daltypes.Transaction) {
-	droped := []string{}
+	dropped := make([]string, 0)
 	for _, txn := range txns {
 		switch txn.Status {
 		case daltypes.TxStatusOnProgress:
@@ -148,13 +153,13 @@ func (th *TxnHandler) handleTxn(txns ...daltypes.Transaction) {
 		case daltypes.TxStatusCommitted:
 			th.committed <- txn.TxnID
 		case daltypes.TxStatusAborted, daltypes.TxStatusException:
-			droped = append(droped, txn.TxnID)
+			dropped = append(dropped, txn.TxnID)
 		default:
-			blog.Warnf("unknow transaction status %#v", txn.Status)
+			blog.Warnf("unknown transaction status %#v", txn.Status)
 		}
 	}
 
-	th.dropTransaction(droped)
+	th.dropTransaction(dropped)
 }
 
 func (th *TxnHandler) dropTransaction(txnIDs []string) {

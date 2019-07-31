@@ -111,6 +111,7 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFie
 }
 
 func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metadata.Metadata) ([]PropertyGroup, error) {
+	rid := util.GetHTTPCCRequestID(header)
 	ownerID := util.GetOwnerID(header)
 	condition := mapstr.MapStr{
 		common.BKObjIDField:   objID,
@@ -124,11 +125,11 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metada
 	}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectGroup(context.Background(), header, ownerID, objID, condition)
 	if nil != err {
-		blog.Errorf("get %s fields group failed, err:%+v, rid:%s", objID, err, util.GetHTTPCCRequestID(header))
+		blog.Errorf("get %s fields group failed, err:%+v, rid: %s", objID, err, rid)
 		return nil, fmt.Errorf("get attribute group failed, err: %+v", err)
 	}
 	if !result.Result {
-		blog.Errorf("get %s fields group result failed. error code:%d, error message:%s, rid:%s", objID, result.Code, result.ErrMsg, util.GetHTTPCCRequestID(header))
+		blog.Errorf("get %s fields group result failed. error code:%d, error message:%s, rid:%s", objID, result.Code, result.ErrMsg, rid)
 		return nil, fmt.Errorf("get attribute group result false, result: %+v", result)
 	}
 	fields := result.Data
@@ -140,7 +141,7 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metada
 		propertyGroup.ID = mapField.GroupID
 		ret = append(ret, propertyGroup)
 	}
-	blog.V(5).Infof("getObjectGroup count:%d", len(ret))
+	blog.V(5).Infof("getObjectGroup count:%d, rid: %s", len(ret), rid)
 	return ret, nil
 
 }
@@ -167,6 +168,7 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metada
 }
 
 func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, meta *metadata.Metadata) ([]Property, error) {
+	rid := util.GetHTTPCCRequestID(header)
 
 	condition := mapstr.MapStr{
 		common.BKObjIDField:   objID,
@@ -182,27 +184,36 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), header, condition)
 	if nil != err {
-		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s, error:%s ,rid:%s", objID, conds, err.Error(), util.GetHTTPCCRequestID(header))
+		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s, error:%s ,rid:%s", objID, conds, err.Error(), rid)
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
-		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s,  http reply info,error code:%d, error msg:%s ,rid:%s", objID, conds, result.Code, result.ErrMsg, util.GetHTTPCCRequestID(header))
+		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s,  http reply info,error code:%d, error msg:%s ,rid:%s", objID, conds, result.Code, result.ErrMsg, rid)
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 
-	uniques, err := lgc.CoreAPI.ObjectController().Unique().Search(context.Background(), header, objID)
+	inputParam := metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Offset: 0,
+			Limit:  common.BKNoLimit,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKObjIDField: objID,
+		}),
+	}
+	uniques, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrUnique(context.Background(), header, inputParam)
 	if nil != err {
-		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, err, util.GetHTTPCCRequestID(header))
+		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, err, rid)
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !uniques.Result {
-		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, uniques, util.GetHTTPCCRequestID(header))
+		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, uniques, rid)
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(uniques.Code, uniques.ErrMsg)
 	}
 
 	keyIDs := map[uint64]bool{}
-	for _, unique := range uniques.Data {
+	for _, unique := range uniques.Data.Info {
 		if unique.MustCheck {
 			for _, key := range unique.Keys {
 				keyIDs[key.ID] = true
@@ -238,7 +249,7 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 			IsOnly:       fieldIsOnly,
 		})
 	}
-	blog.V(5).Infof("getObjFieldIDsBySort ret count:%d", len(ret))
+	blog.V(5).Infof("getObjFieldIDsBySort ret count:%d, rid: %s", len(ret), rid)
 	return ret, nil
 }
 

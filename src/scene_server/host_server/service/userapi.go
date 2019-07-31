@@ -49,7 +49,7 @@ func (s *Service) AddUserCustomQuery(req *restful.Request, resp *restful.Respons
 	}
 
 	ucq.CreateUser = srvData.user
-	result, err := s.CoreAPI.HostController().User().AddUserConfig(srvData.ctx, srvData.header, ucq)
+	result, err := s.CoreAPI.CoreService().Host().AddUserConfig(srvData.ctx, srvData.header, ucq)
 	if err != nil {
 		blog.Errorf("GetUserCustom http do error, err:%s, input:%+v,rid:%s", err.Error(), ucq, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -63,6 +63,7 @@ func (s *Service) AddUserCustomQuery(req *restful.Request, resp *restful.Respons
 	if err := s.AuthManager.RegisterDynamicGroupByID(srvData.ctx, srvData.header, result.Data.ID); err != nil {
 		blog.Errorf("AddUserCustomQuery register user api failed, err: %+v, rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+		return
 	}
 
 	resp.WriteEntity(meta.Response{
@@ -84,7 +85,7 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 	params["modify_user"] = srvData.user
 	params[common.LastTimeField] = time.Now().UTC()
 	bizID := req.PathParameter("bk_biz_id")
-	result, err := s.CoreAPI.HostController().User().UpdateUserConfig(srvData.ctx, bizID, req.PathParameter("id"), srvData.header, params)
+	result, err := s.CoreAPI.CoreService().Host().UpdateUserConfig(srvData.ctx, bizID, req.PathParameter("id"), srvData.header, params)
 	if err != nil {
 		blog.Errorf("UpdateUserCustomQuery http do error,err:%s, biz:%v,input:%+v,rid:%s", err.Error(), bizID, params, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -98,8 +99,9 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 
 	id := req.PathParameter("id")
 	if err := s.AuthManager.UpdateRegisteredDynamicGroupByID(srvData.ctx, srvData.header, id); err != nil {
-		blog.Errorf("GetUserCustom update register user api failed, dynamicgroupid:%d, err:%+v, rid:%s", id, err, srvData.rid)
+		blog.Errorf("UpdateRegisteredDynamicGroupByID failed, dynamicgroupid:%d, err:%+v, rid:%s", id, err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+		return
 	}
 
 	resp.WriteEntity(meta.Response{
@@ -116,7 +118,7 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 	dynamicID := req.PathParameter("id")
 	appID := req.PathParameter("bk_biz_id")
 
-	dyResult, err := s.CoreAPI.HostController().User().GetUserConfigDetail(srvData.ctx, appID, dynamicID, srvData.header)
+	dyResult, err := s.CoreAPI.CoreService().Host().GetUserConfigDetail(srvData.ctx, appID, dynamicID, srvData.header)
 	if err != nil {
 		blog.Errorf("DeleteUserCustomQuery http do error,err:%s, biz:%v, rid:%s", err.Error(), appID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -129,7 +131,7 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	result, err := s.CoreAPI.HostController().User().DeleteUserConfig(srvData.ctx, appID, dynamicID, srvData.header)
+	result, err := s.CoreAPI.CoreService().Host().DeleteUserConfig(srvData.ctx, appID, dynamicID, srvData.header)
 	if err != nil {
 		blog.Errorf("DeleteUserCustomQuery http do error,err:%s, biz:%v, rid:%s", err.Error(), appID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -144,6 +146,7 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 	if err := s.AuthManager.DeregisterDynamicGroupByID(srvData.ctx, srvData.header, dyResult.Data); err != nil {
 		blog.Errorf("GetUserCustom deregister user api failed, err: %+v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		return
 	}
 
 	resp.WriteEntity(meta.Response{
@@ -185,7 +188,7 @@ func (s *Service) GetUserCustomQuery(req *restful.Request, resp *restful.Respons
 	}
 	input.Condition = condition
 
-	result, err := s.CoreAPI.HostController().User().GetUserConfig(srvData.ctx, srvData.header, input)
+	result, err := s.CoreAPI.CoreService().Host().GetUserConfig(srvData.ctx, srvData.header, input)
 	if err != nil {
 		blog.Errorf("GetUserCustomQuery http do error,err:%s, biz:%v,input:%+v,rid:%s", err.Error(), req.PathParameter("bk_biz_id"), input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -210,7 +213,7 @@ func (s *Service) GetUserCustomQueryDetail(req *restful.Request, resp *restful.R
 	appID := req.PathParameter("bk_biz_id")
 	ID := req.PathParameter("id")
 
-	result, err := s.CoreAPI.HostController().User().GetUserConfigDetail(srvData.ctx, appID, ID, srvData.header)
+	result, err := s.CoreAPI.CoreService().Host().GetUserConfigDetail(srvData.ctx, appID, ID, srvData.header)
 	if err != nil {
 		blog.Errorf("GetUserCustomQueryDetail http do error,err:%s, biz:%v,ID:%+v,rid:%s", err.Error(), appID, ID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -243,12 +246,12 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 		return
 	}
 
-	result, err := s.CoreAPI.HostController().User().GetUserConfigDetail(srvData.ctx, appID, ID, srvData.header)
+	result, err := s.CoreAPI.CoreService().Host().GetUserConfigDetail(srvData.ctx, appID, ID, srvData.header)
 	if nil != err || (nil == err && !result.Result) {
 		if nil == err {
 			err = fmt.Errorf(result.ErrMsg)
 		}
-		blog.Errorf("UserAPIResult custom query failed,  err: %v, appid:%s, id:%s", err.Error(), appID, ID)
+		blog.Errorf("UserAPIResult custom query failed,  err: %v, appid:%s, id:%s, rid: %s", err.Error(), appID, ID, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrGetUserCustomQueryDetailFaild, err.Error())})
 		return
 	}
@@ -277,7 +280,7 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 		if nil == err {
 			err = fmt.Errorf(result.ErrMsg)
 		}
-		blog.Errorf("UserAPIResult custom query search host failed,  err: %v, appid:%s, id:%s", err.Error(), appID, ID)
+		blog.Errorf("UserAPIResult custom query search host failed,  err: %v, appid:%s, id:%s, rid: %s", err.Error(), appID, ID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrGetUserCustomQueryDetailFaild, err.Error())})
 		return
 	}

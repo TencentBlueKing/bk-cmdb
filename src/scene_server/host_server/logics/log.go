@@ -133,7 +133,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 		return err
 	}
 
-	var setIDs, moduleIDs []int64
+	var setIDs, moduleIDs, appIDs []int64
 	preMap := make(map[int64]map[int64]interface{})
 	curMap := make(map[int64]map[int64]interface{})
 
@@ -144,6 +144,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 		preMap[val.HostID][val.ModuleID] = val
 		setIDs = append(setIDs, val.SetID)
 		moduleIDs = append(moduleIDs, val.ModuleID)
+		appIDs = append(appIDs, val.AppID)
 	}
 
 	for _, val := range h.cur {
@@ -176,10 +177,28 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 			RefName: setInfo[common.BKSetNameField].(string),
 		}
 	}
+
+	appInfoArr, err := h.getApps(ctx, appIDs)
+	if err != nil {
+		return err
+	}
+	appIDNameMap := make(map[int64]string, 0)
+	for _, appInfo := range appInfoArr {
+		instID, err := appInfo.Int64(common.BKAppIDField)
+		if err != nil {
+			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+		}
+		name, err := appInfo.String(common.BKAppNameField)
+		if err != nil {
+			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppNameField, "string", err.Error())
+		}
+		appIDNameMap[instID] = name
+	}
+
 	type ModuleRef struct {
 		metadata.Ref
 		Set     []interface{} `json:"set"`
-		appID   interface{}
+		appID   int64
 		ownerID string
 	}
 	moduleMap := make(map[int64]ModuleRef, 0)
@@ -192,11 +211,16 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 		if err != nil {
 			return err
 		}
+
+		appID, err := moduleInfo.Int64(common.BKAppIDField)
+		if err != nil {
+			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+		}
 		moduleRef := ModuleRef{}
 		moduleRef.Set = append(moduleRef.Set, setMap[sID])
 		moduleRef.RefID = mID
 		moduleRef.RefName = moduleInfo[common.BKModuleNameField].(string)
-		moduleRef.appID = moduleInfo[common.BKAppIDField]
+		moduleRef.appID = appID
 		moduleRef.ownerID = moduleInfo[common.BKOwnerIDField].(string)
 		moduleMap[mID] = moduleRef
 	}
@@ -204,8 +228,9 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 	setRefName := "set"
 	headers := []metadata.Header{
 		{PropertyID: moduleReName, PropertyName: "module"},
-		{PropertyID: setRefName, PropertyName: "app"},
+		{PropertyID: setRefName, PropertyName: "set"},
 		{PropertyID: common.BKAppIDField, PropertyName: "business ID"},
+		{PropertyID: common.BKAppNameField, PropertyName: "business Name"},
 	}
 
 	if len(desc) != 0 {
@@ -222,14 +247,14 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 		}
 
 		preModule := make([]interface{}, 0)
-		var preApp interface{}
+		var preApp int64
 		for moduleID := range preMap[instID] {
 			preModule = append(preModule, moduleMap[moduleID])
 			preApp = moduleMap[moduleID].appID
 		}
 
 		curModule := make([]interface{}, 0)
-		var curApp interface{}
+		var curApp int64
 
 		for moduleID := range curMap[instID] {
 			curModule = append(curModule, moduleMap[moduleID])
@@ -240,8 +265,8 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 			ID:    instID,
 			Model: common.BKInnerObjIDHost,
 			Content: metadata.Content{
-				PreData: common.KvMap{moduleReName: preModule, common.BKAppIDField: preApp},
-				CurData: common.KvMap{moduleReName: curModule, common.BKAppIDField: curApp},
+				PreData: common.KvMap{moduleReName: preModule, common.BKAppIDField: preApp, common.BKAppNameField: appIDNameMap[preApp]},
+				CurData: common.KvMap{moduleReName: curModule, common.BKAppIDField: curApp, common.BKAppNameField: appIDNameMap[curApp]},
 				Headers: headers,
 			},
 			OpDesc: h.desc,
@@ -289,7 +314,7 @@ func (h *HostModuleLog) getInnerIP(ctx context.Context) ([]mapstr.MapStr, errors
 		Fields:    fmt.Sprintf("%s,%s", common.BKHostIDField, common.BKHostInnerIPField),
 	}
 
-	result, err := h.logic.CoreAPI.HostController().Host().GetHosts(ctx, h.header, query)
+	result, err := h.logic.CoreAPI.CoreService().Host().GetHosts(ctx, h.header, query)
 	if err != nil {
 		blog.Errorf("GetHosts http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
 		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -340,6 +365,27 @@ func (h *HostModuleLog) getSets(ctx context.Context, setIDs []int64) ([]mapstr.M
 	}
 	if !result.Result {
 		blog.Errorf("getSets http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.logic.rid)
+		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
+	}
+	return result.Data.Info, nil
+}
+
+func (h *HostModuleLog) getApps(ctx context.Context, appIDs []int64) ([]mapstr.MapStr, errors.CCError) {
+	if appIDs == nil {
+		return make([]mapstr.MapStr, 0), nil
+	}
+	query := &metadata.QueryCondition{
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		Condition: mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: appIDs}},
+		Fields:    []string{common.BKAppNameField, common.BKAppNameField, common.BKOwnerIDField},
+	}
+	result, err := h.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.header, common.BKInnerObjIDApp, query)
+	if err != nil {
+		blog.Errorf("getApps http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
+		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("getApps http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.logic.rid)
 		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
 	}
 	return result.Data.Info, nil

@@ -115,11 +115,17 @@ func (t *Time) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
 			return nil
 		}
 		return nil
+	case bsontype.DateTime:
+		rv := bson.RawValue{Type: bsontype.DateTime, Value: raw}
+		t.Time = rv.Time()
+		return nil
 	}
+
 	// for compatibility purpose
 	tt := tmptime{}
 	err := bson.Unmarshal(raw, &tt)
 	t.Time = tt.Time
+
 	return err
 }
 

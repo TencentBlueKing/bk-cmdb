@@ -55,7 +55,7 @@ func (d *aggregate) Execute(ctx core.ContextParams, decoder rpc.Request) (*types
 		targetCol = d.dbProxy.Collection(msg.Collection)
 	}
 
-	err := targetCol.AggregateOne(ctx, msg.Pipiline, &opt, &reply.Docs)
+	err := targetCol.Aggregate(ctx, msg.Pipiline, &opt, &reply.Docs)
 	if nil == err {
 		reply.Success = true
 	} else {

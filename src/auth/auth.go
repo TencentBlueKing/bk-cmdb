@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Authorize interface {
@@ -65,6 +66,6 @@ type ResourceHandler interface {
 // This allows bk-cmdb to support other kind of auth center.
 // tls can be nil if it is not care.
 // authConfig is a way to parse configuration info for the connection to a auth center.
-func NewAuthorize(tls *util.TLSClientConfig, authConfig authcenter.AuthConfig) (Authorize, error) {
-	return authcenter.NewAuthCenter(tls, authConfig)
+func NewAuthorize(tls *util.TLSClientConfig, authConfig authcenter.AuthConfig, reg prometheus.Registerer) (Authorize, error) {
+	return authcenter.NewAuthCenter(tls, authConfig, reg)
 }

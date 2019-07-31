@@ -35,6 +35,7 @@ export default {
             setAuthScope () {
                 this.authScope = 'global'
             }
-        }
+        },
+        i18nTitle: 'Nav["事件推送"]'
     })
 }
