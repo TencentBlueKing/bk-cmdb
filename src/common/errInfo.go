@@ -741,11 +741,11 @@ const (
 	/** TODO: 以下错误码需要改造 **/
 
 	// json
-	CC_ERR_Comm_JSON_DECODE     = 3001
-	CC_ERR_Comm_JSON_DECODE_STR = "json decode failed!"
-	CC_ERR_Comm_JSON_ENCODE     = 3002
-	CC_ERR_Comm_JSON_ENCODE_STR = "json encode failed!"
+	CCErrCommJsonDecode    = 3001
+	CCErrCommJsonDecodeStr = "json decode failed!"
+	CCErrCommJsonEncode    = 3002
+	CCErrCommJsonEncodeStr = "json encode failed!"
 
-	Json_Marshal_ERR     = 9000
-	Json_Marshal_ERR_STR = "json marshal error"
+	JsonMarshalErr    = 9000
+	JsonMarshalErrStr = "json marshal error"
 )
