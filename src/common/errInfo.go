@@ -191,6 +191,7 @@ const (
 	CCErrCommListAuthorizedResourcedFromIAMFailed = 1199068
 	CCErrParseAttrOptionEnumFailed                = 1199069
 
+	// 构造DB查询条件失败
 	CCErrConstructDBFilterFailed = 1199070
 
 	// unknown or unrecognized error
