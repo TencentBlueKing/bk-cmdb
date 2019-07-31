@@ -123,9 +123,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 		}
 
 		// delete the current inst
-		cond := condition.CreateCondition()
-		cond.Field(currentInst.GetObject().GetInstIDFieldName()).Eq(instID)
-		if err := cli.inst.DeleteInst(params, current, cond, false); nil != err {
+		if err := cli.inst.DeleteMainlineInstWithID(params, current, instID); nil != err {
 			blog.Errorf("[operation-asst] failed to delete the current inst(%#v), err: %+v, rid: %s", currentInst.ToMapStr(), err, rid)
 			continue
 		}

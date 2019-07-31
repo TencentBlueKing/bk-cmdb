@@ -142,6 +142,16 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 		if err := s.Core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {
 			return nil, err
 		}
+
+		// check if this business still has hosts.
+		has, err := s.Core.BusinessOperation().HasHosts(params, bizID)
+		if err != nil {
+			return nil, err
+		}
+		if has {
+			return nil, params.Err.Error(common.CCErrTopoArchiveBusinessHasHost)
+		}
+
 		data.Set(common.BKDataStatusField, pathParams("flag"))
 	case common.DataStatusEnable:
 		name, err := bizs[0].GetInstName()
@@ -247,6 +257,20 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
+	attrArr, err := obj.GetAttributes()
+	if nil != err {
+		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), util.GetHTTPCCRequestID(params.Header))
+		return nil, err
+	}
+	// userFieldArr Fields in the business are user-type fields
+	var userFieldArr []string
+	for _, attrInterface := range attrArr {
+		attr := attrInterface.Attribute()
+		if attr.PropertyType == common.FieldTypeUser {
+			userFieldArr = append(userFieldArr, attr.PropertyID)
+		}
+	}
+
 	innerCond := condition.CreateCondition()
 	switch searchCond.Native {
 	case 1: // native mode
@@ -255,7 +279,7 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 			return nil, params.Err.Error(common.CCErrTopoAppSearchFailed)
 		}
 	default:
-		if err := innerCond.Parse(gparams.ParseAppSearchParams(searchCond.Condition)); nil != err {
+		if err := innerCond.Parse(gparams.ParseAppSearchParams(searchCond.Condition, userFieldArr)); nil != err {
 			blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
 			return nil, params.Err.Error(common.CCErrTopoAppSearchFailed)
 		}

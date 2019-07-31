@@ -149,7 +149,7 @@ func (cli *classification) Update(data mapstr.MapStr) error {
 	}
 
 	if exists {
-		return cli.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
+		return cli.params.Err.Errorf(common.CCErrCommDuplicateItem, cli.GetName())
 	}
 
 	cond := condition.CreateCondition()

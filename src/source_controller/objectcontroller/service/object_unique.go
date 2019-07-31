@@ -75,7 +75,7 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 	err := recheckUniqueForExistsInsts(ctx, db, ownerID, objID, dat.Keys, dat.MustCheck)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %v error: %v", objID, dat, err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, "")})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, objID)})
 		return
 	}
 
@@ -161,7 +161,7 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 	err = recheckUniqueForExistsInsts(ctx, db, ownerID, objID, unique.Keys, unique.MustCheck)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %v error: %v", objID, unique, err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, "")})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, objID)})
 		return
 	}
 
