@@ -79,7 +79,7 @@ func (eh *EventClient) SetCurDataAndPush(ctx core.ContextParams, objID, eventAct
 		if err != nil {
 			blog.ErrorJSON("EventHandle SetCurDataAndPush objID(%s) field(%s) convert to int64 error. err:%s, inst:%s, rid:%s", objID, instIDFieldName, err.Error(), inst, ctx.ReqID)
 			// convert %s  field %s to %s error %s
-			return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, objID, instIDFieldName, "integer", err.Error())
+			return ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, objID, instIDFieldName, "integer", err.Error())
 		}
 		eh.SetCurData(id, inst)
 	}

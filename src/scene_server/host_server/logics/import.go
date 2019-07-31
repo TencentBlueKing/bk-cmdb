@@ -327,7 +327,7 @@ func (h *importInstance) GetHostIDByHostInfoArr(ctx context.Context, hostInfos m
 		if err != nil {
 			blog.Errorf("GetHostIDByHostInfoArr get hostID error. err:%s, hostInfo:%#v, rid:%s", err.Error(), host, h.rid)
 			// convert %s  field %s to %s error %s
-			return hostMap, h.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+			return hostMap, h.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 		}
 		hostMap[key] = hostID
 	}

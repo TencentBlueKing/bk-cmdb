@@ -683,7 +683,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	}
 	if len(moduleIDS) != len(hostList.ModuleID) {
 		blog.Errorf("not found part module: source:%v, db:%v, rid: %s", hostList.ModuleID, moduleIDS, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed)})
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed)})
 		return
 	}
 
