@@ -9,8 +9,8 @@ package command
 import (
 	"testing"
 
-	"bk_bson/x/bsonx"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 	"github.com/stretchr/testify/assert"
 )
 

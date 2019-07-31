@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"time"
 
-	"bk_bson/bson/primitive"
-	"bk_bson/tag"
-	"bk_bson/x/network/address"
-	"bk_bson/x/network/result"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bsontag"
+	"github.com/rentiansheng/bk_bsonx/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/result"
 )
 
 // UnsetRTT is the unset value for a round trip time.

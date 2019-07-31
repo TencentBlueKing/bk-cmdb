@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"bk_bson/bson"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/bsonx/bsoncore"
-	"bk_bson/x/mongo/driver/session"
-	"bk_bson/x/mongo/driver/topology"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/session"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 // BatchCursor is a batch implementation of a cursor. It returns documents in entire batches instead

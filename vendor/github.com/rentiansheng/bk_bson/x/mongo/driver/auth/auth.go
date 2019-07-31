@@ -10,11 +10,11 @@ import (
 	"context"
 	"fmt"
 
-	"bk_bson/x/network/address"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/connection"
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonx/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/connection"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 // AuthenticatorFactory constructs an authenticator.

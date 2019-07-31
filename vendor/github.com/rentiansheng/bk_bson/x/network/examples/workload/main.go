@@ -17,18 +17,18 @@ import (
 	"os/signal"
 	"time"
 
-	"bk_bson/mongo/options"
-	"bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonmongo/options"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
 
-	"bk_bson/bson"
+	"github.com/rentiansheng/bk_bsonbson"
 
-	"bk_bson/mongo/readpref"
-	"bk_bson/x/mongo/driver"
-	"bk_bson/x/mongo/driver/session"
-	"bk_bson/x/mongo/driver/topology"
-	"bk_bson/x/mongo/driver/uuid"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bsonmongo/readpref"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/session"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/uuid"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 )
 
 var concurrency = flag.Int("concurrency", 24, "how much concurrency should be used")

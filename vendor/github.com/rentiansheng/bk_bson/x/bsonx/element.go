@@ -9,7 +9,7 @@ package bsonx
 import (
 	"fmt"
 
-	"bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
 )
 
 const validateMaxDepthDefault = 2048

@@ -13,7 +13,7 @@ import (
 	"io"
 
 	"github.com/golang/snappy"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 // Compressor is the interface implemented by types that can compress and decompress wire messages. This is used

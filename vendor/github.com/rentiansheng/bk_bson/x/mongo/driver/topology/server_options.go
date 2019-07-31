@@ -9,10 +9,10 @@ package topology
 import (
 	"time"
 
-	"bk_bson/bson"
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/x/mongo/driver/session"
-	"bk_bson/x/network/connection"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/session"
+	"github.com/rentiansheng/bk_bsonx/network/connection"
 )
 
 var defaultRegistry = bson.NewRegistryBuilder().Build()

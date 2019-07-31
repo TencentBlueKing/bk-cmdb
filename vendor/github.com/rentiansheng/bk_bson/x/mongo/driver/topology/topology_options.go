@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"bk_bson/x/mongo/driver/auth"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/compressor"
-	"bk_bson/x/network/connection"
-	"bk_bson/x/network/connstring"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/auth"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/compressor"
+	"github.com/rentiansheng/bk_bsonx/network/connection"
+	"github.com/rentiansheng/bk_bsonx/network/connstring"
 )
 
 // Option is a configuration option for a topology.

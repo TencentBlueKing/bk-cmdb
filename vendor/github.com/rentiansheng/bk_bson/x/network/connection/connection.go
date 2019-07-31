@@ -24,15 +24,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"bk_bson/bson"
-	"bk_bson/bson/bsontype"
-	"bk_bson/event"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/bsonx/bsoncore"
-	"bk_bson/x/network/address"
-	"bk_bson/x/network/compressor"
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bsonevent"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bsonx/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/compressor"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 var globalClientConnectionID uint64

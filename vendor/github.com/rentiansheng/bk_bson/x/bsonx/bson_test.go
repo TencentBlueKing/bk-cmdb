@@ -7,7 +7,7 @@
 package bsonx
 
 import (
-	"bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
 	"testing"
 )
 

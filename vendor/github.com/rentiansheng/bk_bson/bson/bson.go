@@ -12,7 +12,7 @@
 package bson
 
 import (
-	"bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
 )
 
 // Zeroer allows custom struct types to implement a report of zero

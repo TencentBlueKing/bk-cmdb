@@ -4,7 +4,7 @@ import (
 	"errors"
 	"io"
 
-	"bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
 )
 
 // DocumentSequenceStyle is used to represent how a document sequence is laid out in a slice of

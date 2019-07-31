@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"bk_bson/bson/bsonrw"
-	"bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
 )
 
 func TestRegistry(t *testing.T) {

@@ -9,10 +9,10 @@ package driver
 import (
 	"errors"
 
-	"bk_bson/bson"
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/mongo/driver/session"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/session"
 )
 
 // ErrCollation is caused if a collation is given for an invalid server version.

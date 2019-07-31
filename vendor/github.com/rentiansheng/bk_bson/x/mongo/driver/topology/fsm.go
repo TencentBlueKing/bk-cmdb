@@ -10,9 +10,9 @@ import (
 	"bytes"
 	"fmt"
 
-	"bk_bson/bson/primitive"
-	"bk_bson/x/network/address"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bsonx/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 )
 
 var supportedWireVersions = description.NewVersionRange(2, 6)
