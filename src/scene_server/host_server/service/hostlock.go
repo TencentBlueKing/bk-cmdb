@@ -113,6 +113,7 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 		}
 		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, hostIDArr)
 		if err != nil {
+			blog.Errorf("gen no permission response failed, err: %v, rid: %s", err, srvData.rid)
 			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
@@ -165,6 +166,7 @@ func (s *Service) QueryHostLock(req *restful.Request, resp *restful.Response) {
 		}
 		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, hostIDArr)
 		if err != nil {
+			blog.Errorf("gen no permission response failed, err: %v, rid: %s", err, srvData.rid)
 			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
