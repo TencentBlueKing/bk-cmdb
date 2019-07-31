@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth"
 	"encoding/json"
 	"net/http"
 
@@ -53,8 +54,12 @@ func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 	}
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		if err != auth.NoAuthorizeError {
+			blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
+			resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp(hostIDArr))
 		return
 	}
 
@@ -96,8 +101,12 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 	}
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		if err != auth.NoAuthorizeError {
+			blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
+			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp(hostIDArr))
 		return
 	}
 
@@ -139,8 +148,12 @@ func (s *Service) QueryHostLock(req *restful.Request, resp *restful.Response) {
 	}
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		if err != auth.NoAuthorizeError {
+			blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
+			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp(hostIDArr))
 		return
 	}
 

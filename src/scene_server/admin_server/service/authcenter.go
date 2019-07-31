@@ -41,6 +41,13 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	noRscPoolBiz := make([]metadata.BizInst, 0)
+	for _, biz := range bizs {
+		if biz.BizName != "资源池" || biz.BizName == "resource pool" {
+			noRscPoolBiz = append(noRscPoolBiz, biz)
+		}
+	}
+
 	cls := []metadata.Classification{}
 	if err := s.db.Table(common.BKTableNameObjClassifiction).Find(condition.CreateCondition().Field("ispre").NotEq(true).ToMapStr()).All(s.ctx, &cls); err != nil {
 		blog.Errorf("init auth center error: %v", err)
@@ -64,7 +71,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	}
 
 	if err := s.authCenter.Init(s.ctx, meta.InitConfig{
-		Bizs:             bizs,
+		Bizs:             noRscPoolBiz,
 		Models:           models,
 		Classifications:  cls,
 		AssociationKinds: associationKinds,

@@ -36,7 +36,7 @@ type BusinessOperationInterface interface {
 	FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error)
 	GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error)
 	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error
-
+	HasHosts(params types.ContextParams, bizID int64) (bool, error)
 	SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface)
 }
 
@@ -63,6 +63,25 @@ func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInt
 	b.module = module
 	b.obj = obj
 }
+
+func (b *business) HasHosts(params types.ContextParams, bizID int64) (bool, error) {
+	cond := map[string][]int64{
+		common.BKAppIDField: {bizID},
+	}
+	rsp, err := b.clientSet.HostController().Module().GetModulesHostConfig(context.Background(), params.Header, cond)
+	if nil != err {
+		blog.Errorf("[operation-set] failed to request the object controller, error info is %s", err.Error())
+		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[operation-set]  failed to search the host set configures, error info is %s", rsp.ErrMsg)
+		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return 0 != len(rsp.Data), nil
+}
+
 func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
 	defaulFieldVal, err := data.Int64(common.BKDefaultField)

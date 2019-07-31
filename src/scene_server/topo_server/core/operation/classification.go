@@ -224,6 +224,20 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		asstObjsMap[asstItem.ObjectID] = asstObjMap
 	}
 
+	asstMap := make(map[string]map[string][]metadata.Object)
+	for _, info := range queryObjectResp.Data.Info {
+		asstObjMap := make(map[string][]metadata.Object)
+		if asstObjs, ok := asstMap[info.Spec.ObjCls]; ok {
+			asstObjMap = asstObjs
+		}
+		if asstObjs, ok := asstObjsMap[info.Spec.ObjectID]; ok {
+			for asstObjKey, asstObj := range asstObjs {
+				asstObjMap[asstObjKey] = asstObj
+			}
+		}
+		asstMap[info.Spec.ObjCls] = asstObjMap
+	}
+
 	datas := []metadata.ClassificationWithObject{}
 	for _, cls := range rsp.Data.Info {
 		clsItem := metadata.ClassificationWithObject{
@@ -234,12 +248,8 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		if obj, ok := objMap[cls.ClassificationID] ; ok {
 			clsItem.Objects = obj
 		}
-		for _, objItem := range clsItem.Objects {
-			if asstObjs, ok := asstObjsMap[objItem.ObjectID]; ok {
-				for asstObjKey, asstObj := range asstObjs {
-					clsItem.AsstObjects[asstObjKey] = asstObj
-				}
-			}
+		if asst, ok := asstMap[cls.ClassificationID] ; ok {
+			clsItem.AsstObjects = asst
 		}
 		datas = append(datas, clsItem)
 	}

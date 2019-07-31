@@ -46,7 +46,7 @@ type DataInfo struct {
 }
 
 // delete hosts from resource pool
-func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) {
+func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
 	opt := new(meta.DeleteHostBatchOpt)
@@ -616,6 +616,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 // NewHostSyncAppTopo add new hosts to the business
 // synchronize hosts directly to a module in a business if this host does not exist.
 // otherwise, this operation will only change host's attribute.
+// TODO: used by framework.
 func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
@@ -720,6 +721,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 // Remove the host from the module or set.
 // The host belongs to the current module or host only, and puts the host into the idle machine of the current service.
 // When the host data is in multiple modules or sets. Disconnect the host from the module or set only
+// TODO: used by v2 version, remove this api when v2 is offline.
 func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	srvData := s.newSrvComm(req.Request.Header)
@@ -754,7 +756,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	}
 
 	condition.ApplicationID = data.ApplicationID
-	hostResult, err := srvData.lgc.GetConfigByCond(srvData.ctx, condition) //logics.GetConfigByCond(req, m.CC.HostCtrl(), condition)
+	hostResult, err := srvData.lgc.GetConfigByCond(srvData.ctx, condition)
 	if nil != err {
 		blog.Errorf("read host from application  error:%v,input:%+v,rid:%s", err, data, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
@@ -983,8 +985,12 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	}
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, dstHostID); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", dstHostID, err, srvData.rid)
-		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		if err != auth.NoAuthorizeError {
+			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", dstHostID, err, srvData.rid)
+			resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp([]int64{dstHostID}))
 		return
 	}
 
