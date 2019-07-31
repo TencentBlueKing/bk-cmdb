@@ -136,7 +136,7 @@ type ListHostByTopoNodeOption struct {
 
 func (option ListHostByTopoNodeOption) Validate() (string, error) {
 	if option.BizID == 0 {
-		return "bk_biz_id", errors.New("bk_biz_id field shouldn't be empty")
+		return common.BKAppIDField, errors.New("bk_biz_id field shouldn't be empty")
 	}
 
 	if key, err := option.Page.Validate(); err != nil {
