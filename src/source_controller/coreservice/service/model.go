@@ -224,7 +224,14 @@ func (s *coreService) SearchModelAttributeGroup(params core.ContextParams, pathP
 		return nil, err
 	}
 
-	return s.core.ModelOperation().SearchModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+	dataResult, err := s.core.ModelOperation().SearchModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+	if nil != err {
+		return dataResult, err
+	}
+	for index := range dataResult.Info {
+		dataResult.Info[index].GroupName = s.TranslatePropertyGroupName(params.Lang, &dataResult.Info[index])
+	}
+	return dataResult, err
 }
 
 func (s *coreService) SearchModelAttributeGroupByCondition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -234,7 +241,14 @@ func (s *coreService) SearchModelAttributeGroupByCondition(params core.ContextPa
 		return nil, err
 	}
 
-	return s.core.ModelOperation().SearchModelAttributeGroupByCondition(params, inputData)
+	dataResult, err := s.core.ModelOperation().SearchModelAttributeGroupByCondition(params, inputData)
+	if nil != err {
+		return dataResult, err
+	}
+	for index := range dataResult.Info {
+		dataResult.Info[index].GroupName = s.TranslatePropertyGroupName(params.Lang, &dataResult.Info[index])
+	}
+	return dataResult, err
 }
 
 func (s *coreService) DeleteModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
