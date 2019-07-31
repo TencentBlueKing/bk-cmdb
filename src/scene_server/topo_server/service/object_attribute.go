@@ -95,7 +95,7 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 
 	// auth: update registered resource
 	if err := s.AuthManager.DeregisterModelAttributeByID(params.Context, params.Header, id); err != nil {
-		blog.Errorf("delete object attribute failed, deregistered model attribute to auth failed, err: %+v, rid: %s", err, params.ReqID)
+		blog.Errorf("delete object attribute failed, deregister model attribute to auth failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 

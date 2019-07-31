@@ -88,19 +88,19 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 	err = s.Core.AssociationOperation().DeleteMainlineAssociation(params, objID)
 
 	if err != nil {
-		if txerr := tx.Abort(context.Background()); txerr != nil {
+		if txErr := tx.Abort(context.Background()); txErr != nil {
 			blog.Errorf("[api-asst] abort transaction failed; %v, rid: %s", err, params.ReqID)
 			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 		}
 	} else {
-		if txerr := tx.Commit(context.Background()); txerr != nil {
+		if txErr := tx.Commit(context.Background()); txErr != nil {
 			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 		}
 	}
 	return nil, err
 }
 
-// SearchMainLineOBjectTopo search the main line topo
+// SearchMainLineObjectTopo search the main line topo
 func (s *Service) SearchMainLineObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizObj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
@@ -212,7 +212,7 @@ func (s *Service) SearchAssociationType(params types.ContextParams, pathParams, 
 	return ret.Data, nil
 }
 
-func (s *Service) SearchObjectAssoWithAssoKindList(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchObjectAssocWithAssocKindList(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	ids := new(metadata.AssociationKindIDs)
 	if err := data.MarshalJSONInto(ids); err != nil {

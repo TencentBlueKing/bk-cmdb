@@ -77,7 +77,10 @@ func (s *Service) SearchClassification(params types.ContextParams, pathParams, q
 
 		data.Remove(metadata.PageName)
 	}
-	cond.Parse(data)
+	if err := cond.Parse(data); err != nil {
+		blog.Errorf("parse condition from data failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
 
 	return s.Core.ClassificationOperation().FindClassification(params, cond)
 }
