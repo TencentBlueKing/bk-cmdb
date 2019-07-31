@@ -983,7 +983,7 @@ func (s *Service) GetPlat(req *restful.Request, resp *restful.Response) {
 	res, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, params)
 	if nil != err {
 		blog.Errorf("GetPlat htt do error: %v,rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoGetCloudErrStrFaild, err.Error())})
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoGetCloudErrStrFailed, err.Error())})
 		return
 	}
 	if false == res.Result {
