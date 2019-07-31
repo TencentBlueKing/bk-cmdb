@@ -37,9 +37,9 @@ func (s *Service) SearchIdentifier(params types.ContextParams, pathParams, query
 	if !ok {
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "param not set")
 	}
-	retval, err := s.Core.IdentifierOperation().SearchIdentifier(params, pathParams("obj_type"), param)
+	retVal, err := s.Core.IdentifierOperation().SearchIdentifier(params, pathParams("obj_type"), param)
 	if err != nil {
 		return nil, err
 	}
-	return retval.Data, nil
+	return retVal.Data, nil
 }

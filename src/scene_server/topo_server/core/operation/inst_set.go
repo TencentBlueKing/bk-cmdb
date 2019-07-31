@@ -109,7 +109,7 @@ func (s *set) DeleteSet(params types.ContextParams, obj model.Object, bizID int6
 		return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
 	}
 
-	// clear the moudle belong to deleted sets
+	// clear the module belong to deleted sets
 	moduleObj, err := s.obj.FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to find the object , error info is %s, rid: %s", err.Error(), params.ReqID)
