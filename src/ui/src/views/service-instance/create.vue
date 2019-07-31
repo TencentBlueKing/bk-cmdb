@@ -186,6 +186,7 @@
                             })
                         })
                     }
+                    this.$success(this.$t('Common[\'添加成功\']'))
                     this.handleBackToModule()
                 } catch (e) {
                     console.error(e)

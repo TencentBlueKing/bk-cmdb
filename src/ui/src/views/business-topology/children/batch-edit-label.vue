@@ -38,7 +38,13 @@
                 this.localExisitingLabel = this.$tools.clone(list)
             }
         },
+        created () {
+            this.initValue()
+        },
         methods: {
+            initValue () {
+                this.localExisitingLabel = this.$tools.clone(this.exisitingLabel)
+            },
             handleRemove (index) {
                 this.removeList.push(this.localExisitingLabel[index])
                 this.localExisitingLabel.splice(index, 1)

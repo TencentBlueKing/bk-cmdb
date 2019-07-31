@@ -95,7 +95,7 @@
             </bk-pagination>
             <div class="filter-empty" v-if="!instances.length">
                 <div class="filter-empty-content">
-                    <i class="bk-icon icon-empty"></i>
+                    <img class="img-empty" src="../../../assets/images/empty-content.png" alt="">
                     <span>{{$t('BusinessTopology["暂无符合条件的实例"]')}}</span>
                 </div>
             </div>
@@ -125,12 +125,15 @@
             :mask-close="false"
             :width="580"
             @confirm="handleSubmitBatchLabel"
-            @cancel="handleCloseBatchLable">
+            @cancel="handleCloseBatchLable"
+            @after-leave="handleSetEditBox">
             <div class="reset-header" slot="header">
                 {{$t("BusinessTopology['批量编辑']")}}
                 <span>{{$tc("BusinessTopology['已选择实例']", checked.length, { num: checked.length })}}</span>
             </div>
-            <batch-edit-label ref="batchLabel" :exisiting-label="editLabel.list">
+            <batch-edit-label ref="batchLabel"
+                v-if="editLabel.visiable"
+                :exisiting-label="editLabel.list">
                 <cmdb-edit-label
                     ref="instanceLabel"
                     slot="batch-add-label"
@@ -193,6 +196,7 @@
                 },
                 editLabel: {
                     show: false,
+                    visiable: false,
                     list: []
                 },
                 isCarryParams: false
@@ -480,6 +484,7 @@
                     this.processForm.instance = null
                     this.processForm.referenceService = null
                     this.processForm.disabledProperties = []
+                    this.$success(this.$t('Common[\'保存成功\']'))
                 } catch (e) {
                     console.error(e)
                 }
@@ -597,6 +602,7 @@
                                     requestId: 'batchDeleteServiceInstance'
                                 }
                             })
+                            this.$success(this.$t('Common[\'删除成功\']'))
                             this.instances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
                             this.checked = []
                         } catch (e) {
@@ -631,6 +637,7 @@
                 }
                 try {
                     this.editLabel.show = true
+                    this.editLabel.visiable = true
                     const labelList = []
                     const existingKeys = []
                     for (const instance of this.checked) {
@@ -707,12 +714,18 @@
                         this.getHistoryLabel()
                     }
                     this.handleCloseBatchLable()
+                    setTimeout(() => {
+                        this.handleSetEditBox()
+                    }, 200)
                 } catch (e) {
                     console.error(e)
                 }
             },
             handleCloseBatchLable () {
                 this.editLabel.show = false
+            },
+            handleSetEditBox () {
+                this.editLabel.visiable = false
                 this.editLabel.list = []
             }
         }
@@ -865,11 +878,9 @@
             display: table-cell;
             vertical-align: middle;
             text-align: center;
-            .icon-empty {
+            .img-empty {
                 display: block;
-                margin: 0 0 10px 0;
-                font-size: 65px;
-                color: #c3cdd7;
+                margin: 0 auto;
             }
         }
     }

@@ -6,8 +6,8 @@
             v-for="(group, index) in groupedProperties"
             :key="index">
             <h2 class="group-name">{{group.bk_group_name}}</h2>
-            <ul class="property-list clearfix">
-                <li class="property-item fl"
+            <ul class="property-list">
+                <li class="property-item"
                     v-for="property in group.properties"
                     :key="property.id">
                     <span class="property-name"
@@ -59,6 +59,18 @@
                             </span>
                         </div>
                     </template>
+                    <template v-if="$tools.getPropertyText(property, host) !== '--' && property !== editState.property">
+                        <bk-popover class="property-popover"
+                            trigger="click"
+                            placement="top"
+                            theme="copy-text"
+                            :tippy-options="{ wait: handleCopy }">
+                            <i class="property-copy icon-cc-details-copy" @click="handleCopyText($tools.getPropertyText(property, host))"></i>
+                            <span class="popover-content" slot="content">
+                                {{$t('Common[\'复制成功\']')}}
+                            </span>
+                        </bk-popover>
+                    </template>
                 </li>
             </ul>
         </div>
@@ -76,7 +88,8 @@
                     property: null,
                     value: null
                 },
-                tooltipState: {}
+                tooltipState: {},
+                copyText: ''
             }
         },
         computed: {
@@ -137,6 +150,20 @@
                 const rangeWidth = range.getBoundingClientRect().width
                 const threshold = Math.max(rangeWidth - target.offsetWidth, target.scrollWidth - target.offsetWidth)
                 this.$set(this.tooltipState, property.bk_property_id, threshold > 0.5)
+            },
+            handleCopyText (copyText) {
+                this.copyText = copyText
+            },
+            handleCopy (instance) {
+                this.$copyText(this.copyText).then(() => {
+                    instance.show()
+                    const timer = setTimeout(() => {
+                        instance.hide()
+                        clearTimeout(timer)
+                    }, 800)
+                }, () => {
+                    this.$error(this.$t('Common["复制失败"]'))
+                })
             }
         }
     }
@@ -154,7 +181,7 @@
             line-height: 21px;
             font-size: 16px;
             font-weight: normal;
-            color: #313238;
+            color: #333948;
             &:before {
                 content: "";
                 display: inline-block;
@@ -169,22 +196,27 @@
     .property-list {
         width: 1000px;
         margin: 25px 0 0 0;
-        line-height: 38px;
         color: #63656e;
+        display: flex;
+        flex-wrap: wrap;
         .property-item {
-            width: 50%;
-            font-size: 0;
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding-bottom: 8px;
+            display: flex;
             &:hover {
                 .property-edit {
+                    display: inline-block;
+                }
+                .property-copy {
                     display: inline-block;
                 }
             }
             .property-name {
                 position: relative;
-                display: inline-block;
                 width: 150px;
+                line-height: 30px;
                 padding: 0 16px 0 36px;
-                vertical-align: middle;
                 font-size: 14px;
                 color: #63656E;
                 @include ellipsis;
@@ -195,17 +227,20 @@
                 }
             }
             .property-value {
-                display: inline-block;
-                margin: 0 0 0 4px;
-                max-width: 310px;
+                margin: 6px 0 0 4px;
+                max-width: 296px;
                 font-size: 14px;
-                vertical-align: middle;
-                color: #313238;
-                @include ellipsis;
+                color: #313237;
+                overflow:hidden;
+                text-overflow:ellipsis;
+                word-break: break-all;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
             }
             .property-edit {
                 display: none;
-                margin: 0 0 0 8px;
+                margin: 8px 0 0 8px;
                 vertical-align: middle;
                 font-size: 16px;
                 color: #3c96ff;
@@ -218,9 +253,11 @@
                     color: #ccc;
                 }
             }
-            .property-form {
-                display: inline-block;
-                vertical-align: middle;
+            .property-copy {
+                margin: 6px 0 0 8px;
+                color: #3c96ff;
+                cursor: pointer;
+                display: none;
             }
         }
     }
@@ -296,6 +333,10 @@
                     height: 30px ;
                     font-size: 14px !important;
                 }
+                .bk-form-input {
+                    height: 30px;
+                    float: left;
+                }
                 .bk-date-picker:after {
                     width: 30px;
                     height: 30px;
@@ -331,6 +372,15 @@
                     }
                 }
             }
+        }
+    }
+</style>
+
+<style lang="scss">
+    .copy-text-theme {
+        background-color: #9f9f9f;
+        .tippy-arrow {
+            border-top-color: #9f9f9f !important;
         }
     }
 </style>

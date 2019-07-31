@@ -106,11 +106,12 @@
                                 <span>{{childCategory['name']}}</span>
                                 <div class="child-edit" v-if="!childCategory['is_built_in']">
                                     <i
+                                        class="mr10"
                                         v-cursor="{
                                             active: !$isAuthorized($OPERATION.U_SERVICE_CATEGORY),
                                             auth: [$OPERATION.U_SERVICE_CATEGORY]
                                         }">
-                                        <bk-button class="child-edit-btn mr10"
+                                        <bk-button class="child-edit-btn"
                                             :text="true"
                                             :disabled="!$isAuthorized($OPERATION.U_SERVICE_CATEGORY)"
                                             @click.stop="handleEditChild(childCategory['id'], childCategory['name'])">
@@ -122,7 +123,7 @@
                                             active: !$isAuthorized($OPERATION.D_SERVICE_CATEGORY),
                                             auth: [$OPERATION.D_SERVICE_CATEGORY]
                                         }">
-                                        <bk-button class="child-edit-btn mr10"
+                                        <bk-button class="child-edit-btn"
                                             :text="true"
                                             :disabled="!$isAuthorized($OPERATION.D_SERVICE_CATEGORY)"
                                             @click.stop="handleDeleteCategory(childCategory['id'], 'child', index)">
@@ -131,11 +132,10 @@
                                     </i>
                                     <i class="icon-cc-tips-close" v-else
                                         style="color: #c4c6cc; cursor: not-allowed;"
-                                        v-bktooltips="tooltips">
+                                        v-bk-tooltips.bottom="tooltips">
                                     </i>
                                 </div>
                             </div>
-                            <!-- <span>{{childCategory['usage_amount']}}</span> -->
                         </template>
                     </div>
                 </div>
@@ -182,8 +182,7 @@
         data () {
             return {
                 tooltips: {
-                    content: this.$t("ServiceCategory['二级分类删除提示']"),
-                    arrowsSize: 5
+                    content: this.$t("ServiceCategory['二级分类删除提示']")
                 },
                 showFeatureTips: false,
                 showAddMianCategory: false,

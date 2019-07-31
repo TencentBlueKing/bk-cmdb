@@ -9,11 +9,6 @@
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
-            <span class="topology-path"
-                v-bk-tooltips="pathToolTips"
-                @click.stop="goTopologyInstance">
-                {{topologyPath}}
-            </span>
             <cmdb-dot-menu class="instance-menu" @click.native.stop>
                 <ul class="menu-list">
                     <li class="menu-item"
@@ -26,32 +21,35 @@
                     </li>
                 </ul>
             </cmdb-dot-menu>
-            <div class="instance-label clearfix" @click.stop v-if="labelShowList.length">
-                <div class="label-title fl">
-                    <i class="icon-cc-label"></i>
-                    <span>{{$t('BusinessTopology["标签"]')}}：</span>
-                </div>
-                <div class="label-list fl">
-                    <div class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelShowList">
-                        <span>{{label.key}}</span>
-                        <span>:</span>
-                        <span>{{label.value}}</span>
-                    </div>
-                    <bk-popover class="label-item label-tips"
-                        v-if="labelTipsList.length"
-                        theme="light"
-                        :width="290"
-                        placement="top-end">
-                        <span>...</span>
-                        <div class="tips-label-list" slot="content">
-                            <span class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelTipsList">
-                                <span>{{label.key}}</span>
-                                <span>:</span>
-                                <span>{{label.value}}</span>
-                            </span>
+            <div class="right-content fr">
+                <div class="instance-label clearfix" @click.stop v-if="currentView === 'label'">
+                    <div class="label-list fl">
+                        <div class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelShowList">
+                            <span>{{label.key}}</span>
+                            <span>:</span>
+                            <span>{{label.value}}</span>
                         </div>
-                    </bk-popover>
+                        <bk-popover class="label-item label-tips"
+                            v-if="labelTipsList.length"
+                            theme="light label-tips"
+                            :width="290"
+                            placement="bottom-end">
+                            <span>...</span>
+                            <div class="tips-label-list" slot="content">
+                                <span class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelTipsList">
+                                    <span>{{label.key}}</span>
+                                    <span>:</span>
+                                    <span>{{label.value}}</span>
+                                </span>
+                            </div>
+                        </bk-popover>
+                    </div>
                 </div>
+                <span class="topology-path" v-else
+                    v-bk-tooltips="pathToolTips"
+                    @click.stop="goTopologyInstance">
+                    {{topologyPath}}
+                </span>
             </div>
         </div>
         <bk-table
@@ -74,7 +72,11 @@
                 type: Object,
                 required: true
             },
-            expanded: Boolean
+            expanded: Boolean,
+            currentView: {
+                type: String,
+                default: 'label'
+            }
         },
         data () {
             return {
@@ -142,7 +144,7 @@
             },
             topologyPath () {
                 const pathArr = this.$tools.clone(this.instance.topo_path).reverse()
-                const path = pathArr.map(path => path.InstanceName).join(' > ')
+                const path = pathArr.map(path => path.InstanceName).join(' / ')
                 return path
             }
         },
@@ -255,6 +257,7 @@
         line-height: 40px;
         border-radius: 2px 2px 0 0;
         background-color: #DCDEE5;
+        overflow: hidden;
         cursor: pointer;
         .title-icon {
             font-size: 12px;
@@ -268,12 +271,15 @@
         }
         .topology-path {
             font-size: 12px;
-            color: #979ba5;
+            color: #63656e;
             height: 20px;
             line-height: 20px;
             padding: 0 6px;
-            background-color: #fafbfd;
+            outline: none;
             @include inlineBlock;
+            &:hover {
+                color: #3a84ff;
+            }
         }
     }
     .menu-list {
@@ -328,11 +334,16 @@
             }
             .label-tips {
                 padding: 0;
-                .bk-tooltip-ref span {
+                /deep/.bk-tooltip-ref {
                     padding: 0 6px;
+                    span {
+                        line-height: 16px;
+                        display: inline-block;
+                        vertical-align: top;
+                    }
                 }
                 &:hover {
-                    background-color: #f0f1f5;
+                    background-color: #e1ecff;
                 }
             }
         }
@@ -358,5 +369,8 @@
                 max-width: 54px;
             }
         }
+    }
+    .tippy-tooltip.label-tips-theme {
+        padding: 8px 6px !important;
     }
 </style>

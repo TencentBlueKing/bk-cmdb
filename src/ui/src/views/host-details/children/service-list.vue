@@ -24,6 +24,13 @@
                         @change="handleSearch">
                     </bk-search-select>
                 </div>
+                <div class="options-check-view">
+                    <i :class="['icon-cc-label', 'view-btn', 'pr10', { 'active': currentView === 'label' }]"
+                        @click="checkView('label')"></i>
+                    <span class="dividing-line"></span>
+                    <i :class="['icon-cc-instance-path', 'view-btn', 'pl10', { 'active': currentView === 'path' }]"
+                        @click="checkView('path')"></i>
+                </div>
             </div>
         </div>
         <div class="tables">
@@ -33,6 +40,7 @@
                 :key="instance.id"
                 :instance="instance"
                 :expanded="index === 0"
+                :current-view="currentView"
                 @delete-instance="handleDeleteInstance"
                 @check-change="handleCheckChange">
             </service-instance-table>
@@ -81,7 +89,8 @@
                 isExpandAll: false,
                 isCheckAll: false,
                 filter: [],
-                instances: []
+                instances: [],
+                currentView: 'label'
             }
         },
         computed: {
@@ -236,6 +245,9 @@
                 this.pagination.current = 1
                 this.pagination.size = size
                 this.getHostSeriveInstances()
+            },
+            checkView (value) {
+                this.currentView = value
             }
         }
     }
@@ -263,6 +275,31 @@
         min-width: 240px;
         max-width: 500px;
         z-index: 99;
+    }
+    .options-check-view {
+        @include inlineBlock;
+        height: 32px;
+        line-height: 30px;
+        font-size: 0;
+        border: 1px solid #c4c6cc;
+        padding: 0 10px;
+        border-radius: 2px;
+        .view-btn {
+            color: #dcdee5;
+            font-size: 14px;
+            height: 100%;
+            line-height: 30px;
+            cursor: pointer;
+            &:hover, &.active {
+                color: #3a84ff;
+            }
+        }
+        .dividing-line {
+            @include inlineBlock;
+            width: 1px;
+            height: 14px;
+            background-color: #dcdee5;
+        }
     }
     .tables {
         padding-top: 16px;

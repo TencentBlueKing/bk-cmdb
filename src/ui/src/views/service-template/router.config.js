@@ -4,24 +4,14 @@ import {
     C_SERVICE_TEMPLATE,
     U_SERVICE_TEMPLATE,
     D_SERVICE_TEMPLATE,
-    R_SERVICE_TEMPLATE,
-    
-    C_PROCESS_TEMPLATE,
-    U_PROCESS_TEMPLATE,
-    D_PROCESS_TEMPLATE,
-    R_PROCESS_TEMPLATE
+    R_SERVICE_TEMPLATE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
     C_SERVICE_TEMPLATE,
     U_SERVICE_TEMPLATE,
     D_SERVICE_TEMPLATE,
-    R_SERVICE_TEMPLATE,
-    
-    C_PROCESS_TEMPLATE,
-    U_PROCESS_TEMPLATE,
-    D_PROCESS_TEMPLATE,
-    R_PROCESS_TEMPLATE
+    R_SERVICE_TEMPLATE
 }
 
 const path = '/service/template'
@@ -40,6 +30,7 @@ export default [{
             adminView: false
         },
         auth: {
+            view: OPERATION.R_SERVICE_TEMPLATE,
             operation: Object.values(OPERATION),
             setAuthScope () {
                 this.authScope = 'business'

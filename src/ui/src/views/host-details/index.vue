@@ -68,7 +68,9 @@
         },
         watch: {
             info (info) {
-                this.$store.commit('setHeaderTitle', `${this.$t('HostDetails["主机详情"]')}(${info.host.bk_host_innerip})`)
+                const hostList = info.host.bk_host_innerip.split(',')
+                const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
+                this.$store.commit('setHeaderTitle', `${this.$t('HostDetails["主机详情"]')}(${host})`)
             },
             id () {
                 this.getData()
