@@ -13,14 +13,18 @@
 package self
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
+	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
@@ -132,11 +136,58 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	return user, true
 }
 
+func (m *user) getEsbClient(config map[string]string) (esbserver.EsbClientInterface, error) {
+	esbAddr, addrOk := config["esb.addr"]
+	esbAppCode, appCodeOk := config["esb.appCode"]
+	esbAppSecret, appSecretOk := config["esb.appSecret"]
+	if addrOk == false || appCodeOk == false || appSecretOk == false {
+		return nil, fmt.Errorf("esb config not found or incomplete, %+v", config)
+	}
+	esbConfigChn := make(chan esbutil.EsbConfig, 1)
+	defer func() {
+		close(esbConfigChn)
+	}()
+	esbConfigChn <- esbutil.EsbConfig{Addrs: esbAddr, AppCode: esbAppCode, AppSecret: esbAppSecret}
+	tlsConfig, err := util.NewTLSClientConfigFromConfig("esb", config)
+	if err != nil {
+		return nil, fmt.Errorf("parse esb tls config failed, config: %+v, err: %+v", config, err)
+	}
+	apiMachineryConfig := &util.APIMachineryConfig{
+		QPS:       1000,
+		Burst:     1000,
+		TLSConfig: &tlsConfig,
+	}
+	esbSrv, err := esbserver.NewEsb(apiMachineryConfig, esbConfigChn, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create esb client failed. err: %v", err)
+	}
+	return esbSrv, nil
+}
+
 // GetUserList get user list from paas
 func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, error) {
 	accountURL, ok := config["site.bk_account_url"]
 	if !ok {
-		return nil, fmt.Errorf("config site.bk_account_url not found")
+		// try to use esb user list api
+		esbClient, err := m.getEsbClient(config)
+		if err != nil {
+			blog.Warnf("get esb client failed, err: %+v", err)
+			return nil, fmt.Errorf("config site.bk_account_url not found")
+		}
+		result, err := esbClient.User().GetAllUsers(context.Background(), c.Request.Header)
+		if err != nil {
+			blog.Warnf("get users by esb client failed, http failed, err: %+v", err)
+			return nil, fmt.Errorf("get users by esb client failed, http failed")
+		}
+		users := make([]*metadata.LoginSystemUserInfo, 0)
+		for _, userInfo := range result.Data {
+			user := &metadata.LoginSystemUserInfo{
+				CnName: userInfo.DisplayName,
+				EnName: userInfo.BkUsername,
+			}
+			users = append(users, user)
+		}
+		return users, nil
 	}
 	session := sessions.Default(c)
 	skiplogin := session.Get(webCommon.IsSkipLogin)

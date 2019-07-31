@@ -8,6 +8,18 @@ export default {
             type: Array,
             required: true
         },
+        uneditableProperties: {
+            type: Array,
+            default () {
+                return []
+            }
+        },
+        disabledProperties: {
+            type: Array,
+            default () {
+                return []
+            }
+        },
         objectUnique: {
             type: Array,
             default () {

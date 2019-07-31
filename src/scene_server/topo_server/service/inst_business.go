@@ -33,26 +33,26 @@ import (
 func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("failed to search the business, %s", err.Error())
+		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	data.Set(common.BKDefaultField, 0)
 	business, err := s.Core.BusinessOperation().CreateBusiness(params, obj, data)
 	if err != nil {
-		blog.Errorf("create business failed, err: %v", err)
+		blog.Errorf("create business failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 
 	businessID, err := business.GetInstID()
 	if err != nil {
-		blog.Errorf("unexpected error, create business success, but get id failed, err: %+v", err)
+		blog.Errorf("unexpected error, create business success, but get id failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
 
 	// auth: register business to iam
 	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
-		blog.Errorf("create business success, but register to iam failed, err: %v", err)
+		blog.Errorf("create business success, but register to iam failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
@@ -64,19 +64,19 @@ func (s *Service) DeleteBusiness(params types.ContextParams, pathParams, queryPa
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("failed to search the business, %s", err.Error())
+		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-business]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
 	// auth: deregister business to iam
 	if err := s.AuthManager.DeregisterBusinessesByID(params.Context, params.Header, bizID); err != nil {
-		blog.Errorf("delete business failed, deregister business failed, err: %+v", err)
+		blog.Errorf("delete business failed, deregister business failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 
@@ -88,13 +88,13 @@ func (s *Service) UpdateBusiness(params types.ContextParams, pathParams, queryPa
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("failed to search the business, %s", err.Error())
+		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-business]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
@@ -105,7 +105,7 @@ func (s *Service) UpdateBusiness(params types.ContextParams, pathParams, queryPa
 
 	// auth: update registered business to iam
 	if err := s.AuthManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
-		blog.Errorf("update business success, but update registered business failed, err: %+v", err)
+		blog.Errorf("update business success, but update registered business failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
@@ -117,13 +117,13 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("failed to search the business, %s", err.Error())
+		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-business]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 	data = mapstr.New()
@@ -142,6 +142,16 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 		if err := s.Core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {
 			return nil, err
 		}
+
+		// check if this business still has hosts.
+		has, err := s.Core.BusinessOperation().HasHosts(params, bizID)
+		if err != nil {
+			return nil, err
+		}
+		if has {
+			return nil, params.Err.Error(common.CCErrTopoArchiveBusinessHasHost)
+		}
+
 		data.Set(common.BKDataStatusField, pathParams("flag"))
 	case common.DataStatusEnable:
 		name, err := bizs[0].GetInstName()
@@ -160,11 +170,11 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 
 	err = s.Core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
 	if err != nil {
-		blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v", err)
+		blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 	if err := s.AuthManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
-		blog.Errorf("UpdateBusinessStatus failed, update register business info failed, err: %+v", err)
+		blog.Errorf("UpdateBusinessStatus failed, update register business info failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 	return nil, nil
@@ -176,7 +186,7 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("failed to search the business, %s", err.Error())
+		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 	fields := []string{common.BKAppIDField, common.BKAppNameField, "business_dept_id", "business_dept_name"}
@@ -199,7 +209,7 @@ func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathPara
 
 	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, fields, cond)
 	if nil != err {
-		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -235,7 +245,7 @@ func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathPara
 func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("failed to search the business, %s", err.Error())
+		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -243,20 +253,34 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 		Condition: mapstr.New(),
 	}
 	if err := data.MarshalJSONInto(&searchCond); nil != err {
-		blog.Errorf("failed to parse the params, error info is %s", err.Error())
+		blog.Errorf("failed to parse the params, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+	}
+
+	attrArr, err := obj.GetAttributes()
+	if nil != err {
+		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), util.GetHTTPCCRequestID(params.Header))
+		return nil, err
+	}
+	// userFieldArr Fields in the business are user-type fields
+	var userFieldArr []string
+	for _, attrInterface := range attrArr {
+		attr := attrInterface.Attribute()
+		if attr.PropertyType == common.FieldTypeUser {
+			userFieldArr = append(userFieldArr, attr.PropertyID)
+		}
 	}
 
 	innerCond := condition.CreateCondition()
 	switch searchCond.Native {
 	case 1: // native mode
 		if err := innerCond.Parse(searchCond.Condition); nil != err {
-			blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
+			blog.Errorf("[api-biz] failed to parse the input data, error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrTopoAppSearchFailed)
 		}
 	default:
-		if err := innerCond.Parse(gparams.ParseAppSearchParams(searchCond.Condition)); nil != err {
-			blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
+		if err := innerCond.Parse(gparams.ParseAppSearchParams(searchCond.Condition, userFieldArr)); nil != err {
+			blog.Errorf("[api-biz] failed to parse the input data, err: %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrTopoAppSearchFailed)
 		}
 	}
@@ -329,7 +353,7 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 
 	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, searchCond.Fields, innerCond)
 	if nil != err {
-		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -345,13 +369,13 @@ func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams,
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("failed to search the business, %s", err.Error())
+		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	innerCond := condition.CreateCondition()
 	if err = innerCond.Parse(data); nil != err {
-		blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
+		blog.Errorf("[api-biz] failed to parse the input data, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 	innerCond.Field(common.BKDefaultField).Eq(common.DefaultAppFlag)
@@ -370,7 +394,7 @@ func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams,
 
 	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, []string{}, innerCond)
 	if nil != err {
-		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 	result := mapstr.MapStr{}
@@ -383,7 +407,7 @@ func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams,
 func (s *Service) CreateDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("failed to search the business, %s", err.Error())
+		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -400,7 +424,7 @@ func (s *Service) CreateDefaultBusiness(params types.ContextParams, pathParams, 
 
 	// auth: register business to iam
 	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
-		blog.Errorf("create default business failed, register business failed, err: %+v", err)
+		blog.Errorf("create default business failed, register business failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
@@ -410,7 +434,7 @@ func (s *Service) CreateDefaultBusiness(params types.ContextParams, pathParams, 
 func (s *Service) GetInternalModule(params types.ContextParams, pathParams, queryparams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("failed to search the business, %s", err.Error())
+		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)

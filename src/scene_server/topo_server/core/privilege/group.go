@@ -65,20 +65,20 @@ func (u *userGroup) checkGroupNameRepeat(supplierAccount, groupID, groupName str
 	}
 	cond.Field("group_name").Eq(groupName)
 
-	rsp, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header, cond.ToMapStr())
+	rsp, err := u.client.CoreService().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[permission] failed to request object controller, error info is %s, rid: %s", err.Error(), u.params.ReqID)
 		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[permission] failed to check the user group, error info is %s", rsp.ErrMsg)
+		blog.Errorf("[permission] failed to check the user group, error info is %s, rid: %s", rsp.ErrMsg, u.params.ReqID)
 		return u.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	if 0 < len(rsp.Data) {
-		blog.Warnf("[permission] the group name (%s) repeated", groupName)
-		return u.params.Err.Error(common.CCErrCommDuplicateItem)
+		blog.Warnf("[permission] the group name (%s) repeated， rid: %s", groupName, u.params.ReqID)
+		return u.params.Err.Errorf(common.CCErrCommDuplicateItem, u.userGroup.GroupName)
 	}
 
 	return nil
@@ -90,14 +90,14 @@ func (u *userGroup) CreateUserGroup(supplierAccount string, userGroup *metadata.
 		return err
 	}
 
-	rspCreate, err := u.client.ObjectController().Privilege().CreateUserGroup(context.Background(), supplierAccount, u.params.Header, userGroup.ToMapStr())
+	rspCreate, err := u.client.CoreService().Privilege().CreateUserGroup(context.Background(), supplierAccount, u.params.Header, userGroup.ToMapStr())
 	if nil != err {
-		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[permission] failed to request object controller, error info is %s, rid: %s", err.Error(), u.params.ReqID)
 		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rspCreate.Result {
-		blog.Errorf("[permission] failed to create the user group name(%s), error info is %s", userGroup.GroupName, rspCreate.ErrMsg)
+		blog.Errorf("[permission] failed to create the user group name(%s), error info is %s, rid: %s", userGroup.GroupName, rspCreate.ErrMsg, u.params.ReqID)
 		return u.params.Err.New(rspCreate.Code, rspCreate.ErrMsg)
 	}
 
@@ -106,14 +106,14 @@ func (u *userGroup) CreateUserGroup(supplierAccount string, userGroup *metadata.
 
 func (u *userGroup) DeleteUserGroup(supplierAccount, groupID string) error {
 
-	rsp, err := u.client.ObjectController().Privilege().DeleteUserGroup(context.Background(), supplierAccount, groupID, u.params.Header)
+	rsp, err := u.client.CoreService().Privilege().DeleteUserGroup(context.Background(), supplierAccount, groupID, u.params.Header)
 	if nil != err {
-		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[permission] failed to request object controller, error info is %s, rid: %s", err.Error(), u.params.ReqID)
 		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[permission] failed to delete the group (%s), error info is %s", groupID, rsp.ErrMsg)
+		blog.Errorf("[permission] failed to delete the group (%s), error info is %s, rid: %s", groupID, rsp.ErrMsg, u.params.ReqID)
 		return u.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -124,7 +124,7 @@ func (u *userGroup) UpdateUserGroup(supplierAccount, groupID string, data mapstr
 
 	groupName, err := data.String("group_name")
 	if nil != err {
-		blog.Errorf("the group name (%#v) is invalid, error info is %s", data, err.Error())
+		blog.Errorf("the group name (%#v) is invalid, error info is %s, rid: %s", data, err.Error(), u.params.ReqID)
 		return u.params.Err.Errorf(common.CCErrCommParamsNeedSet, "group name")
 	}
 
@@ -132,14 +132,14 @@ func (u *userGroup) UpdateUserGroup(supplierAccount, groupID string, data mapstr
 		return err
 	}
 
-	rsp, err := u.client.ObjectController().Privilege().UpdateUserGroup(context.Background(), supplierAccount, groupID, u.params.Header, data)
+	rsp, err := u.client.CoreService().Privilege().UpdateUserGroup(context.Background(), supplierAccount, groupID, u.params.Header, data)
 	if nil != err {
-		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[permission] failed to request object controller, error info is %s, rid: %s", err.Error(), u.params.ReqID)
 		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[permission] failed to update the group (%s), error info is %s", groupID, rsp.ErrMsg)
+		blog.Errorf("[permission] failed to update the group (%s), error info is %s, rid: %s", groupID, rsp.ErrMsg, u.params.ReqID)
 		return u.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -148,14 +148,14 @@ func (u *userGroup) UpdateUserGroup(supplierAccount, groupID string, data mapstr
 
 func (u *userGroup) SearchUserGroup(supplierAccount string, cond condition.Condition) ([]metadata.UserGroup, error) {
 
-	rsp, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header, cond.ToMapStr())
+	rsp, err := u.client.CoreService().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[permission] failed to request object controller, error info is %s, rid: %s", err.Error(), u.params.ReqID)
 		return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[permission] failed to search, the condition (%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[permission] failed to search, the condition (%#v), error info is %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, u.params.ReqID)
 		return nil, u.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

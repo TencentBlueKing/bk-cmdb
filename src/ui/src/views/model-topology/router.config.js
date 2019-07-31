@@ -26,6 +26,8 @@ export default {
             setAuthScope () {
                 this.authScope = 'global'
             }
-        }
+        },
+        i18nTitle: 'Nav["模型拓扑"]'
+            
     })
 }

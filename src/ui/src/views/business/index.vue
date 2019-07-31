@@ -216,7 +216,6 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
                 this.$store.dispatch('userCustom/setRencentlyData', { id: 'business' })
                 this.properties = await this.searchObjectAttribute({
@@ -324,7 +323,7 @@
             },
             getTableData () {
                 this.getBusinessList().then(data => {
-                    this.table.list = this.$tools.flatternList(this.properties, data.info)
+                    this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
                     return data
                 })
@@ -354,9 +353,9 @@
                 }
                 return params
             },
-            async handleEdit (flatternItem) {
+            async handleEdit (flattenItem) {
                 const list = await this.getBusinessList({ fromCache: true })
-                const inst = list.info.find(item => item['bk_biz_id'] === flatternItem['bk_biz_id'])
+                const inst = list.info.find(item => item['bk_biz_id'] === flattenItem['bk_biz_id'])
                 const bizNameProperty = this.$tools.getProperty(this.properties, 'bk_biz_name')
                 bizNameProperty.isreadonly = inst['bk_biz_name'] === '蓝鲸'
                 this.attribute.inst.edit = inst
@@ -389,7 +388,7 @@
                     }).then(() => {
                         this.getTableData()
                         this.searchBusinessById({ bizId: originalValues['bk_biz_id'] }).then(item => {
-                            this.attribute.inst.details = this.$tools.flatternItem(this.properties, item)
+                            this.attribute.inst.details = this.$tools.flattenItem(this.properties, item)
                         })
                         this.handleCancel()
                         this.$success(this.$t("Common['修改成功']"))
@@ -425,7 +424,12 @@
                 })
             },
             routeToHistory () {
-                this.$router.push({ name: 'businessHistory' })
+                this.$router.push({
+                    name: 'businessHistory',
+                    query: {
+                        from: this.$route.fullPath
+                    }
+                })
             },
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {

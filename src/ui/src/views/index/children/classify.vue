@@ -79,13 +79,13 @@
                 return this.availableCollectedData.includes(model.id)
             },
             handleClick (model) {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.$router.push({
                     name: 'generalModel',
                     params: {
                         objId: model.bk_obj_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             },

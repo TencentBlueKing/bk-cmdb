@@ -38,6 +38,7 @@ const commanLimit = 40
 
 type Client interface {
 	Call(cmd string, input interface{}, result interface{}) error
+	CallInfo(cmd string, input interface{}, result interface{}) (addr string, err error)
 	CallStream(cmd string, input interface{}) (*StreamMessage, error)
 	Ping() error
 	TargetID() string
@@ -75,7 +76,7 @@ func NewClient(conn net.Conn, compress string) (*client, error) {
 		done:      util.NewBool(false),
 		send:      make(chan *Message, 1024),
 		messages:  map[uint32]*Message{},
-		codec:     JSONCodec,
+		codec:     BSONCodec,
 		stream:    newStreamStore(),
 	}
 	blog.V(3).Infof("connected to rpc server %s", c.TargetID())
@@ -147,6 +148,15 @@ func (c *client) Call(cmd string, input interface{}, result interface{}) error {
 		return err
 	}
 	return msg.Decode(result)
+}
+
+// Call replica client and return rpc server address
+func (c *client) CallInfo(cmd string, input interface{}, result interface{}) (addr string, err error) {
+	msg, err := c.operation(TypeRequest, cmd, input)
+	if err != nil {
+		return "", err
+	}
+	return c.TargetID(), msg.Decode(result)
 }
 
 // CallStream replica client

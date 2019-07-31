@@ -34,7 +34,8 @@ export default [{
         auth: {
             operation: Object.values(OPERATION)
         },
-        requireBusiness: true
+        requireBusiness: true,
+        i18nTitle: 'Cloud["资源确认"]'
     })
 }, {
     name: 'confirmHistory',
@@ -48,6 +49,7 @@ export default [{
             setAuthScope () {
                 this.authScope = 'global'
             }
-        }
+        },
+        i18nTitle: 'Cloud["确认记录"]'
     })
 }]

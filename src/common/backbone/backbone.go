@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/metrics"
 	"configcenter/src/common/types"
 )
 
@@ -98,6 +99,8 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, err
 	}
 
+	metricService := metrics.NewService(metrics.Config{ProcessName: common.GetIdentification(), ProcessInstance: input.SrvInfo.Instance()})
+
 	common.SetServerInfo(input.SrvInfo)
 	client, err := newSvcManagerClient(ctx, input.Regdiscv)
 	if err != nil {
@@ -130,6 +133,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	engine.discovery = serviceDiscovery
 	engine.ServiceManageInterface = serviceDiscovery
 	engine.srvInfo = input.SrvInfo
+	engine.metric = metricService
 
 	handler := &cc.CCHandler{
 		OnProcessUpdate:  input.ConfigUpdate,
@@ -149,7 +153,7 @@ func StartServer(ctx context.Context, e *Engine, HTTPHandler http.Handler) error
 	e.server = Server{
 		ListenAddr: e.srvInfo.IP,
 		ListenPort: e.srvInfo.Port,
-		Handler:    HTTPHandler,
+		Handler:    e.Metric().HTTPMiddleware(HTTPHandler),
 		TLS:        TLSConfig{},
 	}
 
@@ -182,6 +186,7 @@ type Engine struct {
 	ServiceManageInterface discovery.ServiceManageInterface
 	SvcDisc                ServiceRegisterInterface
 	discovery              discovery.DiscoveryInterface
+	metric                 *metrics.Service
 
 	sync.Mutex
 
@@ -204,6 +209,10 @@ func (e *Engine) ApiMachineryConfig() *util.APIMachineryConfig {
 
 func (e *Engine) ServiceManageClient() *zk.ZkClient {
 	return e.client
+}
+
+func (e *Engine) Metric() *metrics.Service {
+	return e.metric
 }
 
 func (e *Engine) onLanguageUpdate(previous, current map[string]language.LanguageMap) {

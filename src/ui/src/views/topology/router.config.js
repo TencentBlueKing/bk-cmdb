@@ -31,6 +31,7 @@ export default {
                 this.authScope = 'business'
             }
         },
-        requireBusiness: true
+        requireBusiness: true,
+        i18nTitle: 'Nav["业务拓扑"]'
     })
 }

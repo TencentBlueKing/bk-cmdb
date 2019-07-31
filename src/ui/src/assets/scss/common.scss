@@ -278,7 +278,7 @@ input.cmdb-form-input {
     background-color: transparent;
     cursor: pointer;
     &:hover {
-        color: #0082ff;
+        color: #0082ff !important;
     }
 
     &.disabled,

@@ -1,5 +1,8 @@
 export default class Meta {
     constructor (data = {}) {
+        this.title = ''
+        this.i18nTitle = ''
+        this.resetMenu = true
         Object.keys(data).forEach(key => {
             this[key] = data[key]
         })

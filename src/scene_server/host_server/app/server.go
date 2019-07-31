@@ -19,8 +19,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
@@ -33,6 +31,8 @@ import (
 	"configcenter/src/scene_server/host_server/app/options"
 	hostsvc "configcenter/src/scene_server/host_server/service"
 	"configcenter/src/storage/dal/redis"
+
+	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -77,7 +77,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	blog.Info("host server auth config is: %+v", hostSrv.Config.Auth)
-	authorizer, err := auth.NewAuthorize(nil, hostSrv.Config.Auth)
+	authorizer, err := auth.NewAuthorize(nil, hostSrv.Config.Auth, engine.Metric().Registry())
 	if err != nil {
 		blog.Errorf("new host authorizer failed, err: %+v", err)
 		return fmt.Errorf("new host authorizer failed, err: %+v", err)

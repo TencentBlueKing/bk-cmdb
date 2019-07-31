@@ -34,7 +34,7 @@ func updateFranceName(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		return err
 	}
 
-	enums, err := instances.ParseEnumOption(state.Option)
+	enums, err := instances.ParseEnumOption(ctx, state.Option)
 	if err != nil {
 		return err
 	}

@@ -57,7 +57,6 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
@@ -108,7 +107,7 @@
                     }
                 }).then(business => {
                     this.pagination.count = business.count
-                    this.list = this.$tools.flatternList(this.properties, business.info.map(biz => {
+                    this.list = this.$tools.flattenList(this.properties, business.info.map(biz => {
                         biz['last_time'] = this.$tools.formatTime(biz['last_time'], 'YYYY-MM-DD HH:mm:ss')
                         return biz
                     }))

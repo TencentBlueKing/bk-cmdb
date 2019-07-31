@@ -19,6 +19,7 @@ export default {
             setAuthScope () {
                 this.authScope = 'global'
             }
-        }
+        },
+        i18nTitle: 'Nav["操作审计"]'
     })
 }

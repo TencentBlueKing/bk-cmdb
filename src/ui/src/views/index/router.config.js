@@ -3,7 +3,7 @@ import { NAV_INDEX } from '@/dictionary/menu'
 
 const path = '/index'
 
-export default {
+export default [{
     name: 'index',
     path: path,
     component: () => import('./index.vue'),
@@ -15,6 +15,16 @@ export default {
         },
         auth: {
             view: null
+        },
+        i18nTitle: 'Index["首页"]'
+    })
+}, {
+    name: 'search',
+    path: '/index/search',
+    component: () => import('./children/full-text-search.vue'),
+    meta: new Meta({
+        checkAvailable: (to, from, app) => {
+            return window.Site.fullTextSearch === 'on'
         }
     })
-}
+}]

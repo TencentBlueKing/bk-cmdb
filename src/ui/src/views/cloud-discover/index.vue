@@ -4,7 +4,7 @@
             <bk-button class="cloud-btn" type="primary" @click="handleCreate">{{ $t('Cloud["新建云同步任务"]')}}</bk-button>
             <div class="cloud-option-filter clearfix fr">
                 <bk-selector class="cloud-filter-selector fl"
-                    :list="list"
+                    :list="selectList"
                     :selected.sync="defaultDemo.selected">
                 </bk-selector>
                 <input class="cloud-filter-value cmdb-form-input fl"
@@ -55,11 +55,8 @@
                     :show-text="showText">
                 </bk-switcher>
             </template>
-            <template slot="bk_account_type">
-                <span>{{$t('Cloud["腾讯云"]')}}</span>
-            </template>
-            <template slot="bk_obj_id">
-                <span>{{ $t('Hosts["主机"]')}}</span>
+            <template slot="bk_account_type" slot-scope="{ item }">
+                <span v-if="item.bk_account_type === 'tencent_cloud'">{{$t('Cloud[\'腾讯云\']')}}</span>
             </template>
             <template slot="bk_last_sync_time" slot-scope="{ item }">
                 <span v-if="item.bk_last_sync_time === ''">--</span>
@@ -135,7 +132,7 @@
         },
         data () {
             return {
-                list: [{
+                selectList: [{
                     id: 'tencent_cloud',
                     name: this.$t('Cloud["腾讯云"]')
                 }],
@@ -214,7 +211,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Cloud["云资源发现"]'))
             const urlType = this.$route.params.type
             if (urlType) {
                 this.handleCreate()

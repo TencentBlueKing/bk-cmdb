@@ -138,6 +138,10 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	if w.Config.Site.AuthScheme == "" {
 		w.Config.Site.AuthScheme = "internal"
 	}
+	w.Config.Site.FullTextSearch = current.ConfigMap["site.full_text_search"]
+	if w.Config.Site.FullTextSearch == "" {
+		w.Config.Site.FullTextSearch = "off"
+	}
 	w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
 	w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
 	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]

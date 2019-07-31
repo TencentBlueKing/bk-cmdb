@@ -56,9 +56,10 @@ func ValidPrivilege() gin.HandlerFunc {
 
 // GetRolePrivilege get role privilege
 func (p *Privilege) GetRolePrivilege(objID, role string) []string {
+	rid := util.GetHTTPCCRequestID(p.header)
 	result, err := p.Engine.CoreAPI.ApiServer().GetRolePrivilege(context.Background(), p.header, p.OwnerID, objID, role)
 	if nil != err || !result.Result {
-		blog.Warnf("get role privilege json error: %v", err)
+		blog.Warnf("get role privilege json error: %v, rid: %s", err, rid)
 		return []string{}
 	}
 	return result.Data
@@ -66,11 +67,12 @@ func (p *Privilege) GetRolePrivilege(objID, role string) []string {
 
 // GetAppRole get app role
 func (p *Privilege) GetAppRole() []string {
+	rid := util.GetHTTPCCRequestID(p.header)
 	data := make([]string, 0)
 	params := mapstr.MapStr{common.BKPropertyTypeField: "objuser", common.BKObjIDField: common.BKInnerObjIDApp}
 	result, err := p.Engine.CoreAPI.ApiServer().GetAppRole(context.Background(), p.header, params)
 	if nil != err || !result.Result {
-		blog.Warnf("get role privilege json error: %v", err)
+		blog.Warnf("get role privilege json error: %v, rid: %s", err, rid)
 		return data
 	}
 	for _, i := range result.Data {
@@ -85,6 +87,7 @@ func (p *Privilege) GetAppRole() []string {
 
 // GetUserPrivilegeApp get user privilege app
 func (p *Privilege) GetUserPrivilegeApp(appRole []string) map[int64][]string {
+	rid := util.GetHTTPCCRequestID(p.header)
 	orCond := make([]mapstr.MapStr, 0)
 	allCond := mapstr.MapStr{}
 	condition := mapstr.MapStr{}
@@ -102,7 +105,7 @@ func (p *Privilege) GetUserPrivilegeApp(appRole []string) map[int64][]string {
 
 	result, err := p.Engine.CoreAPI.ApiServer().GetUserPrivilegeApp(context.Background(), p.header, p.OwnerID, p.UserName, condition)
 	if nil != err || !result.Result {
-		blog.Errorf("get role privilege app error: %v", err)
+		blog.Errorf("get role privilege app error: %v, rid: %s", err, rid)
 		return userRole
 	}
 
@@ -135,10 +138,11 @@ func (p *Privilege) GetUserPrivilegeApp(appRole []string) map[int64][]string {
 
 // GetUserPrivilegeConfig get user privilege config
 func (p *Privilege) GetUserPrivilegeConfig() (map[string][]string, []string) {
+	rid := util.GetHTTPCCRequestID(p.header)
 	result, err := p.Engine.CoreAPI.ApiServer().GetUserPrivilegeConfig(context.Background(), p.header, p.OwnerID, p.UserName)
 
 	if nil != err || false == result.Result {
-		blog.Warnf("get user privilege json error: %v", err)
+		blog.Warnf("get user privilege json error: %v, rid: %s", err, rid)
 		return nil, nil
 	}
 	sysConfig := make([]string, 0)
@@ -160,10 +164,11 @@ func (p *Privilege) GetUserPrivilegeConfig() (map[string][]string, []string) {
 
 // GetAllMainLineObject get all main line object
 func (p *Privilege) GetAllMainLineObject() []string {
+	rid := util.GetHTTPCCRequestID(p.header)
 	mainLineObjName := make([]string, 0)
 	result, err := p.Engine.CoreAPI.ApiServer().GetAllMainLineObject(context.Background(), p.header, p.OwnerID, p.UserName)
 	if nil != err || false == result.Result {
-		blog.Warnf("get all main line object error: %v", err)
+		blog.Warnf("get all main line object error: %v, rid: %s", err, rid)
 		return mainLineObjName
 	}
 	for _, data := range result.Data {
