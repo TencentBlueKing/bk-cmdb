@@ -65,22 +65,46 @@
             }
         },
         methods: {
-            show (list) {
-                this.list = list
+            show (permission) {
+                this.permission = permission
+                this.setList()
                 this.isModalShow = true
             },
-            handleApplyPermission () {
-                const topWindow = window.top
-                const isPaasConsole = topWindow !== window
-                const authCenter = window.Site.authCenter || {}
-                if (isPaasConsole) {
-                    topWindow.postMessage(JSON.stringify({
-                        action: 'open_other_app',
-                        app_code: authCenter.appCode,
-                        app_url: 'apply-by-system'
-                    }), '*')
-                } else {
-                    window.open(authCenter.url)
+            setList () {
+                const permission = this.permission
+                this.list = permission.map(datum => {
+                    const scope = [datum.scope_type_name]
+                    if (datum.scope_id) {
+                        scope.push(datum.scope_name)
+                    }
+                    return {
+                        scope: this.getPermissionText(datum, 'scope_type_name', 'scope_name'),
+                        resource: datum.resources.map(resource => {
+                            const resourceInfo = resource.map(info => this.getPermissionText(info, 'resource_type_name', 'resource_name')).join('\n')
+                            return resourceInfo
+                        }).join('\n'),
+                        action: datum.action_name
+                    }
+                })
+            },
+            getPermissionText (data, necessaryKey, extraKey, split = '：') {
+                const text = [data[necessaryKey]]
+                if (data[extraKey]) {
+                    text.push(data[extraKey])
+                }
+                return text.join(split)
+            },
+            async handleApplyPermission () {
+                try {
+                    const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
+                        params: this.permission,
+                        config: {
+                            requestId: 'getSkipUrl'
+                        }
+                    })
+                    window.open(skipUrl)
+                } catch (e) {
+                    console.error(e)
                 }
             },
             onCloseDialog () {

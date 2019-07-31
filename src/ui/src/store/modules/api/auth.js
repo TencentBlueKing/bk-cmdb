@@ -121,6 +121,9 @@ const actions = {
         }
         commit('setAdminEntranceAuth', data)
         return Promise.resolve(data)
+    },
+    getSkipUrl (context, { params, config }) {
+        return $http.post('auth/skip_url', params, config)
     }
 }
 
