@@ -6,7 +6,7 @@
 
 package wiremessage
 
-import "bk_bson/bson"
+import "github.com/rentiansheng/bk_bsonbson"
 
 // Update represents the OP_UPDATE message of the MongoDB wire protocol.
 type Update struct {

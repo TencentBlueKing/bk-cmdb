@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"bk_bson/mongo/readpref"
-	"bk_bson/tag"
-	"bk_bson/x/network/address"
+	"github.com/rentiansheng/bk_bsonmongo/readpref"
+	"github.com/rentiansheng/bk_bsontag"
+	"github.com/rentiansheng/bk_bsonx/network/address"
 	"github.com/stretchr/testify/require"
 )
 

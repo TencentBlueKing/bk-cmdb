@@ -10,7 +10,7 @@ import (
 	"bytes"
 	"errors"
 
-	"bk_bson/bson"
+	"github.com/rentiansheng/bk_bsonbson"
 )
 
 func readInt32(b []byte, pos int32) int32 {

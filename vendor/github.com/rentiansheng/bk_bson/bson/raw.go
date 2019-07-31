@@ -10,7 +10,7 @@ import (
 	"errors"
 	"io"
 
-	"bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
 )
 
 // ErrNilReader indicates that an operation was attempted on a nil bson.Reader.

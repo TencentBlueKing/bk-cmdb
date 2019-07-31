@@ -6,7 +6,7 @@
 
 package wiremessage
 
-import "bk_bson/bson"
+import "github.com/rentiansheng/bk_bsonbson"
 
 // Command represents the OP_COMMAND message of the MongoDB wire protocol.
 type Command struct {

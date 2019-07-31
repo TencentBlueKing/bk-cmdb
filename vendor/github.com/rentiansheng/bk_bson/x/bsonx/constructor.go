@@ -11,8 +11,8 @@ import (
 	"math"
 	"time"
 
-	"bk_bson/bson/bsontype"
-	"bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
 )
 
 // IDoc is the interface implemented by Doc and MDoc. It allows either of these types to be provided

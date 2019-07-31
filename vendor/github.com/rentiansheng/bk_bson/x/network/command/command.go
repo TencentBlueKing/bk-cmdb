@@ -13,17 +13,17 @@ import (
 
 	"fmt"
 
-	"bk_bson/bson"
-	"bk_bson/bson/bsontype"
-	"bk_bson/bson/primitive"
-	"bk_bson/mongo/readconcern"
-	"bk_bson/mongo/writeconcern"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/bsonx/bsoncore"
-	"bk_bson/x/mongo/driver/session"
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/result"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bsonmongo/readconcern"
+	"github.com/rentiansheng/bk_bsonmongo/writeconcern"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/session"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/result"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 // WriteBatch represents a single batch for a write operation.

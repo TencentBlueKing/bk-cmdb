@@ -11,8 +11,8 @@ import (
 	"math"
 	"time"
 
-	"bk_bson/mongo/readpref"
-	"bk_bson/tag"
+	"github.com/rentiansheng/bk_bsonmongo/readpref"
+	"github.com/rentiansheng/bk_bsontag"
 )
 
 // ServerSelector is an interface implemented by types that can select a server given a

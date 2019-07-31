@@ -7,9 +7,9 @@
 package command
 
 import (
-	"bk_bson/bson"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 func decodeCommandOpMsg(msg wiremessage.Msg) (bson.Raw, error) {

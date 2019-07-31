@@ -13,13 +13,13 @@ import (
 	"testing"
 	"time"
 
-	"bk_bson/internal/testutil"
-	"bk_bson/x/mongo/driver/auth"
-	"bk_bson/x/mongo/driver/topology"
-	"bk_bson/x/network/address"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/compressor"
-	"bk_bson/x/network/connection"
+	"github.com/rentiansheng/bk_bsoninternal/testutil"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/auth"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/compressor"
+	"github.com/rentiansheng/bk_bsonx/network/connection"
 )
 
 func TestTopologyServer(t *testing.T) {

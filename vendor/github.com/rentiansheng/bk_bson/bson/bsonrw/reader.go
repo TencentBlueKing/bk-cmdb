@@ -7,8 +7,8 @@
 package bsonrw
 
 import (
-	"bk_bson/bson/bsontype"
-	"bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
 )
 
 // ArrayReader is implemented by types that allow reading values from a BSON

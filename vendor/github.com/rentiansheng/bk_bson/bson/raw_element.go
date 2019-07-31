@@ -7,7 +7,7 @@
 package bson
 
 import (
-	"bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
 )
 
 // RawElement represents a BSON element in byte form. This type provides a simple way to

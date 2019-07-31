@@ -3,7 +3,7 @@ package util
 import (
 	"reflect"
 
-	"bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
 )
 
 // MapType use map decoder validation type

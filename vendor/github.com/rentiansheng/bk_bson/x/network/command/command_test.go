@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"bk_bson/mongo/readpref"
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonmongo/readpref"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 func noerr(t *testing.T, err error) {

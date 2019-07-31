@@ -13,15 +13,15 @@ import (
 	"bytes"
 	"errors"
 
-	"bk_bson/bson"
-	"bk_bson/internal"
-	"bk_bson/internal/testutil"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/mongo/driver/topology"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/connection"
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bsoninternal"
+	"github.com/rentiansheng/bk_bsoninternal/testutil"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/connection"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 func createServerConn(t *testing.T) (*topology.SelectedServer, connection.Connection) {

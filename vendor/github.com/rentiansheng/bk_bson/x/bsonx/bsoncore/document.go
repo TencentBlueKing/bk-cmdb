@@ -14,7 +14,7 @@ import (
 	"strconv"
 
 	"github.com/go-stack/stack"
-	"bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
 )
 
 // DocumentValidationError is an error type returned when attempting to validate a document.

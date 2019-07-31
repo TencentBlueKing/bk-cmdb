@@ -12,9 +12,9 @@ import (
 	"reflect"
 	"sync"
 
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/bson/bsonrw"
-	"bk_bson/bson/util"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw"
+	"github.com/rentiansheng/bk_bson/bson/util"
 )
 
 // This pool is used to keep the allocations of Decoders down. This is only used for the Marshal*

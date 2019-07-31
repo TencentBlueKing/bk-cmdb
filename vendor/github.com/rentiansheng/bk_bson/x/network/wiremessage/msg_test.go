@@ -10,7 +10,7 @@ import (
 	"bytes"
 	"testing"
 
-	"bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
 )
 
 var doc = bsonx.Doc{{"x", bsonx.Int32(5)}}

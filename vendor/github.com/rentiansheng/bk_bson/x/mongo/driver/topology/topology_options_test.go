@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"bk_bson/x/network/connstring"
+	"github.com/rentiansheng/bk_bsonx/network/connstring"
 	"github.com/stretchr/testify/assert"
 )
 

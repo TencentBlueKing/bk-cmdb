@@ -12,8 +12,8 @@ import (
 	"path"
 	"testing"
 
-	"bk_bson/internal/testutil/helpers"
-	"bk_bson/x/network/connstring"
+	"github.com/rentiansheng/bk_bsoninternal/testutil/helpers"
+	"github.com/rentiansheng/bk_bsonx/network/connstring"
 	"github.com/stretchr/testify/require"
 )
 

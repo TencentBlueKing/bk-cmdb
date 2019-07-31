@@ -1,8 +1,8 @@
 package bsonx
 
 import (
-	"bk_bson/bson"
-	"bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
 )
 
 // DefaultRegistry is the default bsoncodec.Registry. It contains the default codecs and the

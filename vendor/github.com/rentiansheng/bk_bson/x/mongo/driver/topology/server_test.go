@@ -11,10 +11,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"bk_bson/x/mongo/driver/auth"
-	"bk_bson/x/network/address"
-	"bk_bson/x/network/connection"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/auth"
+	"github.com/rentiansheng/bk_bsonx/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/connection"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 	"github.com/stretchr/testify/require"
 )
 
