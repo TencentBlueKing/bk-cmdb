@@ -748,7 +748,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ids := []int64{}
+		ids := make([]int64, 0)
 		gjson.GetBytes(ps.RequestCtx.Body, "update.#.inst_id").ForEach(
 			func(key, value gjson.Result) bool {
 				ids = append(ids, value.Int())
@@ -1595,10 +1595,11 @@ const (
 )
 
 var (
-	deleteMainlineObjectLatestRegexp         = regexp.MustCompile(`^/api/v3/delete/topomodelmainline/object/[^\s/]+/?$`)
-	findBusinessInstanceTopologyLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst/biz/[0-9]+/?$`)
-	findMainineSubInstanceTopoLatestRegexp   = regexp.MustCompile(`^/api/v3/topoinstchild/object/[^\s/]+/biz/[0-9]+/inst/[0-9]+/?$`)
-	findMainlineIdleFaultModuleLatestRegexp  = regexp.MustCompile(`^/api/v3/find/topointernal/biz/[0-9]+/?$`)
+	deleteMainlineObjectLatestRegexp                       = regexp.MustCompile(`^/api/v3/delete/topomodelmainline/object/[^\s/]+/?$`)
+	findBusinessInstanceTopologyLatestRegexp               = regexp.MustCompile(`^/api/v3/find/topoinst/biz/[0-9]+/?$`)
+	findBusinessInstanceTopologyWithStatisticsLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst_with_statistics/biz/[0-9]+/?$`)
+	findMainineSubInstanceTopoLatestRegexp                 = regexp.MustCompile(`^/api/v3/topoinstchild/object/[^\s/]+/biz/[0-9]+/inst/[0-9]+/?$`)
+	findMainlineIdleFaultModuleLatestRegexp                = regexp.MustCompile(`^/api/v3/find/topointernal/biz/[0-9]+/?$`)
 )
 
 func (ps *parseStream) mainlineLatest() *parseStream {
@@ -1715,7 +1716,8 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// find business instance topology operation.
 	// also is find mainline instance topology operation.
-	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) {
+	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) ||
+		ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find business instance topology, but got invalid url")
 			return ps
