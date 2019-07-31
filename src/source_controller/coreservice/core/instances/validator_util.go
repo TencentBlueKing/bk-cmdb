@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 
-	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/rentiansheng/bk_bson/bson"
 	"github.com/tidwall/gjson"
 	mgobson "gopkg.in/mgo.v2/bson"
 )
