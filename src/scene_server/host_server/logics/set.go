@@ -51,7 +51,7 @@ func (lgc *Logics) GetSetIDByCond(ctx context.Context, cond []metadata.Condition
 		setID, err := i.Int64(common.BKSetIDField)
 		if err != nil {
 			blog.Errorf("GetSetIDByCond convert %s %s to integer error, set info:%+v, input:%+v,rid:%s", common.BKInnerObjIDSet, common.BKSetIDField, i, query, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
 		}
 		setIDArr = append(setIDArr, setID)
 	}
@@ -80,7 +80,7 @@ func (lgc *Logics) GetSetMapByCond(ctx context.Context, fields []string, cond ma
 		setID, err := i.Int64(common.BKSetIDField)
 		if err != nil {
 			blog.Errorf("GetSetMapByCond convert %s %s to integer error, set info:%+v, input:%+v,rid:%s", common.BKInnerObjIDSet, common.BKSetIDField, i, query, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
 		}
 
 		setMap[setID] = i

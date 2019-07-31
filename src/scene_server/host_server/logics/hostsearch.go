@@ -355,7 +355,7 @@ func (sh *searchHost) convInstInfoToAssociateInfo(instIDKey, instNameKey, objID 
 		}
 		instID, err := instInfo.Int64(instIDKey)
 		if err != nil {
-			return nil, sh.ccErr.Errorf(common.CCErrCommInstFieldConvFail, objID, instIDKey, "int", err.Error())
+			return nil, sh.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, objID, instIDKey, "int", err.Error())
 		}
 		asstInst.ID = strconv.FormatInt(instID, 10)
 		asstInst.ObjectID = instID

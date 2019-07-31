@@ -40,7 +40,7 @@ func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, erro
 	id, err := util.GetInt64ByInterface(appDetails[common.BKAppIDField])
 	if nil != err {
 		blog.Errorf("GetDefaultAppID http response format error,convert bk_biz_id to int error, err:%s, inst:%+v, rid:%s", err.Error(), appDetails, lgc.rid)
-		return -1, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+		return -1, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 	}
 	return id, nil
 }
@@ -58,7 +58,7 @@ func (lgc *Logics) GetDefaultAppID(ctx context.Context) (int64, errors.CCError) 
 	id, err := appDetails.Int64(common.BKAppIDField)
 	if nil != err {
 		blog.Errorf("GetDefaultAppID http response format error,convert bk_biz_id to int error, err:%s, inst:%+v, rid:%s", err.Error(), appDetails, lgc.rid)
-		return -1, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+		return -1, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 	}
 	return id, nil
 }
@@ -201,7 +201,7 @@ func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.Condition
 		id, err := info.Int64(common.BKAppIDField)
 		if err != nil {
 			blog.Errorf("GetAppIDByCond http response format error,convert bk_biz_id to int error, err:%s, inst:%+v  input:%+v, rid:%s", err.Error(), info, query, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 		appIDs = append(appIDs, id)
 	}
@@ -236,7 +236,7 @@ func (lgc *Logics) GetAppMapByCond(ctx context.Context, fields []string, cond ma
 		id, err := info.Int64(common.BKAppIDField)
 		if err != nil {
 			blog.Errorf("GetAppMapByCond http response format error,convert bk_biz_id to int error, err:%s, inst:%+v  input:%+v, rid:%s", err.Error(), info, query, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 		appMap[id] = info
 	}

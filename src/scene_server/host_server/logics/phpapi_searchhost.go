@@ -108,7 +108,7 @@ func (phpapi *PHPAPI) GetHostMapByCond(ctx context.Context, condition map[string
 		HostID, err := host.Int64(common.BKHostIDField)
 		if nil != err {
 			blog.Errorf("getHostMapByCond  hostID not integer, err:%s,input:%s,host:%+v,rid:%s", err.Error(), condition, host, phpapi.rid)
-			return nil, nil, phpapi.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+			return nil, nil, phpapi.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 		}
 
 		hostMap[HostID] = host

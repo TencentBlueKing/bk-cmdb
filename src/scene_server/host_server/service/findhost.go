@@ -68,12 +68,10 @@ func (s *Service) ListHostByTopoNode(req *restful.Request, resp *restful.Respons
 
 	s.CoreAPI.CoreService()
 	option := meta.ListHostByTopoNodeOption{
-		BizID:              bizID,
-		SetIDs:             parameter.SetIDs,
-		ModuleIDs:          parameter.ModuleIDs,
-		Page:               parameter.Page,
-		StdProperty:        parameter.StdProperty,
-		ExcludeStdProperty: parameter.ExcludeStdProperty,
+		BizID:     bizID,
+		SetIDs:    parameter.SetIDs,
+		ModuleIDs: parameter.ModuleIDs,
+		Page:      parameter.Page,
 	}
 	host, err := s.CoreAPI.CoreService().Host().ListHostByTopoNode(ctx, header, option)
 	if err != nil {

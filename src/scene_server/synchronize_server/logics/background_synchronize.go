@@ -63,7 +63,7 @@ func (lgc *Logics) NewSynchronizeItem(version int64, syncConfig *options.ConfigI
 }
 
 func (s *synchronizeItem) configPretreatment() {
-	if len(s.config.ObjectIDArr) > 0 && s.config.WiteList {
+	if len(s.config.ObjectIDArr) > 0 && s.config.WhiteList {
 		objectIDArr := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
 		s.config.ObjectIDArr = append(s.config.ObjectIDArr, objectIDArr...)
 	}
@@ -125,6 +125,11 @@ func (s *synchronizeItem) synchronizeItemException(ctx context.Context, exceptio
 func (s *synchronizeItem) synchronizeInstanceTask(ctx context.Context) (errorInfoArr []metadata.ExceptionResult, err errors.CCError) {
 
 	inst := s.lgc.NewFetchInst(s.config, s.baseCondition)
+	err = inst.Pretreatment()
+	if err != nil {
+		blog.Errorf("instance Pretreatment error. err:%s, rid:%s", err.Error(), s.lgc.rid)
+		return nil, err
+	}
 	var partErrorInfoArr []metadata.ExceptionResult
 
 	// must first business.  get synchronize app information,
@@ -217,9 +222,9 @@ func (s *synchronizeItem) sycnhronizePartInstance(ctx context.Context, input *me
 		id, err := item.Int64(IDField)
 		if err != nil {
 			//  CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
-			ccErrInst := lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, input.DataClassify, IDField, "int64", err.Error())
+			ccErrInst := lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, input.DataClassify, IDField, "int64", err.Error())
 			errorInfoArr = append(errorInfoArr, metadata.ExceptionResult{
-				Code:        common.CCErrCommInstFieldConvFail,
+				Code:        common.CCErrCommInstFieldConvertFail,
 				Message:     ccErrInst.Error(),
 				Data:        item,
 				OriginIndex: 0,
@@ -256,7 +261,7 @@ func (s *synchronizeItem) synchronizeModelTask(ctx context.Context) ([]metadata.
 	var errorInfoArr []metadata.ExceptionResult
 	baseCondition := condition.CreateCondition()
 	if len(s.config.ObjectIDArr) > 0 {
-		if s.config.WiteList {
+		if s.config.WhiteList {
 			baseCondition.Field(common.BKObjIDField).In(s.config.ObjectIDArr)
 		} else {
 			baseCondition.Field(common.BKObjIDField).NotIn(s.config.ObjectIDArr)
@@ -265,12 +270,16 @@ func (s *synchronizeItem) synchronizeModelTask(ctx context.Context) ([]metadata.
 	conditionMapStr := baseCondition.ToMapStr()
 	conditionMapStr.Merge(s.baseCondition)
 	model := s.lgc.NewFetchModel(s.config, conditionMapStr)
+	err := model.Pretreatment()
+	if err != nil {
+		blog.Errorf("model Pretreatment error. err:%s, rid:%s", err.Error(), s.lgc.rid)
+		return nil, err
+	}
 	classifyArr := []string{
 		common.SynchronizeModelTypeBase,
 		common.SynchronizeModelTypeClassification,
 		common.SynchronizeModelTypeAttribute,
 		common.SynchronizeModelTypeAttributeGroup,
-		common.SynchronizeModelTypeModelClassificationRelation,
 	}
 	for _, dataClassify := range classifyArr {
 		partErrorInfoArr, err := s.synchronizeModel(ctx, model, dataClassify)
@@ -334,9 +343,9 @@ func (s *synchronizeItem) sycnhronizePartModel(ctx context.Context, input *metad
 		id, err := item.Int64(common.BKFieldID)
 		if err != nil {
 			//  CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
-			ccErrInst := s.lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, "model attribute", common.BKFieldID, "int64", err.Error())
+			ccErrInst := s.lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, "model attribute", common.BKFieldID, "int64", err.Error())
 			errorInfoArr = append(errorInfoArr, metadata.ExceptionResult{
-				Code:        common.CCErrCommInstFieldConvFail,
+				Code:        common.CCErrCommInstFieldConvertFail,
 				Message:     ccErrInst.Error(),
 				Data:        item,
 				OriginIndex: 0,
@@ -348,7 +357,12 @@ func (s *synchronizeItem) sycnhronizePartModel(ctx context.Context, input *metad
 		}
 		synchronizeParameter.InfoArray = append(synchronizeParameter.InfoArray, &metadata.SynchronizeItem{ID: id, Info: item})
 	}
-
+	// 当配置不需要同步模型的时候。不去保存数据，
+	// 但是需要使用上面的功能获取需要同步模型id。 s.ojjIDMap
+	if s.config.IgnoreModelAttr {
+		blog.V(4).Infof("sycnhronizePartModel skip. rid:%s, version:%v", s.lgc.rid, s.version)
+		return errorInfoArr, nil
+	}
 	result, err := s.lgc.CoreAPI.CoreService().Synchronize().SynchronizeModel(ctx, s.lgc.header, synchronizeParameter)
 	if err != nil {
 		blog.Errorf("sycnhronizePartModel http do error, error: %s,DataSign: %s,DataTeyp: %s,rid:%s", err.Error(), input.DataClassify, input.OperateDataType, s.lgc.rid)
@@ -442,9 +456,9 @@ func (s *synchronizeItem) sycnhronizePartAssociation(ctx context.Context, input 
 		id, err := item.Int64(common.BKFieldID)
 		if err != nil {
 			//  CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
-			ccErrInst := s.lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, "model associate", common.BKFieldID, "int64", err.Error())
+			ccErrInst := s.lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, "model associate", common.BKFieldID, "int64", err.Error())
 			errorInfoArr = append(errorInfoArr, metadata.ExceptionResult{
-				Code:        common.CCErrCommInstFieldConvFail,
+				Code:        common.CCErrCommInstFieldConvertFail,
 				Message:     ccErrInst.Error(),
 				Data:        item,
 				OriginIndex: 0,

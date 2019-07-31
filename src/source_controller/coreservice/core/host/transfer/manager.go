@@ -215,7 +215,7 @@ func (manager *TransferManager) RemoveFromModule(ctx core.ContextParams, input *
 	hostConfigs := make([]metadata.ModuleHost, 0)
 	if err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(ctx.Context, &hostConfigs); err != nil {
 		blog.ErrorJSON("RemoveFromModule failed, find host module config failed, filter:%s, hostID:%s, err:%s, rid:%s", hostConfigFilter, common.BKTableNameModuleHostConfig, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrHostModuleConfigFaild, err.Error())
+		return nil, ctx.Error.CCErrorf(common.CCErrHostModuleConfigFailed, err.Error())
 	}
 
 	// 如果主机不在参数指定的模块中，操作失败
