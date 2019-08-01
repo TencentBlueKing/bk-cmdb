@@ -89,7 +89,7 @@ func (t *object) UpdateObject(ctx context.Context, objID string, h http.Header, 
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/object/%s", objID)
 
-	err = t.client.Post().
+	err = t.client.Put().
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
