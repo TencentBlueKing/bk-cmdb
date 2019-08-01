@@ -85,6 +85,8 @@ div.cmdb-form-item {
             font-size: 12px;
             line-height: 14px;
             color: $cmdbDangerColor;
+            max-width: 100%;
+            @include ellipsis;
         }
     }
 
