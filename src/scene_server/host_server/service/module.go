@@ -67,6 +67,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 		blog.Errorf("check move host to module authorization failed, hosts: %+v, err: %v", config.HostID, err)
 		if err != auth.NoAuthorizeError {
 			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
 		}
 		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, config.HostID)
 		if err != nil {

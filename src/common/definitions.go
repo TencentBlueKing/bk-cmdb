@@ -130,6 +130,9 @@ const (
 )
 
 const (
+	// used only for host search
+	BKDBMULTIPLELike = "$multilike"
+
 	// BKDBIN the db operator
 	BKDBIN = "$in"
 

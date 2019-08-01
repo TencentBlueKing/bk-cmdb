@@ -678,8 +678,15 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 	}
 
 	condition := make(map[string]interface{})
-	hostParse.ParseHostParams(sh.conds.hostCond.Condition, condition)
-	hostParse.ParseHostIPParams(sh.hostSearchParam.Ip, condition)
+	err = hostParse.ParseHostParams(sh.conds.hostCond.Condition, condition)
+	if err != nil {
+		return err
+	}
+
+	err = hostParse.ParseHostIPParams(sh.hostSearchParam.Ip, condition)
+	if err != nil {
+		return err
+	}
 
 	query := &metadata.QueryInput{
 		Condition: condition,
