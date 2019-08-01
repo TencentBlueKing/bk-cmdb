@@ -4,14 +4,15 @@
             <textarea ref="textarea"
                 v-model="localValue"
                 :rows="rows"
-                @focus="setRows"
-                @blur="resetRows"
+                :placeholder="$t('请输入关键词')"
+                @focus="handleFocus"
+                @blur="handleBlur"
                 @input="setValue"
                 @keydown.enter="handleEnter"
                 @keydown.delete="handleDelete">
             </textarea>
             <i class="bk-icon icon-close"
-                v-show="localValue.length"
+                v-show="focus && localValue.length"
                 @click="handleClear">
             </i>
         </div>
@@ -31,7 +32,8 @@
             return {
                 localValue: this.value,
                 rows: 1,
-                timer: null
+                timer: null,
+                focus: false
             }
         },
         watch: {
@@ -63,9 +65,15 @@
                 const rows = this.localValue.split('\n').length
                 this.rows = Math.min(5, Math.max(rows, 1))
             },
-            resetRows () {
+            handleFocus () {
+                this.setRows()
+                this.focus = true
+            },
+            handleBlur () {
+                this.focus = false
                 this.timer = setTimeout(() => {
                     this.rows = 1
+                    this.$refs.textarea.scrollTop = 0
                 }, 200)
             },
             handleEnter () {
@@ -88,7 +96,7 @@
             left: 0;
             width: 100%;
             line-height: 24px;
-            z-index: 1500;
+            z-index: 100;
             textarea {
                 display: block;
                 width: 100%;
