@@ -195,9 +195,11 @@ const (
 
 	// 构造DB查询条件失败
 	CCErrConstructDBFilterFailed = 1199071
-
+    CCErrGetNoAuthSkipUrlFailed     = 1199072
+    
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
+
 
 	// CCErrCommInternalServerError %s Internal Server Error
 	CCErrCommInternalServerError = 1199999
