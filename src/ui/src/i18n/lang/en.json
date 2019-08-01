@@ -949,7 +949,7 @@
         "考虑显示效果，上限为25个，100%宽度建议显示20个，50%宽度10个": "Considering the display effect, the upper limit is 25, the 100% width is recommended to display 20, and the 50% width is 10.",
         "横轴坐标数量": "Number of abscissal coordinates",
         "新增图表": "Add Chart",
-        "所有更改已实时保存": "All changes are saved in real time",
+        "所有更改将自动保存": "All changes will be saved automatically",
         "编辑图表": "Edit Chart",
         "实例总数": "Inst Amount",
         "模型总数":"Model Amount",
@@ -972,7 +972,12 @@
         "该图表暂无数据": "The chart has no data for the time being.",
         "编辑模式": "Editorial Model",
         "退出编辑模式": "Exit editing",
-        "是否确认删除": "Whether to confirm deletion?"
+        "是否确认删除": "Whether to confirm deletion?",
+        "不包含业务、主机模型及实例": "Does not include business, host model and examples",
+        "添加主机图表": "Add Host Chart",
+        "添加实例图表": "Add Instance Chart",
+        "新增主机统计图表": "New Host Statistical Chart",
+        "新增实例统计图表": "Statistical Charts of New Instances"
     },
     "HostDetails": {
         "主机详情": "Host Details",

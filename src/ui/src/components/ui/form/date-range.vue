@@ -10,6 +10,7 @@
             :timer="timer"
             :start-date="startDate"
             :end-date="endDate"
+            :auto-close="autoClose"
             @change="handleChange">
         </bk-date-range>
         <div class="icon-box" :class="{ 'icon-toggle': hoverToggle }">
@@ -62,6 +63,10 @@
                 default: false
             },
             showClose: {
+                type: Boolean,
+                default: false
+            },
+            autoClose: {
                 type: Boolean,
                 default: false
             }

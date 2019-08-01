@@ -191,7 +191,8 @@
     * @param startDate: 'YYYY-MM-DD' -默认开始日期
     * @param endDate: 'YYYY-MM-DD' -默认结束日期
     * @param quickSelect: true/false -快捷选择开关
-    * @param ranges: true/false -选择日期后是否自动关闭
+    * @param ranges: Object -快速选择日期类型
+    * @param autoClose: true/false -选择日期后是否自动关闭
     */
 
     export default {
@@ -273,6 +274,10 @@
             endDateMax: {
                 type: String,
                 default: ''
+            },
+            autoClose: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -639,6 +644,7 @@
                         format(setHours(setMinutes(setSeconds(endDate, second), minute), hour), 'YYYY-MM-DD')
                         : endDate
                 )
+                if (this.autoClose) this.showDatePanel = false
             },
 
             // 日期快速切换回调
