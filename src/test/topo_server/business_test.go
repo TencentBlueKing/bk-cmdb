@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("business test", func() {
 
-	var bizId, bizId2 int
+	var bizId, bizId2 string
 
 	It("create business bk_biz_name = 'eereeede'", func() {
 		input := map[string]interface{}{
@@ -31,7 +31,7 @@ var _ = Describe("business test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(ContainElement("eereeede"))
-		bizId = int(rsp.Data["bk_biz_id"].(float64))
+		bizId = strconv.FormatInt(int64(rsp.Data["bk_biz_id"].(float64)), 10)
 	})
 
 	It("create business bk_biz_name = 'mmrmm'", func() {
@@ -50,26 +50,21 @@ var _ = Describe("business test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(ContainElement("mmrmm"))
-		bizId2 = int(rsp.Data["bk_biz_id"].(float64))
+		bizId2 = strconv.FormatInt(int64(rsp.Data["bk_biz_id"].(float64)), 10)
 	})
 
-	It(fmt.Sprintf("update business bk_biz_id = %d", bizId), func() {
+	It(fmt.Sprintf("update business bk_biz_id = %s", bizId), func() {
 		input := map[string]interface{}{
-			"bk_biz_developer":  "",
-			"bk_biz_maintainer": "admin",
-			"bk_biz_name":       "cdewdercfee",
-			"bk_biz_productor":  "",
-			"bk_biz_tester":     "",
-			"life_cycle":        "2",
-			"operator":          "",
+			"bk_biz_name": "cdewdercfee",
+			"life_cycle":  "2",
 		}
-		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", strconv.Itoa(bizId), header, input)
+		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", bizId, header, input)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
 
-	It(fmt.Sprintf("update business enable status bk_biz_id = %d", bizId2), func() {
-		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, strconv.Itoa(bizId2), header)
+	It(fmt.Sprintf("update business enable status bk_biz_id = %s", bizId2), func() {
+		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, bizId2, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
