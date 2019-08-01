@@ -122,14 +122,10 @@ const (
 	BKInnerObjIDApache = "bk_apache"
 )
 
-// Revision
 const (
-	RevisionEnterprise = "enterprise"
-	RevisionCommunity  = "community"
-	RevisionOpensource = "opensource"
-)
+	// used only for host search
+	BKDBMULTIPLELike = "$multilike"
 
-const (
 	// BKDBIN the db operator
 	BKDBIN = "$in"
 
