@@ -52,22 +52,32 @@ func (ih *IAMHandler) HandleUserGroupSync(task *meta.WorkRequest) error {
 		case common.BKMaintainersField:
 			if !isUserDifferent(m.Users, strings.Split(biz.Maintainer, ",")) {
 				changedFields[common.BKMaintainersField] = strings.Join(m.Users, ",")
+				blog.Warnf("sync user group with biz: %s,  %s has changed from: %s to %+v.", biz.BKAppNameField,
+					common.BKMaintainersField, biz.Maintainer, m.Users)
 			}
 		case common.BKProductPMField:
-			if !isUserDifferent(m.Users, strings.Split(biz.Maintainer, ",")) {
+			if !isUserDifferent(m.Users, strings.Split(biz.Producer, ",")) {
 				changedFields[common.BKProductPMField] = strings.Join(m.Users, ",")
+				blog.Warnf("sync user group with biz: %s,  %s has changed from: %s to %+v.", biz.BKAppNameField,
+					common.BKProductPMField, biz.Producer, m.Users)
 			}
 		case common.BKTesterField:
-			if !isUserDifferent(m.Users, strings.Split(biz.Maintainer, ",")) {
+			if !isUserDifferent(m.Users, strings.Split(biz.Tester, ",")) {
 				changedFields[common.BKTesterField] = strings.Join(m.Users, ",")
+				blog.Warnf("sync user group with biz: %s,  %s has changed from: %s to %+v.", biz.BKAppNameField,
+					common.BKTesterField, biz.Tester, m.Users)
 			}
 		case common.BKDeveloperField:
-			if !isUserDifferent(m.Users, strings.Split(biz.Maintainer, ",")) {
+			if !isUserDifferent(m.Users, strings.Split(biz.Developer, ",")) {
 				changedFields[common.BKDeveloperField] = strings.Join(m.Users, ",")
+				blog.Warnf("sync user group with biz: %s,  %s has changed from: %s to %+v.", biz.BKAppNameField,
+					common.BKDeveloperField, biz.Developer, m.Users)
 			}
 		case common.BKOperatorField:
-			if !isUserDifferent(m.Users, strings.Split(biz.Maintainer, ",")) {
+			if !isUserDifferent(m.Users, strings.Split(biz.Operator, ",")) {
 				changedFields[common.BKOperatorField] = strings.Join(m.Users, ",")
+				blog.Warnf("sync user group with biz: %s,  %s has changed from: %s to %+v.", biz.BKAppNameField,
+					common.BKOperatorField, biz.Operator, m.Users)
 			}
 		default:
 			return fmt.Errorf("sync user group from auth center, but got unsupported user group: %s", m.Name)
@@ -79,7 +89,6 @@ func (ih *IAMHandler) HandleUserGroupSync(task *meta.WorkRequest) error {
 		return nil
 	}
 
-	blog.V(4).Infof("sync user group with biz: %s, user group has changed: %+v, prepare to update.", biz.BKAppNameField, changedFields)
 	// user group has changed, need to sync to cmdb now.
 	op := metadata.UpdateOption{
 		Condition: map[string]interface{}{
@@ -87,6 +96,8 @@ func (ih *IAMHandler) HandleUserGroupSync(task *meta.WorkRequest) error {
 		},
 		Data: changedFields,
 	}
+	h.Set(common.BKHTTPOwner, "0")
+	h.Set(common.BKHTTPHeaderUser, "cc_system")
 	result, err := ih.clientSet.CoreService().Instance().UpdateInstance(context.TODO(), h, "biz", &op)
 	if err != nil {
 		return fmt.Errorf("sync user group, usr has changed, but update: %+v to biz: %d, name: %s failed, err: %v",
@@ -97,7 +108,7 @@ func (ih *IAMHandler) HandleUserGroupSync(task *meta.WorkRequest) error {
 		return fmt.Errorf("sync user group, usr has changed, but update: %+v to biz: %d, name: %s failed, err: %v",
 			changedFields, biz.BKAppIDField, biz.BKAppNameField, result.ErrMsg)
 	}
-	blog.V(4).Infof("sync user group with biz: %s success", biz.BKAppNameField)
+	blog.Warnf("sync user group with biz: %s success", biz.BKAppNameField)
 	return nil
 }
 

@@ -35,7 +35,6 @@ func (ih *IAMHandler) HandleBusinessSync(task *meta.WorkRequest) error {
 		blog.Info("no business found")
 	}
 
-	blog.Info("list business businessList: %+v", businesses)
 	resources := ih.authManager.MakeResourcesByBusiness(*header, authmeta.EmptyAction, businesses...)
 
 	// step2 get businesses from iam
