@@ -28,7 +28,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	info := new(ResourceInfo)
 	info.ResourceName = attribute.Basic.Name
 
-	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
+	resourceTypeID, err := ConvertResourceType(attribute.Type, attribute.BusinessID)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 // Adaptor is a middleware wrapper which works for converting concepts
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
-func convertResourceType(resourceType meta.ResourceType, businessID int64) (*ResourceTypeID, error) {
+func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*ResourceTypeID, error) {
 	var iamResourceType ResourceTypeID
 	switch resourceType {
 	case meta.Business:
@@ -224,7 +224,7 @@ var ActionIDNameMap = map[ActionID]string{
 	BindModule: "绑定到模块",
 }
 
-func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
+func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	if r.Basic.Type == meta.ModelAttributeGroup ||
 		r.Basic.Type == meta.ModelUnique ||
 		r.Basic.Type == meta.ModelAttribute {
@@ -347,14 +347,14 @@ func AdoptPermissions(rs []meta.ResourceAttribute) ([]metadata.Permission, error
 			p.ScopeTypeName = ScopeTypeIDSystemName
 		}
 
-		actID, err := adaptorAction(&r)
+		actID, err := AdaptorAction(&r)
 		if err != nil {
 			return nil, err
 		}
 		p.ActionID = string(actID)
 		p.ActionName = ActionIDNameMap[actID]
 
-		rscType, err := convertResourceType(r.Basic.Type, r.BusinessID)
+		rscType, err := ConvertResourceType(r.Basic.Type, r.BusinessID)
 		if err != nil {
 			return nil, err
 		}
