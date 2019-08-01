@@ -521,13 +521,13 @@ func (a *authClient) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p
 // get user's group members from auth center
 func (a *authClient) GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]UserGroupMembers, error) {
 	util.CopyHeader(a.basicHeader, header)
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/scope-types/%s/scopes/%d/group-users?group_codes=%s",
-		SystemIDCMDB, "biz", bizID, strings.Join(groups, ","))
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/scope-types/%s/scopes/%d/group-users", SystemIDCMDB, "biz", bizID)
 	resp := new(UserGroupMembersResult)
 	err := a.client.Get().
 		SubResource(url).
 		WithContext(ctx).
 		WithHeaders(header).
+		WithParam("group_codes", strings.Join(groups, ",")).
 		Do().Into(&resp)
 	if err != nil {
 		return nil, err

@@ -75,6 +75,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	ws.Route(ws.GET("/auth/business_list").To(s.GetAnyAuthorizedAppList))
 	ws.Route(ws.GET("/auth/admin_entrance").To(s.GetAdminEntrance))
 	ws.Route(ws.POST("/auth/skip_url").To(s.GetUserNoAuthSkipUrl))
+	ws.Route(ws.POST("/auth/convert").To(s.GetCmdbConvertResources))
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
 	ws.Route(ws.PUT("{.*}").Filter(s.URLFilterChan).To(s.Put))
@@ -115,6 +116,11 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		if path == "/api/v3/auth/skip_url" {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		if path == "/api/v3/auth/convert" {
 			fchain.ProcessFilter(req, resp)
 			return
 		}

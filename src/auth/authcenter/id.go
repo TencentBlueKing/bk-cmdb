@@ -297,7 +297,7 @@ func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resourc
 	// translate all parent layers
 	resourceIDs := make([]RscTypeAndID, 0)
 	for _, layer := range attribute.Layers {
-		iamResourceType, err := convertResourceType(layer.Type, attribute.BusinessID)
+		iamResourceType, err := ConvertResourceType(layer.Type, attribute.BusinessID)
 		if err != nil {
 			return nil, fmt.Errorf("convert resource type to iam resource type failed, layer: %+v, err: %+v", layer, err)
 		}
