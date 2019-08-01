@@ -54,8 +54,8 @@ func (p *Producer) Start() {
 	finished := false
 	go func(producer *Producer) {
 		for {
-			if start.Add(time.Second * 5).Before(time.Now()) {
-				start = start.Add(time.Second * 5)
+			if start.Add(time.Minute * 5).Before(time.Now()) {
+				start = start.Add(time.Minute * 5)
 				finished = false
 			}
 
