@@ -97,7 +97,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		}
 		businessList = append(businessList, businessSimplify)
 	}
-	blog.Info("list business businessList: %+v", businessList)
+	blog.V(4).Infof("list business businessList: %+v", businessList)
 
 	// job of synchronize business scope resources to iam
 	resourceTypes := []meta.ResourceType{
