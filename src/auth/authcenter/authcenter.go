@@ -228,7 +228,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	businessesInputs := make(map[int64]AuthBatch)
 	businessesExactInputs := make(map[int64]AuthBatch)
 	for index, rsc := range resources {
-		action, err := adaptorAction(&rsc)
+		action, err := AdaptorAction(&rsc)
 		if err != nil {
 			blog.Errorf("auth batch, but adaptor action:%s failed, err: %v, rid: %s", rsc.Action, err, rid)
 			return nil, err
@@ -703,7 +703,7 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	if err != nil {
 		return nil, err
 	}
-	resourceType, err := convertResourceType(r.Type, r.BusinessID)
+	resourceType, err := ConvertResourceType(r.Type, r.BusinessID)
 	if err != nil {
 		return nil, err
 	}
