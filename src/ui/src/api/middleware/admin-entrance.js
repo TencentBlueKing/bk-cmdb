@@ -5,7 +5,7 @@ import {
 } from './util.js'
 
 const origin = {
-    url: 'auth/admin-entrance',
+    url: 'auth/admin_entrance',
     method: 'get'
 }
 const redirect = {
