@@ -195,6 +195,7 @@
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {
                     rules[propertyType] = true
+                    rules[`${propertyType}Length`] = true
                 }
                 if (propertyType === 'int') {
                     rules['numeric'] = true
