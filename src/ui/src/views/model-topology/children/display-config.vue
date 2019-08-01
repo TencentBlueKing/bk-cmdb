@@ -52,10 +52,10 @@
             </ul>
         </div>
         <div class="button-group">
-            <bk-button type="primary" @click="saveDisplay">
+            <bk-button theme="primary" @click="saveDisplay">
                 {{$t('Common["确定"]')}}
             </bk-button>
-            <bk-button type="default" @click="reset">
+            <bk-button theme="default" @click="reset">
                 {{$t('ModelManagement["重置"]')}}
             </bk-button>
         </div>

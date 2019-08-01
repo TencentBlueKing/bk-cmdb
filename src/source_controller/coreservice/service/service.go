@@ -21,9 +21,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -50,6 +47,9 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/remote"
 	dalredis "configcenter/src/storage/dal/redis"
+
+	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 )
 
 // CoreServiceInterface the topo service methods used to init
@@ -93,7 +93,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	if s.cfg.Mongo.Enable == "true" {
 		db, dbErr = local.NewMgo(s.cfg.Mongo.BuildURI(), time.Minute)
 	} else {
-		db, dbErr = remote.NewWithDiscover(s.engin.ServiceManageInterface.TMServer().GetServers)
+		db, dbErr = remote.NewWithDiscover(s.engin)
 	}
 	if dbErr != nil {
 		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
@@ -172,13 +172,13 @@ func (s *coreService) createAPIRspStr(errcode int, info interface{}) (string, er
 		Data:     nil,
 	}
 
-	if common.CCSuccess != errcode {
+	if errcode == common.CCSuccess {
+		rsp.ErrMsg = common.CCSuccessStr
+		rsp.Data = info
+	} else {
 		rsp.Code = errcode
 		rsp.Result = false
 		rsp.ErrMsg = fmt.Sprintf("%v", info)
-	} else {
-		rsp.ErrMsg = common.CCSuccessStr
-		rsp.Data = info
 	}
 
 	data, err := json.Marshal(rsp)
@@ -282,7 +282,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 					}
 				}
 
-				data, dataErr := act.HandlerFunc(core.ContextParams{
+				param := core.ContextParams{
 					Context:         util.GetDBContext(context.Background(), req.Request.Header),
 					Error:           defErr,
 					Lang:            defLang,
@@ -290,11 +290,8 @@ func (s *coreService) Actions() []*httpserver.Action {
 					SupplierAccount: ownerID,
 					ReqID:           rid,
 					User:            user,
-				},
-					req.PathParameter,
-					req.QueryParameter,
-					mData)
-
+				}
+				data, dataErr := act.HandlerFunc(param, req.PathParameter, req.QueryParameter, mData)
 				if nil != dataErr {
 					switch e := dataErr.(type) {
 					default:

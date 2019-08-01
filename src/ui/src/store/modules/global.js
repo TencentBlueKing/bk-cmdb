@@ -26,7 +26,8 @@ const state = {
         adminTips: true,
         serviceTemplate: true,
         category: true
-    }
+    },
+    appHeight: window.innerHeight
 }
 
 const getters = {
@@ -107,6 +108,9 @@ const mutations = {
         } else {
             window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
         }
+    },
+    setAppHeight (state, height) {
+        state.appHeight = height
     }
 }
 

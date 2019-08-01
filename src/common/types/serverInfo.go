@@ -26,7 +26,6 @@ const (
 
 // cc modules
 const (
-	// CC_MODULE_AUDITCONTROLLER  = "auditcontroller"
 	CC_MODULE_DATACOLLECTION = "datacollection"
 	CC_MODULE_HOST           = "host"
 	CC_MODULE_MIGRATE        = "migrate"
@@ -45,19 +44,18 @@ const (
 
 // AllModule all cc module
 var AllModule = map[string]bool{
-	// CC_MODULE_AUDITCONTROLLER:  true,
-	CC_MODULE_DATACOLLECTION: true,
-	CC_MODULE_HOST:           true,
-	CC_MODULE_MIGRATE:        true,
-	CC_MODULE_PROC:           true,
-	CC_MODULE_TOPO:           true,
-	CC_MODULE_APISERVER:      true,
-	CC_MODULE_WEBSERVER:      true,
-	CC_MODULE_EVENTSERVER:    true,
-	CC_MODULE_TXC:            true,
-	CC_MODULE_CORESERVICE:    true,
-	// CC_MODULE_SYNCHRONZESERVER: true,
-	CC_MODULE_OPERATION: true,
+	CC_MODULE_DATACOLLECTION:   true,
+	CC_MODULE_HOST:             true,
+	CC_MODULE_MIGRATE:          true,
+	CC_MODULE_PROC:             true,
+	CC_MODULE_TOPO:             true,
+	CC_MODULE_APISERVER:        true,
+	CC_MODULE_WEBSERVER:        true,
+	CC_MODULE_EVENTSERVER:      true,
+	CC_MODULE_TXC:              true,
+	CC_MODULE_CORESERVICE:      true,
+	CC_MODULE_SYNCHRONZESERVER: true,
+	CC_MODULE_OPERATION:        true,
 }
 
 // cc functionality define

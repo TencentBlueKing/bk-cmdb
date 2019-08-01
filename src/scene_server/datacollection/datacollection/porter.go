@@ -18,11 +18,10 @@ import (
 	"net"
 	"runtime"
 	"runtime/debug"
-	"strings"
-	"sync"
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 
@@ -38,7 +37,7 @@ type chanCollector struct {
 // 14kB * 10000 = 140M
 const cacheSize = 10000
 
-func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Client, channels []string, mockmesg string, registry prometheus.Registerer) *chanPorter {
+func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Client, channels []string, mockmesg string, registry prometheus.Registerer, engine *backbone.Engine) *chanPorter {
 	porter := &chanPorter{
 		analyzer:        analyzer,
 		name:            name,
@@ -51,6 +50,7 @@ func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Cl
 		slaveC:          make(chan string, cacheSize),
 		analyzeCounterC: make(chan int, runtime.NumCPU()),
 		runed:           util.NewBool(false),
+		Engine:          engine,
 	}
 
 	ns := "cmdb_collector_" + name + "_"
@@ -160,6 +160,9 @@ type chanPorter struct {
 
 	// 用于统计处理效率的
 	analyzeCounterC chan int
+
+	// 用于判断是否是master的
+	*backbone.Engine
 }
 
 func (p *chanPorter) Name() string {
@@ -242,42 +245,23 @@ func (p *chanPorter) analyzeCount() {
 
 // collect 获取待处理消息，当是master时从redis channel获取，当是slave时从 redis queue 获取
 func (p *chanPorter) collect() error {
-	// 抢master锁
-	err := loginMaster(p.redisCli, p.name, p.pid)
-	if err != nil {
-		// 抢失败，成为slave
-		if strings.HasPrefix(err.Error(), "there is other master") {
-			blog.Infof("[data-collection][%s] %v", p.name, err)
-			return nil
-		}
-		blog.Errorf("[data-collection][%s] %v", p.name, err)
-		return err
+	if !p.Engine.ServiceManageInterface.IsMaster() {
+		p.isMaster.UnSet()
+		blog.Infof("[data-collection][%s] %v", p.name, "there is other master")
+		return nil
 	}
-
-	// 抢成功，成为master，开始读redis channel，并推送处理不过来的消息到slave处理队列
 	blog.Infof("[data-collection][%s] i am master(id: %s) from now", p.name, p.pid)
 	defer blog.Infof("[data-collection][%s] exist master(id: %s) from now", p.name, p.pid)
 	p.isMaster.Set()
 	defer p.isMaster.UnSet()
 
-	var wg = &sync.WaitGroup{}
-	wg.Add(1)
-
-	// 续期master锁
-	go p.renewalMasterLoop()
-
 	// 开始订阅
-	err = p.subscribeLoop()
+	err := p.subscribeLoop()
 	if err != nil {
 		return fmt.Errorf("subscribe channel return an error: %v", err)
 	}
 
-	// 读 redis channel 异常， 退出 master 状态
-	p.isMaster.UnSet()
-	err = logoutMaster(p.redisCli, p.name, p.pid)
-	wg.Wait()
-
-	return err
+	return nil
 }
 
 func (p *chanPorter) subscribeLoop() error {
@@ -296,7 +280,8 @@ func (p *chanPorter) subscribeLoop() error {
 	var ok bool
 	var received interface{}
 	var name = p.name + "[receive]"
-	for p.isMaster.IsSet() {
+	for p.Engine.ServiceManageInterface.IsMaster() {
+		p.isMaster.Set()
 		received, err = subChan.ReceiveTimeout(time.Second * 10)
 		if err == redis.Nil || err == io.EOF {
 			continue
@@ -338,6 +323,7 @@ func (p *chanPorter) subscribeLoop() error {
 			ts = time.Now()
 		}
 	}
+	p.isMaster.UnSet()
 	return nil
 }
 

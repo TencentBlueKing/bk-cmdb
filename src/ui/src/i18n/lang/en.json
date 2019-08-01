@@ -90,7 +90,8 @@
         "复制属性": "Copy Property",
         "复制成功": "Copy Success",
         "复制失败": "Copy Fail",
-        "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?",
+        "退出会导致未保存信息丢失": "The exit will cause the unsaved information to be lost.",
+        "确认退出": "sure to exit?",
         "内容不合法": "Illegal content",
         "下属层级都会被删除，请先转移其下所有的主机": "The subordinate hierarchy will be deleted. Please transfer all the hosts under it first.",
         "详情信息": "Detail",
@@ -134,7 +135,12 @@
         "请输入关键字": "Please input keyword...",
         "添加": "Add",
         "全部展开": "Expand all",
-        "暂无数据": "No data"
+        "暂无数据": "No data",
+        "选择日期范围": "Select date range",
+        "立即添加": "Add it now",
+        "您暂无创建权限": "You have no permission to create",
+        "添加成功": "Added successfully",
+        "克隆成功": "Cloned successfully"
     },
     "Nav": {
         "首页": "Index",
@@ -413,6 +419,7 @@
         "唯一校验": "Unique check",
         "校验规则": "Regex",
         "是否为必须校验": "Is required",
+        "属性为空值是否校验": "Whether to check the null value",
         "新建校验": "New rule",
         "编辑校验": "Modify rule",
         "是": "Yes",
@@ -431,7 +438,8 @@
         "停用模型提示": "No model disabled",
         "模型顶部提示": "The model can view and dynamically change the current data structure of the CMDB. For example, a new device needs to be recorded to the CMDB, which can be implemented by creating a new corresponding model.",
         "业务层级提示": "The service level shows the hierarchical settings of the current service topology. You can modify the attributes of each layer or increase the topology level according to the needs of the enterprise.",
-        "关联关系提示": "The “association type” is the classification associated with the model. For example, the relationship between the host and the switch can be classified as “uplink” type."
+        "关联关系提示": "The “association type” is the classification associated with the model. For example, the relationship between the host and the switch can be classified as “uplink” type.",
+        "添加字段": "Add field"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
@@ -493,7 +501,7 @@
         "修改人": "Modified Person",
         "修改时间": "Update Time",
         "查询定义": "Group Definition",
-        "确认要删除": "Confirm to delete {name}?",
+        "确认要删除": "Confirm to delete {name} group?",
         "保存后的查询可通过接口调用生效": "The saved group can be validated through an interface call",
         "动态分组提示": "Dynamic grouping is mainly used to define commonly used conditional queries, and can quickly retrieve target hosts based on dynamic grouping when operating platforms or standard operations"
     },
@@ -867,7 +875,8 @@
         "新增关联": "New Association",
         "批量取消": "Batch Cancel",
         "列表": "List",
-        "暂无关联关系": "No Association"
+        "暂无关联关系": "No Association",
+        "服务列表": "Service List"
     },
     "BusinessTopology": {
         "已选择主机": "{count}host selected",
@@ -910,7 +919,7 @@
         "服务分类": "Service category",
         "服务模板信息": "Service template info",
         "确认解除模板": "Confirm to unbind template?",
-        "解除模板影响": "Unbind service template will cause those effects：<br><br> &nbsp;&nbsp; 1. Service instance will not synchronous template anymore.<br> &nbsp;&nbsp;2. Can not use template to create instance anymore. ",
+        "解除模板影响": "Unbind the {name} service template will cause those effects：<br><br> &nbsp;&nbsp; 1. Service instance will not synchronous template anymore.<br> &nbsp;&nbsp;2. Can not use template to create instance anymore. ",
         "服务实例": "Service instance",
         "节点信息": "Node info",
         "源实例主机提示": "Please update process, can not repeat with source instance",
@@ -924,7 +933,25 @@
         "删除模块提示": "Need to remove all service instances under the module first",
         "模块名称提示": "The module name must be consistent with the service template name.",
         "请为主机添加进程": "Please add process to the host",
-        "请输入实例名称搜索": "Please enter instance name search..."
+        "实例名称/标签": "Instance name / Tag",
+        "添加标签键": "Add tag key",
+        "标签值": "Tag value",
+        "已有标签": "Existing tag",
+        "已有标签提示": "(The list is the selected instance tag collection)",
+        "批量添加标签": "Add tags in bulk",
+        "批量编辑": "批量编辑",
+        "标签": "Tag",
+        "编辑标签": "Edit tag",
+        "请填写完整标签键/值": "Please fill in the full tag key/value",
+        "已选择实例": "({num} instances have been selected)",
+        "服务实例名": "Service Instance Name",
+        "服务实例名重复": "Service instance name can only enter one",
+        "跳转模板添加进程": "Jump template add process",
+        "创建实例提示": "You have not created any service instances yet,",
+        "模板未添加进程": "No process added, please add to the template and sync",
+        "跳转服务拓扑": "Jump service topology",
+        "暂无实例": "No instance",
+        "新建模板": "Create Template"
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
@@ -991,5 +1018,6 @@
         "批量取消": "Batch Cancel",
         "列表": "List",
         "暂无关联关系": "No Association"
-    }
+    },
+    "已选择条数": "{count} properties selected"
 }

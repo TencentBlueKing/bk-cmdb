@@ -74,7 +74,7 @@ func (s *Service) initBusinessAssociation() {
 	s.addAction(http.MethodPost, "/find/topoinst_with_statistics/biz/{bk_biz_id}", s.SearchBusinessTopoWithStatistics, nil)
 
 	// association type methods ,NOT SUPPORT BUSINESS
-	s.addAction(http.MethodPost, "/find/topoassociationtype", s.SearchObjectAssoWithAssoKindList, nil)
+	s.addAction(http.MethodPost, "/find/topoassociationtype", s.SearchObjectAssocWithAssocKindList, nil)
 	s.addAction(http.MethodPost, "/find/associationtype", s.SearchAssociationType, nil)
 	s.addAction(http.MethodPost, "/create/associationtype", s.CreateAssociationType, nil)
 	s.addAction(http.MethodPut, "/update/associationtype/{id}", s.UpdateAssociationType, nil)

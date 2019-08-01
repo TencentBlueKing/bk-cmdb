@@ -81,7 +81,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			if err != nil {
 				return fmt.Errorf("connect rpc server failed, err: %s", err.Error())
 			}
-			db, err = remote.NewWithDiscover(process.Core.ServiceManageInterface.TMServer().GetServers)
+			db, err = remote.NewWithDiscover(process.Core)
 		}
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed, err: %s", err.Error())

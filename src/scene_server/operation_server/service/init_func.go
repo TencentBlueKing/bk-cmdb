@@ -27,6 +27,6 @@ func (o *OperationServer) InitFunc() {
 	}
 
 	srvData := o.newSrvComm(header)
-	go srvData.lgc.InitInnerChart(srvData.ctx)
+	srvData.lgc.InitInnerChart(srvData.ctx)
 	go srvData.lgc.TimerFreshData(srvData.ctx)
 }

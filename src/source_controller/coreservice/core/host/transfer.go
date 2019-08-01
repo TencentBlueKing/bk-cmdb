@@ -20,7 +20,7 @@ import (
 // TransferHostToInnerModule transfer host to inner module
 // 转移到空闲机/故障机模块
 func (hm *hostManager) TransferToInnerModule(ctx core.ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error) {
-	return hm.moduleHost.TransferToInnerModule(ctx, input)
+	return hm.hostTransfer.TransferToInnerModule(ctx, input)
 }
 
 // TransferToNormalModule transfer host to normal module(modules except idle and fault module)
@@ -28,24 +28,24 @@ func (hm *hostManager) TransferToInnerModule(ctx core.ContextParams, input *meta
 // 将主机转移到 input 表示的目标模块中
 // IsIncrement 控制增量更新还是覆盖更新
 func (hm *hostManager) TransferToNormalModule(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
-	return hm.moduleHost.TransferToNormalModule(ctx, input)
+	return hm.hostTransfer.TransferToNormalModule(ctx, input)
 }
 
 // TransferToAnotherBusiness transfer host to another business module
 func (hm *hostManager) TransferToAnotherBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
-	return hm.moduleHost.TransferToAnotherBusiness(ctx, input)
+	return hm.hostTransfer.TransferToAnotherBusiness(ctx, input)
 }
 
 // DeleteHost delete host from cmdb
 func (hm *hostManager) DeleteFromSystem(ctx core.ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
-	return hm.moduleHost.DeleteFromSystem(ctx, input)
+	return hm.hostTransfer.DeleteFromSystem(ctx, input)
 }
 
 // RemoveFromModule remove from one of original modules
 func (hm *hostManager) RemoveFromModule(ctx core.ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error) {
-	return hm.moduleHost.RemoveFromModule(ctx, input)
+	return hm.hostTransfer.RemoveFromModule(ctx, input)
 }
 
 func (hm *hostManager) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error) {
-	return hm.moduleHost.GetHostModuleRelation(ctx, input)
+	return hm.hostTransfer.GetHostModuleRelation(ctx, input)
 }

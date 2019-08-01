@@ -7,7 +7,7 @@
                 </cmdb-business-selector>
             </div>
             <div class="tree-layout">
-                <cmdb-tree ref="topoTree" class="topo-tree"
+                <bk-big-tree ref="topoTree" class="topo-tree"
                     v-cursor="{
                         active: !$isAuthorized(transferResourceAuth),
                         auth: [transferResourceAuth],
@@ -21,6 +21,7 @@
                         childrenKey: 'child'
                     }"
                     :selectable="false"
+                    :expand-on-click="false"
                     :show-checkbox="shouldShowCheckbox"
                     :before-check="beforeNodeCheck"
                     @node-click="handleNodeClick"
@@ -29,7 +30,7 @@
                         <i :class="['node-model-icon fl', { 'is-checked': node.checked }]">{{modelIconMap[data.bk_obj_id]}}</i>
                         <span class="node-name">{{data.bk_inst_name}}</span>
                     </div>
-                </cmdb-tree>
+                </bk-big-tree>
             </div>
         </div>
         <div class="columns-layout fl">
@@ -62,12 +63,12 @@
                 </label>
             </div>
             <div class="button-layout content-middle fr">
-                <bk-button class="transfer-button" type="primary"
+                <bk-button class="transfer-button" theme="primary"
                     :disabled="!selectedModules.length"
                     @click="handleTransfer">
                     {{$t('Common[\'确认转移\']')}}
                 </bk-button>
-                <bk-button class="transfer-button" type="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
+                <bk-button class="transfer-button" theme="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
             </div>
         </div>
     </div>
@@ -114,10 +115,10 @@
                 return modules
             },
             showIncrementOption () {
-                const hasSpecialModule = this.selectedModuleStates.some(({ node }) => {
-                    return node['bk_inst_id'] === 'resource' || [1, 2].includes(node.default)
+                const hasSpecialModule = this.selectedModules.some(node => {
+                    return node.data.bk_inst_id === 'resource' || [1, 2].includes(node.data.default)
                 })
-                return this.selectedModuleStates.length && this.selectedHosts.length > 1 && !hasSpecialModule
+                return this.selectedModules.length && this.selectedHosts.length > 1 && !hasSpecialModule
             },
             loading () {
                 const requestIds = [
@@ -238,8 +239,8 @@
             shouldShowCheckbox (data) {
                 return data.bk_obj_id === 'module'
             },
-            handleNodeCheck (checked, nodes) {
-                this.selectedModules = nodes
+            handleNodeCheck (checked) {
+                this.selectedModules = checked.map(id => this.$refs.topoTree.getNodeById(id))
             },
             beforeNodeCheck (node) {
                 let confirmResolver
@@ -261,7 +262,8 @@
                         },
                         cancelFn: () => {
                             confirmResolver(false)
-                        }
+                        },
+                        zIndex: 2000
                     })
                 } else {
                     const specialNodes = this.selectedModules.filter(selectedNode => {
@@ -419,7 +421,7 @@
             text-align: center;
             font-style: normal;
             font-size: 12px;
-            margin: 5px 4px 0 6px;
+            margin: 9px 4px 0 6px;
             border-radius: 50%;
             background-color: #c4c6cc;
             color: #fff;

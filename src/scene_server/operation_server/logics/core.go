@@ -40,7 +40,7 @@ type Logics struct {
 }
 
 // NewLogics get logics handle
-func NewLogics(b *backbone.Engine, header http.Header, esbServ esbserver.EsbClientInterface, authManager *extensions.AuthManager) *Logics {
+func NewLogics(b *backbone.Engine, header http.Header, authManager *extensions.AuthManager) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
 		Engine:      b,
@@ -50,7 +50,6 @@ func NewLogics(b *backbone.Engine, header http.Header, esbServ esbserver.EsbClie
 		ccLang:      b.Language.CreateDefaultCCLanguageIf(lang),
 		user:        util.GetUser(header),
 		ownerID:     util.GetOwnerID(header),
-		esbServ:     esbServ,
 		AuthManager: authManager,
 	}
 }

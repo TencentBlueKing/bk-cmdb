@@ -83,7 +83,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new redis client failed, err: %s", err)
 	}
 
-	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), procSvr.EsbConfigChn, engine.Metric().Registry())
+	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), procSvr.EsbConfigChn, nil, engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}

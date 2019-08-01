@@ -21,39 +21,38 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// CreateUserGroup create user goup
+// CreateUserGroup create user group
 func (s *Service) CreateUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	userGroup := &metadata.UserGroup{}
-	_, err := userGroup.Parse(data)
-	if nil != err {
-		blog.Errorf("[api-privilege] failed to parse the input data, error info is %s ", err.Error())
+	if err := data.MarshalJSONInto(userGroup); nil != err {
+		blog.Errorf("[api-privilege] failed to parse the input data, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err = s.Core.PermissionOperation().UserGroup(params).CreateUserGroup(params.SupplierAccount, userGroup)
+	err := s.Core.PermissionOperation().UserGroup(params).CreateUserGroup(params.SupplierAccount, userGroup)
 	return nil, err
 }
 
-// DeleteUserGroup delete user goup
+// DeleteUserGroup delete user group
 func (s *Service) DeleteUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	err := s.Core.PermissionOperation().UserGroup(params).DeleteUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"))
 	return nil, err
 }
 
-// UpdateUserGroup update user goup
+// UpdateUserGroup update user group
 func (s *Service) UpdateUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	err := s.Core.PermissionOperation().UserGroup(params).UpdateUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"), data)
 	return nil, err
 }
 
-// SearchUserGroup search user goup
+// SearchUserGroup search user group
 func (s *Service) SearchUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
-	data.ForEach(func(key string, val interface{}) error {
+	_ = data.ForEach(func(key string, val interface{}) error {
 		cond.Field(key).Like(val)
 		return nil
 	})

@@ -428,7 +428,11 @@ func (valid *ValidMap) validEnum(val interface{}, key string) error {
 		return nil
 	}
 	// validate within enum
-	enumOption := ParseEnumOption(option.Option)
+	enumOption, err := ParseEnumOption(option.Option)
+	if err != nil {
+		blog.ErrorJSON("validEnum ParseEnumOption error:%s, option:%s", err.Error(), option.Option)
+		return valid.errif.Errorf(common.CCErrParseAttrOptionEnumFailed)
+	}
 	match := false
 	for _, k := range enumOption {
 		if k.ID == valStr {

@@ -6,7 +6,7 @@
                     active: !$isAuthorized($OPERATION.C_BUSINESS),
                     auth: [$OPERATION.C_BUSINESS]
                 }">
-                <bk-button class="fl" type="primary"
+                <bk-button class="fl" theme="primary"
                     :disabled="!$isAuthorized($OPERATION.C_BUSINESS)"
                     @click="handleCreate">
                     {{$t("Common['新建']")}}
@@ -18,22 +18,30 @@
                     auth: [$OPERATION.BUSINESS_ARCHIVE]
                 }">
                     <bk-button class="button-history"
-                        v-tooltip.bottom="$t('Common[\'查看删除历史\']')"
+                        icon="icon-cc-history2"
+                        v-bk-tooltips.bottom="$t('Common[\'查看删除历史\']')"
                         :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
                         @click="routeToHistory">
-                        <i class="icon-cc-history2"></i>
                     </bk-button>
                 </span>
-                <bk-button class="button-setting" v-tooltip.bottom="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">
-                    <i class="icon-cc-setting"></i>
+                <bk-button class="button-setting"
+                    icon="icon-cc-setting"
+                    v-bk-tooltips.bottom="$t('BusinessTopology[\'列表显示属性配置\']')"
+                    @click="columnsConfig.show = true">
                 </bk-button>
             </div>
             <div class="options-filter clearfix fr">
-                <bk-selector class="filter-selector fl"
-                    :searchable="true"
-                    :list="filter.options"
-                    :selected.sync="filter.id">
-                </bk-selector>
+                <bk-select
+                    class="filter-selector fl"
+                    v-model="filter.id"
+                    searchable
+                    :clearable="false">
+                    <bk-option v-for="(option, index) in filter.options"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
                 <cmdb-form-enum class="filter-value fl"
                     v-if="filter.type === 'enum'"
                     :options="$tools.getEnumOptions(properties, filter.id)"
@@ -41,36 +49,45 @@
                     v-model="filter.value"
                     @on-selected="handleFilterData">
                 </cmdb-form-enum>
-                <input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
+                <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="handleFilterData">
-                <input class="filter-value cmdb-form-input fl" type="text"
+                    @enter="handleFilterData">
+                </bk-input>
+                <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="handleFilterData">
+                    @enter="handleFilterData">
+                </bk-input>
                 <i class="filter-search bk-icon icon-search"
                     v-show="filter.type !== 'enum'"
                     @click="handleFilterData"></i>
             </div>
         </div>
-        <cmdb-table class="business-table" ref="table"
-            :loading="$loading('post_searchBusiness_list')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :default-sort="table.defaultSort"
-            :wrapper-minus-height="157"
-            @handleRowClick="handleRowClick"
-            @handleSortChange="handleSortChange"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange">
-        </cmdb-table>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
-            <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+        <bk-table class="business-table"
+            v-bkloading="{ isLoading: $loading('post_searchBusiness_list') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 160"
+            @row-click="handleRowClick"
+            @sort-change="handleSortChange"
+            @page-limit-change="handleSizeChange"
+            @page-change="handlePageChange">
+            <bk-table-column v-for="column in table.header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+        </bk-table>
+        <bk-sideslider
+            :is-show.sync="slider.show"
+            :title="slider.title"
+            :width="800"
+            :before-close="handleSliderBeforeClose">
+            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.show">
+                <bk-tab-panel name="attribute" :label="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
                         :property-groups="propertyGroups"
@@ -93,25 +110,26 @@
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
-                </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="attribute.type !== 'create'">
+                </bk-tab-panel>
+                <bk-tab-panel name="relevance" :label="$t('HostResourcePool[\'关联\']')" :visible="attribute.type !== 'create'">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
                         :auth="$OPERATION.U_BUSINESS"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
-                </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type !== 'create'">
+                </bk-tab-panel>
+                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :visible="attribute.type !== 'create'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="biz"
                         :inst-id="attribute.inst.details['bk_biz_id']">
                     </cmdb-audit-history>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
-        </cmdb-slider>
-        <cmdb-slider :is-show.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
+        </bk-sideslider>
+        <bk-sideslider :is-show.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
             <cmdb-columns-config slot="content"
+                v-if="columnsConfig.show"
                 :properties="properties"
                 :selected="columnsConfig.selected"
                 :disabled-columns="columnsConfig.disabledColumns"
@@ -119,7 +137,7 @@
                 @on-cancel="columnsConfig.show = false"
                 @on-reset="handleResetColumnsConfig">
             </cmdb-columns-config>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -143,7 +161,7 @@
                     list: [],
                     pagination: {
                         count: 0,
-                        size: 10,
+                        limit: 10,
                         current: 1
                     },
                     defaultSort: 'bk_biz_id',
@@ -233,6 +251,10 @@
                     this.setTableHeader(),
                     this.setFilterOptions()
                 ])
+                if (this.$route.params.bizName) {
+                    this.filter.sendValue = this.$route.params.bizName
+                    this.filter.value = this.$route.params.bizName
+                }
                 this.getTableData()
             } catch (e) {
                 // ignore
@@ -299,11 +321,11 @@
                 this.attribute.type = 'details'
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handlePageChange (page) {
@@ -335,8 +357,8 @@
                     },
                     fields: [],
                     page: {
-                        start: this.table.pagination.size * (this.table.pagination.current - 1),
-                        limit: this.table.pagination.size,
+                        start: this.table.pagination.limit * (this.table.pagination.current - 1),
+                        limit: this.table.pagination.limit,
                         sort: this.table.sort
                     }
                 }
@@ -438,7 +460,9 @@
                     if (Object.keys(changedValues).length) {
                         return new Promise((resolve, reject) => {
                             this.$bkInfo({
-                                title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                                title: this.$t('Common["确认退出"]'),
+                                subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                                extCls: 'bk-dialog-sub-header-center',
                                 confirmFn: () => {
                                     resolve(true)
                                 },
@@ -472,7 +496,7 @@
     .filter-search{
         position: absolute;
         right: 10px;
-        top: 11px;
+        top: 9px;
         cursor: pointer;
     }
 }

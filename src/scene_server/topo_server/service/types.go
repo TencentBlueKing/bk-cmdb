@@ -20,8 +20,8 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// LogicFunc the logics logics function definition
-type LogicFunc func(params types.ContextParams, parthParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error)
+// LogicFunc the core logic function definition
+type LogicFunc func(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error)
 
 // ParamsGetter get param by key
 type ParamsGetter func(name string) string
@@ -44,7 +44,7 @@ type API interface {
 	Actions() []*httpserver.Action
 }
 
-type compatiblev2Condition struct {
+type compatibleV2Condition struct {
 	Condition mapstr.MapStr     `json:"condition"`
 	Page      metadata.BasePage `json:"page"`
 	Fields    []string          `json:"fields"`

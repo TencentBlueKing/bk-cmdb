@@ -65,10 +65,10 @@ func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInt
 }
 
 func (b *business) HasHosts(params types.ContextParams, bizID int64) (bool, error) {
-	cond := map[string][]int64{
-		common.BKAppIDField: {bizID},
+	option := metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
 	}
-	rsp, err := b.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, cond)
+	rsp, err := b.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to request the object controller, error info is %s", err.Error())
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -84,12 +84,12 @@ func (b *business) HasHosts(params types.ContextParams, bizID int64) (bool, erro
 
 func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
-	defaulFieldVal, err := data.Int64(common.BKDefaultField)
+	defaultFieldVal, err := data.Int64(common.BKDefaultField)
 	if nil != err {
 		blog.Errorf("[operation-biz] failed to create business, error info is did not set the default field, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
-	if defaulFieldVal == int64(common.DefaultAppFlag) && params.SupplierAccount != common.BKDefaultOwnerID {
+	if defaultFieldVal == int64(common.DefaultAppFlag) && params.SupplierAccount != common.BKDefaultOwnerID {
 		// this is a new supplier owner and prepare to create a new business.
 		asstQuery := map[string]interface{}{
 			common.BKOwnerIDField: common.BKDefaultOwnerID,
@@ -99,7 +99,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 
 		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), defaultOwnerHeader, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
-			blog.Errorf("create business failed to get default assts, error info is %s, rid: %s", err.Error(), params.ReqID)
+			blog.Errorf("create business failed to get default assoc, error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 		}
 		if !asstRsp.Result {
@@ -110,7 +110,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 
 		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
-			blog.Errorf("create business failed to get default assts, error info is %s, rid: %s", err.Error(), params.ReqID)
+			blog.Errorf("create business failed to get default assoc, error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 		}
 		if !existAsstRsp.Result {
@@ -139,7 +139,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 				createAsstRsp, err = b.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), params.Header, &metadata.CreateModelAssociation{Spec: asst})
 			}
 			if nil != err {
-				blog.Errorf("create business failed to copy default assts, error info is %s, rid: %s", err.Error(), params.ReqID)
+				blog.Errorf("create business failed to copy default assoc, error info is %s, rid: %s", err.Error(), params.ReqID)
 				return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 			}
 			if !createAsstRsp.Result {

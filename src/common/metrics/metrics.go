@@ -16,6 +16,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -51,7 +52,7 @@ type Service struct {
 // NewService returns new metrics service
 func NewService(conf Config) *Service {
 	registry := prometheus.NewRegistry()
-	register := prometheus.WrapRegistererWith(prometheus.Labels{LableProcessName: conf.ProcessName, LableProcessInstance: conf.ProcessInstance}, registry)
+	register := prometheus.WrapRegistererWith(prometheus.Labels{LableProcessName: conf.ProcessName, LabelHost: strings.Split(conf.ProcessInstance, ":")[0]}, registry)
 	srv := Service{conf: conf, registry: register}
 
 	srv.requestTotal = prometheus.NewCounterVec(
@@ -91,11 +92,11 @@ func NewService(conf Config) *Service {
 
 // lables
 const (
-	LableHandler         = "handler"
-	LableHTTPStatus      = "status_code"
-	LableOrigin          = "origin"
-	LableProcessName     = "process_name"
-	LableProcessInstance = "process_instance"
+	LableHandler     = "handler"
+	LableHTTPStatus  = "status_code"
+	LableOrigin      = "origin"
+	LableProcessName = "process_name"
+	LabelHost        = "host"
 )
 
 // lables

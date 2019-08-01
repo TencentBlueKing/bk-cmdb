@@ -25,11 +25,12 @@
                     active: !editable,
                     auth: [$OPERATION.U_CUSTOM_QUERY]
                 }">
-                    <input type="text" class="cmdb-form-input"
+                    <bk-input type="text" class="cmdb-form-input"
                         v-model.trim="name"
                         :name="$t('CustomQuery[\'查询名称\']')"
                         :disabled="!editable"
                         v-validate="'required|max:15'">
+                    </bk-input>
                 </div>
                 <span v-show="errors.has($t('CustomQuery[\'查询名称\']'))" class="color-danger">{{ errors.first($t('CustomQuery[\'查询名称\']')) }}</span>
             </div>
@@ -38,33 +39,37 @@
                     {{$t("CustomQuery['查询内容']")}}<span class="color-danger"> * </span>
                 </label>
                 <div class="userapi-content-display">
-                    <div class="text-content"
-                        v-cursor="{
-                            active: !editable,
-                            auth: [$OPERATION.U_CUSTOM_QUERY]
-                        }"
-                        :class="{
-                            open: attribute.isShow,
-                            disabled: !editable
-                        }"
-                        @click="toggleContentSelector(true)">
-                        <span class="default-name">{{attribute.defaultName}}</span><span v-if="selectedName.length">,{{selectedName}}</span>
-                        <i class="bk-icon icon-angle-down"></i>
-                    </div>
-                    <div class="userapi-content-display-mask" v-if="attribute.isShow"></div>
-                    <bk-selector class="fl userapi-content-selector"
-                        :searchable="true"
-                        search-key="bk_property_name"
+                    <bk-select class="fl"
                         ref="content"
-                        :list="attribute.list"
-                        @visible-toggle="toggleContentSelector"
-                        :content-max-height="200"
-                        setting-key="bk_property_id"
-                        display-key="bk_property_name"
-                        :selected.sync="attribute.selected"
-                        :multi-select="true"
-                        :disabled="!editable">
-                    </bk-selector>
+                        searchable
+                        multiple
+                        v-model="attribute.selected"
+                        :clearable="false"
+                        :scroll-height="200"
+                        :disabled="!editable"
+                        :popover-options="{
+                            offset: 100
+                        }"
+                        @toggle="toggleContentSelector">
+                        <div class="text-content" slot="trigger"
+                            v-cursor="{
+                                active: !editable,
+                                auth: [$OPERATION.U_CUSTOM_QUERY]
+                            }"
+                            :class="{
+                                open: attribute.isShow,
+                                disabled: !editable
+                            }"
+                            @click="toggleContentSelector(true)">
+                            <span class="default-name">{{attribute.defaultName}}</span><span v-if="selectedName.length">,{{selectedName}}</span>
+                            <i class="bk-icon icon-angle-down"></i>
+                        </div>
+                        <bk-option v-for="(option, index) in attribute.list"
+                            :key="index"
+                            :id="option.bk_property_id"
+                            :name="option.bk_property_name">
+                        </bk-option>
+                    </bk-select>
                 </div>
             </div>
             <ul class="userapi-list">
@@ -95,11 +100,6 @@
                             v-model="property.value"
                             :disabled="!editable">
                         </cmdb-form-bool-input>
-                        <cmdb-form-associate-input class="filter-field-value filter-field-associate fl"
-                            v-else-if="['singleasst', 'multiasst'].includes(property.propertyType)"
-                            v-model="property.value"
-                            :disabled="!editable">
-                        </cmdb-form-associate-input>
                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
                             v-else
                             :is="`cmdb-form-${property.propertyType}`"
@@ -125,22 +125,22 @@
                     </button>
                 </div>
                 <div class="userapi-new-mask" v-if="filter.isShow"></div>
-                <bk-selector class="userapi-new-selector"
-                    v-if="filter.isShow"
-                    :searchable="true"
-                    search-key="filter_name"
+                <bk-select v-if="filter.isShow"
+                    class="userapi-new-selector"
                     ref="propertySelector"
-                    :list="filterList"
-                    @visible-toggle="toggleUserAPISelector"
-                    :content-max-height="200"
-                    setting-key="filter_id"
-                    display-key="filter_name"
-                    @item-selected="addUserProperties"
-                    :selected="''">
-                </bk-selector>
+                    searchable
+                    :scroll-height="200"
+                    @toggle="toggleUserAPISelector"
+                    @selected="addUserProperties">
+                    <bk-option v-for="(option, index) in filterList"
+                        :key="index"
+                        :id="option.filter_id"
+                        :name="option.filter_name">
+                    </bk-option>
+                </bk-select>
             </div>
             <div class="userapi-btn-group">
-                <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
+                <bk-button theme="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
                     {{$t("CustomQuery['预览']")}}
                 </bk-button>
                 <span class="inline-block-middle"
@@ -148,15 +148,15 @@
                         active: !editable,
                         auth: [$OPERATION.U_CUSTOM_QUERY]
                     }">
-                    <bk-button type="primary" class="userapi-btn"
-                        v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
+                    <bk-button theme="primary" class="userapi-btn"
+                        v-bk-tooltips="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
                         :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
                         :disabled="errors.any() || !editable"
                         @click="saveUserAPI">
                         {{$t("Common['保存']")}}
                     </bk-button>
                 </span>
-                <bk-button type="default" class="userapi-btn" @click="closeSlider">
+                <bk-button theme="default" class="userapi-btn" @click="closeSlider">
                     {{$t("Common['取消']")}}
                 </bk-button>
                 <span class="inline-block-middle"
@@ -164,7 +164,7 @@
                         active: !editable,
                         auth: [$OPERATION.U_CUSTOM_QUERY]
                     }">
-                    <bk-button type="danger" class="userapi-btn button-delete"
+                    <bk-button theme="danger" class="userapi-btn button-delete"
                         v-if="type === 'update'"
                         :loading="$loading('deleteCustomQuery')"
                         :disabled="!editable"
@@ -689,14 +689,14 @@
                 }
                 return property
             },
-            addUserProperties (key, property) {
+            addUserProperties (key) {
                 const {
                     'bk_property_id': propertyId,
                     'bk_property_name': propertyName,
                     'bk_property_type': propertyType,
                     'bk_asst_obj_id': asstObjId,
                     'bk_obj_id': objId
-                } = property
+                } = this.filterList.find(property => property.filter_id === key)
                 this.userProperties.push({
                     objId,
                     propertyId,
@@ -710,7 +710,7 @@
             },
             toggleContentSelector (isShow) {
                 if (this.editable) {
-                    this.$refs.content.open = isShow
+                    // isShow ? this.$refs.content.show() : this.$refs.content.close()
                     this.attribute.isShow = isShow
                 }
             },
@@ -718,7 +718,7 @@
                 this.filter.isShow = isPropertiesShow
                 if (isPropertiesShow) {
                     this.$nextTick(() => {
-                        this.$refs.propertySelector.open = isPropertiesShow
+                        isPropertiesShow ? this.$refs.propertySelector.show() : this.$refs.propertySelector.close()
                     })
                 }
             }
@@ -737,6 +737,7 @@
         .userapi-group {
             margin-bottom: 15px;
             width: 370px;
+            font-size: 14px;
             &.content {
                 margin-bottom: 30px;
             }
@@ -744,15 +745,26 @@
                 display: block;
                 margin-bottom: 5px;
             }
+            .business-selector {
+                width: 100%;
+            }
             .userapi-content-display {
                 position: relative;
+                height: 32px;
+                .bk-select {
+                    width: 100%;
+                    border: none !important;
+                }
                 .text-content {
+                    position: relative;
                     border-radius: 2px;
                     border: 1px solid $cmdbBorderColor;
                     padding: 0 28px 0 16px;
                     height: 32px;
                     line-height: 30px;
                     overflow: hidden;
+                    background-color: #fff;
+                    z-index: 2;
                     &.open {
                         padding: 5px 28px 5px 16px;
                         height: auto;
@@ -793,6 +805,7 @@
         }
         .userapi-list {
             width: 370px;
+            font-size: 14px;
             .filter-label {
                 display: block;
                 margin-top: 20px;
@@ -832,6 +845,7 @@
             margin-top: 20px;
             font-size: 14px;
             .userapi-new-btn{
+                position: relative;
                 width: 100%;
                 height: 32px;
                 background-color: #ffffff;
@@ -839,6 +853,7 @@
                 border: 1px dashed #c3cdd7;
                 outline: 0;
                 color: $cmdbBorderFocusColor;
+                z-index: 2;
                 &:hover{
                     box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.1);
                 }
@@ -919,9 +934,11 @@
             .userapi-new {
                 position: relative;
                 .userapi-new-selector {
+                    width: 100%;
                     position: absolute;
                     left: 0;
-                    bottom: 32px;
+                    top:0;
+                    z-index: 1;
                 }
                 .bk-selector-wrapper {
                     display: none;
@@ -946,16 +963,11 @@
             }
             .userapi-content-display {
                 .userapi-content-selector {
+                    width: 100%;
                     position: absolute;
                     left: 0;
-                    bottom: 32px;
-                }
-                .bk-selector-wrapper {
-                    display: none;
-                }
-                .bk-selector-list {
-                    top: 36px;
-                    left: 1px;
+                    top: 0;
+                    z-index: 1;
                 }
             }
         }

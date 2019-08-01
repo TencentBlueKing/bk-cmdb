@@ -1,26 +1,27 @@
 <template>
-    <v-popover
-        trigger="manual"
-        placement="bottom-end"
-        popover-arrow-class=""
-        popover-class="dot-menu-popover"
+    <bk-popover
+        ref="popover"
+        trigger="click"
+        placement="bottom-start"
+        :sticky="true"
+        :arrow="false"
+        theme="light dot-menu-popover"
         :class="['dot-menu', {
             'is-open': open
         }]"
-        :open="open"
-        @show="setVisible(true)"
-        @hide="setVisible(false)"
-        @click.native="setVisible(true)">
+        :always="open"
+        :on-show="show"
+        :on-hide="hide">
         <i class="menu-trigger"
             :style="{
                 '--color': color,
                 '--hoverColor': hoverColor
             }">
         </i>
-        <div class="menu-content" slot="popover" @click="handleContentClick">
+        <div class="menu-content" slot="content" @click="handleContentClick">
             <slot></slot>
         </div>
-    </v-popover>
+    </bk-popover>
 </template>
 
 <script>
@@ -46,12 +47,15 @@
             }
         },
         methods: {
-            setVisible (open) {
-                this.open = open
+            show () {
+                this.open = true
+            },
+            hide () {
+                this.open = false
             },
             handleContentClick () {
                 if (this.closeWhenMenuClick) {
-                    this.setVisible(false)
+                    this.$refs.popover.$refs.reference._tippy.hide()
                 }
             }
         }
@@ -73,8 +77,13 @@
                 box-shadow: 0 -5px 0 0 var(--hoverColor), 0 5px 0 0 var(--hoverColor);
             }
         }
+        /deep/.bk-tooltip-ref {
+            width: 100%;
+            outline: none;
+        }
         .menu-trigger {
             @include inlineBlock;
+            width: 100%;
             &:before {
                 @include inlineBlock;
                 content: "";
@@ -86,20 +95,18 @@
             }
         }
     }
-    .menu-content {
-        font-size: 14px;
-    }
 </style>
 <style lang="scss">
-    .tooltip.popover.dot-menu-popover {
-        margin: 0;
-        top: 5px !important;
-        .popover-inner {
-            border-radius: 2px;
-            box-shadow: 0px 1px 4px 0px rgba(196, 198, 204, 1);
-        }
-        .tooltip-inner {
-            padding: 0;
+    .dot-menu-popover-theme {
+        top: -6px;
+        left: 10px;
+        padding: 0 !important;
+        .menu-content {
+            font-size: 14px !important;
+            background-color: #ffffff;
+            button {
+                font-size: 14px !important;
+            }
         }
     }
 </style>

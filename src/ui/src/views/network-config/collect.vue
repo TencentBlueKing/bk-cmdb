@@ -1,14 +1,18 @@
 <template>
     <div class="collect-wrapper">
         <div class="title">
-            <bk-button type="primary"
+            <bk-button theme="primary"
                 :disabled="!table.checked.length"
                 :loading="$loading('collectDataCollection')"
                 @click="executionDiscovery">
                 {{$t('NetworkDiscovery["执行发现"]')}}
             </bk-button>
             <div class="input-box">
-                <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'搜索IP、云区域\']')" v-model.trim="filter.text" @keyup.enter="getTableData">
+                <bk-input type="text" class="cmdb-form-input"
+                    :placeholder="$t('NetworkDiscovery[\'搜索IP、云区域\']')"
+                    v-model.trim="filter.text"
+                    @enter="getTableData">
+                </bk-input>
                 <i class="bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>
@@ -65,15 +69,13 @@
             </template>
         </cmdb-table>
         <bk-dialog
-            class="config-dialog"
-            :is-show.sync="configDialog.isShow"
-            :has-header="false"
-            :has-footer="false"
-            :quick-close="false"
+            class="bk-dialog-no-padding config-dialog"
+            v-model="configDialog.isShow"
+            :show-footer="false"
+            :mask-close="false"
             :close-icon="false"
-            padding="0"
             :width="424">
-            <div slot="content" class="dialog-content">
+            <div class="dialog-content">
                 <div class="content-box">
                     <h2 class="title">
                         {{$t('NetworkDiscovery["配置采集器"]')}}
@@ -81,7 +83,7 @@
                     <label>
                         <span>{{$t('NetworkDiscovery["SNMP扫描范围"]')}}</span>
                         <span class="color-danger">*</span>
-                        <i class="bk-icon icon-exclamation-circle" v-tooltip="{ content: htmlEncode(), classes: 'collect-tooltip' }"></i>
+                        <i class="bk-icon icon-exclamation-circle" v-bk-tooltips="{ content: htmlEncode(), classes: 'collect-tooltip' }"></i>
                     </label>
                     <textarea name="scan_range" id="" cols="30" rows="10" v-validate="'required'" v-model.trim="configDialog.scan_range"></textarea>
                     <div v-show="errors.has('scan_range')" class="color-danger">{{ errors.first('scan_range') }}</div>
@@ -89,23 +91,29 @@
                         <span>{{$t('NetworkDiscovery["采集频率"]')}}</span>
                         <span class="color-danger">*</span>
                     </label>
-                    <bk-selector
-                        :list="configDialog.periodList"
-                        :selected.sync="configDialog.period"
-                    ></bk-selector>
+                    <bk-select v-model="configDialog.period">
+                        <bk-option v-for="(option, index) in configDialog.periodList"
+                            :key="index"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
                     <label>
                         <span>{{$t('NetworkDiscovery["团体字"]')}}</span>
                         <span class="color-danger">*</span>
-                        <i class="bk-icon icon-exclamation-circle" v-tooltip="'Community String'"></i>
+                        <i class="bk-icon icon-exclamation-circle" v-bk-tooltips="'Community String'"></i>
                     </label>
-                    <input type="text" name="community" class="cmdb-form-input" v-validate="'required'" v-model.trim="configDialog.community">
+                    <bk-input type="text" name="community" class="cmdb-form-input"
+                        v-validate="'required'"
+                        v-model.trim="configDialog.community">
+                    </bk-input>
                     <div v-show="errors.has('community')" class="color-danger">{{ errors.first('community') }}</div>
                 </div>
                 <div class="footer">
-                    <bk-button type="primary" @click="saveConfig">
+                    <bk-button theme="primary" @click="saveConfig">
                         {{$t('NetworkDiscovery["保存并下发"]')}}
                     </bk-button>
-                    <bk-button type="default" @click="hideConfig">
+                    <bk-button theme="default" @click="hideConfig">
                         {{$t('Common["取消"]')}}
                     </bk-button>
                 </div>

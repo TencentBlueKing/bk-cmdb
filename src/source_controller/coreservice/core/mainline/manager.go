@@ -34,7 +34,7 @@ type InstanceMainline struct {
 	modelIDs        []string
 	objectParentMap map[string]string
 
-	businessInstances []mapstr.MapStr
+	businessInstance  mapstr.MapStr
 	setInstances      []mapstr.MapStr
 	moduleInstances   []mapstr.MapStr
 	mainlineInstances []mapstr.MapStr
@@ -74,7 +74,7 @@ func (im *InstanceMainline) LoadModelParentMap(ctx context.Context) {
 		}
 		im.objectParentMap[objectID] = im.modelIDs[idx-1]
 	}
-	blog.V(5).Infof("LoadModelParentMap mainline models: %+v, objectParentMap: %+v, rid:  %s", im.modelIDs, im.objectParentMap, rid)
+	blog.V(5).Infof("LoadModelParentMap mainline models: %#v, objectParentMap: %#v, rid: %s", im.modelIDs, im.objectParentMap, rid)
 }
 
 func (im *InstanceMainline) LoadSetInstances(ctx context.Context) error {
@@ -85,10 +85,10 @@ func (im *InstanceMainline) LoadSetInstances(ctx context.Context) error {
 
 	err := im.dbProxy.Table(common.BKTableNameBaseSet).Find(mongoCondition.ToMapStr()).All(ctx, &im.setInstances)
 	if err != nil {
-		blog.Errorf("get set instances by business:%d failed, %+v, rid: %s", im.bkBizID, err, rid)
+		blog.Errorf("get set instances by business:%d failed, %+v, cond: %#v, rid: %s", im.bkBizID, err, mongoCondition.ToMapStr(), rid)
 		return fmt.Errorf("get set instances by business:%d failed, %+v", im.bkBizID, err)
 	}
-	blog.V(5).Infof("get set instances by business:%d result: %+v, rid: %s", im.bkBizID, im.setInstances, rid)
+	blog.V(5).Infof("get set instances by business:%d result: %+v, cond: %#v, rid: %s", im.bkBizID, im.setInstances, mongoCondition.ToMapStr(), rid)
 	return nil
 }
 
@@ -100,10 +100,10 @@ func (im *InstanceMainline) LoadModuleInstances(ctx context.Context) error {
 
 	err := im.dbProxy.Table(common.BKTableNameBaseModule).Find(mongoCondition.ToMapStr()).All(ctx, &im.moduleInstances)
 	if err != nil {
-		blog.Errorf("get module instances by business:%d failed, %+v, rid: %s", im.bkBizID, err, rid)
+		blog.Errorf("get module instances by business:%d failed, err:%v, cond: %#v, rid: %s", im.bkBizID, err, mongoCondition.ToMapStr(), rid)
 		return fmt.Errorf("get module instances by business:%d failed, %+v", im.bkBizID, err)
 	}
-	blog.V(5).Infof("get module instances by business:%d result: %+v, rid: %s", im.bkBizID, im.moduleInstances, rid)
+	blog.V(5).Infof("get module instances by business:%d result: %+v,cond:%#v, rid: %s", im.bkBizID, im.moduleInstances, mongoCondition.ToMapStr(), rid)
 	return nil
 }
 
@@ -119,10 +119,10 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context) error {
 	cond := condCheckModel.ToMapStr()
 	err = im.dbProxy.Table(common.BKTableNameBaseInst).Find(cond).All(ctx, &im.mainlineInstances)
 	if err != nil {
-		blog.Errorf("get other mainline instances by business:%d failed, %+v, rid: %s", im.bkBizID, err, rid)
+		blog.Errorf("get other mainline instances by business:%d failed, err: %v, cond: %#v, rid: %s", im.bkBizID, err, cond, rid)
 		return fmt.Errorf("get other mainline instances by business:%d failed, %+v", im.bkBizID, err)
 	}
-	blog.V(5).Infof("get other mainline instances by business:%d result: %+v, rid: %s", im.bkBizID, im.mainlineInstances, rid)
+	blog.V(5).Infof("get other mainline instances by business:%d result: %#v, cond: %#v, rid: %s", im.bkBizID, im.mainlineInstances, cond, rid)
 	return nil
 }
 
@@ -136,22 +136,19 @@ func (im *InstanceMainline) ConstructBizTopoInstance(ctx context.Context, withDe
 		Detail:           map[string]interface{}{},
 	}
 
+	// get business detail here
+	bizFilter := map[string]interface{}{
+		common.BKAppIDField: im.bkBizID,
+	}
+	err := im.dbProxy.Table(common.BKTableNameBaseApp).Find(bizFilter).One(ctx, &im.businessInstance)
+	if err != nil {
+		blog.Errorf("get business instances by business:%d failed, err: %+v, cond: %#v, rid: %s", im.bkBizID, err, rid)
+		return fmt.Errorf("get business instances by business:%d failed, err: %+v", im.bkBizID, err)
+	}
+	blog.V(5).Infof("SearchMainlineInstanceTopo businessInstances: %+v, rid: %s", im.businessInstance, rid)
+	bizTopoInstance.InstanceName = util.GetStrByInterface(im.businessInstance[common.BKAppNameField])
 	if withDetail == true {
-		// get business detail here
-		mongoCondition := mongo.NewCondition()
-		mongoCondition.Element(&mongo.Eq{Key: common.BKAppIDField, Val: im.bkBizID})
-
-		err := im.dbProxy.Table(common.BKTableNameBaseApp).Find(mongoCondition.ToMapStr()).All(ctx, &im.businessInstances)
-		if err != nil {
-			blog.Errorf("get business instances by business:%d failed, err: %+v, rid: %s", im.bkBizID, err, rid)
-			return fmt.Errorf("get business instances by business:%d failed, err: %+v", im.bkBizID, err)
-		}
-		blog.V(5).Infof("SearchMainlineInstanceTopo businessInstances: %+v, rid: %s", im.businessInstances, rid)
-		if len(im.businessInstances) == 0 {
-			blog.Errorf("business instances by business:%d not found, rid: %s", im.bkBizID, rid)
-			return fmt.Errorf("business instances by business:%d not found", im.bkBizID)
-		}
-		bizTopoInstance.Detail = im.businessInstances[0]
+		bizTopoInstance.Detail = im.businessInstance
 	}
 
 	im.allTopoInstances = append(im.allTopoInstances, bizTopoInstance)
@@ -179,10 +176,12 @@ func (im *InstanceMainline) OrganizeSetInstance(ctx context.Context, withDetail 
 			return fmt.Errorf("parse set instance default field failed, default: %+v, err: %+v", instance[common.BKDefaultField], err)
 		}
 
+		instanceName := util.GetStrByInterface(instance[common.BKSetNameField])
 		topoInstance := &metadata.TopoInstance{
 			Default:          defaultFieldValue,
 			ObjectID:         common.BKInnerObjIDSet,
 			InstanceID:       instanceID,
+			InstanceName:     instanceName,
 			ParentInstanceID: parentInstanceID,
 			Detail:           map[string]interface{}{},
 		}
@@ -215,10 +214,13 @@ func (im *InstanceMainline) OrganizeModuleInstance(ctx context.Context, withDeta
 			return fmt.Errorf("parse module instance default field failed, default: %+v, err: %+v", instance[common.BKDefaultField], err)
 		}
 
+		instanceName := util.GetStrByInterface(instance[common.BKModuleNameField])
+
 		topoInstance := &metadata.TopoInstance{
 			Default:          defaultFieldValue,
 			ObjectID:         common.BKInnerObjIDModule,
 			InstanceID:       instanceID,
+			InstanceName:     instanceName,
 			ParentInstanceID: parentInstanceID,
 			Detail:           map[string]interface{}{},
 		}
@@ -244,9 +246,11 @@ func (im *InstanceMainline) OrganizeMainlineInstance(ctx context.Context, withDe
 			blog.Errorf("parse instanceID:%+v to int64 failed, %+v, rid: %s", instance[common.BKInstParentStr], err, rid)
 			return fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
 		}
+		instanceName := util.GetStrByInterface(instance[common.BKInstNameField])
 		topoInstance := &metadata.TopoInstance{
 			ObjectID:         instance[common.BKObjIDField].(string),
 			InstanceID:       instanceID,
+			InstanceName:     instanceName,
 			ParentInstanceID: parentInstanceID,
 			Detail:           map[string]interface{}{},
 		}
@@ -262,7 +266,7 @@ func (im *InstanceMainline) OrganizeMainlineInstance(ctx context.Context, withDe
 func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	for _, topoInstance := range im.allTopoInstances {
-		blog.V(5).Infof("topo instance: %+v, rid: %s", topoInstance, rid)
+		blog.V(5).Infof("topo instance: %#v, rid: %s", topoInstance, rid)
 		if topoInstance.ParentInstanceID == 0 {
 			continue
 		}
@@ -302,12 +306,13 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, wi
 				// 这类特殊情况的结点是业务，不需要重复获取，ConstructInstanceTopoTree 会做进一步处理
 				continue
 			} else {
-				blog.Errorf("found unexpected count of missedInstances: %+v, rid: %s", missedInstances, rid)
-				return fmt.Errorf("SearchMainlineInstanceTopo found %d missedInstances with instanceID=%d", len(missedInstances), topoInstance.ParentInstanceID)
+				// parent id not found, ignore node
+				blog.Warnf("found unexpected count of missedInstances: %#v, cond: %#v, rid: %s", missedInstances, mongoCondition.ToMapStr(), rid)
+				//return fmt.Errorf("SearchMainlineInstanceTopo found %d missedInstances with instanceID=%d", len(missedInstances), topoInstance.ParentInstanceID)
 			}
 		}
 		if len(missedInstances) > 1 {
-			blog.Errorf("found too many(%d) missedInstances: %+v by id: %d, rid: %s", len(missedInstances), missedInstances, topoInstance.ParentInstanceID, rid)
+			blog.Errorf("found too many(%d) missedInstances: %#v by id: %d, cond: %#v, rid: %s", len(missedInstances), missedInstances, topoInstance.ParentInstanceID, mongoCondition.ToMapStr(), rid)
 			return fmt.Errorf("found too many(%d) missedInstances: %+v by id: %d", len(missedInstances), missedInstances, topoInstance.ParentInstanceID)
 		}
 		instance := missedInstances[0]
@@ -338,6 +343,7 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, wi
 
 		topoInstance := &metadata.TopoInstance{
 			ObjectID:         util.GetStrByInterface(instance[common.BKObjIDField]),
+			InstanceName:     util.GetStrByInterface(instance[common.BKInstNameField]),
 			InstanceID:       instanceID,
 			ParentInstanceID: parentInstanceID,
 			Detail:           map[string]interface{}{},
@@ -401,6 +407,7 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, withD
 					parentInstance = &metadata.TopoInstance{
 						ObjectID:         parentObjectID,
 						InstanceID:       topoInstance.ParentInstanceID,
+						InstanceName:     util.GetStrByInterface(inst),
 						ParentInstanceID: parentParentID,
 						Detail:           inst,
 					}
@@ -409,10 +416,11 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, withD
 				}
 			}
 			topoInstanceNode := &metadata.TopoInstanceNode{
-				ObjectID:   parentInstance.ObjectID,
-				InstanceID: parentInstance.InstanceID,
-				Detail:     parentInstance.Detail,
-				Children:   []*metadata.TopoInstanceNode{},
+				ObjectID:     parentInstance.ObjectID,
+				InstanceID:   parentInstance.InstanceID,
+				InstanceName: parentInstance.InstanceName,
+				Detail:       parentInstance.Detail,
+				Children:     []*metadata.TopoInstanceNode{},
 			}
 			topoInstanceNodeMap[parentKey] = topoInstanceNode
 		}
@@ -426,10 +434,11 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, withD
 
 		if _, exist := topoInstanceNodeMap[topoInstance.Key()]; exist == false {
 			childTopoInstanceNode := &metadata.TopoInstanceNode{
-				ObjectID:   topoInstance.ObjectID,
-				InstanceID: topoInstance.InstanceID,
-				Detail:     topoInstance.Detail,
-				Children:   []*metadata.TopoInstanceNode{},
+				ObjectID:     topoInstance.ObjectID,
+				InstanceID:   topoInstance.InstanceID,
+				InstanceName: topoInstance.InstanceName,
+				Detail:       topoInstance.Detail,
+				Children:     []*metadata.TopoInstanceNode{},
 			}
 			topoInstanceNodeMap[topoInstance.Key()] = childTopoInstanceNode
 		}

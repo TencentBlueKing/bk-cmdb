@@ -17,7 +17,7 @@
                                     <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                     <i class="property-name-tooltips icon-cc-tips"
                                         v-if="property['placeholder']"
-                                        v-tooltip="htmlEncode(property['placeholder'])">
+                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
                                     </i>
                                 </div>
                                 <div class="property-value clearfix">
@@ -50,7 +50,7 @@
                         active: !$isAuthorized(saveAuth),
                         auth: [saveAuth]
                     }">
-                    <bk-button class="button-save" type="primary"
+                    <bk-button class="button-save" theme="primary"
                         :disabled="!$isAuthorized(saveAuth) || !hasChange || $loading()"
                         @click="handleSave">
                         {{$t("Common['保存']")}}

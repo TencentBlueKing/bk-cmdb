@@ -1,16 +1,16 @@
 <template>
     <div class="network-confirm-wrapper">
         <div class="filter-wrapper" :class="{ 'open': filter.isShow }">
-            <bk-button type="default" @click="toggleFilter">
+            <bk-button theme="default" @click="toggleFilter">
                 {{$t('NetworkDiscovery["批量操作"]')}}
                 <i class="bk-icon icon-angle-down"></i>
             </bk-button>
             <div class="filter-details clearfix" v-show="filter.isShow">
                 <div class="details-left">
-                    <bk-button type="default" @click="toggleIgnore(true)">
+                    <bk-button theme="default" @click="toggleIgnore(true)">
                         {{$t('NetworkDiscovery["忽略"]')}}
                     </bk-button>
-                    <bk-button type="default" @click="toggleIgnore(false)">
+                    <bk-button theme="default" @click="toggleIgnore(false)">
                         {{$t('NetworkDiscovery["取消忽略"]')}}
                     </bk-button>
                     <label class="cmdb-form-checkbox">
@@ -19,20 +19,24 @@
                     </label>
                 </div>
                 <div class="details-right clearfix">
-                    <bk-selector
-                        :list="changeList"
-                        :allow-clear="true"
-                        :selected.sync="filterCopy.action"
-                        :placeholder="$t('NetworkDiscovery[\'全部变更\']')"
-                    ></bk-selector>
-                    <bk-selector
-                        :list="typeList"
-                        :allow-clear="true"
-                        :selected.sync="filterCopy['bk_obj_name']"
-                        :placeholder="$t('NetworkDiscovery[\'全部类型\']')"
-                    ></bk-selector>
-                    <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')">
-                    <bk-button type="default" @click="search">
+                    <bk-select v-model="filterCopy.action"
+                        :placeholder="$t('NetworkDiscovery[\'全部变更\']')">
+                        <bk-option v-for="(option, index) in changeList"
+                            :key="index"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
+                    <bk-select v-model="filterCopy.bk_obj_name"
+                        :placeholder="$t('NetworkDiscovery[\'全部类型\']')">
+                        <bk-option v-for="(option, index) in typeList"
+                            :key="index"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
+                    <bk-input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')"></bk-input>
+                    <bk-button theme="default" @click="search">
                         {{$t('Common["查询"]')}}
                     </bk-button>
                 </div>
@@ -74,12 +78,13 @@
                 </template>
             </template>
         </cmdb-table>
-        <cmdb-slider
+        <bk-sideslider
             :width="740"
             :title="slider.title"
             :is-show.sync="slider.isShow">
             <v-confirm-details
                 slot="content"
+                v-if="slider.isShow"
                 :ignore="activeItem.ignore"
                 :attributes.sync="activeItem.attributes"
                 :associations.sync="activeItem.associations"
@@ -87,21 +92,20 @@
                 @toggleSwitcher="toggleSwitcher"
                 @updateView="updateView"
             ></v-confirm-details>
-        </cmdb-slider>
+        </bk-sideslider>
         <div class="footer">
-            <bk-button type="primary" @click="showResultDialog">
+            <bk-button theme="primary" @click="showResultDialog">
                 {{$t('NetworkDiscovery["确认变更"]')}}
             </bk-button>
         </div>
         <bk-dialog
             class="result-dialog"
-            :is-show.sync="resultDialog.isShow"
-            :has-header="false"
-            :has-footer="false"
-            :quick-close="false"
+            v-model="resultDialog.isShow"
+            :show-footer="false"
+            :mask-close="false"
             :close-icon="false"
             :width="448">
-            <div slot="content">
+            <div>
                 <h2>{{$t('NetworkDiscovery["执行结果"]')}}</h2>
                 <div class="dialog-content">
                     <p>
@@ -137,29 +141,28 @@
                     </transition>
                 </div>
                 <div class="footer">
-                    <bk-button type="primary" @click="resultDialog.isShow = false">
+                    <bk-button theme="primary" @click="resultDialog.isShow = false">
                         {{$t('Hosts["确认"]')}}
                     </bk-button>
                 </div>
             </div>
         </bk-dialog>
         <bk-dialog
-            class="confirm-dialog"
-            :is-show.sync="confirmDialog.isShow"
+            class="bk-dialog-no-padding confirm-dialog"
+            v-model="confirmDialog.isShow"
             :title="$t('NetworkDiscovery[\'退出确认\']')"
-            :has-footer="false"
-            :quick-close="false"
-            padding="0"
+            :show-footer="false"
+            :mask-close="false"
             :width="390">
-            <div slot="content" class="dialog-content">
+            <div class="dialog-content">
                 <p>
                     {{$t('NetworkDiscovery["当前改动尚未生效，是否放弃？"]')}}
                 </p>
                 <div class="footer">
-                    <bk-button type="default" @click="routeToLeave">
+                    <bk-button theme="default" @click="routeToLeave">
                         {{$t('NetworkDiscovery["放弃改动"]')}}
                     </bk-button>
-                    <bk-button type="default" @click="confirmDialog.isShow = false">
+                    <bk-button theme="default" @click="confirmDialog.isShow = false">
                         {{$t('Common["取消"]')}}
                     </bk-button>
                 </div>

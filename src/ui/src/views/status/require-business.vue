@@ -7,7 +7,7 @@
                 <p>{{$t("Common['点击下方按钮申请']")}}</p>
             </div>
             <div class="btns">
-                <bk-button type="primary" @click="handleApplyPermission">
+                <bk-button theme="primary" @click="handleApplyPermission">
                     {{$t("Common['申请业务权限']")}}
                 </bk-button>
             </div>

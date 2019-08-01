@@ -72,7 +72,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		if process.Config.MongoDB.Enable == "true" {
 			mgoCli, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
 		} else {
-			mgoCli, err = remote.NewWithDiscover(process.Core.ServiceManageInterface.TMServer().GetServers)
+			mgoCli, err = remote.NewWithDiscover(process.Core)
 		}
 		if err != nil {
 			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
@@ -80,7 +80,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		esbChan := make(chan esbutil.EsbConfig, 1)
 		esbChan <- process.Config.Esb
-		esb, err := esbserver.NewEsb(engine.ApiMachineryConfig(), esbChan, engine.Metric().Registry())
+		esb, err := esbserver.NewEsb(engine.ApiMachineryConfig(), esbChan, nil, engine.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new esb client failed, err: %s", err.Error())
 		}

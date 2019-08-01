@@ -14,26 +14,31 @@
                     </span>
                 </div>
             </div>
-            <cmdb-table
-                row-cursor="default"
-                row-hover-color="#fff"
-                :loading="$loading(`post_searchObjectAttribute_${objId}`)"
-                :sortable="false"
-                :width="width ? width : 700"
-                :wrapper-minus-height="300"
-                :empty-height="230"
-                :header="tableHeader"
-                :list="displayList"
+            <bk-table
+                v-bkloading="{ isLoading: $loading(`post_searchObjectAttribute_${objId}`) }"
+                :data="displayList"
+                :width="width || 700"
+                :max-height="$APP.height - 300"
+                :height="height"
                 :row-border="true"
                 :col-border="true"
-                v-bind="height ? { height } : {}">
-                <template slot="pre_data" slot-scope="{ item }">
-                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item.pre_data"></div>
-                </template>
-                <template slot="cur_data" slot-scope="{ item }">
-                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item.cur_data"></div>
-                </template>
-            </cmdb-table>
+                :cell-style="getCellStyle">
+                <bk-table-column prop="bk_property_name"></bk-table-column>
+                <bk-table-column v-if="details.op_type !== 1"
+                    prop="pre_data"
+                    :label="$t('OperationAudit[\'变更前\']')">
+                    <template slot-scope="{ row }">
+                        <span v-html="row.pre_data"></span>
+                    </template>
+                </bk-table-column>
+                <bk-table-column v-if="details.op_type !== 3"
+                    prop="cur_data"
+                    :label="$t('OperationAudit[\'变更后\']')">
+                    <template slot-scope="{ row }" v-html="row.cur_data">
+                        <span v-html="row.cur_data"></span>
+                    </template>
+                </bk-table-column>
+            </bk-table>
             <p class="field-btn" @click="toggleFields" v-if="isShowToggle && details.op_type !== 1 && details.op_type !== 3">
                 {{isShowAllFields ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
             </p>
@@ -101,30 +106,6 @@
                     biz,
                     opType
                 }
-            },
-            tableHeader () {
-                const header = [{
-                    id: 'bk_property_name',
-                    name: '',
-                    width: 130
-                }]
-                const preDataHeader = {
-                    id: 'pre_data',
-                    name: this.$t("OperationAudit['变更前']")
-                }
-                const curDataHeader = {
-                    id: 'cur_data',
-                    name: this.$t("OperationAudit['变更后']")
-                }
-                if (this.details['op_type'] === 1) {
-                    header.push(curDataHeader)
-                } else if (this.details['op_type'] === 2 || this.details['op_type'] === 100) {
-                    header.push(preDataHeader)
-                    header.push(curDataHeader)
-                } else if (this.details['op_type'] === 3) {
-                    header.push(preDataHeader)
-                }
-                return header
             },
             tableList () {
                 const list = []
@@ -231,6 +212,14 @@
                 }
                 return false
             },
+            getCellStyle ({ row, columnIndex }) {
+                if (columnIndex > 0 && this.hasChanged(row)) {
+                    return {
+                        backgroundColor: '#e9faf0'
+                    }
+                }
+                return {}
+            },
             getTopoPath (bizId, module) {
                 const path = [this.options.biz[bizId] || `业务ID：${bizId}`]
                 const set = ((module.set || [])[0] || {}).ref_name
@@ -249,7 +238,7 @@
 <style lang="scss" scoped>
     .history-details-wrapper{
         padding: 32px 50px;
-        height: calc(100% - 60px);
+        height: 100%;
     }
     .info-group{
         width: 50%;
@@ -278,17 +267,8 @@
             width: 220px;
         }
     }
-    .details-data{
-        min-height: 100%;
-        width: calc(100% + 32px);
-        padding: 6px 16px;
-        margin: 0 0 0 -16px;
-        white-space: normal;
-        &.has-changed{
-            background-color: #e9faf0;
-        }
-    }
     .field-btn{
+        font-size: 14px;
         margin: 10px 0;
         text-align: right;
         color: #3c96ff;

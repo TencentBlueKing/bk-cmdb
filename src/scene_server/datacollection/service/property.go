@@ -16,7 +16,7 @@ import (
 	"net/http"
 	"strconv"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -27,76 +27,76 @@ import (
 
 // CreateProperty create net property
 func (s *Service) CreateProperty(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	pHeader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	netPropertyInfo := meta.NetcollectProperty{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&netPropertyInfo); nil != err {
 		blog.Errorf("[NetProperty] add property failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	result, err := s.Logics.AddProperty(pheader, netPropertyInfo)
+	result, err := s.Logics.AddProperty(pHeader, netPropertyInfo)
 	if nil != err {
 		if err.Error() == defErr.Error(common.CCErrCollectNetPropertyCreateFail).Error() {
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
 
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(result))
+	_ = resp.WriteEntity(meta.NewSuccessResp(result))
 }
 
 // UpdateProperty update net property
 func (s *Service) UpdateProperty(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	pHeader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	netPropertyID, err := checkNetPropertyIDPathParam(defErr, req.PathParameter("netcollect_property_id"))
 	if nil != err {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
 
 	netPropertyInfo := meta.NetcollectProperty{}
 	if err = json.NewDecoder(req.Request.Body).Decode(&netPropertyInfo); nil != err {
 		blog.Errorf("[NetProperty] update property failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	if err = s.Logics.UpdateProperty(pheader, netPropertyID, netPropertyInfo); nil != err {
+	if err = s.Logics.UpdateProperty(pHeader, netPropertyID, netPropertyInfo); nil != err {
 		if err.Error() == defErr.Error(common.CCErrCollectNetPropertyUpdateFail).Error() {
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
 
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(nil))
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 // BatchCreateProperty batch create net property
 func (s *Service) BatchCreateProperty(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	pHeader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	batchAddNetProperty := new(meta.BatchAddNetProperty)
 	if err := json.NewDecoder(req.Request.Body).Decode(&batchAddNetProperty); err != nil {
 		blog.Errorf("[NetProperty] batch add property failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 	propertyList := batchAddNetProperty.Data
-	resultList, hasError := s.Logics.BatchCreateProperty(pheader, propertyList)
+	resultList, hasError := s.Logics.BatchCreateProperty(pHeader, propertyList)
 	if hasError {
-		resp.WriteEntity(meta.Response{
+		_ = resp.WriteEntity(meta.Response{
 			BaseResp: meta.BaseResp{
 				Result: false,
 				Code:   common.CCErrCollectNetPropertyCreateFail,
@@ -106,29 +106,29 @@ func (s *Service) BatchCreateProperty(req *restful.Request, resp *restful.Respon
 		return
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(resultList))
+	_ = resp.WriteEntity(meta.NewSuccessResp(resultList))
 }
 
 // SearchProperty search net property
 func (s *Service) SearchProperty(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	pHeader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	body := new(meta.NetCollSearchParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(body); nil != err {
 		blog.Errorf("[NetProperty] search net property failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	propertys, err := s.Logics.SearchProperty(pheader, body)
+	propertys, err := s.Logics.SearchProperty(pHeader, body)
 	if nil != err {
 		blog.Errorf("[NetProperty] search net property failed, err: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCollectNetPropertyGetFail)})
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCollectNetPropertyGetFail)})
 		return
 	}
 
-	resp.WriteEntity(meta.SearchNetPropertyResult{
+	_ = resp.WriteEntity(meta.SearchNetPropertyResult{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     *propertys,
 	})
@@ -136,31 +136,31 @@ func (s *Service) SearchProperty(req *restful.Request, resp *restful.Response) {
 
 // DeleteProperty delete net propertys
 func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	pHeader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	deleteNetPropertyBatchOpt := new(meta.DeleteNetPropertyBatchOpt)
 	if err := json.NewDecoder(req.Request.Body).Decode(deleteNetPropertyBatchOpt); nil != err {
 		blog.Errorf("[NetProperty] delete net property batch, but decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	for _, netPropertyID := range deleteNetPropertyBatchOpt.NetcollectPropertyIDs {
-		if err := s.Logics.DeleteProperty(pheader, netPropertyID); nil != err {
+		if err := s.Logics.DeleteProperty(pHeader, netPropertyID); nil != err {
 			blog.Errorf("[NetProperty] delete net property failed, with netcollect_property_id [%d], err: %v", netPropertyID, err)
 
 			if defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist).Error() == err.Error() {
-				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+				_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 				return
 			}
 
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(nil))
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func checkNetPropertyIDPathParam(defErr errors.DefaultCCErrorIf, ID string) (uint64, error) {

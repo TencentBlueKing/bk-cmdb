@@ -41,7 +41,7 @@ export default [{
                 this.authScope = isAdminView ? 'global' : 'business'
             }
         },
-        i18Title: 'Nav["模型"]'
+        i18nTitle: 'Nav["模型"]'
     })
 }, {
     name: 'modelDetails',

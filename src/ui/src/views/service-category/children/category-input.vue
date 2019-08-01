@@ -1,10 +1,11 @@
 <template>
     <div class="cagetory-input" v-click-outside="handleCancel">
-        <input type="text" class="bk-form-input"
+        <bk-input type="text" class="bk-form-control"
             :style="setStyle"
             :ref="inputRef"
             :placeholder="placeholder"
             v-model="localValue">
+        </bk-input>
         <div class="operation">
             <span class="text-primary btn-confirm"
                 @click.stop="handleConfirm">{{$t("Common['确定']")}}
@@ -67,12 +68,19 @@
         @include space-between;
         width: 100%;
         font-weight: normal;
-        .bk-form-input {
+        .bk-form-control {
             flex: 1;
             font-size: 14px;
             height: 32px;
             line-height: 32px;
             margin-right: 10px;
+            /deep/.bk-form-input {
+                border: none;
+                    background-color: transparent;
+                &:focus {
+                    background-color: transparent !important;
+                }
+            }
         }
         .text-primary {
             display: inline-block;

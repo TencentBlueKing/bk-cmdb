@@ -36,6 +36,7 @@ type InstOperationInterface interface {
 	CreateInst(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
 	CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error)
 	DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition, needCheckHost bool) error
+	DeleteMainlineInstWithID(params types.ContextParams, obj model.Object, instID int64) error
 	DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error
 	FindOriginInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error)
 	FindInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
@@ -128,7 +129,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		// check if this instance name is already exist.
 		if _, ok := instNameMap[name]; ok {
 			blog.Errorf("create object[%s] instance batch, but bk_inst_name %s is duplicated., rid: %s", object.ObjectID, name, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrorTopoMutipleObjectInstanceName, name)
+			return nil, params.Err.Errorf(common.CCErrorTopoMultipleObjectInstanceName, name)
 		}
 
 		instNameMap[name] = struct{}{}
@@ -286,11 +287,10 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 }
 
 func (c *commonInst) innerHasHost(params types.ContextParams, moduleIDS []int64) (bool, error) {
-	cond := map[string][]int64{
-		common.BKModuleIDField: moduleIDS,
+	option := metadata.HostModuleRelationRequest{
+		ModuleIDArr: moduleIDS,
 	}
-
-	rsp, err := c.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, cond)
+	rsp, err := c.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -362,7 +362,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		return err
 	}
 
-	deleteIDS := []deletedInst{}
+	deleteIDS := make([]deletedInst, 0)
 	for _, inst := range insts {
 		ids, exists, err := c.hasHost(params, inst, needCheckHost)
 		if nil != err {
@@ -420,6 +420,57 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 	return nil
 }
 
+func (c *commonInst) DeleteMainlineInstWithID(params types.ContextParams, obj model.Object, instID int64) error {
+	object := obj.Object()
+	preAudit := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(instID, condition.CreateCondition().ToMapStr())
+	// if this instance has been bind to a instance by the association, then this instance should not be deleted.
+	innerCond := condition.CreateCondition()
+	innerCond.Field(common.BKAsstObjIDField).Eq(object.ObjectID)
+	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	innerCond.Field(common.BKAsstInstIDField).Eq(instID)
+	err := c.asst.CheckBeAssociation(params, obj, innerCond)
+	if nil != err {
+		return err
+	}
+
+	// this instance has not be bind to another instance, we can delete all the associations it created
+	// by the association with other instances.
+	innerCond = condition.CreateCondition()
+	innerCond.Field(common.BKObjIDField).Eq(object.ObjectID)
+	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	innerCond.Field(common.BKInstIDField).Eq(instID)
+	if err = c.asst.DeleteInstAssociation(params, innerCond); nil != err {
+		blog.Errorf("[operation-inst] failed to delete the inst asst, err: %s", err.Error())
+		return err
+	}
+
+	// delete this instance now.
+	delCond := condition.CreateCondition()
+	delCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	delCond.Field(obj.GetInstIDFieldName()).Eq(instID)
+	if obj.IsCommon() {
+		delCond.Field(common.BKObjIDField).Eq(object.ObjectID)
+	}
+
+	ops := metadata.DeleteOption{
+		Condition: delCond.ToMapStr(),
+	}
+	rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(context.Background(), params.Header, object.ObjectID, &ops)
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s", object.ObjectID, delCond.ToMapStr(), rsp.ErrMsg)
+		return params.Err.Error(rsp.Code)
+	}
+
+	NewSupplementary().Audit(params, c.clientSet, obj, c).CommitDeleteLog(preAudit, nil, nil)
+
+	return nil
+}
+
 func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition, needCheckHost bool) error {
 
 	// clear inst associations
@@ -428,7 +479,7 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 	query.Condition = cond.ToMapStr()
 
 	_, insts, err := c.FindInst(params, obj, query, false)
-	instIDs := []int64{}
+	instIDs := make([]int64, 0)
 	for _, inst := range insts {
 		instID, _ := inst.GetInstID()
 		instIDs = append(instIDs, instID)
@@ -568,12 +619,12 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 	tmpResults := map[string]*CommonInstTopo{}
 	for _, inst := range insts {
 
-		childs, err := inst.GetChildObjectWithInsts()
+		children, err := inst.GetChildObjectWithInsts()
 		if nil != err {
 			return 0, nil, err
 		}
 
-		for _, child := range childs {
+		for _, child := range children {
 			object := child.Object.Object()
 			commonInst, exists := tmpResults[object.ObjectID]
 			if !exists {

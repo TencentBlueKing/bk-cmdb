@@ -2,7 +2,7 @@
     <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading() }">
         <label class="create-label fl">{{$t('BusinessTopology["添加主机"]')}}</label>
         <div class="create-hosts">
-            <bk-button class="select-host-button" type="default"
+            <bk-button class="select-host-button" theme="default"
                 @click="hostSelectorVisible = true">
                 <i class="bk-icon icon-plus"></i>
                 {{$t('BusinessTopology["添加主机"]')}}
@@ -19,14 +19,21 @@
                     :name="host.bk_host_innerip"
                     :source-processes="sourceProcesses"
                     :templates="templates"
+                    :show-tips="showTips"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
-                    <bk-button type="primary"
-                        :disabled="!hosts.length"
-                        @click="handleConfirm">
-                        {{$t('Common["确定"]')}}
-                    </bk-button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                            auth: [$OPERATION.C_SERVICE_INSTANCE]
+                        }">
+                        <bk-button theme="primary"
+                            :disabled="!hosts.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                            @click="handleConfirm">
+                            {{$t('Common["确定"]')}}
+                        </bk-button>
+                    </span>
                     <bk-button @click="handleBackToModule">{{$t('Common["取消"]')}}</bk-button>
                 </div>
             </div>
@@ -54,7 +61,8 @@
                 hostSelectorVisible: false,
                 moduleInstance: {},
                 hosts: [],
-                templates: []
+                templates: [],
+                showTips: false
             }
         },
         computed: {
@@ -145,10 +153,7 @@
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
                     if (serviceInstanceTables.some(table => !table.processList.length)) {
-                        this.$bkMessage({
-                            message: this.$t("BusinessTopology['请为主机添加进程']"),
-                            theme: 'warning'
-                        })
+                        this.showTips = true
                         return
                     }
                     if (this.withTemplate) {
@@ -181,6 +186,7 @@
                             })
                         })
                     }
+                    this.$success(this.$t('Common[\'添加成功\']'))
                     this.handleBackToModule()
                 } catch (e) {
                     console.error(e)

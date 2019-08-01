@@ -46,7 +46,8 @@ func (ps *parseStream) topology() *parseStream {
 		objectUnique().
 		audit().
 		instanceAudit().
-		privilege()
+		privilege().
+		fullTextSearch()
 
 	return ps
 }
@@ -1929,6 +1930,29 @@ func (ps *parseStream) privilege() *parseStream {
 	}
 
 	if ps.hitRegexp(findPrivilege, http.MethodGet) || ps.hitRegexp(findPrivilege, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+var (
+	fullTextSearchPattern = "/api/v3/find/full_text"
+)
+
+func (ps *parseStream) fullTextSearch() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitRegexp(findPrivilege, http.MethodGet) || ps.hitPattern(fullTextSearchPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

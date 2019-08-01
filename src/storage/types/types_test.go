@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/rentiansheng/bk_bson/bson"
 	"github.com/stretchr/testify/require"
 )
 
@@ -135,4 +135,32 @@ func TestDecodeSubStruct(t *testing.T) {
 	}
 
 	t.Logf("%#v   %#v  %#v", out, elem, elem2)
+}
+
+// Classification the classification metadata definition
+type Classification struct {
+	//Name int64     `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
+	Time time.Time `field:"last_time"  json:"last_time" bson:"last_time"`
+}
+
+type Time time.Time
+
+func TestStruct(t *testing.T) {
+	docItem := map[string]interface{}{
+
+		"last_time": "2018-11-16T08:18:13.946Z",
+	}
+
+	out, err := bson.Marshal(docItem)
+	if nil != err {
+		t.Errorf("Decode array error when marshal: %v, source is %s", err, docItem)
+	}
+
+	newData := &Classification{}
+	err = bson.Unmarshal(out, newData)
+	if nil != err {
+		t.Errorf("Decode array error when unmarshal: %v, source is %v", err, newData)
+	}
+	t.Log(newData)
+
 }

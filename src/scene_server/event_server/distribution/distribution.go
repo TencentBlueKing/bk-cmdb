@@ -80,8 +80,8 @@ func (dh *DistHandler) StartDistribute() (err error) {
 		defer blog.Warn("discovering subscriber change process stopped")
 		for {
 			msg := <-MsgChan
-			msgAction := getChangeAction(msg)
-			msgBody := getChangeBody(msg)
+			msgAction := extractChangeAction(msg)
+			msgBody := extractChangeBody(msg)
 
 			subscriber := metadata.Subscription{}
 			blog.Infof("msg: action:%s, body:%s", msgAction, msgBody)
@@ -108,13 +108,13 @@ func (dh *DistHandler) StartDistribute() (err error) {
 				renewMaps[subscriber.SubscriptionID] = renewCh
 			case "update":
 				blog.Infof("renew subscribers process %d", subscriber.SubscriptionID)
-				if renewCh, ok := renewMaps[subscriber.SubscriptionID]; ok {
+				if renewCh, exist := renewMaps[subscriber.SubscriptionID]; exist == true {
 					renewCh <- subscriber
 				} else {
 					MsgChan <- "create" + msgBody
 				}
 			case "delete":
-				blog.Infof("stopping subscribers process %d", subscriber.SubscriptionID)
+				blog.Infof("subscriber has been deleted, now stopping subscribe process, subscriberID: %d", subscriber.SubscriptionID)
 				if routines[subscriber.SubscriptionID] != nil {
 					close(routines[subscriber.SubscriptionID])
 					delete(routines, subscriber.SubscriptionID)
@@ -265,9 +265,9 @@ func (dh *DistHandler) saveDistDone(dist *metadata.DistInstCtx) (err error) {
 	return
 }
 
-func getChangeAction(msg string) string {
+func extractChangeAction(msg string) string {
 	return msg[:6]
 }
-func getChangeBody(msg string) string {
+func extractChangeBody(msg string) string {
 	return msg[6:]
 }

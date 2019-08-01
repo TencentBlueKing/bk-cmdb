@@ -91,10 +91,10 @@
             </div>
         </div>
         <footer class="footer">
-            <bk-button type="primary" :loading="$loading('updateGroupAuthorities')" @click="updateGroupAuthorities">
+            <bk-button theme="primary" :loading="$loading('updateGroupAuthorities')" @click="updateGroupAuthorities">
                 {{$t('Common["保存"]')}}
             </bk-button>
-            <bk-button type="default" @click="cancel">
+            <bk-button theme="default" @click="cancel">
                 {{$t('Common["取消"]')}}
             </bk-button>
         </footer>

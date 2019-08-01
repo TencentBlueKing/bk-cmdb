@@ -32,9 +32,6 @@ import (
 	"configcenter/src/scene_server/operation_server/app/options"
 	"configcenter/src/scene_server/operation_server/logics"
 	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/thirdpartyclient/esbserver"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
-
 	"github.com/emicklei/go-restful"
 )
 
@@ -52,12 +49,10 @@ type srvComm struct {
 
 type OperationServer struct {
 	*backbone.Engine
-	EsbConfigChn chan esbutil.EsbConfig
-	Config       *options.Config
-	EsbServ      esbserver.EsbClientInterface
-	ConfigMap    map[string]string
-	AuthManager  *extensions.AuthManager
-	Logic        *logics.Logic
+	Config      *options.Config
+	ConfigMap   map[string]string
+	AuthManager *extensions.AuthManager
+	Logic       *logics.Logic
 }
 
 func (o *OperationServer) newSrvComm(header http.Header) *srvComm {
@@ -75,7 +70,7 @@ func (o *OperationServer) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(o.Engine, header, o.EsbServ, o.AuthManager),
+		lgc:           logics.NewLogics(o.Engine, header, o.AuthManager),
 	}
 }
 

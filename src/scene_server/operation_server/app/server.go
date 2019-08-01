@@ -29,8 +29,6 @@ import (
 	"configcenter/src/scene_server/operation_server/app/options"
 	"configcenter/src/scene_server/operation_server/logics"
 	"configcenter/src/scene_server/operation_server/service"
-	"configcenter/src/thirdpartyclient/esbserver"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -42,7 +40,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	operationSvr := new(service.OperationServer)
-	operationSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
 
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: operationSvr.OnOperationConfigUpdate,
@@ -76,13 +73,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new authorize failed, err: %v", err)
 	}
 
-	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), operationSvr.EsbConfigChn, engine.Metric().Registry())
-	if err != nil {
-		return fmt.Errorf("create esb api  object failed. err: %v", err)
-	}
 	operationSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, authorize)
 	operationSvr.Engine = engine
-	operationSvr.EsbServ = esbSrv
 	operationSvr.Logic = &logics.Logic{
 		Engine: operationSvr.Engine,
 	}

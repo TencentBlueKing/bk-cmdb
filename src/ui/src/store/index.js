@@ -1,12 +1,13 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-
 import global from './modules/global.js'
 import request from './modules/request.js'
-
 import index from './modules/view/index.js'
 import hostDetails from './modules/view/host-details.js'
-
+import serviceProcess from './modules/view/service-process.js'
+import businessTopology from './modules/view/business-topology.js'
+import businessSync from './modules/view/business-sync.js'
+import hosts from './modules/view/hosts.js'
 import auth from './modules/api/auth.js'
 import menu from './modules/menu.js'
 import eventSub from './modules/api/event-sub.js'
@@ -48,6 +49,7 @@ import businessSynchronous from './modules/api/business-synchronous.js'
 import serviceInstance from './modules/api/service-instance.js'
 import processInstance from './modules/api/process-instance.js'
 import operationChart from './modules/api/operation-chart'
+import instanceLabel from './modules/api/instance-label.js'
 import fullTextSearch from './modules/api/full-text-search.js'
 
 Vue.use(Vuex)
@@ -57,7 +59,10 @@ export default new Vuex.Store({
     modules: {
         index,
         hostDetails,
-        
+        serviceProcess,
+        businessTopology,
+        businessSync,
+        hosts,
         auth,
         menu,
         request,
@@ -100,6 +105,7 @@ export default new Vuex.Store({
         serviceInstance,
         processInstance,
         operationChart,
+        instanceLabel,
         fullTextSearch
     }
 })

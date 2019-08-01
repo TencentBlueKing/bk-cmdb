@@ -21,7 +21,6 @@ import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
 import process from '@/views/process/router.config'
 import resource from '@/views/resource/router.config'
-import topology from '@/views/topology/router.config'
 import generalModel from '@/views/general-model/router.config'
 import permission from '@/views/permission/router.config'
 import operation from '@/views/operation/router.config'
@@ -46,7 +45,6 @@ export const viewRouters = [
     modelTopology,
     process,
     resource,
-    topology,
     operation,
     ...template,
     ...generalModel,

@@ -1,19 +1,19 @@
 <template>
     <div class="device-wrapper">
         <div class="title">
-            <bk-button type="primary" @click="showDeviceDialog('create')">
+            <bk-button theme="primary" @click="showDeviceDialog('create')">
                 {{$t('NetworkDiscovery["新增设备"]')}}
             </bk-button>
-            <bk-button type="default"
+            <bk-button theme="default"
                 :loading="$loading('deleteDevice')"
                 :disabled="!table.checked.length"
                 @click="deleteDevices">
                 {{$t('Common["删除"]')}}
             </bk-button>
-            <bk-button type="default" @click="importSlider.isShow = true">
+            <bk-button theme="default" @click="importSlider.isShow = true">
                 {{$t('ModelManagement["导入"]')}}
             </bk-button>
-            <bk-button :disabled="!table.checked.length" type="default submit" form="exportForm">
+            <bk-button :disabled="!table.checked.length" type="submit" form="exportForm">
                 {{$t('ModelManagement["导出"]')}}
             </bk-button>
             <form id="exportForm" :action="url.export" method="POST" hidden>
@@ -38,40 +38,45 @@
         </cmdb-table>
         <bk-dialog
             class="create-dialog"
-            :is-show.sync="deviceDialog.isShow"
+            v-model="deviceDialog.isShow"
             :title="deviceDialog.title"
-            :has-footer="false"
+            :show-footer="false"
             :close-icon="false"
             :width="424">
-            <div slot="content">
+            <div>
                 <div>
                     <label class="label first">
                         <span>{{$t('NetworkDiscovery["设备型号"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text"
+                    <bk-input type="text"
                         class="cmdb-form-input"
                         name="device_model"
                         v-model.trim="deviceDialog.data['device_model']"
                         v-validate="'required|singlechar'">
+                    </bk-input>
                     <div v-show="errors.has('device_model')" class="color-danger">{{ errors.first('device_model') }}</div>
                 </div>
                 <div>
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["设备名称"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text" class="cmdb-form-input" name="device_name" v-model.trim="deviceDialog.data['device_name']" v-validate="'required|singlechar'">
+                    <bk-input type="text" class="cmdb-form-input" name="device_name"
+                        v-model.trim="deviceDialog.data['device_name']"
+                        v-validate="'required|singlechar'">
+                    </bk-input>
                     <div v-show="errors.has('device_name')" class="color-danger">{{ errors.first('device_name') }}</div>
                 </div>
                 <div>
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["对应模型"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <bk-selector
-                        :list="netList"
-                        setting-key="bk_obj_id"
-                        display-key="bk_obj_name"
-                        :selected.sync="deviceDialog.data['bk_obj_id']"
-                    ></bk-selector>
+                    <bk-select v-model="deviceDialog.data.bk_obj_id">
+                        <bk-option v-for="(option, index) in netList"
+                            :key="index"
+                            :id="option.bk_obj_id"
+                            :name="option.bk_obj_name">
+                        </bk-option>
+                    </bk-select>
                     <input type="text" hidden name="bk_obj_id" v-model.trim="deviceDialog.data['bk_obj_id']" v-validate="'required'">
                     <div v-show="errors.has('bk_obj_id')" class="color-danger">{{ errors.first('bk_obj_id') }}</div>
                 </div>
@@ -79,20 +84,24 @@
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["厂商"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text" class="cmdb-form-input" name="bk_vendor" v-model.trim="deviceDialog.data['bk_vendor']" v-validate="'required|singlechar'">
+                    <bk-input type="text" class="cmdb-form-input" name="bk_vendor"
+                        v-model.trim="deviceDialog.data['bk_vendor']"
+                        v-validate="'required|singlechar'">
+                    </bk-input>
                     <div v-show="errors.has('bk_vendor')" class="color-danger">{{ errors.first('bk_vendor') }}</div>
                 </div>
                 <div class="footer">
-                    <bk-button type="primary" @click="saveDevice" :loading="$loading(['createDevice', 'updateDevice'])">
+                    <bk-button theme="primary" @click="saveDevice" :loading="$loading(['createDevice', 'updateDevice'])">
                         {{$t('Common["保存"]')}}
                     </bk-button>
-                    <bk-button type="default" @click="hideDeviceDialog">
+                    <bk-button theme="default" @click="hideDeviceDialog">
                         {{$t('Common["取消"]')}}
                     </bk-button>
                 </div>
             </div>
         </bk-dialog>
-        <cmdb-slider
+        <bk-sideslider
+            :width="800"
             :is-show.sync="importSlider.isShow"
             :title="$t('HostResourcePool[\'批量导入\']')">
             <cmdb-import v-if="importSlider.isShow" slot="content"
@@ -101,7 +110,7 @@
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

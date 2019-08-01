@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -26,6 +27,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// NOTE: 进程模板增删改操作检查服务模板的编辑权限
 var ProcessTemplateAuthConfigs = []AuthConfig{
 	{
 		Name:                  "createProcessTemplateBatchPattern",
@@ -34,7 +36,8 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessTemplate,
-		ResourceAction:        meta.Create,
+		// ResourceAction:        meta.Create,
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:                  "updateProcessTemplatePattern",
 		Description:           "更新进程模板",
@@ -42,7 +45,8 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:            http.MethodPut,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessTemplate,
-		ResourceAction:        meta.Update,
+		// ResourceAction:        meta.Update,
+		ResourceAction: meta.SkipAction,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			procTemplateID := gjson.GetBytes(request.Body, common.BKProcessTemplateIDField).Int()
 			if procTemplateID <= 0 {
@@ -56,8 +60,9 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 		Pattern:               "/api/v3/deletemany/proc/proc_template",
 		HTTPMethod:            http.MethodDelete,
 		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessTemplate,
-		ResourceAction:        meta.Delete,
+		ResourceType:          meta.ProcessServiceTemplate,
+		// ResourceAction:        meta.Delete,
+		ResourceAction: meta.SkipAction,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			procTemplateIDs := gjson.GetBytes(request.Body, "process_templates").Array()
 			ids := make([]int64, 0)
@@ -86,10 +91,14 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessTemplate,
-		ResourceAction:        meta.Find,
+		// ResourceAction:        meta.Find,
+		ResourceAction: meta.SkipAction,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			subMatch := re.FindStringSubmatch(request.URI)
 			for _, subStr := range subMatch {
+				if strings.Contains(subStr, "api") {
+					continue
+				}
 				id, err := strconv.ParseInt(subStr, 10, 64)
 				if err != nil {
 					return nil, fmt.Errorf("parse template id to int64 failed, err: %s", err)
