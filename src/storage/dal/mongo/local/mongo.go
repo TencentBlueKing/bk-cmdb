@@ -14,6 +14,7 @@ package local
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -191,6 +192,21 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
 	c.dbc.Refresh()
 	data := bson.M{"$set": doc}
+	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(filter, data)
+	return err
+}
+
+// UpdateMultiModel 根据不同的操作符去更新数据
+func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
+	c.dbc.Refresh()
+	data := bson.M{}
+	for _, item := range updateModel {
+		if _, ok := data[item.Op]; ok {
+			return errors.New(item.Op + " appear multiple times")
+		}
+		data["$"+item.Op] = item.Doc
+	}
+
 	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(filter, data)
 	return err
 }

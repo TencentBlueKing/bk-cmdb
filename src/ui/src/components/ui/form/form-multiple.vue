@@ -24,7 +24,7 @@
                                     </label>
                                     <i class="property-name-tooltips icon icon-cc-tips"
                                         v-if="property['placeholder']"
-                                        v-tooltip="htmlEncode(property['placeholder'])">
+                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
                                     </i>
                                 </div>
                                 <div class="property-value">
@@ -55,7 +55,7 @@
                         active: !$isAuthorized(saveAuth),
                         auth: [saveAuth]
                     }">
-                    <bk-button class="button-save" type="primary"
+                    <bk-button class="button-save" theme="primary"
                         :disabled="!$isAuthorized(saveAuth) || !hasChange || $loading()"
                         @click="handleSave">
                         {{$t("Common['保存']")}}

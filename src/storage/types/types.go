@@ -22,7 +22,7 @@ import (
 
 	"configcenter/src/common"
 
-	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/rentiansheng/bk_bson/bson"
 )
 
 type Transaction struct {
@@ -116,6 +116,7 @@ func (d Documents) Decode(result interface{}) error {
 			if nil != err {
 				return fmt.Errorf("Decode array error when marshal: %v, source is %s", err, doc)
 			}
+
 			err = bson.Unmarshal(out, elem.Interface())
 			if nil != err {
 				return fmt.Errorf("Decode array error when unmarshal: %v, source is %s", err, doc)

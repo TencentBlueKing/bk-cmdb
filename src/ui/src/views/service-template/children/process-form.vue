@@ -22,32 +22,21 @@
                                     <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                     <i class="property-name-tooltips icon-cc-tips"
                                         v-if="property['placeholder']"
-                                        v-tooltip="htmlEncode(property['placeholder'])">
+                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
                                     </i>
                                     <label class="cmdb-form-checkbox cmdb-checkbox-small"
                                         v-if="property['isLocking'] !== undefined">
                                         <input type="checkbox" v-model="values[property['bk_property_id']]['as_default_value']">
                                         <span class="cmdb-checkbox-text"
-                                            v-tooltip="$t('ServiceManagement[\'锁定不可编辑\']')">
+                                            v-bk-tooltips="$t('ServiceManagement[\'锁定不可编辑\']')">
                                             {{$t('ProcessManagement["锁定"]')}}
                                         </span>
                                     </label>
                                 </div>
                                 <div class="property-value">
-                                    <component class="form-component" v-if="['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])"
+                                    <component class="form-component"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :class="{ error: errors.has(property['bk_property_id']) }"
                                         :disabled="type === 'update' && ['bk_func_name'].includes(property['bk_property_id'])"
-                                        :options="property.option || []"
-                                        :data-vv-name="property['bk_property_id']"
-                                        :data-vv-as="property['bk_property_name']"
-                                        v-validate="getValidateRules(property)"
-                                        v-model.trim="values[property['bk_property_id']]['value']"
-                                        @input="handleFuncNameInput(property['bk_property_id'])"
-                                        @on-change="handleFuncNameChange(property['bk_property_id'])">
-                                    </component>
-                                    <component class="form-component" v-else
-                                        :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
                                         :options="property.option || []"
                                         :allow-clear="['bind_ip'].includes(property['bk_property_id'])"
@@ -68,11 +57,17 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <bk-button class="button-save" type="primary"
-                    :disabled="saveDisabled || $loading()"
-                    @click="handleSave">
-                    {{$t("Common['保存']")}}
-                </bk-button>
+                <span style="display: inline-block"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
+                        auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                    }">
+                    <bk-button class="button-save" theme="primary"
+                        :disabled="saveDisabled || $loading() || !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
+                        @click="handleSave">
+                        {{$t("Common['保存']")}}
+                    </bk-button>
+                </span>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>
@@ -127,7 +122,7 @@
                     {
                         'name': '127.0.0.1',
                         'type': 'text',
-                        'is_default': false,
+                        'is_default': true,
                         'id': '1'
                     },
                     {
@@ -149,13 +144,14 @@
                     //     'id': '4'
                     // }
                 ],
-                values: {},
+                values: {
+                    bk_func_name: ''
+                },
                 refrenceValues: {},
                 scrollbar: false,
                 groupState: {
                     none: true
-                },
-                autoInput: true
+                }
             }
         },
         computed: {
@@ -183,6 +179,14 @@
             },
             properties () {
                 this.initValues()
+            },
+            'values.bk_func_name.value': {
+                handler (newVal, oldValue) {
+                    if (this.values.bk_process_name.value === oldValue) {
+                        this.values.bk_process_name.value = newVal
+                    }
+                },
+                deep: true
             }
         },
         created () {
@@ -309,14 +313,6 @@
                 }
                 return rules
             },
-            handleFuncNameChange (id) {
-                this.autoInput = !this.values['bk_process_name']['value']
-            },
-            handleFuncNameInput (id) {
-                if (id === 'bk_func_name' && this.autoInput) {
-                    this.values['bk_process_name']['value'] = this.values['bk_func_name']['value']
-                }
-            },
             handleSave () {
                 this.$validator.validateAll().then(result => {
                     if (!this.hasChange()) {
@@ -355,7 +351,9 @@
                 if (this.hasChange()) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('Common["确认退出"]'),
+                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.$emit('on-cancel')
                             },

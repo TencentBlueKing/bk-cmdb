@@ -382,7 +382,6 @@ func (c *collection) Aggregate(ctx context.Context, pipeline interface{}, opts *
 			return err
 		}
 		outputV.Elem().Set(reflect.Append(outputV.Elem(), item.Elem()))
-
 	}
 	return cursor.Err()
 }

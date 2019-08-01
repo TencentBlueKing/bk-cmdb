@@ -126,6 +126,8 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizProcessServiceTemplate
 	case meta.ProcessServiceCategory:
 		iamResourceType = BizProcessServiceCategory
+	case meta.ProcessServiceInstance:
+		iamResourceType = BizProcessServiceInstance
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -162,6 +164,7 @@ const (
 	BizAuditLog               ResourceTypeID = "biz_audit_log"
 	BizProcessServiceTemplate ResourceTypeID = "biz_process_service_template"
 	BizProcessServiceCategory ResourceTypeID = "biz_process_service_category"
+	BizProcessServiceInstance ResourceTypeID = "biz_process_service_instance"
 )
 
 const (

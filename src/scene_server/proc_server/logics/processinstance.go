@@ -151,11 +151,11 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) err
 func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, process *metadata.Process) (int64, errors.CCErrorCoder) {
 	processBytes, err := json.Marshal(process)
 	if err != nil {
-		return 0, kit.CCError.CCError(common.CC_ERR_Comm_JSON_ENCODE)
+		return 0, kit.CCError.CCError(common.CCErrCommJsonEncode)
 	}
 	mData := mapstr.MapStr{}
 	if err := json.Unmarshal(processBytes, &mData); nil != err && 0 != len(processBytes) {
-		return 0, kit.CCError.CCError(common.CC_ERR_Comm_JSON_DECODE)
+		return 0, kit.CCError.CCError(common.CCErrCommJsonDecode)
 	}
 	inputParam := metadata.CreateModelInstance{
 		Data: mData,

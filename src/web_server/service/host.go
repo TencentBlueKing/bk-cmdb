@@ -96,6 +96,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 // ExportHost export host
 func (s *Service) ExportHost(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromGinContext(c)
 
 	appIDStr := c.PostForm("bk_biz_id")
 	hostIDStr := c.PostForm("bk_host_id")
@@ -146,7 +147,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	fileName := fmt.Sprintf("%dhost.xlsx", time.Now().UnixNano())
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
 
-	logics.ProductExcelCommentSheet(file, defLang)
+	logics.ProductExcelCommentSheet(ctx, file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {
 		blog.Errorf("ExportHost failed, save file failed, err: %+v, rid: %s", err, rid)
@@ -165,6 +166,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 // BuildDownLoadExcelTemplate build download excel template
 func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromGinContext(c)
 
 	logics.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
@@ -190,9 +192,9 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	}
 
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
-	err = s.Logics.BuildExcelTemplate(objID, file, c.Request.Header, defLang, metaInfo)
+	err = s.Logics.BuildExcelTemplate(ctx, objID, file, c.Request.Header, defLang, metaInfo)
 	if nil != err {
-		blog.Errorf("BuildDownLoadExcelTemplate failed, build excel template failed, object:%s error:%s", objID, err.Error())
+		blog.Errorf("BuildDownLoadExcelTemplate failed, build excel template failed, object:%s error:%s, rid: %s", objID, err.Error(), rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return

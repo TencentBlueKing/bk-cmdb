@@ -11,7 +11,7 @@
         <the-classify></the-classify>
         <the-map></the-map>
         <cmdb-main-inject class="copyright" ref="copyright">
-            Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有
+            Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有. {{site.buildVersion}}
         </cmdb-main-inject>
     </div>
 </template>

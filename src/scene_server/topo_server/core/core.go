@@ -63,9 +63,9 @@ type core struct {
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Core {
 
 	// health
-	healthOpeartion := operation.NewHealthOperation(client)
+	healthOperation := operation.NewHealthOperation(client)
 
-	// create insts
+	// create instances
 	attributeOperation := operation.NewAttributeOperation(client, authManager)
 	classificationOperation := operation.NewClassificationOperation(client, authManager)
 	groupOperation := operation.NewGroupOperation(client)
@@ -114,7 +114,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		graphics:       graphics,
 		audit:          audit,
 		identifier:     identifier,
-		health:         healthOpeartion,
+		health:         healthOperation,
 		unique:         unique,
 	}
 }

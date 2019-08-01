@@ -13,11 +13,11 @@
 package logics
 
 import (
-    "context"
-    
-    "configcenter/src/common"
-    "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
+	"context"
+
+	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 )
 
 func (lgc *Logics) FindHostByModuleIDs(ctx context.Context, data *metadata.HostModuleFind, isDetail bool) (*metadata.SearchHost, error) {

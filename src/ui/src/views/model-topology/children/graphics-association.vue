@@ -1,10 +1,10 @@
 <template>
-    <cmdb-slider
+    <bk-sideslider
         :width="514"
         :title="title"
         :is-show.sync="isShow"
         @close="handleClose">
-        <div class="association-layout" slot="content">
+        <div class="association-layout" slot="content" v-if="isShow">
             <div class="form-group">
                 <label class="form-label"
                     :class="{
@@ -12,9 +12,10 @@
                     }">
                     {{$t('ModelManagement["源模型"]')}}
                 </label>
-                <input type="text"class="cmdb-form-input"
+                <bk-input type="text"class="cmdb-form-input"
                     disabled
                     :value="getModelName(info.source)">
+                </bk-input>
             </div>
             <div class="form-group">
                 <label class="form-label"
@@ -23,9 +24,10 @@
                     }">
                     {{$t('ModelManagement["目标模型"]')}}
                 </label>
-                <input type="text"class="cmdb-form-input"
+                <bk-input type="text"class="cmdb-form-input"
                     disabled
                     :value="getModelName(info.target)">
+                </bk-input>
             </div>
             <div class="form-group" v-if="!isViewMode">
                 <label class="form-label required">
@@ -50,11 +52,12 @@
                     }">
                     {{$t('ModelManagement["关联描述"]')}}
                 </label>
-                <input type="text"class="cmdb-form-input"
+                <bk-input type="text"class="cmdb-form-input"
                     :disabled="isViewMode"
                     name="description"
                     v-validate="'required|singlechar'"
                     v-model="info.description">
+                </bk-input>
                 <p class="form-error" v-if="errors.has('description')">{{errors.first('description')}}</p>
             </div>
             <div class="form-group">
@@ -76,27 +79,27 @@
             </div>
             <div class="button-group" v-if="isEditMode && !info.ispre">
                 <bk-button class="form-button"
-                    type="primary"
+                    theme="primary"
                     :loading="$loading()"
                     @click="handleSave">
                     {{$t('Common["确定"]')}}
                 </bk-button>
                 <bk-button class="form-button"
                     v-if="isViewMode"
-                    type="danger"
+                    theme="danger"
                     :loading="$loading()"
                     @click="handleDelete">
                     {{$t('ModelManagement["删除关联"]')}}
                 </bk-button>
                 <bk-button class="form-button"
                     v-else
-                    type="default"
+                    theme="default"
                     @click="handleCancel">
                     {{$t('Common["取消"]')}}
                 </bk-button>
             </div>
         </div>
-    </cmdb-slider>
+    </bk-sideslider>
 </template>
 
 <script>

@@ -117,6 +117,9 @@ func (s *Service) WebService() *restful.Container {
 	//  delete host from business, used for framework
 	api.Route(api.DELETE("/hosts/module/biz/delete").To(s.DeleteHostFromBusiness))
 
+	// next generation host search api
+	api.Route(api.POST("/hosts/list_by_topo_node").To(s.ListHostByTopoNode))
+
 	api.Route(api.POST("/userapi").To(s.AddUserCustomQuery))
 	api.Route(api.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))
 	api.Route(api.DELETE("/userapi/{bk_biz_id}/{id}").To(s.DeleteUserCustomQuery))
@@ -128,7 +131,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.DELETE("/host/lock").To(s.UnlockHost))
 	api.Route(api.POST("/host/lock/search").To(s.QueryHostLock))
 
-	api.Route(api.GET("/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}").To(s.getHostListByAppidAndField))
+	api.Route(api.GET("/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}").To(s.getHostListByAppIDAndField))
 	api.Route(api.PUT("/openapi/host/{" + common.BKAppIDField + "}").To(s.UpdateHost))
 	api.Route(api.PUT("/host/updateHostByAppID/{appid}").To(s.UpdateHostByAppID))
 	api.Route(api.POST("/gethostlistbyip").To(s.HostSearchByIP))
@@ -211,7 +214,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Message: meta.Message,
 	}
 	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteEntity(answer)
+	_ = resp.WriteEntity(answer)
 }
 
 func (s *Service) InitBackground() {

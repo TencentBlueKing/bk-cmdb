@@ -34,6 +34,7 @@ const (
 	BKNoLimit = 999999999
 	// max limit of a page
 	BKMaxPageLimit = 2000
+	BKMaxPageSize  = 500
 
 	// BKDefaultLimit the default limit definition
 	BKDefaultLimit = 20
@@ -182,6 +183,12 @@ const (
 
 	// BKDBUNSET the db opeartor
 	BKDBUNSET = "$unset"
+
+	// BKDBAddToSet The $addToSet operator adds a value to an array unless the value is already present, in which case $addToSet does nothing to that array.
+	BKDBAddToSet = "$addToSet"
+
+	// BKDBPull The $pull operator removes from an existing array all instances of a value or values that match a specified condition.
+	BKDBPull = "$pull"
 
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
@@ -1013,8 +1020,16 @@ const (
 )
 
 const (
-	MetaDataSynchronizeFlagField    = "metadata_sync_flag"
-	MetaDataSynchronizeVersionField = "metadata_sync_version"
+	// MetaDataSynchronizeField Synchronous data aggregation field
+	MetaDataSynchronizeField = "sync"
+	// MetaDataSynchronizeFlagField synchronize flag
+	MetaDataSynchronizeFlagField = "flag"
+	// MetaDataSynchronizeVersionField synchronize version
+	MetaDataSynchronizeVersionField = "version"
+	// MetaDataSynchronizeIdentifierField 数据需要同步cmdb系统的身份标识， 值是数组
+	MetaDataSynchronizeIdentifierField = "identifier"
+	// MetaDataSynchronIdentifierFlagSyncAllValue 数据可以被任何系统同步
+	MetaDataSynchronIdentifierFlagSyncAllValue = "__bk_cmdb__"
 
 	// SynchronizeSignPrefix  synchronize sign , Should appear in the configuration file
 	SynchronizeSignPrefix = "sync_blueking"
@@ -1027,10 +1042,8 @@ const (
 	SynchronizeModelTypeAttribute = "model_attribute"
 	// SynchronizeModelTypeAttributeGroup synchroneize model attribute group
 	SynchronizeModelTypeAttributeGroup = "model_atrribute_group"
-	// SynchronizeModelTypeBase synchroneize model attribute group
+	// SynchronizeModelTypeBase synchroneize model attribute
 	SynchronizeModelTypeBase = "model"
-	// SynchronizeModelTypeModelClassificationRelation synchroneize model classification relation
-	SynchronizeModelTypeModelClassificationRelation = "model_classification_relation"
 
 	/* synchronize instance assoication sign*/
 

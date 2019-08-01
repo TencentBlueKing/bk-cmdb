@@ -60,6 +60,18 @@ func NewNoPermissionResp(permission []Permission) BaseResp {
 // SuccessBaseResp default result
 var SuccessBaseResp = BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr}
 
+type SuccessResponse struct {
+	BaseResp `json:",inline"`
+	Data     interface{} `json:"data"`
+}
+
+func NewSuccessResponse(data interface{}) SuccessResponse {
+	return SuccessResponse{
+		BaseResp: SuccessBaseResp,
+		Data:     data,
+	}
+}
+
 // CreatedCount created count struct
 type CreatedCount struct {
 	Count uint64 `json:"created_count"`

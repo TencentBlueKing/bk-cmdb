@@ -509,18 +509,18 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 	cond = condition.CreateCondition()
 	cond.NewOR().Array(or)
 
-	assoResult, err := o.asst.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
+	assocResult, err := o.asst.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("check object[%s] can be deleted, but get object associate info failed, err: %v, rid: %s", tObject.ObjectID, err, params.ReqID)
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !assoResult.Result {
+	if !assocResult.Result {
 		blog.Errorf("check if object[%s] can be deleted, but get object associate info failed, err: %v, rid: %s", tObject.ObjectID, err, params.ReqID)
-		return params.Err.Error(assoResult.Code)
+		return params.Err.Error(assocResult.Code)
 	}
 
-	if len(assoResult.Data) != 0 {
+	if len(assocResult.Data) != 0 {
 		blog.Errorf("check if object[%s] can be deleted, but object has already associate to another one., rid: %s", tObject.ObjectID, params.ReqID)
 		return params.Err.Error(common.CCErrorTopoObjectHasAlreadyAssociated)
 	}
@@ -593,7 +593,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !rsp.Result {
-			blog.Errorf("[opration-obj] failed to delete the object by the condition(%#v) or the id(%d), rid: %s", cond.ToMapStr(), id, params.ReqID)
+			blog.Errorf("[operation-obj] failed to delete the object by the condition(%#v) or the id(%d), rid: %s", cond.ToMapStr(), id, params.ReqID)
 			return params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
@@ -673,7 +673,7 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 			}
 
 			for _, asstObj := range asstObjs {
-				assoObject := asstObj.Object()
+				assocObject := asstObj.Object()
 				tmp := metadata.ObjectTopo{}
 				tmp.Label = resp.Data.Info[0].AssociationKindName
 				tmp.LabelName = resp.Data.Info[0].AssociationKindName
@@ -686,17 +686,17 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 				tmp.From.Position = object.Position
 				tmp.From.OwnerID = object.OwnerID
 				tmp.From.ObjName = object.ObjectName
-				tmp.To.OwnerID = assoObject.OwnerID
-				tmp.To.ObjID = assoObject.ObjectID
+				tmp.To.OwnerID = assocObject.OwnerID
+				tmp.To.ObjID = assocObject.ObjectID
 
 				cls, err = asstObj.GetClassification()
 				if nil != err {
 					return nil, err
 				}
 				tmp.To.ClassificationID = cls.Classify().ClassificationID
-				tmp.To.Position = assoObject.Position
-				tmp.To.ObjName = assoObject.ObjectName
-				ok, err := o.isFrom(params, assoObject.ObjectID, object.ObjectID)
+				tmp.To.Position = assocObject.Position
+				tmp.To.ObjName = assocObject.ObjectName
+				ok, err := o.isFrom(params, assocObject.ObjectID, object.ObjectID)
 				if nil != err {
 					return nil, err
 				}
@@ -737,7 +737,7 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	models := []metadata.Object{}
+	models := make([]metadata.Object, 0)
 	for index := range rsp.Data.Info {
 		models = append(models, rsp.Data.Info[index].Spec)
 	}

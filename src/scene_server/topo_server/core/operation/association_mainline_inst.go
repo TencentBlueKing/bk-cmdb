@@ -30,7 +30,7 @@ import (
 
 // checkInstNameRepeat 检查如果将 currentInsts 都删除之后，拥有共同父节点的孩子结点会不会出现名字冲突
 // 如果有冲突，返回 (false, 冲突实例名, nil)
-func (cli *association) checkInstNameRepeat(params types.ContextParams, currentInsts []inst.Inst) (canReset bool, repeatedInstName string, err error) {
+func (assoc *association) checkInstNameRepeat(params types.ContextParams, currentInsts []inst.Inst) (canReset bool, repeatedInstName string, err error) {
 	// TODO: 返回值将bool值与出错情况分开 (bool, error)
 	instNames := map[string]bool{}
 	for _, currInst := range currentInsts {
@@ -39,12 +39,12 @@ func (cli *association) checkInstNameRepeat(params types.ContextParams, currentI
 			return false, "", err
 		}
 
-		childs, err := currInst.GetMainlineChildInst()
+		children, err := currInst.GetMainlineChildInst()
 		if nil != err {
 			return false, "", err
 		}
 
-		for _, child := range childs {
+		for _, child := range children {
 			instName, err := child.GetInstName()
 			if nil != err {
 				return false, "", err
@@ -61,7 +61,7 @@ func (cli *association) checkInstNameRepeat(params types.ContextParams, currentI
 	return true, "", nil
 }
 
-func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams, current model.Object) error {
+func (assoc *association) ResetMainlineInstAssociatoin(params types.ContextParams, current model.Object) error {
 	rid := params.ReqID
 
 	cObj := current.Object()
@@ -73,7 +73,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 	defaultCond.Condition = cond.ToMapStr()
 
 	// 获取 current 模型的所有实例
-	_, currentInsts, err := cli.inst.FindInst(params, current, defaultCond, false)
+	_, currentInsts, err := assoc.inst.FindInst(params, current, defaultCond, false)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find current object(%s) inst, err: %+v, rid: %s", cObj.ObjectID, err, rid)
 		return err
@@ -82,7 +82,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 	// 检查实例删除后，会不会出现重名冲突
 	var canReset bool
 	var repeatedInstName string
-	if canReset, repeatedInstName, err = cli.checkInstNameRepeat(params, currentInsts); nil != err {
+	if canReset, repeatedInstName, err = assoc.checkInstNameRepeat(params, currentInsts); nil != err {
 		blog.Errorf("[operation-asst] can not be reset, err: %+v, rid: %s", err, rid)
 		return err
 	}
@@ -122,9 +122,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 		}
 
 		// delete the current inst
-		cond := condition.CreateCondition()
-		cond.Field(currentInst.GetObject().GetInstIDFieldName()).Eq(instID)
-		if err := cli.inst.DeleteInst(params, current, cond, false); nil != err {
+		if err := assoc.inst.DeleteMainlineInstWithID(params, current, instID); nil != err {
 			blog.Errorf("[operation-asst] failed to delete the current inst(%#v), err: %+v, rid: %s", currentInst.ToMapStr(), err, rid)
 			continue
 		}
@@ -133,7 +131,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 	return nil
 }
 
-func (cli *association) SetMainlineInstAssociation(params types.ContextParams, parent, current, child model.Object) error {
+func (assoc *association) SetMainlineInstAssociation(params types.ContextParams, parent, current, child model.Object) error {
 
 	defaultCond := &metadata.QueryInput{}
 	cond := condition.CreateCondition()
@@ -142,7 +140,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 	}
 	defaultCond.Condition = cond.ToMapStr()
 	// fetch all parent instances.
-	_, parentInsts, err := cli.inst.FindInst(params, parent, defaultCond, false)
+	_, parentInsts, err := assoc.inst.FindInst(params, parent, defaultCond, false)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find parent object(%s) inst, err: %s, rid: %s", parent.Object().ObjectID, err.Error(), params.ReqID)
 		return err
@@ -159,7 +157,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 		}
 
 		// we create the current object's instance for each parent instance belongs to the parent object.
-		currentInst := cli.instFactory.CreateInst(params, current)
+		currentInst := assoc.instFactory.CreateInst(params, current)
 		currentInst.SetValue(current.GetInstNameFieldName(), current.Object().ObjectName)
 		currentInst.SetValue(common.BKDefaultField, 0)
 		// set current instance's parent id to parent instance's id, so that they can be chained.
@@ -182,14 +180,14 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 			blog.Errorf("create mainline instance for obj: %s, but got invalid instance id, err :%v, rid: %s", current.Object().ObjectID, err, params.ReqID)
 			return err
 		}
-		err = cli.authManager.RegisterInstancesByID(params.Context, params.Header, current.Object().ObjectID, instID)
+		err = assoc.authManager.RegisterInstancesByID(params.Context, params.Header, current.Object().ObjectID, instID)
 		if err != nil {
 			blog.Errorf("create mainline instance for object: %s, but register to auth center failed, err: %v, rid: %s", current.Object().ObjectID, err, params.ReqID)
 			return err
 		}
 
 		// reset the child's parent instance's parent id to current instance's id.
-		childs, err := parent.GetMainlineChildInst()
+		children, err := parent.GetMainlineChildInst()
 		if nil != err {
 			if io.EOF == err {
 				continue
@@ -204,7 +202,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 			return err
 		}
 
-		expectParent2Childs[curInstID] = childs
+		expectParent2Childs[curInstID] = children
 	}
 
 	for parentID, childs := range expectParent2Childs {
@@ -220,14 +218,14 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 	return nil
 }
 
-func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64, withStatistics bool) ([]*metadata.TopoInstRst, error) {
+func (assoc *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64, withStatistics bool) ([]*metadata.TopoInstRst, error) {
 
 	cond := &metadata.QueryInput{}
 	cond.Condition = mapstr.MapStr{
 		obj.GetInstIDFieldName(): instID,
 	}
 
-	_, bizInsts, err := cli.inst.FindInst(params, obj, cond, false)
+	_, bizInsts, err := assoc.inst.FindInst(params, obj, cond, false)
 	if nil != err {
 		blog.Errorf("[SearchMainlineAssociationInstTopo] FindInst for %+v failed: %v, rid: %s", cond, err, params.ReqID)
 		return nil, err
@@ -256,18 +254,18 @@ func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextPa
 		results = append(results, tmp)
 	}
 
-	if err = cli.fillMainlineChildInst(params, obj, results); err != nil {
+	if err = assoc.fillMainlineChildInst(params, obj, results); err != nil {
 		blog.Errorf("[SearchMainlineAssociationInstTopo] fillMainlineChildInst for %+v failed: %v, rid: %s", results, err, params.ReqID)
 		return nil, err
 	}
 	if withStatistics && len(bizInsts) > 0 {
-		inst := bizInsts[0]
-		bizID, err := inst.GetBizID()
+		instance := bizInsts[0]
+		bizID, err := instance.GetBizID()
 		if err != nil {
-			blog.Errorf("[SearchMainlineAssociationInstTopo] parse biz id failed, inst: %+v, err: %v, rid: %s", inst, err, params.ReqID)
+			blog.Errorf("[SearchMainlineAssociationInstTopo] parse biz id failed, inst: %+v, err: %v, rid: %s", instance, err, params.ReqID)
 			return nil, params.Err.CCError(common.CCErrCommParseBizIDFromMetadataInDBFailed)
 		}
-		if err := cli.fillStatistics(params, bizID, results); err != nil {
+		if err := assoc.fillStatistics(params, bizID, results); err != nil {
 			blog.Errorf("[SearchMainlineAssociationInstTopo] fill statistics data failed, bizID: %d, err: %v, rid: %s", bizID, err, params.ReqID)
 			return nil, err
 		}
@@ -275,7 +273,7 @@ func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextPa
 	return results, nil
 }
 
-func (cli *association) fillStatistics(params types.ContextParams, bizID int64, parentInsts []*metadata.TopoInstRst) error {
+func (assoc *association) fillStatistics(params types.ContextParams, bizID int64, parentInsts []*metadata.TopoInstRst) error {
 	// fill service instance count
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
@@ -283,7 +281,7 @@ func (cli *association) fillStatistics(params types.ContextParams, bizID int64, 
 			Limit: common.BKNoLimit,
 		},
 	}
-	serviceInstances, err := cli.clientSet.CoreService().Process().ListServiceInstance(params.Context, params.Header, option)
+	serviceInstances, err := assoc.clientSet.CoreService().Process().ListServiceInstance(params.Context, params.Header, option)
 	if err != nil {
 		blog.Errorf("fillStatistics failed, list service instances failed, option: %+v, err: %s, rid: %s", option, err.Error(), params.ReqID)
 		return err
@@ -298,7 +296,7 @@ func (cli *association) fillStatistics(params types.ContextParams, bizID int64, 
 	listHostOption := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 	}
-	hostModules, e := cli.clientSet.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, listHostOption)
+	hostModules, e := assoc.clientSet.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, listHostOption)
 	if e != nil {
 		blog.Errorf("fillStatistics failed, list host modules failed, option: %+v, err: %s, rid: %s", listHostOption, e.Error(), params.ReqID)
 		return e
@@ -363,7 +361,7 @@ func (cli *association) fillStatistics(params types.ContextParams, bizID int64, 
 	return nil
 }
 
-func (cli *association) fillMainlineChildInst(params types.ContextParams, object model.Object, parentInsts []*metadata.TopoInstRst) error {
+func (assoc *association) fillMainlineChildInst(params types.ContextParams, object model.Object, parentInsts []*metadata.TopoInstRst) error {
 	childObj, err := object.GetMainlineChildObject()
 	if err == io.EOF {
 		return nil
@@ -373,7 +371,7 @@ func (cli *association) fillMainlineChildInst(params types.ContextParams, object
 		return err
 	}
 
-	parentIDs := []int64{}
+	parentIDs := make([]int64, 0)
 	for index := range parentInsts {
 		parentIDs = append(parentIDs, parentInsts[index].InstID)
 	}
@@ -386,15 +384,15 @@ func (cli *association) fillMainlineChildInst(params types.ContextParams, object
 		cond.Field(common.BKDefaultField).NotEq(common.DefaultResSetFlag)
 	}
 
-	_, childInsts, err := cli.inst.FindInst(params, childObj, &metadata.QueryInput{Condition: cond.ToMapStr()}, false)
+	_, childInsts, err := assoc.inst.FindInst(params, childObj, &metadata.QueryInput{Condition: cond.ToMapStr()}, false)
 	if err != nil {
 		blog.Errorf("[fillMainlineChildInst] FindInst for %+v failed: %v, rid: %s", cond.ToMapStr(), err, params.ReqID)
 		return err
 	}
 
-	// parentID mapping to child topo insts
+	// parentID mapping to child topo instances
 	childInstMap := map[int64][]*metadata.TopoInstRst{}
-	childTopoInsts := []*metadata.TopoInstRst{}
+	childTopoInsts := make([]*metadata.TopoInstRst, 0)
 	for _, childInst := range childInsts {
 		childInstID, err := childInst.GetInstID()
 		if err != nil {
@@ -427,5 +425,5 @@ func (cli *association) fillMainlineChildInst(params types.ContextParams, object
 		parentInst.Child = append(parentInst.Child, childInstMap[parentInst.InstID]...)
 	}
 
-	return cli.fillMainlineChildInst(params, childObj, childTopoInsts)
+	return assoc.fillMainlineChildInst(params, childObj, childTopoInsts)
 }

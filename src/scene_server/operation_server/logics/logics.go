@@ -88,10 +88,10 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	opt := mapstr.MapStr{}
 
 	// 主服务器跑定时
-	//if isMaster := lgc.Engine.ServiceManageInterface.IsMaster(); !isMaster {
-	//	blog.Errorf("not master")
-	//	return
-	//}
+	if isMaster := lgc.Engine.ServiceManageInterface.IsMaster(); !isMaster {
+		blog.Errorf("not master")
+		return
+	}
 
 	if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
 		blog.Error("start collect chart data timer fail, err: %v", err)

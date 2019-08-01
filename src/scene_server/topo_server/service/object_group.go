@@ -78,7 +78,10 @@ func (s *Service) UpdateObjectGroup(params types.ContextParams, pathParams, quer
 	attributeGroups := make([]metadata.Group, 0)
 	for _, item := range result.Data.Info {
 		ag := metadata.Group{}
-		ag.Parse(item)
+		if _, err := ag.Parse(item); err != nil {
+			blog.Errorf("UpdateObjectGroup failed, parse condition from data failed, err: %+v, rid: %s", err, params.ReqID)
+			return nil, err
+		}
 		attributeGroups = append(attributeGroups, ag)
 	}
 
@@ -128,15 +131,17 @@ func (s *Service) ParseUpdateObjectAttributeGroupPropertyInput(data []byte) (map
 // UpdateObjectAttributeGroupProperty update the object attribute belongs to group information
 func (s *Service) UpdateObjectAttributeGroupProperty(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	datas := make([]metadata.PropertyGroupObjectAtt, 0)
 	val, exists := data.Get("origin")
 	if !exists {
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
 	}
 
-	datas, _ = val.([]metadata.PropertyGroupObjectAtt)
+	objectAtt, ok := val.([]metadata.PropertyGroupObjectAtt)
+	if ok == false {
+		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "unexpected parameter type")
+	}
 
-	err := s.Core.GroupOperation().UpdateObjectAttributeGroup(params, datas)
+	err := s.Core.GroupOperation().UpdateObjectAttributeGroup(params, objectAtt)
 	if nil != err {
 		return nil, err
 	}
@@ -165,7 +170,10 @@ func (s *Service) DeleteObjectAttributeGroup(params types.ContextParams, pathPar
 	attributeGroups := make([]metadata.Group, 0)
 	for _, item := range result.Data.Info {
 		ag := metadata.Group{}
-		ag.Parse(item)
+		if _, err := ag.Parse(item); err != nil {
+			blog.Errorf("DeleteObjectAttributeGroup failed, parse condition from data failed, err: %+v, rid: %s", err, params.ReqID)
+			return nil, err
+		}
 		attributeGroups = append(attributeGroups, ag)
 	}
 

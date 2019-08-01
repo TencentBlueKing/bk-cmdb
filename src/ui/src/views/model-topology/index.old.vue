@@ -7,7 +7,7 @@
                         active: !$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS),
                         auth: [$OPERATION.SYSTEM_MODEL_GRAPHICS]
                     }">
-                    <bk-button class="edit-button" type="primary"
+                    <bk-button class="edit-button" theme="primary"
                         :disabled="!$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS)"
                         @click="editTopo">
                         {{$t('ModelManagement["编辑拓扑"]')}}
@@ -15,17 +15,17 @@
                 </span>
             </template>
             <template v-else>
-                <bk-button type="primary" @click="exitEdit">
+                <bk-button theme="primary" @click="exitEdit">
                     {{$t('Common["返回"]')}}
                 </bk-button>
                 <p class="edit-cue">{{$t('ModelManagement["所有更改已自动保存"]')}}</p>
             </template>
             <div class="vis-button-group">
-                <i class="bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')"></i>
-                <i class="bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')"></i>
-                <i class="bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')"></i>
+                <i class="bk-icon icon-full-screen" @click="resizeFull" v-bk-tooltips="$t('ModelManagement[\'还原\']')"></i>
+                <i class="bk-icon icon-plus" @click="zoomIn" v-bk-tooltips="$t('ModelManagement[\'放大\']')"></i>
+                <i class="bk-icon icon-minus" @click="zoomOut" v-bk-tooltips="$t('ModelManagement[\'缩小\']')"></i>
                 <i class="icon-cc-setting"
-                    v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"
+                    v-bk-tooltips="$t('ModelManagement[\'拓扑显示设置\']')"
                     @click="showSlider('theDisplay')">
                 </i>
                 <div class="topo-example" v-if="!isAdminView">
@@ -88,7 +88,7 @@
             </ul>
         </template>
         
-        <cmdb-slider
+        <bk-sideslider
             :width="slider.width"
             :is-show.sync="slider.isShow"
             :title="slider.title"
@@ -96,12 +96,13 @@
             <component
                 class="slider-content"
                 slot="content"
+                v-if="slider.isShow"
                 :is="slider.content"
                 v-bind="slider.properties"
                 @save="handleSliderSave"
                 @cancel="handleSliderCancel"
             ></component>
-        </cmdb-slider>
+        </bk-sideslider>
         <div class="global-model" ref="topo" v-bkloading="{ isLoading: loading }"
             @dragover.prevent=""
             @drop="handleDrop"
@@ -413,7 +414,7 @@
                 if (asstNum) {
                     this.$bkInfo({
                         title: this.$t('ModelManagement["移除失败"]'),
-                        content: this.$tc('ModelManagement["移除失败提示"]', asstNum, { asstNum })
+                        subTitle: this.$tc('ModelManagement["移除失败提示"]', asstNum, { asstNum })
                     })
                 }
                 return !!asstNum
@@ -427,7 +428,7 @@
                 }
                 this.$bkInfo({
                     title: this.$t('ModelManagement["确定移除模型?"]'),
-                    content: this.$t('ModelManagement["移除模型提示"]'),
+                    subTitle: this.$t('ModelManagement["移除模型提示"]'),
                     confirmFn: () => {
                         const node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
                         node.position = { x: null, y: null }

@@ -207,6 +207,29 @@ var expectBizResourceType = []ResourceType{
 		},
 	},
 	{
+		ResourceTypeID:       BizProcessServiceInstance,
+		ResourceTypeName:     "服务实例",
+		ParentResourceTypeID: "",
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: false,
+			},
+		},
+	},
+	{
 		ResourceTypeID:       BizAuditLog,
 		ResourceTypeName:     "操作审计",
 		ParentResourceTypeID: "",

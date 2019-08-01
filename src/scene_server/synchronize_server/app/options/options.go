@@ -71,7 +71,7 @@ func (t TriggerTime) IsTiming() bool {
 type ConfigItem struct {
 	Name string
 	// White list, default false
-	WiteList bool
+	WhiteList bool
 	// White list  = true, need synchronize app list
 	// White list  = true,  out of synchronize business name,
 	AppNames []string
@@ -97,4 +97,12 @@ type ConfigItem struct {
 
 	// Retry error max retry count
 	ExceptionFileCount int
+
+	// Unsynchronized model related properties
+	// 使用忽略模型属性变的模式。 用户在目标中新加对应的模型，模型的属性。
+	// 满足同步的实例将会同步到目的cmdb。 在目标系统中新建相同的唯一标识模型或者模型的字段。内容会自动展示出来
+	IgnoreModelAttr bool
+
+	// EnableInstFilter  是否开启实例数据根据同步身份过滤
+	EnableInstFilter bool
 }

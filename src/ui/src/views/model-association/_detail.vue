@@ -7,12 +7,13 @@
                     <span class="color-danger">*</span>
                 </span>
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
-                    <input type="text" class="cmdb-form-input"
+                    <bk-input type="text" class="cmdb-form-input"
                         name="asstId"
                         :disabled="isEdit"
                         v-model.trim="relationInfo['bk_asst_id']"
                         v-validate="'required|associationId'"
                         :placeholder="$t('ModelManagement[\'请输入英文标识\']')">
+                    </bk-input>
                     <p class="form-error">{{errors.first('asstId')}}</p>
                 </div>
             </label>
@@ -22,13 +23,14 @@
                     <span class="color-danger">*</span>
                 </span>
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
-                    <input type="text"
+                    <bk-input type="text"
                         class="cmdb-form-input"
                         name="asstName"
                         :disabled="isEdit && relation.ispre"
                         v-validate="'required|singlechar'"
                         v-model.trim="relationInfo['bk_asst_name']"
                         :placeholder="$t('ModelManagement[\'请输入名称\']')">
+                    </bk-input>
                     <p class="form-error">{{errors.first('asstName')}}</p>
                 </div>
             </label>
@@ -54,13 +56,14 @@
                     <span class="color-danger">*</span>
                 </span>
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has('destDes') }">
-                    <input type="text"
+                    <bk-input type="text"
                         class="cmdb-form-input"
                         name="destDes"
                         :disabled="isEdit && relation.ispre"
                         v-validate="'required|singlechar'"
                         v-model.trim="relationInfo['dest_des']"
                         :placeholder="$t('ModelManagement[\'请输入关联描述如：属于、上联\']')">
+                    </bk-input>
                     <p class="form-error">{{errors.first('destDes')}}</p>
                 </div>
             </label>
@@ -89,10 +92,10 @@
         </div>
         <slot name="operation">
             <div class="btn-group">
-                <bk-button type="primary" :disabled="isEdit && relation.ispre" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveRelation">
+                <bk-button theme="primary" :disabled="isEdit && relation.ispre" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveRelation">
                     {{saveBtnText || $t('Common["确定"]')}}
                 </bk-button>
-                <bk-button type="default" @click="cancel">
+                <bk-button theme="default" @click="cancel">
                     {{$t('Common["取消"]')}}
                 </bk-button>
             </div>
@@ -128,7 +131,8 @@
                     src_des: '',
                     dest_des: '',
                     direction: 'src_to_dest' // none, src_to_dest, bidirectional
-                }
+                },
+                originInfo: {}
             }
         },
         computed: {
@@ -141,6 +145,15 @@
                 const updateParams = { ...this.relationInfo }
                 delete updateParams['bk_asst_id']
                 return updateParams
+            },
+            changedValues () {
+                const values = {}
+                Object.keys(this.relationInfo).forEach(key => {
+                    if (this.relationInfo[key] !== this.originInfo[key]) {
+                        values[key] = this.relationInfo[key]
+                    }
+                })
+                return values
             }
         },
         created () {
@@ -149,6 +162,7 @@
                     this.relationInfo[key] = this.$tools.clone(this.relation[key])
                 }
             }
+            this.originInfo = this.$tools.clone(this.relationInfo)
         },
         methods: {
             ...mapActions('objectAssociation', [

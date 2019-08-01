@@ -3,7 +3,7 @@
         <div class="config-wrapper config-unselected fl">
             <div class="wrapper-header unselected-header">
                 <label class="header-label">{{$t("Inst['隐藏属性']")}}</label>
-                <input class="header-filter" type="text" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="filter">
+                <bk-input class="header-filter" type="text" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="filter"></bk-input>
             </div>
             <ul class="property-list property-list-unselected">
                 <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" :key="index" @click="selectProperty(property)">
@@ -31,7 +31,7 @@
                         <i class="icon-triple-dot"></i>
                         <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                         <i class="bk-icon icon-eye-slash-shape"
-                            v-tooltip="$t('Common[\'隐藏\']')"
+                            v-bk-tooltips="$t('Common[\'隐藏\']')"
                             @click="unselectProperty(property)">
                         </i>
                     </li>
@@ -39,9 +39,9 @@
             </div>
         </div>
         <div class="config-options clearfix">
-            <bk-button class="config-button fl" type="primary" @click="handleApply">{{$t('Inst[\'应用\']')}}</bk-button>
-            <bk-button class="config-button fl" type="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
-            <bk-button class="config-button fr" type="default" @click="handleReset">{{$t("Common['还原默认']")}}</bk-button>
+            <bk-button class="config-button fl" theme="primary" @click="handleApply">{{$t('Inst[\'应用\']')}}</bk-button>
+            <bk-button class="config-button fl" theme="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
+            <bk-button class="config-button fr" theme="default" @click="handleReset">{{$t("Common['还原默认']")}}</bk-button>
         </div>
     </div>
 </template>
@@ -186,6 +186,7 @@
 <style lang="scss" scoped>
     .config-layout{
         height: 100%;
+        font-size: 14px;
     }
     .config-wrapper{
         width: 50%;
@@ -206,10 +207,6 @@
                 display: inline-block;
                 vertical-align: middle;
                 width: 120px;
-                height: 36px;
-                padding: 0 15px;
-                border: 1px solid $cmdbBorderColor;
-                border-radius: 2px;
             }
         }
     }

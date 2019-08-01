@@ -57,12 +57,11 @@ func (s *set) SetProxy(obj ObjectOperationInterface, inst InstOperationInterface
 }
 
 func (s *set) hasHost(params types.ContextParams, bizID int64, setIDS []int64) (bool, error) {
-	cond := map[string][]int64{
-		common.BKAppIDField: []int64{bizID},
-		common.BKSetIDField: setIDS,
+	option := metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		SetIDArr:      setIDS,
 	}
-
-	rsp, err := s.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, cond)
+	rsp, err := s.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to request the object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -110,7 +109,7 @@ func (s *set) DeleteSet(params types.ContextParams, obj model.Object, bizID int6
 		return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
 	}
 
-	// clear the moudle belong to deleted sets
+	// clear the module belong to deleted sets
 	moduleObj, err := s.obj.FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to find the object , error info is %s, rid: %s", err.Error(), params.ReqID)
