@@ -36,7 +36,7 @@
                             </label>
                             <span class="cmdb-form-item">
                                 <cmdb-selector
-                                    setting-key="name"
+                                    setting-key="repType"
                                     display-key="name"
                                     :list="seList.disList"
                                     v-model="chartData.name"
@@ -96,11 +96,11 @@
                             </label>
                             <label class="cmdb-form-radio cmdb-radio-big">
                                 <input type="radio" name="present" value="pie" v-model="chartData.chart_type">
-                                <span class="cmdb-radio-text cmdb-radio-text-icon"><i class="icon icon-cc-op-pie"></i>{{$t('Operation["柱状图"]')}}</span>
+                                <span class="cmdb-radio-text cmdb-radio-text-icon">{{$t('Operation["饼图"]')}}</span>
                             </label>
                             <label class="cmdb-form-radio cmdb-radio-big">
                                 <input type="radio" name="present" value="bar" v-model="chartData.chart_type">
-                                <span class="cmdb-radio-text cmdb-radio-text-icon"><i class="icon icon-cc-op-bar"></i>{{$t('Operation["柱状图"]')}}</span>
+                                <span class="cmdb-radio-text cmdb-radio-text-icon">{{$t('Operation["柱状图"]')}}</span>
                             </label>
                         </div>
                     </div>
@@ -133,8 +133,8 @@
                     </div>
                 </div>
                 <div class="footer">
-                    <bk-button type="primary" @click="confirm">{{$t("Common['保存']")}}</bk-button>
                     <bk-button type="default" @click="closeChart">{{$t("Common['取消']")}}</bk-button>
+                    <bk-button type="primary" @click="confirm">{{$t("Common['确定']")}}</bk-button>
                 </div>
             </div>
         </bk-dialog>
@@ -209,7 +209,7 @@
                 chartType: true,
                 showDia: true,
                 hostFilter: ['host', 'module', 'biz', 'set', 'process'],
-                editTitle: this.openType === 'add' ? this.$t('Operation["新增图表"]') : this.$t('Operation["编辑图表"]')
+                editTitle: ''
             }
         },
         computed: {
@@ -234,9 +234,13 @@
             }
         },
         created () {
+            this.initTitle()
             this.chartType = this.chartData.report_type === 'custom'
-            if (this.chartType && this.chartData.bk_obj_id === 'host') this.getDemList('host')
-            else if (this.chartType && this.chartData.bk_obj_id !== 'host') this.getStaList()
+            if (this.chartType && this.chartData.bk_obj_id === 'host') {
+                this.getDemList('host')
+            } else if (this.chartType && this.chartData.bk_obj_id !== 'host') {
+                this.getStaList()
+            }
         },
         methods: {
             ...mapActions('operationChart', [
@@ -269,14 +273,16 @@
                 })
             },
             confirm () {
+                this.chartData.report_type = this.chartType ? 'custom' : this.chartData.name
                 this.$validator.validateAll().then(result => {
                     if (result) {
                         if (this.openType === 'add') {
+                            if (!this.chartType) this.delKeys(this.chartData, ['bk_obj_id', 'config_id', 'field', 'name', 'chart_type'])
                             this.newStatisticalCharts({ params: this.chartData }).then(res => {
                                 this.transData(res)
                             })
                         } else {
-                            this.delKeys(this.chartData, ['data', 'hasData', 'create_time'])
+                            this.delKeys(this.chartData, ['data', 'hasData', 'create_time', 'title'])
                             this.updateStatisticalCharts({ params: this.chartData }).then(res => {
                                 this.transData(res)
                             })
@@ -302,6 +308,10 @@
                     delete obj[key]
                 })
                 return obj
+            },
+            initTitle () {
+                if (this.openType !== 'add') this.editTitle = this.$t('Common["编辑"]') + '【' + this.chartData.title + '】'
+                else this.editTitle = this.chartData.bk_obj_id === 'host' ? this.$t('Operation["新增主机统计图表"]') : this.$t('Operation["新增实例统计图表"]')
             }
         }
     }
@@ -325,7 +335,6 @@
                 display: inline-block;
                 float:left;
                 font-size:24px;
-                font-family:MicrosoftYaHei;
                 color:rgba(68,68,68,1);
                 margin-left: 14px;
             }
@@ -388,7 +397,6 @@
                     width:380px;
                     height:15px;
                     font-size:11px;
-                    font-family:MicrosoftYaHei;
                     color:rgba(151,155,165,1);
                     line-height:15px;
                     margin-left: 122px;
@@ -399,14 +407,14 @@
     }
     .footer {
         border-top: 1px solid rgba(220,222,229,1);
-        height:50px;
+        height: 50px;
         line-height: 50px;
         font-size: 0;
         text-align: center;
         button {
-            float:right;
-            margin-right: 24px;
-            margin-top:7px;
+            float: right;
+            margin-right: 20px;
+            margin-top: 7px;
         }
     }
     .form-error {
