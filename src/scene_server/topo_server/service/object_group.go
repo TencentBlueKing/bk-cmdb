@@ -61,12 +61,6 @@ func (s *Service) UpdateObjectGroup(params types.ContextParams, pathParams, quer
 	if cond.Condition.ID != 0 {
 		searchCondition.Field(common.BKFieldID).Eq(cond.Condition.ID)
 	}
-	if cond.Condition.GroupID != "" {
-		searchCondition.Field(common.BKPropertyGroupIDField).Eq(cond.Condition.GroupID)
-	}
-	if cond.Condition.ObjID != "" {
-		searchCondition.Field(common.BKObjIDField).Eq(cond.Condition.ObjID)
-	}
 	queryCond := metadata.QueryCondition{
 		Condition: searchCondition.ToMapStr(),
 	}
