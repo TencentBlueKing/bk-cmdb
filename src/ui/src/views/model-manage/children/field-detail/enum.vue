@@ -190,8 +190,8 @@
             }
             .enum-btn {
                 display: inline-block;
-                width: 36px;
-                height: 36px;
+                width: 32px;
+                height: 32px;
                 margin-left: 5px;
                 vertical-align: middle;
                 text-align: center;

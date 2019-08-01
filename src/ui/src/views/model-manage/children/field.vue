@@ -27,12 +27,14 @@
                 min-width="110"
                 :label="$t('ModelManagement[\'唯一标识\']')">
                 <template slot-scope="{ row }">
-                    <span
-                        v-if="row['ispre']"
-                        :class="['field-pre', $i18n.locale]">
-                        {{$t('ModelManagement["内置"]')}}
-                    </span>
-                    <span class="field-id">{{row['bk_property_id']}}</span>
+                    <div style="cursor: pointer; padding: 5px 0;" @click.stop="handleShowDetails(row)">
+                        <span
+                            v-if="row['ispre']"
+                            :class="['field-pre', $i18n.locale]">
+                            {{$t('ModelManagement["内置"]')}}
+                        </span>
+                        <span class="field-id">{{row['bk_property_id']}}</span>
+                    </div>
                 </template>
             </bk-table-column>
             <bk-table-column prop="bk_property_name" :label="$t('ModelManagement[\'名称\']')"></bk-table-column>
@@ -74,6 +76,7 @@
                 :is-read-only="isReadOnly"
                 :is-edit-field="slider.isEditField"
                 :field="slider.curField"
+                :only-read-of-type="slider.type"
                 @save="saveField"
                 @cancel="handleSliderBeforeClose">
             </the-field-detail>
@@ -94,7 +97,8 @@
                     isShow: false,
                     isEditField: false,
                     title: this.$t('ModelManagement["新建字段"]'),
-                    curField: {}
+                    curField: {},
+                    type: ''
                 },
                 fieldTypeMap: {
                     'singlechar': this.$t('ModelManagement["短字符"]'),
@@ -171,6 +175,7 @@
                 this.slider.isReadOnly = false
                 this.slider.title = this.$t('ModelManagement["新建字段"]')
                 this.slider.curField = {}
+                this.slider.type = false
                 this.slider.isShow = true
             },
             editField (item) {
@@ -178,6 +183,7 @@
                 this.slider.isReadOnly = this.isReadOnly
                 this.slider.title = this.$t('ModelManagement["编辑字段"]')
                 this.slider.curField = item
+                this.slider.type = false
                 this.slider.isShow = true
             },
             deleteField (field) {
@@ -249,6 +255,14 @@
                 }
                 this.slider.isShow = false
                 return true
+            },
+            handleShowDetails (item) {
+                this.slider.isEditField = true
+                this.slider.isReadOnly = true
+                this.slider.title = this.$t('ModelManagement["字段详情"]')
+                this.slider.curField = item
+                this.slider.type = true
+                this.slider.isShow = true
             }
         }
     }
