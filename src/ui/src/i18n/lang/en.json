@@ -352,6 +352,7 @@
         "所属分组": "Direction",
         "新建关联类型": "Create association type",
         "编辑关联类型": "Modify association type",
+        "关联类型详情": "Association type details",
         "源->目标描述": "Source to target description",
         "目标->源描述": "Target to source description",
         "请输入关联类型名称": "Enter type name",
@@ -438,7 +439,8 @@
         "模型顶部提示": "The model can view and dynamically change the current data structure of the CMDB. For example, a new device needs to be recorded to the CMDB, which can be implemented by creating a new corresponding model.",
         "业务层级提示": "The service level shows the hierarchical settings of the current service topology. You can modify the attributes of each layer or increase the topology level according to the needs of the enterprise.",
         "关联关系提示": "The “association type” is the classification associated with the model. For example, the relationship between the host and the switch can be classified as “uplink” type.",
-        "添加字段": "Add field"
+        "添加字段": "Add field",
+        "字段详情": "Field Details"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
