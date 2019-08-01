@@ -72,8 +72,8 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 		ws.Filter(s.authFilter(getErrFun))
 	}
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
-	ws.Route(ws.GET("/auth/business_list").To(s.GetAnyAuthorizedAppList))
-	ws.Route(ws.GET("/auth/admin_entrance").To(s.GetAdminEntrance))
+	ws.Route(ws.GET("/auth/business-list").To(s.GetAnyAuthorizedAppList))
+	ws.Route(ws.GET("/auth/admin-entrance").To(s.GetAdminEntrance))
 	ws.Route(ws.POST("/auth/skip_url").To(s.GetUserNoAuthSkipUrl))
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
@@ -103,11 +103,11 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		if path == "/api/v3/auth/business_list" {
+		if path == "/api/v3/auth/business-list" {
 			fchain.ProcessFilter(req, resp)
 			return
 		}
-		if path == "/api/v3/auth/admin_entrance" {
+		if path == "/api/v3/auth/admin-entrance" {
 			fchain.ProcessFilter(req, resp)
 			return
 		}
