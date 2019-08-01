@@ -239,3 +239,30 @@ type RoleAction struct {
 	ResourceTypeID ResourceTypeID `json:"resource_type_id"`
 	ActionID       ActionID       `json:"action_id"`
 }
+
+type RegisterRoleResult struct {
+	BaseResponse
+	Data struct {
+		TemplateID int64 `json:"perm_template_id"`
+	} `json:"data"`
+}
+
+type GetSkipUrlResult struct {
+	BaseResponse
+	Data struct {
+		Url string `json:"url"`
+	} `json:"data"`
+}
+
+type UserGroupMembersResult struct {
+	BaseResponse
+	Data []UserGroupMembers `json:"data"`
+}
+
+type UserGroupMembers struct {
+	ID int64 `json:"group_id"`
+	// user's group name, should be one of follows:
+	// bk_biz_maintainer, bk_biz_productor, bk_biz_test, bk_biz_developer, operator
+	Name  string   `json:"group_code"`
+	Users []string `json:"users"`
+}

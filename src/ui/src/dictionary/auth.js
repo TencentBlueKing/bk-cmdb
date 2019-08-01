@@ -183,7 +183,7 @@ export const RESOURCE_ACTION_NAME = {
     unboundModelToProcess: '解绑模块',
     findBoundModuleProcess: '查询已绑定模块',
     transferHost: '转移主机',
-    moveHostFromModuleToResPool: '归还主机至资源池',
+    moveHostFromModuleToResPool: '删除/归还',
     moveResPoolHostToBizIdleModule: '分配主机到业务空闲机',
     archive: '归档',
     modelTopologyOperation: '拓扑层级管理',

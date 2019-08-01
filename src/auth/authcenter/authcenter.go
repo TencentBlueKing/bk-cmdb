@@ -13,6 +13,7 @@
 package authcenter
 
 import (
+	"configcenter/src/common/metadata"
 	"context"
 	"errors"
 	"fmt"
@@ -793,4 +794,34 @@ func (ac *AuthCenter) RawDeregisterResource(ctx context.Context, scope ScopeInfo
 	}
 
 	return ac.authClient.deregisterResource(ctx, header, &info)
+}
+
+func (ac *AuthCenter) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p []metadata.Permission) (url string, err error) {
+	if !ac.Config.Enable {
+		return "", errors.New("auth center not enabled")
+	}
+
+	// wrapper the resource type name at first.
+	for index := range p {
+		if len(p[index].Resources) != 0 {
+			if len(p[index].Resources[0]) != 0 {
+				p[index].ResourceTypeName = p[index].Resources[0][0].ResourceTypeName
+				p[index].ResourceType = p[index].Resources[0][0].ResourceType
+			}
+		}
+
+		if p[index].ScopeType == ScopeTypeIDSystem {
+			p[index].ScopeID = SystemIDCMDB
+			p[index].ScopeName = SystemNameCMDB
+		}
+	}
+
+	return ac.authClient.GetNoAuthSkipUrl(ctx, header, p)
+}
+
+func (ac *AuthCenter) GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]UserGroupMembers, error) {
+	if !ac.Config.Enable {
+		return nil, errors.New("auth center not enabled")
+	}
+	return ac.authClient.GetUserGroupMembers(ctx, header, bizID, groups)
 }

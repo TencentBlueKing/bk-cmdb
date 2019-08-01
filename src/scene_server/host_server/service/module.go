@@ -66,10 +66,15 @@ func (s *Service) TransferHostModule(req *restful.Request, resp *restful.Respons
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveBizHostToModule, config.HostID...); err != nil {
 		blog.Errorf("check move host to module authorization failed, hosts: %+v, err: %v", config.HostID, err)
 		if err != auth.NoAuthorizeError {
-			_ = resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+            return
+		}
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, config.HostID)
+		if err != nil {
+			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		_ = resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp(config.HostID))
+		resp.WriteEntity(perm)
 		return
 	}
 	// auth: deregister hosts
@@ -136,7 +141,12 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 			_ = resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		_ = resp.WriteEntity(s.AuthManager.GenMoveBizHostToResourcePoolNoPermissionResp(conf.HostID))
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, conf.HostID)
+		if err != nil {
+			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(perm)
 		return
 	}
 	// auth: deregister hosts
@@ -460,16 +470,21 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, action, conf.HostID...); err != nil {
 		blog.Errorf("auth host from iam failed, hosts: %+v, err: %v, rid: %s", conf.HostID, err, srvData.rid)
 		if err != auth.NoAuthorizeError {
-			_ = resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		_ = resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp(conf.HostID))
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, conf.HostID)
+		if err != nil {
+			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(perm)
 		return
 	}
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", conf.HostID, err, srvData.rid)
-		_ = resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", conf.HostID, err)
+		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
 
