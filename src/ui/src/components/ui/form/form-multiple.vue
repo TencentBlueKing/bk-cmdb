@@ -37,7 +37,10 @@
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]">
                                     </component>
-                                    <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
+                                    <span class="form-error"
+                                        :title="errors.first(property['bk_property_id'])">
+                                        {{errors.first(property['bk_property_id'])}}
+                                    </span>
                                 </div>
                             </li>
                         </ul>
@@ -199,6 +202,7 @@
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {
                     rules[propertyType] = true
+                    rules[`${propertyType}Length`] = true
                 }
                 if (propertyType === 'int') {
                     rules['numeric'] = true
@@ -336,6 +340,8 @@
         line-height: 14px;
         font-size: 12px;
         color: #ff5656;
+        max-width: 100%;
+        @include ellipsis;
     }
     .form-empty{
         height: 100%;
