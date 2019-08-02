@@ -1,14 +1,11 @@
 <template>
     <div class="chart-detail">
-        <bk-dialog
-            :is-show.sync="showDia"
-            :quick-close="false"
+        <bk-dialog v-model="showDia"
             :close-icon="false"
-            :has-header="false"
-            :has-footer="false"
-            :width="600"
-            :padding="0">
-            <div slot="content" class="dialog-content">
+            :mask-close="false"
+            :show-footer="false"
+            :width="720">
+            <div class="dialog-content">
                 <div class="model-header">
                     <p class="title">{{ editTitle }}</p>
                     <i class="modal-close icon icon-cc-tips-close" @click="closeChart()"></i>
@@ -132,9 +129,9 @@
                         <span class="tips">{{$t('Operation["考虑显示效果，上限为25个，100%宽度建议显示20个，50%宽度10个"]')}}</span>
                     </div>
                 </div>
-                <div class="footer">
-                    <bk-button type="default" @click="closeChart">{{$t("Common['取消']")}}</bk-button>
-                    <bk-button type="primary" @click="confirm">{{$t("Common['确定']")}}</bk-button>
+                <div class="footer" slot="footer">
+                    <bk-button theme="default" @click="closeChart">{{$t("Common['取消']")}}</bk-button>
+                    <bk-button theme="primary" @click="confirm">{{$t("Common['确定']")}}</bk-button>
                 </div>
             </div>
         </bk-dialog>
