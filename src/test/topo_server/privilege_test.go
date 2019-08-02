@@ -2,7 +2,6 @@ package topo_server_test
 
 import (
 	"configcenter/src/common/metadata"
-	"configcenter/src/test"
 	"context"
 	"encoding/json"
 	"fmt"
