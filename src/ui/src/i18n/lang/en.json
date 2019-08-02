@@ -835,7 +835,7 @@
         "所有一级分类": "(All primary classification)",
         "所有二级分类": "(All secondary classification)",
         "没有二级分类": "No secondary classification",
-        "锁定不可编辑": "Locked service instance is not editable"
+        "纳入模板管理": "Incorporate template management, the instance will not support modification"
     },
     "ServiceCategory": {
         "服务分类功能提示": "Service classification can help the business sort out service usage. Configuring platform initialization includes some common classifications and supports more classifications based on business development.",
