@@ -3,6 +3,7 @@ package topo_server_test
 import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	params "configcenter/src/common/paraparse"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 var _ = Describe("object test", func() {
 	var bizId string
 	var childInstId string
+	var setId string
 	objectClient := topoServerClient.Object()
 	instClient := topoServerClient.Instance()
 
@@ -182,6 +184,7 @@ var _ = Describe("object test", func() {
 		var clsId, clsId2 string
 
 		It("create classification", func() {
+
 			input := &metadata.Classification{
 				ClassificationID:   "cc_class",
 				ClassificationName: "新测试分类",
@@ -570,16 +573,16 @@ var _ = Describe("object test", func() {
 		})
 
 		Describe("object attribute group test", func() {
-			It("update property group", func() {
+			It("update object attribute property group", func() {
 				arr := []metadata.PropertyGroupObjectAtt{
 					metadata.PropertyGroupObjectAtt{},
 				}
 				arr[0].Condition.ObjectID = "cc_obj"
 				arr[0].Condition.PropertyID = "test_singlechar"
 				arr[0].Condition.OwnerID = "0"
-				arr[0].Data.PropertyGroupID = "1" // strconv.FormatInt(groupId, 10)
+				arr[0].Data.PropertyGroupID = "1"
 				input := map[string]interface{}{
-					"origin": arr,
+					"data": arr,
 				}
 				rsp, err := objectClient.UpdatePropertyGroupObjectAtt(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
@@ -594,14 +597,12 @@ var _ = Describe("object test", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 				j, err := json.Marshal(rsp.Data)
-				data := []map[string]interface{}{}
-				json.Unmarshal(j, &data)
-				Expect(data).To(ContainElement(HaveKeyWithValue("bk_property_group_name", "123")))
-				Expect(data).To(ContainElement(HaveKeyWithValue("bk_property_group", "1")))
+				Expect(j).To(ContainSubstring("\"bk_property_group_name\":\"456\""))
+				Expect(j).To(ContainSubstring("\"bk_property_group\":\"1\""))
 			})
 
 			It("delete object attribute property group", func() {
-				rsp, err := objectClient.DeletePropertyGroupObjectAtt(context.Background(), "0", "cc_obj", "test_singlechar", strconv.FormatInt(groupId, 10), header)
+				rsp, err := objectClient.DeletePropertyGroupObjectAtt(context.Background(), "0", "cc_obj", "test_singlechar", "1", header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 			})
@@ -616,59 +617,152 @@ var _ = Describe("object test", func() {
 				j, err := json.Marshal(rsp.Data)
 				data := []map[string]interface{}{}
 				json.Unmarshal(j, &data)
-				Expect(data).NotTo(ContainElement(HaveKeyWithValue("bk_property_group_name", "ayayyaya")))
-				Expect(data).NotTo(ContainElement(HaveKeyWithValue("bk_property_group", "test_singlechar")))
+				Expect(j).NotTo(ContainSubstring("\"bk_property_group_name\":\"456\""))
+				Expect(j).NotTo(ContainSubstring("\"bk_property_group\":\"1\""))
 			})
 		})
 	})
 
 	Describe("set test", func() {
-		var setId, setId1 string
-		childInstIdInt, _ := strconv.ParseInt(childInstId, 10, 64)
-		bizIdInt, _ := strconv.ParseInt(bizId, 10, 64)
+		var setId1 string
+		var childInstIdInt, bizIdInt int64
 
-		It("create set bk_biz_id="+bizId+" and bk_parent_id="+childInstId, func() {
+		It(fmt.Sprintf("create set bk_biz_id=%s and bk_parent_id=%s", bizId, childInstId), func() {
+			var err error
+			childInstIdInt, err = strconv.ParseInt(childInstId, 10, 64)
+			Expect(err).NotTo(HaveOccurred())
+			bizIdInt, err = strconv.ParseInt(bizId, 10, 64)
+			Expect(err).NotTo(HaveOccurred())
 			input := mapstr.MapStr{
 				"bk_set_name":         "cc_set",
 				"bk_parent_id":        childInstIdInt,
 				"bk_supplier_account": "0",
 				"bk_biz_id":           bizIdInt,
 				"bk_service_status":   "1",
-				"bk_set_env":          "3",
+				"bk_set_env":          "2",
 			}
 			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			for k, v := range input {
-				Expect(rsp.Data.(map[string]interface{})).To(HaveKeyWithValue(k, v))
-			}
-			setId = strconv.FormatInt(rsp.Data["bk_set_id"].(int64), 10)
+			Expect(rsp.Data["bk_set_name"].(string)).To(Equal("cc_set"))
+			Expect(int64(rsp.Data["bk_parent_id"].(float64))).To(Equal(childInstIdInt))
+			Expect(int64(rsp.Data["bk_biz_id"].(float64))).To(Equal(bizIdInt))
+			setId = strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)
 		})
 
-		It("create set bk_biz_id="+bizId+" and bk_parent_id="+childInstId, func() {
+		It(fmt.Sprintf("create set bk_biz_id=%s and bk_parent_id=%s", bizId, childInstId), func() {
 			input := mapstr.MapStr{
 				"bk_set_name":         "test",
 				"bk_parent_id":        childInstIdInt,
 				"bk_supplier_account": "0",
 				"bk_biz_id":           bizIdInt,
 				"bk_service_status":   "1",
-				"bk_set_env":          "3",
+				"bk_set_env":          "2",
 			}
 			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			for k, v := range input {
-				Expect(rsp.Data.(map[string]interface{})).To(HaveKeyWithValue(k, v))
-			}
-			setId1 = strconv.FormatInt(rsp.Data["bk_set_id"].(int64), 10)
-			fmt.Println(setId1)
+			Expect(rsp.Data["bk_set_name"].(string)).To(Equal("test"))
+			Expect(int64(rsp.Data["bk_parent_id"].(float64))).To(Equal(childInstIdInt))
+			Expect(int64(rsp.Data["bk_biz_id"].(float64))).To(Equal(bizIdInt))
+			setId1 = strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)
 		})
 
 		It("update set", func() {
-			input := map[string]interface{}{}
+			input := map[string]interface{}{
+				"bk_set_name": "new_test",
+			}
 			rsp, err := instClient.UpdateSet(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("delete set", func() {
+			rsp, err := instClient.DeleteSet(context.Background(), bizId, setId1, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It(fmt.Sprintf("search set"), func() {
+			input := &params.SearchParams{
+				Condition: map[string]interface{}{},
+				Page: map[string]interface{}{
+					"sort": "id",
+				},
+			}
+			rsp, err := instClient.SearchSet(context.Background(), "0", bizId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(map[string]interface{}(rsp.Data.Info[rsp.Data.Count-1])).To(HaveKeyWithValue("bk_set_name", "new_test"))
+			Expect(map[string]interface{}(rsp.Data.Info[rsp.Data.Count-1])).To(HaveKeyWithValue("bk_service_status", "1"))
+			Expect(map[string]interface{}(rsp.Data.Info[rsp.Data.Count-1])).To(HaveKeyWithValue("bk_set_env", "2"))
+			Expect(int64(rsp.Data.Info[rsp.Data.Count-1]["bk_parent_id"].(float64))).To(Equal(childInstIdInt))
+			Expect(int64(rsp.Data.Info[rsp.Data.Count-1]["bk_biz_id"].(float64))).To(Equal(bizIdInt))
+		})
+	})
+
+	Describe("module test", func() {
+		var moduleId, moduleId1 string
+
+		It(fmt.Sprintf("create module bk_biz_id=%s and bk_set_id=%s", bizId, setId), func() {
+			input := map[string]interface{}{
+				"bk_module_name":      "cc_module",
+				"bk_parent_id":        1,
+				"service_category_id": 2,
+				"service_template_id": 0,
+			}
+			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data["bk_module_name"].(string)).To(Equal("cc_module"))
+			Expect(strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)).To(Equal(setId))
+			moduleId = strconv.FormatInt(int64(rsp.Data["bk_module_id"].(float64)), 10)
+		})
+
+		It(fmt.Sprintf("create module bk_biz_id=%s and bk_set_id=%s", bizId, setId), func() {
+			input := map[string]interface{}{
+				"bk_module_name":      "test_module",
+				"bk_parent_id":        1,
+				"service_category_id": 2,
+				"service_template_id": 0,
+			}
+			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data["bk_module_name"].(string)).To(Equal("test_module"))
+			Expect(strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)).To(Equal(setId))
+			moduleId1 = strconv.FormatInt(int64(rsp.Data["bk_module_id"].(float64)), 10)
+		})
+
+		It("update module", func() {
+			input := map[string]interface{}{
+				"bk_module_name": "new_module",
+			}
+			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("delete module", func() {
+			rsp, err := instClient.DeleteModule(context.Background(), bizId, setId, moduleId1, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It(fmt.Sprintf("search module"), func() {
+			input := &params.SearchParams{
+				Condition: map[string]interface{}{},
+				Page: map[string]interface{}{
+					"sort": "id",
+				},
+			}
+			rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(1))
+			Expect(map[string]interface{}(rsp.Data.Info[0])).To(HaveKeyWithValue("bk_module_name", "new_module"))
+			Expect(strconv.FormatInt(int64(rsp.Data.Info[0]["bk_set_id"].(float64)), 10)).To(Equal(setId))
+			Expect(int(rsp.Data.Info[0]["bk_parent_id"].(float64))).To(Equal(1))
 		})
 	})
 })
