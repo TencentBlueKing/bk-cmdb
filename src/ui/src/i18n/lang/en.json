@@ -935,7 +935,8 @@
         "模板未添加进程": "No process added, please add to the template and sync",
         "跳转服务拓扑": "Jump service topology",
         "暂无实例": "No instance",
-        "新建模板": "Create Template"
+        "新建模板": "Create Template",
+        "删除节点": "Delete Node"
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
