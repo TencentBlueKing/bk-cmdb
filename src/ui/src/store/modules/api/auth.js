@@ -114,13 +114,16 @@ const actions = {
             is_pass: false
         }
         try {
-            const response = await $http.get('auth/admin-entrance', config)
+            const response = await $http.get('auth/admin_entrance', config)
             data.is_pass = response.is_pass
         } catch (e) {
             console.error(e)
         }
         commit('setAdminEntranceAuth', data)
         return Promise.resolve(data)
+    },
+    getSkipUrl (context, { params, config }) {
+        return $http.post('auth/skip_url', params, config)
     }
 }
 
