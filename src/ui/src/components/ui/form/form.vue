@@ -197,6 +197,7 @@
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {
                     rules[propertyType] = true
+                    rules[`${propertyType}Length`] = true
                 }
                 if (propertyType === 'float') {
                     rules['float'] = true
