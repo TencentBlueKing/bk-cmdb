@@ -33,7 +33,7 @@
                                 v-validate="'required'"
                                 v-model="modelDialog.data['bk_classification_id']"
                             ></cmdb-selector>
-                            <p class="form-error">{{errors.first('modelGroup')}}</p>
+                            <p class="form-error" :title="errors.first('modelGroup')">{{errors.first('modelGroup')}}</p>
                         </div>
                     </div>
                     <label>
@@ -45,7 +45,7 @@
                                 :placeholder="$t('ModelManagement[\'请输入唯一标识\']')"
                                 v-model.trim="modelDialog.data['bk_obj_id']"
                                 v-validate="'required|modelId'">
-                            <p class="form-error">{{errors.first('modelId')}}</p>
+                            <p class="form-error" :title="errors.first('modelId')">{{errors.first('modelId')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
                     </label>
@@ -58,7 +58,7 @@
                                 :placeholder="$t('ModelManagement[\'请输入名称\']')"
                                 v-validate="'required|singlechar'"
                                 v-model.trim="modelDialog.data['bk_obj_name']">
-                            <p class="form-error">{{errors.first('modelName')}}</p>
+                            <p class="form-error" :title="errors.first('modelName')">{{errors.first('modelName')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'请填写模型名\']')"></i>
                     </label>
