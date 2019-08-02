@@ -96,23 +96,23 @@ func (o *OperationServer) UpdateOperationChart(ctx *rest.Contexts) {
 		return
 	}
 
-	// 图表是否已经存在
-	filterCondition := mapstr.MapStr{}
-	filterCondition[common.BKObjIDField] = opt[common.BKObjIDField]
-	filterCondition[common.OperationReportType] = opt[common.OperationReportType]
-	filterCondition["field"] = opt["field"]
-	filterCondition["width"] = opt["width"]
-	filterCondition["chart_type"] = opt["chart_type"]
-	filterCondition["x_axis_count"] = opt["x_axis_count"]
-	exist, err := o.CoreAPI.CoreService().Operation().SearchChartCommon(ctx.Kit.Ctx, ctx.Kit.Header, filterCondition)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrOperationUpdateChartFail, "new add statistic fail, err: %v", err)
-		return
-	}
-	if exist.Data.Count > 0 {
-		ctx.RespErrorCodeOnly(common.CCErrOperationChartAlreadyExist, "chart already exist")
-		return
-	}
+	//// 图表是否已经存在
+	//filterCondition := mapstr.MapStr{}
+	//filterCondition[common.BKObjIDField] = opt[common.BKObjIDField]
+	//filterCondition[common.OperationReportType] = opt[common.OperationReportType]
+	//filterCondition["field"] = opt["field"]
+	//filterCondition["width"] = opt["width"]
+	//filterCondition["chart_type"] = opt["chart_type"]
+	//filterCondition["x_axis_count"] = opt["x_axis_count"]
+	//exist, err := o.CoreAPI.CoreService().Operation().SearchChartCommon(ctx.Kit.Ctx, ctx.Kit.Header, filterCondition)
+	//if err != nil {
+	//	ctx.RespErrorCodeOnly(common.CCErrOperationUpdateChartFail, "update statistic fail, err: %v", err)
+	//	return
+	//}
+	//if exist.Data.Count > 0 {
+	//	ctx.RespErrorCodeOnly(common.CCErrOperationChartAlreadyExist, "chart already exist")
+	//	return
+	//}
 
 	if _, err := o.Engine.CoreAPI.CoreService().Operation().UpdateOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt); err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationUpdateChartFail, "update statistic info fail, err: %v", err)

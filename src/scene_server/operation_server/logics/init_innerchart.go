@@ -32,9 +32,8 @@ func (lgc *Logics) InitInnerChart(ctx context.Context) {
 	}
 
 	position := metadata.ChartPosition{}
-	position.Position = make(map[string][]uint64)
-	position.Position["host"] = configID[2:6]
-	position.Position["inst"] = configID[6:]
+	position.Position.Host = configID[2:6]
+	position.Position.Inst = configID[6:]
 	position.OwnerID = "0"
 
 	if _, err := lgc.CoreAPI.CoreService().Operation().UpdateOperationChartPosition(ctx, lgc.header, position); err != nil {
