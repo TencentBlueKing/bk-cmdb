@@ -31,9 +31,14 @@ type ChartConfig struct {
 }
 
 type ChartPosition struct {
-	BizID    int64               `json:"bk_biz_id" bson:"bk_biz_id"`
-	Position map[string][]uint64 `json:"position" bson:"position"`
-	OwnerID  string              `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	BizID    int64        `json:"bk_biz_id" bson:"bk_biz_id"`
+	Position PositionInfo `json:"position" bson:"position"`
+	OwnerID  string       `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+type PositionInfo struct {
+	Host []uint64 `json:"host" bson:"host"`
+	Inst []uint64 `json:"inst" bson:"inst"`
 }
 
 type ModelInstChange map[string]*InstChangeCount
@@ -131,4 +136,10 @@ type AttributesOption struct {
 	Name      string `json:"name" bson:"name"`
 	Type      string `json:"type" bson:"type"`
 	IsDefault string `json:"is_default" bson:"is_default"`
+}
+
+type ChartClassification struct {
+	Host []ChartConfig `json:"host"`
+	Inst []ChartConfig `json:"inst"`
+	Nav  []ChartConfig `json:"nav"`
 }

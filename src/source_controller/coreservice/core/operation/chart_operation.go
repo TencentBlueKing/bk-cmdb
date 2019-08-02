@@ -20,7 +20,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputParam interface{}) (interface{}, error) {
+func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputParam interface{}) (*metadata.ChartClassification, error) {
 	opt := mapstr.MapStr{}
 	chartConfig := make([]metadata.ChartConfig, 0)
 
@@ -39,32 +39,26 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 		return nil, nil
 	}
 
-	chartsInfo := make(map[string][]interface{})
-	chartsInfo["host"] = make([]interface{}, 0)
-	chartsInfo["inst"] = make([]interface{}, 0)
-	chartsInfo["nav"] = make([]interface{}, 0)
-	for _, info := range chartPosition[0].Position["host"] {
-		for _, chart := range chartConfig {
-			if chart.ConfigID == info {
-				chartsInfo["host"] = append(chartsInfo["host"], chart)
-			}
-		}
-	}
+	chartsInfo := &metadata.ChartClassification{}
 
 	for _, chart := range chartConfig {
+		for _, id := range chartPosition[0].Position.Host {
+			if chart.ConfigID == id {
+				chartsInfo.Host = append(chartsInfo.Host, chart)
+			}
+		}
+
+		for _, id := range chartPosition[0].Position.Inst {
+			if chart.ConfigID == id {
+				chartsInfo.Inst = append(chartsInfo.Inst, chart)
+			}
+		}
+
 		if chart.ReportType == common.BizModuleHostChart {
-			chartsInfo["nav"] = append(chartsInfo["nav"], chart)
+			chartsInfo.Nav = append(chartsInfo.Nav, chart)
 		}
 		if chart.ReportType == common.ModelAndInstCount {
-			chartsInfo["nav"] = append(chartsInfo["nav"], chart)
-		}
-	}
-
-	for _, info := range chartPosition[0].Position["inst"] {
-		for _, chart := range chartConfig {
-			if chart.ConfigID == info {
-				chartsInfo["inst"] = append(chartsInfo["inst"], chart)
-			}
+			chartsInfo.Nav = append(chartsInfo.Nav, chart)
 		}
 	}
 

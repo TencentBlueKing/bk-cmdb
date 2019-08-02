@@ -92,6 +92,23 @@ func (s *coreService) SearchOperationChart(params core.ContextParams, pathParams
 		return nil, err
 	}
 
+	if result == nil {
+		return struct {
+			Count uint64      `json:"count"`
+			Info  interface{} `json:"info"`
+		}{
+			Count: 0,
+			Info:  result,
+		}, err
+	}
+
+	for _, chart := range result.Host {
+		chart.Name = s.TranslateOperationChartName(params.Lang, chart)
+	}
+	for _, chart := range result.Inst {
+		chart.Name = s.TranslateOperationChartName(params.Lang, chart)
+	}
+
 	count, err := s.db.Table(common.BKTableNameChartConfig).Find(opt).Count(params.Context)
 	if err != nil {
 		blog.Errorf("search chart config fail, err: %v", err)
