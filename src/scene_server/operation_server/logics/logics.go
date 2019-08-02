@@ -15,7 +15,7 @@ import (
 func (lgc *Logics) GetBizModuleHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
 	cond := metadata.QueryCondition{}
 	data := make([]metadata.IDStringCountInt64, 0)
-	target := [3]string{common.BKInnerObjIDApp, common.BKInnerObjIDModule, common.BKInnerObjIDHost}
+	target := [2]string{common.BKInnerObjIDApp, common.BKInnerObjIDHost}
 
 	for _, obj := range target {
 		if obj == common.BKInnerObjIDApp {
