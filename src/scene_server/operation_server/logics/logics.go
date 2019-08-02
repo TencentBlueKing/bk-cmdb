@@ -75,6 +75,10 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 	if !ok {
 		return nil, kit.CCError.Error(common.CCErrOperationNewAddStatisticFail)
 	}
+
+	opt.Width = chartInfo.Width
+	opt.XAxisCount = chartInfo.XAxisCount
+
 	result, err := lgc.CoreAPI.CoreService().Operation().CreateOperationChart(kit.Ctx, kit.Header, opt)
 	if err != nil {
 		blog.Errorf("search chart info fail, err: %v", err)
