@@ -305,6 +305,9 @@
                             barModel.isX = false
                             res[item].forEach(child => {
                                 const time = this.$tools.formatTime(child.id, 'YYYY-MM-DD')
+                                returnData.minTime = returnData.minTime === '' ? time : returnData.minTime
+                                returnData.maxTime = time > returnData.maxTime ? time : returnData.maxTime
+                                returnData.minTime = time < returnData.minTime ? time : returnData.minTime
                                 content.x.push(time)
                                 content.y.push(child.count)
                                 content.mode = 'line'
@@ -402,7 +405,6 @@
                 const options = {
                     displaylogo: false,
                     displayModeBar: false
-                    // responsive: true
                 }
                 if (this.editType.openType === 'edit') {
                     Plotly.purge(myDiv)
