@@ -33,7 +33,7 @@
                             </label>
                             <span class="cmdb-form-item">
                                 <cmdb-selector
-                                    setting-key="repType"
+                                    setting-key="name"
                                     display-key="name"
                                     :list="seList.disList"
                                     v-model="chartData.name"
@@ -51,8 +51,8 @@
                                 {{$t('Operation["图表名称"]')}}：
                             </label>
                             <span class="cmdb-form-item">
-                                <input class="cmdb-form-input" placeholder="请输入图表名称" v-model="chartData.name">
-                                <span class="form-error">{{errors.first('present')}}</span>
+                                <input class="cmdb-form-input" placeholder="请输入图表名称" v-model="chartData.name" name="collectionName" v-validate="'required'">
+                                <span class="form-error">{{errors.first('collectionName')}}</span>
                             </span>
                         </div>
                         <div class="content-item" v-if="chartData.bk_obj_id !== 'host'">
@@ -61,6 +61,7 @@
                             </label>
                             <span class="cmdb-form-item">
                                 <cmdb-selector
+                                    :disabled="openType === 'edit'"
                                     setting-key="bk_obj_id"
                                     display-key="bk_obj_name"
                                     :list="staticFilter"
@@ -77,6 +78,7 @@
                             </label>
                             <span class="cmdb-form-item">
                                 <cmdb-selector
+                                    :disabled="openType === 'edit'"
                                     setting-key="bk_property_id"
                                     display-key="bk_property_name"
                                     :list="filterList"
@@ -130,8 +132,8 @@
                     </div>
                 </div>
                 <div class="footer" slot="footer">
-                    <bk-button theme="default" @click="closeChart">{{$t("Common['取消']")}}</bk-button>
-                    <bk-button theme="primary" @click="confirm">{{$t("Common['确定']")}}</bk-button>
+                    <bk-button type="default" @click="closeChart">{{$t("Common['取消']")}}</bk-button>
+                    <bk-button type="primary" @click="confirm">{{$t("Common['确定']")}}</bk-button>
                 </div>
             </div>
         </bk-dialog>
@@ -219,18 +221,26 @@
                 return this.staList.filter(item => {
                     return this.hostFilter.indexOf(item.bk_obj_id) === -1
                 })
+            },
+            typeFilter () {
+                const data = this.chartData.bk_obj_id === 'host' ? this.seList.host : this.seList.inst
+                return data.filter(item => {
+                    return item.name === this.chartData.name
+                })
             }
         },
         watch: {
             'chartType' () {
                 if (this.chartData.bk_obj_id === 'host') this.seList.disList = this.$tools.clone(this.seList.host)
                 else this.seList.disList = this.$tools.clone(this.seList.inst)
+                if (this.chartType) this.chartData.name = ''
             },
             'chartData.bk_obj_id' () {
                 this.getDemList(this.chartData.bk_obj_id)
             }
         },
         created () {
+            console.log(this.chartData)
             this.initTitle()
             this.chartType = this.chartData.report_type === 'custom'
             if (this.chartType && this.chartData.bk_obj_id === 'host') {
@@ -270,17 +280,18 @@
                 })
             },
             confirm () {
-                this.chartData.report_type = this.chartType ? 'custom' : this.chartData.name
+                this.chartData.report_type = this.chartType ? 'custom' : this.typeFilter[0].repType
+                const data = this.$tools.clone(this.chartData)
                 this.$validator.validateAll().then(result => {
                     if (result) {
                         if (this.openType === 'add') {
-                            if (!this.chartType) this.delKeys(this.chartData, ['bk_obj_id', 'config_id', 'field', 'name', 'chart_type'])
-                            this.newStatisticalCharts({ params: this.chartData }).then(res => {
+                            if (!this.chartType) this.delKeys(data, ['bk_obj_id', 'config_id', 'field', 'name', 'chart_type'])
+                            this.newStatisticalCharts({ params: data }).then(res => {
                                 this.transData(res)
                             })
                         } else {
-                            this.delKeys(this.chartData, ['data', 'hasData', 'create_time', 'title'])
-                            this.updateStatisticalCharts({ params: this.chartData }).then(res => {
+                            this.delKeys(data, ['data', 'hasData', 'create_time', 'title'])
+                            this.updateStatisticalCharts({ params: data }).then(res => {
                                 this.transData(res)
                             })
                         }
