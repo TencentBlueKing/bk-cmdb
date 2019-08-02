@@ -16,7 +16,7 @@
             collapse-icon="bk-icon icon-right-shape"
             @select-change="handleSelectChange">
             <div class="node-info clearfix" slot-scope="{ node, data }">
-                <i :class="['node-model-icon fl', { 'is-selected': node.selected }]">{{modelIconMap[data.bk_obj_id]}}</i>
+                <i :class="['node-model-icon fl', { 'is-selected': node.selected }, { 'is-template': isTemplate(node) }]">{{modelIconMap[data.bk_obj_id]}}</i>
                 <span class="fr" v-if="isBlueKing && showCreate(node, data)"
                     v-bk-tooltips.top="$t('Common[\'您暂无创建权限\']')">
                     <bk-button class="node-button"
@@ -181,6 +181,9 @@
                 const isModule = data.bk_obj_id === 'module'
                 return node.selected && !isModule
             },
+            isTemplate (node) {
+                return node.data.service_template_id
+            },
             async showCreateDialog (node) {
                 const nodeModel = this.mainLine.find(data => data.bk_obj_id === node.data.bk_obj_id)
                 const nextModelId = nodeModel.bk_next_obj
@@ -237,6 +240,7 @@
                         child: [],
                         bk_obj_name: nextModel.bk_obj_name,
                         bk_obj_id: nextModel.bk_obj_id,
+                        service_instance_count: 0,
                         ...data
                     }
                     this.$refs.tree.addNode(nodeData, parentNode.id, 0)
@@ -303,6 +307,9 @@
             border-radius: 50%;
             background-color: #c4c6cc;
             color: #fff;
+            &.is-template {
+                background-color: #97aed6;
+            }
             &.is-selected {
                 background-color: #3a84ff;
             }
