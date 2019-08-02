@@ -62,7 +62,8 @@ a:focus {
     display: none;
 }
 
-input::-webkit-input-placeholder {
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
     color: #c3cdd7;
     font-size: 12px;
 }
@@ -89,6 +90,8 @@ div.cmdb-form-item {
             font-size: 12px;
             line-height: 14px;
             color: $cmdbDangerColor;
+            max-width: 100%;
+            @include ellipsis;
         }
     }
 

@@ -1,20 +1,27 @@
 import Vue from 'vue'
 import { language } from '@/i18n'
 import veeValidate, { Validator } from 'vee-validate'
+import stringLength from 'utf8-byte-length'
 
 const customRules = {
     singlechar: {
         validate: value => {
-            /* eslint-disable */
             return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。@#\."'\\\/\s]){0,256}$/.test(value)
-            /* eslint-enable */
+        }
+    },
+    singlecharLength: {
+        validate: value => {
+            return stringLength(value) <= 256
         }
     },
     longchar: {
         validate: value => {
-            /* eslint-disable */
             return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。@#\."'\\\/\s]){0,2000}$/.test(value)
-            /* eslint-enable */
+        }
+    },
+    longcharLength: {
+        validate: value => {
+            return stringLength(value) <= 2000
         }
     },
     associationId: {
@@ -101,7 +108,9 @@ const dictionary = {
         messages: {
             regex: () => '请输入符合自定义正则的内容',
             longchar: () => '请输入正确的长字符内容',
+            longcharLength: () => '请输入2000个字符以内的内容',
             singlechar: () => '请输入正确的短字符内容',
+            singlecharLength: () => '请输入256个字符以内的内容',
             associationId: () => '格式不正确，只能包含下划线，英文小写',
             classifyName: () => '请输入正确的内容',
             classifyId: () => '请输入正确的内容',
@@ -129,7 +138,9 @@ const dictionary = {
         messages: {
             regex: () => 'Please enter the correct content that conform custom regex',
             longchar: () => 'Please enter the correct content',
+            longcharLength: () => 'Content length max than 2000',
             singlechar: () => 'Please enter the correct content',
+            singlecharLength: () => 'Content length max than 256',
             associationId: () => 'The format is incorrect and can only contain underscores and lowercase English',
             classifyName: () => 'Please enter the correct content',
             classifyId: () => 'Please enter the correct content',
