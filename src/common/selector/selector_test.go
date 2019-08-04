@@ -13,11 +13,12 @@
 package selector_test
 
 import (
+	"configcenter/src/common/selector"
+
 	"fmt"
 	"strings"
 	"testing"
 
-	"configcenter/src/common/selector"
 	"github.com/stretchr/testify/assert"
 )
 
