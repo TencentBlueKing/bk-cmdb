@@ -73,52 +73,52 @@
 > 目前仅支持 `RFC3339` 时间格式
 - OperatorDatetimeLess           ("datetime_less")
     + 含义：匹配记录字段值表示的时间早于 < `{Value}`
-    + 参数格式： `RFC3339` 格式字符串
+    + Value格式： `RFC3339` 格式字符串
 - OperatorDatetimeLessOrEqual    ("datetime_less_or_equal")
     + 含义：匹配记录字段值表示的时间不晚于 <= `{Value}`
-    + 参数格式： `RFC3339` 格式字符串
+    + Value格式： `RFC3339` 格式字符串
 - OperatorDatetimeGreater        ("datetime_greater")
     + 含义：匹配记录字段值表示的时间晚于 < `{Value}`
-    + 参数格式： `RFC3339` 格式字符串
+    + Value格式： `RFC3339` 格式字符串
 - OperatorDatetimeGreaterOrEqual ("datetime_greater_or_equal")
     + 含义：匹配记录字段值表示的时间不早于 >= `{Value}`
-    + 参数格式： `RFC3339` 格式字符串
+    + Value格式： `RFC3339` 格式字符串
 
 ### 字符串操作符
 - OperatorBeginsWith    ("begins_with")
     + 含义：匹配记录字段值是以`{Value}`开头的字符串
-    + 参数格式：非空字符串
+    + Value格式：非空字符串
 - OperatorNotBeginsWith ("not_begins_with")
     + 含义：匹配记录字段值不是以`{Value}`开头的字符串
-    + 参数格式：非空字符串
+    + Value格式：非空字符串
 - OperatorContains      ("contains")
     + 含义：匹配记录字段值包含`{Value}`的字符串
-    + 参数格式：非空字符串
+    + Value格式：非空字符串
 - OperatorNotContains   ("not_contains")
     + 含义：匹配记录字段值不包含`{Value}`的字符串
-    + 参数格式：非空字符串
+    + Value格式：非空字符串
 - OperatorsEndsWith     ("ends_with")
     + 含义：匹配记录字段值是以`{Value}`结尾的字符串
-    + 参数格式：非空字符串
+    + Value格式：非空字符串
 - OperatorNotEndsWith   ("not_ends_with")
     + 含义：匹配记录字段值不是以`{Value}`结尾的字符串
-    + 参数格式：非空字符串
+    + Value格式：非空字符串
 
 ### 空值操作符
 - OperatorIsNull    ("is_null")
     + 含义：匹配记录字段值为 `null`
-    + 参数格式：不接受参数
+    + Value格式：不接受参数
 - OperatorIsNotNull ("is_not_null")
     + 含义：匹配记录字段值不为 `null`
-    + 参数格式：不接受参数
+    + Value格式：不接受参数
 
 ### 字段存在状态操作符
 - OperatorExist    ("exist")
     + 含义：匹配记录包含字段 `{Field}`
-    + 参数格式：不接受参数
+    + Value格式：不接受参数
 - OperatorNotExist ("not_exist")
     + 含义：匹配记录不包含字段 `{Field}`
-    + 参数格式：不接受参数
+    + Value格式：不接受参数
 
 ## demo
 ```json
