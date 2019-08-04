@@ -157,7 +157,7 @@ type HostOperation interface {
 	CreateConfirmHistory(ctx ContextParams, input mapstr.MapStr) (uint64, error)
 
 	// host search
-	ListHostByTopoNode(ctx ContextParams, input metadata.ListHostByTopoNodeOption) (*metadata.ListHostResult, error)
+	ListHosts(ctx ContextParams, input metadata.ListHosts) (*metadata.ListHostResult, error)
 }
 
 // AssociationOperation association methods
