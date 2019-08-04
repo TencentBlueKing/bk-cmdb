@@ -24,6 +24,9 @@ type RuleGroupData struct {
 }
 
 func ParseRule(data map[string]interface{}) (queryFilter Rule, errKey string, err error) {
+	if data == nil {
+		return nil, "", nil
+	}
 	if _, ok := data["condition"]; ok == true {
 		ruleGroupData := &RuleGroupData{}
 		// shouldn't use mapstr here as it doesn't support nest struct
@@ -40,7 +43,9 @@ func ParseRule(data map[string]interface{}) (queryFilter Rule, errKey string, er
 			if err != nil {
 				return nil, fmt.Sprintf("rules[%d].%s", idx, errKey), err
 			}
-			combinedRule.Rules = append(combinedRule.Rules, qf)
+			if qf != nil {
+				combinedRule.Rules = append(combinedRule.Rules, qf)
+			}
 		}
 		queryFilter = combinedRule
 	} else if _, ok := data["operator"]; ok == true {
