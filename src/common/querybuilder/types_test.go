@@ -388,3 +388,34 @@ func TestInvalidCombinedRule(t *testing.T) {
 		assert.NotNil(t, err)
 	}
 }
+
+func TestExceedMaxDeep(t *testing.T) {
+	rules := []querybuilder.CombinedRule{
+		{
+			Condition: querybuilder.ConditionOr,
+			Rules: []querybuilder.Rule{
+				querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionOr,
+					Rules: []querybuilder.Rule{
+						querybuilder.AtomRule{
+							Operator: querybuilder.OperatorEqual,
+							Field:    "field",
+							Value:    1,
+						},
+					},
+				},
+			},
+		},
+	}
+	for idx, rule := range rules {
+		t.Logf("running exceed max deep case %d, rule: %+v", idx, rule)
+		filter, errKey, err := rule.ToMgo()
+		assert.NotNil(t, err)
+		assert.NotEmpty(t, errKey)
+		assert.Nil(t, filter)
+
+		errKey, err = rule.Validate()
+		assert.NotEmpty(t, errKey)
+		assert.NotNil(t, err)
+	}
+}

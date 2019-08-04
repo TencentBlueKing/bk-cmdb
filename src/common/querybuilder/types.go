@@ -319,6 +319,10 @@ type CombinedRule struct {
 	Rules     []Rule    `json:"rules"`
 }
 
+var (
+	MaxDeep = 2
+)
+
 func (r CombinedRule) GetDeep() int {
 	maxChildDeep := 1
 	for _, child := range r.Rules {
@@ -337,6 +341,9 @@ func (r CombinedRule) Validate() (string, error) {
 	if r.Rules == nil || len(r.Rules) == 0 {
 		return "rules", fmt.Errorf("combined rules shouldn't be empty")
 	}
+	if r.GetDeep() > MaxDeep {
+		return "rules", fmt.Errorf("exceed max query condition deepth: %d", MaxDeep)
+	}
 	for idx, rule := range r.Rules {
 		if key, err := rule.Validate(); err != nil {
 			return fmt.Sprintf("rules[%d].%s", idx, key), err
@@ -351,6 +358,9 @@ func (r CombinedRule) ToMgo() (mgoFilter map[string]interface{}, key string, err
 	}
 	if r.Rules == nil || len(r.Rules) == 0 {
 		return nil, "rules", fmt.Errorf("combined rules shouldn't be empty")
+	}
+	if r.GetDeep() > MaxDeep {
+		return nil, "rules", fmt.Errorf("exceed max query condition deepth: %d", MaxDeep)
 	}
 	filters := make([]map[string]interface{}, 0)
 	for idx, rule := range r.Rules {

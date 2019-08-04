@@ -62,4 +62,10 @@ func TestNormalParser(t *testing.T) {
 		assert.Empty(t, errKey)
 		assert.NotNil(t, filter)
 	}
+
+	data := map[string]interface{}(nil)
+	filter, errKey, err := querybuilder.ParseRule(data)
+	assert.Nil(t, err)
+	assert.Empty(t, errKey)
+	assert.Nil(t, filter)
 }
