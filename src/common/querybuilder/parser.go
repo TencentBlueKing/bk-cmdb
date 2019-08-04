@@ -19,32 +19,38 @@ import (
 )
 
 type RuleGroupData struct {
-	Condition Condition                `json:"condition"`
-	Rules     []map[string]interface{} `json:"rules"`
+	Condition Condition                `json:"condition" field:"condition"`
+	Rules     []map[string]interface{} `json:"rules" field:"rules"`
 }
 
-func RuleParser(data map[string]interface{}) (queryFilter Rule, errKey string, err error) {
+func ParseRule(data map[string]interface{}) (queryFilter Rule, errKey string, err error) {
 	if _, ok := data["condition"]; ok == true {
 		ruleGroupData := &RuleGroupData{}
-		if err := mapstr.SetValueToStructByTags(ruleGroupData, data); err != nil {
+		// shouldn't use mapstr here as it doesn't support nest struct
+		// TODO: replace it with more efficient way
+		if err := mapstr.DecodeFromMapStr(ruleGroupData, data); err != nil {
 			return nil, "", fmt.Errorf("decode to rule group struct failed, err: %+v", err)
 		}
-		queryFilter := CombinedRule{
+		combinedRule := CombinedRule{
 			Condition: ruleGroupData.Condition,
 			Rules:     make([]Rule, 0),
 		}
 		for idx, item := range ruleGroupData.Rules {
-			qf, errKey, err := RuleParser(item)
+			qf, errKey, err := ParseRule(item)
 			if err != nil {
 				return nil, fmt.Sprintf("rules[%d].%s", idx, errKey), err
 			}
-			queryFilter.Rules = append(queryFilter.Rules, qf)
+			combinedRule.Rules = append(combinedRule.Rules, qf)
 		}
+		queryFilter = combinedRule
 	} else if _, ok := data["operator"]; ok == true {
 		rule := AtomRule{}
-		if err := mapstr.SetValueToStructByTags(&rule, data); err != nil {
+		if err := mapstr.DecodeFromMapStr(&rule, data); err != nil {
 			return nil, "", fmt.Errorf("decode to rule struct failed, err: %+v", err)
 		}
+		queryFilter = rule
+	} else {
+		return nil, "", fmt.Errorf("no query filter found")
 	}
-	return nil, "", fmt.Errorf("no query filter found")
+	return queryFilter, "", nil
 }

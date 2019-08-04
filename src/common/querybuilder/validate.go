@@ -1,10 +1,11 @@
 package querybuilder
 
 import (
-	"configcenter/src/common/util"
 	"fmt"
+	"reflect"
+	"time"
 
-	"github.com/joyt/godate"
+	"configcenter/src/common/util"
 )
 
 var (
@@ -16,7 +17,7 @@ var (
 
 func getType(value interface{}) string {
 	switch value.(type) {
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, byte, rune, float64, float32:
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, float64, float32:
 		return TypeNumeric
 	case bool:
 		return TypeBoolean
@@ -29,28 +30,37 @@ func getType(value interface{}) string {
 
 func validateBasicType(value interface{}) error {
 	if t := getType(value); t == TypeUnknown {
-		return fmt.Errorf("unknow value type: %+v", value)
+		return fmt.Errorf("unknow value type with value: %+v", value)
 	}
 	return nil
 }
 
 func validateNumericType(value interface{}) error {
-	if t := getType(value); t == TypeNumeric {
+	if t := getType(value); t != TypeNumeric {
 		return fmt.Errorf("unknow value type: %s, value: %+v", t, value)
 	}
 	return nil
 }
 
 func validateBoolType(value interface{}) error {
-	if t := getType(value); t == TypeBoolean {
+	if t := getType(value); t != TypeBoolean {
 		return fmt.Errorf("unknow value type: %s, value: %+v", t, value)
 	}
 	return nil
 }
 
 func validateStringType(value interface{}) error {
-	if t := getType(value); t == TypeString {
+	if t := getType(value); t != TypeString {
 		return fmt.Errorf("unknow value type of: %s, value: %+v", t, value)
+	}
+	return nil
+}
+func validateNotEmptyStringType(value interface{}) error {
+	if err := validateStringType(value); err != nil {
+		return err
+	}
+	if len(value.(string)) == 0 {
+		return fmt.Errorf("value shouldn't be empty")
 	}
 	return nil
 }
@@ -59,25 +69,28 @@ func validateDatetimeStringType(value interface{}) error {
 	if err := validateStringType(value); err != nil {
 		return err
 	}
-	if _, err := date.Parse(value.(string)); err != nil {
+	if _, err := time.Parse(time.RFC3339, value.(string)); err != nil {
 		return err
 	}
 	return nil
 }
 
 func validateSliceOfBasicType(value interface{}, requireSameType bool) error {
-	v, ok := value.([]interface{})
-	if ok == false {
-		return fmt.Errorf("unexpected value type, expect array")
+	t := reflect.TypeOf(value)
+	if t.Kind() != reflect.Array && t.Kind() != reflect.Slice {
+		return fmt.Errorf("unexpected value type: %s, expect array", t.Kind().String())
 	}
-	for _, item := range v {
+	v := reflect.ValueOf(value)
+	for i := 0; i < v.Len(); i++ {
+		item := v.Index(i).Interface()
 		if err := validateBasicType(item); err != nil {
 			return err
 		}
 	}
 	if requireSameType == true {
 		vTypes := make([]string, 0)
-		for _, item := range v {
+		for i := 0; i < v.Len(); i++ {
+			item := v.Index(i).Interface()
 			vTypes = append(vTypes, getType(item))
 		}
 		vTypes = util.StrArrayUnique(vTypes)

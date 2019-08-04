@@ -14,10 +14,10 @@ package querybuilder
 
 import (
 	"fmt"
+	"regexp"
+	"time"
 
 	"configcenter/src/common"
-
-	"github.com/joyt/godate"
 )
 
 type Rule interface {
@@ -130,7 +130,6 @@ func (op Operator) Validate() error {
 type AtomRule struct {
 	Field    string      `json:"field"`
 	Operator Operator    `json:"operator"`
-	Type     string      `json:"type"`
 	Value    interface{} `json:"value"`
 }
 
@@ -140,12 +139,27 @@ func (r AtomRule) GetDeep() int {
 
 func (r AtomRule) Validate() (string, error) {
 	if err := r.Operator.Validate(); err != nil {
-		return "operator", nil
+		return "operator", err
+	}
+	if err := r.validateField(); err != nil {
+		return "field", err
 	}
 	if err := r.validateValue(); err != nil {
 		return "value", err
 	}
 	return "", nil
+}
+
+var (
+	// TODO: should we support dot field separator here?
+	ValidFieldPattern = regexp.MustCompile(`^[a-zA-Z][\d\w\-_.]*$`)
+)
+
+func (r AtomRule) validateField() error {
+	if ValidFieldPattern.MatchString(r.Field) == false {
+		return fmt.Errorf("invalid field: %s", r.Field)
+	}
+	return nil
 }
 
 func (r AtomRule) validateValue() error {
@@ -159,7 +173,7 @@ func (r AtomRule) validateValue() error {
 	case OperatorDatetimeLess, OperatorDatetimeLessOrEqual, OperatorDatetimeGreater, OperatorDatetimeGreaterOrEqual:
 		return validateDatetimeStringType(r.Value)
 	case OperatorBeginsWith, OperatorNotBeginsWith, OperatorContains, OperatorNotContains, OperatorsEndsWith, OperatorNotEndsWith:
-		return validateStringType(r.Value)
+		return validateNotEmptyStringType(r.Value)
 	case OperatorIsEmpty, OperatorIsNotEmpty:
 		return nil
 	case OperatorIsNull, OperatorIsNotNull:
@@ -212,7 +226,7 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 			common.BKDBGTE: r.Value,
 		}
 	case OperatorDatetimeLess:
-		t, err := date.Parse(r.Value.(string))
+		t, err := time.Parse(time.RFC3339, r.Value.(string))
 		if err != nil {
 			return nil, "value", err
 		}
@@ -220,7 +234,7 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 			common.BKDBLT: t,
 		}
 	case OperatorDatetimeLessOrEqual:
-		t, err := date.Parse(r.Value.(string))
+		t, err := time.Parse(time.RFC3339, r.Value.(string))
 		if err != nil {
 			return nil, "value", err
 		}
@@ -228,7 +242,7 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 			common.BKDBLTE: t,
 		}
 	case OperatorDatetimeGreater:
-		t, err := date.Parse(r.Value.(string))
+		t, err := time.Parse(time.RFC3339, r.Value.(string))
 		if err != nil {
 			return nil, "value", err
 		}
@@ -236,7 +250,7 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 			common.BKDBGT: t,
 		}
 	case OperatorDatetimeGreaterOrEqual:
-		t, err := date.Parse(r.Value.(string))
+		t, err := time.Parse(time.RFC3339, r.Value.(string))
 		if err != nil {
 			return nil, "value", err
 		}
@@ -287,7 +301,11 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 		}
 	case OperatorExist:
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBExists: r.Value.(bool),
+			common.BKDBExists: true,
+		}
+	case OperatorNotExist:
+		filter[r.Field] = map[string]interface{}{
+			common.BKDBExists: false,
 		}
 	default:
 		return nil, "operator", fmt.Errorf("unsupported operator: %s", r.Operator)
@@ -316,9 +334,12 @@ func (r CombinedRule) Validate() (string, error) {
 	if err := r.Condition.Validate(); err != nil {
 		return "condition", err
 	}
-	for _, rule := range r.Rules {
+	if r.Rules == nil || len(r.Rules) == 0 {
+		return "rules", fmt.Errorf("combined rules shouldn't be empty")
+	}
+	for idx, rule := range r.Rules {
 		if key, err := rule.Validate(); err != nil {
-			return fmt.Sprintf("rules.%s", key), err
+			return fmt.Sprintf("rules[%d].%s", idx, key), err
 		}
 	}
 	return "", nil
@@ -327,6 +348,9 @@ func (r CombinedRule) Validate() (string, error) {
 func (r CombinedRule) ToMgo() (mgoFilter map[string]interface{}, key string, err error) {
 	if err := r.Condition.Validate(); err != nil {
 		return nil, "condition", err
+	}
+	if r.Rules == nil || len(r.Rules) == 0 {
+		return nil, "rules", fmt.Errorf("combined rules shouldn't be empty")
 	}
 	filters := make([]map[string]interface{}, 0)
 	for idx, rule := range r.Rules {
