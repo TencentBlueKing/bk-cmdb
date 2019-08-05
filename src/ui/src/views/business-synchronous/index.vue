@@ -187,7 +187,9 @@
                                 } else if (['bool'].includes(property['bk_property_type'])) {
                                     attribute['show_value'] = attribute['template_property_value']['value'] ? '是' : '否'
                                 } else {
-                                    attribute['show_value'] = attribute['template_property_value']['value']
+                                    attribute['show_value'] = attribute['property_id'] === 'bind_ip'
+                                        ? attribute['template_property_value']
+                                        : attribute['template_property_value']['value']
                                 }
                                 attributes.push(attribute)
                             }
@@ -311,9 +313,16 @@
                     })
             },
             filterShowList () {
-                const list = this.propertiesGroup()
+                const list = this.$tools.clone(this.propertiesGroup())
                 if (this.changedData.type === 'added') {
-                    return list.filter(property => property['show_value'])
+                    return list.filter(property => {
+                        const ip = ['127.0.0.1', '0.0.0.0']
+                        const value = property['show_value']
+                        if (property['property_id'] === 'bind_ip') {
+                            property['show_value'] = ip[value - 1]
+                        }
+                        return property['show_value']
+                    })
                 } else {
                     return list.filter(property => property['before_value'])
                 }
@@ -326,7 +335,8 @@
                 }
             },
             getTableShowList (list) {
-                return list.map(item => {
+                const resList = this.$tools.clone(list)
+                return resList.map(item => {
                     const result = item
                     const property = this.modelProperties.find(property => property['bk_property_id'] === item['property_id'])
                     if (['enum'].includes(property['bk_property_type'])) {
@@ -337,7 +347,9 @@
                         result['show_value'] = item['template_property_value']['value'] ? '是' : '否'
                     } else {
                         result['before_value'] = item['property_value']
-                        result['show_value'] = item['template_property_value']['value'] ? item['template_property_value']['value'] : '--'
+                        result['show_value'] = item['property_id'] === 'bind_ip'
+                            ? item['template_property_value'] ? item['template_property_value'] : '--'
+                            : item['template_property_value']['value'] ? item['template_property_value']['value'] : '--'
                     }
                     return result
                 })

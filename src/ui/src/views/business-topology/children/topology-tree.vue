@@ -16,7 +16,7 @@
             collapse-icon="bk-icon icon-right-shape"
             @select-change="handleSelectChange">
             <div class="node-info clearfix" slot-scope="{ node, data }">
-                <i :class="['node-model-icon fl', { 'is-selected': node.selected }]">{{modelIconMap[data.bk_obj_id]}}</i>
+                <i :class="['node-model-icon fl', { 'is-selected': node.selected }, { 'is-template': isTemplate(node) }]">{{modelIconMap[data.bk_obj_id]}}</i>
                 <span class="fr" v-if="isBlueKing && showCreate(node, data)"
                     v-bk-tooltips.top="$t('Common[\'您暂无创建权限\']')">
                     <bk-button class="node-button"
@@ -32,7 +32,10 @@
                     @click.stop="showCreateDialog(node)">
                     {{$t('Common[\'新建\']')}}
                 </bk-button>
-                <span class="node-name">{{data.bk_inst_name}}</span>
+                <div class="info-content">
+                    <span class="node-name">{{data.bk_inst_name}}</span>
+                    <span class="instance-num">{{data.service_instance_count}}</span>
+                </div>
             </div>
         </bk-big-tree>
         <bk-dialog class="bk-dialog-no-padding bk-dialog-no-tools"
@@ -111,6 +114,7 @@
                 this.getTopologyData(),
                 this.getMainLine()
             ])
+            this.getTopologyInstanceNum()
             this.treeData = data
             this.mainLine = mainLine
             this.$nextTick(() => {
@@ -145,12 +149,40 @@
                     }
                 })
             },
+            getTopologyInstanceNum () {
+                this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
+                    bizId: this.business,
+                    config: {
+                        requestId: 'getTopologyInstanceNum'
+                    }
+                }).then(data => {
+                    this.setNodeNum(data)
+                })
+            },
+            setNodeNum (data) {
+                data.forEach((datum, index) => {
+                    const id = this.idGenerator(datum)
+                    const node = this.$refs.tree.getNodeById(id)
+                    if (node) {
+                        const num = datum.service_instance_count
+                        datum.service_instance_count = num > 999 ? '999+' : num
+                        node.data = datum
+                    }
+                    const child = datum.child
+                    if (Array.isArray(child) && child.length) {
+                        this.setNodeNum(child)
+                    }
+                })
+            },
             idGenerator (data) {
                 return `${data.bk_obj_id}_${data.bk_inst_id}`
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
                 return node.selected && !isModule
+            },
+            isTemplate (node) {
+                return node.data.service_template_id
             },
             async showCreateDialog (node) {
                 const nodeModel = this.mainLine.find(data => data.bk_obj_id === node.data.bk_obj_id)
@@ -208,6 +240,7 @@
                         child: [],
                         bk_obj_name: nextModel.bk_obj_name,
                         bk_obj_id: nextModel.bk_obj_id,
+                        service_instance_count: 0,
                         ...data
                     }
                     this.$refs.tree.addNode(nodeData, parentNode.id, 0)
@@ -274,6 +307,9 @@
             border-radius: 50%;
             background-color: #c4c6cc;
             color: #fff;
+            &.is-template {
+                background-color: #97aed6;
+            }
             &.is-selected {
                 background-color: #3a84ff;
             }
@@ -287,11 +323,34 @@
             font-size: 12px;
             min-width: auto;
         }
-        .node-name {
-            display: block;
+        .info-content {
+            display: flex;
+            align-items: center;
             line-height: 40px;
             font-size: 14px;
-            @include ellipsis;
+            .node-name {
+                @include ellipsis;
+                margin-right: 4px;
+            }
+            .instance-num {
+                margin-right: 5px;
+                padding: 0 5px;
+                height: 18px;
+                line-height: 17px;
+                border-radius: 2px;
+                background-color: #f0f1f5;
+                color: #979ba5;
+                font-size: 12px;
+                text-align: center;
+            }
+        }
+    }
+    .topology-tree {
+        .bk-big-tree-node.is-selected {
+            .instance-num {
+                background-color: #a2c5fd;
+                color: #fff;
+            }
         }
     }
 </style>
