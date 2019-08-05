@@ -282,7 +282,7 @@
             }
         }
         .template-table {
-            margin-top: 15px;
+            margin-top: 14px;
         }
     }
 </style>

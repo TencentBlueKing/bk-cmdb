@@ -81,8 +81,13 @@
             sourceProcesses () {
                 return this.templates.map(template => {
                     const value = {}
+                    const ip = ['127.0.0.1', '0.0.0.0']
                     Object.keys(template.property).forEach(key => {
-                        value[key] = template.property[key].value
+                        if (key === 'bind_ip') {
+                            value[key] = ip[template.property[key].value - 1]
+                        } else {
+                            value[key] = template.property[key].value
+                        }
                     })
                     return value
                 })
