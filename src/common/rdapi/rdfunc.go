@@ -118,7 +118,7 @@ func createAPIRspStr(errcode int, info string) (string, error) {
 func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
 	cid := util.GetHTTPCCRequestID(req.Request.Header)
 	if "" == cid {
-		cid = getHTTPOtherRequestID(req.Request.Header)
+		cid = GetHTTPOtherRequestID(req.Request.Header)
 		if cid == "" {
 			cid = util.GenerateRID()
 		} else {
@@ -143,6 +143,6 @@ func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *r
 }
 
 // getHTTPOtherRequestID return other system request id from http header
-func getHTTPOtherRequestID(header http.Header) string {
+func GetHTTPOtherRequestID(header http.Header) string {
 	return header.Get(common.BKHTTPOtherRequestID)
 }

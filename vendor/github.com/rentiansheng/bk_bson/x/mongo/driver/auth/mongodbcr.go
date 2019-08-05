@@ -13,11 +13,11 @@ import (
 
 	"io"
 
-	"bk_bson/bson"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 // MONGODBCR is the mechanism name for MONGODB-CR.

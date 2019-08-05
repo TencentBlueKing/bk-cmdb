@@ -88,7 +88,10 @@ func (ps *ProcServer) WebService() *restful.Container {
 	}
 
 	api := new(restful.WebService)
-	api.Path("/process/v3").Filter(ps.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/process/v3")
+	api.Filter(ps.Engine.Metric().RestfulMiddleWare)
+	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
+	api.Produces(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 

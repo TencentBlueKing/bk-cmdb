@@ -74,8 +74,8 @@ func (g *identifier) SearchIdentifier(params types.ContextParams, objType string
 		hostID, err := hostInfo.Int64(common.BKHostIDField)
 		if err != nil {
 			blog.ErrorJSON("[identifier] ReadInstance host info bk_host_id not int . error:%s, input:%s, host info:%s,  rid:%s", err.Error(), params, hostInfo, params.ReqID)
-			// CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
-			return nil, params.Err.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int64", err.Error())
+			// format: `convert %s  field %s to %s error %s`
+			return nil, params.Err.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int64", err.Error())
 		}
 		hostIDs = append(hostIDs, hostID)
 	}

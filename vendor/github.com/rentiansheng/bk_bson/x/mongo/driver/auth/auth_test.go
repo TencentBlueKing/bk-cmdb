@@ -11,9 +11,9 @@ import (
 
 	"reflect"
 
-	"bk_bson/x/bsonx"
-	. "bk_bson/x/mongo/driver/auth"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	. "github.com/rentiansheng/bk_bsonx/mongo/driver/auth"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 	"github.com/stretchr/testify/require"
 )
 

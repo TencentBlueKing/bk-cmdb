@@ -15,6 +15,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -72,6 +73,16 @@ func ExtractRequestIDFromContext(ctx context.Context) string {
 		return ridValue
 	}
 	return ""
+}
+
+func NewContextFromGinContext(c *gin.Context) context.Context {
+	return NewContextFromHTTPHeader(c.Request.Header)
+}
+
+func NewContextFromHTTPHeader(header http.Header) context.Context {
+	rid := GetHTTPCCRequestID(header)
+	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+	return ctx
 }
 
 func ExtractRequestUserFromContext(ctx context.Context) string {
@@ -181,4 +192,14 @@ func Int64Join(data []int64, separator string) string {
 		ret += strconv.FormatInt(item, 10) + separator
 	}
 	return strings.Trim(ret, separator)
+}
+
+// BuildMongoField build mongodb sub item field key
+func BuildMongoField(key ...string) string {
+	return strings.Join(key, ".")
+}
+
+// BuildMongoSyncItemField build mongodb sub item synchronize field key
+func BuildMongoSyncItemField(key string) string {
+	return BuildMongoField(common.MetadataField, common.MetaDataSynchronizeField, key)
 }

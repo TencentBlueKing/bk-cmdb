@@ -30,29 +30,31 @@ import (
 )
 
 // GetImportInsts get insts from excel file
-func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf, meta *metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
+func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf, meta *metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, meta)
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
 	if 0 == len(f.Sheets) {
-		blog.Error("the excel file sheets is empty")
+		blog.Errorf("the excel file sheets is empty, rid: %s", rid)
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
 	sheet := f.Sheets[0]
 	if nil == sheet {
-		blog.Errorf("import object %s instance, but the excel file sheet is empty", objID)
+		blog.Errorf("import object %s instance, but the excel file sheet is empty, rid: %s", objID, rid)
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 	if isInst {
-		return GetExcelData(sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, headerRow, defLang)
+		return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, headerRow, defLang)
 	} else {
-		return GetRawExcelData(sheet, common.KvMap{"import_from": common.HostAddMethodExcel}, headerRow, defLang)
+		return GetRawExcelData(ctx, sheet, common.KvMap{"import_from": common.HostAddMethodExcel}, headerRow, defLang)
 	}
 }
 
 func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr, meta *metadata.Metadata) ([]mapstr.MapStr, error) {
+	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	instIDArr := strings.Split(instIDStr, ",")
 	searchCond := mapstr.MapStr{}
@@ -75,17 +77,17 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 	searchCond[metadata.BKMetadata] = meta
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetInstDetail(context.Background(), header, ownerID, objID, searchCond)
 	if nil != err {
-		blog.Errorf("get inst data detail error:%v , search condition:%#v", err, searchCond)
+		blog.Errorf("get inst data detail error:%v , search condition:%#v, rid: %s", err, searchCond, rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
-		blog.Errorf("get inst data detail error:%v , search condition:%#v", result.ErrMsg, searchCond)
+		blog.Errorf("get inst data detail error:%v , search condition:%#v, rid: %s", result.ErrMsg, searchCond, rid)
 		return nil, defErr.Error(result.Code)
 	}
 
 	if 0 == result.Data.Count {
-		blog.Errorf("get inst data detail, but got 0 instances , search condition:%#v", searchCond)
+		blog.Errorf("get inst data detail, but got 0 instances , search condition:%#v, rid: %s", searchCond, rid)
 		return nil, defErr.Error(common.CCErrAPINoObjectInstancesIsFound)
 	}
 
@@ -95,12 +97,12 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 	attrCond[common.BKOwnerIDField] = ownerID
 	attrResult, aErr := lgc.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), header, attrCond)
 	if nil != aErr {
-		blog.Errorf("get object: %s instance, but get object attr error: %v", objID, aErr)
+		blog.Errorf("get object: %s instance, but get object attr error: %v, rid: %s", objID, aErr, rid)
 		return nil, defErr.Error(common.CCErrTopoObjectAttributeSelectFailed)
 	}
 
 	if !attrResult.Result {
-		blog.Errorf("get object: %s instance, but get object attr error: %s", objID, attrResult.Code)
+		blog.Errorf("get object: %s instance, but get object attr error: %s, rid: %s", objID, attrResult.Code, rid)
 		return nil, defErr.Error(common.CCErrTopoObjectAttributeSelectFailed)
 	}
 
@@ -113,11 +115,12 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 
 // ImportHosts import host info
 func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, defLang lang.DefaultCCLanguageIf, meta *metadata.Metadata) (resultData mapstr.MapStr, errCode int, err error) {
+	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	resultData = mapstr.New()
-	insts, errMsg, err := lgc.GetImportInsts(f, objID, header, 0, true, defLang, meta)
+	insts, errMsg, err := lgc.GetImportInsts(ctx, f, objID, header, 0, true, defLang, meta)
 	if nil != err {
-		blog.Errorf("ImportInsts  get %s inst info from excel error, error:%s logID:%s", objID, err.Error(), util.GetHTTPCCRequestID(header))
+		blog.Errorf("ImportInsts  get %s inst info from excel error, error:%s, rid: %s", objID, err.Error(), rid)
 		return
 	}
 	if 0 != len(errMsg) {

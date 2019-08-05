@@ -13,6 +13,9 @@
 package metadata
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -112,14 +115,50 @@ type HostModuleFind struct {
 	Page      BasePage `json:"page"`
 }
 
-//ip search info
+type ListHostByTopoNodeParameter struct {
+	Metadata  Metadata `json:"metadata"`
+	SetIDs    []int64  `json:"bk_set_ids"`
+	ModuleIDs []int64  `json:"bk_module_ids"`
+	Page      BasePage `json:"page"`
+}
+
+type TimeRange struct {
+	Start *time.Time
+	End   *time.Time
+}
+
+type ListHostByTopoNodeOption struct {
+	BizID     int64    `json:"bk_biz_id,omitempty"`
+	SetIDs    []int64  `json:"bk_set_ids"`
+	ModuleIDs []int64  `json:"bk_module_ids"`
+	Page      BasePage `json:"page"`
+}
+
+func (option ListHostByTopoNodeOption) Validate() (string, error) {
+	if option.BizID == 0 {
+		return common.BKAppIDField, errors.New("bk_biz_id field shouldn't be empty")
+	}
+
+	if key, err := option.Page.Validate(); err != nil {
+		return fmt.Sprintf("page.%s", key), err
+	}
+
+	return "", nil
+}
+
+func (option ListHostByTopoNodeOption) GetHostPropertyFilter(ctx context.Context) (map[string]interface{}, error) {
+	_ = util.ExtractRequestIDFromContext(ctx)
+	return make(map[string]interface{}), nil
+}
+
+// ip search info
 type IPInfo struct {
 	Data  []string `json:"data"`
 	Exact int64    `json:"exact"`
 	Flag  string   `json:"flag"`
 }
 
-//search condition
+// search condition
 type SearchCondition struct {
 	Fields    []string        `json:"fields"`
 	Condition []ConditionItem `json:"condition"`
@@ -129,6 +168,11 @@ type SearchCondition struct {
 type SearchHost struct {
 	Count int             `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
+}
+
+type ListHostResult struct {
+	Count int                      `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
 }
 
 func (sh SearchHost) ExtractHostIDs() *[]int64 {

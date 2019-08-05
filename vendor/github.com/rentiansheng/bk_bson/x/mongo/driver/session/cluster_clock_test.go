@@ -10,7 +10,7 @@ import (
 	"bytes"
 	"testing"
 
-	"bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
 )
 
 func TestClusterClock(t *testing.T) {

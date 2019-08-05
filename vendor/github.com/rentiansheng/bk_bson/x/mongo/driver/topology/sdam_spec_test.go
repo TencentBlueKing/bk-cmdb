@@ -13,11 +13,11 @@ import (
 	"path"
 	"testing"
 
-	"bk_bson/internal/testutil/helpers"
-	"bk_bson/x/network/address"
-	"bk_bson/x/network/connstring"
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/result"
+	"github.com/rentiansheng/bk_bsoninternal/testutil/helpers"
+	"github.com/rentiansheng/bk_bsonx/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/connstring"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/result"
 	"github.com/stretchr/testify/require"
 )
 

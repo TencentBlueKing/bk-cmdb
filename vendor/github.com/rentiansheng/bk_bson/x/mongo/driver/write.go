@@ -9,13 +9,13 @@ package driver
 import (
 	"context"
 
-	"bk_bson/bson"
-	"bk_bson/mongo/writeconcern"
-	"bk_bson/x/mongo/driver/session"
-	"bk_bson/x/mongo/driver/topology"
-	"bk_bson/x/mongo/driver/uuid"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/description"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bsonmongo/writeconcern"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/session"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/uuid"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/description"
 )
 
 // Write handles the full cycle dispatch and execution of a write command against the provided

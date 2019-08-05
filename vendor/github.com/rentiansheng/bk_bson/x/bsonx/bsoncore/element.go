@@ -10,7 +10,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
 )
 
 // MalformedElementError represents a class of errors that RawElement methods return.

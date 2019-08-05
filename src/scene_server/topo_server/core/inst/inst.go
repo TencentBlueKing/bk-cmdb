@@ -48,7 +48,7 @@ type Inst interface {
 	SetAssoID(id int64)
 	GetAssoID() int64
 
-	SetValue(key string, value interface{}) error
+	SetValue(key string, value interface{})
 
 	SetValues(values mapstr.MapStr)
 
@@ -122,7 +122,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 
 func (cli *inst) Create() error {
 	if cli.target.Object().IsPaused {
-		return cli.params.Err.Error(common.CCErrorTopoModleStopped)
+		return cli.params.Err.Error(common.CCErrorTopoModelStopped)
 	}
 	if cli.target.IsCommon() {
 		cli.datas.Set(common.BKObjIDField, cli.target.Object().ObjectID)
@@ -148,7 +148,7 @@ func (cli *inst) Create() error {
 
 func (cli *inst) Update(data mapstr.MapStr) error {
 	if cli.target.Object().IsPaused {
-		return cli.params.Err.Error(common.CCErrorTopoModleStopped)
+		return cli.params.Err.Error(common.CCErrorTopoModelStopped)
 	}
 	instIDName := cli.target.GetInstIDFieldName()
 	instID, exists := cli.datas.Get(instIDName)
@@ -308,9 +308,8 @@ func (cli *inst) ToMapStr() mapstr.MapStr {
 	return cli.datas
 }
 
-func (cli *inst) SetValue(key string, value interface{}) error {
+func (cli *inst) SetValue(key string, value interface{}) {
 	cli.datas.Set(key, value)
-	return nil
 }
 
 func (cli *inst) SetValues(values mapstr.MapStr) {

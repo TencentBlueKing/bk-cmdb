@@ -12,7 +12,7 @@ import (
 
 	"time"
 
-	"bk_bson/x/network/connstring"
+	"github.com/rentiansheng/bk_bsonx/network/connstring"
 	"github.com/stretchr/testify/require"
 )
 

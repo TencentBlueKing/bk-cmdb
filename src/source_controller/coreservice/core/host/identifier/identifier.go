@@ -285,6 +285,9 @@ func (i *Identifier) build(ctx core.ContextParams) {
 				BizID:    relation.AppID,
 			}
 
+			if host.HostIdentModule == nil {
+				host.HostIdentModule = make(map[string]*metadata.HostIdentModule, 0)
+			}
 			host.HostIdentModule[strconv.FormatInt(mod.ModuleID, 10)] = mod
 
 			if biz, ok := i.bizs[mod.BizID]; ok {

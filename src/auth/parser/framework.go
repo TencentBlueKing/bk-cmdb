@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-type InstanceIDGetter = func(request *RequestContext, re *regexp.Regexp) ([]int64, error)
+type InstanceIDGetter func(request *RequestContext, re *regexp.Regexp) ([]int64, error)
 
 type AuthConfig struct {
 	Name                  string

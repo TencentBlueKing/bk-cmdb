@@ -114,14 +114,14 @@ func (s *Service) DeleteSetHost(params types.ContextParams, pathParams, queryPar
 	}
 
 	requestBody := struct {
-		setIDs []int64 `json:"bk_set_id" field:"bk_set_id" bson:"bk_set_id"`
+		SetIDs []int64 `json:"bk_set_id" field:"bk_set_id" bson:"bk_set_id"`
 	}{}
 	if err := data.MarshalJSONInto(&requestBody); err != nil {
 		blog.Errorf("[api-compatiblev2] parse request body failed, the input data is %#v, rid: %s", data, params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
 	}
 
-	err = s.Core.CompatibleV2Operation().Set(params).DeleteSetHost(bizID, requestBody.setIDs)
+	err = s.Core.CompatibleV2Operation().Set(params).DeleteSetHost(bizID, requestBody.SetIDs)
 	return nil, err
 }
 
@@ -159,7 +159,7 @@ func (s *Service) SearchModuleByApp(params types.ContextParams, pathParams, quer
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	cond := &compatiblev2Condition{}
+	cond := &compatibleV2Condition{}
 	if err := data.MarshalJSONInto(cond); nil != err {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (s *Service) SearchModuleBySetProperty(params types.ContextParams, pathPara
 
 	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
+		blog.Errorf("[api-compatible-v2]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 	cond := condition.CreateCondition()
@@ -219,7 +219,7 @@ func (s *Service) AddMultiModule(params types.ContextParams, pathParams, queryPa
 	}
 
 	// prepare the data
-	data.ForEach(func(key string, val interface{}) error {
+	_ = data.ForEach(func(key string, val interface{}) error {
 		switch key {
 		case common.BKSetIDField, common.BKOperatorField, common.BKBakOperatorField, common.BKModuleTypeField:
 			return nil

@@ -20,8 +20,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/go-cmp/cmp"
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/bson/bsonrw"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/pretty"
 )

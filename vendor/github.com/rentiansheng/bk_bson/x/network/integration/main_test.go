@@ -16,9 +16,9 @@ import (
 	"sync"
 	"testing"
 
-	"bk_bson/x/mongo/driver/auth"
-	"bk_bson/x/network/connection"
-	"bk_bson/x/network/connstring"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/auth"
+	"github.com/rentiansheng/bk_bsonx/network/connection"
+	"github.com/rentiansheng/bk_bsonx/network/connstring"
 )
 
 var host = flag.String("host", "127.0.0.1:27017", "specify the location of a running mongodb server.")

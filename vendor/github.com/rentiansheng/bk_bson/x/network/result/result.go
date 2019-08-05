@@ -10,9 +10,9 @@ package result
 import (
 	"time"
 
-	"bk_bson/bson"
-	"bk_bson/bson/primitive"
-	"bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
 )
 
 // Upsert contains the information for a single upsert.

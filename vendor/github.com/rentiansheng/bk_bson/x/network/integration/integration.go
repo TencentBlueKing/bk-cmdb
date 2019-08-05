@@ -8,6 +8,6 @@ package integration
 
 import (
 	// These imports are for coverage information.
-	_ "bk_bson/x/mongo/driver/topology"
-	_ "bk_bson/x/network/connection"
+	_ "github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	_ "github.com/rentiansheng/bk_bsonx/network/connection"
 )

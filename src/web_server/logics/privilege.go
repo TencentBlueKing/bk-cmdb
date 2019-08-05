@@ -13,26 +13,30 @@
 package logics
 
 import (
+	"context"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/privilege"
 )
 
-//GetUserAppPri get user privilege
-func (lgc *Logics) GetUserAppPri(userName string, ownerID, lang string) (userPriveApp map[int64][]string, rolePrivi map[string][]string, modelConfigPrivi map[string][]string, sysPrivi []string, mainLineObjIDArr []string) {
+// GetUserAppPri get user privilege
+func (lgc *Logics) GetUserAppPri(ctx context.Context, userName string, ownerID, lang string) (userPriveApp map[int64][]string, rolePrivi map[string][]string, modelConfigPrivi map[string][]string, sysPrivi []string, mainLineObjIDArr []string) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	p := privilege.NewPrivilege(userName, ownerID, lang)
 	p.Engine = lgc.Engine
 	appRole := p.GetAppRole()
 	rolePrivi = make(map[string][]string)
-	blog.V(5).Infof("get app role result:%v", appRole)
+	blog.V(5).Infof("get app role result:%v, rid: %s", appRole, rid)
 	if nil != appRole {
 		userPriveApp = p.GetUserPrivilegeApp(appRole)
-		blog.V(5).Infof("get user privi app:%v", userPriveApp)
+		blog.V(5).Infof("get user privi app:%v, rid: %s", userPriveApp, rid)
 		if nil != userPriveApp {
 			for _, role := range appRole {
 				rolePrivilege := p.GetRolePrivilege(common.BKInnerObjIDApp, role)
 				rolePrivi[role] = rolePrivilege
-				blog.V(5).Infof("get role privilege:%v", rolePrivilege)
+				blog.V(5).Infof("get role privilege:%v, rid: %s", rolePrivilege, rid)
 			}
 		}
 

@@ -19,7 +19,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/rentiansheng/bk_bson/bson"
 
 	"configcenter/src/common/util"
 )

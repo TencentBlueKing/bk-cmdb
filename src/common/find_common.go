@@ -7,7 +7,7 @@ const (
 	TypeObject      = "object"
 	TypeModel       = "model"
 	TypeProcess     = "process"
-	TypeApplication = "application"
+	TypeApplication = "biz"
 
 	TypeAggName  = "type_agg"
 	TypeAggField = "_type"

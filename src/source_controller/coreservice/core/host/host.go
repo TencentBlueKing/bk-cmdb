@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common/eventclient"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/source_controller/coreservice/core/host/searcher"
 	"configcenter/src/source_controller/coreservice/core/host/transfer"
 	"configcenter/src/storage/dal"
 )
@@ -24,11 +25,12 @@ import (
 var _ core.HostOperation = (*hostManager)(nil)
 
 type hostManager struct {
-	DbProxy    dal.RDB
-	Cache      *redis.Client
-	EventCli   eventclient.Client
-	moduleHost *transfer.TransferManager
-	dependent  transfer.OperationDependence
+	DbProxy      dal.RDB
+	Cache        *redis.Client
+	EventCli     eventclient.Client
+	hostTransfer *transfer.TransferManager
+	dependent    transfer.OperationDependence
+	hostSearcher searcher.Searcher
 }
 
 // New create a new model manager instance
@@ -40,6 +42,7 @@ func New(dbProxy dal.RDB, cache *redis.Client, dependent transfer.OperationDepen
 		EventCli:  eventclient.NewClientViaRedis(cache, dbProxy),
 		dependent: dependent,
 	}
-	coreMgr.moduleHost = transfer.New(dbProxy, cache, coreMgr.EventCli, dependent)
+	coreMgr.hostTransfer = transfer.New(dbProxy, cache, coreMgr.EventCli, dependent)
+	coreMgr.hostSearcher = searcher.New(dbProxy, cache)
 	return coreMgr
 }

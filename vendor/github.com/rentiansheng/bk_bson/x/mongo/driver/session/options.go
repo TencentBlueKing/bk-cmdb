@@ -7,9 +7,9 @@
 package session
 
 import (
-	"bk_bson/mongo/readconcern"
-	"bk_bson/mongo/readpref"
-	"bk_bson/mongo/writeconcern"
+	"github.com/rentiansheng/bk_bsonmongo/readconcern"
+	"github.com/rentiansheng/bk_bsonmongo/readpref"
+	"github.com/rentiansheng/bk_bsonmongo/writeconcern"
 )
 
 // ClientOptions represents all possible options for creating a client session.

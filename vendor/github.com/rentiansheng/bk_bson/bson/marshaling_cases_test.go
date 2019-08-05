@@ -7,7 +7,7 @@
 package bson
 
 import (
-	"bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
 )
 
 type marshalingTestCase struct {

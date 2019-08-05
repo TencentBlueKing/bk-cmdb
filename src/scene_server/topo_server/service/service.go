@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/auth"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -21,6 +20,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"configcenter/src/auth"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"

@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/bson/bsonrw"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw"
 )
 
 func TestUnmarshal(t *testing.T) {

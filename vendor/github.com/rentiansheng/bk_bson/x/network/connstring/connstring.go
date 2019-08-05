@@ -16,9 +16,9 @@ import (
 	"strings"
 	"time"
 
-	"bk_bson/internal"
-	"bk_bson/mongo/writeconcern"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsoninternal"
+	"github.com/rentiansheng/bk_bsonmongo/writeconcern"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 // Parse parses the provided uri and returns a URI object.

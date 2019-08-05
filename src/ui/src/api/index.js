@@ -185,7 +185,7 @@ function handleReject (error, config) {
         const { status, data } = error.response
         const nextError = { message: error.message }
         if (status === 401) {
-            window.location.href = window.Site.login
+            window.Site.login && (window.location.href = window.Site.login)
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
         } else if (status === 403) {
@@ -201,29 +201,7 @@ function handleReject (error, config) {
 }
 
 function popupPermissionModal (permission = []) {
-    const data = permission.map(datum => {
-        const scope = [datum.scope_type_name]
-        if (datum.scope_id) {
-            scope.push(datum.scope_name)
-        }
-        return {
-            scope: getPermissionText(datum, 'scope_type_name', 'scope_name'),
-            resource: datum.resources.map(resource => {
-                const resourceInfo = resource.map(info => getPermissionText(info, 'resource_type_name', 'resource_name')).join('\n')
-                return resourceInfo
-            }).join('\n'),
-            action: datum.action_name
-        }
-    })
-    window.permissionModal && window.permissionModal.show(data, true)
-}
-
-function getPermissionText (data, necessaryKey, extraKey, split = '：') {
-    const text = [data[necessaryKey]]
-    if (data[extraKey]) {
-        text.push(data[extraKey])
-    }
-    return text.join(split)
+    window.permissionModal && window.permissionModal.show(permission)
 }
 
 /**

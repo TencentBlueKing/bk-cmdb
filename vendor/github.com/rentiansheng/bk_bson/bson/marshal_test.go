@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"bk_bson/bson/bsoncodec"
-	"bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/bson/bsoncodec"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
 	"github.com/stretchr/testify/require"
 )
 

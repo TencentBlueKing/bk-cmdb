@@ -46,7 +46,7 @@ func (a *audit) Query(params types.ContextParams, query metadata.QueryInput) (in
 
 	if !rsp.Result {
 		blog.Errorf("[audit] failed request audit controller, error info is %s, rid: %s", rsp.ErrMsg, params.ReqID)
-		return nil, params.Err.New(common.CCErrAuditTakeSnapshotFaile, rsp.ErrMsg)
+		return nil, params.Err.New(common.CCErrAuditTakeSnapshotFailed, rsp.ErrMsg)
 	}
 
 	for index := range rsp.Data.Info {

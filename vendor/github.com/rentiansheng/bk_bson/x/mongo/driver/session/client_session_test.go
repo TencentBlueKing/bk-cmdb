@@ -10,10 +10,10 @@ import (
 	"bytes"
 	"testing"
 
-	"bk_bson/bson/primitive"
-	"bk_bson/internal/testutil/helpers"
-	"bk_bson/x/bsonx/bsoncore"
-	"bk_bson/x/mongo/driver/uuid"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bsoninternal/testutil/helpers"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/uuid"
 	"github.com/stretchr/testify/require"
 )
 

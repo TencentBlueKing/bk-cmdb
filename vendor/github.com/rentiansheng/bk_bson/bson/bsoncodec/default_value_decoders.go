@@ -16,11 +16,11 @@ import (
 	"strconv"
 	"time"
 
-	"bk_bson/bson/bsonrw"
-	"bk_bson/bson/bsontype"
-	"bk_bson/bson/primitive"
-	"bk_bson/bson/util"
-	"bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/bson/util"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
 )
 
 var defaultValueDecoders DefaultValueDecoders
@@ -602,20 +602,32 @@ func (dvd DefaultValueDecoders) URLDecodeValue(dc DecodeContext, vr bsonrw.Value
 
 // TimeDecodeValue is the ValueDecoderFunc for time.Time.
 func (dvd DefaultValueDecoders) TimeDecodeValue(dc DecodeContext, vr bsonrw.ValueReader, val reflect.Value) error {
-	if vr.Type() != bsontype.DateTime {
+	if vr.Type() != bsontype.DateTime && vr.Type() != bsontype.String {
 		return fmt.Errorf("cannot decode %v into a time.Time", vr.Type())
 	}
-
-	dt, err := vr.ReadDateTime()
-	if err != nil {
-		return err
-	}
-
 	if !val.CanSet() || val.Type() != tTime {
 		return ValueDecoderError{Name: "TimeDecodeValue", Types: []reflect.Type{tTime}, Received: val}
 	}
 
-	val.Set(reflect.ValueOf(time.Unix(dt/1000, dt%1000*1000000)))
+	if vr.Type() == bsontype.DateTime {
+		dt, err := vr.ReadDateTime()
+		if err != nil {
+			return err
+		}
+
+		val.Set(reflect.ValueOf(time.Unix(dt/1000, dt%1000*1000000)))
+	} else {
+		dt, err := vr.ReadString()
+		if err != nil {
+			return err
+		}
+		vTime, err := time.Parse(time.RFC3339, dt)
+		if err != nil {
+			return fmt.Errorf("cannot decode %v into a time.Time", vr.Type())
+		}
+		val.Set(reflect.ValueOf(vTime))
+	}
+
 	return nil
 }
 

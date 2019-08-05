@@ -66,7 +66,7 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 		// auth register new created
 		if len(setInst.SuccessCreated) != 0 {
 			if err := s.AuthManager.RegisterInstancesByID(params.Context, params.Header, objID, setInst.SuccessCreated...); err != nil {
-				blog.Errorf("create instance suceess, but register instances to iam failed, instances: %+v, err: %+v, rid: %s", setInst.SuccessCreated, err, params.ReqID)
+				blog.Errorf("create instance success, but register instances to iam failed, instances: %+v, err: %+v, rid: %s", setInst.SuccessCreated, err, params.ReqID)
 				return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 			}
 		}
