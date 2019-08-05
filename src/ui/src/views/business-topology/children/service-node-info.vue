@@ -13,12 +13,21 @@
     >
         <cmdb-details class="topology-details"
             v-if="type === 'details'"
-            :show-delete="false"
             :properties="properties"
             :property-groups="propertyGroups"
             :inst="flattenedInstance"
-            :show-options="modelId !== 'biz'"
-            @on-edit="handleEdit">
+            :show-options="modelId !== 'biz'">
+            <template slot="details-options">
+                <bk-button class="button-edit"
+                    theme="primary"
+                    @click="handleEdit">
+                    {{$t('Common["编辑"]')}}
+                </bk-button>
+                <bk-button class="button-delete" theme="danger"
+                    @click="handleDelete">
+                    {{$t('BusinessTopology["删除节点"]')}}
+                </bk-button>
+            </template>
             <span class="property-value fl" slot="__template_name__">
                 <span class="link"
                     v-if="withTemplate"
@@ -40,10 +49,6 @@
             :type="type"
             @on-submit="handleSubmit"
             @on-cancel="handleCancel">
-            <template slot="extra-options">
-                <bk-button theme="danger" style="margin-left: 4px" @click="handleDelete">{{$t('Common["删除"]')}}
-                </bk-button>
-            </template>
             <template slot="__service_category__" v-if="!withTemplate">
                 <cmdb-selector class="category-selector fl"
                     :list="firstCategories"
@@ -575,5 +580,10 @@
                 margin-left: 10px;
             }
         }
+    }
+    .button-delete{
+        min-width: 76px;
+        background-color: #fff;
+        color: #ff5656;
     }
 </style>

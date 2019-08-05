@@ -53,6 +53,9 @@
             business () {
                 return this.$store.getters['objectBiz/bizId']
             },
+            currentNode () {
+                return this.$store.state.businessTopology.selectedNode
+            },
             moduleNode () {
                 const node = this.$store.state.businessTopology.selectedNode
                 if (node && node.data.bk_obj_id === 'module') {
@@ -135,6 +138,7 @@
             },
             async handleSelectHost (checked) {
                 try {
+                    const addNum = checked.length
                     const data = await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
                         params: this.$injectMetadata({
                             name: this.moduleInstance.bk_module_name,
@@ -157,6 +161,12 @@
                             })
                         })
                     })
+                    if (this.withTemplate) {
+                        this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count + addNum
+                        this.currentNode.parents.forEach(node => {
+                            node.data.service_instance_count = node.data.service_instance_count + addNum
+                        })
+                    }
                     this.visible = false
                     this.$success(this.$t('Common[\'添加成功\']'))
                     this.$emit('create-instance-success', data)
