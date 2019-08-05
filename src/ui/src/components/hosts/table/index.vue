@@ -656,7 +656,7 @@
         }
     }
     .hosts-table {
-        margin-top: 20px;
+        margin-top: 14px;
     }
     .transfer-title {
         height: 50px;
