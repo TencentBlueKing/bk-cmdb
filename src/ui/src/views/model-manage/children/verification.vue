@@ -206,6 +206,6 @@
         padding: 10px 0;
     }
     .verification-table {
-        margin: 10px 0 0 0;
+        margin: 14px 0 0 0;
     }
 </style>

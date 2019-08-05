@@ -34,7 +34,7 @@
                     v-model="assignBusiness"
                     @on-selected="handleAssignHosts">
                 </cmdb-selector>
-                <bk-dropdown-menu
+                <bk-dropdown-menu v-if="isAdminView"
                     trigger="click"
                     @show="isDropdownShow = true"
                     @hide="isDropdownShow = false">
@@ -53,7 +53,7 @@
                                 {{$t('修改')}}
                             </bk-button>
                         </li>
-                        <li v-if="isAdminView"
+                        <li
                             v-cursor="{
                                 active: !$isAuthorized($OPERATION.D_RESOURCE_HOST),
                                 auth: [$OPERATION.D_RESOURCE_HOST]
@@ -73,6 +73,22 @@
                         </li>
                     </ul>
                 </bk-dropdown-menu>
+                <span v-cursor="{
+                          active: !$isAuthorized($OPERATION.U_RESOURCE_HOST),
+                          auth: [$OPERATION.U_RESOURCE_HOST]
+                      }"
+                    v-if="!isAdminView">
+                    <bk-button class="options-button" theme="primary"
+                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_RESOURCE_HOST)"
+                        @click="handleMultipleEdit">
+                        {{$t('修改')}}
+                    </bk-button>
+                </span>
+                <bk-button class="options-button" form="exportForm" v-if="!isAdminView"
+                    :disabled="!table.checked.length"
+                    @click="exportField">
+                    {{$t('导出')}}
+                </bk-button>
                 <cmdb-clipboard-selector class="options-clipboard"
                     :list="clipboardList"
                     :disabled="!table.checked.length"
