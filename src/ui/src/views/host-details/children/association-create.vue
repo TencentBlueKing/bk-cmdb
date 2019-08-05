@@ -27,11 +27,12 @@
             :pagination="table.pagination"
             :data="table.list"
             :col-border="true"
-            :max-height="$APP.height - 310"
+            :max-height="$APP.height - 210"
             @page-change="setCurrentPage"
             @page-limit-change="setCurrentLimit"
             @sort-change="setCurrentSort">
             <bk-table-column v-for="column in table.header"
+                sortable="custom"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
@@ -245,6 +246,7 @@
             },
             setCurrentLimit (limit) {
                 this.table.pagination.limit = limit
+                this.search()
             },
             setCurrentSort (sort) {
                 this.table.sort = this.$tools.getSort(sort)

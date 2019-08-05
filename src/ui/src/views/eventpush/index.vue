@@ -28,13 +28,13 @@
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="subscription_name" :label="$t('EventPush[\'推送名称\']')">
+            <bk-table-column prop="subscription_name" :label="$t('EventPush[\'推送名称\']')" sortable="custom">
             </bk-table-column>
-            <bk-table-column prop="system_name" :label="$t('EventPush[\'系统名称\']')">
+            <bk-table-column prop="system_name" :label="$t('EventPush[\'系统名称\']')" sortable="custom">
             </bk-table-column>
-            <bk-table-column prop="operator" :label="$t('EventPush[\'操作人\']')">
+            <bk-table-column prop="operator" :label="$t('EventPush[\'操作人\']')" sortable="custom">
             </bk-table-column>
-            <bk-table-column prop="last_time" :label="$t('EventPush[\'更新时间\']')">
+            <bk-table-column prop="last_time" :label="$t('EventPush[\'更新时间\']')" sortable="custom">
             </bk-table-column>
             <bk-table-column prop="statistics" :label="$t('EventPush[\'推送情况（近一周）\']')">
                 <template slot-scope="{ row }">
@@ -232,7 +232,7 @@
 
 <style lang="scss" scoped>
     .btn-wrapper {
-        margin-bottom: 20px;
+        margin-bottom: 14px;
     }
     .circle{
         display: inline-block;
