@@ -243,11 +243,8 @@
             console.log(this.chartData)
             this.initTitle()
             this.chartType = this.chartData.report_type === 'custom'
-            if (this.chartType && this.chartData.bk_obj_id === 'host') {
-                this.getDemList('host')
-            } else if (this.chartType && this.chartData.bk_obj_id !== 'host') {
-                this.getStaList()
-            }
+            this.getDemList(this.chartData.bk_obj_id)
+            if (this.chartType && this.chartData.bk_obj_id !== 'host') this.getStaList()
         },
         methods: {
             ...mapActions('operationChart', [
@@ -369,6 +366,9 @@
                     width: 319px;
                     vertical-align: middle;
                     position: relative;
+                    div {
+                        width: 100%;
+                    }
                     .axis-picker{
                         position:relative;
                         width:120px;
