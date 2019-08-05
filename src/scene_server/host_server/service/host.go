@@ -847,7 +847,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		return
 	}
 	hostIDMHMap := make(map[int64][]meta.ModuleHost, 0)
-	for _, item := range configResult.Data {
+	for _, item := range configResult.Data.Info {
 		hostIDMHMap[item.HostID] = append(hostIDMHMap[item.HostID], item)
 	}
 
