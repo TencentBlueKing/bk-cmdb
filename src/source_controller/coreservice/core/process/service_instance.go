@@ -549,10 +549,10 @@ func (p *processOperation) generateServiceInstanceName(ctx core.ContextParams, i
 			return "", ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
 
-		if process.ProcessName != nil {
+		if process.ProcessName != nil && len(*process.ProcessName) > 0 {
 			instanceName += fmt.Sprintf("_%s", *process.ProcessName)
 		}
-		if process.Port != nil {
+		if process.Port != nil && len(*process.Port) > 0 {
 			instanceName += fmt.Sprintf("_%s", *process.Port)
 		}
 	}
