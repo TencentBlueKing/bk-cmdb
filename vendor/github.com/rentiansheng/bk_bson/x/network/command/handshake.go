@@ -10,12 +10,12 @@ import (
 	"context"
 	"runtime"
 
-	"bk_bson/version"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/network/address"
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/result"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonversion"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/result"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 // Handshake represents a generic MongoDB Handshake. It calls isMaster and

@@ -11,14 +11,14 @@ import (
 
 	"time"
 
-	"bk_bson/mongo/options"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/mongo/driver/session"
-	"bk_bson/x/mongo/driver/topology"
-	"bk_bson/x/mongo/driver/uuid"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/result"
+	"github.com/rentiansheng/bk_bsonmongo/options"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/session"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/uuid"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/result"
 )
 
 // CreateIndexes handles the full cycle dispatch and execution of a createIndexes

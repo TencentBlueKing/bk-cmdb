@@ -12,8 +12,8 @@ import (
 
 	"strings"
 
-	"bk_bson/bson"
-	"bk_bson/x/network/result"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bsonx/network/result"
 )
 
 var (

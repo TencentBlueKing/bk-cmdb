@@ -45,22 +45,22 @@ func (s *Service) UpdateObjectTopoGraphics(params types.ContextParams, pathParam
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
 	}
 
-	datas, ok := val.([]metadata.TopoGraphics)
+	topoGraphics, ok := val.([]metadata.TopoGraphics)
 	if !ok {
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "invalid body")
 	}
 
-	err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"), datas)
+	err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"), topoGraphics)
 	return nil, err
 }
 
 func (s *Service) UpdateObjectTopoGraphicsNew(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	datas := metadata.UpdateTopoGraphicsInput{}
-	err := data.MarshalJSONInto(&datas)
+	input := metadata.UpdateTopoGraphicsInput{}
+	err := data.MarshalJSONInto(&input)
 	if nil != err {
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
 	}
 
-	err = s.Core.GraphicsOperation().UpdateObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"), datas.Origin)
+	err = s.Core.GraphicsOperation().UpdateObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"), input.Origin)
 	return nil, err
 }

@@ -46,7 +46,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	if err := s.db.Table(common.BKTableNameBaseApp).Find(bizFilter).All(s.ctx, &bizs); err != nil {
 		blog.Errorf("init auth center failed, list businesses failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error()),
+			Msg: defErr.Errorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
@@ -70,7 +70,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	if err := s.db.Table(common.BKTableNameObjClassifiction).Find(clsFilter).All(s.ctx, &cls); err != nil {
 		blog.Errorf("init auth center failed, list classifications failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error()),
+			Msg: defErr.Errorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
@@ -85,7 +85,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	if err := s.db.Table(common.BKTableNameObjDes).Find(modelFilter).All(s.ctx, &models); err != nil {
 		blog.Errorf("init auth center failed, list models failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error()),
+			Msg: defErr.Errorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
@@ -98,7 +98,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	if err := s.db.Table(common.BKTableNameAsstDes).Find(associationFilter).All(s.ctx, &associationKinds); err != nil {
 		blog.Errorf("init auth center with association kind failed, get details association kind failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error()),
+			Msg: defErr.Errorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
@@ -112,7 +112,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	if err := s.authCenter.Init(s.ctx, initCfg); nil != err {
 		blog.Errorf("init auth center failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error()),
+			Msg: defErr.Errorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
 		return

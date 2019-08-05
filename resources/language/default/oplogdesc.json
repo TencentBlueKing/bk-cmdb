@@ -36,5 +36,8 @@
     "auditlog_update module": "更新模块信息",
     "auditlog_host to other bussiness module":"跨业务转移主机",
     "auditlog_delete host from business":"删除业务下主机",
+    "auditlog_create instance association": "创建实例关联",
+    "auditlog_delete instance association": "删除实例关联",
+
     "":""
 }

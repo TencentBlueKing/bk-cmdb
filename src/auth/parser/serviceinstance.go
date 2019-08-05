@@ -51,7 +51,15 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceInstance,
-		ResourceAction:        meta.Find,
+		ResourceAction:        meta.FindMany,
+	}, {
+		Name:                  "findServiceInstanceByHostWebPattern",
+		Description:           "根据主机服务实例-frontend",
+		Pattern:               "/api/v3/findmany/proc/web/service_instance/with_host",
+		HTTPMethod:            http.MethodPost,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceInstance,
+		ResourceAction:        meta.FindMany,
 	}, {
 		Name:                  "deleteServiceInstancePattern",
 		Description:           "删除服务实例",
@@ -83,7 +91,15 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceInstance,
-		ResourceAction:        meta.Find,
+		ResourceAction:        meta.FindMany,
+	}, {
+		Name:                  "aggregationServiceInstanceLabels",
+		Description:           "聚合服务实例labels",
+		Pattern:               "/api/v3/findmany/proc/service_instance/labels/aggregation",
+		HTTPMethod:            http.MethodPost,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceInstance,
+		ResourceAction:        meta.FindMany,
 	}, {
 		Name:                  "addServiceInstanceLabelsPattern",
 		Description:           "服务实例添加label",

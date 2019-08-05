@@ -40,7 +40,7 @@ dep ensure -add bk_bson/mongo
 To get started with the driver, import the `mongo` package, create a `mongo.Client`:
 
 ```go
-import "bk_bson/mongo"
+import "github.com/rentiansheng/bk_bsonmongo"
 
 client, err := mongo.NewClient("mongodb://localhost:27017")
 ```

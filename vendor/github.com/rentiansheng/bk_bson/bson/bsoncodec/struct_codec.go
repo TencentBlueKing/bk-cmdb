@@ -12,9 +12,9 @@ import (
 	"reflect"
 	"sync"
 
-	"bk_bson/bson/bsonrw"
-	"bk_bson/bson/bsontype"
-	"bk_bson/bson/util"
+	"github.com/rentiansheng/bk_bson/bson/bsonrw"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/util"
 )
 
 var defaultStructCodec = &StructCodec{

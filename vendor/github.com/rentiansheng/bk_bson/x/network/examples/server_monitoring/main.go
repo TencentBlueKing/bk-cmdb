@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/kr/pretty"
-	"bk_bson/x/mongo/driver/topology"
-	"bk_bson/x/network/address"
-	"bk_bson/x/network/connection"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/network/address"
+	"github.com/rentiansheng/bk_bsonx/network/connection"
 )
 
 func main() {

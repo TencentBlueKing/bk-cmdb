@@ -8,12 +8,12 @@ package driver
 
 import (
 	"context"
-	"bk_bson/x/network/connection"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonx/network/connection"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 
-	"bk_bson/x/mongo/driver/topology"
-	"bk_bson/x/network/command"
-	"bk_bson/x/network/result"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/topology"
+	"github.com/rentiansheng/bk_bsonx/network/command"
+	"github.com/rentiansheng/bk_bsonx/network/result"
 )
 
 // KillCursors handles the full cycle dispatch and execution of an aggregate command against the provided

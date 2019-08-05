@@ -9,7 +9,7 @@ package command
 import (
 	"testing"
 
-	"bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
 )
 
 func TestEndSessions(t *testing.T) {

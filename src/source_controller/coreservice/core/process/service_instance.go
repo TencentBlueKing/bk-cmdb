@@ -333,6 +333,12 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 		filter[common.BKHostIDField] = option.HostID
 	}
 
+	if option.ServiceInstanceIDs != nil {
+		filter[common.BKFieldID] = map[string]interface{}{
+			common.BKDBIN: option.ServiceInstanceIDs,
+		}
+	}
+
 	if key, err := option.Selectors.Validate(); err != nil {
 		blog.Errorf("ListServiceInstance failed, selector validate failed, selectors: %+v, key: %s, err: %+v, rid: %s", option.Selectors, key, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, key)
@@ -354,7 +360,13 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 	}
 	serviceInstances := make([]metadata.ServiceInstance, 0)
 	serviceInstanceDetails := make([]metadata.ServiceInstanceDetail, 0)
-	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(ctx.Context, &serviceInstances); nil != err {
+	start := uint64(option.Page.Start)
+	limit := uint64(option.Page.Limit)
+	query := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Start(start).Limit(limit)
+	if len(option.Page.Sort) > 0 {
+		query = query.Sort(option.Page.Sort)
+	}
+	if err := query.All(ctx.Context, &serviceInstances); nil != err {
 		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}

@@ -47,7 +47,6 @@ func RegistUpgrader(version string, handlerFunc func(context.Context, dal.RDB, *
 	defer registLock.Unlock()
 	v := Upgrader{version: version, do: handlerFunc}
 	upgraderPool = append(upgraderPool, v)
-	blog.Infof("registed upgrader for version: %s", v.version)
 }
 
 // Upgrade upgrade the db data to newest version

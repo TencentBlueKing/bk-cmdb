@@ -26,9 +26,9 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID string) error {
+func (assoc *association) DeleteMainlineAssociation(params types.ContextParams, objID string) error {
 
-	targetObj, err := a.obj.FindSingleObject(params, objID)
+	targetObj, err := assoc.obj.FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find the target object(%s), error info is %s, rid: %s", objID, err.Error(), params.ReqID)
 		return err
@@ -48,8 +48,8 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 		return err
 	}
 
-	if err = a.ResetMainlineInstAssociatoin(params, targetObj); nil != err && io.EOF != err {
-		blog.Errorf("[operation-asst] failed to delete the object(%s)'s insts, error info %s, rid: %s", objID, err.Error(), params.ReqID)
+	if err = assoc.ResetMainlineInstAssociatoin(params, targetObj); nil != err && io.EOF != err {
+		blog.Errorf("[operation-asst] failed to delete the object(%s)'s instance, error info %s, rid: %s", objID, err.Error(), params.ReqID)
 		return err
 	}
 
@@ -66,12 +66,12 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 	or := cond.NewOR()
 	or.Item(mapstr.MapStr{metadata.AssociationFieldObjectID: objID})
 	or.Item(mapstr.MapStr{metadata.AssociationFieldAssociationObjectID: objID})
-	if err = a.DeleteAssociation(params, cond); nil != err {
+	if err = assoc.DeleteAssociation(params, cond); nil != err {
 		return err
 	}
 
 	// delete objects
-	if err = a.obj.DeleteObject(params, tObject.ID, nil, false); nil != err && io.EOF != err {
+	if err = assoc.obj.DeleteObject(params, tObject.ID, nil, false); nil != err && io.EOF != err {
 		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s, rid: %s", tObject.ID, err.Error(), params.ReqID)
 		return err
 	}
@@ -81,7 +81,7 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 
 // SearchMainlineAssociationTopo get mainline topo of special model
 // result is a list with targetObj as head, so if you want a full topo, target must be biz model.
-func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
+func (assoc *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
 
 	// foundObjIDMap used as a map to detect whether found model is already in,
 	// so that we can detect infinite loop.
@@ -136,9 +136,9 @@ func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, 
 
 }
 
-func (a *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Object, error) {
+func (assoc *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Object, error) {
 	// find the mainline module's head, which is biz.
-	bizObj, err := a.obj.FindSingleObject(params, common.BKInnerObjIDApp)
+	bizObj, err := assoc.obj.FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
@@ -155,19 +155,19 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	}
 
 	params.MetaData = &data.Metadata
-	items, err := a.SearchMainlineAssociationTopo(params, bizObj)
+	items, err := assoc.SearchMainlineAssociationTopo(params, bizObj)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	if len(items) >= params.MaxTopoLevel {
-		blog.Errorf("[operation-asst] the mainline topo leve is %d, the max limit is %d, rid: %s", len(items), params.MaxTopoLevel, params.ReqID)
+		blog.Errorf("[operation-asst] the mainline topo level is %d, the max limit is %d, rid: %s", len(items), params.MaxTopoLevel, params.ReqID)
 		return nil, params.Err.Error(common.CCErrTopoBizTopoLevelOverLimit)
 	}
 
 	// find the mainline parent object
-	parentObj, err := a.obj.FindSingleObject(params, data.AsstObjID)
+	parentObj, err := assoc.obj.FindSingleObject(params, data.AsstObjID)
 	switch t := err.(type) {
 	case nil:
 	default:
@@ -189,7 +189,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	}
 
 	// check and create the association mainline object
-	if err = a.obj.IsValidObject(params, data.ObjectID); nil == err {
+	if err = assoc.obj.IsValidObject(params, data.ObjectID); nil == err {
 		blog.Errorf("[operation-asst] the object(%s) is duplicate, rid: %s", data.ObjectID, params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, data.ObjectID)
 	}
@@ -200,14 +200,14 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		common.BKObjIconField:          data.ObjectIcon,
 		common.BKClassificationIDField: data.ClassificationID,
 	}
-	currentObj, err := a.obj.CreateObject(params, true, objData)
+	currentObj, err := assoc.obj.CreateObject(params, true, objData)
 	if err != nil {
 		return nil, err
 	}
 
 	cObj := currentObj.Object()
 	// update the mainline topo inst association
-	if err = a.SetMainlineInstAssociation(params, parentObj, currentObj, childObj); nil != err {
+	if err = assoc.SetMainlineInstAssociation(params, parentObj, currentObj, childObj); nil != err {
 		blog.Errorf("[operation-asst] failed set the mainline inst association, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}

@@ -10,11 +10,11 @@ import (
 	"context"
 	"fmt"
 
-	"bk_bson/bson"
-	"bk_bson/x/bsonx"
-	"bk_bson/x/bsonx/bsoncore"
-	"bk_bson/x/network/result"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bsonx/network/result"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 // IsMaster represents the isMaster command.

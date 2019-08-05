@@ -65,7 +65,7 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 		}
 		if count > 0 {
 			blog.Errorf("[CreateObjectUnique] model could not have multiple must check unique, rid: %s", ctx.ReqID)
-			return 0, ctx.Error.Error(common.CCErrTopoObjectUniqueCanNotHasMutiMustCheck)
+			return 0, ctx.Error.Error(common.CCErrTopoObjectUniqueCanNotHasMultipleMustCheck)
 		}
 	}
 
@@ -129,7 +129,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 		}
 		if count > 0 {
 			blog.Errorf("[UpdateObjectUnique] model could not have multiple must check unique, rid: %s", ctx.ReqID)
-			return ctx.Error.Error(common.CCErrTopoObjectUniqueCanNotHasMutiMustCheck)
+			return ctx.Error.Error(common.CCErrTopoObjectUniqueCanNotHasMultipleMustCheck)
 		}
 	}
 

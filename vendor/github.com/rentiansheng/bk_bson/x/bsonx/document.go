@@ -11,8 +11,8 @@ import (
 	"errors"
 	"fmt"
 
-	"bk_bson/bson/bsontype"
-	"bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
 )
 
 // ErrNilDocument indicates that an operation was attempted on a nil *bson.Document.

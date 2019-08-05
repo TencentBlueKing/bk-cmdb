@@ -26,7 +26,11 @@
             </bk-table>
         </div>
         <div class="permission-footer" slot="footer">
-            <bk-button theme="primary" @click="handleApplyPermission">{{ i18n.apply }}</bk-button>
+            <bk-button theme="primary"
+                :loading="$loading('getSkipUrl')"
+                @click="handleApplyPermission">
+                {{ i18n.apply }}
+            </bk-button>
             <bk-button theme="default" @click="onCloseDialog">{{ i18n.cancel }}</bk-button>
         </div>
     </bk-dialog>
@@ -38,6 +42,7 @@
         data () {
             return {
                 isModalShow: false,
+                permission: [],
                 list: [],
                 i18n: {
                     permissionTitle: this.$t('没有权限访问或操作此资源'),
@@ -51,22 +56,52 @@
             }
         },
         methods: {
-            show (list) {
-                this.list = list
+            show (permission) {
+                this.permission = permission
+                this.setList()
                 this.isModalShow = true
             },
-            handleApplyPermission () {
-                const topWindow = window.top
-                const isPaasConsole = topWindow !== window
-                const authCenter = window.Site.authCenter || {}
-                if (isPaasConsole) {
-                    topWindow.postMessage(JSON.stringify({
-                        action: 'open_other_app',
-                        app_code: authCenter.appCode,
-                        app_url: 'apply-by-system'
-                    }), '*')
-                } else {
-                    window.open(authCenter.url)
+            setList () {
+                const permission = this.permission
+                this.list = permission.map(datum => {
+                    const scope = [datum.scope_type_name]
+                    if (datum.scope_id) {
+                        scope.push(datum.scope_name)
+                    }
+                    let resource
+                    if (datum.resource_type_name) {
+                        resource = datum.resource_type_name
+                    } else {
+                        resource = datum.resources.map(resource => {
+                            const resourceInfo = resource.map(info => this.getPermissionText(info, 'resource_type_name', 'resource_name'))
+                            return [...new Set(resourceInfo)].join('\n')
+                        }).join('\n')
+                    }
+                    return {
+                        scope: this.getPermissionText(datum, 'scope_type_name', 'scope_name'),
+                        resource: resource,
+                        action: datum.action_name
+                    }
+                })
+            },
+            getPermissionText (data, necessaryKey, extraKey, split = '：') {
+                const text = [data[necessaryKey]]
+                if (data[extraKey]) {
+                    text.push(data[extraKey])
+                }
+                return text.join(split).trim()
+            },
+            async handleApplyPermission () {
+                try {
+                    const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
+                        params: this.permission,
+                        config: {
+                            requestId: 'getSkipUrl'
+                        }
+                    })
+                    window.open(skipUrl)
+                } catch (e) {
+                    console.error(e)
                 }
             },
             onCloseDialog () {

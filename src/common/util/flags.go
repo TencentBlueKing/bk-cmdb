@@ -14,12 +14,10 @@ package util
 
 import (
 	goflag "flag"
+	"os"
 	"strings"
 
 	"configcenter/src/common/version"
-	//"github.com/golang/glog"
-	"os"
-
 	"github.com/spf13/pflag"
 )
 
@@ -27,17 +25,6 @@ import (
 func WordSepNormalizeFunc(f *pflag.FlagSet, name string) pflag.NormalizedName {
 	if strings.Contains(name, "_") {
 		return pflag.NormalizedName(strings.Replace(name, "_", "-", -1))
-	}
-	return pflag.NormalizedName(name)
-}
-
-// WarnWordSepNormalizeFunc changes and warns for flags that contain "_" separators
-func WarnWordSepNormalizeFunc(f *pflag.FlagSet, name string) pflag.NormalizedName {
-	if strings.Contains(name, "_") {
-		nname := strings.Replace(name, "_", "-", -1)
-		//glog.Warningf("%s is DEPRECATED and will be removed in a future version. Use %s instead.", name, nname)
-
-		return pflag.NormalizedName(nname)
 	}
 	return pflag.NormalizedName(name)
 }
@@ -55,7 +42,7 @@ func InitFlags() {
 	ver := AddCommonFlags(pflag.CommandLine)
 	pflag.Parse()
 
-	//add handler if flag include --version/-v
+	// add handler if flag include --version/-v
 	if *ver {
 		version.ShowVersion()
 		os.Exit(0)

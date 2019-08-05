@@ -6,7 +6,7 @@
 
 package wiremessage
 
-import "bk_bson/bson"
+import "github.com/rentiansheng/bk_bsonbson"
 
 // CommandReply represents the OP_COMMANDREPLY message of the MongoDB wire protocol.
 type CommandReply struct {

@@ -211,7 +211,6 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, errors.CCError) 
 	setIDArr := make([]int64, 0)
 	moduleIDArr := make([]int64, 0)
 
-	type idArrStruct []int64
 	hostAppSetModuleConfig := make(map[int64]map[int64]*appLevelInfo, 0)
 
 	blog.V(5).Infof("get modulehostconfig map:%v, rid:%s", mhconfig, sh.ccRid)
@@ -356,7 +355,7 @@ func (sh *searchHost) convInstInfoToAssociateInfo(instIDKey, instNameKey, objID 
 		}
 		instID, err := instInfo.Int64(instIDKey)
 		if err != nil {
-			return nil, sh.ccErr.Errorf(common.CCErrCommInstFieldConvFail, objID, instIDKey, "int", err.Error())
+			return nil, sh.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, objID, instIDKey, "int", err.Error())
 		}
 		asstInst.ID = strconv.FormatInt(instID, 10)
 		asstInst.ObjectID = instID
@@ -678,8 +677,15 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 	}
 
 	condition := make(map[string]interface{})
-	hostParse.ParseHostParams(sh.conds.hostCond.Condition, condition)
-	hostParse.ParseHostIPParams(sh.hostSearchParam.Ip, condition)
+	err = hostParse.ParseHostParams(sh.conds.hostCond.Condition, condition)
+	if err != nil {
+		return err
+	}
+
+	err = hostParse.ParseHostIPParams(sh.hostSearchParam.Ip, condition)
+	if err != nil {
+		return err
+	}
 
 	query := &metadata.QueryInput{
 		Condition: condition,

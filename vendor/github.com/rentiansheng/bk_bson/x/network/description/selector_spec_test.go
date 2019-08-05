@@ -10,7 +10,7 @@ import (
 	"path"
 	"testing"
 
-	"bk_bson/internal/testutil/helpers"
+	"github.com/rentiansheng/bk_bsoninternal/testutil/helpers"
 )
 
 const selectorTestsDir = "../../../data/server-selection/server_selection"

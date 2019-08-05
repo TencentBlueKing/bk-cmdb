@@ -9,12 +9,12 @@ package session
 import (
 	"errors"
 
-	"bk_bson/bson"
-	"bk_bson/bson/primitive"
-	"bk_bson/mongo/readconcern"
-	"bk_bson/mongo/readpref"
-	"bk_bson/mongo/writeconcern"
-	"bk_bson/x/mongo/driver/uuid"
+	"github.com/rentiansheng/bk_bsonbson"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bsonmongo/readconcern"
+	"github.com/rentiansheng/bk_bsonmongo/readpref"
+	"github.com/rentiansheng/bk_bsonmongo/writeconcern"
+	"github.com/rentiansheng/bk_bsonx/mongo/driver/uuid"
 )
 
 // ErrSessionEnded is returned when a client session is used after a call to endSession().

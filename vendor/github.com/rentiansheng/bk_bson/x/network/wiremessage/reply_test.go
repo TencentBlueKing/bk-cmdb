@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"bk_bson/bson"
+	"github.com/rentiansheng/bk_bsonbson"
 )
 
 func TestReply(t *testing.T) {

@@ -50,25 +50,21 @@ func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensi
 
 // Start do main loop
 func (p *Producer) Start() {
-	start := time.Now()
-	finished := false
+	ticker := time.NewTicker(5 * time.Minute)
 	go func(producer *Producer) {
 		for {
-			if start.Add(time.Minute * 5).Before(time.Now()) {
-				start = start.Add(time.Minute * 5)
-				finished = false
-			}
-
-			if finished == false {
+			select {
+			case <-ticker.C:
 				// get jobs
 				jobs := producer.generateJobs()
 
 				for _, job := range *jobs {
 					p.WorkerQueue <- job
 				}
-				finished = true
+			case <-p.QuitChan:
+				ticker.Stop()
+				return
 			}
-			time.Sleep(time.Millisecond * 100)
 		}
 	}(p)
 }
@@ -101,7 +97,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		}
 		businessList = append(businessList, businessSimplify)
 	}
-	blog.Info("list business businessList: %+v", businessList)
+	blog.V(4).Infof("list business businessList: %+v", businessList)
 
 	// job of synchronize business scope resources to iam
 	resourceTypes := []meta.ResourceType{
@@ -113,6 +109,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		meta.DynamicGroupResource,
 		meta.AuditCategory,
 		meta.ClassificationResource,
+		meta.UserGroupSyncResource,
 	}
 	for _, resourceType := range resourceTypes {
 		for _, businessSimplify := range businessList {

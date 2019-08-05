@@ -23,4 +23,5 @@ func (s *coreService) initDataSynchronize() {
 	s.addAction(http.MethodPost, "/set/synchronize/association", s.SynchronizeAssociation, nil)
 	s.addAction(http.MethodPost, "/read/synchronize", s.SynchronizeFind, nil)
 	s.addAction(http.MethodDelete, "/clear/synchronize/data", s.SynchronizeClearData, nil)
+	s.addAction(http.MethodPost, "/set/synchronize/identifier/flag", s.SetIdentifierFlag, nil)
 }

@@ -11,8 +11,8 @@ import (
 	"io"
 	"sync"
 
-	"bk_bson/bson/bsontype"
-	"bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
 )
 
 // ExtJSONValueReaderPool is a pool for ValueReaders that read ExtJSON.

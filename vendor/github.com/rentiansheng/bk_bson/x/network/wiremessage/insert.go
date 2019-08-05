@@ -6,7 +6,7 @@
 
 package wiremessage
 
-import "bk_bson/bson"
+import "github.com/rentiansheng/bk_bsonbson"
 
 // Insert represents the OP_INSERT message of the MongoDB wire protocol.
 type Insert struct {

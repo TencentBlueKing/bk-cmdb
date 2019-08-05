@@ -12,11 +12,11 @@ import (
 
 	"strings"
 
-	"bk_bson/internal"
-	"bk_bson/x/bsonx"
-	. "bk_bson/x/mongo/driver/auth"
-	"bk_bson/x/network/description"
-	"bk_bson/x/network/wiremessage"
+	"github.com/rentiansheng/bk_bsoninternal"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
+	. "github.com/rentiansheng/bk_bsonx/mongo/driver/auth"
+	"github.com/rentiansheng/bk_bsonx/network/description"
+	"github.com/rentiansheng/bk_bsonx/network/wiremessage"
 )
 
 func TestMongoDBCRAuthenticator_Fails(t *testing.T) {

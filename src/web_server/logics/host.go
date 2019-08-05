@@ -31,6 +31,7 @@ import (
 
 // GetHostData get host data from excel
 func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) ([]mapstr.MapStr, error) {
+	rid := util.GetHTTPCCRequestID(header)
 	hostInfo := make([]mapstr.MapStr, 0)
 	sHostCond := make(map[string]interface{})
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
@@ -96,12 +97,12 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 	}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetHostData(context.Background(), header, sHostCond)
 	if nil != err {
-		blog.Errorf("GetHostData failed, search condition: %+v, err: %+v", sHostCond, err)
+		blog.Errorf("GetHostData failed, search condition: %+v, err: %+v, rid: %s", sHostCond, err, rid)
 		return hostInfo, err
 	}
 
 	if !result.Result {
-		blog.Errorf("GetHostData failed, search condition: %+v, result: %+v", sHostCond, result)
+		blog.Errorf("GetHostData failed, search condition: %+v, result: %+v, rid: %s", sHostCond, result, rid)
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 
@@ -111,6 +112,7 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 // GetImportHosts get import hosts
 // return inst array data, errmsg collection, error
 func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf, meta *metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
+	ctx := util.NewContextFromHTTPHeader(header)
 
 	if 0 == len(f.Sheets) {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
@@ -128,17 +130,18 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	return GetExcelData(sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, 0, defLang)
+	return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, 0, defLang)
 }
 
 // ImportHosts import host info
 func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf, meta *metadata.Metadata) (resultData mapstr.MapStr, errCode int, err error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, meta)
 	resultData = mapstr.New()
 
 	if nil != err {
-		blog.Errorf("ImportHost  get import hosts from excel err, error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
+		blog.Errorf("ImportHost  get import hosts from excel err, error:%s, rid: %s", err.Error(), rid)
 	}
 	if 0 != len(errMsg) {
 		resultData.Set("err", errMsg)

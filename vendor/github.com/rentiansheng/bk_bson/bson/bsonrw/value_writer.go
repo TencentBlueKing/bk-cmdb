@@ -14,9 +14,9 @@ import (
 	"strconv"
 	"sync"
 
-	"bk_bson/bson/bsontype"
-	"bk_bson/bson/primitive"
-	"bk_bson/x/bsonx/bsoncore"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/bson/primitive"
+	"github.com/rentiansheng/bk_bson/x/bsonx/bsoncore"
 )
 
 var _ ValueWriter = (*valueWriter)(nil)

@@ -97,12 +97,13 @@ type GetServiceInstanceInModuleInput struct {
 }
 
 type ListServiceInstanceDetailRequest struct {
-	Metadata  Metadata           `json:"metadata"`
-	SetID     int64              `json:"bk_set_id"`
-	ModuleID  int64              `json:"bk_module_id"`
-	HostID    int64              `json:"bk_host_id"`
-	Page      BasePage           `json:"page,omitempty"`
-	Selectors selector.Selectors `json:"selectors,omitempty"`
+	Metadata           Metadata           `json:"metadata"`
+	SetID              int64              `json:"bk_set_id"`
+	ModuleID           int64              `json:"bk_module_id"`
+	HostID             int64              `json:"bk_host_id"`
+	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
+	Page               BasePage           `json:"page,omitempty"`
+	Selectors          selector.Selectors `json:"selectors,omitempty"`
 }
 
 type DiffServiceInstanceWithTemplateOption struct {

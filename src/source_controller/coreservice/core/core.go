@@ -127,6 +127,7 @@ type DataSynchronizeOperation interface {
 	SynchronizeAssociationAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
 	Find(ctx ContextParams, find *metadata.SynchronizeFindInfoParameter) ([]mapstr.MapStr, uint64, error)
 	ClearData(ctx ContextParams, input *metadata.SynchronizeClearDataParameter) error
+	SetIdentifierFlag(ctx ContextParams, input *metadata.SetIdenifierFlag) ([]metadata.ExceptionResult, error)
 }
 
 // TopoOperation methods
@@ -154,6 +155,9 @@ type HostOperation interface {
 	CreateResourceConfirm(ctx ContextParams, input *metadata.ResourceConfirm) (uint64, error)
 	CreateCloudSyncHistory(ctx ContextParams, input *metadata.CloudHistory) (uint64, error)
 	CreateConfirmHistory(ctx ContextParams, input mapstr.MapStr) (uint64, error)
+
+	// host search
+	ListHostByTopoNode(ctx ContextParams, input metadata.ListHostByTopoNodeOption) (*metadata.ListHostResult, error)
 }
 
 // AssociationOperation association methods
