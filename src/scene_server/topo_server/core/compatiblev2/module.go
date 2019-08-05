@@ -62,7 +62,7 @@ func (m *module) hasHost(bizID int64, moduleIDS []int64) (bool, error) {
 		return false, m.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return 0 != len(rsp.Data), nil
+	return 0 != len(rsp.Data.Info), nil
 }
 
 func (m *module) isValidSet(bizID int64, setID int64) (bool, error) {
