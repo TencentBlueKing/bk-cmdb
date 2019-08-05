@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import i18n from '@/i18n'
+import './magicbox.scss'
 import {
     bkInput,
     bkDropdownMenu,
@@ -37,7 +38,13 @@ Vue.use(bkSideslider, {
 Vue.use(bkSelect)
 Vue.use(bkOption)
 Vue.use(bkOptionGroup)
-Vue.use(bkTable)
+Vue.use(bkTable, {
+    rowStyle: () => {
+        return {
+            cursor: 'pointer'
+        }
+    }
+})
 Vue.use(bkTableColumn)
 Vue.use(bkCheckbox)
 Vue.use(bkPagination)

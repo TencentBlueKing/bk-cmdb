@@ -90,8 +90,8 @@
 
 .bk-big-tree {
     .bk-big-tree-node {
-        height: 40px;
-        line-height: 40px;
+        height: 36px;
+        line-height: 36px;
         &.is-leaf {
             padding-left: calc(var(--level) * 30px + 28px)
         }
@@ -104,8 +104,8 @@
             padding-left: 10px;
             .node-folder-icon {
                 width: 24px;
-                height: 40px;
-                line-height: 40px;
+                height: 36px;
+                line-height: 36px;
             }
         }
     }
@@ -114,6 +114,7 @@
 .bk-tab {
     height: 100%;
     .bk-tab-section {
+        padding: 0 20px;
         height: calc(100% - 42px);
         .bk-tab-content {
             height: 100%;
