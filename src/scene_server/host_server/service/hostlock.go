@@ -55,11 +55,16 @@ func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
 		if err != auth.NoAuthorizeError {
-			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, srvData.rid)
-			_ = resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
+			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		_ = resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp(hostIDArr))
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, hostIDArr)
+		if err != nil {
+			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(perm)
 		return
 	}
 
@@ -106,7 +111,13 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 			_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		_ = resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp(hostIDArr))
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, hostIDArr)
+		if err != nil {
+			blog.Errorf("gen no permission response failed, err: %v, rid: %s", err, srvData.rid)
+			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(perm)
 		return
 	}
 
@@ -153,7 +164,13 @@ func (s *Service) QueryHostLock(req *restful.Request, resp *restful.Response) {
 			_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		_ = resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp(hostIDArr))
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, hostIDArr)
+		if err != nil {
+			blog.Errorf("gen no permission response failed, err: %v, rid: %s", err, srvData.rid)
+			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(perm)
 		return
 	}
 

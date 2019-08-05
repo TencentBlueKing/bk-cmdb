@@ -30,15 +30,19 @@ type BaseResp struct {
 // Permission is used only when a user do not have the authority to
 // access a resources with a action.
 type Permission struct {
-	SystemID      string       `json:"system_id"`
-	SystemName    string       `json:"system_name"`
-	ScopeType     string       `json:"scope_type"`
-	ScopeTypeName string       `json:"scope_type_name"`
-	ScopeID       string       `json:"scope_id"`
-	ScopeName     string       `json:"scope_name"`
-	ActionID      string       `json:"action_id"`
-	ActionName    string       `json:"action_name"`
-	Resources     [][]Resource `json:"resources"`
+	SystemID      string `json:"system_id"`
+	SystemName    string `json:"system_name"`
+	ScopeType     string `json:"scope_type"`
+	ScopeTypeName string `json:"scope_type_name"`
+	ScopeID       string `json:"scope_id"`
+	ScopeName     string `json:"scope_name"`
+	ActionID      string `json:"action_id"`
+	ActionName    string `json:"action_name"`
+	// newly added two field.
+	ResourceTypeName string `json:"resource_type_name"`
+	ResourceType     string `json:"resource_type"`
+
+	Resources [][]Resource `json:"resources"`
 }
 
 type Resource struct {

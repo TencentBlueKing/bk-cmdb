@@ -29,6 +29,7 @@ var (
 	ProcessResource        = ResourceType("process")
 	DynamicGroupResource   = ResourceType("dynamicGroup")
 	ClassificationResource = ResourceType("classification")
+	UserGroupSyncResource  = ResourceType("userGroupSync")
 )
 
 // ResourceType represent a resource type that will be enqueue to WorkerQueue
@@ -54,4 +55,5 @@ type SyncHandler interface {
 	HandleProcessSync(task *WorkRequest) error
 	HandleDynamicGroupSync(task *WorkRequest) error
 	HandleClassificationSync(task *WorkRequest) error
+	HandleUserGroupSync(task *WorkRequest) error
 }

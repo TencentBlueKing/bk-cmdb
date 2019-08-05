@@ -68,12 +68,18 @@
                     if (datum.scope_id) {
                         scope.push(datum.scope_name)
                     }
+                    let resource
+                    if (datum.resource_type_name) {
+                        resource = datum.resource_type_name
+                    } else {
+                        resource = datum.resources.map(resource => {
+                            const resourceInfo = resource.map(info => this.getPermissionText(info, 'resource_type_name', 'resource_name'))
+                            return [...new Set(resourceInfo)].join('\n')
+                        }).join('\n')
+                    }
                     return {
                         scope: this.getPermissionText(datum, 'scope_type_name', 'scope_name'),
-                        resource: datum.resources.map(resource => {
-                            const resourceInfo = resource.map(info => this.getPermissionText(info, 'resource_type_name', 'resource_name')).join('\n')
-                            return resourceInfo
-                        }).join('\n'),
+                        resource: resource,
                         action: datum.action_name
                     }
                 })
@@ -83,7 +89,7 @@
                 if (data[extraKey]) {
                     text.push(data[extraKey])
                 }
-                return text.join(split)
+                return text.join(split).trim()
             },
             async handleApplyPermission () {
                 try {

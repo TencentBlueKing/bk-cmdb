@@ -677,11 +677,14 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 	}
 
 	condition := make(map[string]interface{})
-	if err := hostParse.ParseHostParams(sh.conds.hostCond.Condition, condition); err != nil {
-		blog.Warnf("ParseHostParams failed, err:%+v, rid: %s", err, sh.ccRid)
+	err = hostParse.ParseHostParams(sh.conds.hostCond.Condition, condition)
+	if err != nil {
+		return err
 	}
-	if err := hostParse.ParseHostIPParams(sh.hostSearchParam.Ip, condition); err != nil {
-		blog.Warnf("ParseHostIPParams failed, err:%+v, rid: %s", err, sh.ccRid)
+
+	err = hostParse.ParseHostIPParams(sh.hostSearchParam.Ip, condition)
+	if err != nil {
+		return err
 	}
 
 	query := &metadata.QueryInput{
