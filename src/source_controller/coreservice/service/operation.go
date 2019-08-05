@@ -38,7 +38,7 @@ func (s *coreService) SearchInstCount(params core.ContextParams, pathParams, que
 func (s *coreService) CommonAggregate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	condition := metadata.ChartConfig{}
 	if err := data.MarshalJSONInto(&condition); err != nil {
-		blog.Errorf("marshal chart config fail, err: %v", err)
+		blog.Errorf("search chart data fail, marshal chart config fail, err: %v, rid: %v", err, params.ReqID)
 		return nil, err
 	}
 
@@ -54,7 +54,7 @@ func (s *coreService) DeleteOperationChart(params core.ContextParams, pathParams
 	id := pathParams("id")
 	int64ID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		blog.Errorf("delete chart fail, string convert to int64 fail, err: %v", err)
+		blog.Errorf("delete chart fail, string convert to int64 fail, err: %v, rid: %v", err, params.ReqID)
 		return nil, err
 	}
 	if _, err := s.core.StatisticOperation().DeleteOperationChart(params, int64ID); err != nil {
@@ -67,7 +67,7 @@ func (s *coreService) DeleteOperationChart(params core.ContextParams, pathParams
 func (s *coreService) CreateOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	chartConfig := metadata.ChartConfig{}
 	if err := data.MarshalJSONInto(&chartConfig); err != nil {
-		blog.Errorf("marshal chart config fail, err: %v", err)
+		blog.Errorf("create chart fail, marshal chart config fail, err: %v, rid: %v", err, params.ReqID)
 		return nil, err
 	}
 
@@ -76,7 +76,7 @@ func (s *coreService) CreateOperationChart(params core.ContextParams, pathParams
 	chartConfig.OwnerID = ownerID
 	result, err := s.core.StatisticOperation().CreateOperationChart(params, chartConfig)
 	if err != nil {
-		blog.Errorf("save chart config fail, err: %v", err)
+		blog.Errorf("create chart fail, err: %v, rid: %v", err, params.ReqID)
 		return nil, err
 	}
 
@@ -88,7 +88,7 @@ func (s *coreService) SearchOperationChart(params core.ContextParams, pathParams
 
 	result, err := s.core.StatisticOperation().SearchOperationChart(params, opt)
 	if err != nil {
-		blog.Errorf("search chart config fail, err: %v", err)
+		blog.Errorf("search chart fail, err: %v, option: %v, rid: %v", err, opt, params.ReqID)
 		return nil, err
 	}
 
@@ -111,7 +111,7 @@ func (s *coreService) SearchOperationChart(params core.ContextParams, pathParams
 
 	count, err := s.db.Table(common.BKTableNameChartConfig).Find(opt).Count(params.Context)
 	if err != nil {
-		blog.Errorf("search chart config fail, err: %v", err)
+		blog.Errorf("search chart fail, option: %v, err: %v, rid: %v", opt, err, params.ReqID)
 		return nil, err
 	}
 
@@ -127,7 +127,7 @@ func (s *coreService) SearchOperationChart(params core.ContextParams, pathParams
 func (s *coreService) UpdateOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	opt := mapstr.MapStr{}
 	if err := data.MarshalJSONInto(&opt); err != nil {
-		blog.Errorf("marshal chart config fail, err: %v", err)
+		blog.Errorf("update chart fail, marshal chart config fail, err: %v, rid: %v", err, params.ReqID)
 		return nil, err
 	}
 
@@ -142,7 +142,7 @@ func (s *coreService) UpdateOperationChart(params core.ContextParams, pathParams
 func (s *coreService) UpdateOperationChartPosition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	opt := metadata.ChartPosition{}
 	if err := data.MarshalJSONInto(&opt); err != nil {
-		blog.Errorf("marshal chart position fail, err: %v", err)
+		blog.Errorf("update chart position fail, marshal chart position fail, err: %v, rid: %v", err, params.ReqID)
 		return nil, err
 	}
 	result, err := s.core.StatisticOperation().UpdateChartPosition(params, opt)
@@ -156,13 +156,13 @@ func (s *coreService) UpdateOperationChartPosition(params core.ContextParams, pa
 func (s *coreService) SearchOperationChartData(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	opt := metadata.ChartConfig{}
 	if err := data.MarshalJSONInto(&opt); err != nil {
-		blog.Errorf("marshal chart config fail, err: %v", err)
+		blog.Errorf("search chart data fail, marshal chart config fail, err: %v, rid: %v", err, params.ReqID)
 		return nil, err
 	}
 
 	result, err := s.core.StatisticOperation().SearchOperationChartData(params, opt)
 	if err != nil {
-		blog.Errorf("search operation chart data fail, chartName: %v, err: %v", opt.Name, err)
+		blog.Errorf("search operation chart data fail, chartName: %v, err: %v, rid: %v", opt.Name, err, params.ReqID)
 		return nil, err
 
 	}
@@ -173,19 +173,19 @@ func (s *coreService) SearchOperationChartData(params core.ContextParams, pathPa
 func (s *coreService) SearchChartCommon(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	opt := mapstr.MapStr{}
 	if err := data.MarshalJSONInto(&opt); err != nil {
-		blog.Errorf("marshal chart config fail, err: %v", err)
+		blog.Errorf(" search chart fail, marshal chart config fail, err: %v, rid: %v", err, params.ReqID)
 		return nil, err
 	}
 
 	chartConfig := make([]metadata.ChartConfig, 0)
 	if err := s.db.Table(common.BKTableNameChartConfig).Find(opt).All(params.Context, &chartConfig); err != nil {
-		blog.Errorf("search chart config fail, err: %v", err)
+		blog.Errorf("search chart config fail, option: %v, err: %v, rid: %v", opt, err, params.ReqID)
 		return nil, err
 	}
 
 	count, err := s.db.Table(common.BKTableNameChartConfig).Find(opt).Count(params.Context)
 	if err != nil {
-		blog.Errorf("search chart config fail, err: %v", err)
+		blog.Errorf("search chart fail, opt: %v, err: %v, rid: %v", opt, err, params.ReqID)
 		return nil, err
 	}
 
@@ -219,7 +219,7 @@ func (s *coreService) SearchCloudMapping(params core.ContextParams, pathParams, 
 
 	respData := new(metadata.CloudMapping)
 	if err := s.db.Table(common.BKTableNameChartConfig).Find(opt).All(params.Context, respData); err != nil {
-		blog.Errorf("search chart config fail, err: %v", err)
+		blog.Errorf("search cloud mapping fail, err: %v, rid: %v", err, params.ReqID)
 		return nil, err
 	}
 

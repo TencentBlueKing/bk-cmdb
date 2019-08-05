@@ -83,6 +83,7 @@ type HostChangeChartData struct {
 	ReportType string                    `json:"report_type" bson:"report_type"`
 	Data       map[string][]BizHostChart `json:"data" bson:"data"`
 	OwnerID    string                    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	UpdateTime time.Time                 `json:"update_time" bson:"update_time"`
 }
 
 type BizHostChart struct {
