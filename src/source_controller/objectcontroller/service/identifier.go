@@ -204,7 +204,9 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 
 	// fill hostidentifier
 	for _, inst := range hosts {
-		inst.HostIdentModule = map[string]*metadata.HostIdentModule{}
+		if inst.HostIdentModule == nil {
+			inst.HostIdentModule = make(map[string]*metadata.HostIdentModule, 0)
+		}
 		// fill cloud
 		if _, ok := clouds[inst.CloudID]; ok {
 			cloud := clouds[inst.CloudID]
