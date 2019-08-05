@@ -191,6 +191,6 @@
         }
     }
     .relation-component {
-        height: calc(100% - 54px);
+        height: calc(100% - 80px);
     }
 </style>
