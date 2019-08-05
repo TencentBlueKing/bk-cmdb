@@ -281,7 +281,7 @@
 
 <style lang="scss" scoped>
     .operation-box {
-        margin: 0 0 20px 0;
+        margin: 0 0 14px 0;
         font-size: 0;
         .create-btn {
             margin: 0 10px 0 0;

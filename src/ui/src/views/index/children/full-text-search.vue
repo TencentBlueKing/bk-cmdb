@@ -517,12 +517,13 @@
                 padding-top: 14px;
                 color: $cmdbTextColor;
                 .results-item {
-                    width: 60%;
+                    width: 65%;
                     padding-bottom: 35px;
                     color: #63656e;
                     em {
                         color: #3a84ff !important;
                         font-style: normal !important;
+                        word-break: break-all;
                     }
                     .results-title {
                         display: inline-block;
