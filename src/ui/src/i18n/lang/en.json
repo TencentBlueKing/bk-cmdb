@@ -472,7 +472,7 @@
         "操作账号": "Account",
         "变更内容": "Change Content",
         "操作时间": "Operation Time",
-        "agent安装说明": "Note: After the Blue Whale Agent is installed on the host, it will be automatically entered in the \"Host Resource Pool\".",
+        "agent安装说明": "Note: When the host installs the Blue Whale Agent, it will be automatically entered into the service host.",
         "点此进入节点管理": "Click here to enter the Node Manager",
         "批量导入": "Batch Import",
         "自动导入": "Auto Import",
@@ -502,7 +502,7 @@
         "修改人": "Modified Person",
         "修改时间": "Update Time",
         "查询定义": "Group Definition",
-        "确认要删除": "Confirm to delete {name} group?",
+        "确认要删除": "Confirm to delete \"{name}\" group?",
         "保存后的查询可通过接口调用生效": "The saved group can be validated through an interface call",
         "动态分组提示": "Dynamic grouping is mainly used to define commonly used conditional queries, and can quickly retrieve target hosts based on dynamic grouping when operating platforms or standard operations"
     },
