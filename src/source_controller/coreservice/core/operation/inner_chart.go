@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/common/util"
 	"fmt"
 	"time"
 
@@ -34,14 +35,14 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 
 	pipeline := []M{{"$group": M{"_id": "$bk_obj_id", "count": M{"$sum": 1}}}}
 	if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &modelInstCount); err != nil {
-		blog.Errorf("model's instance count aggregate fail, err: %v", err)
+		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
 	opt := mapstr.MapStr{}
 	modelInfo := make([]metadata.Object, 0)
 	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(opt).All(ctx, &modelInfo); err != nil {
-		blog.Errorf("search model info fail ,err: %v", err)
+		blog.Errorf("count model's instance, search model info fail ,err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
@@ -65,12 +66,12 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 	condition := mapstr.MapStr{}
 	condition[common.OperationReportType] = common.ModelInstChart
 	if err := m.dbProxy.Table(common.BKTableNameChartData).Delete(ctx, condition); err != nil {
-		blog.Errorf("delete model instance change data fail, err: %v", err)
+		blog.Errorf("count model's instance number, delete model instance change data fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
 	if err := m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, data); err != nil {
-		blog.Errorf("insert model instance change data fail, err: %v", err)
+		blog.Errorf("count model's instance, insert model instance change data fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
@@ -84,28 +85,28 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 	createInstCount := make([]metadata.StringIDCount, 0)
 	createPipe := []M{{"$match": M{"op_desc": "create object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": "$content.cur_data.bk_obj_id", "count": M{"$sum": 1}}}}
 	if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, createPipe, &createInstCount); err != nil {
-		blog.Errorf("model's instance count aggregate fail, err: %v", err)
+		blog.Errorf("aggregate: count create object fail, err: %v, rid", err, ctx.ReqID)
 		return
 	}
 
 	deleteInstCount := make([]metadata.StringIDCount, 0)
 	deletePipe := []M{{"$match": M{"op_desc": "delete object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": "$content.pre_data.bk_obj_id", "count": M{"$sum": 1}}}}
 	if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, deletePipe, &deleteInstCount); err != nil {
-		blog.Errorf("model's instance count aggregate fail, err: %v", err)
+		blog.Errorf("aggregate: count delete object fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
 	updateInstCount := make([]metadata.UpdateInstCount, 0)
 	updatePipe := []M{{"$match": M{"op_desc": "update object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": M{"bk_obj_id": "$content.cur_data.bk_obj_id", "inst_id": "$content.cur_data.bk_inst_id"}, "count": M{"$sum": 1}}}}
 	if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, updatePipe, &updateInstCount); err != nil {
-		blog.Errorf("model's instance count aggregate fail, err: %v", err)
+		blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
 	opt := mapstr.MapStr{}
 	modelData := make([]metadata.Object, 0)
 	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(opt).All(ctx, &modelData); nil != err {
-		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.ReqID, err.Error())
+		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.ReqID, opt, err.Error())
 		return
 	}
 
@@ -155,12 +156,12 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 
 	opt[common.OperationReportType] = common.ModelInstChangeChart
 	if err := m.dbProxy.Table(common.BKTableNameChartData).Delete(ctx, opt); err != nil {
-		blog.Errorf("delete model instance change data fail, err: %v", err)
+		blog.Errorf("delete model instance change chart data fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
 	if err := m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, condition); err != nil {
-		blog.Errorf("insert model instance change data fail, err: %v", err)
+		blog.Errorf("insert model instance change chart data fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 }
@@ -168,14 +169,14 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 	bizHost, err := m.SearchBizHost(ctx)
 	if err != nil {
-		blog.Errorf("search biz host count fail, err: %v", err)
+		blog.Errorf("search biz's host count fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
 	opt := mapstr.MapStr{}
 	bizInfo := make([]metadata.BizInst, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
-		blog.Errorf("search biz info fail ,err: %v", err)
+		blog.Errorf("biz's host count, search biz info fail ,err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
@@ -183,7 +184,7 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 	condition[common.OperationReportType] = common.HostChangeBizChart
 	bizHostChange := make([]metadata.HostChangeChartData, 0)
 	if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).All(ctx, &bizHostChange); err != nil {
-		blog.Errorf("get host change data fail, err: %v", err)
+		blog.Errorf("get host change data fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
@@ -196,8 +197,7 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 				continue
 			}
 			if len(bizHostChange) > 0 {
-				// 上次同步在24小时内，则不同步
-				subHour := now.Sub(bizHostChange[0].Data[biz.BizName][len(bizHostChange[0].Data[biz.BizName])-1].Id)
+				subHour := now.Sub(bizHostChange[0].UpdateTime).Hours()
 				if subHour < 24 {
 					return
 				}
@@ -213,6 +213,7 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 						Count: info.Count,
 					})
 				}
+				bizHostChange[0].UpdateTime = time.Now()
 			} else {
 				if len(firstBizHostChange.Data) > 0 {
 					firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
@@ -228,18 +229,19 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 						Count: info.Count,
 					})
 				}
+				firstBizHostChange.UpdateTime = time.Now()
 			}
 		}
 	}
 
 	if len(bizHostChange) > 0 {
 		if err := m.dbProxy.Table(common.BKTableNameChartData).Update(ctx, condition, bizHostChange[0]); err != nil {
-			blog.Errorf("update biz host change fail, err: %v", err)
+			blog.Errorf("update biz host change chart fail, err: %v, rid: %v", err, ctx.ReqID)
 			return
 		}
 	} else {
 		if err := m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, firstBizHostChange); err != nil {
-			blog.Errorf("update biz host change fail, err: %v", err)
+			blog.Errorf("update biz host change fail, err: %v, rid: %v", err, ctx.ReqID)
 			return
 		}
 	}
@@ -250,7 +252,7 @@ func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.Int
 
 	pipeline := []M{{"$group": M{"_id": "$bk_biz_id", "count": M{"$sum": 1}}}}
 	if err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).AggregateAll(ctx, pipeline, &bizHostCount); err != nil {
-		blog.Errorf("biz' host count aggregate fail, err: %v", err)
+		blog.Errorf("aggregate: biz' host count fail, err: %v, rid: %v", err, ctx.ReqID)
 		return nil, err
 	}
 
@@ -263,18 +265,19 @@ func (m *operationManager) HostCloudChartData(ctx core.ContextParams, inputParam
 
 	pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
 	if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(ctx, pipeline, &commonCount); err != nil {
-		blog.Errorf("model's instance count aggregate fail, err: %v", err)
+		blog.Errorf("hostCloudChartData, aggregate: model's instance count fail, err: %v, rid: %v", err, ctx.ReqID)
 		return nil, err
 	}
 
 	opt := mapstr.MapStr{}
 	cloudMapping := make([]metadata.CloudMapping, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBasePlat).Find(opt).All(ctx, &cloudMapping); err != nil {
-		blog.Errorf("search chart config fail, err: %v", err)
+		blog.Errorf("hostCloudChartData, search cloud mapping fail, err: %v, rid: %v", err, ctx.ReqID)
 		return nil, err
 	}
 
 	respData := make([]metadata.StringIDCount, 0)
+	matched := make([]string, 0)
 	for _, data := range commonCount {
 		for _, cloud := range cloudMapping {
 			if data.Id == cloud.CloudID {
@@ -282,25 +285,35 @@ func (m *operationManager) HostCloudChartData(ctx core.ContextParams, inputParam
 					Id:    cloud.CloudName,
 					Count: data.Count,
 				}
+				matched = append(matched, cloud.CloudName)
 				respData = append(respData, info)
 			}
 		}
 	}
 
+	for _, cloud := range cloudMapping {
+		if !util.InStrArr(matched, cloud.CloudName) {
+			info := metadata.StringIDCount{
+				Id:    cloud.CloudName,
+				Count: 0,
+			}
+			respData = append(respData, info)
+		}
+	}
 	return respData, nil
 }
 
 func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 	bizHost, err := m.SearchBizHost(ctx)
 	if err != nil {
-		blog.Error("search biz host info fail, err: %v", err)
+		blog.Error("search biz's host data fail, err: %v, rid: %v", err, ctx.ReqID)
 		return nil, err
 	}
 
 	opt := mapstr.MapStr{}
 	bizInfo := make([]mapstr.MapStr, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
-		blog.Errorf("get biz info fail, err: %v", err)
+		blog.Errorf("HostBizChartData, get biz info fail, err: %v, rid: %v ", err, ctx.ReqID)
 		return nil, err
 	}
 
@@ -308,12 +321,12 @@ func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam m
 	for _, biz := range bizInfo {
 		id, err := biz.Int64(common.BKAppIDField)
 		if err != nil {
-			blog.Error("search biz host chart data fail, interface convert to int64 fail, err: %v", err)
+			blog.Error("search biz host chart data fail, interface convert to int64 fail, err: %v, rid: %v", err, ctx.ReqID)
 			continue
 		}
 		name, err := biz.String(common.BKAppNameField)
 		if err != nil {
-			blog.Error("search biz host chart data fail, interface convert to int64 fail, err: %v", err)
+			blog.Error("search biz host chart data fail, interface convert to int64 fail, err: %v, rid: %v", err, ctx.ReqID)
 			continue
 		}
 		for _, host := range bizHost {
