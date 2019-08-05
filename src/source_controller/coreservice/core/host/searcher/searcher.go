@@ -36,6 +36,7 @@ func New(db dal.RDB, cache *redis.Client) Searcher {
 	}
 }
 
+// ListHosts search host with topo node info and host property
 func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (searchResult *metadata.ListHostResult, err error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
