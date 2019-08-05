@@ -32,9 +32,12 @@
                 <div class="item-left">
                     <span>{{ navData.inst }}</span>
                     <span>{{$t('Operation["实例总数"]')}}
-                        <bk-tooltip :content="tooltip" :width="'100px'" :placement="'right'">
+                        <bk-popover :delay="300" :offset="10" placement="top">
                             <i class="menu-icon icon-cc-attribute"></i>
-                        </bk-tooltip>
+                            <span class="popover-content" slot="content">
+                                {{tooltip}}
+                            </span>
+                        </bk-popover>
                     </span>
                 </div>
                 <div class="item-right item-right-right">
@@ -75,8 +78,7 @@
                         class="options-filter"
                         :auto-close="true"
                         :position="'left'"
-                        v-model="dateRange"
-                        @on-change="dateChange">
+                        v-model="dateRange">
                     </cmdb-form-date-range>
                 </div>
             </div>
@@ -153,7 +155,16 @@
                     model: ''
                 },
                 dateRange: [],
-                dateChart: {}
+                dateChart: {},
+                firstDraw: true
+            }
+        },
+        watch: {
+            'dateRange' () {
+                if (!this.firstDraw) {
+                    const date = this.$tools.clone(this.dateRange)
+                    this.dateChange(date)
+                } else this.firstDraw = false
             }
         },
         created () {
@@ -362,7 +373,9 @@
                 if (item.report_type === 'host_change_biz_chart') {
                     layConfig.type = 'date'
                     layConfig.range = [item.data.minTime, item.data.maxTime]
-                    this.dateRange = layConfig.range
+                    if (this.firstDraw) {
+                        this.dateRange = layConfig.range
+                    }
                     this.dateChart = item
                     this.$set(item, 'showDate', true)
                     const minus = this.computeRange(item.data.minTime, item.data.maxTime)
@@ -557,6 +570,15 @@
         }
     }
 </script>
+
+<style lang="scss">
+    .zerolinelayer {
+        path{
+            stroke-opacity: 0!important;
+            stroke-width: 0!important;
+        }
+    }
+</style>
 
 <style scoped lang="scss">
     *{
