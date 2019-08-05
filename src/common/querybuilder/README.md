@@ -139,9 +139,12 @@
           "value": 2
         },
         {
-          "field": "category",
-          "operator": "equal",
-          "value": 1
+          "condition": "AND",
+          "rules": [{
+            "field": "name",
+            "operator": "not_in",
+            "value": ["a", "b"]
+          }]
         }
       ]
     }
