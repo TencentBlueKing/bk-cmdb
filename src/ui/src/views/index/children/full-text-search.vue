@@ -58,6 +58,7 @@
                                 v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"
                                 @click="jumpPage(source)"></div>
                             <div class="results-desc" v-if="propertyMap['host']" @click="jumpPage(source)">
+                                <span class="desc-item" v-html="`${$t('Index[\'主机ID\']')}${source['bk_host_id']}`"> </span>
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap['host']"
                                     :key="childIndex"
