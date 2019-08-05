@@ -648,7 +648,7 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 	}{}
 	var err error
 	if err = p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).One(ctx.Context, &module); err != nil {
-		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, get module failed, err: %+v, rid: %s", err, ctx.ReqID)
+		blog.ErrorJSON("AutoCreateServiceInstanceModuleHost failed, get module failed, err: %+v, cond: %#v, rid: %s", err, moduleFilter, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 
