@@ -157,6 +157,11 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
+// get host instance's properties as follows:
+// host object property id: "bk_host_name"
+// host object property name: "host"
+// host object property value: "centos7"
+
 func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
