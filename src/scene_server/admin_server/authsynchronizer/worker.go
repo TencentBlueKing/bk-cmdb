@@ -13,6 +13,8 @@
 package authsynchronizer
 
 import (
+	"fmt"
+
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
 )
@@ -48,8 +50,10 @@ func (w *Worker) Start() {
 			select {
 			case work := <-w.WorkerQueue:
 				// Receive a work request.
-				blog.Infof("worker%d: Received work request, delaying for %f seconds\n", w.ID, work.Delay.Seconds())
-				w.doWork(&work)
+				blog.V(5).Infof("worker %d: Received work request, delaying for %f seconds\n", w.ID, work.Delay.Seconds())
+				if err := w.doWork(&work); err != nil {
+					blog.Errorf("do work failed, err: %v", err)
+				}
 
 			case <-w.QuitChan:
 				// We have been asked to stop.
@@ -70,32 +74,34 @@ func (w *Worker) Stop() {
 }
 
 func (w *Worker) doWork(work *meta.WorkRequest) error {
-	blog.Infof("start doing work: %+v", work)
+	blog.V(4).Infof("start doing work: %+v", work)
+	var err error
 	switch work.ResourceType {
 	case meta.BusinessResource:
-		w.SyncHandler.HandleBusinessSync(work)
+		err = w.SyncHandler.HandleBusinessSync(work)
 	case meta.HostResource:
-		w.SyncHandler.HandleHostSync(work)
+		err = w.SyncHandler.HandleHostSync(work)
 	case meta.SetResource:
-		w.SyncHandler.HandleSetSync(work)
+		err = w.SyncHandler.HandleSetSync(work)
 	case meta.ModuleResource:
-		w.SyncHandler.HandleModuleSync(work)
+		err = w.SyncHandler.HandleModuleSync(work)
 	case meta.ModelResource:
-		w.SyncHandler.HandleModelSync(work)
+		err = w.SyncHandler.HandleModelSync(work)
 	case meta.InstanceResource:
-		w.SyncHandler.HandleInstanceSync(work)
+		err = w.SyncHandler.HandleInstanceSync(work)
 	case meta.AuditCategory:
-		w.SyncHandler.HandleAuditSync(work)
+		err = w.SyncHandler.HandleAuditSync(work)
 	case meta.ProcessResource:
-		w.SyncHandler.HandleProcessSync(work)
+		err = w.SyncHandler.HandleProcessSync(work)
 	case meta.DynamicGroupResource:
-		w.SyncHandler.HandleDynamicGroupSync(work)
+		err = w.SyncHandler.HandleDynamicGroupSync(work)
 	case meta.ClassificationResource:
-		w.SyncHandler.HandleClassificationSync(work)
-
+		err = w.SyncHandler.HandleClassificationSync(work)
+	case meta.UserGroupSyncResource:
+		err = w.SyncHandler.HandleUserGroupSync(work)
 	default:
-		blog.Errorf("work type:%s didn't register yet.", work.ResourceType)
+		return fmt.Errorf("unsupported work resource type: %s", work.ResourceType)
 
 	}
-	return nil
+	return err
 }

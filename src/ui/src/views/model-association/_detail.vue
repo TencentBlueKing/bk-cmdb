@@ -9,7 +9,7 @@
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
                     <bk-input type="text" class="cmdb-form-input"
                         name="asstId"
-                        :disabled="isEdit"
+                        :disabled="isReadOnly || isEdit"
                         v-model.trim="relationInfo['bk_asst_id']"
                         v-validate="'required|associationId'"
                         :placeholder="$t('ModelManagement[\'请输入英文标识\']')">
@@ -26,7 +26,7 @@
                     <bk-input type="text"
                         class="cmdb-form-input"
                         name="asstName"
-                        :disabled="isEdit && relation.ispre"
+                        :disabled="isReadOnly || isEdit && relation.ispre"
                         v-validate="'required|singlechar'"
                         v-model.trim="relationInfo['bk_asst_name']"
                         :placeholder="$t('ModelManagement[\'请输入名称\']')">
@@ -43,7 +43,7 @@
                     <input type="text"
                         class="cmdb-form-input"
                         name="srcDes"
-                        :disabled="isEdit && relation.ispre"
+                        :disabled="isReadOnly || isEdit && relation.ispre"
                         v-validate="'required|singlechar'"
                         v-model.trim="relationInfo['src_des']"
                         :placeholder="$t('ModelManagement[\'请输入关联描述如：连接、运行\']')">
@@ -59,7 +59,7 @@
                     <bk-input type="text"
                         class="cmdb-form-input"
                         name="destDes"
-                        :disabled="isEdit && relation.ispre"
+                        :disabled="isReadOnly || isEdit && relation.ispre"
                         v-validate="'required|singlechar'"
                         v-model.trim="relationInfo['dest_des']"
                         :placeholder="$t('ModelManagement[\'请输入关联描述如：属于、上联\']')">
@@ -74,17 +74,17 @@
                     </label>
                     <label class="cmdb-form-radio cmdb-radio-small">
                         <input type="radio" name="direction" value="src_to_dest" v-model="relationInfo.direction"
-                            :disabled="isEdit && relation.ispre">
+                            :disabled="isReadOnly || isEdit && relation.ispre">
                         <span class="cmdb-radio-text">{{$t('ModelManagement["有，源指向目标"]')}}</span>
                     </label>
                     <label class="cmdb-form-radio cmdb-radio-small">
                         <input type="radio" name="direction" value="none" v-model="relationInfo.direction"
-                            :disabled="isEdit && relation.ispre">
+                            :disabled="isReadOnly || isEdit && relation.ispre">
                         <span class="cmdb-radio-text">{{$t('ModelManagement["无方向"]')}}</span>
                     </label>
                     <label class="cmdb-form-radio cmdb-radio-small">
                         <input type="radio" name="direction" value="bidirectional" v-model="relationInfo.direction"
-                            :disabled="isEdit && relation.ispre">
+                            :disabled="isReadOnly || isEdit && relation.ispre">
                         <span class="cmdb-radio-text">{{$t('ModelManagement["双向"]')}}</span>
                     </label>
                 </div>
@@ -92,7 +92,7 @@
         </div>
         <slot name="operation">
             <div class="btn-group">
-                <bk-button theme="primary" :disabled="isEdit && relation.ispre" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveRelation">
+                <bk-button theme="primary" :disabled="isReadOnly || isEdit && relation.ispre" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveRelation">
                     {{saveBtnText || $t('Common["确定"]')}}
                 </bk-button>
                 <bk-button theme="default" @click="cancel">

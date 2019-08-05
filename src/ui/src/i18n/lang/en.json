@@ -353,6 +353,7 @@
         "所属分组": "Direction",
         "新建关联类型": "Create association type",
         "编辑关联类型": "Modify association type",
+        "关联类型详情": "Association type details",
         "源->目标描述": "Source to target description",
         "目标->源描述": "Target to source description",
         "请输入关联类型名称": "Enter type name",
@@ -439,7 +440,8 @@
         "模型顶部提示": "The model can view and dynamically change the current data structure of the CMDB. For example, a new device needs to be recorded to the CMDB, which can be implemented by creating a new corresponding model.",
         "业务层级提示": "The service level shows the hierarchical settings of the current service topology. You can modify the attributes of each layer or increase the topology level according to the needs of the enterprise.",
         "关联关系提示": "The “association type” is the classification associated with the model. For example, the relationship between the host and the switch can be classified as “uplink” type.",
-        "添加字段": "Add field"
+        "添加字段": "Add field",
+        "字段详情": "Field Details"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
@@ -851,7 +853,7 @@
         "所有一级分类": "(All primary classification)",
         "所有二级分类": "(All secondary classification)",
         "没有二级分类": "No secondary classification",
-        "锁定不可编辑": "Locked service instance is not editable"
+        "纳入模板管理": "Incorporate template management, the instance will not support modification"
     },
     "ServiceCategory": {
         "服务分类功能提示": "Service classification can help the business sort out service usage. Configuring platform initialization includes some common classifications and supports more classifications based on business development.",
@@ -951,7 +953,8 @@
         "模板未添加进程": "No process added, please add to the template and sync",
         "跳转服务拓扑": "Jump service topology",
         "暂无实例": "No instance",
-        "新建模板": "Create Template"
+        "新建模板": "Create Template",
+        "删除节点": "Delete Node"
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
