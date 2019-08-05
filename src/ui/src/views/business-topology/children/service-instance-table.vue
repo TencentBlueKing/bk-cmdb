@@ -192,6 +192,9 @@
             }
         },
         computed: {
+            currentNode () {
+                return this.$store.state.businessTopology.selectedNode
+            },
             isModuleNode () {
                 const node = this.$store.state.businessTopology.selectedNode
                 return node && node.data.bk_obj_id === 'module'
@@ -373,6 +376,10 @@
                                     }),
                                     requestId: this.requestId.deleteProcess
                                 }
+                            })
+                            this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count - 1
+                            this.currentNode.parents.forEach(node => {
+                                node.data.service_instance_count = node.data.service_instance_count - 1
                             })
                             this.$success(this.$t('Common[\'删除成功\']'))
                             this.$emit('delete-instance', this.instance.id)
