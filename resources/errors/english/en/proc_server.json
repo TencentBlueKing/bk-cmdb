@@ -35,5 +35,7 @@
     "1108038": "create service instance on module with wrong http method",
     "1108039": "forbidden add process on service instance initialized with template",
     "1108040": "unbound template on module failed",
+    "1108041": "generate service instance name failed",
+    "1108042": "unbound template on module disabled",
     "": ""
 }
