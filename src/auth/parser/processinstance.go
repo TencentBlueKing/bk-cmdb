@@ -18,6 +18,8 @@ import (
 	"configcenter/src/auth/meta"
 )
 
+var ProcessInstanceIAMResourceType = meta.BizTopology
+
 var ProcessInstanceAuthConfigs = []AuthConfig{
 	{
 		Name:                  "createProcessInstances",
@@ -25,15 +27,15 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 		Pattern:               "/api/v3/create/proc/process_instance",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
-		ResourceType:          meta.Process,
-		ResourceAction:        meta.Create,
+		ResourceType:          ProcessInstanceIAMResourceType,
+		ResourceAction:        meta.Update,
 	}, {
 		Name:                  "updateProcessInstances",
 		Description:           "更新进程实例",
 		Pattern:               "/api/v3/update/proc/process_instance",
 		HTTPMethod:            http.MethodPut,
 		RequiredBizInMetadata: true,
-		ResourceType:          meta.Process,
+		ResourceType:          ProcessInstanceIAMResourceType,
 		ResourceAction:        meta.Update,
 	}, {
 		Name:                  "deleteProcessInstance",
@@ -41,15 +43,15 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 		Pattern:               "/api/v3/delete/proc/process_instance",
 		HTTPMethod:            http.MethodDelete,
 		RequiredBizInMetadata: true,
-		ResourceType:          meta.Process,
-		ResourceAction:        meta.Delete,
+		ResourceType:          ProcessInstanceIAMResourceType,
+		ResourceAction:        meta.Update,
 	}, {
 		Name:                  "listProcessInstances",
 		Description:           "查找进程实例",
 		Pattern:               "/api/v3/findmany/proc/process_instance",
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
-		ResourceType:          meta.Process,
+		ResourceType:          ProcessInstanceIAMResourceType,
 		ResourceAction:        meta.Find,
 	},
 }

@@ -113,11 +113,6 @@ func (s *coreService) ListServiceTemplates(params core.ContextParams, pathParams
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	if fp.BusinessID == 0 {
-		blog.Errorf("ListServiceTemplates failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
-	}
-
 	result, err := s.core.ProcessOperation().ListServiceTemplates(params, fp)
 	if err != nil {
 		blog.Errorf("ListServiceTemplates failed, err: %+v, rid: %s", err, params.ReqID)
