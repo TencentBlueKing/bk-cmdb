@@ -187,7 +187,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizHostInstance:     "业务主机",
 	BizProcessInstance:  "进程",
 	// TODO: delete this when upgrade to v3.5.x
-	BizTopology:   "拓扑",
+	BizTopology:   "服务拓扑",
 	BizModelGroup: "模型分组",
 	BizModel:      "模型",
 	BizInstance:   "实例",
