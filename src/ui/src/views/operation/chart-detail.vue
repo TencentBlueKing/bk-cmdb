@@ -232,6 +232,7 @@
         },
         watch: {
             'chartType' () {
+                this.$validator.reset()
                 if (this.chartData.bk_obj_id === 'host') this.seList.disList = this.$tools.clone(this.seList.host)
                 else this.seList.disList = this.$tools.clone(this.seList.inst)
                 if (this.chartType) this.chartData.name = ''
@@ -275,6 +276,8 @@
                         bk_obj_id: id
                     }
                 })
+                this.$validator.reset()
+                this.chartData.field = ''
             },
             confirm () {
                 this.chartData.report_type = this.chartType ? 'custom' : this.typeFilter[0].repType
@@ -289,7 +292,8 @@
                         } else {
                             this.delKeys(data, ['data', 'hasData', 'create_time', 'title'])
                             this.updateStatisticalCharts({ params: data }).then(res => {
-                                this.transData(res.info)
+                                this.chartData.config_id = res
+                                this.transData(this.chartData)
                             })
                         }
                     }
