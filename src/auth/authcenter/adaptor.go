@@ -128,6 +128,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizProcessServiceCategory
 	case meta.ProcessServiceInstance:
 		iamResourceType = BizProcessServiceInstance
+	case meta.BizTopology:
+		iamResourceType = BizTopology
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -185,7 +187,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizHostInstance:     "业务主机",
 	BizProcessInstance:  "进程",
 	// TODO: delete this when upgrade to v3.5.x
-	BizTopology:   "拓扑",
+	BizTopology:   "服务拓扑",
 	BizModelGroup: "模型分组",
 	BizModel:      "模型",
 	BizInstance:   "实例",

@@ -362,6 +362,7 @@ func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Resp
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+
 	var cond metadata.HostModuleRelationRequest
 	if data.AppID != 0 {
 		cond.ApplicationID = data.AppID
@@ -369,14 +370,15 @@ func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Resp
 	if len(data.HostID) > 0 {
 		cond.HostIDArr = data.HostID
 	}
+	cond.Page.Limit = common.BKNoLimit
 
-	configArr, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, cond)
+	moduleHostConfig, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, cond)
 	if err != nil {
 		blog.Errorf("GetHostModuleRelation logcis err:%s,cond:%#v,rid:%s", err.Error(), cond, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
 		return
 	}
-	_ = resp.WriteEntity(metadata.NewSuccessResp(configArr))
+	_ = resp.WriteEntity(metadata.NewSuccessResp(moduleHostConfig.Info))
 	return
 }
 
@@ -517,4 +519,25 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 		return
 	}
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+}
+
+// GetAppHostTopoRelation  query host and module relation,
+// hostID can empty
+func (s *Service) GetAppHostTopoRelation(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	data := new(metadata.HostModuleRelationRequest)
+	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+		blog.Errorf("Transfer host across business failed with decode body err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	result, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, *data)
+	if err != nil {
+		blog.Errorf("GetHostModuleRelation logcis err:%s,cond:%#v,rid:%s", err.Error(), data, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
+		return
+	}
+	_ = resp.WriteEntity(metadata.NewSuccessResp(result))
+	return
 }
