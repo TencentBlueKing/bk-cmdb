@@ -66,18 +66,18 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 }
 
 func (m *operationManager) CreateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (uint64, error) {
-	objID, err := m.dbProxy.NextSequence(ctx, common.BKTableNameCloudTask)
+	configID, err := m.dbProxy.NextSequence(ctx, common.BKTableNameCloudTask)
 	if err != nil {
 		return 0, err
 	}
-	inputParam.ConfigID = objID
+	inputParam.ConfigID = configID
 
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Insert(ctx, inputParam); err != nil {
 		blog.Errorf("CreateOperationChart fail, err: %v, rid: %v", err, ctx.ReqID)
 		return 0, err
 	}
 
-	return objID, nil
+	return configID, nil
 }
 
 func (m *operationManager) UpdateChartPosition(ctx core.ContextParams, inputParam interface{}) (interface{}, error) {

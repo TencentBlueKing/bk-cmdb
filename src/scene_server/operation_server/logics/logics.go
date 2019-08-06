@@ -70,10 +70,10 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCount
 	return info, nil
 }
 
-func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConfig) (interface{}, error) {
+func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConfig) (uint64, error) {
 	opt, ok := InnerCharts[chartInfo.ReportType]
 	if !ok {
-		return nil, kit.CCError.Error(common.CCErrOperationNewAddStatisticFail)
+		return 0, kit.CCError.Error(common.CCErrOperationNewAddStatisticFail)
 	}
 
 	opt.Width = chartInfo.Width
@@ -82,7 +82,7 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 	result, err := lgc.CoreAPI.CoreService().Operation().CreateOperationChart(kit.Ctx, kit.Header, opt)
 	if err != nil {
 		blog.Errorf("search chart info fail, err: %v", err)
-		return nil, err
+		return 0, err
 	}
 
 	return result.Data, nil
