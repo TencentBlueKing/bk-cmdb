@@ -47,15 +47,15 @@ func (ps *ProcServer) ListServiceCategory(ctx *rest.Contexts) {
 			return
 		}
 		if listOption.ServiceCategoryIDs != nil {
-			listOption.ServiceCategoryIDs = &authorizedCategoryIDs
-		} else {
 			ids := make([]int64, 0)
-			for _, id := range *listOption.ServiceCategoryIDs {
+			for _, id := range listOption.ServiceCategoryIDs {
 				if util.InArray(id, authorizedCategoryIDs) == true {
 					ids = append(ids, id)
 				}
 			}
-			listOption.ServiceCategoryIDs = &ids
+			listOption.ServiceCategoryIDs = ids
+		} else {
+			listOption.ServiceCategoryIDs = authorizedCategoryIDs
 		}
 	}
 
