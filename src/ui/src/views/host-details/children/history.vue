@@ -21,9 +21,9 @@
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="handleRowClick">
-            <bk-table-column prop="op_desc" :label="$t('HostResourcePool[\'变更内容\']')"></bk-table-column>
-            <bk-table-column prop="operator" :label="$t('HostResourcePool[\'操作账号\']')"></bk-table-column>
-            <bk-table-column :label="$t('HostResourcePool[\'操作时间\']')">
+            <bk-table-column prop="op_desc" :label="$t('HostResourcePool[\'变更内容\']')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="operator" :label="$t('HostResourcePool[\'操作账号\']')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="op_time" :label="$t('HostResourcePool[\'操作时间\']')" sortable="custom">
                 <template slot-scope="{ row }">
                     {{$tools.formatTime(row['op_time'])}}
                 </template>

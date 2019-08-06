@@ -1,21 +1,22 @@
 <template>
     <div class="model-relation-wrapper">
-        <span v-cursor="{
-            active: !$isAuthorized($OPERATION.U_MODEL),
-            auth: [$OPERATION.U_MODEL]
-        }">
-            <bk-button class="create-btn" theme="primary"
-                :disabled="isReadOnly || !updateAuth"
-                @click="createRelation">
-                {{$t('ModelManagement["新建关联"]')}}
-            </bk-button>
-        </span>
+        <div class="options">
+            <span v-cursor="{
+                active: !$isAuthorized($OPERATION.U_MODEL),
+                auth: [$OPERATION.U_MODEL]
+            }">
+                <bk-button class="create-btn" theme="primary"
+                    :disabled="isReadOnly || !updateAuth"
+                    @click="createRelation">
+                    {{$t('ModelManagement["新建关联"]')}}
+                </bk-button>
+            </span>
+        </div>
         <bk-table
             class="relation-table"
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
-            :max-height="$APP.height - 220"
-            @sort-change="handleSortChange">
+            :max-height="$APP.height - 220">
             <bk-table-column prop="bk_obj_asst_id" :label="$t('ModelManagement[\'唯一标识\']')">
                 <template slot-scope="{ row }">
                     <span
@@ -243,17 +244,14 @@
             saveRelation () {
                 this.slider.isShow = false
                 this.searchRelationList()
-            },
-            handleSortChange (sort) {
-                this.table.sort = this.$tools.getSort(sort)
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .create-btn {
-        margin: 10px 0;
+    .options {
+        padding: 20px 0 14px;
     }
     .relation-pre {
         display: inline-block;

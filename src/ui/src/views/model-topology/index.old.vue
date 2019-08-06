@@ -1112,7 +1112,7 @@
         }
     }
     .toolbar {
-        padding: 7px 20px;
+        padding: 9px 20px;
         width: 100%;
         height: 50px;
         background: #fff;
@@ -1138,6 +1138,7 @@
                 font-size: 14px;
                 font-weight: bold;
                 cursor: pointer;
+                outline: 0;
                 &:hover {
                     color: $cmdbBorderFocusColor;
                 }

@@ -236,6 +236,7 @@
                 this.$bkInfo({
                     title: this.$t("ServiceManagement['确认删除模版']"),
                     subTitle: this.$tc("ServiceManagement['即将删除服务模版']", name, { name: template.name }),
+                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({
                             params: {
@@ -282,7 +283,7 @@
             }
         }
         .template-table {
-            margin-top: 15px;
+            margin-top: 14px;
         }
     }
 </style>
