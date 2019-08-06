@@ -1138,6 +1138,7 @@
                 font-size: 14px;
                 font-weight: bold;
                 cursor: pointer;
+                outline: 0;
                 &:hover {
                     color: $cmdbBorderFocusColor;
                 }

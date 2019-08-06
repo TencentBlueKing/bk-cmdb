@@ -739,7 +739,7 @@
 
 <style lang="scss" scoped>
     .options {
-        padding: 15px 0;
+        padding: 0 0 15px;
     }
     .options-button {
         height: 32px;

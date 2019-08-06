@@ -271,7 +271,7 @@
 
 <style lang="scss" scoped>
     .options {
-        padding: 20px 0 14px;
+        padding: 10px 0 14px;
     }
     .field-pre {
         display: inline-block;
