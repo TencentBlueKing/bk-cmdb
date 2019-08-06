@@ -89,7 +89,7 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 }
 
 func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
-	result, err := m.StatisticCreateDeleteInst(ctx)
+	result, err := m.StatisticOperationLog(ctx)
 	if err != nil {
 		blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
@@ -98,7 +98,7 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 	cond := mapstr.MapStr{}
 	modelData := make([]metadata.Object, 0)
 	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).All(ctx, &modelData); nil != err {
-		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.ReqID, opt, err.Error())
+		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.ReqID, cond, err.Error())
 		return
 	}
 
@@ -164,15 +164,22 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 
 func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 	bizHost, err := m.SearchBizHost(ctx)
-	if err != nil {
-		blog.Errorf("search biz's host count fail, err: %v, rid: %v", err, ctx.ReqID)
-		return
-	}
 
 	opt := mapstr.MapStr{}
 	bizInfo := make([]metadata.BizInst, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
 		blog.Errorf("biz's host count, search biz info fail ,err: %v, rid: %v", err, ctx.ReqID)
+		return
+	}
+
+	if bizHost == nil {
+		blog.V(3).Info("table cc_ModuleHOstConfig is empty, rid: %v", ctx.ReqID)
+
+		m.BizHostEmpty(ctx, bizInfo)
+		return
+	}
+	if err != nil {
+		blog.Errorf("search biz's host count fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
@@ -247,13 +254,23 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.IntIDCount, error) {
 	bizHostCount := make([]metadata.IntIDCount, 0)
 
-	pipeline := []M{{"$group": M{"_id": "$bk_biz_id", "count": M{"$sum": 1}}}}
-	if err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).AggregateAll(ctx, pipeline, &bizHostCount); err != nil {
+	cond := mapstr.MapStr{}
+	hostCount, err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(ctx)
+	if err != nil {
 		blog.Errorf("aggregate: biz' host count fail, err: %v, rid: %v", err, ctx.ReqID)
 		return nil, err
 	}
 
-	return bizHostCount, nil
+	if hostCount > 0 {
+		pipeline := []M{{"$group": M{"_id": "$bk_biz_id", "count": M{"$sum": 1}}}}
+		if err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).AggregateAll(ctx, pipeline, &bizHostCount); err != nil {
+			blog.Errorf("aggregate: biz' host count fail, err: %v, rid: %v", err, ctx.ReqID)
+			return nil, err
+		}
+		return bizHostCount, nil
+	}
+
+	return nil, nil
 }
 
 func (m *operationManager) HostCloudChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
@@ -307,6 +324,7 @@ func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam m
 		return nil, err
 	}
 
+	respData := make([]metadata.StringIDCount, 0)
 	opt := mapstr.MapStr{"bk_data_status": M{"$ne": "disabled"}}
 	bizInfo := make([]metadata.BizInst, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
@@ -314,7 +332,20 @@ func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam m
 		return nil, err
 	}
 
-	respData := make([]metadata.StringIDCount, 0)
+	if bizHost == nil {
+		blog.V(3).Info("table cc_ModuleHOstConfig is empty, rid: %v", ctx.ReqID)
+
+		for _, biz := range bizInfo {
+			info := metadata.StringIDCount{
+				Id:    biz.BizName,
+				Count: 0,
+			}
+			respData = append(respData, info)
+		}
+
+		return respData, err
+	}
+
 	allBiz := make([]string, 0)
 	matchedBiz := make([]string, 0)
 	for _, biz := range bizInfo {
@@ -356,7 +387,7 @@ func (m *operationManager) UpdateInnerChartData(ctx core.ContextParams, opt maps
 	return nil
 }
 
-func (m *operationManager) StatisticCreateDeleteInst(ctx core.ContextParams) (*metadata.StatisticInstOperation, error) {
+func (m *operationManager) StatisticOperationLog(ctx core.ContextParams) (*metadata.StatisticInstOperation, error) {
 	lastTime := time.Now().AddDate(0, 0, -30)
 
 	opt := mapstr.MapStr{}
@@ -412,4 +443,33 @@ func (m *operationManager) StatisticCreateDeleteInst(ctx core.ContextParams) (*m
 	}
 
 	return result, nil
+}
+
+// BizHostEmpty cc_ModuleHOstConfig为空的情况下, 统计业务下主机为0
+func (m *operationManager) BizHostEmpty(ctx core.ContextParams, bizInfo []metadata.BizInst) {
+	firstBizHostChange := metadata.HostChangeChartData{}
+	now := time.Now()
+
+	for _, biz := range bizInfo {
+		if len(firstBizHostChange.Data) > 0 {
+			firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
+				Id:    now,
+				Count: 0,
+			})
+		} else {
+			firstBizHostChange.OwnerID = "0"
+			firstBizHostChange.ReportType = common.HostChangeBizChart
+			firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
+			firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
+				Id:    now,
+				Count: 0,
+			})
+		}
+		firstBizHostChange.UpdateTime = time.Now()
+	}
+
+	if err := m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, firstBizHostChange); err != nil {
+		blog.Errorf("update biz host change fail, err: %v, rid: %v", err, ctx.ReqID)
+		return
+	}
 }
