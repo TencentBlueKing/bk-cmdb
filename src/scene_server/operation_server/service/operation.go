@@ -116,7 +116,7 @@ func (o *OperationServer) UpdateOperationChart(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(opt["config_id"])
+	ctx.RespEntity(opt)
 }
 
 func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
