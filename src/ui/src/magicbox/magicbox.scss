@@ -86,6 +86,14 @@
             }
         }
     }
+    .bk-table-body {
+        .is-highlight {
+            color: #3A84FF;
+        }
+        tr.hover-row>td {
+            background-color: #f0f1f5;
+        }
+    }
 }
 
 .bk-big-tree {

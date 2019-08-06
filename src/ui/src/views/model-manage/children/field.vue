@@ -26,6 +26,7 @@
             <bk-table-column prop="bk_property_id"
                 min-width="110"
                 sortable="custom"
+                class-name="is-highlight"
                 :label="$t('ModelManagement[\'唯一标识\']')">
                 <template slot-scope="{ row }">
                     <div style="cursor: pointer; padding: 5px 0;" @click.stop="handleShowDetails(row)">

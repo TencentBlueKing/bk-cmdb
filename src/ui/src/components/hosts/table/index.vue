@@ -108,7 +108,8 @@
                 :label="column.name"
                 :sortable="column.sortable"
                 :prop="column.id"
-                :fixed="column.id === 'bk_host_innerip'">
+                :fixed="column.id === 'bk_host_innerip'"
+                :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
                     {{getHostCellText(column, row)}}
                 </template>
