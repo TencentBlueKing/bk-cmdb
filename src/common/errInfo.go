@@ -195,11 +195,10 @@ const (
 
 	// 构造DB查询条件失败
 	CCErrConstructDBFilterFailed = 1199071
-    CCErrGetNoAuthSkipUrlFailed     = 1199072
-    
+	CCErrGetNoAuthSkipUrlFailed  = 1199072
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
-
 
 	// CCErrCommInternalServerError %s Internal Server Error
 	CCErrCommInternalServerError = 1199999
@@ -558,6 +557,8 @@ const (
 	CCErrCreateRawProcessInstanceOnTemplateInstance       = 1108039
 	CCErrProcRemoveTemplateBindingOnModule                = 1108040
 	CCErrProcReconstructServiceInstanceNameFailed         = 1108041
+
+	CCErrProcUnbindModuleServiceTemplateDisabled = 1108042
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001
