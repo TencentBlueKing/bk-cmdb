@@ -393,7 +393,6 @@
         .category-list {
             display: flex;
             flex-flow: row wrap;
-            padding-top: 10px;
         }
         .category-item {
             position: relative;

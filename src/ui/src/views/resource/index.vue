@@ -34,61 +34,10 @@
                     v-model="assignBusiness"
                     @on-selected="handleAssignHosts">
                 </cmdb-selector>
-                <bk-dropdown-menu v-if="isAdminView"
-                    trigger="click"
-                    @show="isDropdownShow = true"
-                    @hide="isDropdownShow = false">
-                    <bk-button slot="dropdown-trigger">
-                        <span>{{$t('更多')}}</span>
-                        <i :class="['bk-icon icon-angle-down', { 'icon-flip': isDropdownShow }]"></i>
-                    </bk-button>
-                    <ul class="bk-dropdown-list" slot="dropdown-content">
-                        <li v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_RESOURCE_HOST),
-                            auth: [$OPERATION.U_RESOURCE_HOST]
-                        }">
-                            <bk-button class="dropdown-button"
-                                :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_RESOURCE_HOST)"
-                                @click="handleMultipleEdit">
-                                {{$t('修改')}}
-                            </bk-button>
-                        </li>
-                        <li
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION.D_RESOURCE_HOST),
-                                auth: [$OPERATION.D_RESOURCE_HOST]
-                            }">
-                            <bk-button class="dropdown-button"
-                                :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_RESOURCE_HOST)"
-                                @click="handleMultipleDelete">
-                                {{$t('删除')}}
-                            </bk-button>
-                        </li>
-                        <li>
-                            <bk-button class="dropdown-button" form="exportForm"
-                                :disabled="!table.checked.length"
-                                @click="exportField">
-                                {{$t('导出')}}
-                            </bk-button>
-                        </li>
-                    </ul>
-                </bk-dropdown-menu>
-                <span v-cursor="{
-                          active: !$isAuthorized($OPERATION.U_RESOURCE_HOST),
-                          auth: [$OPERATION.U_RESOURCE_HOST]
-                      }"
-                    v-if="!isAdminView">
-                    <bk-button class="options-button" theme="primary"
-                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_RESOURCE_HOST)"
-                        @click="handleMultipleEdit">
-                        {{$t('修改')}}
-                    </bk-button>
-                </span>
-                <bk-button class="options-button" form="exportForm" v-if="!isAdminView"
-                    :disabled="!table.checked.length"
-                    @click="exportField">
-                    {{$t('导出')}}
-                </bk-button>
+                <cmdb-button-group
+                    :buttons="buttons"
+                    :expand="!isAdminView">
+                </cmdb-button-group>
                 <cmdb-clipboard-selector class="options-clipboard"
                     :list="clipboardList"
                     :disabled="!table.checked.length"
@@ -130,10 +79,12 @@
     import { mapGetters, mapActions, mapState } from 'vuex'
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbImport from '@/components/import/import'
+    import cmdbButtonGroup from '@/components/ui/other/button-group'
     export default {
         components: {
             cmdbHostsTable,
-            cmdbImport
+            cmdbImport,
+            cmdbButtonGroup
         },
         data () {
             return {
@@ -165,6 +116,33 @@
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['authorizedBusiness', 'bizId']),
             ...mapState('hosts', ['filterParams']),
+            buttons () {
+                return [{
+                    id: 'edit',
+                    text: this.$t('修改'),
+                    handler: this.handleMultipleEdit,
+                    disabled: !this.table.checked.length || !this.$isAuthorized(this.$OPERATION.U_RESOURCE_HOST),
+                    auth: {
+                        active: !this.$isAuthorized(this.$OPERATION.U_RESOURCE_HOST),
+                        auth: [this.$OPERATION.U_RESOURCE_HOST]
+                    }
+                }, {
+                    id: 'delete',
+                    text: this.$t('删除'),
+                    handler: this.handleMultipleDelete,
+                    disabled: !this.table.checked.length || !this.$isAuthorized(this.$OPERATION.D_RESOURCE_HOST),
+                    auth: {
+                        active: !this.$isAuthorized(this.$OPERATION.D_RESOURCE_HOST),
+                        auth: [this.$OPERATION.D_RESOURCE_HOST]
+                    },
+                    available: this.isAdminView
+                }, {
+                    id: 'export',
+                    text: this.$t('导出'),
+                    handler: this.exportField,
+                    disabled: !this.table.checked.length
+                }]
+            },
             columnsConfigKey () {
                 return `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
             },
@@ -436,7 +414,7 @@
         display: inline-block;
         vertical-align: middle;
         font-size: 14px;
-        margin: 0 5px;
+        margin: 0 10px 0 0;
         padding: 0 10px;
         &:hover{
             z-index: 1;
@@ -457,31 +435,13 @@
         }
     }
     .options-clipboard {
-        margin: 0 5px;
-    }
-    .options-table-selector,
-    .options-business-selector{
-        margin: 0 5px 0 0;
+        margin: 0 0 0 10px;
     }
     .options-business-selector{
         display: inline-block;
         vertical-align: middle;
+        margin: 0 10px 0 0;
         width: 180px;
-    }
-    .dropdown-button {
-        display: block;
-        width: 100%;
-        height: 40px;
-        line-height: 40px;
-        border: none;
-        text-align: left;
-        &:not(:disabled):hover {
-            background-color: #ebf4ff;
-            color: #3c96ff;
-        }
-    }
-    .resource-table{
-        margin-top: 20px;
     }
     .automatic-import{
         padding:40px 30px 0 30px;
