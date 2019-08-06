@@ -197,7 +197,6 @@
                 })
             },
             async getNavData (item, type) {
-                console.log(item)
                 const res = await this.getCountedChartsData({
                     params: {
                         config_id: item.config_id
