@@ -47,7 +47,7 @@
                     v-if="withTemplate"
                     @click="goServiceTemplate">{{flattenedInstance.__template_name__}}</span>
                 <span v-else>{{flattenedInstance.__template_name__}}</span>
-                <span style="display: inline-block;"
+                <!-- <span style="display: inline-block;"
                     v-if="withTemplate"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.U_TOPO),
@@ -58,7 +58,7 @@
                         @click="handleRemoveTemplate">
                         {{$t('BusinessTopology["解除模板"]')}}
                     </bk-button>
-                </span>
+                </span> -->
             </span>
         </cmdb-details>
         <cmdb-form class="topology-form" v-else-if="type === 'update'"
