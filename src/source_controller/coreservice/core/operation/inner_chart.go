@@ -89,52 +89,10 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 }
 
 func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
-	lastTime := time.Now().AddDate(0, 0, -30)
-
-	opt := mapstr.MapStr{}
-	opt["op_desc"] = "create object"
-	createCount, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(opt).Count(ctx)
+	result, err := m.StatisticCreateDeleteInst(ctx)
 	if err != nil {
-		blog.Errorf("aggregate: count create object fail, err: %v, rid", err, ctx.ReqID)
+		blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
-	}
-	createInstCount := make([]metadata.StringIDCount, 0)
-	if createCount > 0 {
-		createPipe := []M{{"$match": M{"op_desc": "create object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": "$content.cur_data.bk_obj_id", "count": M{"$sum": 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, createPipe, &createInstCount); err != nil {
-			blog.Errorf("aggregate: count create object fail, err: %v, rid", err, ctx.ReqID)
-			return
-		}
-	}
-
-	opt["op_desc"] = "delete object"
-	deleteCount, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(opt).Count(ctx)
-	if err != nil {
-		blog.Errorf("aggregate: count create object fail, err: %v, rid", err, ctx.ReqID)
-		return
-	}
-	deleteInstCount := make([]metadata.StringIDCount, 0)
-	if deleteCount > 0 {
-		deletePipe := []M{{"$match": M{"op_desc": "delete object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": "$content.pre_data.bk_obj_id", "count": M{"$sum": 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, deletePipe, &deleteInstCount); err != nil {
-			blog.Errorf("aggregate: count delete object fail, err: %v, rid: %v", err, ctx.ReqID)
-			return
-		}
-	}
-
-	opt["op_desc"] = "update object"
-	updateCount, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(opt).Count(ctx)
-	if err != nil {
-		blog.Errorf("aggregate: count create object fail, err: %v, rid", err, ctx.ReqID)
-		return
-	}
-	updateInstCount := make([]metadata.UpdateInstCount, 0)
-	if updateCount > 0 {
-		updatePipe := []M{{"$match": M{"op_desc": "update object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": M{"bk_obj_id": "$content.cur_data.bk_obj_id", "inst_id": "$content.cur_data.bk_inst_id"}, "count": M{"$sum": 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, updatePipe, &updateInstCount); err != nil {
-			blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, ctx.ReqID)
-			return
-		}
 	}
 
 	cond := mapstr.MapStr{}
@@ -145,14 +103,14 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 	}
 
 	modelInstChange := metadata.ModelInstChange{}
-	for _, createInst := range createInstCount {
+	for _, createInst := range result.Create {
 		if _, ok := modelInstChange[createInst.Id]; !ok {
 			modelInstChange[createInst.Id] = &metadata.InstChangeCount{}
 		}
 		modelInstChange[createInst.Id].Create = createInst.Count
 	}
 
-	for _, deleteInst := range deleteInstCount {
+	for _, deleteInst := range result.Delete {
 		if _, ok := modelInstChange[deleteInst.Id]; !ok {
 			modelInstChange[deleteInst.Id] = &metadata.InstChangeCount{}
 		}
@@ -160,7 +118,7 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 	}
 
 	// 同一个实例更新多次，模型下实例变更数，只需要记录一次
-	for _, updateInst := range updateInstCount {
+	for _, updateInst := range result.Update {
 		if _, ok := modelInstChange[updateInst.Id.ObjID]; ok {
 			modelInstChange[updateInst.Id.ObjID].Update += 1
 		} else {
@@ -396,4 +354,62 @@ func (m *operationManager) UpdateInnerChartData(ctx core.ContextParams, opt maps
 		return err
 	}
 	return nil
+}
+
+func (m *operationManager) StatisticCreateDeleteInst(ctx core.ContextParams) (*metadata.StatisticInstOperation, error) {
+	lastTime := time.Now().AddDate(0, 0, -30)
+
+	opt := mapstr.MapStr{}
+	opt["op_desc"] = "create object"
+	createCount, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(opt).Count(ctx)
+	if err != nil {
+		blog.Errorf("aggregate: count create object fail, err: %v, rid", err, ctx.ReqID)
+		return nil, err
+	}
+	createInstCount := make([]metadata.StringIDCount, 0)
+	if createCount > 0 {
+		createPipe := []M{{"$match": M{"op_desc": "create object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": "$content.cur_data.bk_obj_id", "count": M{"$sum": 1}}}}
+		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, createPipe, &createInstCount); err != nil {
+			blog.Errorf("aggregate: count create object fail, err: %v, rid", err, ctx.ReqID)
+			return nil, err
+		}
+	}
+
+	opt["op_desc"] = "delete object"
+	deleteCount, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(opt).Count(ctx)
+	if err != nil {
+		blog.Errorf("aggregate: count create object fail, err: %v, rid", err, ctx.ReqID)
+		return nil, err
+	}
+	deleteInstCount := make([]metadata.StringIDCount, 0)
+	if deleteCount > 0 {
+		deletePipe := []M{{"$match": M{"op_desc": "delete object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": "$content.pre_data.bk_obj_id", "count": M{"$sum": 1}}}}
+		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, deletePipe, &deleteInstCount); err != nil {
+			blog.Errorf("aggregate: count delete object fail, err: %v, rid: %v", err, ctx.ReqID)
+			return nil, err
+		}
+	}
+
+	opt["op_desc"] = "update object"
+	updateCount, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(opt).Count(ctx)
+	if err != nil {
+		blog.Errorf("aggregate: count create object fail, err: %v, rid", err, ctx.ReqID)
+		return nil, err
+	}
+	updateInstCount := make([]metadata.UpdateInstCount, 0)
+	if updateCount > 0 {
+		updatePipe := []M{{"$match": M{"op_desc": "update object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": M{"bk_obj_id": "$content.cur_data.bk_obj_id", "inst_id": "$content.cur_data.bk_inst_id"}, "count": M{"$sum": 1}}}}
+		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, updatePipe, &updateInstCount); err != nil {
+			blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, ctx.ReqID)
+			return nil, err
+		}
+	}
+
+	result := &metadata.StatisticInstOperation{
+		Create: createInstCount,
+		Delete: deleteInstCount,
+		Update: updateInstCount,
+	}
+
+	return result, nil
 }
