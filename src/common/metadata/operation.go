@@ -149,3 +149,9 @@ type ObjectIDName struct {
 	ObjectID   string `json:"bk_object_id"`
 	ObjectName string `json:"bk_object_name"`
 }
+
+type StatisticInstOperation struct {
+	Create []StringIDCount   `json:"create"`
+	Delete []StringIDCount   `json:"update"`
+	Update []UpdateInstCount `json:"delete"`
+}
