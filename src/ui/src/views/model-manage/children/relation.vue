@@ -16,7 +16,11 @@
             class="relation-table"
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
-            :max-height="$APP.height - 220">
+            :max-height="$APP.height - 220"
+            :row-style="{
+                cursor: 'pointer'
+            }"
+            @cell-click="handleShowDetails">
             <bk-table-column prop="bk_obj_asst_id" :label="$t('ModelManagement[\'唯一标识\']')">
                 <template slot-scope="{ row }">
                     <span
@@ -70,7 +74,7 @@
                 class="slider-content"
                 slot="content"
                 v-if="slider.isShow"
-                :is-read-only="isReadOnly"
+                :is-read-only="isReadOnly || slider.isReadOnly"
                 :is-edit="slider.isEdit"
                 :relation="slider.relation"
                 :relation-list="relationList"
@@ -244,6 +248,14 @@
             saveRelation () {
                 this.slider.isShow = false
                 this.searchRelationList()
+            },
+            handleShowDetails (row, column, cell) {
+                if (column.property === 'operation') return
+                this.slider.isEdit = true
+                this.slider.isReadOnly = true
+                this.slider.relation = row
+                this.slider.title = this.$t('ModelManagement["查看关联"]')
+                this.slider.isShow = true
             }
         }
     }
