@@ -55,6 +55,9 @@
 }
 
 .bk-table {
+    .cell {
+        white-space: nowrap;
+    }
     .bk-table-fixed {
         border-bottom: none;
     }
