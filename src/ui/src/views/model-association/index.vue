@@ -37,14 +37,20 @@
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange">
-            <bk-table-column prop="bk_asst_id" :label="$t('ModelManagement[\'唯一标识\']')"></bk-table-column>
-            <bk-table-column prop="bk_asst_name" :label="$t('Hosts[\'名称\']')">
+            <bk-table-column prop="bk_asst_id" :label="$t('ModelManagement[\'唯一标识\']')" sortable="custom">
+                <template slot-scope="{ row }">
+                    <div style="cursor: pointer; padding: 10px 0;" @click.stop="handleShowDetails(row)">
+                        {{row['bk_asst_id']}}
+                    </div>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_asst_name" :label="$t('Hosts[\'名称\']')" sortable="custom">
                 <template slot-scope="{ row }">
                     {{row['bk_asst_name'] || '--'}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="src_des" :label="$t('ModelManagement[\'源->目标描述\']')"></bk-table-column>
-            <bk-table-column prop="dest_des" :label="$t('ModelManagement[\'目标->源描述\']')"></bk-table-column>
+            <bk-table-column prop="src_des" :label="$t('ModelManagement[\'源->目标描述\']')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="dest_des" :label="$t('ModelManagement[\'目标->源描述\']')" sortable="custom"></bk-table-column>
             <bk-table-column prop="count" :label="$t('ModelManagement[\'使用数\']')"></bk-table-column>
             <bk-table-column v-if="isAdminView"
                 fixed="right"
@@ -91,6 +97,7 @@
                 class="slider-content"
                 v-if="slider.isShow"
                 :is-edit="slider.isEdit"
+                :is-read-only="slider.isReadOnly"
                 :relation="slider.relation"
                 @saved="saveRelation"
                 @cancel="handleSliderBeforeClose">
@@ -115,7 +122,8 @@
                     isShow: false,
                     isEdit: false,
                     title: this.$t('ModelManagement["新建关联类型"]'),
-                    relation: {}
+                    relation: {},
+                    isReadOnly: false
                 },
                 searchText: '',
                 table: {
@@ -198,11 +206,13 @@
             },
             createRelation () {
                 this.slider.title = this.$t('ModelManagement["新建关联类型"]')
+                this.slider.isReadOnly = false
                 this.slider.isEdit = false
                 this.slider.isShow = true
             },
             editRelation (relation) {
                 this.slider.title = this.$t('ModelManagement["编辑关联类型"]')
+                this.slider.isReadOnly = false
                 this.slider.relation = relation
                 this.slider.isEdit = true
                 this.slider.isShow = true
@@ -257,6 +267,13 @@
                 }
                 this.slider.isShow = false
                 return true
+            },
+            handleShowDetails (relation) {
+                this.slider.title = this.$t('ModelManagement["关联类型详情"]')
+                this.slider.relation = relation
+                this.slider.isReadOnly = true
+                this.slider.isEdit = true
+                this.slider.isShow = true
             }
         }
     }
@@ -264,7 +281,7 @@
 
 <style lang="scss" scoped>
     .operation-box {
-        margin: 0 0 20px 0;
+        margin: 0 0 14px 0;
         font-size: 0;
         .create-btn {
             margin: 0 10px 0 0;

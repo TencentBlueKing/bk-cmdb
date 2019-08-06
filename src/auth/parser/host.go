@@ -265,7 +265,7 @@ const (
 	moveHostsFromModuleToResPoolPattern       = "/api/v3/hosts/modules/resource"
 	moveHostsToBizIdleModulePattern           = "/api/v3/hosts/modules/idle"
 	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
-	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts//host/add/module"
+	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts/host/add/module"
 	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
@@ -275,8 +275,25 @@ const (
 	findHostsWithModulesPattern       = "/api/v3/hosts/findmany/modulehost"
 )
 
+var (
+	// find host instance's object properties info
+	findHostInstanceObjectPropertiesRegexp = regexp.MustCompile(`^/api/v3/hosts/[^\s/]+/[0-9]+/?$`)
+)
+
 func (ps *parseStream) host() *parseStream {
 	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitRegexp(findHostInstanceObjectPropertiesRegexp, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.Find,
+				},
+			},
+		}
 		return ps
 	}
 

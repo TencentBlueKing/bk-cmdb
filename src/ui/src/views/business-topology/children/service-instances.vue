@@ -594,6 +594,7 @@
                     confirmFn: async () => {
                         try {
                             const serviceInstanceIds = this.checked.map(instance => instance.id)
+                            const deleteNum = serviceInstanceIds.length
                             await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
                                 config: {
                                     data: this.$injectMetadata({
@@ -601,6 +602,10 @@
                                     }),
                                     requestId: 'batchDeleteServiceInstance'
                                 }
+                            })
+                            this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count - deleteNum
+                            this.currentNode.parents.forEach(node => {
+                                node.data.service_instance_count = node.data.service_instance_count - deleteNum
                             })
                             this.$success(this.$t('Common[\'删除成功\']'))
                             this.instances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
@@ -734,7 +739,7 @@
 
 <style lang="scss" scoped>
     .options {
-        padding: 15px 0;
+        padding: 0 0 15px;
     }
     .options-button {
         height: 32px;

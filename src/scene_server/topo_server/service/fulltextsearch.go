@@ -46,82 +46,87 @@ type Query struct {
 	BkBizId     string   `json:"bk_biz_id"`
 }
 
+func NewQuery() *Query {
+	query := new(Query)
+	// set paging default
+	query.Paging.Start = -1
+	query.Paging.Limit = -1
+	query.BkObjId = ""
+	query.BkBizId = ""
+	return query
+}
+
 func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	if s.Es.Client == nil {
 		blog.Errorf("FullTextFind failed, es client is nil, rid: %s", params.ReqID)
 		return nil, params.Err.Error(common.CCErrorTopoFullTextClientNotInitialized)
 	}
 
-	if data.Exists("query_string") {
-		query := new(Query)
-		// set paging default
-		query.Paging.Start = -1
-		query.Paging.Limit = -1
-		query.BkObjId = ""
-		query.BkBizId = ""
-		if err := data.MarshalJSONInto(query); err != nil {
-			blog.Errorf("full_text_find failed, import query params, but got invalid query params:[%v], err: %+v, rid: %s", query, err, params.ReqID)
-			return nil, params.Err.Error(common.CCErrCommJSONMarshalFailed)
+	if _, exist := data["query_string"]; exist == false {
+		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+	}
+
+	query := NewQuery()
+	if err := data.MarshalJSONInto(query); err != nil {
+		blog.Errorf("full_text_find failed, import query params, but got invalid query params:[%v], err: %+v, rid: %s", query, err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommJSONMarshalFailed)
+	}
+
+	// check query string
+	rawString, ok := query.checkQueryString()
+	if !ok {
+		blog.Errorf("full_text_find failed, query string [%s] large than 32, rid: %s", rawString, params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "query_string")
+	}
+	// get query and search types
+	esQuery, searchTypes := query.toEsQueryAndSearchTypes()
+
+	result, err := s.Es.Search(params.Context, esQuery, searchTypes, query.Paging.Start, query.Paging.Limit)
+	if err != nil {
+		blog.Errorf("full_text_find failed, es search failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
+	}
+
+	// result is hits and aggregations
+	searchResults := new(SearchResults)
+
+	searchResults.Total = result.Hits.TotalHits
+	// set hits
+	for _, hit := range result.Hits.Hits {
+		// ignore not correct cmdb table data
+		if hit.Index == common.CMDBINDEX && hit.Id != common.INDICES {
+			sr := SearchResult{}
+			sr.setHit(params.Context, hit, query.BkBizId, rawString)
+			searchResults.Hits = append(searchResults.Hits, sr)
 		}
+	}
 
-		// check query string
-		rawString, ok := checkQueryString(query)
-		if !ok {
-			blog.Errorf("full_text_find failed, query string [%s] large than 32, rid: %s", rawString, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "query_string")
+	// set aggregations
+	bkObjIdAggr, found := result.Aggregations.Terms(common.BkObjIdAggName)
+	if found == true && bkObjIdAggr != nil {
+		for _, bucket := range bkObjIdAggr.Buckets {
+			agg := Aggregation{}
+			agg.setAgg(bucket)
+			searchResults.Aggregations = append(searchResults.Aggregations, agg)
 		}
-		// get query and search types
-		queryEs, searchTypes := getEsQueryAndSearchTypes(query)
+	}
 
-		result, err := s.Es.CmdbSearch(queryEs, searchTypes, query.Paging.Start, query.Paging.Limit)
-		if err != nil {
-			blog.Errorf("full_text_find failed, es search failed, err: %+v, rid: %s", err, params.ReqID)
-			return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
-		}
-
-		// result is hits and aggregations
-		searchResults := new(SearchResults)
-
-		searchResults.Total = result.Hits.TotalHits
-		// set hits
-		for _, hit := range result.Hits.Hits {
-			// ignore not correct cmdb table data
-			if hit.Index == common.CMDBINDEX && hit.Id != common.INDICES {
-				sr := SearchResult{}
-				sr.setHit(params.Context, hit, query.BkBizId, rawString)
-				searchResults.Hits = append(searchResults.Hits, sr)
-			}
-		}
-
-		// set aggregations
-		bkObjIdAggs, found := result.Aggregations.Terms(common.BkObjIdAggName)
-		if found == true && bkObjIdAggs != nil {
-			for _, bucket := range bkObjIdAggs.Buckets {
+	typeAggr, found := result.Aggregations.Terms(common.TypeAggName)
+	if found == true && typeAggr != nil {
+		for _, bucket := range typeAggr.Buckets {
+			// only cc_HostBase, cc_ApplicationBase currently
+			if bucket.Key == common.BKTableNameBaseHost || bucket.Key == common.BKTableNameBaseApp {
 				agg := Aggregation{}
 				agg.setAgg(bucket)
 				searchResults.Aggregations = append(searchResults.Aggregations, agg)
 			}
 		}
-
-		typeAggs, found := result.Aggregations.Terms(common.TypeAggName)
-		if found == true && typeAggs != nil {
-			for _, bucket := range typeAggs.Buckets {
-				// only cc_HostBase, cc_ApplicationBase currently
-				if bucket.Key == common.BKTableNameBaseHost || bucket.Key == common.BKTableNameBaseApp {
-					agg := Aggregation{}
-					agg.setAgg(bucket)
-					searchResults.Aggregations = append(searchResults.Aggregations, agg)
-				}
-			}
-		}
-
-		return searchResults, nil
 	}
 
-	return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+	return searchResults, nil
 }
 
-func checkQueryString(query *Query) (string, bool) {
+func (query Query) checkQueryString() (string, bool) {
 	// if query string is single string in SpecialChar, make it to null string
 	for i := range common.SpecialChar {
 		if query.QueryString == common.SpecialChar[i] {
@@ -138,7 +143,7 @@ func checkQueryString(query *Query) (string, bool) {
 	}
 }
 
-func getEsQueryAndSearchTypes(query *Query) (elastic.Query, []string) {
+func (query Query) toEsQueryAndSearchTypes() (elastic.Query, []string) {
 	qBool := elastic.NewBoolQuery()
 
 	// if set bk_biz_id

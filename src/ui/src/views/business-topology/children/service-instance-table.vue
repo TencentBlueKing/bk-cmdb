@@ -1,6 +1,8 @@
 <template>
     <div class="table-layout" v-show="show">
-        <div class="table-title" @click="localExpanded = !localExpanded">
+        <div class="table-title" @click="localExpanded = !localExpanded"
+            @mouseenter="handleShowDotMenu"
+            @mouseleave="handleHideDotMenu">
             <cmdb-form-bool class="title-checkbox"
                 :size="16"
                 v-model="checked"
@@ -10,8 +12,10 @@
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
             <i class="bk-icon icon-exclamation" v-if="localExpanded && withTemplate && showTips" v-bk-tooltips="tooltips"></i>
-            <cmdb-dot-menu class="instance-menu" @click.native.stop>
-                <ul class="menu-list">
+            <cmdb-dot-menu class="instance-menu" ref="dotMenu" @click.native.stop>
+                <ul class="menu-list"
+                    @mouseenter="handleShowDotMenu"
+                    @mouseleave="handleHideDotMenu">
                     <li class="menu-item"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
@@ -192,6 +196,9 @@
             }
         },
         computed: {
+            currentNode () {
+                return this.$store.state.businessTopology.selectedNode
+            },
             isModuleNode () {
                 const node = this.$store.state.businessTopology.selectedNode
                 return node && node.data.bk_obj_id === 'module'
@@ -374,6 +381,10 @@
                                     requestId: this.requestId.deleteProcess
                                 }
                             })
+                            this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count - 1
+                            this.currentNode.parents.forEach(node => {
+                                node.data.service_instance_count = node.data.service_instance_count - 1
+                            })
                             this.$success(this.$t('Common[\'删除成功\']'))
                             this.$emit('delete-instance', this.instance.id)
                         } catch (e) {
@@ -466,6 +477,12 @@
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            handleShowDotMenu () {
+                this.$refs.dotMenu.$el.style.opacity = 1
+            },
+            handleHideDotMenu () {
+                this.$refs.dotMenu.$el.style.opacity = 0
             }
         }
     }
@@ -496,6 +513,9 @@
             color: #ffffff;
             background: #f0b659;
             border-radius: 50%;
+        }
+        .instance-menu {
+            opacity: 0;
         }
         .title-label {
             font-size: 14px;
@@ -557,11 +577,9 @@
         }
         .icon-cc-label {
             font-size: 16px;
-            margin-top: -4px;
         }
         .label-list {
             padding-left: 4px;
-            line-height: 38px;
             font-size: 0;
             .label-item {
                 @include inlineBlock;

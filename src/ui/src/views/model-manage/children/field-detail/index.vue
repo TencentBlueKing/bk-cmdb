@@ -10,7 +10,7 @@
                     name="fieldId"
                     :placeholder="$t('ModelManagement[\'下划线/数字/字母\']')"
                     v-model.trim="fieldInfo['bk_property_id']"
-                    :disabled="isEditField"
+                    :disabled="onlyReadOfType || isEditField"
                     v-validate="'required|fieldId'">
                 </bk-input>
                 <p class="form-error">{{errors.first('fieldId')}}</p>
@@ -26,7 +26,7 @@
                     name="fieldName"
                     :placeholder="$t('ModelManagement[\'请输入字段名称\']')"
                     v-model.trim="fieldInfo['bk_property_name']"
-                    :disabled="isReadOnly"
+                    :disabled="onlyReadOfType || isReadOnly"
                     v-validate="'required|enumName'">
                 </bk-input>
                 <p class="form-error">{{errors.first('fieldName')}}</p>
@@ -42,7 +42,7 @@
                     class="bk-select-full-width"
                     :clearable="false"
                     v-model="fieldInfo.bk_property_type"
-                    :disabled="isEditField">
+                    :disabled="onlyReadOfType || isEditField">
                     <bk-option v-for="(option, index) in fieldTypeList"
                         :key="index"
                         :id="option.id"
@@ -54,13 +54,13 @@
         <div class="field-detail">
             <the-config
                 :type="fieldInfo['bk_property_type']"
-                :is-read-only="isReadOnly"
+                :is-read-only="onlyReadOfType || isReadOnly"
                 :editable.sync="fieldInfo['editable']"
                 :isrequired.sync="fieldInfo['isrequired']"
             ></the-config>
             <component
                 v-if="isComponentShow"
-                :is-read-only="isReadOnly"
+                :is-read-only="onlyReadOfType || isReadOnly"
                 :is="`the-field-${fieldType}`"
                 v-model="fieldInfo.option"
                 ref="component"
@@ -73,17 +73,20 @@
             <div class="cmdb-form-item">
                 <bk-input type="text" class="cmdb-form-input"
                     v-model.trim="fieldInfo['unit']"
-                    :disabled="isReadOnly"
+                    :disabled="onlyReadOfType || isReadOnly"
                     :placeholder="$t('ModelManagement[\'请输入单位\']')">
                 </bk-input>
             </div>
         </label>
         <div class="form-label">
             <span class="label-text">{{$t('ModelManagement["用户提示"]')}}</span>
-            <textarea v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
+            <textarea v-model.trim="fieldInfo['placeholder']" :disabled="onlyReadOfType || isReadOnly"></textarea>
         </div>
         <div class="btn-group">
-            <bk-button theme="primary" :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])" @click="saveField">
+            <bk-button theme="primary"
+                :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
+                :disabled="onlyReadOfType"
+                @click="saveField">
                 {{$t('Common["确定"]')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">
@@ -117,6 +120,10 @@
                 default: false
             },
             isEditField: {
+                type: Boolean,
+                default: false
+            },
+            onlyReadOfType: {
                 type: Boolean,
                 default: false
             }
@@ -190,7 +197,7 @@
             changedValues () {
                 const changedValues = {}
                 for (const propertyId in this.fieldInfo) {
-                    if (this.fieldInfo[propertyId] !== this.originalFieldInfo[propertyId]) {
+                    if (JSON.stringify(this.fieldInfo[propertyId]) !== JSON.stringify(this.originalFieldInfo[propertyId])) {
                         changedValues[propertyId] = this.fieldInfo[propertyId]
                     }
                 }
@@ -289,6 +296,12 @@
 </script>
 
 <style lang="scss" scoped>
+    .slider-content {
+        /deep/ textarea[disabled] {
+            background-color: #fafbfd!important;
+            cursor: not-allowed;
+        }
+    }
     .icon-info-circle {
         font-size: 18px;
         color: $cmdbBorderColor;
