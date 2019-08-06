@@ -55,9 +55,6 @@
 }
 
 .bk-table {
-    .cell {
-        white-space: nowrap;
-    }
     .bk-table-fixed {
         border-bottom: none;
     }
@@ -89,6 +86,14 @@
             }
         }
     }
+    .bk-table-body {
+        .is-highlight {
+            color: #3A84FF;
+        }
+        tr.hover-row>td {
+            background-color: #f0f1f5;
+        }
+    }
 }
 
 .bk-big-tree {
@@ -118,6 +123,7 @@
     height: 100%;
     background-color: #fff;
     .bk-tab-header {
+        padding: 0 20px;
         height: 58px;
         background-image: linear-gradient(transparent 57px,#dcdee5 0);
         .bk-tab-label-list {

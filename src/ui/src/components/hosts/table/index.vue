@@ -108,7 +108,8 @@
                 :label="column.name"
                 :sortable="column.sortable"
                 :prop="column.id"
-                :fixed="column.id === 'bk_host_innerip'">
+                :fixed="column.id === 'bk_host_innerip'"
+                :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
                     {{getHostCellText(column, row)}}
                 </template>
@@ -405,7 +406,9 @@
                         this.$store.commit('hosts/setFilterList', filterList)
                         this.$store.commit('hosts/setFilterIP', filterIP)
                         this.$store.commit('hosts/setCollection', collection)
-                        this.$refs.hostFilter.handleSearch(false)
+                        setTimeout(() => {
+                            this.$refs.hostFilter.handleSearch(false)
+                        }, 0)
                     } catch (e) {
                         this.$error(this.$t('应用收藏条件失败，转换数据错误'))
                         console.error(e.message)
