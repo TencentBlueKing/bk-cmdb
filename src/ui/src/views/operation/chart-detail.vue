@@ -1,6 +1,7 @@
 <template>
     <div class="chart-detail">
         <bk-dialog v-model="showDia"
+            class="bk-dialog-no-padding bk-dialog-no-tools group-dialog dialog"
             :close-icon="false"
             :mask-close="false"
             :show-footer="false"
@@ -13,7 +14,7 @@
                 <div class="content clearfix">
                     <div class="content-item">
                         <label class="label-text">
-                            {{$t('Operation["图表类型"]')}}：
+                            {{$t('Operation["图表类型"]')}}
                         </label>
                         <label class="cmdb-form-radio cmdb-radio-big">
                             <input type="radio" name="required" :value="true"
@@ -29,7 +30,7 @@
                     <div v-if="!chartType">
                         <div class="content-item">
                             <label class="label-text">
-                                {{$t('Operation["图表名称"]')}}：
+                                {{$t('Operation["图表名称"]')}}
                             </label>
                             <span class="cmdb-form-item">
                                 <cmdb-selector
@@ -48,7 +49,7 @@
                     <div v-if="chartType">
                         <div class="content-item">
                             <label class="label-text">
-                                {{$t('Operation["图表名称"]')}}：
+                                {{$t('Operation["图表名称"]')}}
                             </label>
                             <span class="cmdb-form-item">
                                 <input class="cmdb-form-input" placeholder="请输入图表名称" v-model="chartData.name" name="collectionName" v-validate="'required'">
@@ -57,7 +58,7 @@
                         </div>
                         <div class="content-item" v-if="chartData.bk_obj_id !== 'host'">
                             <label class="label-text">
-                                {{$t('Operation["统计对象"]')}}：
+                                {{$t('Operation["统计对象"]')}}
                             </label>
                             <span class="cmdb-form-item">
                                 <cmdb-selector
@@ -74,7 +75,7 @@
                         </div>
                         <div class="content-item">
                             <label class="label-text">
-                                {{$t('Operation["统计维度"]')}}：
+                                {{$t('Operation["统计维度"]')}}
                             </label>
                             <span class="cmdb-form-item">
                                 <cmdb-selector
@@ -91,7 +92,7 @@
                         </div>
                         <div class="content-item">
                             <label class="label-text">
-                                {{$t('Operation["图表类型"]')}}：
+                                {{$t('Operation["图表类型"]')}}
                             </label>
                             <label class="cmdb-form-radio cmdb-radio-big">
                                 <input type="radio" name="present" value="pie" v-model="chartData.chart_type">
@@ -105,7 +106,7 @@
                     </div>
                     <div class="content-item">
                         <label class="label-text">
-                            {{$t('Operation["图表宽度"]')}}：
+                            {{$t('Operation["图表宽度"]')}}
                         </label>
                         <label class="cmdb-form-radio cmdb-radio-big">
                             <input type="radio" name="width" value="50" v-model="chartData.width">
@@ -118,7 +119,7 @@
                     </div>
                     <div class="content-item">
                         <label class="label-text-x">
-                            {{$t('Operation["横轴坐标数量"]')}}：
+                            {{$t('Operation["横轴坐标数量"]')}}
                         </label>
                         <label class="cmdb-form-item">
                             <div class="axis-picker">
@@ -132,8 +133,8 @@
                     </div>
                 </div>
                 <div class="footer" slot="footer">
-                    <bk-button type="default" @click="closeChart">{{$t("Common['取消']")}}</bk-button>
-                    <bk-button type="primary" @click="confirm">{{$t("Common['确定']")}}</bk-button>
+                    <bk-button theme="default" @click="closeChart">{{$t("Common['取消']")}}</bk-button>
+                    <bk-button theme="primary" @click="confirm">{{$t("Common['确定']")}}</bk-button>
                 </div>
             </div>
         </bk-dialog>
@@ -240,7 +241,6 @@
             }
         },
         created () {
-            console.log(this.chartData)
             this.initTitle()
             this.chartType = this.chartData.report_type === 'custom'
             this.getDemList(this.chartData.bk_obj_id)
@@ -284,22 +284,21 @@
                         if (this.openType === 'add') {
                             if (!this.chartType) this.delKeys(data, ['bk_obj_id', 'config_id', 'field', 'name', 'chart_type'])
                             this.newStatisticalCharts({ params: data }).then(res => {
-                                this.transData(res)
+                                this.transData(res.info)
                             })
                         } else {
                             this.delKeys(data, ['data', 'hasData', 'create_time', 'title'])
                             this.updateStatisticalCharts({ params: data }).then(res => {
-                                this.transData(res)
+                                this.transData(res.info)
                             })
                         }
                     }
                 })
             },
             transData (res) {
-                this.chartData.config_id = res
                 this.showDia = false
                 setTimeout(() => {
-                    this.$emit('transData', this.chartData)
+                    this.$emit('transData', res)
                 }, 300)
             },
             closeChart () {
@@ -326,9 +325,8 @@
     .dialog-content {
         position: relative;
         .model-header{
-            padding: 10px;
+            padding: 15px;
             background:white;
-            margin-bottom:25px;
             .modal-close{
                 position: absolute;
                 right: 10px;
@@ -346,7 +344,7 @@
         }
         .content{
             padding: 10px 20px;
-            margin-left:40px;
+            margin: 25px 40px;
             .content-item{
                 padding: 10px;
                 .label-text {
@@ -368,6 +366,11 @@
                     position: relative;
                     div {
                         width: 100%;
+                    }
+                    input {
+                        border: 1px solid #c4c6cc;
+                        border-radius: 2px;
+                        height: 30px!important;
                     }
                     .axis-picker{
                         position:relative;
