@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="tree-box">
         <bk-big-tree class="topology-tree"
             ref="tree"
             v-bkloading="{
@@ -326,7 +326,7 @@
         .node-button {
             height: 24px;
             padding: 0 6px;
-            margin: 8px 4px;
+            margin: 0 4px;
             line-height: 22px;
             border-radius: 4px;
             font-size: 12px;
@@ -335,7 +335,7 @@
         .info-content {
             display: flex;
             align-items: center;
-            line-height: 40px;
+            line-height: 36px;
             font-size: 14px;
             .node-name {
                 @include ellipsis;
