@@ -19,24 +19,21 @@
                                 v-if="checkEditable(property)"
                                 :key="propertyIndex">
                                 <div class="property-name clearfix">
+                                    <bk-checkbox class="form-checkbox"
+                                        v-bk-tooltips="$t('ServiceManagement[\'纳入模板管理\']')"
+                                        v-if="property['isLocking'] !== undefined"
+                                        v-model="values[property['bk_property_id']]['as_default_value']">
+                                    </bk-checkbox>
                                     <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                     <i class="property-name-tooltips icon-cc-tips"
                                         v-if="property['placeholder']"
                                         v-bk-tooltips="htmlEncode(property['placeholder'])">
                                     </i>
-                                    <label class="cmdb-form-checkbox cmdb-checkbox-small"
-                                        v-if="property['isLocking'] !== undefined">
-                                        <input type="checkbox" v-model="values[property['bk_property_id']]['as_default_value']">
-                                        <span class="cmdb-checkbox-text"
-                                            v-bk-tooltips="$t('ServiceManagement[\'锁定不可编辑\']')">
-                                            {{$t('ProcessManagement["锁定"]')}}
-                                        </span>
-                                    </label>
                                 </div>
                                 <div class="property-value">
                                     <component class="form-component"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :disabled="type === 'update' && ['bk_func_name'].includes(property['bk_property_id'])"
+                                        :disabled="type === 'update' && ['bk_func_name'].includes(property['bk_property_id']) || !values[property['bk_property_id']]['as_default_value']"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
                                         :options="property.option || []"
                                         :allow-clear="['bind_ip'].includes(property['bk_property_id'])"
@@ -244,12 +241,12 @@
                 }
                 const formValues = this.$tools.getInstFormValues(this.properties, inst)
                 Object.keys(formValues).forEach(key => {
-                    this.values[key] = {
+                    this.$set(this.values, key, {
                         value: formValues[key],
                         as_default_value: this.type === 'update'
                             ? this.inst[key] ? this.inst[key]['as_default_value'] : false
                             : ['bk_func_name', 'bk_process_name'].includes(key)
-                    }
+                    })
                 })
                 if (this.isCreatedService && this.type === 'update') {
                     this.values['sign_id'] = inst['sign_id']
@@ -444,15 +441,9 @@
                 font-size: 12px;
                 position: relative;
             }
-            .cmdb-form-checkbox {
-                padding: 0;
-                margin-right: 0;
-                float: right;
-                line-height: 16px;
-                cursor: pointer;
-                .cmdb-checkbox-text {
-                    font-size: 12px;
-                }
+            .form-checkbox {
+                margin: 0 6px 0 0;
+                outline: 0;
             }
         }
     }

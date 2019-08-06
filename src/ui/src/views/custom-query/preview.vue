@@ -12,6 +12,7 @@
                 @page-limit-change="handleSizeChange"
                 @sort-change="handleSortChange">
                 <bk-table-column v-for="column in table.header"
+                    sortable="custom"
                     :key="column.id"
                     :prop="column.id"
                     :label="column.name">
