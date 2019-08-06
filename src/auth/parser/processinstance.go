@@ -18,7 +18,7 @@ import (
 	"configcenter/src/auth/meta"
 )
 
-var ProcessInstanceIAMResourceType = meta.ProcessServiceInstance
+var ProcessInstanceIAMResourceType = meta.BizTopology
 
 var ProcessInstanceAuthConfigs = []AuthConfig{
 	{
