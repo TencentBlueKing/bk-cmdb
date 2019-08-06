@@ -1,5 +1,5 @@
 ## What is it
-一个用于前端/API的查询参数解析mongodb过滤条件的后端模块, 支持类 [jQuery-QueryBuidler](https://github.com/mistic100/jQuery-QueryBuilder) 形式的输入参数.
+一个用于前端/API的查询参数解析mongodb过滤条件的后端模块, 支持类 [jQuery-QueryBuilder](https://github.com/mistic100/jQuery-QueryBuilder) 形式的输入参数.
 
 ## 与 jQuery-QueryBuilder 的区别
 - 不支持 type 字段，所有value字段均解析成基本字段类型
@@ -139,9 +139,12 @@
           "value": 2
         },
         {
-          "field": "category",
-          "operator": "equal",
-          "value": 1
+          "condition": "AND",
+          "rules": [{
+            "field": "name",
+            "operator": "not_in",
+            "value": ["a", "b"]
+          }]
         }
       ]
     }
