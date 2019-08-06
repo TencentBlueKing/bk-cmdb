@@ -158,6 +158,10 @@
                 margin-bottom: 10px;
             }
         }
+        .cmdb-form-input {
+            height: 32px;
+            line-height: 32px;
+        }
         .label-key {
             position: relative;
             width: 172px;

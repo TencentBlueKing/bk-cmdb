@@ -56,16 +56,25 @@
                                     </bk-button>
                                 </span>
                                 <span
+                                    v-if="!$isAuthorized($OPERATION.D_SERVICE_CATEGORY)"
                                     v-cursor="{
                                         active: !$isAuthorized($OPERATION.D_SERVICE_CATEGORY),
                                         auth: [$OPERATION.D_SERVICE_CATEGORY]
                                     }">
                                     <bk-button class="menu-btn"
                                         :text="true"
-                                        :disabled="!!mainCategory['child_category_list'].length || !$isAuthorized($OPERATION.D_SERVICE_CATEGORY)"
+                                        :disabled="!$isAuthorized($OPERATION.D_SERVICE_CATEGORY)"
                                         @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
                                         {{$t("Common['删除']")}}
                                     </bk-button>
+                                </span>
+                                <bk-button class="menu-btn" v-else-if="!mainCategory['child_category_list'].length"
+                                    :text="true"
+                                    @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
+                                    {{$t("Common['删除']")}}
+                                </bk-button>
+                                <span class="menu-btn no-allow-btn" v-else v-bk-tooltips="deleteBtnTips">
+                                    {{$t("Common['删除']")}}
                                 </span>
                             </div>
                         </cmdb-dot-menu>
@@ -183,6 +192,10 @@
             return {
                 tooltips: {
                     content: this.$t("ServiceCategory['二级分类删除提示']")
+                },
+                deleteBtnTips: {
+                    content: this.$t("ServiceCategory['请先清空二级分类']"),
+                    placements: ['right']
                 },
                 showFeatureTips: false,
                 showAddMianCategory: false,
@@ -380,6 +393,7 @@
         .category-list {
             display: flex;
             flex-flow: row wrap;
+            padding-top: 10px;
         }
         .category-item {
             position: relative;
@@ -562,11 +576,17 @@
             padding: 0 8px;
             text-align: left;
             color: #63656e;
+            outline: none;
             &:hover {
                 color: #3a84ff;
                 background-color: #e1ecff;
             }
             &:disabled {
+                color: #dcdee5;
+                background-color: transparent;
+            }
+            &.no-allow-btn {
+                cursor: not-allowed;
                 color: #dcdee5;
                 background-color: transparent;
             }
