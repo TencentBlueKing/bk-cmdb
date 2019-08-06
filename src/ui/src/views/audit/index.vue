@@ -318,7 +318,7 @@
 
 <style lang="scss" scoped>
     .title-content{
-        padding: 0 0 20px 0;
+        padding: 0 0 14px 0;
         display: flex;
         align-items: center;
         justify-content: flex-start;

@@ -265,7 +265,7 @@ func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostI
 			return ctx.Kit.CCError.CCError(common.CCErrWebGetHostFail)
 		}
 	}
-	for _, item := range result.Data {
+	for _, item := range result.Data.Info {
 		hostIDHit[item.HostID] = true
 	}
 	invalidHost := make([]int64, 0)

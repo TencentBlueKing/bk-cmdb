@@ -79,7 +79,7 @@ func (b *business) HasHosts(params types.ContextParams, bizID int64) (bool, erro
 		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return 0 != len(rsp.Data), nil
+	return 0 != len(rsp.Data.Info), nil
 }
 
 func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {

@@ -242,6 +242,7 @@
         }
         .hosts-main{
             flex: 1;
+            width: 0;
             height: 100%;
             padding: 20px;
         }

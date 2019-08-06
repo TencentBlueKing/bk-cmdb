@@ -72,7 +72,7 @@ func (s *set) hasHost(params types.ContextParams, bizID int64, setIDS []int64) (
 		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return 0 != len(rsp.Data), nil
+	return 0 != len(rsp.Data.Info), nil
 }
 
 func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int64, data mapstr.MapStr) (inst.Inst, error) {
