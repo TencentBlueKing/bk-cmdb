@@ -46,17 +46,17 @@ func (o *OperationServer) CreateOperationChart(ctx *rest.Contexts) {
 	var id uint64
 	resp := new(metadata.SearchChartCommon)
 
-	defer func() interface{} {
+	defer func() {
 		if id != 0 {
 			opt := mapstr.MapStr{"config_id": id}
 			resp, err = o.Engine.CoreAPI.CoreService().Operation().SearchChartCommon(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 			if err != nil {
 				ctx.RespErrorCodeOnly(common.CCErrOperationNewAddStatisticFail, "new add statistic fail, err: %v", err)
-				return nil
+				return
 			}
 		}
 		ctx.RespEntity(resp.Data)
-		return nil
+		return
 	}()
 
 	// 自定义报表
@@ -111,30 +111,12 @@ func (o *OperationServer) UpdateOperationChart(ctx *rest.Contexts) {
 		return
 	}
 
-	//// 图表是否已经存在
-	//filterCondition := mapstr.MapStr{}
-	//filterCondition[common.BKObjIDField] = opt[common.BKObjIDField]
-	//filterCondition[common.OperationReportType] = opt[common.OperationReportType]
-	//filterCondition["field"] = opt["field"]
-	//filterCondition["width"] = opt["width"]
-	//filterCondition["chart_type"] = opt["chart_type"]
-	//filterCondition["x_axis_count"] = opt["x_axis_count"]
-	//exist, err := o.CoreAPI.CoreService().Operation().SearchChartCommon(ctx.Kit.Ctx, ctx.Kit.Header, filterCondition)
-	//if err != nil {
-	//	ctx.RespErrorCodeOnly(common.CCErrOperationUpdateChartFail, "update statistic fail, err: %v", err)
-	//	return
-	//}
-	//if exist.Data.Count > 0 {
-	//	ctx.RespErrorCodeOnly(common.CCErrOperationChartAlreadyExist, "chart already exist")
-	//	return
-	//}
-
 	if _, err := o.Engine.CoreAPI.CoreService().Operation().UpdateOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt); err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationUpdateChartFail, "update statistic info fail, err: %v", err)
 		return
 	}
 
-	ctx.RespEntity(opt["config_id"])
+	ctx.RespEntity(opt)
 }
 
 func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
