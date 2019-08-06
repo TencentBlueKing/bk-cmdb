@@ -24,13 +24,24 @@
                         @change="handleSearch">
                     </bk-search-select>
                 </div>
-                <div class="options-check-view">
-                    <i :class="['icon-cc-label', 'view-btn', 'pr10', { 'active': currentView === 'label' }]"
-                        @click="checkView('label')"></i>
-                    <span class="dividing-line"></span>
-                    <i :class="['icon-cc-instance-path', 'view-btn', 'pl10', { 'active': currentView === 'path' }]"
-                        @click="checkView('path')"></i>
-                </div>
+                <bk-popover
+                    ref="popoverCheckView"
+                    :always="true"
+                    :width="210"
+                    theme="check-view-color"
+                    placement="bottom-end">
+                    <div slot="content" class="popover-main">
+                        <span>这里可以切换显示标签或路径</span>
+                        <i class="bk-icon icon-close" @click="handleCheckViewStatus"></i>
+                    </div>
+                    <div class="options-check-view">
+                        <i :class="['icon-cc-label', 'view-btn', 'pr10', { 'active': currentView === 'label' }]"
+                            @click="checkView('label')"></i>
+                        <span class="dividing-line"></span>
+                        <i :class="['icon-cc-instance-path', 'view-btn', 'pl10', { 'active': currentView === 'path' }]"
+                            @click="checkView('path')"></i>
+                    </div>
+                </bk-popover>
             </div>
         </div>
         <div class="tables">
@@ -90,7 +101,8 @@
                 isCheckAll: false,
                 filter: [],
                 instances: [],
-                currentView: 'label'
+                currentView: 'label',
+                checkViewTipsStatus: this.$store.getters['featureTipsParams'].hostServiceInstanceCheckView
             }
         },
         computed: {
@@ -102,6 +114,13 @@
         created () {
             this.getHostSeriveInstances()
             this.getHistoryLabel()
+        },
+        mounted () {
+            if (this.checkViewTipsStatus) {
+                this.$refs.popoverCheckView.instance.show()
+            } else {
+                this.$refs.popoverCheckView.instance.destroy()
+            }
         },
         methods: {
             async getHostSeriveInstances () {
@@ -248,6 +267,10 @@
             },
             checkView (value) {
                 this.currentView = value
+            },
+            handleCheckViewStatus () {
+                this.$store.commit('setFeatureTipsParams', 'hostServiceInstanceCheckView')
+                this.$refs.popoverCheckView.instance.hide()
             }
         }
     }
@@ -276,6 +299,13 @@
         max-width: 500px;
         z-index: 99;
     }
+    .popover-main {
+        @include inlineBlock;
+        .bk-icon {
+            margin: -2px 0 0 10px;
+            cursor: pointer;
+        }
+    }
     .options-check-view {
         @include inlineBlock;
         height: 32px;
@@ -303,5 +333,15 @@
     }
     .tables {
         padding-top: 16px;
+    }
+</style>
+
+<style lang="scss">
+    .check-view-color-theme {
+        padding: 10px !important;
+        background-color: #699df4;
+        .tippy-arrow {
+            border-bottom-color: #699df4 !important;
+        }
     }
 </style>

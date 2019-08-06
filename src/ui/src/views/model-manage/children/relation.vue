@@ -250,8 +250,8 @@
 </script>
 
 <style lang="scss" scoped>
-    .options {
-        padding: 20px 0 14px;
+    .create-btn {
+        margin: 10px 0 14px;
     }
     .relation-pre {
         display: inline-block;
