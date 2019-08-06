@@ -41,7 +41,7 @@
                                 </bk-button>
                             </span>
                         </div>
-                        <cmdb-dot-menu class="dot-menu" v-if="!mainCategory['is_built_in']">
+                        <cmdb-dot-menu class="dot-menu-operation" v-if="!mainCategory['is_built_in']">
                             <div class="menu-operational">
                                 <span
                                     v-cursor="{
@@ -313,6 +313,7 @@
             handleDeleteCategory (id, type, index) {
                 this.$bkInfo({
                     title: this.$t("ServiceCategory['确认删除分类']"),
+                    zIndex: 999,
                     confirmFn: async () => {
                         await this.deleteServiceCategory({
                             params: {
@@ -473,8 +474,11 @@
                     display: inline !important;
                 }
             }
-            .dot-menu {
+            .dot-menu-operation {
                 cursor: pointer;
+                /deep/ .bk-tooltip-ref {
+                    width: 100%;
+                }
             }
         }
         .child-category {

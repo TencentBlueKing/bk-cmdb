@@ -26,12 +26,20 @@
                         {{$t('Common[\'新建\']')}}
                     </bk-button>
                 </span>
-                <bk-button class="node-button fr"
-                    theme="primary"
-                    v-else-if="showCreate(node, data)"
-                    @click.stop="showCreateDialog(node)">
-                    {{$t('Common[\'新建\']')}}
-                </bk-button>
+                <span v-else-if="showCreate(node, data)"
+                    class="fr"
+                    style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_TOPO),
+                        auth: [$OPERATION.C_TOPO]
+                    }">
+                    <bk-button class="node-button"
+                        theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.C_TOPO)"
+                        @click.stop="showCreateDialog(node)">
+                        {{$t('Common[\'新建\']')}}
+                    </bk-button>
+                </span>
                 <div class="info-content">
                     <span class="node-name">{{data.bk_inst_name}}</span>
                     <span class="instance-num">{{data.service_instance_count}}</span>
@@ -241,6 +249,7 @@
                         bk_obj_name: nextModel.bk_obj_name,
                         bk_obj_id: nextModel.bk_obj_id,
                         service_instance_count: 0,
+                        service_template_id: value.service_template_id,
                         ...data
                     }
                     this.$refs.tree.addNode(nodeData, parentNode.id, 0)

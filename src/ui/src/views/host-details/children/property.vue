@@ -155,7 +155,7 @@
                     const timer = setTimeout(() => {
                         this.showCopyTips = false
                         clearTimeout(timer)
-                    }, 800)
+                    }, 200)
                 }, () => {
                     this.$error(this.$t('Common["复制失败"]'))
                 })
@@ -201,7 +201,7 @@
             display: flex;
             &:hover {
                 .property-edit {
-                    display: inline-block;
+                    opacity: 1;
                 }
                 .property-copy {
                     display: inline-block;
@@ -234,7 +234,7 @@
                 -webkit-box-orient: vertical;
             }
             .property-edit {
-                display: none;
+                opacity: 0;
                 margin: 8px 0 0 8px;
                 vertical-align: middle;
                 font-size: 16px;
@@ -244,7 +244,6 @@
                     opacity: .8;
                 }
                 &.disabled {
-                    opacity: 1;
                     color: #ccc;
                 }
             }
