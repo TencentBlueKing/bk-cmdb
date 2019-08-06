@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/common/util"
 	"fmt"
 
 	"configcenter/src/common"
@@ -122,17 +123,30 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 	}
 
 	respData := make([]metadata.IDStringCountInt64, 0)
-	for _, count := range commonCount {
-		for _, opt := range option {
+	allAttrs := make([]string, 0)
+	matched := make([]string, 0)
+	for _, opt := range option {
+		allAttrs = append(allAttrs, opt.Name)
+		for _, count := range commonCount {
 			if count.Id == opt.ID {
 				info := metadata.IDStringCountInt64{
 					Id:    opt.Name,
 					Count: count.Count,
 				}
 				respData = append(respData, info)
+				matched = append(matched, opt.Name)
 			}
 		}
 	}
 
+	for _, name := range allAttrs {
+		if !util.InStrArr(matched, name) {
+			info := metadata.IDStringCountInt64{
+				Id:    name,
+				Count: 0,
+			}
+			respData = append(respData, info)
+		}
+	}
 	return respData, nil
 }
