@@ -43,6 +43,22 @@ func (o *OperationServer) CreateOperationChart(ctx *rest.Contexts) {
 		return
 	}
 
+	var id uint64
+	resp := new(metadata.SearchChartCommon)
+
+	defer func() interface{} {
+		if id != 0 {
+			opt := mapstr.MapStr{"config_id": id}
+			resp, err = o.Engine.CoreAPI.CoreService().Operation().SearchChartCommon(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+			if err != nil {
+				ctx.RespErrorCodeOnly(common.CCErrOperationNewAddStatisticFail, "new add statistic fail, err: %v", err)
+				return nil
+			}
+		}
+		ctx.RespEntity(resp.Data)
+		return nil
+	}()
+
 	// 自定义报表
 	if chartInfo.ReportType == common.OperationCustom {
 		result, err := o.Engine.CoreAPI.CoreService().Operation().CreateOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, chartInfo)
@@ -51,19 +67,18 @@ func (o *OperationServer) CreateOperationChart(ctx *rest.Contexts) {
 			return
 		}
 
-		ctx.RespEntity(result.Data)
+		id = result.Data
 		return
 	}
 
 	// 内置报表
 	srvData := o.newSrvComm(ctx.Kit.Header)
-	resp, err := srvData.lgc.CreateInnerChart(ctx.Kit, chartInfo)
+	configID, err := srvData.lgc.CreateInnerChart(ctx.Kit, chartInfo)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationNewAddStatisticFail, "new add statistic fail, err: %v", err)
 		return
 	}
-
-	ctx.RespEntity(resp)
+	id = configID
 }
 
 func (o *OperationServer) DeleteOperationChart(ctx *rest.Contexts) {
