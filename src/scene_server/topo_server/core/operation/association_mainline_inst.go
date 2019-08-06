@@ -306,7 +306,7 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 	moduleHostCount[common.BKInnerObjIDApp] = make(map[int64][]int64)
 	moduleHostCount[common.BKInnerObjIDSet] = make(map[int64][]int64)
 	moduleHostCount[common.BKInnerObjIDModule] = make(map[int64][]int64)
-	for _, hostModule := range hostModules.Data {
+	for _, hostModule := range hostModules.Data.Info {
 		if _, exist := moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID]; exist == false {
 			moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = make([]int64, 0)
 		}

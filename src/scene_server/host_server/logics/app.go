@@ -134,7 +134,7 @@ func (lgc *Logics) ExistHostIDSInApp(ctx context.Context, appID int64, hostIDArr
 		return nil, defErr.New(result.Code, result.ErrMsg)
 	}
 	hostIDMap := make(map[int64]bool, 0)
-	for _, row := range result.Data {
+	for _, row := range result.Data.Info {
 		hostIDMap[row.HostID] = true
 	}
 	var notExistHOstID []int64

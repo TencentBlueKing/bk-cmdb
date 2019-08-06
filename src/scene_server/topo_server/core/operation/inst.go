@@ -301,7 +301,7 @@ func (c *commonInst) innerHasHost(params types.ContextParams, moduleIDS []int64)
 		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return 0 != len(rsp.Data), nil
+	return 0 != len(rsp.Data.Info), nil
 }
 func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst, checkhost bool) ([]deletedInst, bool, error) {
 

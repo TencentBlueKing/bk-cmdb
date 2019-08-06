@@ -234,7 +234,7 @@ func (lgc *Logics) notExistAppModuleHost(ctx context.Context, appID, moduleID in
 		return nil, lgc.ccErr.New(hmResult.Code, hmResult.ErrMsg)
 	}
 	hostIDMap := make(map[int64]bool, 0)
-	for _, row := range hmResult.Data {
+	for _, row := range hmResult.Data.Info {
 		hostIDMap[row.HostID] = true
 	}
 	var errHostIDArr []int64
