@@ -3,7 +3,8 @@
         <div class="operate-menus">
             <div class="menu-items menu-items-blue" @click="goRouter('business')">
                 <div class="item-left">
-                    <span>{{ navData.biz }}</span>
+                    <span v-if="navData.biz">{{ navData.biz }}</span>
+                    <span v-if="!navData.biz">0</span>
                     <span>{{$t('Operation["业务总数"]')}}</span>
                 </div>
                 <div class="item-right item-right-left">
@@ -12,16 +13,18 @@
             </div>
             <div class="menu-items menu-items-white" @click="goRouter('resource')">
                 <div class="item-left">
-                    <span>{{ navData.host }}</span>
+                    <span v-if="navData.host">{{ navData.host }}</span>
+                    <span v-if="!navData.host">0</span>
                     <span>{{$t('Operation["主机总数"]')}}</span>
                 </div>
                 <div class="item-right item-right-right">
-                    <i class="icon icon-cc-op-host"></i>
+                    <i class="icon icon-cc-host"></i>
                 </div>
             </div>
             <div class="menu-items menu-items-blue" @click="goRouter('model')">
                 <div class="item-left">
-                    <span>{{ navData.model }}</span>
+                    <span v-if="navData.model">{{ navData.model }}</span>
+                    <span v-if="!navData.model">0</span>
                     <span>{{$t('Operation["模型总数"]')}}</span>
                 </div>
                 <div class="item-right item-right-left">
@@ -30,9 +33,10 @@
             </div>
             <div class="menu-items menu-items-white">
                 <div class="item-left">
-                    <span>{{ navData.inst }}</span>
+                    <span v-if="navData.inst">{{ navData.inst }}</span>
+                    <span v-if="!navData.inst">0</span>
                     <span>{{$t('Operation["实例总数"]')}}
-                        <bk-popover :delay="300" :offset="10" placement="top">
+                        <bk-popover :delay="300" :offset="10" placement="top" class="operate-pop">
                             <i class="menu-icon icon-cc-attribute"></i>
                             <span class="popover-content" slot="content">
                                 {{tooltip}}
@@ -66,7 +70,7 @@
                         <i class="icon icon-cc-edit-shape"
                             @click="openNew('edit', 'host', item, key)"></i>
                         <i class="icon icon-cc-tips-close"
-                            @click="deleteChart('host', key, hostData.disList, item.config_id)"></i>
+                            @click="deleteChart('host', key, hostData.disList, item)"></i>
                     </div>
                 </div>
                 <div class="operation-charts" :id="item.report_type + item.config_id"></div>
@@ -103,7 +107,7 @@
                             @click="moveChart('inst', 'down', key, instData.disList)"></i>
                         <i class="icon icon-cc-edit-shape" @click="openNew('edit', 'inst', item, key)"></i>
                         <i class="icon icon-cc-tips-close"
-                            @click="deleteChart('inst', key, instData.disList, item.config_id)"></i>
+                            @click="deleteChart('inst', key, instData.disList, item)"></i>
                     </div>
                 </div>
                 <div class="operation-charts" :id="item.report_type + item.config_id"></div>
@@ -193,6 +197,7 @@
                 })
             },
             async getNavData (item, type) {
+                console.log(item)
                 const res = await this.getCountedChartsData({
                     params: {
                         config_id: item.config_id
@@ -481,16 +486,18 @@
                 else this.instData.disList = list
                 this.updatePosition()
             },
-            deleteChart (type, key, list, id) {
+            deleteChart (type, key, list, item) {
+                console.log(item)
                 this.$bkInfo({
                     title: this.$tc('Operation["是否确认删除"]'),
-                    content: '确定要删除【主机-操作系统占比图表】',
+                    subTitle: '确定要删除【' + item.name + '】',
+                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: () => {
                         list.splice(key, 1)
                         if (type === 'host') this.hostData.disList = list
                         else this.instData.disList = list
                         this.deleteOperationChart({
-                            id: id
+                            id: item.config_id
                         })
                         this.updatePosition()
                     }
@@ -581,6 +588,9 @@
 </style>
 
 <style scoped lang="scss">
+    .views-layout {
+        padding: 10px!important;
+    }
     *{
         margin: 0;
         padding: 0
@@ -642,9 +652,15 @@
         width: 100%;
         .menu-items-blue{
             background: linear-gradient(165deg,rgba(108,186,255,1) 0%,rgba(58,132,255,1) 100%);
+            &:hover{
+                 box-shadow:0px 2px 6px 0px rgba(58,132,255,1);
+             }
         }
         .menu-items-white{
             background: linear-gradient(165deg,rgba(77,212,240,1) 0%,rgba(27,167,207,1) 100%);
+            &:hover{
+                 box-shadow:0px 2px 6px 0px rgba(27,167,207,1);
+             }
         }
         .menu-items{
             display: flex;
@@ -676,7 +692,7 @@
                      }
                     &:last-child{
                          height: 16px;
-                         width: 70px;
+                         width: 90px;
                          font-size: 12px;
                          font-weight: bold;
                          color: rgba(255,255,255,1);
@@ -686,15 +702,18 @@
                              font-size: 16px;
                              margin-left: 5px;
                          }
-                     }
+                    }
+                    .operate-pop{
+                        vertical-align: bottom;
+                    }
                 }
             }
             .item-right-left{
                 background-color: #377AE9;
-             }
+            }
             .item-right-right{
                 background-color: #19A2CA;
-             }
+            }
             .item-right{
                  display: flex;
                  justify-content: center;
@@ -724,6 +743,9 @@
              width: 100%;
              .operation-charts{
                 width: 100%;
+             }
+             &:hover {
+                  box-shadow:0px 2px 6px 0px rgba(220,222,229,1);
              }
         }
         .chart-child:hover{
