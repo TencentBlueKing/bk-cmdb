@@ -13,11 +13,17 @@
 package authcenter
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
 
+	"configcenter/src/apimachinery"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
+	params "configcenter/src/common/paraparse"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
@@ -187,12 +193,15 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizHostInstance:     "业务主机",
 	BizProcessInstance:  "进程",
 	// TODO: delete this when upgrade to v3.5.x
-	BizTopology:   "服务拓扑",
-	BizModelGroup: "模型分组",
-	BizModel:      "模型",
-	BizInstance:   "实例",
-	BizAuditLog:   "操作审计",
-	UserCustom:    "",
+	BizTopology:               "服务拓扑",
+	BizModelGroup:             "模型分组",
+	BizModel:                  "模型",
+	BizInstance:               "实例",
+	BizAuditLog:               "操作审计",
+	UserCustom:                "",
+	BizProcessServiceTemplate: "服务模板",
+	BizProcessServiceCategory: "服务分类",
+	BizProcessServiceInstance: "服务实例",
 }
 
 type ActionID string
@@ -342,9 +351,9 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 }
 
 // TODO: add multiple language support
-func AdoptPermissions(rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
-
+func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
 	ps := make([]metadata.Permission, 0)
+	bizIDMap := make(map[int64]string)
 	for _, r := range rs {
 		var p metadata.Permission
 		p.SystemID = SystemIDCMDB
@@ -353,9 +362,45 @@ func AdoptPermissions(rs []meta.ResourceAttribute) ([]metadata.Permission, error
 		if r.BusinessID > 0 {
 			p.ScopeType = ScopeTypeIDBiz
 			p.ScopeTypeName = ScopeTypeIDBizName
+			p.ScopeID = strconv.FormatInt(r.BusinessID, 10)
+			scopeName, exist := bizIDMap[r.BusinessID]
+			if !exist {
+				param := params.SearchParams{
+					Condition: map[string]interface{}{
+						common.BKAppIDField: r.BusinessID,
+					},
+				}
+
+				result, err := api.TopoServer().Instance().SearchApp(context.Background(), r.SupplierAccount, h, &param)
+				if err != nil {
+					return nil, err
+				}
+				if !result.Result {
+					return nil, errors.New(result.ErrMsg)
+				}
+
+				if len(result.Data.Info) != 0 {
+					bizStr, yes := result.Data.Info[0]["bk_biz_name"]
+					if !yes {
+						// can not happen normally.
+						bizIDMap[r.BusinessID] = ""
+					}
+
+					name, ok := bizStr.(string)
+					if !ok {
+						// can not happen normal
+						bizIDMap[r.BusinessID] = ""
+					}
+					bizIDMap[r.BusinessID] = name
+					scopeName = name
+				}
+			}
+			p.ScopeName = scopeName
 		} else {
 			p.ScopeType = ScopeTypeIDSystem
 			p.ScopeTypeName = ScopeTypeIDSystemName
+			p.ScopeID = SystemIDCMDB
+			p.ScopeName = SystemNameCMDB
 		}
 
 		actID, err := AdaptorAction(&r)
