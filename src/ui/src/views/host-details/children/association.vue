@@ -36,7 +36,7 @@
         <div class="association-view">
             <component :is="activeView"></component>
         </div>
-        <bk-sideslider :is-show.sync="showCreate" :width="800">
+        <bk-sideslider :is-show.sync="showCreate" :width="800" :title="$t('HostDetails[\'新增关联\']')">
             <cmdb-host-association-create slot="content" v-if="showCreate"></cmdb-host-association-create>
         </bk-sideslider>
     </div>
