@@ -44,5 +44,10 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		return err
 	}
 
+	err = initInnerChart(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x19_05_22_01] init inner chart error  %s", err.Error())
+		return err
+	}
 	return
 }
