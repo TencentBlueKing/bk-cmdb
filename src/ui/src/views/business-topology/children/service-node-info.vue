@@ -397,7 +397,7 @@
                     module: 'bk_module_name'
                 }
                 try {
-                    await (promiseMap[this.modelId] || this.updateCustomInstance)(value)
+                    await (promiseMap[this.modelId] || this.updateCustomInstance)(this.$injectMetadata(value))
                     this.selectedNode.data.bk_inst_name = value[nameMap[this.modelId] || 'bk_inst_name']
                     this.instance = Object.assign({}, this.instance, value)
                     this.type = 'details'
@@ -481,7 +481,8 @@
                     bizId: this.business,
                     setId: this.selectedNode.data.bk_inst_id,
                     config: {
-                        requestId: 'deleteNodeInstance'
+                        requestId: 'deleteNodeInstance',
+                        data: this.$injectMetadata({})
                     }
                 })
             },
@@ -491,7 +492,8 @@
                     setId: this.selectedNode.parent.data.bk_inst_id,
                     moduleId: this.selectedNode.data.bk_inst_id,
                     config: {
-                        requestId: 'deleteNodeInstance'
+                        requestId: 'deleteNodeInstance',
+                        data: this.$injectMetadata({})
                     }
                 })
             },

@@ -115,6 +115,7 @@
             @selection-change="handleSelectChange">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in table.header"
+                sortable="custom"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
