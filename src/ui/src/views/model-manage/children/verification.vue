@@ -1,17 +1,19 @@
 <template>
     <div class="verification-layout">
-        <span class="inline-block-middle"
-            v-if="!isTopoModel"
-            v-cursor="{
-                active: !$isAuthorized($OPERATION.U_MODEL),
-                auth: [$OPERATION.U_MODEL]
-            }">
-            <bk-button class="create-btn" theme="primary"
-                :disabled="isReadOnly || !updateAuth"
-                @click="createVerification">
-                {{$t('ModelManagement["新建校验"]')}}
-            </bk-button>
-        </span>
+        <div class="options">
+            <span class="inline-block-middle"
+                v-if="!isTopoModel"
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.U_MODEL),
+                    auth: [$OPERATION.U_MODEL]
+                }">
+                <bk-button class="create-btn" theme="primary"
+                    :disabled="isReadOnly || !updateAuth"
+                    @click="createVerification">
+                    {{$t('ModelManagement["新建校验"]')}}
+                </bk-button>
+            </span>
+        </div>
         <bk-table
             class="verification-table"
             v-bkloading="{
@@ -203,7 +205,7 @@
 
 <style lang="scss" scoped>
     .verification-layout {
-        padding: 10px 0;
+        padding: 20px 0;
     }
     .verification-table {
         margin: 14px 0 0 0;

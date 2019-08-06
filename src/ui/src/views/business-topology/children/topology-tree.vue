@@ -223,11 +223,11 @@
             async handleCreateNode (value) {
                 try {
                     const parentNode = this.createInfo.parentNode
-                    const formData = {
+                    const formData = this.$injectMetadata({
                         ...value,
                         'bk_biz_id': this.business,
                         'bk_parent_id': parentNode.data.bk_inst_id
-                    }
+                    })
                     const nextModelId = this.createInfo.nextModelId
                     const nextModel = this.mainLineModels.find(model => model.bk_obj_id === nextModelId)
                     const handlerMap = {
