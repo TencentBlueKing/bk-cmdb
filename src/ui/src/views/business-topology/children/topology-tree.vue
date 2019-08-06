@@ -1,5 +1,5 @@
 <template>
-    <div class="tree-box">
+    <div>
         <bk-big-tree class="topology-tree"
             ref="tree"
             v-bkloading="{
