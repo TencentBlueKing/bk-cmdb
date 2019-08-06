@@ -128,6 +128,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizProcessServiceCategory
 	case meta.ProcessServiceInstance:
 		iamResourceType = BizProcessServiceInstance
+	case meta.BizTopology:
+		iamResourceType = BizTopology
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
