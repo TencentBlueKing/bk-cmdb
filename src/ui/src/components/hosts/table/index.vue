@@ -405,7 +405,9 @@
                         this.$store.commit('hosts/setFilterList', filterList)
                         this.$store.commit('hosts/setFilterIP', filterIP)
                         this.$store.commit('hosts/setCollection', collection)
-                        this.$refs.hostFilter.handleSearch(false)
+                        setTimeout(() => {
+                            this.$refs.hostFilter.handleSearch(false)
+                        }, 0)
                     } catch (e) {
                         this.$error(this.$t('应用收藏条件失败，转换数据错误'))
                         console.error(e.message)

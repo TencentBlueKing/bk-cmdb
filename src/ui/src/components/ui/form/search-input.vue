@@ -95,12 +95,12 @@
             top: 0;
             left: 0;
             width: 100%;
-            line-height: 24px;
+            line-height: 22px;
             z-index: 100;
             textarea {
                 display: block;
                 width: 100%;
-                padding: 5px 20px 5px 10px;
+                padding: 4px 20px 4px 10px;
                 border: 1px solid #c3cdd7;
                 resize: none;
                 font-size: 14px;
