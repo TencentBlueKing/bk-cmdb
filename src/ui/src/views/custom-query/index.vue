@@ -36,16 +36,16 @@
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="showUserAPIDetails">
-            <bk-table-column prop="id" label="ID"></bk-table-column>
-            <bk-table-column prop="name" :label="$t('CustomQuery[\'查询名称\']')"></bk-table-column>
-            <bk-table-column prop="create_user" :label="$t('CustomQuery[\'创建用户\']')"></bk-table-column>
-            <bk-table-column prop="create_time" :label="$t('CustomQuery[\'创建时间\']')">
+            <bk-table-column prop="id" label="ID" sortable="custom"></bk-table-column>
+            <bk-table-column prop="name" :label="$t('CustomQuery[\'查询名称\']')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="create_user" :label="$t('CustomQuery[\'创建用户\']')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="create_time" :label="$t('CustomQuery[\'创建时间\']')" sortable="custom">
                 <template slot-scope="{ row }">
                     {{$tools.formatTime(row['create_time'])}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="modify_user" :label="$t('CustomQuery[\'修改人\']')"></bk-table-column>
-            <bk-table-column prop="last_time" :label="$t('CustomQuery[\'修改时间\']')">
+            <bk-table-column prop="modify_user" :label="$t('CustomQuery[\'修改人\']')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="last_time" :label="$t('CustomQuery[\'修改时间\']')" sortable="custom">
                 <template slot-scope="{ row }">
                     {{$tools.formatTime(row['last_time'])}}
                 </template>
@@ -215,7 +215,7 @@
             }
         }
         .api-table {
-            margin-top: 20px;
+            margin-top: 14px;
         }
     }
 </style>

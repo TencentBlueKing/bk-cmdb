@@ -413,7 +413,7 @@
 
 <style lang="scss" scoped>
     .relation-topology-layout {
-        height: calc(100% - 64px);
+        height: 100%;
         background-color: #f9f9f9;
         position: relative;
         &.full-screen {

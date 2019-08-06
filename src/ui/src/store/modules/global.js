@@ -25,7 +25,8 @@ const state = {
         eventpush: true,
         adminTips: true,
         serviceTemplate: true,
-        category: true
+        category: true,
+        hostServiceInstanceCheckView: true
     },
     appHeight: window.innerHeight
 }
