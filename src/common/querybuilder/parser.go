@@ -13,12 +13,12 @@
 package querybuilder
 
 import (
-	"fmt"
-
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
+	"fmt"
 )
 
-type RuleGroupData struct {
+type RuleGroup struct {
 	Condition Condition                `json:"condition" field:"condition"`
 	Rules     []map[string]interface{} `json:"rules" field:"rules"`
 }
@@ -28,11 +28,11 @@ func ParseRule(data map[string]interface{}) (queryFilter Rule, errKey string, er
 		return nil, "", nil
 	}
 	if _, ok := data["condition"]; ok == true {
-		ruleGroupData := &RuleGroupData{}
+		ruleGroupData := &RuleGroup{}
 		// shouldn't use mapstr here as it doesn't support nest struct
 		// TODO: replace it with more efficient way
 		if err := mapstr.DecodeFromMapStr(ruleGroupData, data); err != nil {
-			return nil, "", fmt.Errorf("decode to rule group struct failed, err: %+v", err)
+			return nil, "", fmt.Errorf("decode as combined rule struct failed, err: %+v", err)
 		}
 		combinedRule := CombinedRule{
 			Condition: ruleGroupData.Condition,
@@ -58,4 +58,43 @@ func ParseRule(data map[string]interface{}) (queryFilter Rule, errKey string, er
 		return nil, "", fmt.Errorf("no query filter found")
 	}
 	return queryFilter, "", nil
+}
+
+func ParseRuleFromBytes(bs []byte) (queryFilter Rule, errKey string, err error) {
+	data := make(map[string]interface{})
+	if err := json.Unmarshal(bs, &data); err != nil {
+		return nil, "", err
+	}
+	return ParseRule(data)
+}
+
+// QueryFilter is aimed at export as a struct member
+type QueryFilter struct {
+	Rule `json:",inline"`
+}
+
+func (qf *QueryFilter) Validate() (string, error) {
+	if qf.Rule == nil {
+		return "", nil
+	}
+	if _, ok := qf.Rule.(CombinedRule); ok == false {
+		return "", fmt.Errorf("query filter must be combined rules")
+	}
+	return qf.Rule.Validate()
+}
+
+func (qf *QueryFilter) MarshalJSON() ([]byte, error) {
+	if qf.Rule != nil {
+		return json.Marshal(qf.Rule)
+	}
+	return nil, nil
+}
+
+func (qf *QueryFilter) UnmarshalJSON(raw []byte) error {
+	rule, errKey, err := ParseRuleFromBytes(raw)
+	if err != nil {
+		return fmt.Errorf("UnmarshalJSON failed, key: %s, err: %+v", errKey, err)
+	}
+	qf.Rule = rule
+	return nil
 }
