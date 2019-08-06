@@ -640,6 +640,7 @@
             vertical-align: middle;
         }
         i:hover{
+            background:rgba(225,236,255,1);
             .title-block {
                 display: block;
             }
@@ -767,6 +768,9 @@
                     margin-left: 3px;
                     border: 1px solid rgba(99,101,110,0);
                     padding: 1px;
+                    &:hover{
+                         color: #2D6ACF
+                    }
                 }
             }
             span{
@@ -787,7 +791,7 @@
             }
         }
         .icon-disable{
-            color: #DCDEE5;
+            color: #DCDEE5!important;
         }
         .icon-weight{
             padding: 0!important;
