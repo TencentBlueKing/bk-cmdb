@@ -1,45 +1,53 @@
-package logics
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package x19_05_22_01
 
 import (
-	"context"
-
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
+	"context"
+	"time"
 )
 
-func (lgc *Logics) InitInnerChart(ctx context.Context) {
-	opt := mapstr.MapStr{}
-	result, err := lgc.CoreAPI.CoreService().Operation().SearchOperationChart(ctx, lgc.header, opt)
-	if err != nil {
-		blog.Errorf("search chart config fail, err: %v", err)
-		return
-	}
-
-	if result.Data.Count > 0 {
-		return
-	}
-
-	configID := make([]uint64, 0)
+func initInnerChart(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	idArr := make([]uint64, 0)
 	for _, chart := range InnerChartsArr {
-		result, err := lgc.CoreAPI.CoreService().Operation().CreateOperationChart(ctx, lgc.header, InnerCharts[chart])
+		configID, err := db.NextSequence(ctx, common.BKTableNameCloudTask)
+		idArr = append(idArr, configID)
 		if err != nil {
-			blog.Errorf("init inner chart fail, err: %v", err)
-			return
+			return err
 		}
-		configID = append(configID, result.Data)
+		innerChart := InnerChartsMap[chart]
+		innerChart.ConfigID = configID
+		innerChart.CreateTime = time.Now()
+		innerChart.OwnerID = conf.OwnerID
+		if err := db.Table(common.BKTableNameChartConfig).Insert(ctx, innerChart); err != nil {
+			return err
+		}
 	}
 
 	position := metadata.ChartPosition{}
-	position.Position.Host = configID[2:6]
-	position.Position.Inst = configID[6:]
+	position.Position.Host = idArr[2:6]
+	position.Position.Inst = idArr[6:]
 	position.OwnerID = "0"
 
-	if _, err := lgc.CoreAPI.CoreService().Operation().UpdateOperationChartPosition(ctx, lgc.header, position); err != nil {
-		blog.Error("init inner chart position fail, err: %v", err)
-		return
+	if err := db.Table(common.BKTableNameChartPosition).Insert(ctx, position); err != nil {
+		return err
 	}
+
+	return nil
 }
 
 var (
@@ -103,7 +111,7 @@ var (
 		XAxisCount: 10,
 	}
 
-	InnerCharts = map[string]metadata.ChartConfig{
+	InnerChartsMap = map[string]metadata.ChartConfig{
 		common.BizModuleHostChart:   BizModuleHostChart,
 		common.ModelAndInstCount:    ModelAndInstCountChart,
 		common.HostOSChart:          HostOsChart,
