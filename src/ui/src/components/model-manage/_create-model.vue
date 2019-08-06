@@ -31,7 +31,7 @@
                                     :name="option.bk_classification_name">
                                 </bk-option>
                             </bk-select>
-                            <p class="form-error">{{errors.first('modelGroup')}}</p>
+                            <p class="form-error" :title="errors.first('modelGroup')">{{errors.first('modelGroup')}}</p>
                         </div>
                     </div>
                     <label>
@@ -44,7 +44,7 @@
                                 v-model.trim="modelDialog.data['bk_obj_id']"
                                 v-validate="'required|modelId'">
                             </bk-input>
-                            <p class="form-error">{{errors.first('modelId')}}</p>
+                            <p class="form-error" :title="errors.first('modelId')">{{errors.first('modelId')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
                     </label>
@@ -58,7 +58,7 @@
                                 v-validate="'required|singlechar'"
                                 v-model.trim="modelDialog.data['bk_obj_name']">
                             </bk-input>
-                            <p class="form-error">{{errors.first('modelName')}}</p>
+                            <p class="form-error" :title="errors.first('modelName')">{{errors.first('modelName')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('ModelManagement[\'请填写模型名\']')"></i>
                     </label>
