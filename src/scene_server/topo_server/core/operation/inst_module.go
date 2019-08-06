@@ -69,7 +69,7 @@ func (m *module) hasHost(params types.ContextParams, bizID int64, moduleIDS []in
 		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return 0 != len(rsp.Data), nil
+	return 0 != len(rsp.Data.Info), nil
 }
 
 func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizID, setID int64, data mapstr.MapStr) (inst.Inst, error) {

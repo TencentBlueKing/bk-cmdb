@@ -62,7 +62,7 @@ func (s *set) hasHost(bizID int64, setIDS []int64) (bool, error) {
 		return false, s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return 0 != len(rsp.Data), nil
+	return 0 != len(rsp.Data.Info), nil
 }
 
 func (s *set) deleteModules(bizID int64, setIDS []int64) error {
@@ -166,7 +166,7 @@ func (s *set) DeleteSetHost(bizID int64, setIDs []int64) error {
 		return ccerr
 	}
 	hostIDs := make([]int64, 0)
-	for _, relation := range relations.Data {
+	for _, relation := range relations.Data.Info {
 		hostIDs = append(hostIDs, relation.HostID)
 	}
 	hostIDs = util.IntArrayUnique(hostIDs)
