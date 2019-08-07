@@ -138,7 +138,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostFromModuleToResPool, conf.HostID...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostID, err)
 		if err != auth.NoAuthorizeError {
-			_ = resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
 		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, conf.HostID)
@@ -152,20 +152,20 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
 		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", conf.HostID, err, srvData.rid)
-		_ = resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
 	exceptionArr, err := srvData.lgc.MoveHostToResourcePool(srvData.ctx, conf)
 	if err != nil {
 		blog.Errorf("move host to resource pool failed, err:%s, input:%#v, rid:%s", err.Error(), conf, srvData.rid)
-		_ = resp.WriteEntity(&metadata.RespError{Msg: err, Data: exceptionArr})
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err, Data: exceptionArr})
 		return
 	}
 
 	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
 		blog.Errorf("register host to iam failed, hosts: %+v, err: %v, rid: %s", conf.HostID, err, srvData.rid)
-		_ = resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
 
@@ -362,6 +362,7 @@ func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Resp
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+
 	var cond metadata.HostModuleRelationRequest
 	if data.AppID != 0 {
 		cond.ApplicationID = data.AppID
@@ -369,14 +370,15 @@ func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Resp
 	if len(data.HostID) > 0 {
 		cond.HostIDArr = data.HostID
 	}
+	cond.Page.Limit = common.BKNoLimit
 
-	configArr, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, cond)
+	moduleHostConfig, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, cond)
 	if err != nil {
 		blog.Errorf("GetHostModuleRelation logcis err:%s,cond:%#v,rid:%s", err.Error(), cond, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
 		return
 	}
-	_ = resp.WriteEntity(metadata.NewSuccessResp(configArr))
+	_ = resp.WriteEntity(metadata.NewSuccessResp(moduleHostConfig.Info))
 	return
 }
 
@@ -517,4 +519,25 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 		return
 	}
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+}
+
+// GetAppHostTopoRelation  query host and module relation,
+// hostID can empty
+func (s *Service) GetAppHostTopoRelation(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	data := new(metadata.HostModuleRelationRequest)
+	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+		blog.Errorf("Transfer host across business failed with decode body err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	result, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, *data)
+	if err != nil {
+		blog.Errorf("GetHostModuleRelation logcis err:%s,cond:%#v,rid:%s", err.Error(), data, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
+		return
+	}
+	_ = resp.WriteEntity(metadata.NewSuccessResp(result))
+	return
 }

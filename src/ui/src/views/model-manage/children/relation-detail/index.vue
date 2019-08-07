@@ -103,7 +103,7 @@
             <i class="bk-icon icon-info-circle"></i>
         </div>
         <div class="btn-group">
-            <bk-button theme="primary" :loading="$loading(['createObjectAssociation', 'updateObjectAssociation'])" @click="saveRelation">
+            <bk-button theme="primary" :disabled="isReadOnly" :loading="$loading(['createObjectAssociation', 'updateObjectAssociation'])" @click="saveRelation">
                 {{$t('Common["确定"]')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">

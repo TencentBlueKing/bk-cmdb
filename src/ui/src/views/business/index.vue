@@ -75,8 +75,10 @@
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
+            <bk-table-column class-name="is-highlight" prop="bk_biz_id" label="ID" width="50" align="center" fixed></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 sortable="custom"
+                :fixed="column.id === 'bk_biz_name'"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
@@ -305,15 +307,12 @@
                 this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
             },
             updateTableHeader (properties) {
-                this.table.header = [{
-                    id: 'bk_biz_id',
-                    name: 'ID'
-                }].concat(properties.map(property => {
+                this.table.header = properties.map(property => {
                     return {
                         id: property['bk_property_id'],
                         name: property['bk_property_name']
                     }
-                }))
+                })
             },
             handleRowClick (item) {
                 this.slider.show = true

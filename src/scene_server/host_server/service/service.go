@@ -112,6 +112,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/modules/idle/set").To(s.MoveSetHost2IdleModule))
 	// get host module relation in app
 	api.Route(api.POST("/hosts/modules/read").To(s.GetHostModuleRelation))
+	api.Route(api.POST("/host/topo/relation/read").To(s.GetAppHostTopoRelation))
 	// transfer host to other business
 	api.Route(api.POST("/hosts/modules/across/biz").To(s.TransferHostAcrossBusiness))
 	//  delete host from business, used for framework

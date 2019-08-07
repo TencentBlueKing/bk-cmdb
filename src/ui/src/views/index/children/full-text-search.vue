@@ -342,12 +342,9 @@
             jumpPage (source) {
                 if (source['hitsType'] === 'host') {
                     this.$router.push({
-                        name: 'resource',
+                        name: 'resourceHostDetails',
                         params: {
-                            text: source['bk_host_innerip'].toString().replace(/(\<\/?em\>)/g, ''),
-                            outer: true,
-                            inner: true,
-                            exact: false
+                            id: source['bk_host_id']
                         },
                         query: {
                             from: this.$route.fullPath

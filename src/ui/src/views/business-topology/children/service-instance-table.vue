@@ -80,24 +80,24 @@
                 <template slot-scope="{ row }">
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_PROCESS),
-                            auth: [$OPERATION.U_PROCESS]
+                            active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                            auth: [$OPERATION.U_SERVICE_INSTANCE]
                         }">
                         <bk-button class="mr10"
                             :text="true"
-                            :disabled="!$isAuthorized($OPERATION.U_PROCESS)"
+                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                             @click="handleEditProcess(row)">
                             {{$t('Common["编辑"]')}}
                         </bk-button>
                     </span>
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.D_PROCESS),
-                            auth: [$OPERATION.D_PROCESS]
+                            active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                            auth: [$OPERATION.U_SERVICE_INSTANCE]
                         }">
                         <bk-button v-if="!withTemplate"
                             :text="true"
-                            :disabled="!$isAuthorized($OPERATION.D_PROCESS)"
+                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                             @click="handleDeleteProcess(row)">
                             {{$t('Common["删除"]')}}
                         </bk-button>
@@ -115,11 +115,11 @@
                 </template>
                 <span style="display: inline-block;" v-else
                     v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_PROCESS),
-                        auth: [$OPERATION.C_PROCESS]
+                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                        auth: [$OPERATION.U_SERVICE_INSTANCE]
                     }">
                     <button class="add-process-button text-primary"
-                        :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
+                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                         @click.stop="handleAddProcess">
                         <i class="bk-icon icon-plus"></i>
                         <span>{{$t('BusinessTopology["添加进程"]')}}</span>
@@ -129,11 +129,11 @@
             <!-- <div class="add-process-options" v-if="!withTemplate && list.length" slot="append">
                 <span style="display: inline-block;"
                     v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_PROCESS),
-                        auth: [$OPERATION.C_PROCESS]
+                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                        auth: [$OPERATION.U_SERVICE_INSTANCE]
                     }">
                     <button class="add-process-button text-primary"
-                        :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
+                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                         @click="handleAddProcess">
                         <i class="bk-icon icon-plus"></i>
                         <span>{{$t('BusinessTopology["添加进程"]')}}</span>
@@ -216,11 +216,11 @@
                     menu.unshift({
                         name: this.$t('BusinessTopology["添加进程"]'),
                         handler: this.handleAddProcess,
-                        auth: 'C_PROCESS'
+                        auth: 'U_SERVICE_INSTANCE'
                     }, {
                         name: this.$t('BusinessTopology["克隆"]'),
                         handler: this.handleCloneInstance,
-                        auth: 'C_PROCESS'
+                        auth: 'C_SERVICE_INSTANCE'
                     })
                 }
                 return menu
@@ -516,6 +516,9 @@
         }
         .instance-menu {
             opacity: 0;
+            /deep/ .bk-tooltip-ref {
+                width: 100%;
+            }
         }
         .title-label {
             font-size: 14px;

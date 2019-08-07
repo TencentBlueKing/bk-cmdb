@@ -305,7 +305,7 @@ func (h *HostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.Mod
 		blog.Errorf("getHostModuleConfig http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, conds, h.logic.rid)
 		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
 	}
-	return result.Data, nil
+	return result.Data.Info, nil
 }
 
 func (h *HostModuleLog) getInnerIP(ctx context.Context) ([]mapstr.MapStr, errors.CCError) {

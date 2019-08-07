@@ -1112,7 +1112,7 @@
         }
     }
     .toolbar {
-        padding: 7px 20px;
+        padding: 9px 20px;
         width: 100%;
         height: 50px;
         background: #fff;

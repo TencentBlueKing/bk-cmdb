@@ -36,8 +36,8 @@
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="showUserAPIDetails">
-            <bk-table-column prop="id" label="ID" sortable="custom"></bk-table-column>
-            <bk-table-column prop="name" :label="$t('CustomQuery[\'查询名称\']')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="id" label="ID" class-name="is-highlight" fixed></bk-table-column>
+            <bk-table-column prop="name" :label="$t('CustomQuery[\'查询名称\']')" sortable="custom" fixed></bk-table-column>
             <bk-table-column prop="create_user" :label="$t('CustomQuery[\'创建用户\']')" sortable="custom"></bk-table-column>
             <bk-table-column prop="create_time" :label="$t('CustomQuery[\'创建时间\']')" sortable="custom">
                 <template slot-scope="{ row }">
