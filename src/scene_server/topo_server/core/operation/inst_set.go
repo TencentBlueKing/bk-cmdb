@@ -57,11 +57,11 @@ func (s *set) SetProxy(obj ObjectOperationInterface, inst InstOperationInterface
 }
 
 func (s *set) hasHost(params types.ContextParams, bizID int64, setIDS []int64) (bool, error) {
-	option := metadata.HostModuleRelationRequest{
+	option := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		SetIDArr:      setIDS,
 	}
-	rsp, err := s.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, option)
+	rsp, err := s.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), params.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to request the object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
