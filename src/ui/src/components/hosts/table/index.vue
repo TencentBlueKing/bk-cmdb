@@ -473,12 +473,20 @@
             },
             injectScope (params) {
                 const biz = params.condition.find(condition => condition.bk_obj_id === 'biz')
-                if (this.scope !== 'all') {
-                    biz.condition.push({
+                if (this.scope === 'all') {
+                    biz.condition = biz.condition.filter(condition => condition.field !== 'default')
+                } else {
+                    const newCondition = {
                         field: 'default',
                         operator: '$eq',
                         value: this.scope
-                    })
+                    }
+                    const existCondition = biz.condition.find(condition => condition.field === 'default')
+                    if (existCondition) {
+                        Object.assign(existCondition, newCondition)
+                    } else {
+                        biz.condition.push(newCondition)
+                    }
                 }
                 return params
             },
