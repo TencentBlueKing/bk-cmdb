@@ -287,10 +287,10 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 }
 
 func (c *commonInst) innerHasHost(params types.ContextParams, moduleIDS []int64) (bool, error) {
-	option := metadata.HostModuleRelationRequest{
+	option := &metadata.HostModuleRelationRequest{
 		ModuleIDArr: moduleIDS,
 	}
-	rsp, err := c.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, option)
+	rsp, err := c.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), params.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

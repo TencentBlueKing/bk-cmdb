@@ -145,7 +145,6 @@ func (s *coreService) host() {
 	s.addAction(http.MethodGet, "/find/hosts/favorites/search/{user}/{id}", s.GetHostFavouriteByID, nil)
 
 	s.addAction(http.MethodPost, "/findmany/meta/hosts/modules/search", s.GetHostModulesIDs, nil)
-	s.addAction(http.MethodPost, "/findmany/meta/hosts/module/config/search", s.GetModulesHostConfig, nil)
 
 	s.addAction(http.MethodPost, "/findmany/hosts/list_by_topo_node", s.ListHostByTopoNode, nil)
 }
