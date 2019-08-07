@@ -1,10 +1,11 @@
 package topo_server_test
 
 import (
-	"configcenter/src/common/metadata"
 	"context"
 	"encoding/json"
 	"strconv"
+
+	"configcenter/src/common/metadata"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -1,8 +1,9 @@
 package host_server_test
 
 import (
-	"configcenter/src/test"
 	"testing"
+
+	"configcenter/src/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,6 +12,7 @@ import (
 var header = test.GetHeader()
 var hostServerClient = test.GetClientSet().HostServer()
 var apiServerClient = test.GetClientSet().ApiServer()
+var instClient = test.GetClientSet().TopoServer().Instance()
 
 func TestHostServer(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -21,6 +23,6 @@ var _ = BeforeSuite(func() {
 	test.ClearDatabase()
 })
 
-var _ = AfterSuite(func() {
-	test.ClearDatabase()
-})
+// var _ = AfterSuite(func() {
+// 	test.ClearDatabase()
+// })

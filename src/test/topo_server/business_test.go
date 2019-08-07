@@ -1,11 +1,12 @@
 package topo_server_test
 
 import (
-	"configcenter/src/common"
-	params "configcenter/src/common/paraparse"
 	"context"
 	"fmt"
 	"strconv"
+
+	"configcenter/src/common"
+	params "configcenter/src/common/paraparse"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
