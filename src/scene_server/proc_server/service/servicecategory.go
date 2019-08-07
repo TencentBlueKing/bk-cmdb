@@ -21,7 +21,15 @@ import (
 	"configcenter/src/common/util"
 )
 
+func (ps *ProcServer) ListServiceCategoryWithStatistics(ctx *rest.Contexts) {
+	ps.listServiceCategory(ctx, true)
+}
+
 func (ps *ProcServer) ListServiceCategory(ctx *rest.Contexts) {
+	ps.listServiceCategory(ctx, false)
+}
+
+func (ps *ProcServer) listServiceCategory(ctx *rest.Contexts, withStatistics bool) {
 	meta := new(metadata.MetadataWrapper)
 	if err := ctx.DecodeInto(meta); err != nil {
 		ctx.RespAutoError(err)
@@ -36,7 +44,7 @@ func (ps *ProcServer) ListServiceCategory(ctx *rest.Contexts) {
 
 	listOption := metadata.ListServiceCategoriesOption{
 		BusinessID:     bizID,
-		WithStatistics: true,
+		WithStatistics: withStatistics,
 	}
 	if ps.AuthManager.Enabled() == true {
 		authorizedCategoryIDs, err := ps.AuthManager.ListAuthorizedServiceCategoryIDs(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
