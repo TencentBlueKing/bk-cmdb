@@ -1,13 +1,14 @@
 package topo_server_test
 
 import (
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
+
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	params "configcenter/src/common/paraparse"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

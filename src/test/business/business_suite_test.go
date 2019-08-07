@@ -13,10 +13,12 @@
 package business_test
 
 import (
+	"testing"
+
 	"configcenter/src/test"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 var clientSet = test.GetClientSet()

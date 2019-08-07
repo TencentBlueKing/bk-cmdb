@@ -1,12 +1,13 @@
 package event_server_test
 
 import (
-	"configcenter/src/common/metadata"
-	"configcenter/src/test"
 	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"configcenter/src/common/metadata"
+	"configcenter/src/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
