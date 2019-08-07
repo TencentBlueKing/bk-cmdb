@@ -14,10 +14,18 @@
                     <li class="menu-item"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
-                        <button class="menu-button"
-                            @click="menu.handler">
-                            {{menu.name}}
-                        </button>
+                        <span class="menu-span"
+                            v-cursor="{
+                                active: !$isAuthorized($OPERATION[menu.auth]),
+                                auth: [$OPERATION[menu.auth]]
+                            }">
+                            <bk-button class="menu-button"
+                                :text="true"
+                                :disabled="!$isAuthorized($OPERATION[menu.auth])"
+                                @click="menu.handler">
+                                {{menu.name}}
+                            </bk-button>
+                        </span>
                     </li>
                 </ul>
             </cmdb-dot-menu>
@@ -107,7 +115,8 @@
             instanceMenu () {
                 const menu = [{
                     name: this.$t('Common["删除"]'),
-                    handler: this.handleDeleteInstance
+                    handler: this.handleDeleteInstance,
+                    auth: 'D_SERVICE_INSTANCE'
                 }]
                 return menu
             },
@@ -280,6 +289,11 @@
             &:hover {
                 color: #3a84ff;
             }
+        }
+    }
+    .instance-menu {
+        /deep/ .bk-tooltip-ref {
+            width: 100%;
         }
     }
     .menu-list {
