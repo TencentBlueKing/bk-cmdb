@@ -145,7 +145,7 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 			ctx.RespAutoError(err)
 			return
 		}
-		if option.ServiceTemplateIDs != nil {
+		if option.ServiceTemplateIDs == nil {
 			option.ServiceTemplateIDs = authorizedIDs
 		} else {
 			ids := make([]int64, 0)
@@ -199,7 +199,7 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 			ctx.RespAutoError(err)
 			return
 		}
-		if option.ServiceTemplateIDs != nil {
+		if option.ServiceTemplateIDs == nil {
 			option.ServiceTemplateIDs = authorizedIDs
 		} else {
 			ids := make([]int64, 0)
