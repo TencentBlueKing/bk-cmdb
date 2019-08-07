@@ -86,6 +86,7 @@ func (d *find) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRe
 	if nil == err {
 		reply.Success = true
 	} else {
+		blog.ErrorJSON("find execute error.  errr: %s, raw data: %s, rid:%s", err.Error(), msg, msg.RequestID)
 		reply.Message = err.Error()
 	}
 
