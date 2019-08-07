@@ -11,7 +11,7 @@
             <span class="title-label">{{instance.name}}</span>
             <cmdb-dot-menu class="instance-menu" @click.native.stop>
                 <ul class="menu-list">
-                    <li class="menu-item"
+                    <li :class="['menu-item', { 'is-disabled': !$isAuthorized($OPERATION[menu.auth]) }]"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
                         <span class="menu-span"
@@ -313,9 +313,16 @@
                 font-size: 12px;
                 background-color: #fff;
                 &:hover {
-                    background-color: #E1ECFF;
-                    color: #3A84FF;
+                    background-color: #e1ecff;
+                    color: #3a84ff;
                 }
+                &[disabled] {
+                    color: #dcdee5;
+                }
+            }
+            .menu-span {
+                display: inline-block;
+                width: 100%;
             }
         }
     }
