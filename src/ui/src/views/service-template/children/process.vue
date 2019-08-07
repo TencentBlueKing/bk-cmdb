@@ -9,7 +9,8 @@
                 :prop="column.id"
                 :label="column.name">
                 <template slot-scope="{ row }">
-                    {{row[column.id] || '--'}}
+                    <span v-if="column.id === 'bind_ip'">{{row[column.id] | ipText}}</span>
+                    <span v-else>{{row[column.id] || '--'}}</span>
                 </template>
             </bk-table-column>
             <bk-table-column :label="$t('Common[\'操作\']')">
@@ -46,6 +47,15 @@
 
 <script>
     export default {
+        filters: {
+            ipText (value) {
+                if (['1', '2'].includes(value)) {
+                    const ip = ['127.0.0.1', '0.0.0.0']
+                    return ip[value - 1]
+                }
+                return value || '--'
+            }
+        },
         props: {
             list: {
                 type: Array,
@@ -101,7 +111,6 @@
             showList () {
                 let list = this.list.map(template => {
                     const result = {}
-                    // const property = template['property']
                     Object.keys(template).map(key => {
                         const type = typeof template[key]
                         if (type === 'object') {

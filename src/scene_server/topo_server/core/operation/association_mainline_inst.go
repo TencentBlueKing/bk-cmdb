@@ -61,7 +61,7 @@ func (assoc *association) checkInstNameRepeat(params types.ContextParams, curren
 	return true, "", nil
 }
 
-func (assoc *association) ResetMainlineInstAssociatoin(params types.ContextParams, current model.Object) error {
+func (assoc *association) ResetMainlineInstAssociation(params types.ContextParams, current model.Object) error {
 	rid := params.ReqID
 
 	cObj := current.Object()
@@ -146,7 +146,7 @@ func (assoc *association) SetMainlineInstAssociation(params types.ContextParams,
 		return err
 	}
 
-	expectParent2Childs := map[int64][]inst.Inst{}
+	expectParent2Children := map[int64][]inst.Inst{}
 	// create current object instance for each parent instance and insert the current instance to
 	for _, parent := range parentInsts {
 
@@ -202,11 +202,11 @@ func (assoc *association) SetMainlineInstAssociation(params types.ContextParams,
 			return err
 		}
 
-		expectParent2Childs[curInstID] = children
+		expectParent2Children[curInstID] = children
 	}
 
-	for parentID, childs := range expectParent2Childs {
-		for _, child := range childs {
+	for parentID, children := range expectParent2Children {
+		for _, child := range children {
 			// set the child's parent
 			if err = child.SetMainlineParentInst(parentID); nil != err {
 				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, err: %s, rid: %s", child.GetObject().Object().ObjectID, err.Error(), params.ReqID)
@@ -306,7 +306,7 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 	moduleHostCount[common.BKInnerObjIDApp] = make(map[int64][]int64)
 	moduleHostCount[common.BKInnerObjIDSet] = make(map[int64][]int64)
 	moduleHostCount[common.BKInnerObjIDModule] = make(map[int64][]int64)
-	for _, hostModule := range hostModules.Data {
+	for _, hostModule := range hostModules.Data.Info {
 		if _, exist := moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID]; exist == false {
 			moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = make([]int64, 0)
 		}
@@ -327,6 +327,29 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 			moduleHostCount[objectID][key] = util.IntArrayUnique(moduleHostCount[objectID][key])
 		}
 	}
+
+	// module bound service_templateID
+	moduleFilter := map[string]interface{}{
+		common.BKAppIDField: bizID,
+	}
+	moduleQueryCondition := &metadata.QueryCondition{
+		Condition: mapstr.MapStr(moduleFilter),
+	}
+	modules, e := assoc.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, moduleQueryCondition)
+	if e != nil {
+		blog.Errorf("fillStatistics failed, list modules failed, option: %+v, err: %s, rid: %s", listHostOption, e.Error(), params.ReqID)
+		return e
+	}
+	moduleServiceTemplateIDMap := make(map[int64]int64)
+	for _, module := range modules.Data.Info {
+		moduleStruct := &metadata.ModuleInst{}
+		if err := module.ToStructByTag(moduleStruct, "field"); err != nil {
+			blog.Errorf("fillStatistics failed, parse module data to struct failed, module: %+v, err: %s, rid: %s", module, e.Error(), params.ReqID)
+			return err
+		}
+		moduleServiceTemplateIDMap[moduleStruct.ModuleID] = moduleStruct.ServiceTemplateID
+	}
+
 	for _, tir := range parentInsts {
 		tir.DeepFirstTraverse(func(node *metadata.TopoInstRst) {
 			if len(node.Child) > 0 {
@@ -347,6 +370,9 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 			if node.ObjID == common.BKInnerObjIDModule {
 				if _, exist := moduleServiceInstanceCount[node.InstID]; exist == true {
 					node.ServiceInstanceCount = moduleServiceInstanceCount[node.InstID]
+				}
+				if id, exist := moduleServiceTemplateIDMap[node.InstID]; exist == true {
+					node.ServiceTemplateID = id
 				}
 			}
 			if node.ObjID == common.BKInnerObjIDApp ||

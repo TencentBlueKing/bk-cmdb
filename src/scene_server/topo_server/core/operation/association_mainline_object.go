@@ -48,7 +48,7 @@ func (assoc *association) DeleteMainlineAssociation(params types.ContextParams, 
 		return err
 	}
 
-	if err = assoc.ResetMainlineInstAssociatoin(params, targetObj); nil != err && io.EOF != err {
+	if err = assoc.ResetMainlineInstAssociation(params, targetObj); nil != err && io.EOF != err {
 		blog.Errorf("[operation-asst] failed to delete the object(%s)'s instance, error info %s, rid: %s", objID, err.Error(), params.ReqID)
 		return err
 	}

@@ -549,10 +549,10 @@ func (p *processOperation) generateServiceInstanceName(ctx core.ContextParams, i
 			return "", ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
 
-		if process.ProcessName != nil {
+		if process.ProcessName != nil && len(*process.ProcessName) > 0 {
 			instanceName += fmt.Sprintf("_%s", *process.ProcessName)
 		}
-		if process.Port != nil {
+		if process.Port != nil && len(*process.Port) > 0 {
 			instanceName += fmt.Sprintf("_%s", *process.Port)
 		}
 	}
@@ -648,7 +648,7 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 	}{}
 	var err error
 	if err = p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).One(ctx.Context, &module); err != nil {
-		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, get module failed, err: %+v, rid: %s", err, ctx.ReqID)
+		blog.ErrorJSON("AutoCreateServiceInstanceModuleHost failed, get module failed, err: %+v, cond: %#v, rid: %s", err, moduleFilter, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 

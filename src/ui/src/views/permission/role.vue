@@ -185,11 +185,11 @@
 
 <style lang="scss" scoped>
     .role-options{
-        padding: 0 0 20px 0;
+        padding: 0 0 14px 0;
         .role-options-search{
             position: relative;
-            height: 36px;
-            line-height: 36px;
+            height: 32px;
+            line-height: 32px;
         }
         .search-selector {
             position: relative;

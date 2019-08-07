@@ -47,11 +47,11 @@ type set struct {
 }
 
 func (s *set) hasHost(bizID int64, setIDS []int64) (bool, error) {
-	option := metadata.HostModuleRelationRequest{
+	option := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		SetIDArr:      setIDS,
 	}
-	rsp, err := s.client.CoreService().Host().GetModulesHostConfig(context.Background(), s.params.Header, option)
+	rsp, err := s.client.CoreService().Host().GetHostModuleRelation(context.Background(), s.params.Header, option)
 	if nil != err {
 		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s, rid: %s", err.Error(), s.params.ReqID)
 		return false, s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -62,7 +62,7 @@ func (s *set) hasHost(bizID int64, setIDS []int64) (bool, error) {
 		return false, s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return 0 != len(rsp.Data), nil
+	return 0 != len(rsp.Data.Info), nil
 }
 
 func (s *set) deleteModules(bizID int64, setIDS []int64) error {
@@ -166,7 +166,7 @@ func (s *set) DeleteSetHost(bizID int64, setIDs []int64) error {
 		return ccerr
 	}
 	hostIDs := make([]int64, 0)
-	for _, relation := range relations.Data {
+	for _, relation := range relations.Data.Info {
 		hostIDs = append(hostIDs, relation.HostID)
 	}
 	hostIDs = util.IntArrayUnique(hostIDs)

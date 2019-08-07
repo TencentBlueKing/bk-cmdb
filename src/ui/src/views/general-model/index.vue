@@ -115,9 +115,12 @@
             @selection-change="handleSelectChange">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in table.header"
+                sortable="custom"
                 :key="column.id"
                 :prop="column.id"
-                :label="column.name">
+                :label="column.name"
+                :class-name="column.id === 'bk_inst_name' ? 'is-highlight' : ''"
+                :fixed="column.id === 'bk_inst_name'">
             </bk-table-column>
         </bk-table>
         <bk-sideslider
@@ -780,6 +783,6 @@
     }
 }
 .models-table{
-    margin-top: 20px;
+    margin-top: 14px;
 }
 </style>
