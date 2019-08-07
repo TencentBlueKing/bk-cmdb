@@ -677,7 +677,7 @@ func (sh *searchHost) searchByHostConds() error {
 	}
 
 	if 0 != len(sh.conds.hostCond.Fields) {
-		sh.conds.hostCond.Fields = append(sh.conds.hostCond.Fields, common.BKHostIDField)
+		sh.conds.hostCond.Fields = append(sh.conds.hostCond.Fields, common.BKHostIDField, common.BKCloudIDField)
 	}
 
 	condition := make(map[string]interface{})
@@ -696,6 +696,7 @@ func (sh *searchHost) searchByHostConds() error {
 		Start:     sh.hostSearchParam.Page.Start,
 		Limit:     sh.hostSearchParam.Page.Limit,
 		Sort:      sh.hostSearchParam.Page.Sort,
+		Fields:    strings.Join(sh.conds.hostCond.Fields, ","),
 	}
 
 	gResult, err := sh.lgc.CoreAPI.HostController().Host().GetHosts(context.Background(), sh.pheader, query)
