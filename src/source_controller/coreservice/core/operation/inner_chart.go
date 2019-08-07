@@ -165,7 +165,7 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 	bizHost, err := m.SearchBizHost(ctx)
 
-	opt := mapstr.MapStr{}
+	opt := M{"bk_data_status": M{"$ne": "disabled"}, "bk_biz_id": M{"$ne": 1}}
 	bizInfo := make([]metadata.BizInst, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
 		blog.Errorf("biz's host count, search biz info fail ,err: %v, rid: %v", err, ctx.ReqID)
@@ -325,7 +325,7 @@ func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam m
 	}
 
 	respData := make([]metadata.StringIDCount, 0)
-	opt := mapstr.MapStr{"bk_data_status": M{"$ne": "disabled"}}
+	opt := mapstr.MapStr{"bk_data_status": M{"$ne": "disabled"}, "bk_biz_id": M{"$ne": 1}}
 	bizInfo := make([]metadata.BizInst, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
 		blog.Errorf("HostBizChartData, get biz info fail, err: %v, rid: %v ", err, ctx.ReqID)

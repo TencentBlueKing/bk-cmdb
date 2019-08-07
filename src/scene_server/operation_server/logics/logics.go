@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	charts "configcenter/src/scene_server/admin_server/upgrader/x19.05.22.01"
 )
 
 func (lgc *Logics) GetBizModuleHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
@@ -84,7 +83,7 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCount
 }
 
 func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConfig) (uint64, error) {
-	opt, ok := charts.InnerChartsMap[chartInfo.ReportType]
+	opt, ok := metadata.InnerChartsMap[chartInfo.ReportType]
 	if !ok {
 		return 0, kit.CCError.Error(common.CCErrOperationNewAddStatisticFail)
 	}
