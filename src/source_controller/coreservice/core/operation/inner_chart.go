@@ -33,20 +33,33 @@ func (m *operationManager) TimerFreshData(params core.ContextParams) {
 func (m *operationManager) ModelInst(ctx core.ContextParams) {
 	modelInstCount := make([]metadata.StringIDCount, 0)
 
-	pipeline := []M{{"$group": M{"_id": "$bk_obj_id", "count": M{"$sum": 1}}}}
-	if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &modelInstCount); err != nil {
-		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, ctx.ReqID)
-		return
-	}
-
 	opt := mapstr.MapStr{}
+	modelInstNumber := make([]metadata.IDStringCountInt64, 0)
 	modelInfo := make([]metadata.Object, 0)
 	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(opt).All(ctx, &modelInfo); err != nil {
 		blog.Errorf("count model's instance, search model info fail ,err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
 
-	modelInstNumber := make([]metadata.IDStringCountInt64, 0)
+	instCount, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(opt).Count(ctx)
+	if err != nil {
+		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, ctx.ReqID)
+		return
+	}
+	if instCount == 0 {
+		if err := m.ObjectInstEmpty(ctx, modelInfo); err != nil {
+			blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, ctx.ReqID)
+			return
+		}
+		return
+	}
+
+	pipeline := []M{{"$group": M{"_id": "$bk_obj_id", "count": M{"$sum": 1}}}}
+	if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &modelInstCount); err != nil {
+		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, ctx.ReqID)
+		return
+	}
+
 	allModels := make([]metadata.ObjectIDName, 0)
 	matchedModels := make([]string, 0)
 	for _, model := range modelInfo {
@@ -374,7 +387,7 @@ func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam m
 	return respData, nil
 }
 
-func (m *operationManager) UpdateInnerChartData(ctx core.ContextParams, opt mapstr.MapStr, data metadata.ChartData) interface{} {
+func (m *operationManager) UpdateInnerChartData(ctx core.ContextParams, opt mapstr.MapStr, data metadata.ChartData) error {
 	if err := m.dbProxy.Table(common.BKTableNameChartData).Delete(ctx, opt); err != nil {
 		blog.Errorf("delete model instance change chart data fail, err: %v, rid: %v", err, ctx.ReqID)
 		return err
@@ -472,4 +485,27 @@ func (m *operationManager) BizHostEmpty(ctx core.ContextParams, bizInfo []metada
 		blog.Errorf("update biz host change fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
 	}
+}
+
+func (m *operationManager) ObjectInstEmpty(ctx core.ContextParams, modelInfo []metadata.Object) error {
+	modelInstNumber := make([]metadata.IDStringCountInt64, 0)
+	for _, model := range modelInfo {
+		info := metadata.IDStringCountInt64{
+			Id:    model.ObjectName,
+			Count: 0,
+		}
+		modelInstNumber = append(modelInstNumber, info)
+	}
+	data := metadata.ChartData{
+		ReportType: common.ModelInstChart,
+		Data:       modelInstNumber,
+		OwnerID:    "0",
+	}
+	condition := mapstr.MapStr{}
+	condition[common.OperationReportType] = common.ModelInstChart
+	if err := m.UpdateInnerChartData(ctx, condition, data); err != nil {
+		blog.Errorf("update inner chart ModelInst data fail, err: %v, rid: %v", err, ctx.ReqID)
+		return err
+	}
+	return nil
 }
