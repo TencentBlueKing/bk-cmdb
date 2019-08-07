@@ -339,7 +339,7 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 }
 
 // GetHostModuleRelation get host module relation
-func (manager *TransferManager) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error) {
+func (manager *TransferManager) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
 	if input.Empty() {
 		blog.Errorf("GetHostModuleRelation input empty. input:%#v, rid:%s", input, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
@@ -362,14 +362,34 @@ func (manager *TransferManager) GetHostModuleRelation(ctx core.ContextParams, in
 		return nil, nil
 	}
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), ctx.SupplierAccount)
-	hostModuleArr := make([]metadata.ModuleHost, 0)
-	err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).All(ctx, &hostModuleArr)
+
+	cnt, err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(ctx.Context)
 	if err != nil {
-		blog.ErrorJSON("GetHostModuleRelation query db error. err:%s, cond:%s,rid:%s", err.Error(), cond, ctx.ReqID)
+		blog.Errorf("get module host config count failed, err: %v, cond:%#v, rid: %s", err, cond, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	return hostModuleArr, nil
+	hostModuleArr := make([]metadata.ModuleHost, 0)
+	db := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).
+		Find(cond).
+		Start(uint64(input.Page.Start)).
+		Sort(input.Page.Sort)
+
+	if input.Page.Limit > 0 {
+		db = db.Limit(uint64(input.Page.Limit))
+	}
+
+	err = db.All(ctx.Context, &hostModuleArr)
+	if err != nil {
+		blog.Errorf("get module host config failed, err: %v, cond:%#v, rid: %s", err, cond, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return &metadata.HostConfigData{
+		Count: int64(cnt),
+		Info:  hostModuleArr,
+		Page:  input.Page,
+	}, nil
 }
 
 // DeleteHost delete host module relation and host info

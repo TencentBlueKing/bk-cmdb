@@ -56,7 +56,6 @@ type HostClientInterface interface {
 	GetHostFavouriteByID(ctx context.Context, user string, id string, h http.Header) (resp *metadata.GetHostFavoriteWithIDResult, err error)
 
 	GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error)
-	GetModulesHostConfig(ctx context.Context, h http.Header, option metadata.HostModuleRelationRequest) (resp *metadata.HostConfig, err error)
 
 	// search host
 	ListHosts(ctx context.Context, header http.Header, option metadata.ListHosts) (resp metadata.ListHostResult, err error)

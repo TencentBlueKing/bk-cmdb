@@ -86,6 +86,14 @@
             }
         }
     }
+    .bk-table-body {
+        .is-highlight {
+            color: #3A84FF;
+        }
+        tr.hover-row>td {
+            background-color: #f0f1f5;
+        }
+    }
 }
 
 .bk-big-tree {
@@ -113,9 +121,25 @@
 
 .bk-tab {
     height: 100%;
+    background-color: #fff;
+    .bk-tab-header {
+        padding: 0 20px;
+        height: 58px;
+        background-image: linear-gradient(transparent 57px,#dcdee5 0);
+        .bk-tab-label-list {
+            height: 58px;
+            .bk-tab-label-item {
+                line-height: 58px;
+            }
+        }
+    }
+    .bk-tab-header-setting {
+        height: 58px;
+        line-height: 58px;
+    }
     .bk-tab-section {
         padding: 0 20px;
-        height: calc(100% - 42px);
+        height: calc(100% - 58px);
         .bk-tab-content {
             height: 100%;
         }
