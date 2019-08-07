@@ -228,6 +228,7 @@ func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID str
 	}
 	attrArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
 	cond.Element(&mongo.In{Key: metadata.AttributeFieldSupplierAccount, Val: attrArr})
+	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	attrResult, err := m.search(ctx, cond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", ctx.ReqID, objID, err.Error())

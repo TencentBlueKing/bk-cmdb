@@ -166,6 +166,10 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/cloud/accountSearch").To(s.SearchAccount))
 	api.Route(api.POST("/hosts/cloud/syncHistory").To(s.SearchCloudSyncHistory))
 
+	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
+	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
+	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
+
 	container.Add(api)
 
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
