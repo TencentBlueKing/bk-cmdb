@@ -58,6 +58,7 @@
                                 v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"
                                 @click="jumpPage(source)"></div>
                             <div class="results-desc" v-if="propertyMap['host']" @click="jumpPage(source)">
+                                <span class="desc-item" v-html="`${$t('Index[\'主机ID\']')}${source['bk_host_id']}`"> </span>
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap['host']"
                                     :key="childIndex"
@@ -341,12 +342,9 @@
             jumpPage (source) {
                 if (source['hitsType'] === 'host') {
                     this.$router.push({
-                        name: 'resource',
+                        name: 'resourceHostDetails',
                         params: {
-                            text: source['bk_host_innerip'].toString().replace(/(\<\/?em\>)/g, ''),
-                            outer: true,
-                            inner: true,
-                            exact: false
+                            id: source['bk_host_id']
                         },
                         query: {
                             from: this.$route.fullPath
@@ -517,12 +515,13 @@
                 padding-top: 14px;
                 color: $cmdbTextColor;
                 .results-item {
-                    width: 60%;
+                    width: 65%;
                     padding-bottom: 35px;
                     color: #63656e;
                     em {
                         color: #3a84ff !important;
                         font-style: normal !important;
+                        word-break: break-all;
                     }
                     .results-title {
                         display: inline-block;

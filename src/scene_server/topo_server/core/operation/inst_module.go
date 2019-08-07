@@ -54,11 +54,11 @@ func (m *module) SetProxy(inst InstOperationInterface) {
 }
 
 func (m *module) hasHost(params types.ContextParams, bizID int64, moduleIDS []int64) (bool, error) {
-	option := metadata.HostModuleRelationRequest{
+	option := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		ModuleIDArr:   moduleIDS,
 	}
-	rsp, err := m.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, option)
+	rsp, err := m.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), params.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -69,7 +69,7 @@ func (m *module) hasHost(params types.ContextParams, bizID int64, moduleIDS []in
 		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return 0 != len(rsp.Data), nil
+	return 0 != len(rsp.Data.Info), nil
 }
 
 func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizID, setID int64, data mapstr.MapStr) (inst.Inst, error) {

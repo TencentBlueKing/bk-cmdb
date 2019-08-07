@@ -37,20 +37,20 @@
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange">
-            <bk-table-column prop="bk_asst_id" :label="$t('ModelManagement[\'唯一标识\']')">
+            <bk-table-column prop="bk_asst_id" :label="$t('ModelManagement[\'唯一标识\']')" sortable="custom" class-name="is-highlight">
                 <template slot-scope="{ row }">
                     <div style="cursor: pointer; padding: 10px 0;" @click.stop="handleShowDetails(row)">
                         {{row['bk_asst_id']}}
                     </div>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_asst_name" :label="$t('Hosts[\'名称\']')">
+            <bk-table-column prop="bk_asst_name" :label="$t('Hosts[\'名称\']')" sortable="custom">
                 <template slot-scope="{ row }">
                     {{row['bk_asst_name'] || '--'}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="src_des" :label="$t('ModelManagement[\'源->目标描述\']')"></bk-table-column>
-            <bk-table-column prop="dest_des" :label="$t('ModelManagement[\'目标->源描述\']')"></bk-table-column>
+            <bk-table-column prop="src_des" :label="$t('ModelManagement[\'源->目标描述\']')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="dest_des" :label="$t('ModelManagement[\'目标->源描述\']')" sortable="custom"></bk-table-column>
             <bk-table-column prop="count" :label="$t('ModelManagement[\'使用数\']')"></bk-table-column>
             <bk-table-column v-if="isAdminView"
                 fixed="right"
@@ -281,7 +281,7 @@
 
 <style lang="scss" scoped>
     .operation-box {
-        margin: 0 0 20px 0;
+        margin: 0 0 14px 0;
         font-size: 0;
         .create-btn {
             margin: 0 10px 0 0;

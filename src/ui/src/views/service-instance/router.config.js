@@ -3,24 +3,14 @@ import {
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
     D_SERVICE_INSTANCE,
-    R_SERVICE_INSTANCE,
-
-    C_PROCESS,
-    U_PROCESS,
-    D_PROCESS,
-    R_PROCESS
+    R_SERVICE_INSTANCE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
     D_SERVICE_INSTANCE,
-    R_SERVICE_INSTANCE,
-
-    C_PROCESS,
-    U_PROCESS,
-    D_PROCESS,
-    R_PROCESS
+    R_SERVICE_INSTANCE
 }
 
 export default [{

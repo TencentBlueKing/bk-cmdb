@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="topology-tree-wrapper">
         <bk-big-tree class="topology-tree"
             ref="tree"
             v-bkloading="{
@@ -26,12 +26,20 @@
                         {{$t('Common[\'新建\']')}}
                     </bk-button>
                 </span>
-                <bk-button class="node-button fr"
-                    theme="primary"
-                    v-else-if="showCreate(node, data)"
-                    @click.stop="showCreateDialog(node)">
-                    {{$t('Common[\'新建\']')}}
-                </bk-button>
+                <span v-else-if="showCreate(node, data)"
+                    class="fr"
+                    style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_TOPO),
+                        auth: [$OPERATION.C_TOPO]
+                    }">
+                    <bk-button class="node-button"
+                        theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.C_TOPO)"
+                        @click.stop="showCreateDialog(node)">
+                        {{$t('Common[\'新建\']')}}
+                    </bk-button>
+                </span>
                 <div class="info-content">
                     <span class="node-name">{{data.bk_inst_name}}</span>
                     <span class="instance-num">{{data.service_instance_count}}</span>
@@ -223,11 +231,11 @@
             async handleCreateNode (value) {
                 try {
                     const parentNode = this.createInfo.parentNode
-                    const formData = {
+                    const formData = this.$injectMetadata({
                         ...value,
                         'bk_biz_id': this.business,
                         'bk_parent_id': parentNode.data.bk_inst_id
-                    }
+                    })
                     const nextModelId = this.createInfo.nextModelId
                     const nextModel = this.mainLineModels.find(model => model.bk_obj_id === nextModelId)
                     const handlerMap = {
@@ -241,6 +249,7 @@
                         bk_obj_name: nextModel.bk_obj_name,
                         bk_obj_id: nextModel.bk_obj_id,
                         service_instance_count: 0,
+                        service_template_id: value.service_template_id,
                         ...data
                     }
                     this.$refs.tree.addNode(nodeData, parentNode.id, 0)
@@ -295,6 +304,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .topology-tree-wrapper {
+        height: 100%;
+    }
     .node-info {
         .node-model-icon {
             width: 22px;
@@ -317,7 +329,7 @@
         .node-button {
             height: 24px;
             padding: 0 6px;
-            margin: 8px 4px;
+            margin: 0 4px;
             line-height: 22px;
             border-radius: 4px;
             font-size: 12px;
@@ -326,7 +338,7 @@
         .info-content {
             display: flex;
             align-items: center;
-            line-height: 40px;
+            line-height: 36px;
             font-size: 14px;
             .node-name {
                 @include ellipsis;
@@ -346,6 +358,7 @@
         }
     }
     .topology-tree {
+        height: 100%;
         .bk-big-tree-node.is-selected {
             .instance-num {
                 background-color: #a2c5fd;

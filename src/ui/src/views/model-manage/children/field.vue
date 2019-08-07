@@ -17,38 +17,42 @@
             v-bkloading="{ isLoading: $loading(`post_searchObjectAttribute_${objId}`) }"
             :data="table.list"
             :max-height="$APP.height - 300"
-            @sort-change="handleSortChange">
-            <bk-table-column prop="isrequired" :label="$t('ModelManagement[\'必填\']')" width="60">
+            :row-style="{
+                cursor: 'pointer'
+            }"
+            @sort-change="handleSortChange"
+            @cell-click="handleShowDetails">
+            <bk-table-column prop="isrequired" :label="$t('ModelManagement[\'必填\']')" width="60" sortable="custom">
                 <template slot-scope="{ row }">
                     <i class="field-required-icon bk-icon icon-check-1" v-if="row.isrequired"></i>
                 </template>
             </bk-table-column>
             <bk-table-column prop="bk_property_id"
                 min-width="110"
+                sortable="custom"
+                class-name="is-highlight"
                 :label="$t('ModelManagement[\'唯一标识\']')">
                 <template slot-scope="{ row }">
-                    <div style="cursor: pointer; padding: 5px 0;" @click.stop="handleShowDetails(row)">
-                        <span
-                            v-if="row['ispre']"
-                            :class="['field-pre', $i18n.locale]">
-                            {{$t('ModelManagement["内置"]')}}
-                        </span>
-                        <span class="field-id">{{row['bk_property_id']}}</span>
-                    </div>
+                    <span
+                        v-if="row['ispre']"
+                        :class="['field-pre', $i18n.locale]">
+                        {{$t('ModelManagement["内置"]')}}
+                    </span>
+                    <span class="field-id">{{row['bk_property_id']}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_property_name" :label="$t('ModelManagement[\'名称\']')"></bk-table-column>
-            <bk-table-column prop="bk_property_type" :label="$t('ModelManagement[\'字段类型\']')">
+            <bk-table-column prop="bk_property_name" :label="$t('ModelManagement[\'名称\']')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="bk_property_type" :label="$t('ModelManagement[\'字段类型\']')" sortable="custom">
                 <template slot-scope="{ row }">
                     <span>{{fieldTypeMap[row['bk_property_type']]}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="create_time" :label="$t('ModelManagement[\'创建时间\']')">
+            <bk-table-column prop="create_time" :label="$t('ModelManagement[\'创建时间\']')" sortable="custom">
                 <template slot-scope="{ row }">
                     {{$tools.formatTime(row['create_time'])}}
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('Common[\'操作\']')" v-if="updateAuth">
+            <bk-table-column prop="operation" :label="$t('Common[\'操作\']')" v-if="updateAuth">
                 <template slot-scope="{ row }">
                     <button class="text-primary mr10"
                         :disabled="!isFieldEditable(row)"
@@ -256,11 +260,12 @@
                 this.slider.isShow = false
                 return true
             },
-            handleShowDetails (item) {
+            handleShowDetails (row, column, cell) {
+                if (column.property === 'operation') return
                 this.slider.isEditField = true
                 this.slider.isReadOnly = true
                 this.slider.title = this.$t('ModelManagement["字段详情"]')
-                this.slider.curField = item
+                this.slider.curField = row
                 this.slider.type = true
                 this.slider.isShow = true
             }
@@ -270,7 +275,7 @@
 
 <style lang="scss" scoped>
     .options {
-        padding: 10px 0;
+        padding: 20px 0 14px;
     }
     .field-pre {
         display: inline-block;
