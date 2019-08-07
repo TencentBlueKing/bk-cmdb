@@ -31,7 +31,7 @@ const (
 type BasePage struct {
 	Sort  string `json:"sort,omitempty"`
 	Limit int    `json:"limit,omitempty"`
-	Start int    `json:"start,omitempty"`
+	Start int    `json:"start"`
 }
 
 func (page BasePage) Validate() (string, error) {
