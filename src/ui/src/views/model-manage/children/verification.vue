@@ -1,24 +1,30 @@
 <template>
     <div class="verification-layout">
-        <span class="inline-block-middle"
-            v-if="!isTopoModel"
-            v-cursor="{
-                active: !$isAuthorized($OPERATION.U_MODEL),
-                auth: [$OPERATION.U_MODEL]
-            }">
-            <bk-button class="create-btn" theme="primary"
-                :disabled="isReadOnly || !updateAuth"
-                @click="createVerification">
-                {{$t('ModelManagement["新建校验"]')}}
-            </bk-button>
-        </span>
+        <div class="options">
+            <span class="inline-block-middle"
+                v-if="!isTopoModel"
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.U_MODEL),
+                    auth: [$OPERATION.U_MODEL]
+                }">
+                <bk-button class="create-btn" theme="primary"
+                    :disabled="isReadOnly || !updateAuth"
+                    @click="createVerification">
+                    {{$t('ModelManagement["新建校验"]')}}
+                </bk-button>
+            </span>
+        </div>
         <bk-table
             class="verification-table"
             v-bkloading="{
                 isLoading: $loading(['searchObjectUniqueConstraints', 'deleteObjectUniqueConstraints'])
             }"
             :data="table.list"
-            :max-height="$APP.height - 220">
+            :max-height="$APP.height - 220"
+            :row-style="{
+                cursor: 'pointer'
+            }"
+            @cell-click="handleShowDetails">
             <bk-table-column :label="$t('ModelManagement[\'校验规则\']')">
                 <template slot-scope="{ row }">
                     {{getRuleName(row.keys)}}
@@ -29,7 +35,7 @@
                     {{row.must_check ? $t('ModelManagement["是"]') : $t('ModelManagement["否"]')}}
                 </template>
             </bk-table-column>
-            <bk-table-column
+            <bk-table-column prop="operation"
                 v-if="updateAuth && !isTopoModel"
                 :label="$t('Common[\'操作\']')">
                 <template slot-scope="{ row }">
@@ -54,7 +60,7 @@
                 class="slider-content"
                 slot="content"
                 v-if="slider.isShow"
-                :is-read-only="isReadOnly"
+                :is-read-only="isReadOnly || slider.isReadOnly"
                 :is-edit="slider.isEdit"
                 :verification="slider.verification"
                 :attribute-list="attributeList"
@@ -157,12 +163,14 @@
             createVerification () {
                 this.slider.title = this.$t('ModelManagement["新建校验"]')
                 this.slider.isEdit = false
+                this.slider.isReadOnly = false
                 this.slider.isShow = true
             },
             editVerification (verification) {
                 this.slider.title = this.$t('ModelManagement["编辑校验"]')
                 this.slider.verification = verification
                 this.slider.isEdit = true
+                this.slider.isReadOnly = false
                 this.slider.isShow = true
             },
             saveVerification () {
@@ -196,6 +204,14 @@
                     }
                 })
                 this.table.list = res
+            },
+            handleShowDetails (row, column, cell) {
+                if (column.property === 'operation') return
+                this.slider.title = this.$t('ModelManagement["查看校验"]')
+                this.slider.verification = row
+                this.slider.isEdit = true
+                this.slider.isReadOnly = true
+                this.slider.isShow = true
             }
         }
     }
@@ -203,9 +219,9 @@
 
 <style lang="scss" scoped>
     .verification-layout {
-        padding: 10px 0;
+        padding: 20px 0;
     }
     .verification-table {
-        margin: 10px 0 0 0;
+        margin: 14px 0 0 0;
     }
 </style>

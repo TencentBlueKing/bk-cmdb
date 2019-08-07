@@ -79,6 +79,7 @@
         }
         /deep/.bk-tab-section {
             height: calc(100% - 42px);
+            padding-top: 14px;
         }
         /deep/.bk-tab-content {
             height: 100%;

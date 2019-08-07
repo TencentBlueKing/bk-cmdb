@@ -21,7 +21,7 @@ export const U_CUSTOM_QUERY = 'dynamicGrouping.update'
 export const D_CUSTOM_QUERY = 'dynamicGrouping.delete'
 export const R_CUSTOM_QUERY = 'dynamicGrouping.findMany'
 
-// 进程管理/进程实例
+// 进程管理
 export const C_PROCESS = 'process.create'
 export const U_PROCESS = 'process.update'
 export const D_PROCESS = 'process.delete'
@@ -30,11 +30,11 @@ export const PROCESS_BIND_MODULE = 'process.boundModuleToProcess'
 export const PROCESS_UNBIND_MODULE = 'process.unboundModelToProcess'
 export const PROCESS_SEARCH_MODULE = 'process.findBoundModuleProcess'
 
-// 业务拓扑
-export const C_TOPO = 'mainlineInstanceTopology.create'
-export const U_TOPO = 'mainlineInstanceTopology.update'
-export const D_TOPO = 'mainlineInstanceTopology.delete'
-export const R_TOPO = 'mainlineInstanceTopology.findMany'
+// 服务拓扑
+export const C_TOPO = 'mainlineInstance.create'
+export const U_TOPO = 'mainlineInstance.update'
+export const D_TOPO = 'mainlineInstance.delete'
+export const R_TOPO = 'mainlineObjectTopology.find'
 export const TOPO_TRANSFER_HOST = 'mainlineInstanceTopology.transferHost'
 
 // 业务主机
@@ -149,7 +149,12 @@ export const STATIC_BUSINESS_MODE = [
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
     D_SERVICE_INSTANCE,
-    R_SERVICE_INSTANCE
+    R_SERVICE_INSTANCE,
+
+    C_TOPO,
+    U_TOPO,
+    D_TOPO,
+    R_TOPO
 ]
 
 export const DYNAMIC_BUSINESS_MODE = [
@@ -174,7 +179,11 @@ export const RESOURCE_TYPE_NAME = {
     systemBase: '系统基础',
     cloudDiscover: '云资源发现',
     cloudConfirm: '云资源确认',
-    cloudConfirmHistory: '云资源确认历史'
+    cloudConfirmHistory: '云资源确认历史',
+    processServiceCategory: '服务分类',
+    processServiceTemplate: '服务模板',
+    processServiceInstance: '服务实例',
+    mainlineInstance: '服务拓扑'
 }
 
 export const RESOURCE_ACTION_NAME = {

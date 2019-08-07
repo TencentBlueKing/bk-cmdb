@@ -738,8 +738,11 @@
 </script>
 
 <style lang="scss" scoped>
+    .layout {
+        padding: 14px 0 0 0;
+    }
     .options {
-        padding: 15px 0;
+        padding: 0 0 15px;
     }
     .options-button {
         height: 32px;

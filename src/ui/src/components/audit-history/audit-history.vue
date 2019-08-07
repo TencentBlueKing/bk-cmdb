@@ -188,7 +188,7 @@
         height: 100%;
     }
     .history-options{
-        padding: 0 0 20px;
+        padding: 20px 0 14px;
         .options-group{
             white-space: nowrap;
             margin-right: 16px;

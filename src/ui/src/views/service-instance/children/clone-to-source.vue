@@ -193,12 +193,32 @@
                 this.processForm.title = this.$t('Common["批量编辑"]')
                 this.processForm.instance = {}
                 this.processForm.show = true
+                this.$nextTick(() => {
+                    const { processForm } = this.$refs
+                    this.processForm.unwatch = processForm.$watch(() => {
+                        return processForm.values.bk_func_name
+                    }, (newVal, oldValue) => {
+                        if (processForm.values.bk_process_name === oldValue) {
+                            processForm.values.bk_process_name = newVal
+                        }
+                    })
+                })
             },
             handleEditProcess (item) {
                 this.processForm.type = 'single'
                 this.processForm.title = `${this.$t('BusinessTopology["编辑进程"]')}${item.bk_process_name}`
                 this.processForm.instance = this.cloneProcesses.find(target => target.bk_process_id === item.bk_process_id)
                 this.processForm.show = true
+                this.$nextTick(() => {
+                    const { processForm } = this.$refs
+                    this.processForm.unwatch = processForm.$watch(() => {
+                        return processForm.values.bk_func_name
+                    }, (newVal, oldValue) => {
+                        if (processForm.values.bk_process_name === oldValue) {
+                            processForm.values.bk_process_name = newVal
+                        }
+                    })
+                })
             },
             handleSubmit (values, changedValues) {
                 if (this.processForm.type === 'single') {

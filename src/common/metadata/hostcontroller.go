@@ -123,7 +123,13 @@ type ModuleHost struct {
 
 type HostConfig struct {
 	BaseResp `json:",inline"`
-	Data     []ModuleHost `json:"data"`
+	Data     HostConfigData `json:"data"`
+}
+
+type HostConfigData struct {
+	Count int64        `json:"count"`
+	Info  []ModuleHost `json:"data"`
+	Page  BasePage     `json:"page"`
 }
 
 type ModuleHostConfigParams struct {

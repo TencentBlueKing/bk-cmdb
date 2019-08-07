@@ -22,11 +22,9 @@ import (
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/validator"
 
 	"github.com/emicklei/go-restful"
 )
@@ -1026,24 +1024,6 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	input[common.BKOwnerIDField] = srvData.ownerID
-	cloudName := input["bk_cloud_name"]
-
-	valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDPlat, srvData.header, s.Engine)
-	validErr := valid.ValidMap(input, common.ValidCreate, 0)
-
-	if nil != validErr {
-		blog.Errorf("CreatePlat error: %v, input:%+v,rid:%s", validErr, input, srvData.rid)
-		if se, ok := validErr.(errors.CCErrorCoder); ok {
-			if se.GetCode() == common.CCErrCommDuplicateItem {
-				_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommDuplicateItem, cloudName)})
-				return
-			}
-		}
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)})
-		return
-	}
-
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeResourceCreate(srvData.ctx, srvData.header, 0, authmeta.Plat); err != nil {
 		blog.Errorf("check create plat authorization failed, err: %v, rid: %s", err, srvData.rid)
@@ -1063,10 +1043,9 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	}
 
 	if false == res.Result {
-		blog.Errorf("GetPlat error.err code:%d,err msg:%s,input:%+v,rid:%s", res.Code, res.ErrMsg, input, srvData.rid)
+		blog.Errorf("CreatePlat error.err code:%d,err msg:%s,input:%+v,rid:%s", res.Code, res.ErrMsg, input, srvData.rid)
 		_ = resp.WriteHeaderAndJson(http.StatusInternalServerError, res, "application/json")
 		return
-
 	}
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
@@ -1079,9 +1058,15 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
 	platID, convErr := util.GetInt64ByInterface(req.PathParameter(common.BKCloudIDField))
-	if nil != convErr || 0 == platID {
+	if nil != convErr {
 		blog.Errorf("the platID is invalid, error info is %s, input:%s.rid:%s", convErr.Error(), platID, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, convErr.Error())})
+		return
+	}
+	if 0 == platID {
+		blog.Errorf("DelPlat search host, input:%+v,rid:%s", platID, srvData.rid)
+		// try delete default area. tip: has host
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoHasHostCheckFailed)})
 		return
 	}
 

@@ -48,7 +48,7 @@
                         :scroll-height="200"
                         :disabled="!editable"
                         :popover-options="{
-                            offset: 100
+                            boundary: 'window'
                         }"
                         @toggle="toggleContentSelector">
                         <div class="text-content" slot="trigger"
@@ -130,6 +130,9 @@
                     ref="propertySelector"
                     searchable
                     :scroll-height="200"
+                    :popover-options="{
+                        boundary: 'window'
+                    }"
                     @toggle="toggleUserAPISelector"
                     @selected="addUserProperties">
                     <bk-option v-for="(option, index) in filterList"
@@ -558,7 +561,9 @@
             },
             deleteUserAPI () {
                 this.$bkInfo({
-                    title: this.$t("CustomQuery['确认要删除']", { name: this.apiParams.name }),
+                    title: this.$t("Common['确定删除']"),
+                    subTitle: this.$t("CustomQuery['确认要删除']", { name: this.apiParams.name }),
+                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         await this.deleteCustomQuery({
                             bizId: this.bizId,

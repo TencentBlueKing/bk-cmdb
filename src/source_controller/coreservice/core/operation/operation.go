@@ -93,6 +93,7 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 	commonCount := make([]metadata.StringIDCount, 0)
 	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
 
+	respData := make([]metadata.IDStringCountInt64, 0)
 	attribute := metadata.Attribute{}
 	opt := mapstr.MapStr{}
 	opt[common.BKObjIDField] = inputParam.ObjID
@@ -102,17 +103,34 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 		return nil, err
 	}
 
+	instCount := uint64(0)
+	cond := M{}
+	var countErr error
 	if inputParam.ObjID == common.BKInnerObjIDHost {
-		pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(ctx, pipeline, &commonCount); err != nil {
-			blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, err, ctx.ReqID)
-			return nil, err
+		instCount, countErr = m.dbProxy.Table(common.BKTableNameBaseHost).Find(cond).Count(ctx)
+		if countErr != nil {
+			blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, countErr, ctx.ReqID)
+			return nil, countErr
+		}
+		if instCount > 0 {
+			pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
+			if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(ctx, pipeline, &commonCount); err != nil {
+				blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, err, ctx.ReqID)
+				return nil, err
+			}
 		}
 	} else {
-		pipeline := []M{{"$match": M{"bk_obj_id": inputParam.ObjID}}, {"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &commonCount); err != nil {
-			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, ctx.ReqID)
-			return nil, err
+		instCount, countErr = m.dbProxy.Table(common.BKTableNameBaseInst).Find(cond).Count(ctx)
+		if countErr != nil {
+			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, countErr, ctx.ReqID)
+			return nil, countErr
+		}
+		if instCount > 0 {
+			pipeline := []M{{"$match": M{"bk_obj_id": inputParam.ObjID}}, {"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
+			if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &commonCount); err != nil {
+				blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, ctx.ReqID)
+				return nil, err
+			}
 		}
 	}
 
@@ -121,8 +139,17 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 		blog.Errorf("count model's instance, parse enum option fail, ObjID: %v, err:%v, rid: %v", inputParam.ObjID, err, ctx.ReqID)
 		return nil, err
 	}
+	if instCount == 0 {
+		for _, opt := range option {
+			info := metadata.IDStringCountInt64{
+				Id:    opt.Name,
+				Count: 0,
+			}
+			respData = append(respData, info)
+		}
+		return respData, nil
+	}
 
-	respData := make([]metadata.IDStringCountInt64, 0)
 	allAttrs := make([]string, 0)
 	matched := make([]string, 0)
 	for _, opt := range option {
