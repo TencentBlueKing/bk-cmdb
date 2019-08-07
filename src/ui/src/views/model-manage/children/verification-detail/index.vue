@@ -9,6 +9,7 @@
                 <bk-select
                     ref="attrSelector"
                     multiple
+                    :disabled="isReadOnly"
                     :clearable="false"
                     v-model="verificationInfo.selected"
                     @toggle="toggleSelector">

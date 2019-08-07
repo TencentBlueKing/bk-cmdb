@@ -120,19 +120,28 @@ func (t *Time) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
 		t.Time = rv.Time()
 		return nil
 	case bsontype.String:
+		rawStr := bson.RawValue{Type: bsontype.String, Value: raw}
+		strTime := strings.TrimSpace(strings.Trim(rawStr.String(), "\""))
 
-		vTime, err := time.Parse(time.RFC3339, strings.TrimSpace(string(raw)))
+		vTime, err := time.Parse(time.RFC3339Nano, strTime)
 		if err == nil {
 			t.Time = vTime
 			return nil
 		}
-		vTime, err = timeparser.TimeParser(strings.Trim(string(raw), "\""))
-		if err != nil {
+
+		vTime, err = time.Parse(time.RFC3339, strTime)
+		if err == nil {
 			t.Time = vTime
 			return nil
 		}
 
-		return fmt.Errorf("cannot decode %v into a metadata.Time", bsontype.String)
+		vTime, err = timeparser.TimeParser(strTime)
+		if err == nil {
+			t.Time = vTime
+			return nil
+		}
+
+		return fmt.Errorf("cannot decode %v into a metadata.Time, err:%s", bsontype.String, err.Error())
 
 	}
 

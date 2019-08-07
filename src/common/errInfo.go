@@ -558,6 +558,8 @@ const (
 	CCErrProcRemoveTemplateBindingOnModule                = 1108040
 	CCErrProcReconstructServiceInstanceNameFailed         = 1108041
 
+	CCErrProcUnbindModuleServiceTemplateDisabled = 1108042
+
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001
 	CCErrAuditTakeSnapshotFailed = 1109001

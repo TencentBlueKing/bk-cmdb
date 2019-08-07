@@ -1,21 +1,26 @@
 <template>
     <div class="model-relation-wrapper">
-        <span v-cursor="{
-            active: !$isAuthorized($OPERATION.U_MODEL),
-            auth: [$OPERATION.U_MODEL]
-        }">
-            <bk-button class="create-btn" theme="primary"
-                :disabled="isReadOnly || !updateAuth"
-                @click="createRelation">
-                {{$t('ModelManagement["新建关联"]')}}
-            </bk-button>
-        </span>
+        <div class="options">
+            <span v-cursor="{
+                active: !$isAuthorized($OPERATION.U_MODEL),
+                auth: [$OPERATION.U_MODEL]
+            }">
+                <bk-button class="create-btn" theme="primary"
+                    :disabled="isReadOnly || !updateAuth"
+                    @click="createRelation">
+                    {{$t('ModelManagement["新建关联"]')}}
+                </bk-button>
+            </span>
+        </div>
         <bk-table
             class="relation-table"
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
             :max-height="$APP.height - 220"
-            @sort-change="handleSortChange">
+            :row-style="{
+                cursor: 'pointer'
+            }"
+            @cell-click="handleShowDetails">
             <bk-table-column prop="bk_obj_asst_id" :label="$t('ModelManagement[\'唯一标识\']')">
                 <template slot-scope="{ row }">
                     <span
@@ -69,7 +74,7 @@
                 class="slider-content"
                 slot="content"
                 v-if="slider.isShow"
-                :is-read-only="isReadOnly"
+                :is-read-only="isReadOnly || slider.isReadOnly"
                 :is-edit="slider.isEdit"
                 :relation="slider.relation"
                 :relation-list="relationList"
@@ -244,16 +249,21 @@
                 this.slider.isShow = false
                 this.searchRelationList()
             },
-            handleSortChange (sort) {
-                this.table.sort = this.$tools.getSort(sort)
+            handleShowDetails (row, column, cell) {
+                if (column.property === 'operation') return
+                this.slider.isEdit = true
+                this.slider.isReadOnly = true
+                this.slider.relation = row
+                this.slider.title = this.$t('ModelManagement["查看关联"]')
+                this.slider.isShow = true
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .create-btn {
-        margin: 10px 0;
+    .options {
+        padding: 20px 0 14px;
     }
     .relation-pre {
         display: inline-block;

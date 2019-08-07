@@ -120,7 +120,7 @@ type InstanceAssociation interface {
 	DeleteInstanceAssociation(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
 
-// DataSynchronize manager data synchronize interface
+// DataSynchronizeOperation manager data synchronize interface
 type DataSynchronizeOperation interface {
 	SynchronizeInstanceAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
 	SynchronizeModelAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
@@ -143,7 +143,7 @@ type HostOperation interface {
 	TransferToAnotherBusiness(ctx ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
 	RemoveFromModule(ctx ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error)
 	DeleteFromSystem(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
-	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error)
+	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error)
 	Identifier(ctx ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
 
 	LockHost(params ContextParams, input *metadata.HostLockRequest) errors.CCError

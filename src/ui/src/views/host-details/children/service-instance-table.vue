@@ -11,13 +11,21 @@
             <span class="title-label">{{instance.name}}</span>
             <cmdb-dot-menu class="instance-menu" @click.native.stop>
                 <ul class="menu-list">
-                    <li class="menu-item"
+                    <li :class="['menu-item', { 'is-disabled': !$isAuthorized($OPERATION[menu.auth]) }]"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
-                        <button class="menu-button"
-                            @click="menu.handler">
-                            {{menu.name}}
-                        </button>
+                        <span class="menu-span"
+                            v-cursor="{
+                                active: !$isAuthorized($OPERATION[menu.auth]),
+                                auth: [$OPERATION[menu.auth]]
+                            }">
+                            <bk-button class="menu-button"
+                                :text="true"
+                                :disabled="!$isAuthorized($OPERATION[menu.auth])"
+                                @click="menu.handler">
+                                {{menu.name}}
+                            </bk-button>
+                        </span>
                     </li>
                 </ul>
             </cmdb-dot-menu>
@@ -107,7 +115,8 @@
             instanceMenu () {
                 const menu = [{
                     name: this.$t('Common["删除"]'),
-                    handler: this.handleDeleteInstance
+                    handler: this.handleDeleteInstance,
+                    auth: 'D_SERVICE_INSTANCE'
                 }]
                 return menu
             },
@@ -282,6 +291,11 @@
             }
         }
     }
+    .instance-menu {
+        /deep/ .bk-tooltip-ref {
+            width: 100%;
+        }
+    }
     .menu-list {
         min-width: 74px;
         padding: 6px 0;
@@ -299,9 +313,16 @@
                 font-size: 12px;
                 background-color: #fff;
                 &:hover {
-                    background-color: #E1ECFF;
-                    color: #3A84FF;
+                    background-color: #e1ecff;
+                    color: #3a84ff;
                 }
+                &[disabled] {
+                    color: #dcdee5;
+                }
+            }
+            .menu-span {
+                display: inline-block;
+                width: 100%;
             }
         }
     }

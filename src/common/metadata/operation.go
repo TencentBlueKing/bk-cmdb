@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"configcenter/src/common"
 	"time"
 )
 
@@ -155,3 +156,87 @@ type StatisticInstOperation struct {
 	Delete []StringIDCount   `json:"update"`
 	Update []UpdateInstCount `json:"delete"`
 }
+
+var (
+	BizModuleHostChart = ChartConfig{
+		ReportType: common.BizModuleHostChart,
+	}
+
+	HostOsChart = ChartConfig{
+		ReportType: common.HostOSChart,
+		Name:       "按操作系统类型统计",
+		ObjID:      "host",
+		Width:      "50",
+		ChartType:  "pie",
+		Field:      "bk_os_type",
+		XAxisCount: 10,
+	}
+
+	HostBizChart = ChartConfig{
+		ReportType: common.HostBizChart,
+		Name:       "按业务统计",
+		ObjID:      "host",
+		Width:      "50",
+		ChartType:  "bar",
+		XAxisCount: 10,
+	}
+
+	HostCloudChart = ChartConfig{
+		ReportType: common.HostCloudChart,
+		Name:       "按云区域统计",
+		Width:      "100",
+		ObjID:      "host",
+		ChartType:  "bar",
+		Field:      common.BKCloudIDField,
+		XAxisCount: 20,
+	}
+
+	HostChangeBizChart = ChartConfig{
+		ReportType: common.HostChangeBizChart,
+		Name:       "主机数量变化趋势",
+		Width:      "100",
+		XAxisCount: 20,
+	}
+
+	ModelAndInstCountChart = ChartConfig{
+		ReportType: common.ModelAndInstCount,
+	}
+
+	ModelInstChart = ChartConfig{
+		ReportType: common.ModelInstChart,
+		Name:       "实例数量统计",
+		Width:      "50",
+		ChartType:  "bar",
+		XAxisCount: 10,
+	}
+
+	ModelInstChangeChart = ChartConfig{
+		ReportType: common.ModelInstChangeChart,
+		Name:       "实例变更统计",
+		Width:      "50",
+		ChartType:  "bar",
+		XAxisCount: 10,
+	}
+
+	InnerChartsMap = map[string]ChartConfig{
+		common.BizModuleHostChart:   BizModuleHostChart,
+		common.ModelAndInstCount:    ModelAndInstCountChart,
+		common.HostOSChart:          HostOsChart,
+		common.HostBizChart:         HostBizChart,
+		common.HostCloudChart:       HostCloudChart,
+		common.HostChangeBizChart:   HostChangeBizChart,
+		common.ModelInstChart:       ModelInstChart,
+		common.ModelInstChangeChart: ModelInstChangeChart,
+	}
+
+	InnerChartsArr = []string{
+		common.BizModuleHostChart,
+		common.ModelAndInstCount,
+		common.HostOSChart,
+		common.HostBizChart,
+		common.HostCloudChart,
+		common.HostChangeBizChart,
+		common.ModelInstChart,
+		common.ModelInstChangeChart,
+	}
+)
