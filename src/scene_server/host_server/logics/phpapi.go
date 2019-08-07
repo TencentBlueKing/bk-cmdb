@@ -412,6 +412,15 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		common.BKCloudIDField:     cloudID,
 	}
 
+	appConf := map[string]interface{}{common.BKAppIDField: input.AppID}
+	appInfo, err := lgc.GetAppDetails(ctx, "", appConf)
+	if err != nil {
+		return nil, err
+	}
+	if len(appInfo) == 0 {
+		return nil, lgc.ccErr.Errorf(common.CCErrCoreServiceBusinessNotExist, input.AppID)
+	}
+
 	phpapi := lgc.NewPHPAPI()
 	// 处理源IP
 	hostMap, hostIdArr, err := phpapi.GetHostMapByCond(ctx, condition)
