@@ -14,7 +14,7 @@
         name: 'cmdb-form-date-range',
         props: {
             value: {
-                type: Array,
+                type: [Array, String],
                 default () {
                     return []
                 }
@@ -31,7 +31,7 @@
         },
         data () {
             return {
-                localValue: this.value
+                localValue: [...this.value]
             }
         },
         computed: {
@@ -49,12 +49,12 @@
         },
         watch: {
             value (value) {
-                if (value.join('') !== this.localValue.join('')) {
+                if ([...value].join('') !== this.localValue.join('')) {
                     this.localValue = [...value]
                 }
             },
             localValue (value, oldValue) {
-                if (value.join('') !== this.value.join('')) {
+                if (value.join('') !== [...this.value].join('')) {
                     this.$emit('input', [...value])
                     this.$emit('change', [...value], [...oldValue])
                 }

@@ -30,6 +30,7 @@
             <bk-table-column prop="bk_property_id"
                 min-width="110"
                 sortable="custom"
+                class-name="is-highlight"
                 :label="$t('ModelManagement[\'唯一标识\']')">
                 <template slot-scope="{ row }">
                     <span
@@ -274,7 +275,7 @@
 
 <style lang="scss" scoped>
     .options {
-        padding: 10px 0 14px;
+        padding: 20px 0 14px;
     }
     .field-pre {
         display: inline-block;

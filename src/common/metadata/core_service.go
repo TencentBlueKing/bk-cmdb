@@ -240,10 +240,11 @@ type TransferHostsCrossBusinessRequest struct {
 
 // HostModuleRelationRequest gethost module relation request parameter
 type HostModuleRelationRequest struct {
-	ApplicationID int64   `json:"bk_biz_id" bson:"bk_biz_id" field:"bk_biz_id"`
-	SetIDArr      []int64 `json:"bk_set_ids" bson:"bk_set_ids" field:"bk_set_ids"`
-	HostIDArr     []int64 `json:"bk_host_ids" bson:"bk_host_ids" field:"bk_host_ids"`
-	ModuleIDArr   []int64 `json:"bk_module_ids" bson:"bk_module_ids" field:"bk_module_ids"`
+	ApplicationID int64    `json:"bk_biz_id" bson:"bk_biz_id" field:"bk_biz_id"`
+	SetIDArr      []int64  `json:"bk_set_ids" bson:"bk_set_ids" field:"bk_set_ids"`
+	HostIDArr     []int64  `json:"bk_host_ids" bson:"bk_host_ids" field:"bk_host_ids"`
+	ModuleIDArr   []int64  `json:"bk_module_ids" bson:"bk_module_ids" field:"bk_module_ids"`
+	Page          BasePage `json:"page" bson:"page" field:"page"`
 }
 
 // Empty empty struct
@@ -388,9 +389,9 @@ type ListProcessTemplatesOption struct {
 	Page               BasePage `json:"page" field:"page" bson:"page"`
 }
 type ListServiceCategoriesOption struct {
-	BusinessID         int64    `json:"bk_biz_id" bson:"bk_biz_id"`
-	ServiceCategoryIDs *[]int64 `json:"service_category_ids,omitempty" bson:"service_category_ids"`
-	WithStatistics     bool     `json:"with_statistics" bson:"with_statistics"`
+	BusinessID         int64   `json:"bk_biz_id" bson:"bk_biz_id"`
+	ServiceCategoryIDs []int64 `json:"service_category_ids,omitempty" bson:"service_category_ids"`
+	WithStatistics     bool    `json:"with_statistics" bson:"with_statistics"`
 }
 
 type OneServiceInstanceResult struct {

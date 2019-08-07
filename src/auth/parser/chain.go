@@ -72,6 +72,10 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		return nil, ps.err
 	}
 
+	for index := range ps.Attribute.Resources {
+		ps.Attribute.Resources[index].SupplierAccount = ps.Attribute.User.SupplierAccount
+	}
+
 	return &ps.Attribute, nil
 }
 
