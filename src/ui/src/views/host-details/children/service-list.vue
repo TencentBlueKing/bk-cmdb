@@ -9,11 +9,11 @@
             </cmdb-form-bool>
             <span style="display: inline-block;"
                 v-cursor="{
-                    active: !$isAuthorized($OPERATION.D_SERVICE_TEMPLATE),
-                    auth: [$OPERATION.D_SERVICE_TEMPLATE]
+                    active: !$isAuthorized($OPERATION.D_SERVICE_INSTANCE),
+                    auth: [$OPERATION.D_SERVICE_INSTANCE]
                 }">
                 <bk-button class="ml10"
-                    :disabled="!$isAuthorized($OPERATION.D_SERVICE_TEMPLATE) || !checked.length"
+                    :disabled="!$isAuthorized($OPERATION.D_SERVICE_INSTANCE) || !checked.length"
                     @click="batchDelete(!checked.length)">
                     {{$t("BusinessTopology['批量删除']")}}
                 </bk-button>
