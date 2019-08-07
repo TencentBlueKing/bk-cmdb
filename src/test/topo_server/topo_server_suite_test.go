@@ -22,7 +22,3 @@ func TestTopoServer(t *testing.T) {
 var _ = BeforeSuite(func() {
 	test.ClearDatabase()
 })
-
-var _ = AfterSuite(func() {
-	test.ClearDatabase()
-})
