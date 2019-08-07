@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="topology-tree-wrapper">
         <bk-big-tree class="topology-tree"
             ref="tree"
             v-bkloading="{
@@ -304,6 +304,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .topology-tree-wrapper {
+        height: 100%;
+    }
     .node-info {
         .node-model-icon {
             width: 22px;
@@ -355,6 +358,7 @@
         }
     }
     .topology-tree {
+        height: 100%;
         .bk-big-tree-node.is-selected {
             .instance-num {
                 background-color: #a2c5fd;

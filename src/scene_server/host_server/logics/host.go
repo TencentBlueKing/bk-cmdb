@@ -97,7 +97,7 @@ func (lgc *Logics) GetConfigByCond(ctx context.Context, input metadata.HostModul
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	return result.Data, nil
+	return result.Data.Info, nil
 }
 
 // EnterIP 将机器导入到指定模块或者空闲模块， 已经存在机器，不操作
@@ -276,7 +276,7 @@ func (lgc *Logics) GetHostIDByCond(ctx context.Context, cond metadata.HostModule
 	}
 
 	hostIDs := make([]int64, 0)
-	for _, val := range result.Data {
+	for _, val := range result.Data.Info {
 		hostIDs = append(hostIDs, val.HostID)
 	}
 
@@ -291,7 +291,15 @@ func (lgc *Logics) DeleteHostBusinessAttributes(ctx context.Context, hostIDArr [
 
 // GetHostModuleRelation  query host and module relation,
 // condition key use appID, moduleID,setID,HostID
-func (lgc *Logics) GetHostModuleRelation(ctx context.Context, cond metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, errors.CCError) {
+func (lgc *Logics) GetHostModuleRelation(ctx context.Context, cond metadata.HostModuleRelationRequest) (*metadata.HostConfigData, errors.CCError) {
+
+	if cond.Empty() {
+		return nil, lgc.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+	}
+
+	if cond.Page.IsIllegal() {
+		return nil, lgc.ccErr.Error(common.CCErrCommPageLimitIsExceeded)
+	}
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &cond)
 	if err != nil {
@@ -303,7 +311,7 @@ func (lgc *Logics) GetHostModuleRelation(ctx context.Context, cond metadata.Host
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	return result.Data, nil
+	return &result.Data, nil
 }
 
 // TransferHostAcrossBusiness  Transfer host across business,

@@ -151,7 +151,7 @@
                                 v-model.trim="groupDialog.data['bk_classification_id']"
                                 v-validate="'required|classifyId'">
                             </bk-input>
-                            <p class="form-error">{{errors.first('classifyId')}}</p>
+                            <p class="form-error" :title="errors.first('classifyId')">{{errors.first('classifyId')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
                     </label>
@@ -168,7 +168,7 @@
                                 v-model.trim="groupDialog.data['bk_classification_name']"
                                 v-validate="'required|classifyName'">
                             </bk-input>
-                            <p class="form-error">{{errors.first('classifyName')}}</p>
+                            <p class="form-error" :title="errors.first('classifyName')">{{errors.first('classifyName')}}</p>
                         </div>
                     </label>
                 </div>

@@ -37,7 +37,7 @@
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange">
-            <bk-table-column prop="bk_asst_id" :label="$t('ModelManagement[\'唯一标识\']')" sortable="custom">
+            <bk-table-column prop="bk_asst_id" :label="$t('ModelManagement[\'唯一标识\']')" sortable="custom" class-name="is-highlight">
                 <template slot-scope="{ row }">
                     <div style="cursor: pointer; padding: 10px 0;" @click.stop="handleShowDetails(row)">
                         {{row['bk_asst_id']}}

@@ -176,8 +176,9 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		if !decision.Authorized {
-			permissions, err := authcenter.AdoptPermissions(attribute.Resources)
+			permissions, err := authcenter.AdoptPermissions(req.Request.Header, s.engine.CoreAPI, attribute.Resources)
 			if err != nil {
+				blog.Errorf("adopt permission failed, err: %v, rid: %s", err, rid)
 				rsp := metadata.BaseResp{
 					Code:   common.CCErrCommCheckAuthorizeFailed,
 					ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
