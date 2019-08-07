@@ -31,6 +31,9 @@ import (
 	"configcenter/src/common/types"
 )
 
+// connect svcManager retry connect time
+const maxRetry = 200
+
 // BackboneParameter Used to constrain different services to ensure
 // consistency of service startup capabilities
 type BackboneParameter struct {
@@ -46,16 +49,25 @@ type BackboneParameter struct {
 }
 
 func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
-	client := zk.NewZkClient(svcManagerAddr, 5*time.Second)
-	if err := client.Start(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
+	var err error
+	for retry := 0; retry < maxRetry; retry++ {
+		client := zk.NewZkClient(svcManagerAddr, 5*time.Second)
+		if err = client.Start(); err != nil {
+			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
+			time.Sleep(time.Second * 2)
+			continue
+		}
+
+		if err = client.Ping(); err != nil {
+			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
+			time.Sleep(time.Second * 2)
+			continue
+		}
+
+		return client, nil
 	}
 
-	if err := client.Ping(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
-	}
-
-	return client, nil
+	return nil, err
 }
 
 func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discovery.DiscoveryInterface, apiMachineryConfig *util.APIMachineryConfig) (*Config, error) {
