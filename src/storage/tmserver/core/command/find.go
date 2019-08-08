@@ -55,9 +55,10 @@ func (d *find) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRe
 		for _, field := range msg.Fields {
 			opt.Fields = append(opt.Fields, findopt.FieldItem{Name: field, Hide: false})
 		}
-	} else {
-		opt.Fields = append(opt.Fields, findopt.FieldItem{Name: "_id", Hide: true})
 	}
+
+	opt.Fields = append(opt.Fields, findopt.FieldItem{Name: "_id", Hide: true})
+
 	if msg.Sort != "" {
 		itemArr := strings.Split(msg.Sort, ",")
 		for _, item := range itemArr {
