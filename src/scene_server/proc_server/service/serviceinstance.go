@@ -330,26 +330,8 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	// find process instance's relations, which allows us know the relationship between
 	// process instance and it's template, service instance, etc.
 	pTemplateMap := make(map[int64]*metadata.ProcessTemplate)
-	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
 	for idx, pTemplate := range processTemplates.Info {
 		pTemplateMap[pTemplate.ID] = &processTemplates.Info[idx]
-
-		option := metadata.ListProcessInstanceRelationOption{
-			BusinessID:        module.BizID,
-			ProcessTemplateID: pTemplate.ID,
-		}
-
-		relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &option)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed,
-				"find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but get service instance relations failed, err: %v",
-				module.ServiceTemplateID, module.BizID, diffOption.ModuleID, err)
-			return
-		}
-
-		for _, r := range relations.Info {
-			serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
-		}
 	}
 
 	// step 4:
@@ -366,6 +348,29 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 			"find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but get service instance failed, err: %v",
 			module.ServiceTemplateID, module.BizID, diffOption.ModuleID, e)
 		return
+	}
+
+	// step 5:
+	// construct map {ServiceInstanceID ==> []ProcessInstanceRelation}
+	serviceInstanceIDs := make([]int64, 0)
+	for _, serviceInstance := range serviceInstances.Info {
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
+	}
+	option := metadata.ListProcessInstanceRelationOption{
+		BusinessID:         module.BizID,
+		ServiceInstanceIDs: serviceInstanceIDs,
+	}
+
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &option)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed,
+			"find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but get service instance relations failed, err: %v",
+			module.ServiceTemplateID, module.BizID, diffOption.ModuleID, err)
+		return
+	}
+	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
+	for _, r := range relations.Info {
+		serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
 	}
 
 	// step 5: compare the process instance with it's process template one by one in a service instance.
