@@ -34,6 +34,15 @@ var ServiceCategoryAuthConfigs = []AuthConfig{
 		// authorization should implements in scene server
 		ResourceAction: meta.SkipAction,
 	}, {
+		Name:                  "findmanyServiceCategoryPattern",
+		Description:           "list 服务分类(含引用统计)",
+		Pattern:               "/api/v3/findmany/proc/service_category/with_statistics",
+		HTTPMethod:            http.MethodPost,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceCategory,
+		// authorization should implements in scene server
+		ResourceAction: meta.SkipAction,
+	}, {
 		Name:                  "createServiceCategoryPattern",
 		Description:           "创建服务分类",
 		Pattern:               "/api/v3/create/proc/service_category",

@@ -30,13 +30,13 @@ export default [{
             adminView: false
         },
         auth: {
-            view: OPERATION.R_SERVICE_TEMPLATE,
             operation: Object.values(OPERATION),
             setAuthScope () {
                 this.authScope = 'business'
             }
         },
-        i18nTitle: "Nav['服务模板']"
+        i18nTitle: "Nav['服务模板']",
+        requireBusiness: true
     })
 }, {
     name: 'operationalTemplate',
@@ -48,6 +48,7 @@ export default [{
             setAuthScope () {
                 this.authScope = 'business'
             }
-        }
+        },
+        requireBusiness: true
     }
 }]

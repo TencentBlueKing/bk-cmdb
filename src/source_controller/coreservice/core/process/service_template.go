@@ -61,6 +61,21 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
+	// check name field unique under business
+	nameUniqueFilter := map[string]interface{}{
+		metadata.BKMetadata: metadata.NewMetadata(bizID),
+		common.BKFieldName:  template.Name,
+	}
+	count, err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(nameUniqueFilter).Count(ctx)
+	if err != nil {
+		blog.Errorf("CreateServiceTemplate failed, count same name instance failed, filter: %+v, err: %+v, rid: %s", nameUniqueFilter, err, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if count > 0 {
+		blog.Errorf("CreateServiceTemplate failed, category id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommDuplicateItem, common.BKFieldName)
+	}
+
 	// generate id field
 	id, err := p.dbProxy.NextSequence(ctx, common.BKTableNameServiceTemplate)
 	if nil != err {
@@ -97,6 +112,8 @@ func (p *processOperation) GetServiceTemplate(ctx core.ContextParams, templateID
 	return &template, nil
 }
 
+// UpdateServiceTemplate
+// not support update name field yet, so don't need validate name unique before update
 func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templateID int64, input metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	template, err := p.GetServiceTemplate(ctx, templateID)
 	if err != nil {

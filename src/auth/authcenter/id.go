@@ -308,14 +308,12 @@ func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resourc
 		resourceIDs = append(resourceIDs, resourceID)
 	}
 
-	if attribute.InstanceID != 0 {
-		// append host resource id to end
-		hostResourceID := RscTypeAndID{
-			ResourceType: resourceType,
-			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
-		}
-		resourceIDs = append(resourceIDs, hostResourceID)
+	// append host resource id to end
+	hostResourceID := RscTypeAndID{
+		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 	}
+	resourceIDs = append(resourceIDs, hostResourceID)
 
 	return resourceIDs, nil
 }
