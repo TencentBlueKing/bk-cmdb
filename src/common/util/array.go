@@ -34,6 +34,7 @@ func InArray(obj interface{}, target interface{}) bool {
 }
 
 func ArrayUnique(a interface{}) (ret []interface{}) {
+	ret = make([]interface{}, 0)
 	va := reflect.ValueOf(a)
 	for i := 0; i < va.Len(); i++ {
 		v := va.Index(i).Interface()
@@ -44,8 +45,9 @@ func ArrayUnique(a interface{}) (ret []interface{}) {
 	return ret
 }
 
-//StrArrayUnique get unique string array
+// StrArrayUnique get unique string array
 func StrArrayUnique(a []string) (ret []string) {
+	ret = make([]string, 0)
 	length := len(a)
 	for i := 0; i < length; i++ {
 		if !Contains(ret, a[i]) {
@@ -55,7 +57,7 @@ func StrArrayUnique(a []string) (ret []string) {
 	return ret
 }
 
-//IntArrayUnique get unique int array
+// IntArrayUnique get unique int array
 func IntArrayUnique(a []int64) (ret []int64) {
 	ret = make([]int64, 0)
 	length := len(a)
@@ -68,6 +70,7 @@ func IntArrayUnique(a []int64) (ret []int64) {
 }
 
 func RemoveDuplicatesAndEmpty(slice []string) (ret []string) {
+	ret = make([]string, 0)
 	for _, a := range slice {
 		if strings.TrimSpace(a) != "" && !Contains(ret, a) {
 			ret = append(ret, a)
@@ -77,7 +80,7 @@ func RemoveDuplicatesAndEmpty(slice []string) (ret []string) {
 }
 
 func StrArrDiff(slice1 []string, slice2 []string) []string {
-	var diffStr []string
+	diffStr := make([]string, 0)
 	for _, i := range slice1 {
 		isIn := false
 		for _, j := range slice2 {
@@ -94,7 +97,7 @@ func StrArrDiff(slice1 []string, slice2 []string) []string {
 }
 
 func IntArrIntersection(slice1 []int64, slice2 []int64) []int64 {
-	var intersectInt []int64
+	intersectInt := make([]int64, 0)
 	intMap := make(map[int64]bool)
 	for _, i := range slice1 {
 		intMap[i] = true
