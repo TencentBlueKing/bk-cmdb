@@ -822,7 +822,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	if false == res.Result {
 		blog.Errorf("GetPlat error: %s", res.ErrMsg)
 		resp.WriteHeaderAndJson(http.StatusInternalServerError, res, common.BKHTTPMIMEJSON)
-
+		return
 	}
 	resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
