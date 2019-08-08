@@ -43,8 +43,10 @@ const (
 	OPAggregateCode
 	// OPDDLCode db collection and index operation code
 	OPDDLCode
-	// PUpdateUnsetCode update $unset operation code
+	// OPUpdateUnsetCode update $unset operation code
 	OPUpdateUnsetCode
+	// OPUpdateByOperatorCode update can use user operator
+	OPUpdateByOperatorCode
 	// OPStartTransactionCode start a transaction code
 	OPStartTransactionCode OPCode = 666
 	// OPCommitCode transaction commit operation code

@@ -46,11 +46,12 @@
                         active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
                         auth: [$OPERATION.U_SERVICE_INSTANCE]
                     }">
-                    <bk-button
-                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
+                    <bk-button class="topo-sync"
+                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE) || !topoStatus"
                         @click="handleSyncTemplate">
                         <i class="bk-icon icon-refresh"></i>
                         {{$t('同步模板')}}
+                        <span class="topo-status" v-show="topoStatus"></span>
                     </bk-button>
                 </span>
                 <div class="options-right fr">
@@ -199,7 +200,8 @@
                     visiable: false,
                     list: []
                 },
-                isCarryParams: false
+                isCarryParams: false,
+                topoStatus: false
             }
         },
         computed: {
@@ -247,12 +249,15 @@
             }
         },
         watch: {
-            currentNode (node) {
+            async currentNode (node) {
                 if (node && node.data.bk_obj_id === 'module') {
                     if (!this.isCarryParams) {
                         this.searchSelectData = []
                     }
-                    this.getServiceInstances()
+                    await this.getServiceInstances()
+                    if (node.data.service_template_id && this.instances.length) {
+                        this.getServiceInstanceDifferences()
+                    }
                 }
             }
         },
@@ -306,6 +311,20 @@
                 } catch (e) {
                     this.processForm.propertyGroups = []
                     console.error(e)
+                }
+            },
+            getServiceInstanceDifferences () {
+                try {
+                    this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
+                        params: this.$injectMetadata({
+                            bk_module_id: this.currentNode.data.bk_inst_id,
+                            service_template_id: this.withTemplate
+                        })
+                    }).then(res => {
+                        this.topoStatus = res.added.length + res.changed.length > 0
+                    })
+                } catch (error) {
+                    console.error(error)
                 }
             },
             async getServiceInstances () {
@@ -749,6 +768,18 @@
         padding: 0 8px;
         margin: 0 0 0 6px;
         line-height: 30px;
+    }
+    .topo-sync {
+        position: relative;
+        .topo-status {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 8px;
+            height: 8px;
+            background-color: #ea3636;
+            border-radius: 50%;
+        }
     }
     .options-checkall {
         width: 36px;
