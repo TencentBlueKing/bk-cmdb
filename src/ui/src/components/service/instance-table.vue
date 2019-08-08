@@ -18,34 +18,34 @@
                 :prop="column.id"
                 :label="column.name">
             </bk-table-column>
-            <bk-table-column :label="$t('Common[\'操作\']')" fixed="right">
+            <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row, $index }">
                     <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess($index)">
-                        {{$t('Common["编辑"]')}}
+                        {{$t('编辑')}}
                     </a>
                     <a href="javascript:void(0)" class="text-primary"
                         v-if="!sourceProcesses.length"
                         @click="handleDeleteProcess($index)">
-                        {{$t('Common["删除"]')}}
+                        {{$t('删除')}}
                     </a>
                 </template>
             </bk-table-column>
             <template slot="empty">
                 <button class="add-process-button text-primary" @click="handleAddProcess">
                     <i class="bk-icon icon-plus"></i>
-                    <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+                    <span>{{$t('添加进程')}}</span>
                 </button>
             </template>
         </bk-table>
         <div class="add-process-options" v-if="!sourceProcesses.length && processList.length">
             <button class="add-process-button text-primary" @click="handleAddProcess">
                 <i class="bk-icon icon-plus"></i>
-                <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+                <span>{{$t('添加进程')}}</span>
             </button>
         </div>
         <bk-sideslider
             :width="800"
-            :title="`${$t('BusinessTopology[\'添加进程\']')}(${name})`"
+            :title="`${$t('添加进程')}(${name})`"
             :is-show.sync="processForm.show"
             :before-close="handleBeforeClose">
             <cmdb-form slot="content" v-if="processForm.show"
@@ -110,7 +110,7 @@
                     unwatch: null
                 },
                 tooltips: {
-                    content: this.$t('BusinessTopology["请为主机添加进程"]'),
+                    content: this.$t('请为主机添加进程'),
                     placement: 'right'
                 }
             }
@@ -226,8 +226,8 @@
                 if (Object.keys(changedValues).length) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["确认退出"]'),
-                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.handleCancelCreateProcess()

@@ -9,7 +9,7 @@
                 <bk-button class="fl" theme="primary"
                     :disabled="!$isAuthorized($OPERATION.C_BUSINESS)"
                     @click="handleCreate">
-                    {{$t("Common['新建']")}}
+                    {{$t('新建')}}
                 </bk-button>
             </span>
             <div class="options-button fr">
@@ -19,14 +19,14 @@
                 }">
                     <bk-button class="button-history"
                         icon="icon-cc-history2"
-                        v-bk-tooltips.bottom="$t('Common[\'查看删除历史\']')"
+                        v-bk-tooltips.bottom="$t('查看删除历史')"
                         :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
                         @click="routeToHistory">
                     </bk-button>
                 </span>
                 <bk-button class="button-setting"
                     icon="icon-cc-setting"
-                    v-bk-tooltips.bottom="$t('BusinessTopology[\'列表显示属性配置\']')"
+                    v-bk-tooltips.bottom="$t('列表显示属性配置')"
                     @click="columnsConfig.show = true">
                 </bk-button>
             </div>
@@ -52,13 +52,13 @@
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
-                    :placeholder="$t('Common[\'快速查询\']')"
+                    :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
-                    :placeholder="$t('Common[\'快速查询\']')"
+                    :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>
                 <i class="filter-search bk-icon icon-search"
@@ -90,12 +90,12 @@
             :width="800"
             :before-close="handleSliderBeforeClose">
             <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.show">
-                <bk-tab-panel name="attribute" :label="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+                <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.details"
-                        :delete-button-text="$t('Inst[\'归档\']')"
+                        :delete-button-text="$t('归档')"
                         :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
                         :show-options="isAdminView"
                         :edit-auth="$OPERATION.U_BUSINESS"
@@ -114,7 +114,7 @@
                         @on-cancel="handleCancel">
                     </cmdb-form>
                 </bk-tab-panel>
-                <bk-tab-panel name="relevance" :label="$t('HostResourcePool[\'关联\']')" :visible="attribute.type !== 'create'">
+                <bk-tab-panel name="relevance" :label="$t('关联')" :visible="attribute.type !== 'create'">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
@@ -122,7 +122,7 @@
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tab-panel>
-                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :visible="attribute.type !== 'create'">
+                <bk-tab-panel name="history" :label="$t('变更记录')" :visible="attribute.type !== 'create'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="biz"
                         :inst-id="attribute.inst.details['bk_biz_id']">
@@ -130,7 +130,7 @@
                 </bk-tab-panel>
             </bk-tab>
         </bk-sideslider>
-        <bk-sideslider :is-show.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
+        <bk-sideslider :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
                 v-if="columnsConfig.show"
                 :properties="properties"
@@ -387,15 +387,15 @@
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['创建']")} ${this.model['bk_obj_name']}`
+                this.slider.title = `${this.$t('创建')} ${this.model['bk_obj_name']}`
             },
             handleDelete (inst) {
                 this.$bkInfo({
-                    title: this.$t("Common['确认要归档']", { name: inst['bk_biz_name'] }),
+                    title: this.$t('确认要归档', { name: inst['bk_biz_name'] }),
                     confirmFn: () => {
                         this.archiveBusiness(inst['bk_biz_id']).then(() => {
                             this.slider.show = false
-                            this.$success(this.$t('Common["归档成功"]'))
+                            this.$success(this.$t('归档成功'))
                             this.handlePageChange(1)
                             this.$http.cancel('post_searchBusiness_$ne_disabled')
                         })
@@ -413,7 +413,7 @@
                             this.attribute.inst.details = this.$tools.flattenItem(this.properties, item)
                         })
                         this.handleCancel()
-                        this.$success(this.$t("Common['修改成功']"))
+                        this.$success(this.$t('修改成功'))
                         this.$http.cancel('post_searchBusiness_$ne_disabled')
                     })
                 } else {
@@ -422,7 +422,7 @@
                     }).then(() => {
                         this.handlePageChange(1)
                         this.handleCancel()
-                        this.$success(this.$t("Inst['创建成功']"))
+                        this.$success(this.$t('创建成功'))
                         this.$http.cancel('post_searchBusiness_$ne_disabled')
                     })
                 }
@@ -460,8 +460,8 @@
                     if (Object.keys(changedValues).length) {
                         return new Promise((resolve, reject) => {
                             this.$bkInfo({
-                                title: this.$t('Common["确认退出"]'),
-                                subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                                title: this.$t('确认退出'),
+                                subTitle: this.$t('退出会导致未保存信息丢失'),
                                 extCls: 'bk-dialog-sub-header-center',
                                 confirmFn: () => {
                                     resolve(true)

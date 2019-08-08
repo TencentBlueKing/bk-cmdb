@@ -10,7 +10,7 @@
                     <bk-button theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_INST)"
                         @click="handleCreate">
-                        {{$t("Common['新建']")}}
+                        {{$t('新建')}}
                     </bk-button>
                 </div>
                 <div class="fl mr10"
@@ -21,14 +21,14 @@
                     <bk-button class="models-button"
                         :disabled="!$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST])"
                         @click="importSlider.show = true">
-                        {{$t('ModelManagement[\'导入\']')}}
+                        {{$t('导入')}}
                     </bk-button>
                 </div>
                 <div class="fl mr10">
                     <bk-button class="models-button" theme="default"
                         :disabled="!table.checked.length"
                         @click="handleExport">
-                        {{$t('ModelManagement[\'导出\']')}}
+                        {{$t('导出')}}
                     </bk-button>
                 </div>
                 <div class="fl mr10"
@@ -39,7 +39,7 @@
                     <bk-button class="models-button"
                         :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_INST)"
                         @click="handleMultipleEdit">
-                        {{$t('Inst[\'批量更新\']')}}
+                        {{$t('批量更新')}}
                     </bk-button>
                 </div>
                 <div class="fl mr10"
@@ -50,15 +50,15 @@
                     <bk-button class="models-button button-delete"
                         :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_INST)"
                         @click="handleMultipleDelete">
-                        {{$t('Common[\'删除\']')}}
+                        {{$t('删除')}}
                     </bk-button>
                 </div>
             </div>
             <div class="options-button fr">
-                <bk-button v-bk-tooltips="$t('Common[\'查看删除历史\']')" @click="routeToHistory">
+                <bk-button v-bk-tooltips="$t('查看删除历史')" @click="routeToHistory">
                     <i class="icon-cc-history"></i>
                 </bk-button>
-                <bk-button class="button-setting" v-bk-tooltips="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">
+                <bk-button class="button-setting" v-bk-tooltips="$t('列表显示属性配置')" @click="columnsConfig.show = true">
                     <i class="icon-cc-setting"></i>
                 </bk-button>
             </div>
@@ -83,19 +83,19 @@
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
-                    :placeholder="$t('Common[\'快速查询\']')"
+                    :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
-                    :placeholder="$t('Common[\'快速查询\']')"
+                    :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
-                    :placeholder="$t('Common[\'快速查询\']')"
+                    :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
                 <i class="filter-search bk-icon icon-search"
@@ -129,7 +129,7 @@
             :width="800"
             :before-close="handleSliderBeforeClose">
             <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.show">
-                <bk-tab-panel name="attribute" :label="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+                <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
                         :property-groups="propertyGroups"
@@ -159,7 +159,7 @@
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
                 </bk-tab-panel>
-                <bk-tab-panel name="relevance" :label="$t('HostResourcePool[\'关联\']')" :visible="['update', 'details'].includes(attribute.type)">
+                <bk-tab-panel name="relevance" :label="$t('关联')" :visible="['update', 'details'].includes(attribute.type)">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         :auth="$OPERATION.U_INST"
@@ -167,7 +167,7 @@
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tab-panel>
-                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :visible="['update', 'details'].includes(attribute.type)">
+                <bk-tab-panel name="history" :label="$t('变更记录')" :visible="['update', 'details'].includes(attribute.type)">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         :target="objId"
                         :inst-id="attribute.inst.details['bk_inst_id']">
@@ -175,7 +175,7 @@
                 </bk-tab-panel>
             </bk-tab>
         </bk-sideslider>
-        <bk-sideslider :is-show.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
+        <bk-sideslider :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
                 v-if="columnsConfig.show"
                 :properties="properties"
@@ -189,7 +189,7 @@
         <bk-sideslider
             :is-show.sync="importSlider.show"
             :width="800"
-            :title="$t('HostResourcePool[\'批量导入\']')">
+            :title="$t('批量导入')">
             <cmdb-import v-if="importSlider.show" slot="content"
                 :template-url="url.template"
                 :import-url="url.import"
@@ -554,11 +554,11 @@
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['创建']")} ${this.model['bk_obj_name']}`
+                this.slider.title = `${this.$t('创建')} ${this.model['bk_obj_name']}`
             },
             handleDelete (inst) {
                 this.$bkInfo({
-                    title: this.$t("Common['确认要删除']", { name: inst['bk_inst_name'] }),
+                    title: this.$t('确认要删除', { name: inst['bk_inst_name'] }),
                     confirmFn: () => {
                         this.deleteInst({
                             objId: this.objId,
@@ -568,7 +568,7 @@
                             }
                         }).then(() => {
                             this.slider.show = false
-                            this.$success(this.$t('Common["删除成功"]'))
+                            this.$success(this.$t('删除成功'))
                             this.handlePageChange(1)
                         })
                     }
@@ -590,7 +590,7 @@
                             this.attribute.inst.details = this.$tools.flattenItem(this.properties, item)
                         })
                         this.handleCancel()
-                        this.$success(this.$t("Common['修改成功']"))
+                        this.$success(this.$t('修改成功'))
                     })
                 } else {
                     this.createInst({
@@ -599,7 +599,7 @@
                     }).then(() => {
                         this.handlePageChange(1)
                         this.handleCancel()
-                        this.$success(this.$t("Inst['创建成功']"))
+                        this.$success(this.$t('创建成功'))
                     })
                 }
             },
@@ -618,7 +618,7 @@
                     })
                 })
                 this.attribute.type = 'multiple'
-                this.slider.title = this.$t('Inst[\'批量更新\']')
+                this.slider.title = this.$t('批量更新')
                 this.slider.show = true
             },
             handleMultipleSave (values) {
@@ -636,7 +636,7 @@
                         requestId: `${this.objId}BatchUpdate`
                     }
                 }).then(() => {
-                    this.$success(this.$t('Common["修改成功"]'))
+                    this.$success(this.$t('修改成功'))
                     this.handlePageChange(1)
                 })
             },
@@ -645,7 +645,7 @@
             },
             handleMultipleDelete () {
                 this.$bkInfo({
-                    title: this.$t("Common['确定删除选中的实例']"),
+                    title: this.$t('确定删除选中的实例'),
                     confirmFn: () => {
                         this.doBatchDeleteInst()
                     }
@@ -662,7 +662,7 @@
                         }, { inject: !this.isPublicModel })
                     }
                 }).then(() => {
-                    this.$success(this.$t('Common["删除成功"]'))
+                    this.$success(this.$t('删除成功'))
                     this.table.checked = []
                     this.handlePageChange(1)
                 })
@@ -696,8 +696,8 @@
                     if (Object.keys(changedValues).length) {
                         return new Promise((resolve, reject) => {
                             this.$bkInfo({
-                                title: this.$t('Common["确认退出"]'),
-                                subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                                title: this.$t('确认退出'),
+                                subTitle: this.$t('退出会导致未保存信息丢失'),
                                 extCls: 'bk-dialog-sub-header-center',
                                 confirmFn: () => {
                                     resolve(true)

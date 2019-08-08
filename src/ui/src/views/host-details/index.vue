@@ -10,19 +10,19 @@
             :style="{
                 '--infoHeight': infoHeight
             }">
-            <bk-tab-panel name="property" :label="$t('HostDetails[\'主机属性\']')">
+            <bk-tab-panel name="property" :label="$t('主机属性')">
                 <cmdb-host-property></cmdb-host-property>
             </bk-tab-panel>
-            <bk-tab-panel name="association" :label="$t('HostDetails[\'关联\']')">
+            <bk-tab-panel name="association" :label="$t('关联')">
                 <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
             </bk-tab-panel>
-            <bk-tab-panel name="status" :label="$t('HostDetails[\'实时状态\']')">
+            <bk-tab-panel name="status" :label="$t('实时状态')">
                 <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
             </bk-tab-panel>
-            <bk-tab-panel name="service" :label="$t('HostDetails[\'服务列表\']')" :visible="!isAdminView">
+            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="!isAdminView">
                 <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
             </bk-tab-panel>
-            <bk-tab-panel name="history" :label="$t('HostDetails[\'变更记录\']')">
+            <bk-tab-panel name="history" :label="$t('变更记录')">
                 <cmdb-host-history v-if="active === 'history'"></cmdb-host-history>
             </bk-tab-panel>
         </bk-tab>
@@ -70,7 +70,7 @@
             info (info) {
                 const hostList = info.host.bk_host_innerip.split(',')
                 const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
-                this.$store.commit('setHeaderTitle', `${this.$t('HostDetails["主机详情"]')}(${host})`)
+                this.$store.commit('setHeaderTitle', `${this.$t('主机详情')}(${host})`)
             },
             id () {
                 this.getData()

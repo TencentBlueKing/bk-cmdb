@@ -5,7 +5,7 @@
             <span class="info-ip">{{hostIp}}</span>
         </div>
         <div class="info-topology clearfix">
-            <div class="topology-label fl">{{$t("BusinessTopology['业务拓扑']")}}：</div>
+            <div class="topology-label fl">{{$t('业务拓扑')}}：</div>
             <div class="topology-details clearfix">
                 <ul class="topology-list fl"
                     v-for="(column, index) in ['left', 'right']"
@@ -26,7 +26,7 @@
                     href="javascript:void(0)"
                     v-if="topology.length > 2"
                     @click="viewAll">
-                    {{$t("Common['更多']")}}
+                    {{$t('更多')}}
                     <i class="bk-icon icon-angle-down" :class="{ 'is-all-show': showAll }"></i>
                 </a>
             </div>

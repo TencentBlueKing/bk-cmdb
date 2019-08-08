@@ -5,7 +5,7 @@
                 <cmdb-form-bool class="options-checkall"
                     :size="16"
                     :checked="isCheckAll"
-                    :title="$t('Common[\'全选本页\']')"
+                    :title="$t('全选本页')"
                     @change="handleCheckALL">
                 </cmdb-form-bool>
                 <span style="display: inline-block;"
@@ -16,12 +16,12 @@
                     <bk-button class="options-button" theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
                         @click="handleCreateServiceInstance">
-                        {{$t('BusinessTopology["添加服务实例"]')}}
+                        {{$t('添加服务实例')}}
                     </bk-button>
                 </span>
                 <bk-dropdown-menu trigger="click">
                     <bk-button class="options-button clipboard-trigger" theme="default" slot="dropdown-trigger">
-                        {{$t('Common["更多"]')}}
+                        {{$t('更多')}}
                         <i class="bk-icon icon-angle-down"></i>
                     </bk-button>
                     <ul class="clipboard-list" slot="dropdown-content">
@@ -50,7 +50,7 @@
                         :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                         @click="handleSyncTemplate">
                         <i class="bk-icon icon-refresh"></i>
-                        {{$t('BusinessTopology["同步模板"]')}}
+                        {{$t('同步模板')}}
                     </bk-button>
                 </span>
                 <div class="options-right fr">
@@ -58,12 +58,12 @@
                         :size="16"
                         :checked="isExpandAll"
                         @change="handleExpandAll">
-                        <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
+                        <span class="checkbox-label">{{$t('全部展开')}}</span>
                     </cmdb-form-bool>
                     <div class="options-search">
                         <bk-search-select
                             :show-condition="false"
-                            :placeholder="$t('BusinessTopology[\'实例名称/标签\']')"
+                            :placeholder="$t('实例名称/标签')"
                             :data="searchSelect"
                             v-model="searchSelectData"
                             @change="handleSearch">
@@ -96,7 +96,7 @@
             <div class="filter-empty" v-if="!instances.length">
                 <div class="filter-empty-content">
                     <img class="img-empty" src="../../../assets/images/empty-content.png" alt="">
-                    <span>{{$t('BusinessTopology["暂无符合条件的实例"]')}}</span>
+                    <span>{{$t('暂无符合条件的实例')}}</span>
                 </div>
             </div>
         </template>
@@ -128,8 +128,8 @@
             @cancel="handleCloseBatchLable"
             @after-leave="handleSetEditBox">
             <div class="reset-header" slot="header">
-                {{$t("BusinessTopology['批量编辑']")}}
-                <span>{{$tc("BusinessTopology['已选择实例']", checked.length, { num: checked.length })}}</span>
+                {{$t('批量编辑')}}
+                <span>{{$tc('已选择实例', checked.length, { num: checked.length })}}</span>
             </div>
             <batch-edit-label ref="batchLabel"
                 v-if="editLabel.visiable"
@@ -167,11 +167,11 @@
                 instances: [],
                 searchSelect: [
                     {
-                        name: this.$t('BusinessTopology["服务实例名"]'),
+                        name: this.$t('服务实例名'),
                         id: 0
                     },
                     {
-                        name: this.$t('BusinessTopology["标签"]'),
+                        name: this.$t('标签'),
                         id: 1,
                         multiable: true,
                         children: []
@@ -230,16 +230,16 @@
             },
             menuItem () {
                 return [{
-                    name: this.$t('BusinessTopology["批量删除"]'),
+                    name: this.$t('批量删除'),
                     handler: this.batchDelete,
                     disabled: !this.checked.length,
                     auth: 'D_SERVICE_INSTANCE'
                 }, {
-                    name: this.$t('BusinessTopology["复制IP"]'),
+                    name: this.$t('复制IP'),
                     handler: this.copyIp,
                     disabled: !this.checked.length
                 }, {
-                    name: this.$t('BusinessTopology["编辑标签"]'),
+                    name: this.$t('编辑标签'),
                     handler: this.handleShowBatchLabel,
                     disabled: !this.checked.length,
                     auth: 'U_SERVICE_INSTANCE'
@@ -381,14 +381,14 @@
                     this.searchSelect[0].id === 0 && this.searchSelect.shift()
                 } else {
                     this.searchSelect[0].id !== 0 && this.searchSelect.unshift({
-                        name: this.$t('BusinessTopology["服务实例名"]'),
+                        name: this.$t('服务实例名'),
                         id: 0
                     })
                 }
                 if (instanceName.length >= 2) {
                     this.searchSelectData.pop()
                     this.$bkMessage({
-                        message: this.$t('BusinessTopology["服务实例名重复"]'),
+                        message: this.$t('服务实例名重复'),
                         theme: 'warning'
                     })
                     return
@@ -417,7 +417,7 @@
             handleCreateProcess (referenceService) {
                 this.processForm.referenceService = referenceService
                 this.processForm.type = 'create'
-                this.processForm.title = `${this.$t('BusinessTopology["添加进程"]')}(${referenceService.instance.name})`
+                this.processForm.title = `${this.$t('添加进程')}(${referenceService.instance.name})`
                 this.processForm.instance = {}
                 this.processForm.show = true
                 this.$nextTick(() => {
@@ -434,7 +434,7 @@
             async handleUpdateProcess (processInstance, referenceService) {
                 this.processForm.referenceService = referenceService
                 this.processForm.type = 'update'
-                this.processForm.title = this.$t('BusinessTopology["编辑进程"]')
+                this.processForm.title = this.$t('编辑进程')
                 this.processForm.instance = processInstance.property
                 this.processForm.show = true
 
@@ -484,7 +484,7 @@
                     this.processForm.instance = null
                     this.processForm.referenceService = null
                     this.processForm.disabledProperties = []
-                    this.$success(this.$t('Common[\'保存成功\']'))
+                    this.$success(this.$t('保存成功'))
                 } catch (e) {
                     console.error(e)
                 }
@@ -529,8 +529,8 @@
                 if (Object.keys(changedValues).length) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["确认退出"]'),
-                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.handleCloseProcessForm()
@@ -588,8 +588,8 @@
                     return false
                 }
                 this.$bkInfo({
-                    title: this.$t('BusinessTopology["确认删除实例"]'),
-                    subTitle: this.$t('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
+                    title: this.$t('确认删除实例'),
+                    subTitle: this.$t('即将删除选中的实例', { count: this.checked.length }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         try {
@@ -607,7 +607,7 @@
                             this.currentNode.parents.forEach(node => {
                                 node.data.service_instance_count = node.data.service_instance_count - deleteNum
                             })
-                            this.$success(this.$t('Common[\'删除成功\']'))
+                            this.$success(this.$t('删除成功'))
                             this.instances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
                             this.checked = []
                         } catch (e) {
@@ -618,9 +618,9 @@
             },
             copyIp () {
                 this.$copyText(this.checked.map(instance => instance.name.split('_')[0]).join('\n')).then(() => {
-                    this.$success(this.$t('Common["复制成功"]'))
+                    this.$success(this.$t('复制成功'))
                 }, () => {
-                    this.$error(this.$t('Common["复制失败"]'))
+                    this.$error(this.$t('复制失败'))
                 })
             },
             handleSyncTemplate () {
@@ -712,7 +712,7 @@
                         })
                     }
                     if (status && status.bk_error_msg === 'success') {
-                        this.$success(this.$t('Common["保存成功"]'))
+                        this.$success(this.$t('保存成功'))
                         this.searchSelectData = []
                         this.getServiceInstances()
                         this.handleCheckALL(false)

@@ -1,7 +1,7 @@
 <template>
     <div class="new-association">
         <div class="association-filter clearfix">
-            <label class="filter-label fl">{{$t('Association["关联列表"]')}}</label>
+            <label class="filter-label fl">{{$t('关联列表')}}</label>
             <cmdb-selector class="fl" style="width: 280px;"
                 :list="options"
                 setting-key="bk_obj_asst_id"
@@ -10,7 +10,7 @@
             </cmdb-selector>
         </div>
         <div class="association-filter clearfix">
-            <label class="filter-label fl">{{$t('Association["条件筛选"]')}}</label>
+            <label class="filter-label fl">{{$t('条件筛选')}}</label>
             <div class="filter-group filter-group-property fl">
                 <cmdb-association-property-filter
                     :obj-id="currentAsstObj"
@@ -20,7 +20,7 @@
                     @on-value-change="handleValueChange">
                 </cmdb-association-property-filter>
             </div>
-            <bk-button theme="primary" class="btn-search fr" @click="search">{{$t('Association["搜索"]')}}</bk-button>
+            <bk-button theme="primary" class="btn-search fr" @click="search">{{$t('搜索')}}</bk-button>
         </div>
         <bk-table class="new-association-table"
             v-bkloading="{ isLoading: $loading() }"
@@ -37,30 +37,30 @@
                 :prop="column.id"
                 :label="column.name">
             </bk-table-column>
-            <bk-table-column :label="$t('Association[\'操作\']')">
+            <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <a href="javascript:void(0)" class="option-link"
                         v-if="tempData.includes(row[instanceIdKey])"
                         @click="updateAssociation(row[instanceIdKey], 'remove')">
-                        {{$t('Association["取消关联"]')}}
+                        {{$t('取消关联')}}
                     </a>
                     <a href="javascript:void(0)" class="option-link is-associated"
                         v-else-if="isAssociated(row)">
-                        {{$t('Association["已关联"]')}}
+                        {{$t('已关联')}}
                     </a>
                     <a href="javascript:void(0)" class="option-link" v-else
                         v-click-outside="handleCloseConfirm"
                         @click.stop="beforeUpdate($event, row[instanceIdKey], 'new')">
-                        {{$t('Association["添加关联"]')}}
+                        {{$t('添加关联')}}
                     </a>
                 </template>
             </bk-table-column>
         </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.id">
-            <p class="tips-content">{{$t('Association["更新确认"]')}}</p>
+            <p class="tips-content">{{$t('更新确认')}}</p>
             <div class="tips-option">
-                <bk-button class="tips-button" theme="primary" @click="confirmUpdate">{{$t('Common["确认"]')}}</bk-button>
-                <bk-button class="tips-button" theme="default" @click="cancelUpdate">{{$t('Common["取消"]')}}</bk-button>
+                <bk-button class="tips-button" theme="primary" @click="confirmUpdate">{{$t('确认')}}</bk-button>
+                <bk-button class="tips-button" theme="default" @click="cancelUpdate">{{$t('取消')}}</bk-button>
             </div>
         </div>
     </div>
@@ -150,12 +150,12 @@
             },
             instanceName () {
                 const name = {
-                    'bk_host_innerip': this.$t('Common["内网IP"]'),
-                    'bk_biz_name': this.$t('Association["业务名"]'),
-                    'bk_cloud_name': this.$t('Hosts["云区域"]'),
-                    'bk_module_name': this.$t('Hosts["模块名"]'),
-                    'bk_set_name': this.$t('Hosts["集群名"]'),
-                    'bk_inst_name': this.$t('Association["实例名"]')
+                    'bk_host_innerip': this.$t('内网IP'),
+                    'bk_biz_name': this.$t('业务名'),
+                    'bk_cloud_name': this.$t('云区域'),
+                    'bk_module_name': this.$t('模块名'),
+                    'bk_set_name': this.$t('集群名'),
+                    'bk_inst_name': this.$t('实例名')
                 }
                 if (name.hasOwnProperty(this.filter.id)) {
                     return this.filter.name
@@ -382,18 +382,18 @@
                     if (updateType === 'new') {
                         await this.createAssociation(instId)
                         this.tempData.push(instId)
-                        this.$success(this.$t('Association["添加关联成功"]'))
+                        this.$success(this.$t('添加关联成功'))
                     } else if (updateType === 'remove') {
                         await this.deleteAssociation(instId)
                         this.tempData = this.tempData.filter(tempId => tempId !== instId)
-                        this.$success(this.$t('Association["取消关联成功"]'))
+                        this.$success(this.$t('取消关联成功'))
                     } else if (updateType === 'update') {
                         await this.deleteAssociation(this.isSource ? this.existInstAssociation[0]['bk_asst_inst_id'] : this.existInstAssociation[0]['bk_inst_id'])
                         this.hasChange = true
                         this.tempData = []
                         await this.createAssociation(instId)
                         this.tempData = [instId]
-                        this.$success(this.$t('Association["添加关联成功"]'))
+                        this.$success(this.$t('添加关联成功'))
                     }
                     this.hasChange = true
                 } catch (e) {
