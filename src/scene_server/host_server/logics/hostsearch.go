@@ -16,6 +16,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -674,7 +675,7 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 	}
 
 	if 0 != len(sh.conds.hostCond.Fields) {
-		sh.conds.hostCond.Fields = append(sh.conds.hostCond.Fields, common.BKHostIDField)
+		sh.conds.hostCond.Fields = append(sh.conds.hostCond.Fields, common.BKHostIDField, common.BKCloudIDField)
 	}
 
 	condition := make(map[string]interface{})
@@ -693,6 +694,7 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		Start:     sh.hostSearchParam.Page.Start,
 		Limit:     sh.hostSearchParam.Page.Limit,
 		Sort:      sh.hostSearchParam.Page.Sort,
+		Fields:    strings.Join(sh.conds.hostCond.Fields, ","),
 	}
 
 	gResult, err := sh.lgc.CoreAPI.HostController().Host().GetHosts(sh.ctx, sh.pheader, query)

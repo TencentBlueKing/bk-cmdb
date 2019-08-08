@@ -377,7 +377,7 @@ func (h *HostModuleLog) getApps(ctx context.Context, appIDs []int64) ([]mapstr.M
 	query := &metadata.QueryCondition{
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
 		Condition: mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: appIDs}},
-		Fields:    []string{common.BKAppNameField, common.BKAppNameField, common.BKOwnerIDField},
+		Fields:    []string{common.BKAppIDField, common.BKAppNameField, common.BKOwnerIDField},
 	}
 	result, err := h.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.header, common.BKInnerObjIDApp, query)
 	if err != nil {
