@@ -19,7 +19,7 @@
                 }">
                     <bk-button class="button-history"
                         icon="icon-cc-history2"
-                        v-bk-tooltips.bottom="$t('Common[\'查看删除历史\']')"
+                        v-bk-tooltips.bottom="$t('Common[\'查看已归档业务\']')"
                         :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
                         @click="routeToHistory">
                     </bk-button>
