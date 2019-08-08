@@ -5,5 +5,6 @@
   "1116004": "Failed to delete statistics chart failed",
   "1116005": "Failed to get operation chart",
   "1116006": "Failed to update statistical chart",
-  "1116007": "Failed to get operation chart data"
+  "1116007": "Failed to get operation chart data",
+  "1116008": "Failed to update operation chart position",
 }

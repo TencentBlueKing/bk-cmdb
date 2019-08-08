@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-
 	"github.com/robfig/cron"
 
 	"configcenter/src/common"
@@ -24,7 +23,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (lgc *Logics) GetBizModuleHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
+func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
 	cond := metadata.QueryCondition{}
 	data := make([]metadata.IDStringCountInt64, 0)
 	target := [2]string{common.BKInnerObjIDApp, common.BKInnerObjIDHost}
@@ -37,7 +36,7 @@ func (lgc *Logics) GetBizModuleHostCount(kit *rest.Kit) ([]metadata.IDStringCoun
 		}
 		result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, obj, &cond)
 		if err != nil {
-			blog.Errorf("search %v amount failed, err: %v", obj, err)
+			blog.Errorf("search %v count failed, err: %v, rid: %v", obj, err, kit.Rid)
 			return nil, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
 		}
 		info := metadata.IDStringCountInt64{}
@@ -58,20 +57,20 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCount
 	cond := &metadata.QueryCondition{}
 	result, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
 	if err != nil {
-		blog.Errorf("search model fail , err: %v", err)
+		blog.Errorf("GetModelAndInstCount fail, search model fail , err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
 
 	info := make([]metadata.IDStringCountInt64, 0)
 	info = append(info, metadata.IDStringCountInt64{
 		Id:    "model",
-		Count: result.Data.Count,
+		Count: result.Data.Count - 6, // 去除内置的模型(主机、集群等)
 	})
 
 	opt := make(map[string]interface{})
 	resp, err := lgc.CoreAPI.CoreService().Operation().SearchInstCount(kit.Ctx, kit.Header, opt)
 	if err != nil {
-		blog.Errorf("get instance number fail, err: %v", err)
+		blog.Errorf("GetModelAndInstCount fail, get instance count fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
 	info = append(info, metadata.IDStringCountInt64{
@@ -93,7 +92,7 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 
 	result, err := lgc.CoreAPI.CoreService().Operation().CreateOperationChart(kit.Ctx, kit.Header, opt)
 	if err != nil {
-		blog.Errorf("search chart info fail, err: %v", err)
+		blog.Errorf("create operation chart fail, err: %v, rid: %v", err, kit.Rid)
 		return 0, err
 	}
 
@@ -104,7 +103,7 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	opt := mapstr.MapStr{}
 
 	if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
-		blog.Error("start collect chart data timer fail, err: %v", err)
+		blog.Error("statistic chart data fail, err: %v, rid: %v", err)
 		return
 	}
 
@@ -115,13 +114,13 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 		isMaster := lgc.Engine.ServiceManageInterface.IsMaster()
 		if isMaster {
 			if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
-				blog.Error("start collect chart data timer fail, err: %v", err)
+				blog.Error("start statistic chart data timer fail, err: %v", err)
 			}
 		}
 	})
 
 	if err != nil {
-		blog.Error("start collect chart data timer fail, err: %v", err)
+		blog.Error("start statistic chart data timer fail, err: %v", err)
 	}
 	c.Start()
 
@@ -131,7 +130,7 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig) (interface{}, error) {
 	switch chartInfo.ReportType {
 	case common.BizModuleHostChart:
-		data, err := lgc.GetBizModuleHostCount(kit)
+		data, err := lgc.GetBizHostCount(kit)
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +144,7 @@ func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig)
 	default:
 		result, err := lgc.CoreAPI.CoreService().Operation().SearchOperationChartData(kit.Ctx, kit.Header, chartInfo)
 		if err != nil {
-			blog.Error("search chart data fail, chart name: %v, err: %v", chartInfo.Name, err)
+			blog.Error("search chart data fail, chart name: %v, err: %v, rid: %v", chartInfo.Name, err, kit.Rid)
 			return nil, err
 		}
 		return result.Data, nil

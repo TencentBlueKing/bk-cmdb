@@ -182,7 +182,7 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 	}
 
 	if bizHost == nil {
-		blog.V(3).Info("table cc_ModuleHOstConfig is empty, rid: %v", ctx.ReqID)
+		blog.V(3).Info("table cc_ModuleHostConfig is empty, rid: %v", ctx.ReqID)
 
 		m.BizHostEmpty(ctx, bizInfo)
 		return
@@ -506,7 +506,7 @@ func (m *operationManager) BizHostEmpty(ctx core.ContextParams, bizInfo []metada
 	}
 }
 
-// ObjectBaseEmpty cc_ObjectBase为空的情况下,统计模型下的实例
+// ObjectBaseEmpty cc_ObjectBase为空的情况下,统计模型下的实例为0
 func (m *operationManager) ObjectBaseEmpty(ctx core.ContextParams, modelInfo []metadata.Object) {
 	modelInstNumber := make([]metadata.IDStringCountInt64, 0)
 	for _, model := range modelInfo {
