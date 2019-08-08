@@ -164,7 +164,7 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := o.CoreAPI.CoreService().Operation().CommonAggregate(ctx.Kit.Ctx, ctx.Kit.Header, chart.Data.Info)
+	result, err := o.CoreAPI.CoreService().Operation().SearchChartDataCommon(ctx.Kit.Ctx, ctx.Kit.Header, chart.Data.Info)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, cond: %v, err: %v, rid: %v", chart.Data.Info, err, ctx.Kit.Rid)
 		return
@@ -179,7 +179,7 @@ func (o *OperationServer) UpdateChartPosition(ctx *rest.Contexts) {
 		return
 	}
 
-	_, err := o.CoreAPI.CoreService().Operation().UpdateOperationChartPosition(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+	_, err := o.CoreAPI.CoreService().Operation().UpdateChartPosition(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationUpdateChartPositionFail, "update chart position fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		return

@@ -142,7 +142,7 @@ func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig)
 		}
 		return data, nil
 	default:
-		result, err := lgc.CoreAPI.CoreService().Operation().SearchOperationChartData(kit.Ctx, kit.Header, chartInfo)
+		result, err := lgc.CoreAPI.CoreService().Operation().SearchTimerChartData(kit.Ctx, kit.Header, chartInfo)
 		if err != nil {
 			blog.Error("search chart data fail, chart name: %v, err: %v, rid: %v", chartInfo.Name, err, kit.Rid)
 			return nil, err
