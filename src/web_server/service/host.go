@@ -98,12 +98,12 @@ func (s *Service) ExportHost(c *gin.Context) {
 	hostIDStr := c.PostForm("bk_host_id")
 
 	logics.SetProxyHeader(c)
-	pheader := c.Request.Header
-	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	header := c.Request.Header
+	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	customFieldsStr := c.PostForm(common.ExportCustomFields)
 
-	hostInfo, err := s.Logics.GetHostData(appIDStr, hostIDStr, pheader)
+	hostInfo, err := s.Logics.GetHostData(appIDStr, hostIDStr, header)
 	if err != nil {
 		blog.Errorf("ExportHost failed, get hosts by id [%+v] failed, err: %v, rid: %s", hostIDStr, err, rid)
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
@@ -120,14 +120,14 @@ func (s *Service) ExportHost(c *gin.Context) {
 	if nil != err {
 		blog.Errorf("ExportHost failed, get host model fields failed, err: %+v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
-		c.Writer.Write([]byte(reply))
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
-	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, pheader, &metadata.Metadata{})
+	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, &metadata.Metadata{})
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
-		c.Writer.Write([]byte(reply))
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 
@@ -148,7 +148,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	if err != nil {
 		blog.Errorf("ExportHost failed, save file failed, err: %+v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
-		c.Writer.Write([]byte(reply))
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 	logics.AddDownExcelHttpHeader(c, "bk_cmdb_export_host.xlsx")
@@ -192,7 +192,7 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	if nil != err {
 		blog.Errorf("BuildDownLoadExcelTemplate failed, build excel template failed, object:%s error:%s, rid: %s", objID, err.Error(), rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
-		c.Writer.Write([]byte(reply))
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 	if objID == common.BKInnerObjIDHost {
