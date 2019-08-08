@@ -13,13 +13,13 @@
 package operation
 
 import (
-	"configcenter/src/common/util"
 	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal"
