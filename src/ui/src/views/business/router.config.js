@@ -24,7 +24,7 @@ export default [{
     meta: new Meta({
         menu: {
             id: 'business',
-            i18n: 'Nav["业务"]',
+            i18n: '业务',
             path: businessPath,
             parent: NAV_BASIC_RESOURCE
         },
@@ -34,7 +34,7 @@ export default [{
                 this.authScope = 'global'
             }
         },
-        i18nTitle: 'Nav["业务"]'
+        i18nTitle: '业务'
     })
 }, {
     name: 'businessHistory',
@@ -48,6 +48,6 @@ export default [{
                 this.authScope = 'global'
             }
         },
-        i18nTitle: 'Nav["业务"]'
+        i18nTitle: '业务'
     })
 }]

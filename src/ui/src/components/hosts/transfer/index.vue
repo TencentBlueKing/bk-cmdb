@@ -2,7 +2,7 @@
     <div class="transfer-layout clearfix" v-bkloading="{ isLoading: loading }">
         <div class="columns-layout fl">
             <div class="business-layout">
-                <label class="business-label">{{$t('Common[\'业务\']')}}</label>
+                <label class="business-label">{{$t('业务')}}</label>
                 <cmdb-business-selector class="business-selector" v-model="businessId" :disabled="true">
                 </cmdb-business-selector>
             </div>
@@ -35,7 +35,7 @@
         </div>
         <div class="columns-layout fl">
             <div class="selected-layout">
-                <label class="selected-label">{{$t('Hosts["已选中模块"]')}}</label>
+                <label class="selected-label">{{$t('已选中模块')}}</label>
             </div>
             <div class="modules-layout">
                 <ul class="module-list">
@@ -53,22 +53,22 @@
         <div v-pre class="clearfix"></div>
         <div class="options-layout clearfix">
             <div class="increment-layout content-middle fl" v-if="showIncrementOption">
-                <label class="cmdb-form-radio cmdb-radio-small" for="increment" :title="$t('Hosts[\'增量更新\']')">
+                <label class="cmdb-form-radio cmdb-radio-small" for="increment" :title="$t('增量更新')">
                     <input id="increment" type="radio" v-model="increment" :value="true">
-                    <span class="cmdb-radio-text">{{$t('Hosts["增量更新"]')}}</span>
+                    <span class="cmdb-radio-text">{{$t('增量更新')}}</span>
                 </label>
-                <label class="cmdb-form-radio cmdb-radio-small" for="replacement" :title="$t('Hosts[\'完全替换\']')">
+                <label class="cmdb-form-radio cmdb-radio-small" for="replacement" :title="$t('完全替换')">
                     <input id="replacement" type="radio" v-model="increment" :value="false">
-                    <span class="cmdb-radio-text">{{$t('Hosts["完全替换"]')}}</span>
+                    <span class="cmdb-radio-text">{{$t('完全替换')}}</span>
                 </label>
             </div>
             <div class="button-layout content-middle fr">
                 <bk-button class="transfer-button" theme="primary"
                     :disabled="!selectedModules.length"
                     @click="handleTransfer">
-                    {{$t('Common[\'确认转移\']')}}
+                    {{$t('确认转移')}}
                 </bk-button>
-                <bk-button class="transfer-button" theme="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
+                <bk-button class="transfer-button" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
             </div>
         </div>
     </div>
@@ -204,7 +204,7 @@
                         'default': 0,
                         'bk_obj_id': 'module',
                         'bk_inst_id': 'resource',
-                        'bk_inst_name': this.$t('HostResourcePool["资源池"]')
+                        'bk_inst_name': this.$t('资源池')
                     }, {
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
@@ -255,7 +255,7 @@
                 })
                 if (isSpecialNode && hasNormalNode) {
                     this.$bkInfo({
-                        title: this.$t('Common[\'转移确认\']', { target: data.bk_inst_name }),
+                        title: this.$t('转移确认', { target: data.bk_inst_name }),
                         confirmFn: () => {
                             this.$refs.topoTree.removeChecked({ emitEvent: true })
                             confirmResolver(true)
@@ -302,7 +302,7 @@
             getModulePath (node) {
                 const data = node.data
                 if (data.bk_inst_id === 'resource') {
-                    return this.$t('Common["主机资源池"]')
+                    return this.$t('主机资源池')
                 }
                 return node.parents.map(parent => parent.data.bk_inst_name).join('-')
             },
@@ -324,7 +324,7 @@
                     transferPromise = this.transerToModules(transferConfig)
                 }
                 transferPromise.then(() => {
-                    this.$success(this.$t('Common[\'转移成功\']'))
+                    this.$success(this.$t('转移成功'))
                     this.$emit('on-success')
                 })
             },

@@ -3,7 +3,7 @@
         <div class="main-box" :style="{ 'padding-right': featureName ? '30px' : 0 }">
             <i class="icon-cc-exclamation-tips"></i>
             <span>{{desc}}</span>
-            <a v-if="moreHref" :href="moreHref" target="_blank">{{$t("Common['更多详情']")}} >></a>
+            <a v-if="moreHref" :href="moreHref" target="_blank">{{$t('更多详情')}} &gt;&gt;</a>
         </div>
         <span class="icon-cc-tips-close fr" v-if="featureName" @click="HandleCloseTips"></span>
     </div>

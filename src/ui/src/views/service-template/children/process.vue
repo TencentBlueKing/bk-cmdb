@@ -13,7 +13,7 @@
                     <span v-else>{{row[column.id] || '--'}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('Common[\'操作\']')">
+            <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <span
                         v-cursor="{
@@ -24,7 +24,7 @@
                             :disabled="!$isAuthorized($OPERATION.U_SERVICE_TEMPLATE)"
                             :text="true"
                             @click.stop="handleEdite(row['originData'])">
-                            {{$t('Common["编辑"]')}}
+                            {{$t('编辑')}}
                         </bk-button>
                     </span>
                     <span
@@ -36,7 +36,7 @@
                             :disabled="!$isAuthorized($OPERATION.D_SERVICE_TEMPLATE)"
                             :text="true"
                             @click.stop="handleDelete(row['originData'])">
-                            {{$t('Common["删除"]')}}
+                            {{$t('删除')}}
                         </bk-button>
                     </span>
                 </template>
@@ -80,27 +80,27 @@
                     header: [
                         {
                             id: 'bk_func_name',
-                            name: this.$t("ProcessManagement['进程名称']"),
+                            name: this.$t('进程名称'),
                             sortable: false
                         }, {
                             id: 'bk_process_name',
-                            name: this.$t("ProcessManagement['进程别名']"),
+                            name: this.$t('进程别名'),
                             sortable: false
                         }, {
                             id: 'bind_ip',
-                            name: this.$t("ProcessManagement['监听IP']"),
+                            name: this.$t('监听IP'),
                             sortable: false
                         }, {
                             id: 'port',
-                            name: this.$t("ProcessManagement['端口']"),
+                            name: this.$t('端口'),
                             sortable: false
                         }, {
                             id: 'work_path',
-                            name: this.$t("ProcessManagement['启动路径']"),
+                            name: this.$t('启动路径'),
                             sortable: false
                         }, {
                             id: 'user',
-                            name: this.$t("ProcessManagement['启动用户']"),
+                            name: this.$t('启动用户'),
                             sortable: false
                         }
                     ]

@@ -11,32 +11,32 @@
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange">
-            <bk-table-column prop="bk_obj_id" :label="$t('Nav[\'模型\']')" width="80"></bk-table-column>
-            <bk-table-column prop="bk_status" :label="$t('ProcessManagement[\'状态\']')" width="80">
+            <bk-table-column prop="bk_obj_id" :label="$t('模型')" width="80"></bk-table-column>
+            <bk-table-column prop="bk_status" :label="$t('状态')" width="80">
                 <template slot-scope="{ row }">
                     <span class="sync-success" v-if="row.bk_status === 'success'">
-                        {{$t('Inst["成功"]')}}
+                        {{$t('成功')}}
                     </span>
                     <span class="sync-fail" v-else-if="row.bk_status === 'fail'">
-                        {{$t('EventPush["失败"]')}}
+                        {{$t('失败')}}
                     </span>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_time_consume" :label="$t('Cloud[\'处理耗时\']')" width="115"></bk-table-column>
-            <bk-table-column prop="details" :label="$t('Cloud[\'详情\']')">
+            <bk-table-column prop="bk_time_consume" :label="$t('处理耗时')" width="115"></bk-table-column>
+            <bk-table-column prop="details" :label="$t('详情')">
                 <template slot-scope="{ row }">
                     <span v-if="row.fail_reason === 'AuthFailure'">
-                        {{ $t('Cloud["ID和Key认证失败"]') }}
+                        {{ $t('ID和Key认证失败') }}
                     </span>
                     <span v-else-if="row.fail_reason === 'else'">
-                        {{ $t('Cloud["服务器错误"]') }}
+                        {{ $t('服务器错误') }}
                     </span>
                     <span v-else>
-                        {{$t('Cloud[\'新增\']')}} ({{row.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{row.attr_changed}})
+                        {{$t('新增')}} ({{row.new_add}}) / {{$t('变更')}} ({{row.attr_changed}})
                     </span>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_start_time" :label="$t('HostResourcePool[\'启动时间\']')"></bk-table-column>
+            <bk-table-column prop="bk_start_time" :label="$t('启动时间')"></bk-table-column>
         </bk-table>
     </div>
 </template>
@@ -113,7 +113,7 @@
                 const res = await this.searchCloudHistory({ params, config: { requestID: 'getSyncHistory' } })
                 this.table.list = res.info.map(data => {
                     data['start_time'] = this.$tools.formatTime(data['start_time'], 'YYYY-MM-DD HH:mm:ss')
-                    data['bk_obj_id'] = this.$t('Hosts["主机"]')
+                    data['bk_obj_id'] = this.$t('主机')
                     return data
                 })
                 pagination.count = res.count

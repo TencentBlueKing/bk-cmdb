@@ -10,7 +10,7 @@
         <div class="define-box">
             <div class="userapi-group">
                 <label class="userapi-label">
-                    {{$t("Common['业务']")}}<span class="color-danger"> * </span>
+                    {{$t('业务')}}<span class="color-danger"> * </span>
                 </label>
                 <cmdb-business-selector
                     class="business-selector"
@@ -19,7 +19,7 @@
             </div>
             <div class="userapi-group">
                 <label class="userapi-label">
-                    {{$t("CustomQuery['查询名称']")}}<span class="color-danger"> * </span>
+                    {{$t('查询名称')}}<span class="color-danger"> * </span>
                 </label>
                 <div v-cursor="{
                     active: !editable,
@@ -27,16 +27,16 @@
                 }">
                     <bk-input type="text" class="cmdb-form-input"
                         v-model.trim="name"
-                        :name="$t('CustomQuery[\'查询名称\']')"
+                        :name="$t('查询名称')"
                         :disabled="!editable"
                         v-validate="'required|max:15'">
                     </bk-input>
                 </div>
-                <span v-show="errors.has($t('CustomQuery[\'查询名称\']'))" class="color-danger">{{ errors.first($t('CustomQuery[\'查询名称\']')) }}</span>
+                <span v-show="errors.has($t('查询名称'))" class="color-danger">{{ errors.first($t('查询名称')) }}</span>
             </div>
             <div class="userapi-group content">
                 <label class="userapi-label">
-                    {{$t("CustomQuery['查询内容']")}}<span class="color-danger"> * </span>
+                    {{$t('查询内容')}}<span class="color-danger"> * </span>
                 </label>
                 <div class="userapi-content-display">
                     <bk-select class="fl"
@@ -121,7 +121,7 @@
                     <button class="userapi-new-btn"
                         :disabled="!editable"
                         @click="toggleUserAPISelector(true)">
-                        {{$t("CustomQuery['新增查询条件']")}}
+                        {{$t('新增查询条件')}}
                     </button>
                 </div>
                 <div class="userapi-new-mask" v-if="filter.isShow"></div>
@@ -144,7 +144,7 @@
             </div>
             <div class="userapi-btn-group">
                 <bk-button theme="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
-                    {{$t("CustomQuery['预览']")}}
+                    {{$t('预览')}}
                 </bk-button>
                 <span class="inline-block-middle"
                     v-cursor="{
@@ -152,15 +152,15 @@
                         auth: [$OPERATION.U_CUSTOM_QUERY]
                     }">
                     <bk-button theme="primary" class="userapi-btn"
-                        v-bk-tooltips="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
+                        v-bk-tooltips="$t('保存后的查询可通过接口调用生效')"
                         :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
                         :disabled="errors.any() || !editable"
                         @click="saveUserAPI">
-                        {{$t("Common['保存']")}}
+                        {{$t('保存')}}
                     </bk-button>
                 </span>
                 <bk-button theme="default" class="userapi-btn" @click="closeSlider">
-                    {{$t("Common['取消']")}}
+                    {{$t('取消')}}
                 </bk-button>
                 <span class="inline-block-middle"
                     v-cursor="{
@@ -172,7 +172,7 @@
                         :loading="$loading('deleteCustomQuery')"
                         :disabled="!editable"
                         @click="deleteUserAPI">
-                        {{$t("Common['删除']")}}
+                        {{$t('删除')}}
                     </bk-button>
                 </span>
             </div>
@@ -217,22 +217,22 @@
                     list: [],
                     selected: [],
                     isShow: false,
-                    defaultName: `${this.$t("Common['内网IP']")},${this.$t("Hosts['集群']")},${this.$t("Hosts['模块']")},${this.$t("Common['业务']")},${this.$t("Hosts['云区域']")}`,
+                    defaultName: ['内网IP', '集群', '模块', '业务', '云区域'].map(i18n => this.$t(i18n)).join(','),
                     default: [{
                         'bk_property_id': 'bk_host_innerip',
-                        'bk_property_name': this.$t("Common['内网IP']")
+                        'bk_property_name': this.$t('内网IP')
                     }, {
                         'bk_property_id': 'bk_set_name',
-                        'bk_property_name': this.$t("Hosts['集群']")
+                        'bk_property_name': this.$t('集群')
                     }, {
                         'bk_property_id': 'bk_module_name',
-                        'bk_property_name': this.$t("Hosts['模块']")
+                        'bk_property_name': this.$t('模块')
                     }, {
                         'bk_property_id': 'bk_biz_name',
-                        'bk_property_name': this.$t("Common['业务']")
+                        'bk_property_name': this.$t('业务')
                     }, {
                         'bk_property_id': 'bk_cloud_id',
-                        'bk_property_name': this.$t("Hosts['云区域']")
+                        'bk_property_name': this.$t('云区域')
                     }]
                 },
                 filter: {
@@ -242,25 +242,25 @@
                 object: {
                     'host': {
                         id: 'host',
-                        name: this.$t("Hosts['主机']"),
+                        name: this.$t('主机'),
                         properties: [],
                         selected: []
                     },
                     'set': {
                         id: 'set',
-                        name: this.$t("Hosts['集群']"),
+                        name: this.$t('集群'),
                         properties: [],
                         selected: []
                     },
                     'module': {
                         id: 'module',
-                        name: this.$t("Hosts['模块']"),
+                        name: this.$t('模块'),
                         properties: [],
                         selected: []
                     },
                     'biz': {
                         id: 'biz',
-                        name: this.$t("Common['业务']"),
+                        name: this.$t('业务'),
                         properties: [],
                         selected: []
                     }
@@ -536,7 +536,7 @@
                             requestId: 'createCustomQuery'
                         }
                     })
-                    this.$success(this.$t("Common['保存成功']"))
+                    this.$success(this.$t('保存成功'))
                     this.$emit('create', res)
                 } else {
                     const res = await this.updateCustomQuery({
@@ -547,7 +547,7 @@
                             requestId: 'updateCustomQuery'
                         }
                     })
-                    this.$success(this.$t("Common['修改成功']"))
+                    this.$success(this.$t('修改成功'))
                     this.$emit('update', res)
                 }
                 this.dataCopy = {
@@ -561,8 +561,8 @@
             },
             deleteUserAPI () {
                 this.$bkInfo({
-                    title: this.$t("Common['确定删除']"),
-                    subTitle: this.$t("CustomQuery['确认要删除']", { name: this.apiParams.name }),
+                    title: this.$t('确定删除'),
+                    subTitle: this.$t('确认要删除', { name: this.apiParams.name }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         await this.deleteCustomQuery({
@@ -572,7 +572,7 @@
                                 requestId: 'deleteCustomQuery'
                             }
                         })
-                        this.$success(this.$t("Common['删除成功']"))
+                        this.$success(this.$t('删除成功'))
                         this.$emit('delete')
                         this.$emit('cancel')
                     }
@@ -649,7 +649,7 @@
                         ...property,
                         ...{
                             filter_id: `${property['bk_obj_id']}-${property['bk_property_id']}`,
-                            filter_name: `${this.$t("Hosts['主机']")}-${property['bk_property_name']}`
+                            filter_name: `${this.$t('主机')}-${property['bk_property_name']}`
                         }
                     }
                 })
@@ -658,7 +658,7 @@
                         ...property,
                         ...{
                             filter_id: `${property['bk_obj_id']}-${property['bk_property_id']}`,
-                            filter_name: `${this.$t("Hosts['集群']")}-${property['bk_property_name']}`
+                            filter_name: `${this.$t('集群')}-${property['bk_property_name']}`
                         }
                     }
                 })
@@ -667,7 +667,7 @@
                         ...property,
                         ...{
                             filter_id: `${property['bk_obj_id']}-${property['bk_property_id']}`,
-                            filter_name: `${this.$t("Hosts['模块']")}-${property['bk_property_name']}`
+                            filter_name: `${this.$t('模块')}-${property['bk_property_name']}`
                         }
                     }
                 })

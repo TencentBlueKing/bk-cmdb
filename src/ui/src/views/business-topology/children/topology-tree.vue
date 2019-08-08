@@ -18,12 +18,12 @@
             <div class="node-info clearfix" slot-scope="{ node, data }">
                 <i :class="['node-model-icon fl', { 'is-selected': node.selected }, { 'is-template': isTemplate(node) }]">{{modelIconMap[data.bk_obj_id]}}</i>
                 <span class="fr" v-if="isBlueKing && showCreate(node, data)"
-                    v-bk-tooltips.top="$t('Common[\'您暂无创建权限\']')">
+                    v-bk-tooltips.top="$t('您暂无创建权限')">
                     <bk-button class="node-button"
                         theme="primary"
                         :disabled="true"
                         @click.stop="showCreateDialog(node)">
-                        {{$t('Common[\'新建\']')}}
+                        {{$t('新建')}}
                     </bk-button>
                 </span>
                 <span v-else-if="showCreate(node, data)"
@@ -37,7 +37,7 @@
                         theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_TOPO)"
                         @click.stop="showCreateDialog(node)">
-                        {{$t('Common[\'新建\']')}}
+                        {{$t('新建')}}
                     </bk-button>
                 </span>
                 <div class="info-content">
@@ -253,7 +253,7 @@
                         ...data
                     }
                     this.$refs.tree.addNode(nodeData, parentNode.id, 0)
-                    this.$success(this.$t('Common[\'新建成功\']'))
+                    this.$success(this.$t('新建成功'))
                     this.handleCancelCreateNode()
                 } catch (e) {
                     console.error(e)

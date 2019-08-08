@@ -11,7 +11,7 @@
                         :disabled="!hasRelation || !$isAuthorized(auth)"
                         :class="{ active: activeComponent === 'cmdbRelationUpdate' }"
                         @click="handleShowUpdate">
-                        {{$t('Association["关联管理"]')}}
+                        {{$t('关联管理')}}
                         <i class="bk-icon icon-angle-down"></i>
                     </bk-button>
                 </span>
@@ -19,15 +19,10 @@
             <div class="fr">
                 <bk-button theme="default" class="options-full-screen"
                     v-show="activeComponent === 'cmdbRelationTopology'"
-                    v-bk-tooltips="$t('Common[\'全屏\']')"
+                    v-bk-tooltips="$t('全屏')"
                     @click="handleFullScreen">
                     <i class="icon-cc-resize-full"></i>
                 </bk-button>
-                <!-- <bk-button class="options-button" :theme="activeComponent === 'cmdbRelationTopology' ? 'primary' : 'default'"
-                    @click.prevent="activeComponent = 'cmdbRelationTopology'">
-                    <i class="icon-cc-resources"></i>
-                    {{$t('Association["拓扑"]')}}
-                </bk-button> -->
             </div>
         </div>
         <div class="relation-component">

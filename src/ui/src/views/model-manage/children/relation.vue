@@ -8,7 +8,7 @@
                 <bk-button class="create-btn" theme="primary"
                     :disabled="isReadOnly || !updateAuth"
                     @click="createRelation">
-                    {{$t('ModelManagement["新建关联"]')}}
+                    {{$t('新建关联')}}
                 </bk-button>
             </span>
         </div>
@@ -21,47 +21,47 @@
                 cursor: 'pointer'
             }"
             @cell-click="handleShowDetails">
-            <bk-table-column prop="bk_obj_asst_id" :label="$t('ModelManagement[\'唯一标识\']')">
+            <bk-table-column prop="bk_obj_asst_id" :label="$t('唯一标识')">
                 <template slot-scope="{ row }">
                     <span
                         v-if="row.ispre"
                         :class="['relation-pre', $i18n.locale]">
-                        {{$t('ModelManagement["内置"]')}}
+                        {{$t('内置')}}
                     </span>
                     <span class="relation-id">{{row['bk_obj_asst_id']}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_asst_name" :label="$t('ModelManagement[\'关联类型\']')">
+            <bk-table-column prop="bk_asst_name" :label="$t('关联类型')">
                 <template slot-scope="{ row }">
                     {{getRelationName(row['bk_asst_id'])}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="mapping" :label="$t('ModelManagement[\'源-目标约束\']')">
+            <bk-table-column prop="mapping" :label="$t('源-目标约束')">
                 <template slot-scope="{ row }">
                     {{mappingMap[row.mapping]}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_obj_name" :label="$t('ModelManagement[\'源模型\']')">
+            <bk-table-column prop="bk_obj_name" :label="$t('源模型')">
                 <template slot-scope="{ row }">
                     {{getModelName(row['bk_obj_id'])}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_asst_obj_name" :label="$t('ModelManagement[\'目标模型\']')">
+            <bk-table-column prop="bk_asst_obj_name" :label="$t('目标模型')">
                 <template slot-scope="{ row }">
                     {{getModelName(row['bk_asst_obj_id'])}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="operation" :label="$t('Common[\'操作\']')" v-if="updateAuth">
+            <bk-table-column prop="operation" :label="$t('操作')" v-if="updateAuth">
                 <template slot-scope="{ row }">
                     <button class="text-primary mr10"
                         :disabled="!isEditable(row)"
                         @click.stop="editRelation(row)">
-                        {{$t('Common["编辑"]')}}
+                        {{$t('编辑')}}
                     </button>
                     <button class="text-primary"
                         :disabled="!isEditable(row)"
                         @click.stop="deleteRelation(row)">
-                        {{$t('Common["删除"]')}}
+                        {{$t('删除')}}
                     </button>
                 </template>
             </bk-table-column>
@@ -97,7 +97,7 @@
                 slider: {
                     isShow: false,
                     isEdit: false,
-                    title: this.$t('ModelManagement["新建关联"]'),
+                    title: this.$t('新建关联'),
                     relation: {}
                 },
                 relationList: [],
@@ -192,19 +192,19 @@
                 this.slider.isEdit = false
                 this.slider.isReadOnly = false
                 this.slider.relation = {}
-                this.slider.title = this.$t('ModelManagement["新建关联"]')
+                this.slider.title = this.$t('新建关联')
                 this.slider.isShow = true
             },
             editRelation (item) {
                 this.slider.isEdit = true
                 this.slider.isReadOnly = false
                 this.slider.relation = item
-                this.slider.title = this.$t('ModelManagement["编辑关联"]')
+                this.slider.title = this.$t('编辑关联')
                 this.slider.isShow = true
             },
             deleteRelation (relation) {
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确定删除关联关系?"]'),
+                    title: this.$t('确定删除关联关系?'),
                     confirmFn: async () => {
                         await this.deleteObjectAssociation({
                             id: relation.id,
@@ -254,7 +254,7 @@
                 this.slider.isEdit = true
                 this.slider.isReadOnly = true
                 this.slider.relation = row
-                this.slider.title = this.$t('ModelManagement["查看关联"]')
+                this.slider.title = this.$t('查看关联')
                 this.slider.isShow = true
             }
         }

@@ -4,7 +4,7 @@
             <cmdb-form-bool class="options-checkall"
                 :size="16"
                 :checked="isCheckAll"
-                :title="$t('Common[\'全选本页\']')"
+                :title="$t('全选本页')"
                 @change="handleCheckALL">
             </cmdb-form-bool>
             <span style="display: inline-block;"
@@ -15,7 +15,7 @@
                 <bk-button class="ml10"
                     :disabled="!$isAuthorized($OPERATION.D_SERVICE_INSTANCE) || !checked.length"
                     @click="batchDelete(!checked.length)">
-                    {{$t("BusinessTopology['批量删除']")}}
+                    {{$t('批量删除')}}
                 </bk-button>
             </span>
             <div class="option-right fr">
@@ -23,12 +23,12 @@
                     :size="16"
                     :checked="isExpandAll"
                     @change="handleExpandAll">
-                    <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
+                    <span class="checkbox-label">{{$t('全部展开')}}</span>
                 </cmdb-form-bool>
                 <div class="options-search">
                     <bk-search-select
                         :show-condition="false"
-                        :placeholder="$t('BusinessTopology[\'实例名称/标签\']')"
+                        :placeholder="$t('实例名称/标签')"
                         :data="searchSelect"
                         v-model="searchSelectData"
                         @change="handleSearch">
@@ -90,11 +90,11 @@
             return {
                 searchSelect: [
                     {
-                        name: this.$t('BusinessTopology["服务实例名"]'),
+                        name: this.$t('服务实例名'),
                         id: 0
                     },
                     {
-                        name: this.$t('BusinessTopology["标签"]'),
+                        name: this.$t('标签'),
                         id: 1,
                         multiable: true,
                         children: []
@@ -214,8 +214,8 @@
                     return false
                 }
                 this.$bkInfo({
-                    title: this.$t('BusinessTopology["确认删除实例"]'),
-                    subTitle: this.$t('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
+                    title: this.$t('确认删除实例'),
+                    subTitle: this.$t('即将删除选中的实例', { count: this.checked.length }),
                     confirmFn: async () => {
                         try {
                             const serviceInstanceIds = this.checked.map(instance => instance.id)
@@ -252,14 +252,14 @@
                     this.searchSelect[0].id === 0 && this.searchSelect.shift()
                 } else {
                     this.searchSelect[0].id !== 0 && this.searchSelect.unshift({
-                        name: this.$t('BusinessTopology["服务实例名"]'),
+                        name: this.$t('服务实例名'),
                         id: 0
                     })
                 }
                 if (instanceName.length >= 2) {
                     this.searchSelectData.pop()
                     this.$bkMessage({
-                        message: this.$t('BusinessTopology["服务实例名重复"]'),
+                        message: this.$t('服务实例名重复'),
                         theme: 'warning'
                     })
                     return

@@ -32,7 +32,7 @@
         },
         computed: {
             localPlaceholder () {
-                return this.placeholder || this.$t('Form["请输入短字符"]')
+                return this.placeholder || this.$t('请输入短字符')
             }
         },
         methods: {

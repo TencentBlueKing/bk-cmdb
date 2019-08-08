@@ -7,7 +7,7 @@
             <feature-tips
                 :feature-name="'model'"
                 :show-tips="showFeatureTips"
-                :desc="$t('ModelManagement[\'模型顶部提示\']')"
+                :desc="$t('模型顶部提示')"
                 :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#ModelManagement'"
                 @close-tips="showFeatureTips = false">
             </feature-tips>
@@ -20,7 +20,7 @@
                     <bk-button theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
                         @click="showModelDialog(false)">
-                        {{$t('ModelManagement["新建模型"]')}}
+                        {{$t('新建模型')}}
                     </bk-button>
                 </span>
                 <span v-else style="display: inline-block;"
@@ -29,10 +29,10 @@
                         auth: [$OPERATION.C_MODEL]
                     }">
                     <bk-button theme="primary"
-                        v-bk-tooltips="$t('ModelManagement[\'新增模型提示\']')"
+                        v-bk-tooltips="$t('新增模型提示')"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
                         @click="showModelDialog(false)">
-                        {{$t('ModelManagement["新建模型"]')}}
+                        {{$t('新建模型')}}
                     </bk-button>
                 </span>
                 <span style="display: inline-block;"
@@ -43,7 +43,7 @@
                     <bk-button theme="default"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
                         @click="showGroupDialog(false)">
-                        {{$t('ModelManagement["新建分组"]')}}
+                        {{$t('新建分组')}}
                     </bk-button>
                 </span>
             </div>
@@ -52,19 +52,19 @@
                     size="small"
                     :theme="modelType === 'enable' ? 'primary' : 'default'"
                     @click="modelType = 'enable'">
-                    {{$t('ModelManagement["启用模型"]')}}
+                    {{$t('启用模型')}}
                 </bk-button>
                 <bk-popover
-                    :content="$t('ModelManagement[\'停用模型提示\']')"
+                    :content="$t('停用模型提示')"
                     placenment="bottom"
                     v-if="!disabledClassifications.length">
                     <bk-button class="model-type-button disabled"
-                        v-bk-tooltips="$t('ModelManagement[\'停用模型提示\']')"
+                        v-bk-tooltips="$t('停用模型提示')"
                         size="small"
                         :disabled="!disabledClassifications.length"
                         :theme="modelType === 'disabled' ? 'primary' : 'default'"
                         @click="modelType = 'disabled'">
-                        {{$t('ModelManagement["停用模型"]')}}
+                        {{$t('停用模型')}}
                     </bk-button>
                 </bk-popover>
                 <bk-button class="model-type-button disabled"
@@ -73,7 +73,7 @@
                     :disabled="!disabledClassifications.length"
                     :theme="modelType === 'disabled' ? 'primary' : 'default'"
                     @click="modelType = 'disabled'">
-                    {{$t('ModelManagement["停用模型"]')}}
+                    {{$t('停用模型')}}
                 </bk-button>
             </div>
             <div class="model-search-options fr">
@@ -141,30 +141,30 @@
                 <div class="content">
                     <label>
                         <div class="label-title">
-                            {{$t('ModelManagement["唯一标识"]')}}<span class="color-danger">*</span>
+                            {{$t('唯一标识')}}<span class="color-danger">*</span>
                         </div>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('classifyId') }">
                             <bk-input type="text" class="cmdb-form-input"
                                 name="classifyId"
-                                :placeholder="$t('ModelManagement[\'请输入唯一标识\']')"
+                                :placeholder="$t('请输入唯一标识')"
                                 :disabled="groupDialog.isEdit"
                                 v-model.trim="groupDialog.data['bk_classification_id']"
                                 v-validate="'required|classifyId'">
                             </bk-input>
                             <p class="form-error" :title="errors.first('classifyId')">{{errors.first('classifyId')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
+                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('下划线，数字，英文小写的组合')"></i>
                     </label>
                     <label>
                         <span class="label-title">
-                            {{$t('ModelManagement["名称"]')}}
+                            {{$t('名称')}}
                         </span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('classifyName') }">
                             <bk-input type="text"
                                 class="cmdb-form-input"
                                 name="classifyName"
-                                :placeholder="$t('ModelManagement[\'请输入名称\']')"
+                                :placeholder="$t('请输入名称')"
                                 v-model.trim="groupDialog.data['bk_classification_name']"
                                 v-validate="'required|classifyName'">
                             </bk-input>
@@ -174,13 +174,13 @@
                 </div>
             </div>
             <div slot="footer" class="footer">
-                <bk-button theme="primary" :loading="$loading(['updateClassification', 'createClassification'])" @click="saveGroup">{{$t("Common['保存']")}}</bk-button>
-                <bk-button theme="default" @click="hideGroupDialog">{{$t("Common['取消']")}}</bk-button>
+                <bk-button theme="primary" :loading="$loading(['updateClassification', 'createClassification'])" @click="saveGroup">{{$t('保存')}}</bk-button>
+                <bk-button theme="default" @click="hideGroupDialog">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
         <the-create-model
             :is-show.sync="modelDialog.isShow"
-            :title="$t('ModelManagement[\'新建模型\']')"
+            :title="$t('新建模型')"
             @confirm="saveModel">
         </the-create-model>
     </div>
@@ -208,7 +208,7 @@
                 groupDialog: {
                     isShow: false,
                     isEdit: false,
-                    title: this.$t('ModelManagement["新建分组"]'),
+                    title: this.$t('新建分组'),
                     data: {
                         bk_classification_id: '',
                         bk_classification_name: '',
@@ -330,13 +330,13 @@
                 if (isEdit) {
                     if (!this.$isAuthorized(this.$OPERATION.U_MODEL_GROUP)) return
                     this.groupDialog.data.id = group.id
-                    this.groupDialog.title = this.$t('ModelManagement["编辑分组"]')
+                    this.groupDialog.title = this.$t('编辑分组')
                     this.groupDialog.data.bk_classification_id = group['bk_classification_id']
                     this.groupDialog.data.bk_classification_name = group['bk_classification_name']
                     this.groupDialog.data.id = group.id
                 } else {
                     if (!this.$isAuthorized(this.$OPERATION.C_MODEL_GROUP)) return
-                    this.groupDialog.title = this.$t('ModelManagement["新建分组"]')
+                    this.groupDialog.title = this.$t('新建分组')
                     this.groupDialog.data.bk_classification_id = ''
                     this.groupDialog.data.bk_classification_name = ''
                     this.groupDialog.data.id = ''
@@ -384,7 +384,7 @@
             deleteGroup (group) {
                 if (!this.$isAuthorized(this.$OPERATION.D_MODEL_GROUP)) return
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确认要删除此分组"]'),
+                    title: this.$t('确认要删除此分组'),
                     confirmFn: async () => {
                         await this.deleteClassification({
                             id: group.id,

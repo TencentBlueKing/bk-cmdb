@@ -8,9 +8,9 @@
         </bk-input>
         <div class="operation">
             <span class="text-primary btn-confirm"
-                @click.stop="handleConfirm">{{$t("Common['确定']")}}
+                @click.stop="handleConfirm">{{$t('确定')}}
             </span>
-            <span class="text-primary" @click="handleCancel">{{$t("Common['取消']")}}</span>
+            <span class="text-primary" @click="handleCancel">{{$t('取消')}}</span>
         </div>
     </div>
 </template>

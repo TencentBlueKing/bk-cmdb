@@ -21,7 +21,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'hosts',
-            i18n: 'Nav["业务主机"]',
+            i18n: '业务主机',
             path: path,
             parent: NAV_BUSINESS_RESOURCE,
             adminView: false
@@ -33,7 +33,7 @@ export default {
             }
         },
         requireBusiness: true,
-        i18nTitle: 'Nav["业务主机"]',
+        i18nTitle: '业务主机',
         filterPropertyKey: 'business_host_filter_properties'
     })
 }
