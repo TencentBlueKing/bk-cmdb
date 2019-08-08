@@ -22,23 +22,9 @@ func (s *operation) SearchInstCount(ctx context.Context, h http.Header, data int
 	return
 }
 
-func (s *operation) CommonAggregate(ctx context.Context, h http.Header, data metadata.ChartConfig) (resp *metadata.Response, err error) {
+func (s *operation) SearchChartDataCommon(ctx context.Context, h http.Header, data metadata.ChartConfig) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/read/operation/chart/data/common"
-
-	err = s.client.Post().
-		WithContext(ctx).
-		Body(data).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (s *operation) ModelInstAggregate(ctx context.Context, h http.Header, data interface{}) (resp *metadata.AggregateStringResponse, err error) {
-	resp = new(metadata.AggregateStringResponse)
-	subPath := "read/operation/model/inst"
 
 	err = s.client.Post().
 		WithContext(ctx).
@@ -106,7 +92,7 @@ func (s *operation) UpdateOperationChart(ctx context.Context, h http.Header, dat
 	return
 }
 
-func (s *operation) SearchOperationChartData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+func (s *operation) SearchTimerChartData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/search/operation/chart/data"
 
@@ -120,7 +106,7 @@ func (s *operation) SearchOperationChartData(ctx context.Context, h http.Header,
 	return
 }
 
-func (s *operation) UpdateOperationChartPosition(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+func (s *operation) UpdateChartPosition(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/operation/chart/position"
 
