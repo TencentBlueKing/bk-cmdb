@@ -17,6 +17,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (hm *hostManager) ListHostByTopoNode(ctx core.ContextParams, input metadata.ListHostByTopoNodeOption) (*metadata.ListHostResult, error) {
-	return hm.hostSearcher.ListHostByTopoNode(ctx, input)
+func (hm *hostManager) ListHosts(ctx core.ContextParams, input metadata.ListHosts) (*metadata.ListHostResult, error) {
+	return hm.hostSearcher.ListHosts(ctx, input)
 }

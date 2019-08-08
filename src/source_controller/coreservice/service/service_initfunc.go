@@ -146,7 +146,7 @@ func (s *coreService) host() {
 
 	s.addAction(http.MethodPost, "/findmany/meta/hosts/modules/search", s.GetHostModulesIDs, nil)
 
-	s.addAction(http.MethodPost, "/findmany/hosts/list_by_topo_node", s.ListHostByTopoNode, nil)
+	s.addAction(http.MethodPost, "/findmany/hosts/list_hosts", s.ListHosts, nil)
 }
 
 func (s *coreService) initCloudSync() {
