@@ -15,15 +15,17 @@ package logics
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	parse "configcenter/src/common/paraparse"
-	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
@@ -140,6 +142,7 @@ func (lgc *Logics) GetModuleMapByCond(ctx context.Context, fields []string, cond
 	return moduleMap, nil
 }
 
+//
 func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.DefaultModuleHostConfigParams) ([]metadata.ExceptionResult, error) {
 
 	ownerAppID, err := lgc.GetDefaultAppID(ctx)
@@ -172,8 +175,9 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 		return nil, err
 	}
 	if len(errHostID) > 0 {
-		blog.Errorf("move host to resource pool, notExistAppModuleHost error, has host not belong to idle module , owneAppID: %d, input:%#v, rid:%s", ownerAppID, conf, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrHostNotBelongIDLEModuleErr, util.Int64Join(errHostID, ","))
+		errHostIP := lgc.convertHostIDToHostIP(ctx, errHostID)
+		blog.Errorf("move host to resource pool, notExistAppModuleHost error, has host not belong to idle module , owneAppID: %d, input:%#v, err host inner ip:%#v, rid:%s", ownerAppID, conf, errHostIP, lgc.rid)
+		return nil, lgc.ccErr.Errorf(common.CCErrHostNotBelongIDLEModuleErr, strings.Join(errHostIP, ","))
 	}
 
 	param := &metadata.TransferHostsCrossBusinessRequest{
@@ -290,8 +294,9 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 		return nil, err
 	}
 	if len(errHostID) > 0 {
+		errHostIP := lgc.convertHostIDToHostIP(ctx, errHostID)
 		blog.Errorf("move host to resource pool, notExistAppModuleHost error, has host not belong to idle module , input:%+v, rid:%s", conf, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrHostNotBelongIDLEModuleErr, util.Int64Join(errHostID, ","))
+		return nil, lgc.ccErr.Errorf(common.CCErrHostNotBelongIDLEModuleErr, strings.Join(errHostIP, ","))
 	}
 
 	mConds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(conf.ApplicationID)
@@ -333,4 +338,57 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 	}
 
 	return nil, nil
+}
+
+// convertHostIDToHostIP  该方法为专用方法。出现任何错误都会被忽略。
+// 尝试将主机ID转换为内网IP，如果转换中出现问题返回主机ID。
+func (lgc *Logics) convertHostIDToHostIP(ctx context.Context, hostIDArr []int64) []string {
+
+	if len(hostIDArr) == 0 {
+		return nil
+	}
+	cond := condition.CreateCondition()
+	cond.Field(common.BKHostIDField).In(hostIDArr)
+	input := &metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+		Fields:    []string{common.BKHostIDField, common.BKHostInnerIPField},
+	}
+
+	// 找不到主机ID对应的IP， 返回主机ID
+	hostIDIPMap := make(map[int64]string, 0)
+	for _, hostID := range hostIDArr {
+		hostIDIPMap[hostID] = strconv.FormatInt(hostID, 10)
+	}
+
+	result, err := lgc.CoreAPI.
+		CoreService().
+		Instance().
+		ReadInstance(ctx, lgc.header, common.BKInnerObjIDHost, input)
+	if err != nil {
+		blog.Warnf("convertHostIDToHostIP http do error. err:%s, input:%#v, rid:%s", err.Error(), input, lgc.rid)
+	}
+	if !result.Result {
+		blog.Warnf("convertHostIDToHostIP http response error. result:%#v, input:%#v, rid:%s", result, input, lgc.rid)
+	}
+	for _, host := range result.Data.Info {
+		hostID, err := host.Int64(common.BKHostIDField)
+		if err != nil {
+			// can't not foud host id , skip
+			blog.Warnf("convertHostIDToHostIP convert host id to int64 error. err:%s, host:%#v, input:%#v, rid:%s", err.Error(), host, input, lgc.rid)
+			continue
+		}
+		innerIP, err := host.String(common.BKHostInnerIPField)
+		if err != nil {
+			// can't not foud host inner ip , skip
+			blog.Warnf("convertHostIDToHostIP convert host inner ip to string error. err:%s, host:%#v, input:%#v, rid:%s", err.Error(), host, input, lgc.rid)
+			continue
+		}
+		hostIDIPMap[hostID] = innerIP
+	}
+	var ips []string
+	for _, ip := range hostIDIPMap {
+		ips = append(ips, ip)
+	}
+
+	return ips
 }
