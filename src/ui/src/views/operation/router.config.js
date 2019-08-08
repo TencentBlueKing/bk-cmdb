@@ -8,7 +8,7 @@ export const OPERATION = {
     R_STATISTICAL_REPORT
 }
 
-const path = '/statistics_server'
+const path = '/operation_server'
 
 export default {
     name: 'statisticalReport',
