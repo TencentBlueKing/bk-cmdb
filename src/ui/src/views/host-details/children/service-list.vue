@@ -7,7 +7,17 @@
                 :title="$t('Common[\'全选本页\']')"
                 @change="handleCheckALL">
             </cmdb-form-bool>
-            <bk-button class="ml10" :disabled="!checked.length" @click="batchDelete(!checked.length)">{{$t("BusinessTopology['批量删除']")}}</bk-button>
+            <span style="display: inline-block;"
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.D_SERVICE_INSTANCE),
+                    auth: [$OPERATION.D_SERVICE_INSTANCE]
+                }">
+                <bk-button class="ml10"
+                    :disabled="!$isAuthorized($OPERATION.D_SERVICE_INSTANCE) || !checked.length"
+                    @click="batchDelete(!checked.length)">
+                    {{$t("BusinessTopology['批量删除']")}}
+                </bk-button>
+            </span>
             <div class="option-right fr">
                 <cmdb-form-bool class="options-checkbox"
                     :size="16"
@@ -277,6 +287,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .service-wrapper {
+        padding: 14px 0 0 0;
+    }
     .options-checkall {
         width: 36px;
         height: 32px;
