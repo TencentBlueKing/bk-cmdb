@@ -75,7 +75,7 @@ func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam me
 	}
 }
 
-func (m *operationManager) SearchOperationChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+func (m *operationManager) SearchTimerChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 
 	condition := mapstr.MapStr{}
 	condition[common.OperationReportType] = inputParam.ReportType

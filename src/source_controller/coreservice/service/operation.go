@@ -35,7 +35,7 @@ func (s *coreService) SearchInstCount(params core.ContextParams, pathParams, que
 	return count, nil
 }
 
-func (s *coreService) CommonAggregate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SearchChartDataCommon(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	condition := metadata.ChartConfig{}
 	if err := data.MarshalJSONInto(&condition); err != nil {
 		blog.Errorf("search chart data fail, marshal chart config fail, err: %v, rid: %v", err, params.ReqID)
@@ -83,7 +83,7 @@ func (s *coreService) CreateOperationChart(params core.ContextParams, pathParams
 	return result, nil
 }
 
-func (s *coreService) SearchOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SearchChartWithPosition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	opt := mapstr.MapStr{}
 
 	result, err := s.core.StatisticOperation().SearchOperationChart(params, opt)
@@ -139,7 +139,7 @@ func (s *coreService) UpdateOperationChart(params core.ContextParams, pathParams
 	return result, nil
 }
 
-func (s *coreService) UpdateOperationChartPosition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) UpdateChartPosition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	opt := metadata.ChartPosition{}
 	if err := data.MarshalJSONInto(&opt); err != nil {
 		blog.Errorf("update chart position fail, marshal chart position fail, err: %v, rid: %v", err, params.ReqID)
@@ -153,14 +153,14 @@ func (s *coreService) UpdateOperationChartPosition(params core.ContextParams, pa
 	return result, nil
 }
 
-func (s *coreService) SearchOperationChartData(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SearchTimerChartData(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	opt := metadata.ChartConfig{}
 	if err := data.MarshalJSONInto(&opt); err != nil {
 		blog.Errorf("search chart data fail, marshal chart config fail, err: %v, rid: %v", err, params.ReqID)
 		return nil, err
 	}
 
-	result, err := s.core.StatisticOperation().SearchOperationChartData(params, opt)
+	result, err := s.core.StatisticOperation().SearchTimerChartData(params, opt)
 	if err != nil {
 		blog.Errorf("search operation chart data fail, chartName: %v, err: %v, rid: %v", opt.Name, err, params.ReqID)
 		return nil, err
