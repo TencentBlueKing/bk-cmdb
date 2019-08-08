@@ -13,9 +13,10 @@
 package querybuilder
 
 import (
-	"configcenter/src/common/json"
-	"configcenter/src/common/mapstr"
+	"encoding/json"
 	"fmt"
+
+	"configcenter/src/common/mapstr"
 )
 
 type RuleGroup struct {
