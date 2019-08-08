@@ -745,6 +745,7 @@ const (
 	CCErrOperationSearchChartFail         = 1116005
 	CCErrOperationUpdateChartFail         = 1116006
 	CCErrOperationGetChartDataFail        = 1116007
+	CCErrOperationUpdateChartPositionFail = 1116008
 	CCErrCloudSyncDeleteSyncTaskFail      = 1116011
 	CCErrCloudSyncUpdateSyncTaskFail      = 1116012
 
