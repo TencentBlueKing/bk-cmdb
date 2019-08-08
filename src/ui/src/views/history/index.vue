@@ -2,7 +2,7 @@
     <div class="history-layout">
         <div class="history-options clearfix">
             <label class="fl">{{$t('已删除历史')}}</label>
-            <bk-button class="fr" theme="primary" @click="back">{{$t('返回')}}</bk-button>
+            <bk-button class="fr ml10" theme="primary" @click="back">{{$t('返回')}}</bk-button>
             <bk-date-picker class="history-date-range fr"
                 placement="bottom-end"
                 type="daterange"

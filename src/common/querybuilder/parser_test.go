@@ -13,6 +13,7 @@
 package querybuilder_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"configcenter/src/common/querybuilder"
@@ -68,4 +69,19 @@ func TestNormalParser(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Empty(t, errKey)
 	assert.Nil(t, filter)
+}
+
+func TestAsStructField(t *testing.T) {
+	type Foo struct {
+		QueryFilter querybuilder.QueryFilter `json:"query_filter"`
+		Key         string                   `json:"key"`
+	}
+	foo := new(Foo)
+	input := `{"key": "test", "query_filter": {"operator":"equal", "value":"1", "field":"field"}}`
+	err := json.Unmarshal([]byte(input), &foo)
+	assert.Nil(t, err)
+
+	output, err := json.Marshal(foo)
+	assert.Nil(t, err)
+	t.Logf("output: %s", output)
 }
