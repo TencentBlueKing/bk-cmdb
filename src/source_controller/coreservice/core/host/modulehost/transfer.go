@@ -273,8 +273,8 @@ func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors
 	// When multiple modules are used, determine whether the default module .
 	// has default module ,not handle transfer.
 	for _, moduleInfo := range moduleInfoArr {
-		if len(t.moduleIDArr) != 1 {
-
+		// 当为多个模块的时候，不能包含默认模块。 单个模块下， 不能用附加功能。
+		if len(t.moduleIDArr) != 1 || t.isIncr {
 			// 转移目标模块为多模块时，不允许包含内置模块(空闲机/故障机等)
 			defaultVal, err := moduleInfo.Int64(common.BKDefaultField)
 			if err != nil {
@@ -351,7 +351,6 @@ func (t *transferHostModule) delHostModuleRelation(ctx core.ContextParams, hostI
 	if t.crossBizTransfer {
 		bizID = t.srcBizID
 	}
-	//
 
 	if t.isIncr {
 		// delete default module
