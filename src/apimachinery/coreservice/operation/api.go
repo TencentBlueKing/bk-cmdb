@@ -24,7 +24,7 @@ func (s *operation) SearchInstCount(ctx context.Context, h http.Header, data int
 
 func (s *operation) CommonAggregate(ctx context.Context, h http.Header, data metadata.ChartConfig) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "read/operation/common/aggregate"
+	subPath := "/read/operation/chart/data/common"
 
 	err = s.client.Post().
 		WithContext(ctx).

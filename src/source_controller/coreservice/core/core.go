@@ -180,7 +180,7 @@ type StatisticOperation interface {
 	UpdateChartPosition(ctx ContextParams, inputParam interface{}) (interface{}, error)
 	DeleteOperationChart(ctx ContextParams, id int64) (interface{}, error)
 	UpdateOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
-	SearchOperationChartData(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
+	SearchTimerChartData(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
 	TimerFreshData(params ContextParams)
 }
 
