@@ -42,7 +42,7 @@ func (s *coreService) SearchChartDataCommon(params core.ContextParams, pathParam
 		return nil, err
 	}
 
-	result, err := s.core.StatisticOperation().CommonAggregate(params, condition)
+	result, err := s.core.StatisticOperation().SearchChartDataCommon(params, condition)
 	if err != nil {
 		return nil, err
 	}
