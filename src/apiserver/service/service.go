@@ -67,7 +67,10 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	}
 
 	ws := &restful.WebService{}
-	ws.Path(rootPath).Filter(s.engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path(rootPath)
+	ws.Filter(s.engine.Metric().RestfulMiddleWare)
+	ws.Filter(rdapi.AllGlobalFilter(getErrFun))
+	ws.Produces(restful.MIME_JSON)
 	if s.authorizer.Enabled() == true {
 		ws.Filter(s.authFilter(getErrFun))
 	}
@@ -176,8 +179,10 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		if !decision.Authorized {
-			permissions, err := authcenter.AdoptPermissions(attribute.Resources)
+			blog.V(4).Infof("authcenter.AdoptPermissions attribute: %+v, rid: %s", attribute, rid)
+			permissions, err := authcenter.AdoptPermissions(req.Request.Header, s.engine.CoreAPI, attribute.Resources)
 			if err != nil {
+				blog.Errorf("adopt permission failed, err: %v, rid: %s", err, rid)
 				rsp := metadata.BaseResp{
 					Code:   common.CCErrCommCheckAuthorizeFailed,
 					ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
@@ -186,7 +191,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 				resp.WriteAsJson(rsp)
 				return
 			}
-			blog.Warnf("authFilter failed, url: %s, reason: %s, rid: %s", path, decision.Reason, rid)
+			blog.Warnf("authFilter failed, url: %s, reason: %+v, permissions: %+v, rid: %s", path, decision, permissions, rid)
 			rsp := metadata.BaseResp{
 				Code:        9900403,
 				ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),

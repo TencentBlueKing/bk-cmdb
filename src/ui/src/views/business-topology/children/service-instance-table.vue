@@ -1,6 +1,8 @@
 <template>
     <div class="table-layout" v-show="show">
-        <div class="table-title" @click="localExpanded = !localExpanded">
+        <div class="table-title" @click="localExpanded = !localExpanded"
+            @mouseenter="handleShowDotMenu"
+            @mouseleave="handleHideDotMenu">
             <cmdb-form-bool class="title-checkbox"
                 :size="16"
                 v-model="checked"
@@ -10,8 +12,10 @@
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
             <i class="bk-icon icon-exclamation" v-if="localExpanded && withTemplate && showTips" v-bk-tooltips="tooltips"></i>
-            <cmdb-dot-menu class="instance-menu" @click.native.stop>
-                <ul class="menu-list">
+            <cmdb-dot-menu class="instance-menu" ref="dotMenu" @click.native.stop>
+                <ul class="menu-list"
+                    @mouseenter="handleShowDotMenu"
+                    @mouseleave="handleHideDotMenu">
                     <li class="menu-item"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
@@ -76,24 +80,24 @@
                 <template slot-scope="{ row }">
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_PROCESS),
-                            auth: [$OPERATION.U_PROCESS]
+                            active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                            auth: [$OPERATION.U_SERVICE_INSTANCE]
                         }">
                         <bk-button class="mr10"
                             :text="true"
-                            :disabled="!$isAuthorized($OPERATION.U_PROCESS)"
+                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                             @click="handleEditProcess(row)">
                             {{$t('Common["编辑"]')}}
                         </bk-button>
                     </span>
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.D_PROCESS),
-                            auth: [$OPERATION.D_PROCESS]
+                            active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                            auth: [$OPERATION.U_SERVICE_INSTANCE]
                         }">
                         <bk-button v-if="!withTemplate"
                             :text="true"
-                            :disabled="!$isAuthorized($OPERATION.D_PROCESS)"
+                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                             @click="handleDeleteProcess(row)">
                             {{$t('Common["删除"]')}}
                         </bk-button>
@@ -111,11 +115,11 @@
                 </template>
                 <span style="display: inline-block;" v-else
                     v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_PROCESS),
-                        auth: [$OPERATION.C_PROCESS]
+                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                        auth: [$OPERATION.U_SERVICE_INSTANCE]
                     }">
                     <button class="add-process-button text-primary"
-                        :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
+                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                         @click.stop="handleAddProcess">
                         <i class="bk-icon icon-plus"></i>
                         <span>{{$t('BusinessTopology["添加进程"]')}}</span>
@@ -125,11 +129,11 @@
             <!-- <div class="add-process-options" v-if="!withTemplate && list.length" slot="append">
                 <span style="display: inline-block;"
                     v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_PROCESS),
-                        auth: [$OPERATION.C_PROCESS]
+                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                        auth: [$OPERATION.U_SERVICE_INSTANCE]
                     }">
                     <button class="add-process-button text-primary"
-                        :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
+                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                         @click="handleAddProcess">
                         <i class="bk-icon icon-plus"></i>
                         <span>{{$t('BusinessTopology["添加进程"]')}}</span>
@@ -212,11 +216,11 @@
                     menu.unshift({
                         name: this.$t('BusinessTopology["添加进程"]'),
                         handler: this.handleAddProcess,
-                        auth: 'C_PROCESS'
+                        auth: 'U_SERVICE_INSTANCE'
                     }, {
                         name: this.$t('BusinessTopology["克隆"]'),
                         handler: this.handleCloneInstance,
-                        auth: 'C_PROCESS'
+                        auth: 'C_SERVICE_INSTANCE'
                     })
                 }
                 return menu
@@ -473,6 +477,12 @@
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            handleShowDotMenu () {
+                this.$refs.dotMenu.$el.style.opacity = 1
+            },
+            handleHideDotMenu () {
+                this.$refs.dotMenu.$el.style.opacity = 0
             }
         }
     }
@@ -503,6 +513,12 @@
             color: #ffffff;
             background: #f0b659;
             border-radius: 50%;
+        }
+        .instance-menu {
+            opacity: 0;
+            /deep/ .bk-tooltip-ref {
+                width: 100%;
+            }
         }
         .title-label {
             font-size: 14px;
@@ -564,11 +580,9 @@
         }
         .icon-cc-label {
             font-size: 16px;
-            margin-top: -4px;
         }
         .label-list {
             padding-left: 4px;
-            line-height: 38px;
             font-size: 0;
             .label-item {
                 @include inlineBlock;

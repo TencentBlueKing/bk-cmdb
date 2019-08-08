@@ -112,6 +112,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/modules/idle/set").To(s.MoveSetHost2IdleModule))
 	// get host module relation in app
 	api.Route(api.POST("/hosts/modules/read").To(s.GetHostModuleRelation))
+	api.Route(api.POST("/host/topo/relation/read").To(s.GetAppHostTopoRelation))
 	// transfer host to other business
 	api.Route(api.POST("/hosts/modules/across/biz").To(s.TransferHostAcrossBusiness))
 	//  delete host from business, used for framework
@@ -164,6 +165,10 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/cloud/confirmHistory/search").To(s.SearchConfirmHistory))
 	api.Route(api.POST("/hosts/cloud/accountSearch").To(s.SearchAccount))
 	api.Route(api.POST("/hosts/cloud/syncHistory").To(s.SearchCloudSyncHistory))
+
+	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
+	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
+	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
 
 	container.Add(api)
 

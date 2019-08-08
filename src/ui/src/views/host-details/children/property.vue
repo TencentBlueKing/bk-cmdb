@@ -8,7 +8,7 @@
             <h2 class="group-name">{{group.bk_group_name}}</h2>
             <ul class="property-list">
                 <li class="property-item"
-                    v-for="property in group.properties"
+                    v-for="(property, childIndex) in group.properties"
                     :key="property.id">
                     <span class="property-name"
                         :title="property.bk_property_name">
@@ -60,16 +60,14 @@
                         </div>
                     </template>
                     <template v-if="$tools.getPropertyText(property, host) !== '--' && property !== editState.property">
-                        <bk-popover class="property-popover"
-                            trigger="click"
-                            placement="top"
-                            theme="copy-text"
-                            :tippy-options="{ wait: handleCopy }">
-                            <i class="property-copy icon-cc-details-copy" @click="handleCopyText($tools.getPropertyText(property, host))"></i>
-                            <span class="popover-content" slot="content">
-                                {{$t('Common[\'复制成功\']')}}
-                            </span>
-                        </bk-popover>
+                        <div class="copy-box">
+                            <i class="property-copy icon-cc-details-copy" @click="handleCopy($tools.getPropertyText(property, host), childIndex)"></i>
+                            <transition name="fade">
+                                <span class="copy-tips" v-if="showCopyTips === childIndex">
+                                    {{$t('Common[\'复制成功\']')}}
+                                </span>
+                            </transition>
+                        </div>
                     </template>
                 </li>
             </ul>
@@ -89,7 +87,7 @@
                     value: null
                 },
                 tooltipState: {},
-                copyText: ''
+                showCopyTips: false
             }
         },
         computed: {
@@ -151,16 +149,13 @@
                 const threshold = Math.max(rangeWidth - target.offsetWidth, target.scrollWidth - target.offsetWidth)
                 this.$set(this.tooltipState, property.bk_property_id, threshold > 0.5)
             },
-            handleCopyText (copyText) {
-                this.copyText = copyText
-            },
-            handleCopy (instance) {
-                this.$copyText(this.copyText).then(() => {
-                    instance.show()
+            handleCopy (copyText, index) {
+                this.$copyText(copyText).then(() => {
+                    this.showCopyTips = index
                     const timer = setTimeout(() => {
-                        instance.hide()
+                        this.showCopyTips = false
                         clearTimeout(timer)
-                    }, 800)
+                    }, 200)
                 }, () => {
                     this.$error(this.$t('Common["复制失败"]'))
                 })
@@ -206,7 +201,7 @@
             display: flex;
             &:hover {
                 .property-edit {
-                    display: inline-block;
+                    opacity: 1;
                 }
                 .property-copy {
                     display: inline-block;
@@ -239,7 +234,7 @@
                 -webkit-box-orient: vertical;
             }
             .property-edit {
-                display: none;
+                opacity: 0;
                 margin: 8px 0 0 8px;
                 vertical-align: middle;
                 font-size: 16px;
@@ -249,7 +244,6 @@
                     opacity: .8;
                 }
                 &.disabled {
-                    opacity: 1;
                     color: #ccc;
                 }
             }
@@ -258,6 +252,33 @@
                 color: #3c96ff;
                 cursor: pointer;
                 display: none;
+            }
+            .copy-box {
+                position: relative;
+                .copy-tips {
+                    position: absolute;
+                    top: -22px;
+                    left: -18px;
+                    width: 70px;
+                    height: 26px;
+                    line-height: 26px;
+                    font-size: 12px;
+                    color: #ffffff;
+                    text-align: center;
+                    background-color: #9f9f9f;
+                    border-radius: 2px;
+                }
+                .fade-enter-active, .fade-leave-active {
+                    transition: all 0.5s;
+                }
+                .fade-enter {
+                    top: -14px;
+                    opacity: 0;
+                }
+                .fade-leave-to {
+                    top: -28px;
+                    opacity: 0;
+                }
             }
         }
     }
@@ -372,15 +393,6 @@
                     }
                 }
             }
-        }
-    }
-</style>
-
-<style lang="scss">
-    .copy-text-theme {
-        background-color: #9f9f9f;
-        .tippy-arrow {
-            border-top-color: #9f9f9f !important;
         }
     }
 </style>

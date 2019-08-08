@@ -265,7 +265,7 @@ func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostI
 			return ctx.Kit.CCError.CCError(common.CCErrWebGetHostFail)
 		}
 	}
-	for _, item := range result.Data {
+	for _, item := range result.Data.Info {
 		hostIDHit[item.HostID] = true
 	}
 	invalidHost := make([]int64, 0)
@@ -532,7 +532,14 @@ func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(processInstanceList)
 }
 
+var UnbindServiceTemplateOnModuleEnable = true
+
 func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
+	if UnbindServiceTemplateOnModuleEnable == true {
+		ctx.RespErrorCodeOnly(common.CCErrProcUnbindModuleServiceTemplateDisabled, "unbind service template from module disabled")
+		return
+	}
+
 	input := new(metadata.RemoveTemplateBindingOnModuleOption)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)

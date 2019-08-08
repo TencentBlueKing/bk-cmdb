@@ -18,26 +18,47 @@
             :inst="flattenedInstance"
             :show-options="modelId !== 'biz'">
             <template slot="details-options">
-                <bk-button class="button-edit"
-                    theme="primary"
-                    @click="handleEdit">
-                    {{$t('Common["编辑"]')}}
-                </bk-button>
-                <bk-button class="button-delete" theme="danger"
-                    @click="handleDelete">
-                    {{$t('BusinessTopology["删除节点"]')}}
-                </bk-button>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_TOPO),
+                        auth: [$OPERATION.U_TOPO]
+                    }">
+                    <bk-button class="button-edit"
+                        theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
+                        @click="handleEdit">
+                        {{$t('Common["编辑"]')}}
+                    </bk-button>
+                </span>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.D_TOPO),
+                        auth: [$OPERATION.D_TOPO]
+                    }">
+                    <bk-button class="btn-delete"
+                        :disabled="!$isAuthorized($OPERATION.D_TOPO)"
+                        @click="handleDelete">
+                        {{$t('BusinessTopology["删除节点"]')}}
+                    </bk-button>
+                </span>
             </template>
             <span class="property-value fl" slot="__template_name__">
                 <span class="link"
                     v-if="withTemplate"
                     @click="goServiceTemplate">{{flattenedInstance.__template_name__}}</span>
                 <span v-else>{{flattenedInstance.__template_name__}}</span>
-                <bk-button class="unbind-button"
+                <!-- <span style="display: inline-block;"
                     v-if="withTemplate"
-                    @click="handleRemoveTemplate">
-                    {{$t('BusinessTopology["解除模板"]')}}
-                </bk-button>
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_TOPO),
+                        auth: [$OPERATION.U_TOPO]
+                    }">
+                    <bk-button class="unbind-button"
+                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
+                        @click="handleRemoveTemplate">
+                        {{$t('BusinessTopology["解除模板"]')}}
+                    </bk-button>
+                </span> -->
             </span>
         </cmdb-details>
         <cmdb-form class="topology-form" v-else-if="type === 'update'"
@@ -528,6 +549,7 @@
                                 })
                             }
                         })
+                        this.selectedNode.data.service_template_id = 0
                         this.instance.service_template_id = null
                         this.instance.__template_name__ = '--'
                         this.disabledProperties = []
@@ -583,9 +605,11 @@
             }
         }
     }
-    .button-delete{
+    .btn-delete{
         min-width: 76px;
-        background-color: #fff;
-        color: #ff5656;
+        &:hover {
+            color: #ff5656;
+            border-color: #ff5656;
+        }
     }
 </style>

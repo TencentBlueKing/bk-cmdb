@@ -116,6 +116,9 @@ func NewMetaDataFromBusinessID(value string) Metadata {
 	meta := Metadata{Label: label}
 	return meta
 }
+func NewMetadata(bizID int64) Metadata {
+	return NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+}
 
 func GetBusinessIDFromMeta(data interface{}) string {
 	if nil == data {

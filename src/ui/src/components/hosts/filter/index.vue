@@ -53,8 +53,9 @@
                     <label class="filter-label">{{getFilterLabel(filterItem)}}</label>
                     <div class="filter-condition">
                         <filter-operator class="filter-operator"
-                            :type="getOperatorType(filterItem)"
-                            v-model="filterItem.operator">
+                            v-if="!['date', 'time'].includes(filterItem.bk_property_type)"
+                            v-model="filterItem.operator"
+                            :type="getOperatorType(filterItem)">
                         </filter-operator>
                         <cmdb-form-enum class="filter-value"
                             v-if="filterItem.bk_property_type === 'enum'"
@@ -65,6 +66,14 @@
                             v-else-if="filterItem.bk_property_type === 'bool'"
                             v-model="filterItem.value">
                         </cmdb-form-bool-input>
+                        <cmdb-search-input class="filter-value"
+                            v-else-if="['singlechar', 'longchar'].includes(filterItem.bk_property_type)"
+                            v-model="filterItem.value">
+                        </cmdb-search-input>
+                        <cmdb-form-date-range class="filter-value"
+                            v-else-if="['date', 'time'].includes(filterItem.bk_property_type)"
+                            v-model="filterItem.value">
+                        </cmdb-form-date-range>
                         <component class="filter-value"
                             v-else
                             :is="`cmdb-form-${filterItem.bk_property_type}`"
@@ -80,49 +89,55 @@
                 :class="{
                     'is-sticky': isScrolling
                 }">
-                <div class="fl">
+                <template v-if="$route.name === 'hosts'">
+                    <div class="fl">
+                        <bk-button theme="primary" @click="handleSearch">{{$t('查询')}}</bk-button>
+                        <bk-button theme="default"
+                            v-if="isCollection"
+                            :loading="$loading('updateCollection')"
+                            @click="handleUpdateCollection">
+                            {{$t('更新条件')}}
+                        </bk-button>
+                        <bk-popover v-else
+                            ref="collectionPopover"
+                            placement="top-end"
+                            theme="light"
+                            trigger="manual"
+                            :width="280"
+                            :tippy-options="{
+                                zIndex: 1002,
+                                interactive: true,
+                                hideOnClick: false
+                            }">
+                            <bk-button theme="default" @click="handleCreateCollection">{{$t('收藏条件')}}</bk-button>
+                            <section class="collection" slot="content">
+                                <label class="collection-title">{{$t('收藏条件')}}</label>
+                                <bk-input class="collection-name"
+                                    :placeholder="$t('请填写名称')"
+                                    v-model="collectionName">
+                                </bk-input>
+                                <div class="collection-options">
+                                    <bk-button
+                                        theme="primary"
+                                        size="small"
+                                        :disabled="!collectionName.length"
+                                        :loading="$loading('createCollection')"
+                                        @click="handleSaveCollection">
+                                        {{$t('确定')}}
+                                    </bk-button>
+                                    <bk-button theme="default" size="small" @click="handleCancelCollection">{{$t('取消')}}</bk-button>
+                                </div>
+                            </section>
+                        </bk-popover>
+                    </div>
+                    <div class="fr">
+                        <bk-button theme="default" @click="handleReset">{{$t('清空')}}</bk-button>
+                    </div>
+                </template>
+                <template v-else>
                     <bk-button theme="primary" @click="handleSearch">{{$t('查询')}}</bk-button>
-                    <bk-button theme="default"
-                        v-if="isCollection"
-                        :loading="$loading('updateCollection')"
-                        @click="handleUpdateCollection">
-                        {{$t('更新条件')}}
-                    </bk-button>
-                    <bk-popover v-else
-                        ref="collectionPopover"
-                        placement="top-end"
-                        theme="light"
-                        trigger="manual"
-                        :width="280"
-                        :tippy-options="{
-                            zIndex: 1002,
-                            interactive: true,
-                            hideOnClick: false
-                        }">
-                        <bk-button theme="default" @click="handleCreateCollection">{{$t('收藏条件')}}</bk-button>
-                        <section class="collection" slot="content">
-                            <label class="collection-title">{{$t('收藏条件')}}</label>
-                            <bk-input class="collection-name"
-                                :placeholder="$t('请填写名称')"
-                                v-model="collectionName">
-                            </bk-input>
-                            <div class="collection-options">
-                                <bk-button
-                                    theme="primary"
-                                    size="small"
-                                    :disabled="!collectionName.length"
-                                    :loading="$loading('createCollection')"
-                                    @click="handleSaveCollection">
-                                    {{$t('确定')}}
-                                </bk-button>
-                                <bk-button theme="default" size="small" @click="handleCancelCollection">{{$t('取消')}}</bk-button>
-                            </div>
-                        </section>
-                    </bk-popover>
-                </div>
-                <div class="fr">
                     <bk-button theme="default" @click="handleReset">{{$t('清空')}}</bk-button>
-                </div>
+                </template>
             </div>
         </section>
         <property-selector :properties="properties" ref="propertySelector"></property-selector>
@@ -333,11 +348,25 @@
                     const filterValue = filterItem.value
                     if (filterValue !== null && filterValue !== undefined && String(filterValue).length) {
                         const modelId = filterItem.bk_obj_id
-                        params[modelId].push({
-                            field: filterItem.bk_property_id,
-                            operator: filterItem.operator,
-                            value: filterValue
-                        })
+                        if (['date', 'time'].includes(filterItem.bk_property_type)) {
+                            params[modelId].push(...[{
+                                field: filterItem.bk_property_id,
+                                operator: '$gte',
+                                value: filterItem.value[0]
+                            }, {
+                                field: filterItem.bk_property_id,
+                                operator: '$lte',
+                                value: filterItem.value[1]
+                            }])
+                        } else {
+                            params[modelId].push({
+                                field: filterItem.bk_property_id,
+                                operator: filterItem.operator,
+                                value: filterItem.operator === '$multilike'
+                                    ? filterValue.split('\n').filter(str => str.trim().length).map(str => str.trim())
+                                    : filterValue
+                            })
+                        }
                     }
                 })
                 return params

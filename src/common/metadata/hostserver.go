@@ -346,3 +346,8 @@ type DeleteHostFromBizParameter struct {
 	AppID     int64   `json:"bk_biz_id"`
 	HostIDArr []int64 `json:"bk_host_ids"`
 }
+
+// CloudAreaParameter search cloud area parameter
+type CloudAreaParameter struct {
+	Page BasePage `json:"page" bson:"page" field:"page"`
+}

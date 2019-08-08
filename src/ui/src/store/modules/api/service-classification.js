@@ -24,7 +24,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`findmany/proc/service_category`, params, config)
+        return $http.post(`findmany/proc/service_category/with_statistics`, params, config)
     },
     /**
      * 创建服务分类

@@ -198,6 +198,7 @@
         "该模型已停用": "The model has been disabled",
         "主线模型无法查看": "Mainline model connot be viewed",
         "模型ID": "Model ID:",
+        "主机ID": "Host ID:",
         "最大支持搜索32个字符": "Maximum support for searching 32 characters"
     },
     "OperationAudit": {
@@ -379,6 +380,7 @@
         "源模型": "Source model",
         "目标模型": "Target model",
         "新建关联": "New association",
+        "查看关联": "View association",
         "关联描述": "Association description",
         "关联": "Association",
         "上移": "Up",
@@ -422,6 +424,7 @@
         "属性为空值是否校验": "Whether to check the null value",
         "新建校验": "New rule",
         "编辑校验": "Modify rule",
+        "查看校验": "View rule",
         "是": "Yes",
         "否": "No",
         "确定删除唯一校验": "Confirm delete rule",
@@ -472,7 +475,7 @@
         "操作账号": "Account",
         "变更内容": "Change Content",
         "操作时间": "Operation Time",
-        "agent安装说明": "Note: After the Blue Whale Agent is installed on the host, it will be automatically entered in the \"Host Resource Pool\".",
+        "agent安装说明": "Note: When the host installs the Blue Whale Agent, it will be automatically entered into the service host.",
         "点此进入节点管理": "Click here to enter the Node Manager",
         "批量导入": "Batch Import",
         "自动导入": "Auto Import",
@@ -502,7 +505,7 @@
         "修改人": "Modified Person",
         "修改时间": "Update Time",
         "查询定义": "Group Definition",
-        "确认要删除": "Confirm to delete {name} group?",
+        "确认要删除": "Confirm to delete \"{name}\" group?",
         "保存后的查询可通过接口调用生效": "The saved group can be validated through an interface call",
         "动态分组提示": "Dynamic grouping is mainly used to define commonly used conditional queries, and can quickly retrieve target hosts based on dynamic grouping when operating platforms or standard operations"
     },
@@ -846,7 +849,8 @@
         "确认删除分类": "Confirm delete category?",
         "请输入分类名称": "Please enter category name",
         "添加二级分类": "Add Secondary Category",
-        "二级分类删除提示": "This category cannot be deleted because there is service instance"
+        "二级分类删除提示": "This category cannot be deleted because there is service instance",
+        "请先清空二级分类": "Please clear the secondary category first."
     },
     "HostDetails": {
         "主机详情": "Host Details",

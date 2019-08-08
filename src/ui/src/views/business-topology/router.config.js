@@ -4,30 +4,30 @@ import {
     U_HOST,
     HOST_TO_RESOURCE,
 
+    C_TOPO,
+    U_TOPO,
+    D_TOPO,
+    R_TOPO,
+
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
     D_SERVICE_INSTANCE,
-    R_SERVICE_INSTANCE,
-
-    C_PROCESS,
-    U_PROCESS,
-    D_PROCESS,
-    R_PROCESS
+    R_SERVICE_INSTANCE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
     U_HOST,
     HOST_TO_RESOURCE,
 
+    C_TOPO,
+    U_TOPO,
+    D_TOPO,
+    R_TOPO,
+
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
     D_SERVICE_INSTANCE,
-    R_SERVICE_INSTANCE,
-
-    C_PROCESS,
-    U_PROCESS,
-    D_PROCESS,
-    R_PROCESS
+    R_SERVICE_INSTANCE
 }
 
 const path = '/topology'
