@@ -47,14 +47,7 @@
                     </bk-button>
                 </span>
             </div>
-            <div class="model-search-options fr">
-                <bk-input class="search-model"
-                    :clearable="true"
-                    :right-icon="'bk-icon icon-search'"
-                    v-model.trim="searchModel">
-                </bk-input>
-            </div>
-            <div class="model-type-options">
+            <div class="model-type-options fr">
                 <bk-button class="model-type-button enable"
                     size="small"
                     :theme="modelType === 'enable' ? 'primary' : 'default'"
@@ -82,6 +75,13 @@
                     @click="modelType = 'disabled'">
                     {{$t('ModelManagement["停用模型"]')}}
                 </bk-button>
+            </div>
+            <div class="model-search-options fr">
+                <bk-input class="search-model"
+                    :clearable="true"
+                    :right-icon="'bk-icon icon-search'"
+                    v-model.trim="searchModel">
+                </bk-input>
             </div>
         </cmdb-main-inject>
         <ul class="group-list">
@@ -151,7 +151,7 @@
                                 v-model.trim="groupDialog.data['bk_classification_id']"
                                 v-validate="'required|classifyId'">
                             </bk-input>
-                            <p class="form-error">{{errors.first('classifyId')}}</p>
+                            <p class="form-error" :title="errors.first('classifyId')">{{errors.first('classifyId')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
                     </label>
@@ -168,7 +168,7 @@
                                 v-model.trim="groupDialog.data['bk_classification_name']"
                                 v-validate="'required|classifyName'">
                             </bk-input>
-                            <p class="form-error">{{errors.first('classifyName')}}</p>
+                            <p class="form-error" :title="errors.first('classifyName')">{{errors.first('classifyName')}}</p>
                         </div>
                     </label>
                 </div>
@@ -462,17 +462,15 @@
         }
     }
     .model-type-options {
-        margin: 6px 0;
+        margin: 0 0 0 10px;
         font-size: 0;
         text-align: right;
-        position: absolute;
-        right: 20px;
-        bottom: -30px;
-        z-index: 1;
         .model-type-button {
             position: relative;
             margin: 0;
             font-size: 12px;
+            height: 32px;
+            line-height: 30px;
             &.enable {
                 border-radius: 2px 0 0 2px;
                 z-index: 2;

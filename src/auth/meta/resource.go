@@ -47,6 +47,7 @@ const (
 	ProcessServiceTemplate   ResourceType = "processServiceTemplate"
 	ProcessTemplate          ResourceType = "processTemplate"
 	ProcessServiceInstance   ResourceType = "processServiceInstance"
+	BizTopology              ResourceType = "bizTopology"
 	HostInstance             ResourceType = "hostInstance"
 	NetDataCollector         ResourceType = "netDataCollector"
 	DynamicGrouping          ResourceType = "dynamicGrouping" // 动态分组

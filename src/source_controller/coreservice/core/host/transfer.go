@@ -46,6 +46,6 @@ func (hm *hostManager) RemoveFromModule(ctx core.ContextParams, input *metadata.
 	return hm.hostTransfer.RemoveFromModule(ctx, input)
 }
 
-func (hm *hostManager) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error) {
+func (hm *hostManager) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
 	return hm.hostTransfer.GetHostModuleRelation(ctx, input)
 }

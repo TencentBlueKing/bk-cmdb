@@ -35,6 +35,7 @@ import (
 // ImportHost import host
 func (s *Service) ImportHost(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromHTTPHeader(c.Request.Header)
 
 	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
@@ -80,17 +81,9 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	data, errCode, err := s.Logics.ImportHosts(context.Background(), f, c.Request.Header, defLang, &metadata.Metadata{})
+	result := s.Logics.ImportHosts(ctx, f, c.Request.Header, defLang, &metadata.Metadata{})
 
-	if nil != err {
-		blog.Errorf("ImportHost failed, import logic failed, err: %+v, rid: %s", err, rid)
-		msg := getReturnStr(errCode, err.Error(), data)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-
-	c.String(http.StatusOK, getReturnStr(0, "", data))
-
+	c.JSON(http.StatusOK, result)
 }
 
 // ExportHost export host

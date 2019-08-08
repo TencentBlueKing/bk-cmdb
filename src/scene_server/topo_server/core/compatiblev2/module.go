@@ -47,11 +47,11 @@ type module struct {
 }
 
 func (m *module) hasHost(bizID int64, moduleIDS []int64) (bool, error) {
-	option := metadata.HostModuleRelationRequest{
+	option := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		ModuleIDArr:   moduleIDS,
 	}
-	rsp, err := m.client.CoreService().Host().GetModulesHostConfig(context.Background(), m.params.Header, option)
+	rsp, err := m.client.CoreService().Host().GetHostModuleRelation(context.Background(), m.params.Header, option)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request the object controller, err: %s, rid: %s", err.Error(), m.params.ReqID)
 		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -62,7 +62,7 @@ func (m *module) hasHost(bizID int64, moduleIDS []int64) (bool, error) {
 		return false, m.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return 0 != len(rsp.Data), nil
+	return 0 != len(rsp.Data.Info), nil
 }
 
 func (m *module) isValidSet(bizID int64, setID int64) (bool, error) {
