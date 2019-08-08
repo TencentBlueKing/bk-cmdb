@@ -91,7 +91,7 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 }
 
 func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
-	result, err := m.StatisticOperationLog(ctx)
+	operationLog, err := m.StatisticOperationLog(ctx)
 	if err != nil {
 		blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, ctx.ReqID)
 		return
@@ -105,14 +105,14 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 	}
 
 	modelInstChange := metadata.ModelInstChange{}
-	for _, createInst := range result.Create {
+	for _, createInst := range operationLog.Create {
 		if _, ok := modelInstChange[createInst.Id]; !ok {
 			modelInstChange[createInst.Id] = &metadata.InstChangeCount{}
 		}
 		modelInstChange[createInst.Id].Create = createInst.Count
 	}
 
-	for _, deleteInst := range result.Delete {
+	for _, deleteInst := range operationLog.Delete {
 		if _, ok := modelInstChange[deleteInst.Id]; !ok {
 			modelInstChange[deleteInst.Id] = &metadata.InstChangeCount{}
 		}
@@ -120,7 +120,7 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 	}
 
 	// 同一个实例更新多次，模型下实例变更数，只需要记录一次
-	for _, updateInst := range result.Update {
+	for _, updateInst := range operationLog.Update {
 		if _, ok := modelInstChange[updateInst.Id.ObjID]; ok {
 			modelInstChange[updateInst.Id.ObjID].Update += 1
 		} else {
