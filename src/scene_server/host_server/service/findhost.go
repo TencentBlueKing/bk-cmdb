@@ -71,7 +71,6 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	s.CoreAPI.CoreService()
 	option := meta.ListHosts{
 		BizID:              bizID,
 		SetIDs:             parameter.SetIDs,
@@ -105,7 +104,6 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	s.CoreAPI.CoreService()
 	option := meta.ListHosts{
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Page:               parameter.Page,

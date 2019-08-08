@@ -24,8 +24,8 @@ import (
 )
 
 var (
-	//需要转换的时间的标志
-	convTimeFields []string = []string{common.CreateTimeField, common.LastTimeField, common.ConfirmTimeField}
+	// 需要转换的时间的标志
+	convTimeFields = []string{common.CreateTimeField, common.LastTimeField, common.ConfirmTimeField}
 )
 
 func GetCurrentTimeStr() string {
@@ -62,7 +62,8 @@ func convTimeItem(item interface{}) (interface{}, error) {
 						break
 					}
 				}
-				if !timeTypeOk { //如果当前不需要转换，递归转
+				// 如果当前不需要转换，递归转
+				if !timeTypeOk {
 					arrItem[key], _ = convTimeItem(value)
 					continue
 				}
@@ -99,7 +100,7 @@ func convTimeItem(item interface{}) (interface{}, error) {
 			item = arrItem
 		}
 	case []interface{}:
-		//如果是数据，递归转换所有子项
+		// 如果是数据，递归转换所有子项
 		arrItem, ok := item.([]interface{})
 		if true == ok {
 			for index, value := range arrItem {

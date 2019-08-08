@@ -15,7 +15,6 @@ package util
 import (
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -24,7 +23,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/storage/dal"
+
 	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
 )
 

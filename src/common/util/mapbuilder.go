@@ -16,29 +16,29 @@ import (
 	"net/http"
 )
 
-type MapBuiler struct {
+type MapBuilder struct {
 	value map[string]interface{}
 }
 
-func NewMapBuilder(kvpairs ...interface{}) *MapBuiler {
+func NewMapBuilder(kvPairs ...interface{}) *MapBuilder {
 	value := map[string]interface{}{}
-	for i := range kvpairs {
+	for i := range kvPairs {
 		if i%2 == 0 {
-			value[kvpairs[i].(string)] = kvpairs[i+1]
+			value[kvPairs[i].(string)] = kvPairs[i+1]
 		}
 	}
-	return &MapBuiler{value}
+	return &MapBuilder{value}
 }
 
-func (m *MapBuiler) Build() map[string]interface{} {
+func (m *MapBuilder) Build() map[string]interface{} {
 	return m.value
 }
 
-func (m *MapBuiler) Set(k string, v interface{}) {
+func (m *MapBuilder) Set(k string, v interface{}) {
 	m.value[k] = v
 }
 
-func (m *MapBuiler) Append(k string, vs ...interface{}) {
+func (m *MapBuilder) Append(k string, vs ...interface{}) {
 	_, ok := m.value[k]
 	if !ok {
 		m.value[k] = []interface{}{}
@@ -46,12 +46,12 @@ func (m *MapBuiler) Append(k string, vs ...interface{}) {
 	m.value[k] = append(m.value[k].([]interface{}), vs...)
 }
 
-func (m *MapBuiler) Delete(k string) {
+func (m *MapBuilder) Delete(k string) {
 	delete(m.value, k)
 }
 
 func CopyMap(data map[string]interface{}, keys []string, ignores []string) map[string]interface{} {
-	newinst := map[string]interface{}{}
+	newInst := make(map[string]interface{})
 
 	ignore := map[string]bool{}
 	for _, key := range ignores {
@@ -66,9 +66,9 @@ func CopyMap(data map[string]interface{}, keys []string, ignores []string) map[s
 		if ignore[key] {
 			continue
 		}
-		newinst[key] = data[key]
+		newInst[key] = data[key]
 	}
-	return newinst
+	return newInst
 
 }
 
