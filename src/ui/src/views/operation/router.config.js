@@ -17,7 +17,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'statisticalReport',
-            i18n: 'Nav["统计报表"]',
+            i18n: '统计报表',
             path: path,
             parent: NAV_AUDIT_ANALYSE,
             businessView: false

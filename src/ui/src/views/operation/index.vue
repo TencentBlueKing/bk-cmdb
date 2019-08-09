@@ -8,7 +8,7 @@
                     <span>{{$t('业务总数')}}</span>
                 </div>
                 <div class="item-right item-right-left">
-                    <i class="icon icon-cc-operate-biz"></i>
+                    <i class="icon icon-cc-operate-biz first-icon"></i>
                 </div>
             </div>
             <div class="menu-items menu-items-white" @click="goRouter('resource')">
@@ -45,7 +45,7 @@
                     </span>
                 </div>
                 <div class="item-right item-right-right">
-                    <i class="icon icon-cc-operate-exam"></i>
+                    <i class="icon icon-cc-operate-exam first-icon"></i>
                 </div>
             </div>
         </div>
@@ -77,18 +77,20 @@
                             @click="deleteChart('host', key, hostData.disList, item)"></i>
                     </div>
                 </div>
-                <div class="operation-charts" :id="item.report_type + item.config_id"></div>
+                <div class="chart-bottom">
+                    <div class="operation-charts" :id="item.report_type + item.config_id"></div>
+                </div>
                 <div v-if="item.noData" class="null-data">
                     <span>{{$t('暂无数据')}}</span>
                 </div>
                 <div class="chart-date" v-if="item.showDate">
-                    <cmdb-form-date-range
+                    <bk-date-picker
+                        :options="options"
                         @change="dateChange"
                         class="options-filter"
-                        :auto-close="true"
-                        :position="'left'"
+                        :type="'daterange'"
                         v-model="dateRange">
-                    </cmdb-form-date-range>
+                    </bk-date-picker>
                 </div>
             </div>
         </div>
@@ -119,7 +121,9 @@
                             @click="deleteChart('inst', key, instData.disList, item)"></i>
                     </div>
                 </div>
-                <div class="operation-charts" :id="item.report_type + item.config_id"></div>
+                <div class="chart-bottom">
+                    <div class="operation-charts" :id="item.report_type + item.config_id"></div>
+                </div>
                 <div v-if="item.noData" class="null-data">
                     <span>{{$t('暂无数据')}}</span>
                 </div>
@@ -169,7 +173,13 @@
                 },
                 dateRange: [],
                 dateChart: {},
-                maxRange: []
+                maxRange: [],
+                options: {
+                    disabledDate (date) {
+                        const today = new Date()
+                        return today < date
+                    }
+                }
             }
         },
         created () {
@@ -405,7 +415,8 @@
                     },
                     yaxis: {
                         fixedrange: true,
-                        rangemode: 'tozero'
+                        rangemode: 'tozero',
+                        zeroline: false
                     },
                     xaxis: {
                         showline: true,
@@ -427,7 +438,8 @@
                 if (item.report_type !== 'model_inst_change_chart') layout.hovermode = 'closest'
                 const options = {
                     displaylogo: false,
-                    displayModeBar: false
+                    displayModeBar: false,
+                    responsive: true
                 }
                 if (this.editType.openType === 'edit') {
                     Plotly.purge(myDiv)
@@ -578,15 +590,6 @@
     }
 </script>
 
-<style lang="scss">
-    .zerolinelayer {
-        path{
-            stroke-opacity: 0!important;
-            stroke-width: 0!important;
-        }
-    }
-</style>
-
 <style scoped lang="scss">
     .views-layout {
         padding: 10px!important;
@@ -625,7 +628,7 @@
     }
     .operation-top{
         padding: 10px 15px;
-        margin-top: 30px;
+        margin-top: 15px;
         .operation-title{
             display: inline-block;
             font-size: 16px;
@@ -729,6 +732,9 @@
                    color: white;
                    font-size: 24px;
                }
+               .first-icon {
+                   font-size: 20px;
+               }
             }
         }
     }
@@ -737,17 +743,16 @@
         position: relative;
         padding: 10px 10px;
         .chart-child{
-             padding: 0 10px;
              background: rgba(255,255,255,1);
              border-radius: 2px;
-             border: 1px solid rgba(220,222,229,1);
+             border: 1px solid #DCDEE5;
              position: relative;
              width: 100%;
              .operation-charts{
                 width: 100%;
              }
              &:hover {
-                  box-shadow:0px 2px 6px 0px rgba(220,222,229,1);
+                  box-shadow:0 2px 6px 0 rgba(220,222,229,1);
              }
         }
         .chart-child:hover{
@@ -755,10 +760,15 @@
                 display: inline-block;
             }
         }
+        .chart-bottom{
+            width: 100%;
+            height: 100%;
+            padding: 0 10px 10px;
+        }
         .chart-title{
             display: block;
             height: 50px;
-            border-bottom: 1px solid rgba(240,241,245,1);
+            border-bottom: 1px solid #F0F1F5;
             .charts-options{
                 display: none;
                 margin-left: 15px;
