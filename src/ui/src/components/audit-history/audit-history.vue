@@ -2,11 +2,11 @@
     <div class="audit-history-layout">
         <div class="history-options clearfix">
             <div class="options-group fl">
-                <label class="options-label">{{$t("HostResourcePool['时间范围']")}}</label>
+                <label class="options-label">{{$t('时间范围')}}</label>
                 <cmdb-form-date-range class="options-filter" :clearable="false" v-model="dateRange"></cmdb-form-date-range>
             </div>
             <div class="options-group fl" style="margin: 0">
-                <label class="options-label">{{$t("HostResourcePool['操作账号']")}}</label>
+                <label class="options-label">{{$t('操作账号')}}</label>
                 <cmdb-form-objuser class="options-filter"
                     v-model="operator"
                     :exclude="false"
@@ -14,7 +14,7 @@
                     :palceholder="$t('操作账号')">
                 </cmdb-form-objuser>
             </div>
-            <bk-button class="fr" theme="primary" @click="refresh(true)">{{$t("Common['查询']")}}</bk-button>
+            <bk-button class="fr" theme="primary" @click="refresh(true)">{{$t('查询')}}</bk-button>
         </div>
         <bk-table
             v-bkloading="{ isLoading: $loading('getUserOperationLog') }"
@@ -25,9 +25,9 @@
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="handleRowClick">
-            <bk-table-column :label="$t('HostResourcePool[\'变更内容\']')" prop="op_desc"></bk-table-column>
-            <bk-table-column :label="$t('HostResourcePool[\'操作账号\']')" prop="operator"></bk-table-column>
-            <bk-table-column :label="$t('HostResourcePool[\'操作时间\']')" prop="op_time">
+            <bk-table-column :label="$t('变更内容')" prop="op_desc"></bk-table-column>
+            <bk-table-column :label="$t('操作账号')" prop="operator"></bk-table-column>
+            <bk-table-column :label="$t('操作时间')" prop="op_time">
                 <template slot-scope="{ row }">
                     {{$tools.formatTime(row.op_time)}}
                 </template>
@@ -35,7 +35,7 @@
         </bk-table>
         <div class="history-details" v-if="details.isShow" v-click-outside="closeDetails">
             <p class="details-title">
-                <span>{{$t('OperationAudit[\'操作详情\']')}}</span>
+                <span>{{$t('操作详情')}}</span>
                 <i class="bk-icon icon-close" @click="closeDetails"></i>
             </p>
             <v-details class="details-content"

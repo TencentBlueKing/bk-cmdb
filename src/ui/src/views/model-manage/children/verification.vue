@@ -10,7 +10,7 @@
                 <bk-button class="create-btn" theme="primary"
                     :disabled="isReadOnly || !updateAuth"
                     @click="createVerification">
-                    {{$t('ModelManagement["新建校验"]')}}
+                    {{$t('新建校验')}}
                 </bk-button>
             </span>
         </div>
@@ -25,29 +25,29 @@
                 cursor: 'pointer'
             }"
             @cell-click="handleShowDetails">
-            <bk-table-column :label="$t('ModelManagement[\'校验规则\']')">
+            <bk-table-column :label="$t('校验规则')">
                 <template slot-scope="{ row }">
                     {{getRuleName(row.keys)}}
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('ModelManagement[\'是否为必须校验\']')">
+            <bk-table-column :label="$t('是否为必须校验')">
                 <template slot-scope="{ row }">
-                    {{row.must_check ? $t('ModelManagement["是"]') : $t('ModelManagement["否"]')}}
+                    {{row.must_check ? $t('是') : $t('否')}}
                 </template>
             </bk-table-column>
             <bk-table-column prop="operation"
                 v-if="updateAuth && !isTopoModel"
-                :label="$t('Common[\'操作\']')">
+                :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <button class="text-primary mr10"
                         :disabled="!isEditable(row)"
                         @click.stop="editVerification(row)">
-                        {{$t('Common["编辑"]')}}
+                        {{$t('编辑')}}
                     </button>
                     <button class="text-primary"
                         :disabled="!isEditable(row)"
                         @click.stop="deleteVerification(row)">
-                        {{$t('Common["删除"]')}}
+                        {{$t('删除')}}
                     </button>
                 </template>
             </bk-table-column>
@@ -161,13 +161,13 @@
                 })
             },
             createVerification () {
-                this.slider.title = this.$t('ModelManagement["新建校验"]')
+                this.slider.title = this.$t('新建校验')
                 this.slider.isEdit = false
                 this.slider.isReadOnly = false
                 this.slider.isShow = true
             },
             editVerification (verification) {
-                this.slider.title = this.$t('ModelManagement["编辑校验"]')
+                this.slider.title = this.$t('编辑校验')
                 this.slider.verification = verification
                 this.slider.isEdit = true
                 this.slider.isReadOnly = false
@@ -179,7 +179,7 @@
             },
             deleteVerification (verification) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除唯一校验？"]', this.getRuleName(verification.keys), { name: this.getRuleName(verification.keys) }),
+                    title: this.$tc('确定删除唯一校验？', this.getRuleName(verification.keys), { name: this.getRuleName(verification.keys) }),
                     confirmFn: async () => {
                         await this.deleteObjectUniqueConstraints({
                             objId: verification['bk_obj_id'],
@@ -207,7 +207,7 @@
             },
             handleShowDetails (row, column, cell) {
                 if (column.property === 'operation') return
-                this.slider.title = this.$t('ModelManagement["查看校验"]')
+                this.slider.title = this.$t('查看校验')
                 this.slider.verification = row
                 this.slider.isEdit = true
                 this.slider.isReadOnly = true

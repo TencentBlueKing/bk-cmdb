@@ -1073,8 +1073,9 @@ const (
 )
 
 const (
-	ContextRequestIDField   = "request_id"
-	ContextRequestUserField = "request_user"
+	ContextRequestIDField    = "request_id"
+	ContextRequestUserField  = "request_user"
+	ContextRequestOwnerField = "request_owner"
 )
 
 const (

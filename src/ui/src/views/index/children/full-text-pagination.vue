@@ -1,8 +1,8 @@
 <template>
     <div class="pagination clearfix">
         <div class="pagination-info fl">
-            <span class="mr10">{{$tc("Common['共计N条']", pagination['total'], { N: pagination['total'] })}}</span>
-            <i18n path="Common['每页显示条数']">
+            <span class="mr10">{{$tc('共计N条', pagination['total'], { N: pagination['total'] })}}</span>
+            <i18n path="每页显示条数">
                 <div ref="paginationSize" place="num"
                     :class="['pagination-size', { 'active': isShowSizeSetting }]"
                     :sizeDirection="'auto'"

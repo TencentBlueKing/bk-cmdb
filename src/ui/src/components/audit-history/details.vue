@@ -26,21 +26,21 @@
                 <bk-table-column prop="bk_property_name"></bk-table-column>
                 <bk-table-column v-if="details.op_type !== 1"
                     prop="pre_data"
-                    :label="$t('OperationAudit[\'变更前\']')">
+                    :label="$t('变更前')">
                     <template slot-scope="{ row }">
                         <span v-html="row.pre_data"></span>
                     </template>
                 </bk-table-column>
                 <bk-table-column v-if="details.op_type !== 3"
                     prop="cur_data"
-                    :label="$t('OperationAudit[\'变更后\']')">
+                    :label="$t('变更后')">
                     <template slot-scope="{ row }" v-html="row.cur_data">
                         <span v-html="row.cur_data"></span>
                     </template>
                 </bk-table-column>
             </bk-table>
             <p class="field-btn" @click="toggleFields" v-if="isShowToggle && details.op_type !== 1 && details.op_type !== 3">
-                {{isShowAllFields ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
+                {{isShowAllFields ? $t('收起') : $t('展开')}}
             </p>
         </template>
     </div>
@@ -60,27 +60,27 @@
                 attribute: [],
                 isShowAllFields: false,
                 informations: [{
-                    label: this.$t('OperationAudit[\'操作账号\']'),
+                    label: this.$t('操作账号'),
                     key: 'operator'
                 }, {
-                    label: this.$t('OperationAudit[\'所属业务\']'),
+                    label: this.$t('所属业务'),
                     key: 'bk_biz_id',
                     optionKey: 'biz'
                 }, {
-                    label: this.$t('OperationAudit[\'IP\']'),
+                    label: this.$t('IP'),
                     key: 'ext_key'
                 }, {
-                    label: this.$t('OperationAudit[\'类型\']'),
+                    label: this.$t('类型'),
                     key: 'op_type',
                     optionKey: 'opType'
                 }, {
-                    label: this.$t('OperationAudit[\'对象\']'),
+                    label: this.$t('对象'),
                     key: 'op_target'
                 }, {
-                    label: this.$t('OperationAudit[\'操作时间\']'),
+                    label: this.$t('操作时间'),
                     key: 'op_time'
                 }, {
-                    label: this.$t('OperationAudit[\'描述\']'),
+                    label: this.$t('描述'),
                     key: 'op_desc'
                 }],
                 colWidth: [130, 280, 280]
@@ -97,10 +97,10 @@
                     biz[bkBizId] = bkBizName
                 })
                 const opType = {
-                    1: this.$t("Common['新增']"),
-                    2: this.$t("Common['修改']"),
-                    3: this.$t("Common['删除']"),
-                    100: this.$t('OperationAudit["关系变更"]')
+                    1: this.$t('新增'),
+                    2: this.$t('修改'),
+                    3: this.$t('删除'),
+                    100: this.$t('关系变更')
                 }
                 return {
                     biz,
@@ -137,7 +137,7 @@
                     const preData = pre.join('<br>')
                     const curData = cur.join('<br>')
                     list.push({
-                        'bk_property_name': this.$t('Hosts["关联关系"]'),
+                        'bk_property_name': this.$t('关联关系'),
                         'pre_data': preData,
                         'cur_data': curData
                     })

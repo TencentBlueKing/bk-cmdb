@@ -3,12 +3,12 @@
         <div class="content-wrapper">
             <div class="title">
                 <img src="../../assets/images/no-authority.png" alt="no-authority">
-                <h2>{{$t("Common['无业务权限']")}}</h2>
-                <p>{{$t("Common['点击下方按钮申请']")}}</p>
+                <h2>{{$t('无业务权限')}}</h2>
+                <p>{{$t('点击下方按钮申请')}}</p>
             </div>
             <div class="btns">
                 <bk-button theme="primary" @click="handleApplyPermission">
-                    {{$t("Common['申请业务权限']")}}
+                    {{$t('申请业务权限')}}
                 </bk-button>
             </div>
         </div>

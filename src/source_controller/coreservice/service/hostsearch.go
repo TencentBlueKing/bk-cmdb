@@ -20,16 +20,17 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) ListHostByTopoNode(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	option := meta.ListHostByTopoNodeOption{}
+func (s *coreService) ListHosts(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	option := meta.ListHosts{}
 	if err := data.MarshalJSONInto(&option); err != nil {
 		blog.Errorf("get host module id failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	hosts, err := s.core.HostOperation().ListHostByTopoNode(params, option)
+	hosts, err := s.core.HostOperation().ListHosts(params, option)
 	if err != nil {
 		blog.Errorf("ListHostByTopoNode failed, call host operation failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
 	}
 
 	return hosts, nil

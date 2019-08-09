@@ -55,7 +55,7 @@
             <a href="javascript:void(0)" class="objuser-menu"
                 ref="contextmenu"
                 v-show="contextmenu"
-                @click.stop="handleCopy">{{$t('Common["复制"]')}}</a>
+                @click.stop="handleCopy">{{$t('复制')}}</a>
         </div>
     </div>
 </template>
@@ -124,11 +124,11 @@
             },
             localPlaceholder () {
                 if (this.exception) {
-                    return this.$t('Common["获取人员列表失败"]')
+                    return this.$t('获取人员列表失败')
                 } else if (this.placeholder) {
                     return this.placeholder
                 }
-                return this.$t('Form["请输入用户"]')
+                return this.$t('请输入用户')
             }
         },
         watch: {
@@ -396,9 +396,9 @@
             handleCopy () {
                 this.contextmenu = false
                 this.$copyText(this.localValue.join(',')).then(() => {
-                    this.$success(this.$t('Common["复制成功"]'))
+                    this.$success(this.$t('复制成功'))
                 }, () => {
-                    this.$error(this.$t('Common["复制失败"]'))
+                    this.$error(this.$t('复制失败'))
                 })
             },
             handleContextmenu (event) {

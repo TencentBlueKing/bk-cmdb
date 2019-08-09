@@ -39,7 +39,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'topology',
-            i18n: 'Nav["服务拓扑"]',
+            i18n: '服务拓扑',
             path: path,
             order: 1,
             parent: NAV_SERVICE_MANAGEMENT,
@@ -51,7 +51,7 @@ export default {
                 this.authScope = 'business'
             }
         },
-        i18nTitle: 'Nav["服务拓扑"]',
+        i18nTitle: '服务拓扑',
         requireBusiness: true
     })
 }

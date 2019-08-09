@@ -20,12 +20,12 @@
                     <bk-button class="options-button" theme="primary" style="margin-left: 0"
                         :disabled="!$isAuthorized($OPERATION.C_RESOURCE_HOST)"
                         @click="importInst.show = true">
-                        {{$t('HostResourcePool[\'导入主机\']')}}
+                        {{$t('导入主机')}}
                     </bk-button>
                 </span>
                 <cmdb-selector class="options-business-selector"
                     v-if="isAdminView"
-                    :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
+                    :placeholder="$t('分配到业务空闲机池')"
                     :disabled="!table.checked.length"
                     :list="authorizedBusiness"
                     :auto-select="false"
@@ -48,25 +48,25 @@
         <bk-sideslider
             :is-show.sync="importInst.show"
             :width="800"
-            :title="$t('HostResourcePool[\'批量导入\']')">
+            :title="$t('批量导入')">
             <bk-tab :active.sync="importInst.active" type="unborder-card" slot="content" v-if="importInst.show">
-                <bk-tab-panel name="import" :label="$t('HostResourcePool[\'批量导入\']')">
+                <bk-tab-panel name="import" :label="$t('批量导入')">
                     <cmdb-import v-if="importInst.show && importInst.active === 'import'"
                         :template-url="importInst.templateUrl"
                         :import-url="importInst.importUrl"
                         @success="getHostList(true)"
                         @partialSuccess="getHostList(true)">
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
-                            {{$t('HostResourcePool["说明：内网IP为必填列"]')}}
+                            {{$t('说明：内网IP为必填列')}}
                         </span>
                     </cmdb-import>
                 </bk-tab-panel>
-                <bk-tab-panel name="agent" :label="$t('HostResourcePool[\'自动导入\']')">
+                <bk-tab-panel name="agent" :label="$t('自动导入')">
                     <div class="automatic-import">
-                        <p>{{$t("HostResourcePool['agent安装说明']")}}</p>
+                        <p>{{$t("agent安装说明")}}</p>
                         <div class="back-contain">
                             <i class="icon-cc-skip"></i>
-                            <a href="javascript:void(0)" @click="openAgentApp">{{$t("HostResourcePool['点此进入节点管理']")}}</a>
+                            <a href="javascript:void(0)" @click="openAgentApp">{{$t('点此进入节点管理')}}</a>
                         </div>
                     </div>
                 </bk-tab-panel>
@@ -230,13 +230,13 @@
             handleAssignHosts (businessId, business) {
                 if (!businessId) return
                 if (this.hasSelectAssignedHost()) {
-                    this.$error(this.$t('Hosts["请勿选择已分配主机"]'))
+                    this.$error(this.$t('请勿选择已分配主机'))
                     this.$nextTick(() => {
                         this.assignBusiness = ''
                     })
                 } else {
                     this.$bkInfo({
-                        title: this.$t("HostResourcePool['请确认是否转移']"),
+                        title: this.$t('请确认是否转移'),
                         subHeader: this.getConfirmContent(business),
                         confirmFn: () => {
                             this.assignHosts(business)
@@ -260,7 +260,7 @@
                         'bk_host_id': this.table.checked
                     }
                 }).then(() => {
-                    this.$success(this.$t("HostResourcePool['分配成功']"))
+                    this.$success(this.$t('分配成功'))
                     this.assignBusiness = ''
                     this.$refs.resourceTable.table.checked = []
                     this.$refs.resourceTable.handlePageChange(1)
@@ -308,18 +308,18 @@
             },
             handleMultipleEdit () {
                 if (this.hasSelectAssignedHost()) {
-                    this.$error(this.$t('Hosts["请勿选择已分配主机"]'))
+                    this.$error(this.$t('请勿选择已分配主机'))
                     return false
                 }
                 this.$refs.resourceTable.handleMultipleEdit()
             },
             handleMultipleDelete () {
                 if (this.hasSelectAssignedHost()) {
-                    this.$error(this.$t('Hosts["请勿选择已分配主机"]'))
+                    this.$error(this.$t('请勿选择已分配主机'))
                     return false
                 }
                 this.$bkInfo({
-                    title: `${this.$t("HostResourcePool['确定删除选中的主机']")}？`,
+                    title: `${this.$t('确定删除选中的主机')}？`,
                     confirmFn: () => {
                         this.deleteHost({
                             params: {
@@ -329,7 +329,7 @@
                                 }
                             }
                         }).then(() => {
-                            this.$success(this.$t("HostResourcePool['成功删除选中的主机']"))
+                            this.$success(this.$t('成功删除选中的主机'))
                             this.$refs.resourceTable.table.checked = []
                             this.$refs.resourceTable.handlePageChange(1)
                         })
@@ -350,7 +350,7 @@
                         window.open(agent)
                     }
                 } else {
-                    this.$warn(this.$t("HostResourcePool['未配置Agent安装APP地址']"))
+                    this.$warn(this.$t('未配置Agent安装APP地址'))
                 }
             },
             exportExcel (response) {

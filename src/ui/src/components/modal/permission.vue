@@ -3,7 +3,7 @@
         ext-cls="error-content-dialog"
         v-model="isModalShow"
         width="600"
-        :z-index="10000"
+        :z-index="2400"
         :mask-close="false"
         @cancel="onCloseDialog">
         <div class="permission-content">

@@ -37,7 +37,7 @@ export default [{
                 this.authScope = 'global'
             }
         },
-        i18nTitle: 'HostDetails["主机详情"]'
+        i18nTitle: '主机详情'
     }
 }, {
     name: BUSINESS_HOST,
@@ -59,6 +59,6 @@ export default [{
                 this.authScope = 'business'
             }
         },
-        i18nTitle: 'HostDetails["主机详情"]'
+        i18nTitle: '主机详情'
     }
 }]

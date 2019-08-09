@@ -26,7 +26,7 @@
         </template>
         <div class="relation-empty" v-else>
             <img class="empty-image" src="../../assets/images/relevance-empty.png">
-            <span class="empty-text">{{$t("Common['当前还未有关联项']")}}</span>
+            <span class="empty-text">{{$t('当前还未有关联项')}}</span>
         </div>
         <cmdb-topo-details v-if="details.show"
             :obj-id="details.objId"

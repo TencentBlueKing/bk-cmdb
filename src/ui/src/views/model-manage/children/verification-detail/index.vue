@@ -2,7 +2,7 @@
     <div class="verification-detail-wrapper">
         <div class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["校验规则"]')}}
+                {{$t('校验规则')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="verification-selector">
@@ -28,15 +28,15 @@
         <!-- <div class="verification-selector-mask" v-if="attribute.isShow"></div> -->
         <div class="radio-box">
             <label class="label-text">
-                {{$t('ModelManagement["属性为空值是否校验"]')}}
+                {{$t('属性为空值是否校验')}}
             </label>
             <label class="cmdb-form-radio cmdb-radio-small">
                 <input type="radio" name="required" :value="true" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["是"]')}}</span>
+                <span class="cmdb-radio-text">{{$t('是')}}</span>
             </label>
             <label class="cmdb-form-radio cmdb-radio-small">
                 <input type="radio" name="required" :value="false" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["否"]')}}</span>
+                <span class="cmdb-radio-text">{{$t('否')}}</span>
             </label>
         </div>
         <div class="btn-group">
@@ -44,10 +44,10 @@
                 :disabled="isReadOnly || !verificationInfo.selected.length"
                 :loading="$loading(['createObjectUniqueConstraints', 'updateObjectUniqueConstraints'])"
                 @click="saveVerification">
-                {{$t('Common["确定"]')}}
+                {{$t('确定')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">
-                {{$t('Common["取消"]')}}
+                {{$t('取消')}}
             </bk-button>
         </div>
     </div>
