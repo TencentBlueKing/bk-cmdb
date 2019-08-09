@@ -45,6 +45,6 @@ func (p *procServer) OpenAPI() openapi.OpenAPIClientInterface {
 	return openapi.NewOpenApiClientInterface(p.client)
 }
 
-func (p *procServer) Service() openapi.OpenAPIClientInterface {
+func (p *procServer) Service() service.ServiceClientInterface {
 	return service.NewServiceClientInterface(p.client)
 }

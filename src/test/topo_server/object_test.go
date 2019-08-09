@@ -514,7 +514,24 @@ var _ = Describe("object test", func() {
 				attrId = strconv.FormatInt(data.ID, 10)
 			})
 
-			It("create object attribute bk_obj_id='cc_obj' and bk_property_id='test_sglchar' and bk_property_name='test_sglchar'", func() {
+			It("create object attribute with same bk_property_id", func() {
+				input := &metadata.ObjAttDes{
+					Attribute: metadata.Attribute{
+						OwnerID:       "0",
+						ObjectID:      "cc_obj",
+						PropertyID:    "test_sglchar",
+						PropertyName:  "sglchar",
+						PropertyGroup: "default",
+						IsEditable:    true,
+						PropertyType:  "singlechar",
+					},
+				}
+				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+			})
+
+			It("create object attribute bk_obj_id='cc_obj' and bk_property_id='test_singlechar' and bk_property_name='test_singlechar'", func() {
 				input := &metadata.ObjAttDes{
 					Attribute: metadata.Attribute{
 						OwnerID:       "0",
@@ -567,9 +584,11 @@ var _ = Describe("object test", func() {
 				j, err := json.Marshal(rsp.Data)
 				data := []map[string]interface{}{}
 				json.Unmarshal(j, &data)
+				Expect(len(data)).To(Equal(1))
 				Expect(data).To(ContainElement(HaveKeyWithValue("bk_property_name", "ayayyaya")))
 				Expect(data).NotTo(ContainElement(HaveKeyWithValue("bk_property_name", "test_singlechar")))
 				Expect(data).NotTo(ContainElement(HaveKeyWithValue("bk_property_name", "test_sglchar")))
+				Expect(data).NotTo(ContainElement(HaveKeyWithValue("bk_property_name", "sglchar")))
 			})
 		})
 
@@ -750,7 +769,7 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(true))
 		})
 
-		It(fmt.Sprintf("search module"), func() {
+		It("search module", func() {
 			input := &params.SearchParams{
 				Condition: map[string]interface{}{},
 				Page: map[string]interface{}{
