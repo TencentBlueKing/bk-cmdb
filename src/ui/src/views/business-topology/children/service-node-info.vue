@@ -577,6 +577,11 @@
 </script>
 
 <style lang="scss" scoped>
+    .topology-details {
+        /deep/ .details-options {
+            padding: 28px 18px 0 0;
+        }
+    }
     .property-value {
         height: 26px;
         line-height: 26px;

@@ -1,10 +1,6 @@
 <template>
     <div class="empty">
-        <div class="empty-content" v-if="isBlueKing">
-            <img class="empty-img" src="../../../assets/images/empty-content.png" alt="">
-            <span>{{$t('暂无实例')}}</span>
-        </div>
-        <template v-else v-bkloading="{ isLoading: $loading('getBatchProcessTemplate') }">
+        <template v-bkloading="{ isLoading: $loading('getBatchProcessTemplate') }">
             <div class="empty-content" v-if="withTemplate && !templates.length && !isSearching">
                 <img src="../../../../static/svg/cc-empty.svg" alt="">
                 <p class="empty-text">{{$t('模板未定义进程', { template: (moduleNode || {}).name })}}</p>
