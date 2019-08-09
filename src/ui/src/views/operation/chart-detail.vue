@@ -9,7 +9,7 @@
             <div class="dialog-content">
                 <div class="model-header">
                     <p class="title">{{ editTitle }}</p>
-                    <i class="modal-close icon icon-cc-tips-close" @click="closeChart()"></i>
+                    <i class="modal-close bk-icon icon-close" @click="closeChart()"></i>
                 </div>
                 <div class="content clearfix">
                     <div class="content-item">
@@ -119,22 +119,27 @@
                     </div>
                     <div class="content-item">
                         <label class="label-text-x">
-                            {{$t('Operation["横轴坐标数量"]')}}
+                            <bk-popover placement="right" :content="$t('Operation[\'横轴可视范围展示的坐标数量\']')">
+                                {{$t('Operation["横轴坐标数量"]')}}
+                            </bk-popover>
                         </label>
                         <label class="cmdb-form-item">
                             <div class="axis-picker">
-                                <input class="cmdb-form-input form-input" v-model="chartData.x_axis_count">
+                                <input class="cmdb-form-input form-input"
+                                    v-validate="'required|number'" name="chartNumber"
+                                    v-model="chartData.x_axis_count">
                                 <i class="bk-icon icon-angle-down" @click="calculate('down')"></i>
                                 <i class="bk-icon icon-angle-up" @click="calculate('up')"></i>
                             </div>
-                            <span class="form-error">{{errors.first('chartName')}}</span>
+                            <span class="tips">{{$t('Operation["考虑显示效果，上限为25个，100%宽度建议显示20个，50%宽度10个"]')}}
+                                <span class="form-error">{{errors.first('chartNumber')}}</span>
+                            </span>
                         </label>
-                        <span class="tips">{{$t('Operation["考虑显示效果，上限为25个，100%宽度建议显示20个，50%宽度10个"]')}}</span>
                     </div>
                 </div>
                 <div class="footer" slot="footer">
-                    <bk-button theme="default" @click="closeChart">{{$t("Common['取消']")}}</bk-button>
                     <bk-button theme="primary" @click="confirm">{{$t("Common['确定']")}}</bk-button>
+                    <bk-button theme="default" @click="closeChart">{{$t("Common['取消']")}}</bk-button>
                 </div>
             </div>
         </bk-dialog>
@@ -164,7 +169,7 @@
                         config_id: null,
                         bk_obj_id: 'host',
                         chart_type: 'pie',
-                        field: 'bk_os_type',
+                        field: '',
                         width: '50',
                         x_axis_count: 10
                     }
@@ -277,10 +282,11 @@
                     }
                 })
                 this.$validator.reset()
-                this.chartData.field = ''
+                if (this.openType === 'add') this.chartData.field = ''
             },
             confirm () {
                 this.chartData.report_type = this.chartType ? 'custom' : this.typeFilter[0].repType
+                this.chartData.x_axis_count = parseInt(this.chartData.x_axis_count)
                 const data = this.$tools.clone(this.chartData)
                 this.$validator.validateAll().then(result => {
                     if (result) {
@@ -337,6 +343,15 @@
                 top: 15px;
                 color:#D8D8D8;
                 cursor: pointer;
+                width: 26px;
+                height: 26px;
+                line-height: 26px;
+                text-align: center;
+                border-radius: 50%;
+                font-weight: 700;
+                &:hover {
+                     background-color: #f0f1f5;
+                 }
             }
             .title {
                 display: inline-block;
@@ -386,12 +401,12 @@
                             right:8px;
                             &:nth-child(2){
                                 bottom:4px
-                             }
+                            }
                             &:nth-child(3){
                                  top: 4px;
-                             }
+                            }
                         }
-    }
+                    }
                 }
                 .form-input{
                     float:left;
@@ -414,8 +429,8 @@
                     font-size:11px;
                     color:rgba(151,155,165,1);
                     line-height:15px;
-                    margin-left: 122px;
                     margin-top: 6px;
+                    position: absolute;
                 }
             }
         }
@@ -425,11 +440,12 @@
         height: 50px;
         line-height: 50px;
         font-size: 0;
-        text-align: center;
+        text-align: right;
+        padding-right: 14px;
+        background:rgba(250,251,253,1);
         button {
-            float: right;
-            margin-right: 20px;
-            margin-top: 7px;
+            vertical-align: middle;
+            margin-right: 10px;
         }
     }
     .form-error {
