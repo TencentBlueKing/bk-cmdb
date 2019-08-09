@@ -5,17 +5,17 @@
                 <div class="item-left">
                     <span v-if="navData.biz">{{ navData.biz }}</span>
                     <span v-if="!navData.biz">0</span>
-                    <span>{{$t('Operation["业务总数"]')}}</span>
+                    <span>{{$t('业务总数')}}</span>
                 </div>
                 <div class="item-right item-right-left">
-                    <i class="icon icon-cc-op-biz"></i>
+                    <i class="icon icon-cc-operate-biz"></i>
                 </div>
             </div>
             <div class="menu-items menu-items-white" @click="goRouter('resource')">
                 <div class="item-left">
                     <span v-if="navData.host">{{ navData.host }}</span>
                     <span v-if="!navData.host">0</span>
-                    <span>{{$t('Operation["主机总数"]')}}</span>
+                    <span>{{$t('主机总数')}}</span>
                 </div>
                 <div class="item-right item-right-right">
                     <i class="icon icon-cc-host"></i>
@@ -25,17 +25,17 @@
                 <div class="item-left">
                     <span v-if="navData.model">{{ navData.model }}</span>
                     <span v-if="!navData.model">0</span>
-                    <span>{{$t('Operation["模型总数"]')}}</span>
+                    <span>{{$t('模型总数')}}</span>
                 </div>
                 <div class="item-right item-right-left">
-                    <i class="menu-icon icon-cc-nav-model"></i>
+                    <i class="menu-icon icon-cc-operate-module"></i>
                 </div>
             </div>
             <div class="menu-items menu-items-white">
                 <div class="item-left">
                     <span v-if="navData.inst">{{ navData.inst }}</span>
                     <span v-if="!navData.inst">0</span>
-                    <span>{{$t('Operation["实例总数"]')}}
+                    <span>{{$t('实例总数')}}
                         <bk-popover :delay="300" :offset="10" placement="top" class="operate-pop">
                             <i class="menu-icon icon-cc-attribute"></i>
                             <span class="popover-content" slot="content">
@@ -45,14 +45,14 @@
                     </span>
                 </div>
                 <div class="item-right item-right-right">
-                    <i class="icon icon-cc-op-example"></i>
+                    <i class="icon icon-cc-operate-exam"></i>
                 </div>
             </div>
         </div>
         <div class="operation-top">
-            <span class="operation-title">{{$t('Operation["主机统计"]')}}</span>
-            <i class="icon icon-cc-rect-add" @click="openNew('add', 'host')">
-                <div class="title-block">{{$t('Operation["添加主机图表"]')}}</div>
+            <span class="operation-title">{{$t('主机统计')}}</span>
+            <i class="icon icon-cc-operate-add" @click="openNew('add', 'host')">
+                <div class="title-block">{{$t('添加主机图表')}}</div>
             </i>
         </div>
         <div v-for="(item, key) in hostData.disList"
@@ -64,9 +64,13 @@
                     <span>{{item.name}}</span>
                     <div class="charts-options">
                         <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
-                            @click="moveChart('host', 'up', key, hostData.disList)"></i>
+                            @click="moveChart('host', 'up', key, hostData.disList)">
+                            <div class="title-block">{{$t('已置顶，无法上移')}}</div>
+                        </i>
                         <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === hostData.disList.length - 1 }"
-                            @click="moveChart('host', 'down', key, hostData.disList)"></i>
+                            @click="moveChart('host', 'down', key, hostData.disList)">
+                            <div class="title-block">{{$t('已置底，无法下移')}}</div>
+                        </i>
                         <i class="icon icon-cc-edit-shape"
                             @click="openNew('edit', 'host', item, key)"></i>
                         <i class="icon icon-cc-tips-close"
@@ -75,10 +79,11 @@
                 </div>
                 <div class="operation-charts" :id="item.report_type + item.config_id"></div>
                 <div v-if="item.noData" class="null-data">
-                    <span>{{$t('Common["暂无数据"]')}}</span>
+                    <span>{{$t('暂无数据')}}</span>
                 </div>
                 <div class="chart-date" v-if="item.showDate">
                     <cmdb-form-date-range
+                        @change="dateChange"
                         class="options-filter"
                         :auto-close="true"
                         :position="'left'"
@@ -88,9 +93,9 @@
             </div>
         </div>
         <div class="operation-top">
-            <span class="operation-title">{{$t('Operation["实例统计"]')}}</span>
-            <i class="icon icon-cc-rect-add" @click="openNew('add', 'inst')">
-                <div class="title-block">{{$t('Operation["添加实例图表"]')}}</div>
+            <span class="operation-title">{{$t('实例统计')}}</span>
+            <i class="icon icon-cc-operate-add" @click="openNew('add', 'inst')">
+                <div class="title-block">{{$t('添加实例图表')}}</div>
             </i>
         </div>
         <div v-for="(item, key) in instData.disList"
@@ -102,9 +107,13 @@
                     <span>{{item.name}}</span>
                     <div class="charts-options">
                         <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
-                            @click="moveChart('inst', 'up', key, instData.disList)"></i>
+                            @click="moveChart('inst', 'up', key, instData.disList)">
+                            <div class="title-block">{{$t('已置顶，无法上移')}}</div>
+                        </i>
                         <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === instData.disList.length - 1 }"
-                            @click="moveChart('inst', 'down', key, instData.disList)"></i>
+                            @click="moveChart('inst', 'down', key, instData.disList)">
+                            <div class="title-block">{{$t('已置底，无法下移')}}</div>
+                        </i>
                         <i class="icon icon-cc-edit-shape" @click="openNew('edit', 'inst', item, key)"></i>
                         <i class="icon icon-cc-tips-close"
                             @click="deleteChart('inst', key, instData.disList, item)"></i>
@@ -112,7 +121,7 @@
                 </div>
                 <div class="operation-charts" :id="item.report_type + item.config_id"></div>
                 <div v-if="item.noData" class="null-data">
-                    <span>{{$t('Common["暂无数据"]')}}</span>
+                    <span>{{$t('暂无数据')}}</span>
                 </div>
             </div>
         </div>
@@ -137,7 +146,7 @@
         },
         data () {
             return {
-                tooltip: this.$t('Operation["不包含业务、主机模型及实例"]'),
+                tooltip: this.$t('不包含业务、主机模型及实例'),
                 isShow: false,
                 newChart: {},
                 editType: {
@@ -160,19 +169,11 @@
                 },
                 dateRange: [],
                 dateChart: {},
-                firstDraw: true
-            }
-        },
-        watch: {
-            'dateRange' () {
-                if (!this.firstDraw) {
-                    const date = this.$tools.clone(this.dateRange)
-                    this.dateChange(date)
-                } else this.firstDraw = false
+                maxRange: []
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Operation["统计报表"]'))
+            this.$store.commit('setHeaderTitle', this.$t('统计报表'))
             this.getChartList()
         },
         methods: {
@@ -235,6 +236,18 @@
                     maxTime: '',
                     maxRange: 0
                 }
+                const hoverlabel = {
+                    bgcolor: '#fff',
+                    bordercolor: '#DCDEE5',
+                    font: {
+                        color: '#63656E',
+                        size: '12'
+                    }
+                }
+                const marker = {
+                    size: 16,
+                    color: []
+                }
                 if (res && Array.isArray(res)) {
                     const content = {
                         labels: [],
@@ -242,25 +255,17 @@
                         x: [],
                         y: [],
                         type: data.chart_type,
-                        hoverlabel: {
-                            bgcolor: '#fff',
-                            bordercolor: '#DCDEE5',
-                            font: {
-                                color: '#63656E',
-                                size: '12'
-                            }
-                        },
-                        marker: {
-                            size: 16,
-                            color: []
-                        },
+                        hoverlabel: hoverlabel,
+                        marker: marker,
                         mode: 'markers',
                         textinfo: 'none',
                         hole: 0.7,
                         pull: 0.01,
                         width: 0.1
                     }
+                    let zeroList = 0
                     res.forEach(item => {
+                        if (item.count === 0) zeroList++
                         if (data.chart_type === 'pie') {
                             content.labels.push(item.id)
                             content.values.push(item.count)
@@ -271,6 +276,7 @@
                             content.y.push(item.count)
                         }
                     })
+                    if (zeroList === res.length) data.hasData = false
                     if (data.chart_type !== 'pie') content.width = (0.015 * data.x_axis_count * (data.width === '50' ? 2 : 1))
                     returnData.data.push(content)
                 } else if (res && !Array.isArray(res)) {
@@ -281,21 +287,27 @@
                                 type: 'bar',
                                 y: [],
                                 color: '#3A84FF',
-                                marker: { size: 16, color: [] }
+                                marker: this.$tools.clone(marker),
+                                hoverinfo: 'y+name',
+                                hoverlabel: hoverlabel
                             },
                             update: {
                                 name: 'update',
                                 type: 'bar',
                                 y: [],
                                 color: '#38C1E2',
-                                marker: { size: 16, color: [] }
+                                marker: this.$tools.clone(marker),
+                                hoverinfo: 'y+name',
+                                hoverlabel: hoverlabel
                             },
                             create: {
                                 name: 'create',
                                 type: 'bar',
                                 y: [],
                                 color: '#59D178',
-                                marker: { size: 16, color: [] }
+                                marker: this.$tools.clone(marker),
+                                hoverinfo: 'y+name',
+                                hoverlabel: hoverlabel
                             }
                         },
                         x: [],
@@ -306,14 +318,7 @@
                             name: item,
                             x: [],
                             y: [],
-                            hoverlabel: {
-                                bgcolor: '#fff',
-                                bordercolor: '#DCDEE5',
-                                font: {
-                                    color: '#63656E',
-                                    size: '12'
-                                }
-                            },
+                            hoverlabel: hoverlabel,
                             textinfo: 'none'
                         }
                         if (Array.isArray(res[item])) {
@@ -344,13 +349,13 @@
                         }
                     }
                 }
-                returnData.maxRange = this.computeRange(returnData.minTime, returnData.maxTime)
+                if (data.report_type === 'host_change_biz_chart') this.maxRange = [returnData.minTime, returnData.maxTime]
                 return returnData
             },
             drawCharts (item) {
                 const layConfig = {
                     type: 'category',
-                    nticks: 0,
+                    nticks: item.x_axis_count,
                     range: [-0.5, item.x_axis_count - 0.5],
                     fixRange: item.x_axis_count > item.data.data[0].x.length,
                     colorway: ['#3A84FF', '#A3C5FD', '#59D178', '#94F5A4', '#38C1E2', '#A1EDFF', '#4159F9', '#7888F0', '#EFAF4B', '#FEDB89', '#FF5656', '#FD9C9C'],
@@ -375,20 +380,21 @@
                     }
                 }
                 if (item.report_type === 'host_change_biz_chart') {
+                    if (this.dateRange.length !== 0) {
+                        item.data.minTime = this.dateRange[0]
+                        item.data.maxTime = this.dateRange[1]
+                    } else {
+                        this.dateRange = [item.data.minTime, item.data.maxTime]
+                    }
                     layConfig.type = 'date'
                     layConfig.range = [item.data.minTime, item.data.maxTime]
-                    if (this.firstDraw) {
-                        this.dateRange = layConfig.range
-                    }
                     this.dateChart = item
                     this.$set(item, 'showDate', true)
-                    const minus = this.computeRange(item.data.minTime, item.data.maxTime)
-                    layConfig.fixRange = item.data.maxRange <= minus
-                    layConfig.nticks = minus % 2 === 0 ? minus : (minus + 1)
+                    layConfig.fixRange = (this.maxRange[0] >= item.data.minTime) && (this.maxRange[1] <= item.data.maxTime)
+                    layConfig.nticks = item.x_axis_count % 2 === 0 ? item.x_axis_count : (item.x_axis_count + 1)
                     layConfig.colorway = ['#3A84FF', '#59D178', '#38C1E2', '#4159F9', '#EFAF4B', '#FF5656', '#904DF7', '#CA78F0', '#B9E145', '#F6E354']
                 }
                 const layout = {
-                    title: ``,
                     barmode: 'stack',
                     height: 250,
                     margin: {
@@ -405,7 +411,7 @@
                         showline: true,
                         linecolor: '#BFBFBF',
                         type: layConfig.type,
-                        nticks: 20,
+                        nticks: item.x_axis_count,
                         range: layConfig.range,
                         showgrid: false,
                         autorange: false,
@@ -508,6 +514,7 @@
                 if (type === 'edit') {
                     this.newChart = this.$tools.clone(data)
                     this.newChart.title = data.name
+                    this.newChart.bk_obj_id = data.bk_obj_id ? data.bk_obj_id : host
                 } else {
                     this.newChart = {
                         report_type: 'custom',
@@ -566,12 +573,6 @@
                 this.dateChart.data.minTime = date[0]
                 this.editType.openType = 'edit'
                 this.drawCharts(this.dateChart)
-            },
-            computeRange (date1, date2) {
-                const time1 = new Date(date1)
-                const time2 = new Date(date2)
-                const minus = Math.abs(time1.getTime() - time2.getTime())
-                return minus / 86400000
             }
         }
     }
@@ -589,6 +590,7 @@
 <style scoped lang="scss">
     .views-layout {
         padding: 10px!important;
+        background:rgba(250,251,253,1);
     }
     *{
         margin: 0;
@@ -599,14 +601,14 @@
         position: absolute;
         width: max-content;
         top: -140%;
-        left: -50%;
+        left: 0;
         color: #fff;
         height: 24px;
         padding: 0 5px;
         line-height: 22px;
         font-size: 12px;
         border-radius: 3px;
-        transform: translate(-20px);
+        transform: translate(-37%);
         background: rgba(0,0,0,0.8);
     }
     .title-block:before{
@@ -654,13 +656,13 @@
             background: linear-gradient(165deg,rgba(108,186,255,1) 0%,rgba(58,132,255,1) 100%);
             &:hover{
                  box-shadow:0px 2px 6px 0px rgba(58,132,255,1);
-             }
+            }
         }
         .menu-items-white{
             background: linear-gradient(165deg,rgba(77,212,240,1) 0%,rgba(27,167,207,1) 100%);
             &:hover{
                  box-shadow:0px 2px 6px 0px rgba(27,167,207,1);
-             }
+            }
         }
         .menu-items{
             display: flex;
@@ -689,7 +691,7 @@
                          font-weight: bold;
                          color: rgba(255,255,255,1);
                          line-height: 29px;
-                     }
+                    }
                     &:last-child{
                          height: 16px;
                          width: 90px;
@@ -721,7 +723,7 @@
                  height: 60px;
                  width: 60px;
                  position: absolute;
-                 right: 15%;
+                 right: 35px;
                  border-radius: 50%;
                i{
                    color: white;
@@ -786,12 +788,21 @@
             position: absolute;
             right: 15px;
             top: 0;
-            .options-filter{
-                width: 300px;
-            }
+            width: 250px;
+        }
+        .disable-title {
+            display: none;
         }
         .icon-disable{
             color: #DCDEE5!important;
+            position: relative;
+            &:hover{
+                .title-block {
+                    top: -165%;
+                    transform: translate(-42%);
+                    display: block;
+                }
+             }
         }
         .icon-weight{
             padding: 0!important;
