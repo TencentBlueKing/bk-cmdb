@@ -29,7 +29,7 @@ export default [{
     meta: new Meta({
         menu: {
             id: 'model',
-            i18n: 'Nav["模型"]',
+            i18n: '模型',
             path: modelPath,
             order: 1,
             parent: NAV_MODEL_MANAGEMENT
@@ -41,7 +41,7 @@ export default [{
                 this.authScope = isAdminView ? 'global' : 'business'
             }
         },
-        i18nTitle: 'Nav["模型"]'
+        i18nTitle: '模型'
     })
 }, {
     name: 'modelDetails',

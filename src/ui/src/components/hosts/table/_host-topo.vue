@@ -2,7 +2,7 @@
     <div class="host-topo-layout">
         <h3 class="host-topo-header" @click="collapse = !collapse">
             <i class="bk-icon icon-angle-down" :class="{ collapse }"></i>
-            {{$t("BusinessTopology['业务拓扑']")}}
+            {{$t('业务拓扑')}}
         </h3>
         <cmdb-collapse-transition>
             <div class="host-topo-list" v-show="!collapse">

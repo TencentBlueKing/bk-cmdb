@@ -22,7 +22,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'resource',
-            i18n: 'Nav["主机"]',
+            i18n: '主机',
             path: path,
             order: 2,
             parent: NAV_BASIC_RESOURCE
@@ -33,7 +33,7 @@ export default {
                 this.authScope = 'global'
             }
         },
-        i18nTitle: 'Nav["主机"]',
+        i18nTitle: '主机',
         filterPropertyKey: 'resource_host_filter_properties'
     })
 }

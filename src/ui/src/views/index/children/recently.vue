@@ -40,14 +40,14 @@
                 return [{
                     id: 'business',
                     bk_obj_icon: 'icon-cc-business',
-                    bk_obj_name: this.$t('Common["业务"]'),
+                    bk_obj_name: this.$t('业务'),
                     router: {
                         name: 'business'
                     }
                 }, {
                     id: 'resource',
                     bk_obj_icon: 'icon-cc-host-free-pool',
-                    bk_obj_name: this.$t('Nav["主机"]'),
+                    bk_obj_name: this.$t('主机'),
                     router: {
                         name: 'resource'
                     }

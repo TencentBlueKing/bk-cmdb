@@ -3,7 +3,7 @@
         <feature-tips
             class="process-tips"
             :show-tips="true"
-            :desc="$t('ProcessManagement[\'添加进程提示\']')">
+            :desc="$t('添加进程提示')">
         </feature-tips>
         <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
@@ -20,7 +20,7 @@
                                 :key="propertyIndex">
                                 <div class="property-name clearfix">
                                     <bk-checkbox class="form-checkbox"
-                                        v-bk-tooltips="$t('ServiceManagement[\'纳入模板管理\']')"
+                                        v-bk-tooltips="$t('纳入模板管理')"
                                         v-if="property['isLocking'] !== undefined"
                                         v-model="values[property['bk_property_id']]['as_default_value']">
                                     </bk-checkbox>
@@ -62,10 +62,10 @@
                     <bk-button class="button-save" theme="primary"
                         :disabled="saveDisabled || $loading() || !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
                         @click="handleSave">
-                        {{$t("Common['保存']")}}
+                        {{$t('保存')}}
                     </bk-button>
                 </span>
-                <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
+                <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>
         </div>
@@ -326,7 +326,7 @@
                             this.$emit('on-cancel')
                         } else {
                             this.$bkMessage({
-                                message: this.$t("ServiceManagement['进程名称已存在']"),
+                                message: this.$t('进程名称已存在'),
                                 theme: 'error'
                             })
                         }
@@ -348,8 +348,8 @@
                 if (this.hasChange()) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["确认退出"]'),
-                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.$emit('on-cancel')

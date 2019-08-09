@@ -23,7 +23,7 @@ export default [{
     meta: new Meta({
         menu: {
             id: 'serviceTemplate',
-            i18n: 'Nav["服务模板"]',
+            i18n: '服务模板',
             path: path,
             order: 2,
             parent: NAV_SERVICE_MANAGEMENT,
@@ -35,7 +35,7 @@ export default [{
                 this.authScope = 'business'
             }
         },
-        i18nTitle: "Nav['服务模板']",
+        i18nTitle: '服务模板',
         requireBusiness: true
     })
 }, {

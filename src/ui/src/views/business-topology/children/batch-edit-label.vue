@@ -2,8 +2,8 @@
     <div class="batch-edit-label">
         <div class="exisiting-label">
             <div class="title">
-                {{$t("BusinessTopology['已有标签']")}}
-                <span>{{$t("BusinessTopology['已有标签提示']")}}</span>
+                {{$t('已有标签')}}
+                <span>{{$t('已有标签提示')}}</span>
             </div>
             <div class="label-set">
                 <span class="label-item" :key="index" v-for="(label, index) in localExisitingLabel">
@@ -13,7 +13,7 @@
             </div>
         </div>
         <div class="batch-add">
-            <div class="title">{{$t("BusinessTopology['批量添加标签']")}}</div>
+            <div class="title">{{$t('批量添加标签')}}</div>
             <slot name="batch-add-label"></slot>
         </div>
     </div>

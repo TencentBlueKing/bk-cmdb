@@ -27,7 +27,7 @@
                         theme="primary"
                         :disabled="!$isAuthorized($OPERATION.U_TOPO)"
                         @click="handleEdit">
-                        {{$t('Common["编辑"]')}}
+                        {{$t('编辑')}}
                     </bk-button>
                 </span>
                 <span style="display: inline-block;"
@@ -38,7 +38,7 @@
                     <bk-button class="btn-delete"
                         :disabled="!$isAuthorized($OPERATION.D_TOPO)"
                         @click="handleDelete">
-                        {{$t('BusinessTopology["删除节点"]')}}
+                        {{$t('删除节点')}}
                     </bk-button>
                 </span>
             </template>
@@ -56,7 +56,7 @@
                     <bk-button class="unbind-button"
                         :disabled="!$isAuthorized($OPERATION.U_TOPO)"
                         @click="handleRemoveTemplate">
-                        {{$t('BusinessTopology["解除模板"]')}}
+                        {{$t('解除模板')}}
                     </bk-button>
                 </span> -->
             </span>
@@ -200,7 +200,7 @@
                 const group = this.getModuleServiceTemplateGroup()
                 return [{
                     bk_property_id: '__template_name__',
-                    bk_property_name: this.$t('BusinessTopology["模板名称"]'),
+                    bk_property_name: this.$t('模板名称'),
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 1,
                     bk_isapi: false,
@@ -208,7 +208,7 @@
                     unit: ''
                 }, {
                     bk_property_id: '__service_category__',
-                    bk_property_name: this.$t('BusinessTopology["服务分类"]'),
+                    bk_property_name: this.$t('服务分类'),
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 2,
                     bk_isapi: false,
@@ -248,7 +248,7 @@
                 return {
                     bk_group_id: '__service_template_info__',
                     bk_group_index: -1,
-                    bk_group_name: this.$t('BusinessTopology["服务模板信息"]'),
+                    bk_group_name: this.$t('服务模板信息'),
                     bk_obj_id: 'module',
                     ispre: true
                 }
@@ -422,7 +422,7 @@
                     this.selectedNode.data.bk_inst_name = value[nameMap[this.modelId] || 'bk_inst_name']
                     this.instance = Object.assign({}, this.instance, value)
                     this.type = 'details'
-                    this.$success(this.$t('Common["修改成功"]'))
+                    this.$success(this.$t('修改成功'))
                 } catch (e) {
                     console.error(e)
                 }
@@ -471,10 +471,10 @@
             },
             handleDelete () {
                 this.$bkInfo({
-                    title: `${this.$t('Common["确定删除"]')} ${this.selectedNode.name}?`,
+                    title: `${this.$t('确定删除')} ${this.selectedNode.name}?`,
                     subTitle: this.modelId === 'module'
-                        ? this.$t('BusinessTopology["删除模块提示"]')
-                        : this.$t('Common[\'下属层级都会被删除，请先转移其下所有的主机\']'),
+                        ? this.$t('删除模块提示')
+                        : this.$t('下属层级都会被删除，请先转移其下所有的主机'),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         const promiseMap = {
@@ -490,7 +490,7 @@
                                 emitEvent: true
                             })
                             tree.removeNode(nodeId)
-                            this.$success(this.$t('Common[\'删除成功\']'))
+                            this.$success(this.$t('删除成功'))
                         } catch (e) {
                             console.error(e)
                         }
@@ -534,11 +534,11 @@
                         'font-size': '14px'
                     },
                     domProps: {
-                        innerHTML: this.$tc('BusinessTopology["解除模板影响"]', this.flattenedInstance.__template_name__, { name: this.flattenedInstance.__template_name__ })
+                        innerHTML: this.$tc('解除模板影响', this.flattenedInstance.__template_name__, { name: this.flattenedInstance.__template_name__ })
                     }
                 })
                 this.$bkInfo({
-                    title: this.$t('BusinessTopology["确认解除模板"]'),
+                    title: this.$t('确认解除模板'),
                     subHeader: content,
                     confirmFn: async () => {
                         await this.$store.dispatch('serviceInstance/removeServiceTemplate', {

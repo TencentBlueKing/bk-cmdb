@@ -7,10 +7,10 @@
             :class="{ unfold: unfold, flexible: !navStick }">
             <div class="logo" @click="$router.push({ name: 'index' })">
                 <span class="logo-text">
-                    {{$t('Nav["蓝鲸配置平台"]')}}
+                    {{$t('蓝鲸配置平台')}}
                 </span>
-                <span class="logo-tag" v-if="isAdminView" :title="$t('Nav[\'后台管理标题\']')">
-                    {{$t('Nav["后台管理"]')}}
+                <span class="logo-tag" v-if="isAdminView" :title="$t('后台管理标题')">
+                    {{$t('后台管理')}}
                 </span>
             </div>
             <ul class="menu-list">
@@ -60,7 +60,7 @@
                     :class="{
                         sticked: navStick
                     }"
-                    :title="navStick ? $t('Index[\'收起导航\']') : $t('Index[\'固定导航\']')"
+                    :title="navStick ? $t('收起导航') : $t('固定导航')"
                     @click="toggleNavStick">
                 </i>
             </div>

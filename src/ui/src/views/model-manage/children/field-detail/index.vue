@@ -2,13 +2,13 @@
     <div class="slider-content">
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["唯一标识"]')}}
+                {{$t('唯一标识')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
                 <bk-input type="text" class="cmdb-form-input"
                     name="fieldId"
-                    :placeholder="$t('ModelManagement[\'下划线/数字/字母\']')"
+                    :placeholder="$t('下划线/数字/字母')"
                     v-model.trim="fieldInfo['bk_property_id']"
                     :disabled="onlyReadOfType || isEditField"
                     v-validate="'required|fieldId'">
@@ -18,13 +18,13 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["名称"]')}}
+                {{$t('名称')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldName') }">
                 <bk-input type="text" class="cmdb-form-input"
                     name="fieldName"
-                    :placeholder="$t('ModelManagement[\'请输入字段名称\']')"
+                    :placeholder="$t('请输入字段名称')"
                     v-model.trim="fieldInfo['bk_property_name']"
                     :disabled="onlyReadOfType || isReadOnly"
                     v-validate="'required|enumName'">
@@ -34,7 +34,7 @@
         </label>
         <div class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["字段类型"]')}}
+                {{$t('字段类型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
@@ -68,18 +68,18 @@
         </div>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["单位"]')}}
+                {{$t('单位')}}
             </span>
             <div class="cmdb-form-item">
                 <bk-input type="text" class="cmdb-form-input"
                     v-model.trim="fieldInfo['unit']"
                     :disabled="onlyReadOfType || isReadOnly"
-                    :placeholder="$t('ModelManagement[\'请输入单位\']')">
+                    :placeholder="$t('请输入单位')">
                 </bk-input>
             </div>
         </label>
         <div class="form-label">
-            <span class="label-text">{{$t('ModelManagement["用户提示"]')}}</span>
+            <span class="label-text">{{$t('用户提示')}}</span>
             <textarea v-model.trim="fieldInfo['placeholder']" :disabled="onlyReadOfType || isReadOnly"></textarea>
         </div>
         <div class="btn-group">
@@ -87,10 +87,10 @@
                 :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
                 :disabled="onlyReadOfType"
                 @click="saveField">
-                {{$t('Common["确定"]')}}
+                {{$t('确定')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">
-                {{$t('Common["取消"]')}}
+                {{$t('取消')}}
             </bk-button>
         </div>
     </div>
@@ -132,31 +132,31 @@
             return {
                 fieldTypeList: [{
                     id: 'singlechar',
-                    name: this.$t('ModelManagement["短字符"]')
+                    name: this.$t('短字符')
                 }, {
                     id: 'int',
-                    name: this.$t('ModelManagement["数字"]')
+                    name: this.$t('数字')
                 }, {
                     id: 'float',
-                    name: this.$t('ModelManagement["浮点"]')
+                    name: this.$t('浮点')
                 }, {
                     id: 'enum',
-                    name: this.$t('ModelManagement["枚举"]')
+                    name: this.$t('枚举')
                 }, {
                     id: 'date',
-                    name: this.$t('ModelManagement["日期"]')
+                    name: this.$t('日期')
                 }, {
                     id: 'time',
-                    name: this.$t('ModelManagement["时间"]')
+                    name: this.$t('时间')
                 }, {
                     id: 'longchar',
-                    name: this.$t('ModelManagement["长字符"]')
+                    name: this.$t('长字符')
                 }, {
                     id: 'objuser',
-                    name: this.$t('ModelManagement["用户"]')
+                    name: this.$t('用户')
                 }, {
                     id: 'timezone',
-                    name: this.$t('ModelManagement["时区"]')
+                    name: this.$t('时区')
                 }, {
                     id: 'bool',
                     name: 'bool'
