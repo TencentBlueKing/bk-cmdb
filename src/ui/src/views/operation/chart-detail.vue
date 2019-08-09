@@ -119,8 +119,8 @@
                     </div>
                     <div class="content-item">
                         <label class="label-text-x">
-                            <bk-popover placement="right" :content="$t('横轴可视范围展示的坐标数量')">
-                                {{$t('横轴坐标数量')}}
+                            <bk-popover placement="right" :content="$t('该图表可视区横轴坐标数量')">
+                                <span class="text-underline">{{$t('横轴坐标数量')}}</span>
                             </bk-popover>
                         </label>
                         <label class="cmdb-form-item">
@@ -129,7 +129,10 @@
                                     v-validate="'required|number'" name="chartNumber"
                                     v-model="chartData.x_axis_count">
                                 <i class="bk-icon icon-angle-down" @click="calculate('down')"></i>
-                                <i class="bk-icon icon-angle-up" @click="calculate('up')"></i>
+                                <i class="bk-icon icon-angle-up" @click="calculate('up')" v-if="maxNum !== chartData.x_axis_count"></i>
+                                <bk-popover class="tool-tip" placement="right" :content="$t('已经超出可显示的最大数量')" v-if="maxNum <= chartData.x_axis_count">
+                                    <i class="bk-icon icon-angle-up" @click="calculate('up')"></i>
+                                </bk-popover>
                             </div>
                             <span class="tips">{{$t('考虑显示效果，上限为25个，100%宽度建议显示20个，50%宽度10个')}}
                                 <span class="form-error">{{errors.first('chartNumber')}}</span>
@@ -214,7 +217,8 @@
                 chartType: true,
                 showDia: true,
                 hostFilter: ['host', 'module', 'biz', 'set', 'process'],
-                editTitle: ''
+                editTitle: '',
+                maxNum: 0
             }
         },
         computed: {
@@ -247,6 +251,7 @@
             }
         },
         created () {
+            this.maxNum = this.chartData.chart_type === 'pie' ? this.chartData.data.data[0].labels.length : this.chartData.data.data[0].x.length
             this.initTitle()
             this.chartType = this.chartData.report_type === 'custom'
             this.getDemList(this.chartData.bk_obj_id)
@@ -262,8 +267,10 @@
             calculate (flag) {
                 if (flag === 'up') {
                     this.chartData.x_axis_count += 1
-                    if (this.chartData.x_axis_count > 25) {
-                        this.chartData.x_axis_count = 25
+                    this.maxNum = parseInt(this.maxNum) >= 25 ? 25 : this.maxNum
+                    console.log(this.maxNum)
+                    if (this.chartData.x_axis_count > this.maxNum) {
+                        this.chartData.x_axis_count = this.maxNum
                     }
                 } else {
                     this.chartData.x_axis_count -= 1
@@ -373,6 +380,9 @@
                 .label-text-x{
                     width: 150px;
                     margin-right: 20px;
+                    .text-underline {
+                        border-bottom: 1px dashed #63656E;
+                    }
                 }
                 .cmdb-form-radio {
                     width: 114px;
@@ -395,6 +405,12 @@
                         position:relative;
                         width:120px;
                         height:32px;
+                        .tool-tip {
+                            font-size:12px;
+                            position:absolute;
+                            right: -120px;
+                            top: -11px;
+                        }
                         i{
                             font-size:12px;
                             position:absolute;
