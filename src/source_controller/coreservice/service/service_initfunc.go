@@ -196,6 +196,10 @@ func (s *coreService) topographics() {
 	s.addAction(http.MethodPost, "/topographics/update", s.UpdateTopoGraphics, nil)
 }
 
+func (s *coreService) graphql() {
+	s.addAction(http.MethodPost, "/graphql", s.SearchGraphql, nil)
+}
+
 func (s *coreService) initService() {
 	s.initModelClassification()
 	s.initModel()
@@ -213,4 +217,5 @@ func (s *coreService) initService() {
 	s.label()
 	s.privilege()
 	s.topographics()
+	s.graphql()
 }
