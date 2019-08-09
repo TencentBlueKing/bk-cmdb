@@ -23,7 +23,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'cloudDiscover',
-            i18n: 'Nav["云资源发现"]',
+            i18n: '云资源发现',
             path: path,
             order: 4,
             parent: NAV_BUSINESS_RESOURCE,
@@ -36,6 +36,6 @@ export default {
             }
         },
         requireBusiness: true,
-        i18nTitle: 'Cloud["云资源发现"]'
+        i18nTitle: '云资源发现'
     })
 }

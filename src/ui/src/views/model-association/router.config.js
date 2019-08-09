@@ -21,7 +21,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'modelAssociation',
-            i18n: 'Nav["关联类型"]',
+            i18n: '关联类型',
             path: path,
             order: 4,
             parent: NAV_MODEL_MANAGEMENT
@@ -32,6 +32,6 @@ export default {
                 this.authScope = 'global'
             }
         },
-        i18nTitle: 'Nav["关联类型"]'
+        i18nTitle: '关联类型'
     })
 }

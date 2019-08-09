@@ -4,7 +4,7 @@
             <div class="empty-content">
                 <i class="bk-icon icon-empty">
                 </i>
-                <span>{{$t('HostDetails["暂无关联关系"]')}}</span>
+                <span>{{$t('暂无关联关系')}}</span>
             </div>
         </div>
         <template v-else>

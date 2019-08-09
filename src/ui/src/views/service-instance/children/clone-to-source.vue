@@ -1,11 +1,11 @@
 <template>
     <div class="source-layout">
-        <p class="source-tips">{{$t('BusinessTopology["源实例主机提示"]')}}</p>
+        <p class="source-tips">{{$t('源实例主机提示')}}</p>
         <div class="table-options">
             <bk-button class="options-button"
                 :disabled="!checked.length"
                 @click="handleBatchEdit">
-                {{$t('Common["批量编辑"]')}}
+                {{$t('批量编辑')}}
             </bk-button>
         </div>
         <bk-table class="source-table"
@@ -17,16 +17,16 @@
                 :prop="column.id"
                 :label="column.name">
             </bk-table-column>
-            <bk-table-column :label="$t('Common[\'操作\']')" fixed="right">
+            <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
                     <button class="text-primary mr10" v-if="isRepeat(row)"
                         @click="handleEditProcess(row)">
                         <i class="bk-icon icon-exclamation-circle"></i>
-                        {{$t('Common["请编辑"]')}}
+                        {{$t('请编辑')}}
                     </button>
                     <button class="text-primary mr10" v-else
                         @click="handleEditProcess(row)">
-                        {{$t('Common["编辑"]')}}
+                        {{$t('编辑')}}
                     </button>
                 </template>
             </bk-table-column>
@@ -40,10 +40,10 @@
                 <bk-button class="options-button" theme="primary"
                     :disabled="!!repeatedProcesses.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
                     @click="doClone">
-                    {{$t('Common["确定"]')}}
+                    {{$t('确定')}}
                 </bk-button>
             </span>
-            <bk-button class="options-button" @click="backToModule">{{$t('Common["取消"]')}}</bk-button>
+            <bk-button class="options-button" @click="backToModule">{{$t('取消')}}</bk-button>
         </div>
         <bk-sideslider
             :is-show.sync="processForm.show"
@@ -190,7 +190,7 @@
             },
             handleBatchEdit () {
                 this.processForm.type = 'batch'
-                this.processForm.title = this.$t('Common["批量编辑"]')
+                this.processForm.title = this.$t('批量编辑')
                 this.processForm.instance = {}
                 this.processForm.show = true
                 this.$nextTick(() => {
@@ -206,7 +206,7 @@
             },
             handleEditProcess (item) {
                 this.processForm.type = 'single'
-                this.processForm.title = `${this.$t('BusinessTopology["编辑进程"]')}${item.bk_process_name}`
+                this.processForm.title = `${this.$t('编辑进程')}${item.bk_process_name}`
                 this.processForm.instance = this.cloneProcesses.find(target => target.bk_process_id === item.bk_process_id)
                 this.processForm.show = true
                 this.$nextTick(() => {
@@ -239,8 +239,8 @@
                 if (Object.keys(changedValues).length) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["确认退出"]'),
-                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.handleCloseProcessForm()
@@ -267,7 +267,7 @@
                             ]
                         })
                     })
-                    this.$success(this.$t('Common[\'克隆成功\']'))
+                    this.$success(this.$t('克隆成功'))
                     this.backToModule()
                 } catch (e) {
                     console.error(e)

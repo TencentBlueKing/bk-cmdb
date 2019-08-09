@@ -1,7 +1,7 @@
 <template>
     <div class="search-layout">
         <div class="search-box" v-click-outside="handleClickOutside">
-            <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('Index[\'开始查询\']')"
+            <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('开始查询')"
                 v-model.trim="keyword"
                 @focus="focus = true">
             <label class="bk-icon icon-search" for="indexSearch"></label>
@@ -20,8 +20,8 @@
                             <v-search-item :list="resultTab.list[panel]" :model="panel"></v-search-item>
                         </bk-tab-panel>
                     </bk-tab>
-                    <div class="result-empty" v-else>{{$t('Common["暂时没有数据"]')}}</div>
-                    <div class="result-more" v-if="hasMore()" @click="showMore">{{$t('Index["查看更多结果"]')}}</div>
+                    <div class="result-empty" v-else>{{$t('暂时没有数据')}}</div>
+                    <div class="result-more" v-if="hasMore()" @click="showMore">{{$t('查看更多结果')}}</div>
                 </div>
             </div>
         </div>

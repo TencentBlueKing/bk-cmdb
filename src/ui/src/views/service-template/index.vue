@@ -3,7 +3,7 @@
         <feature-tips
             :feature-name="'serviceTemplate'"
             :show-tips="showFeatureTips"
-            :desc="$t('ServiceManagement[\'功能提示\']')"
+            :desc="$t('功能提示')"
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="template-filter clearfix">
@@ -16,13 +16,13 @@
                     theme="primary"
                     :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
                     @click="operationTemplate()">
-                    {{$t("Common['新建']")}}
+                    {{$t('新建')}}
                 </bk-button>
             </span>
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
-                    :placeholder="$t('ServiceManagement[\'所有一级分类\']')"
+                    :placeholder="$t('所有一级分类')"
                     :auto-select="false"
                     :allow-clear="true"
                     :list="mainList"
@@ -31,7 +31,7 @@
                 </cmdb-selector>
                 <cmdb-selector
                     class="fl"
-                    :placeholder="$t('ServiceManagement[\'所有二级分类\']')"
+                    :placeholder="$t('所有二级分类')"
                     :auto-select="false"
                     :allow-clear="true"
                     :list="secondaryList"
@@ -41,7 +41,7 @@
                 </cmdb-selector>
                 <bk-input type="text"
                     class="filter-search fl"
-                    :placeholder="$t('ServiceManagement[\'搜索\']')"
+                    :placeholder="$t('搜索')"
                     :right-icon="'bk-icon icon-search'"
                     v-model.trim="filter.templateName"
                     @enter="searchByTemplateName">
@@ -55,17 +55,17 @@
             :max-height="$APP.height - 210"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="name" :label="$t('ServiceManagement[\'模板名称\']')"></bk-table-column>
-            <bk-table-column prop="service_category" :label="$t('ServiceManagement[\'服务分类\']')"></bk-table-column>
-            <bk-table-column prop="process_template_count" :label="$t('ServiceManagement[\'进程数量\']')"></bk-table-column>
-            <bk-table-column prop="module_count" :label="$t('ServiceManagement[\'应用模块数\']')"></bk-table-column>
-            <bk-table-column prop="modifier" :label="$t('ServiceManagement[\'修改人\']')"></bk-table-column>
-            <bk-table-column prop="last_time" :label="$t('ServiceManagement[\'修改时间\']')">
+            <bk-table-column prop="name" :label="$t('模板名称')"></bk-table-column>
+            <bk-table-column prop="service_category" :label="$t('服务分类')"></bk-table-column>
+            <bk-table-column prop="process_template_count" :label="$t('进程数量')"></bk-table-column>
+            <bk-table-column prop="module_count" :label="$t('应用模块数')"></bk-table-column>
+            <bk-table-column prop="modifier" :label="$t('修改人')"></bk-table-column>
+            <bk-table-column prop="last_time" :label="$t('修改时间')">
                 <template slot-scope="{ row }">
                     {{$tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm')}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="operation" :label="$t('Common[\'操作\']')" fixed="right">
+            <bk-table-column prop="operation" :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
                     <span
                         v-cursor="{
@@ -76,14 +76,14 @@
                             :disabled="!$isAuthorized($OPERATION.U_SERVICE_TEMPLATE)"
                             :text="true"
                             @click.stop="operationTemplate(row['id'])">
-                            {{$t('Common["编辑"]')}}
+                            {{$t('编辑')}}
                         </bk-button>
                     </span>
                     <span class="text-primary"
                         style="color: #c4c6cc !important; cursor: not-allowed;"
                         v-if="row['module_count'] && $isAuthorized($OPERATION.D_SERVICE_TEMPLATE)"
-                        v-bk-tooltips.top="$t('ServiceManagement[\'不可删除\']')">
-                        {{$t('Common["删除"]')}}
+                        v-bk-tooltips.top="$t('不可删除')">
+                        {{$t('删除')}}
                     </span>
                     <span v-else
                         v-cursor="{
@@ -94,7 +94,7 @@
                             :disabled="!$isAuthorized($OPERATION.D_SERVICE_TEMPLATE)"
                             :text="true"
                             @click.stop="deleteTemplate(row)">
-                            {{$t('Common["删除"]')}}
+                            {{$t('删除')}}
                         </bk-button>
                     </span>
                 </template>
@@ -154,7 +154,7 @@
                 }
             },
             emptyText () {
-                return this.filter.mainClassification ? this.$t("ServiceManagement['没有二级分类']") : this.$t("ServiceManagement['请选择一级分类']")
+                return this.filter.mainClassification ? this.$t('没有二级分类') : this.$t('请选择一级分类')
             }
         },
         async created () {
@@ -234,8 +234,8 @@
             },
             deleteTemplate (template) {
                 this.$bkInfo({
-                    title: this.$t("ServiceManagement['确认删除模版']"),
-                    subTitle: this.$tc("ServiceManagement['即将删除服务模版']", name, { name: template.name }),
+                    title: this.$t('确认删除模版'),
+                    subTitle: this.$tc('即将删除服务模版', name, { name: template.name }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({
@@ -248,7 +248,7 @@
                                 requestId: 'delete_proc_service_template'
                             }
                         }).then(() => {
-                            this.$success(this.$t('Common["删除成功"]'))
+                            this.$success(this.$t('删除成功'))
                             this.getTableData()
                         })
                     }

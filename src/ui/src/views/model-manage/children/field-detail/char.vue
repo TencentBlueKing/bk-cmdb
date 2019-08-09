@@ -1,6 +1,6 @@
 <template>
     <div class="form-label">
-        <span class="label-text">{{$t('ModelManagement["正则校验"]')}}</span>
+        <span class="label-text">{{$t('正则校验')}}</span>
         <textarea
             v-model="localValue"
             :disabled="isReadOnly"
