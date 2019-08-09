@@ -15,6 +15,7 @@ package logics
 import (
 	"context"
 	"github.com/robfig/cron"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -102,9 +103,19 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	opt := mapstr.MapStr{}
 
-	if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
-		blog.Error("statistic chart data fail, err: %v, rid: %v", err)
-		return
+	// 检测cc_chartData集合是否存在
+	for {
+		resp, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
+		if err != nil {
+			blog.Error("statistic chart data fail, err: %v, rid: %v", err)
+			return
+		}
+		if resp.Data {
+			blog.V(3).Info("collection cc_ChartData inited")
+			break
+		}
+		time.Sleep(30 * time.Second)
+		blog.V(3).Info("waiting collection cc_ChartData init")
 	}
 
 	c := cron.New()

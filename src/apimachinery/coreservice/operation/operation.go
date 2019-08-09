@@ -18,7 +18,7 @@ type OperationClientInterface interface {
 	SearchTimerChartData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	UpdateChartPosition(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	SearchChartCommon(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartCommon, err error)
-	TimerFreshData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
+	TimerFreshData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.BoolResponse, err error)
 }
 
 func NewOperationClientInterface(client rest.ClientInterface) OperationClientInterface {
