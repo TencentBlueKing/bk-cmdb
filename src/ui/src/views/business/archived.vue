@@ -1,8 +1,8 @@
 <template>
     <div class="archived-layout">
         <div class="archived-options clearfix">
-            <label class="fl">{{$t('Common["归档历史"]')}}</label>
-            <bk-button class="fr" theme="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
+            <label class="fl">{{$t('归档历史')}}</label>
+            <bk-button class="fr" theme="primary" @click="back">{{$t('返回')}}</bk-button>
         </div>
         <bk-table class="archived-table"
             :pagination="pagination"
@@ -15,7 +15,7 @@
                 :prop="column.id"
                 :label="column.name">
             </bk-table-column>
-            <bk-table-column :label="$t('Common[\'操作\']')" fixed="right">
+            <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
                     <span class="inline-block-middle"
                         v-cursor="{
@@ -25,7 +25,7 @@
                         <bk-button theme="primary" size="small"
                             :disabled="!$isAuthorized(archiveAuth)"
                             @click="handleRecovery(row)">
-                            {{$t('Inst["恢复业务"]')}}
+                            {{$t('恢复业务')}}
                         </bk-button>
                     </span>
                 </template>
@@ -96,7 +96,7 @@
                     }
                 })).concat([{
                     id: 'last_time',
-                    name: this.$t('Common["更新时间"]')
+                    name: this.$t('更新时间')
                 }])
             },
             getTableData () {
@@ -129,8 +129,8 @@
             },
             handleRecovery (biz) {
                 this.$bkInfo({
-                    title: this.$t('Inst["是否确认恢复业务？"]'),
-                    subTitle: this.$t('Inst["恢复业务提示"]', { bizName: biz['bk_biz_name'] }),
+                    title: this.$t('是否确认恢复业务？'),
+                    subTitle: this.$t('恢复业务提示', { bizName: biz['bk_biz_name'] }),
                     confirmFn: () => {
                         this.recoveryBiz(biz)
                     }
@@ -146,7 +146,7 @@
                     }
                 }).then(() => {
                     this.$http.cancel('post_searchBusiness_$ne_disabled')
-                    this.$success(this.$t('Inst["恢复业务成功"]'))
+                    this.$success(this.$t('恢复业务成功'))
                     this.handlePageChange(1)
                 })
             },

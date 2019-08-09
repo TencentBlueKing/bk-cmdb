@@ -76,7 +76,7 @@
                 :prop="column.id"
                 :label="column.name">
             </bk-table-column>
-            <bk-table-column :label="$t('Common[\'操作\']')">
+            <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <span
                         v-cursor="{
@@ -87,7 +87,7 @@
                             :text="true"
                             :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                             @click="handleEditProcess(row)">
-                            {{$t('Common["编辑"]')}}
+                            {{$t('编辑')}}
                         </bk-button>
                     </span>
                     <span
@@ -99,17 +99,17 @@
                             :text="true"
                             :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                             @click="handleDeleteProcess(row)">
-                            {{$t('Common["删除"]')}}
+                            {{$t('删除')}}
                         </bk-button>
                     </span>
                 </template>
             </bk-table-column>
             <template slot="empty">
                 <template v-if="withTemplate">
-                    <i18n path="BusinessTopology['暂无模板进程']">
+                    <i18n path="暂无模板进程">
                         <button class="add-process-button text-primary" place="link"
                             @click.stop="handleAddProcessToTemplate">
-                            {{$t('BusinessTopology["模板添加"]')}}
+                            {{$t('模板添加')}}
                         </button>
                     </i18n>
                 </template>
@@ -122,24 +122,10 @@
                         :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
                         @click.stop="handleAddProcess">
                         <i class="bk-icon icon-plus"></i>
-                        <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+                        <span>{{$t('添加进程')}}</span>
                     </button>
                 </span>
             </template>
-            <!-- <div class="add-process-options" v-if="!withTemplate && list.length" slot="append">
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
-                        auth: [$OPERATION.U_SERVICE_INSTANCE]
-                    }">
-                    <button class="add-process-button text-primary"
-                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
-                        @click="handleAddProcess">
-                        <i class="bk-icon icon-plus"></i>
-                        <span>{{$t('BusinessTopology["添加进程"]')}}</span>
-                    </button>
-                </span>
-            </div> -->
         </bk-table>
         <bk-dialog class="bk-dialog-no-padding"
             v-model="editLabel.show"
@@ -148,7 +134,7 @@
             @cancel="handleCloseEditLable"
             @after-leave="handleSetEditBox">
             <div slot="header">
-                {{$t("BusinessTopology['编辑标签']")}}
+                {{$t('编辑标签')}}
             </div>
             <template v-if="editLabel.visiable">
                 <cmdb-edit-label
@@ -190,7 +176,7 @@
                 header: [],
                 list: [],
                 tooltips: {
-                    content: this.$t('BusinessTopology["模板未添加进程"]'),
+                    content: this.$t('模板未添加进程'),
                     placement: 'right'
                 }
             }
@@ -208,17 +194,17 @@
             },
             instanceMenu () {
                 const menu = [{
-                    name: this.$t('Common["删除"]'),
+                    name: this.$t('删除'),
                     handler: this.handleDeleteInstance,
                     auth: 'D_SERVICE_INSTANCE'
                 }]
                 if (!this.withTemplate) {
                     menu.unshift({
-                        name: this.$t('BusinessTopology["添加进程"]'),
+                        name: this.$t('添加进程'),
                         handler: this.handleAddProcess,
                         auth: 'U_SERVICE_INSTANCE'
                     }, {
-                        name: this.$t('BusinessTopology["克隆"]'),
+                        name: this.$t('克隆'),
                         handler: this.handleCloneInstance,
                         auth: 'C_SERVICE_INSTANCE'
                     })
@@ -340,7 +326,7 @@
                             })
                         }
                     })
-                    this.$success(this.$t('Common[\'删除成功\']'))
+                    this.$success(this.$t('删除成功'))
                     this.getServiceProcessList()
                 } catch (e) {
                     console.error(e)
@@ -368,8 +354,8 @@
             },
             handleDeleteInstance () {
                 this.$bkInfo({
-                    title: this.$t('BusinessTopology["确认删除实例"]'),
-                    subTitle: this.$t('BusinessTopology["即将删除实例"]', { name: this.instance.name }),
+                    title: this.$t('确认删除实例'),
+                    subTitle: this.$t('即将删除实例', { name: this.instance.name }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         try {
@@ -385,7 +371,7 @@
                             this.currentNode.parents.forEach(node => {
                                 node.data.service_instance_count = node.data.service_instance_count - 1
                             })
-                            this.$success(this.$t('Common[\'删除成功\']'))
+                            this.$success(this.$t('删除成功'))
                             this.$emit('delete-instance', this.instance.id)
                         } catch (e) {
                             console.error(e)
@@ -465,7 +451,7 @@
                         })
                     }
                     if (status && status.bk_error_msg === 'success') {
-                        this.$success(this.$t('Common["保存成功"]'))
+                        this.$success(this.$t('保存成功'))
                         this.$parent.filter = ''
                         this.$parent.getServiceInstances()
                         this.$parent.getHistoryLabel()

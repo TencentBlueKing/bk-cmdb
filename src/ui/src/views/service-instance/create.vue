@@ -1,11 +1,11 @@
 <template>
     <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading() }">
-        <label class="create-label fl">{{$t('BusinessTopology["添加主机"]')}}</label>
+        <label class="create-label fl">{{$t('添加主机')}}</label>
         <div class="create-hosts">
             <bk-button class="select-host-button" theme="default"
                 @click="hostSelectorVisible = true">
                 <i class="bk-icon icon-plus"></i>
-                {{$t('BusinessTopology["添加主机"]')}}
+                {{$t('添加主机')}}
             </bk-button>
             <div class="create-tables">
                 <service-instance-table class="service-instance-table"
@@ -31,10 +31,10 @@
                         <bk-button theme="primary"
                             :disabled="!hosts.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
                             @click="handleConfirm">
-                            {{$t('Common["确定"]')}}
+                            {{$t('确定')}}
                         </bk-button>
                     </span>
-                    <bk-button @click="handleBackToModule">{{$t('Common["取消"]')}}</bk-button>
+                    <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </div>
@@ -101,7 +101,7 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', `${this.$t('BusinessTopology["添加服务实例"]')}【${this.$route.query.title}】`)
+            this.$store.commit('setHeaderTitle', `${this.$t('添加服务实例')}【${this.$route.query.title}】`)
             this.getModuleInstance()
         },
         methods: {
@@ -191,7 +191,7 @@
                             })
                         })
                     }
-                    this.$success(this.$t('Common[\'添加成功\']'))
+                    this.$success(this.$t('添加成功'))
                     this.handleBackToModule()
                 } catch (e) {
                     console.error(e)

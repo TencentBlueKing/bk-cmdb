@@ -10,11 +10,11 @@
         <div class="tab-layout">
             <bk-tab :active="active" type="unborder-card">
                 <bk-tab-panel name="serviceInstances"
-                    :label="$t('BusinessTopology[\'服务实例\']')"
+                    :label="$t('服务实例')"
                     :visible="isModuleNode">
                     <cmdb-service-instances></cmdb-service-instances>
                 </bk-tab-panel>
-                <bk-tab-panel name="nodeInfo" :label="$t('BusinessTopology[\'节点信息\']')">
+                <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
                     <cmdb-service-node-info></cmdb-service-node-info>
                 </bk-tab-panel>
             </bk-tab>

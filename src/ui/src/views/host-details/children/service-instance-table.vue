@@ -99,7 +99,7 @@
                 header: [],
                 list: [],
                 pathToolTips: {
-                    content: this.$t('BusinessTopology["跳转服务拓扑"]'),
+                    content: this.$t('跳转服务拓扑'),
                     placement: 'top'
                 }
             }
@@ -114,7 +114,7 @@
             },
             instanceMenu () {
                 const menu = [{
-                    name: this.$t('Common["删除"]'),
+                    name: this.$t('删除'),
                     handler: this.handleDeleteInstance,
                     auth: 'D_SERVICE_INSTANCE'
                 }]
@@ -224,8 +224,8 @@
             },
             handleDeleteInstance () {
                 this.$bkInfo({
-                    title: this.$t('BusinessTopology["确认删除实例"]'),
-                    subTitle: this.$t('BusinessTopology["即将删除实例"]', { name: this.instance.name }),
+                    title: this.$t('确认删除实例'),
+                    subTitle: this.$t('即将删除实例', { name: this.instance.name }),
                     confirmFn: async () => {
                         try {
                             await this.$store.dispatch('serviceInstance/deleteServiceInstance', {

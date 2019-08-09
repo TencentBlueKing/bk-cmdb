@@ -1,6 +1,6 @@
 <template>
     <div class="node-create-layout">
-        <h2 class="node-create-title">{{$t('BusinessTopology["新建节点"]')}}</h2>
+        <h2 class="node-create-title">{{$t('新建节点')}}</h2>
         <div class="node-create-path">{{topoPath}}</div>
         <div class="node-create-form">
             <div class="form-group"
@@ -25,9 +25,9 @@
             <bk-button theme="primary"
                 :disabled="$loading() || errors.any()"
                 @click="handleSave">
-                {{$t('Common["保存"]')}}
+                {{$t('保存')}}
             </bk-button>
-            <bk-button theme="default" @click="handleCancel">{{$t('Common["取消"]')}}</bk-button>
+            <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>
 </template>

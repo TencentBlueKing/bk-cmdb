@@ -10,7 +10,7 @@
                     :class="{
                         required: !isViewMode
                     }">
-                    {{$t('ModelManagement["源模型"]')}}
+                    {{$t('源模型')}}
                 </label>
                 <bk-input type="text"class="cmdb-form-input"
                     disabled
@@ -22,7 +22,7 @@
                     :class="{
                         required: !isViewMode
                     }">
-                    {{$t('ModelManagement["目标模型"]')}}
+                    {{$t('目标模型')}}
                 </label>
                 <bk-input type="text"class="cmdb-form-input"
                     disabled
@@ -31,7 +31,7 @@
             </div>
             <div class="form-group" v-if="!isViewMode">
                 <label class="form-label required">
-                    {{$t('ModelManagement["关联类型"]')}}
+                    {{$t('关联类型')}}
                 </label>
                 <ul class="association-list clearfix">
                     <li class="association-item fl"
@@ -50,7 +50,7 @@
                     :class="{
                         required: !isViewMode
                     }">
-                    {{$t('ModelManagement["关联描述"]')}}
+                    {{$t('关联描述')}}
                 </label>
                 <bk-input type="text"class="cmdb-form-input"
                     :disabled="isViewMode"
@@ -65,7 +65,7 @@
                     :class="{
                         required: !isViewMode
                     }">
-                    {{$t('ModelManagement["源-目标约束"]')}}
+                    {{$t('源-目标约束')}}
                 </label>
                 <cmdb-selector
                     name="constraint"
@@ -82,20 +82,20 @@
                     theme="primary"
                     :loading="$loading()"
                     @click="handleSave">
-                    {{$t('Common["确定"]')}}
+                    {{$t('确定')}}
                 </bk-button>
                 <bk-button class="form-button"
                     v-if="isViewMode"
                     theme="danger"
                     :loading="$loading()"
                     @click="handleDelete">
-                    {{$t('ModelManagement["删除关联"]')}}
+                    {{$t('删除关联')}}
                 </bk-button>
                 <bk-button class="form-button"
                     v-else
                     theme="default"
                     @click="handleCancel">
-                    {{$t('Common["取消"]')}}
+                    {{$t('取消')}}
                 </bk-button>
             </div>
         </div>
@@ -203,7 +203,7 @@
                 this.info.source = edge.from
                 this.info.target = edge.to
                 this.info.association = this.localAssociationList[0] || {}
-                this.title = this.$t('ModelManagement["新建关联"]')
+                this.title = this.$t('新建关联')
             },
             async createAssociation () {
                 try {
@@ -254,7 +254,7 @@
             },
             handleDelete () {
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确定删除关联关系?"]'),
+                    title: this.$t('确定删除关联关系?'),
                     confirmFn: async () => {
                         try {
                             const edge = this.association.edge

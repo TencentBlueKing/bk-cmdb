@@ -10,33 +10,33 @@
                     <bk-button theme="primary" class="options-button"
                         :disabled="!$isAuthorized(updateAuth)"
                         @click="showCreate = true">
-                        {{$t('HostDetails["新增关联"]')}}
+                        {{$t('新增关联')}}
                     </bk-button>
                 </span>
                 <cmdb-form-bool v-if="hasAssociation"
                     :size="16" class="options-checkbox"
                     @change="handleExpandAll">
-                    <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
+                    <span class="checkbox-label">{{$t('全部展开')}}</span>
                 </cmdb-form-bool>
-                <bk-button theme="default" class="options-button" v-show="false">{{$t('HostDetails["批量取消"]')}}</bk-button>
+                <bk-button theme="default" class="options-button" v-show="false">{{$t('批量取消')}}</bk-button>
             </div>
             <div class="fr">
                 <bk-button class="options-button options-button-view"
                     :theme="activeView === viewName.list ? 'primary' : 'default'"
                     @click="toggleView(viewName.list)">
-                    {{$t('HostDetails["列表"]')}}
+                    {{$t('列表')}}
                 </bk-button>
                 <bk-button class="options-button options-button-view"
                     :theme="activeView === viewName.graphics ? 'primary' : 'default'"
                     @click="toggleView(viewName.graphics)">
-                    {{$t('HostDetails["拓扑"]')}}
+                    {{$t('拓扑')}}
                 </bk-button>
             </div>
         </div>
         <div class="association-view">
             <component :is="activeView"></component>
         </div>
-        <bk-sideslider :is-show.sync="showCreate" :width="800" :title="$t('HostDetails[\'新增关联\']')">
+        <bk-sideslider :is-show.sync="showCreate" :width="800" :title="$t('新增关联')">
             <cmdb-host-association-create slot="content" v-if="showCreate"></cmdb-host-association-create>
         </bk-sideslider>
     </div>
