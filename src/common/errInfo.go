@@ -197,6 +197,9 @@ const (
 	CCErrConstructDBFilterFailed = 1199071
 	CCErrGetNoAuthSkipUrlFailed  = 1199072
 
+	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
+	CCErrCommValExceedMaxFailed = 1199073
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
