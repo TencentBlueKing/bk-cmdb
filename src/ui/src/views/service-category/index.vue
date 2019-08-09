@@ -15,8 +15,7 @@
                         <category-input
                             ref="editInput"
                             :input-ref="'categoryInput'"
-                            :set-style="{ border: 'none', outline: 'none', padding: 0, 'background-color': 'transparent !important' }"
-                            :placeholder="$t('请输入一级分类')"
+                            :placeholder="$t('ServiceCategory[\'请输入一级分类\']')"
                             name="categoryName"
                             v-validate="'required|namedCharacter'"
                             v-model="mainCategoryName"
@@ -155,8 +154,7 @@
                         <category-input
                             ref="addCategoryInput"
                             :input-ref="'categoryInput'"
-                            :set-style="{ border: 'none', outline: 'none', padding: 0, 'background-color': 'transparent !important' }"
-                            :placeholder="$t('请输入一级分类')"
+                            :placeholder="$t('ServiceCategory[\'请输入一级分类\']')"
                             name="categoryName"
                             v-validate="'required|namedCharacter'"
                             v-model="categoryName"
@@ -450,16 +448,15 @@
             .main-edit {
                 display: flex;
                 align-items: center;
-                input {
-                    width: 240px;
-                    height: 42px;
-                    line-height: 42px;
+                /deep/ .cagetory-input .bk-form-input{
                     color: #63656e;
-                    background-color: transparent;
+                    background-color: transparent !important;
                     border: none;
-                    padding-left: 10px;
                     outline: none;
                     font-weight: normal;
+                    &:focus {
+                        background-color: transparent !important;
+                    }
                 }
             }
             .category-name {
