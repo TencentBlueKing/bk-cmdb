@@ -209,9 +209,18 @@ func (s *coreService) SearchChartCommon(params core.ContextParams, pathParams, q
 }
 
 func (s *coreService) TimerFreshData(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	exist, err := s.db.HasTable(common.BKTableNameChartData)
+	if err != nil {
+		blog.Errorf("TimerFreshData, update timer chart data fail, err: %v, rid: %v", err, params.ReqID)
+		return false, nil
+	}
+	if !exist {
+		return false, nil
+	}
+
 	s.core.StatisticOperation().TimerFreshData(params)
 
-	return nil, nil
+	return true, nil
 }
 
 func (s *coreService) SearchCloudMapping(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
