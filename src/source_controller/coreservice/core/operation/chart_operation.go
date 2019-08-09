@@ -39,21 +39,26 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 		return nil, nil
 	}
 
+	// 两个for循环是为了确定图表位置
 	chartsInfo := &metadata.ChartClassification{}
-
-	for _, chart := range chartConfig {
-		for _, id := range chartPosition[0].Position.Host {
+	for _, id := range chartPosition[0].Position.Host {
+		for _, chart := range chartConfig {
 			if chart.ConfigID == id {
 				chartsInfo.Host = append(chartsInfo.Host, chart)
+				break
 			}
 		}
-
-		for _, id := range chartPosition[0].Position.Inst {
+	}
+	for _, id := range chartPosition[0].Position.Inst {
+		for _, chart := range chartConfig {
 			if chart.ConfigID == id {
 				chartsInfo.Inst = append(chartsInfo.Inst, chart)
+				break
 			}
 		}
+	}
 
+	for _, chart := range chartConfig {
 		if chart.ReportType == common.BizModuleHostChart {
 			chartsInfo.Nav = append(chartsInfo.Nav, chart)
 		}
