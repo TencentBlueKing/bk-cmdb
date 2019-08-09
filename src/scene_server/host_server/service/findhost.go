@@ -47,33 +47,68 @@ func (s *Service) FindModuleHost(req *restful.Request, resp *restful.Response) {
 	})
 }
 
-func (s *Service) ListHostByTopoNode(req *restful.Request, resp *restful.Response) {
+// ListHosts list host under business specified by path parameter
+func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 	header := req.Request.Header
 	ctx := util.NewContextFromHTTPHeader(header)
 	rid := util.ExtractRequestIDFromContext(ctx)
 	srvData := s.newSrvComm(header)
 	defErr := srvData.ccErr
 
-	parameter := &meta.ListHostByTopoNodeParameter{}
+	parameter := &meta.ListHostsParameter{}
 	if err := json.NewDecoder(req.Request.Body).Decode(parameter); err != nil {
 		blog.Errorf("ListHostByTopoNode failed, decode body failed, err: %#v, rid:%s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	bizID, err := meta.BizIDFromMetadata(parameter.Metadata)
+	bizID, err := util.GetInt64ByInterface(req.PathParameter("appid"))
 	if err != nil {
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "bk_app_id")})
+		return
+	}
+	if bizID == 0 {
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "bk_app_id")})
+		return
+	}
+
+	option := meta.ListHosts{
+		BizID:              bizID,
+		SetIDs:             parameter.SetIDs,
+		ModuleIDs:          parameter.ModuleIDs,
+		HostPropertyFilter: parameter.HostPropertyFilter,
+		Page:               parameter.Page,
+	}
+	host, err := s.CoreAPI.CoreService().Host().ListHosts(ctx, header, option)
+	if err != nil {
+		blog.Errorf("find host failed, err: %s, input:%#v, rid:%s", err.Error(), parameter, rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
+		return
+	}
+
+	result := meta.NewSuccessResponse(host)
+	_ = resp.WriteEntity(result)
+}
+
+// ListHostsWithNoBiz list host for no biz case merely
+func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Response) {
+	header := req.Request.Header
+	ctx := util.NewContextFromHTTPHeader(header)
+	rid := util.ExtractRequestIDFromContext(ctx)
+	srvData := s.newSrvComm(header)
+	defErr := srvData.ccErr
+
+	parameter := &meta.ListHostsWithNoBizParameter{}
+	if err := json.NewDecoder(req.Request.Body).Decode(parameter); err != nil {
+		blog.Errorf("ListHostByTopoNode failed, decode body failed, err: %#v, rid:%s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	s.CoreAPI.CoreService()
-	option := meta.ListHostByTopoNodeOption{
-		BizID:     bizID,
-		SetIDs:    parameter.SetIDs,
-		ModuleIDs: parameter.ModuleIDs,
-		Page:      parameter.Page,
+	option := meta.ListHosts{
+		HostPropertyFilter: parameter.HostPropertyFilter,
+		Page:               parameter.Page,
 	}
-	host, err := s.CoreAPI.CoreService().Host().ListHostByTopoNode(ctx, header, option)
+	host, err := s.CoreAPI.CoreService().Host().ListHosts(ctx, header, option)
 	if err != nil {
 		blog.Errorf("find host failed, err: %s, input:%#v, rid:%s", err.Error(), parameter, rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})

@@ -23,7 +23,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'eventpush',
-            i18n: 'Nav["事件推送"]',
+            i18n: '事件推送',
             path: path,
             order: 5,
             parent: NAV_MODEL_MANAGEMENT,
@@ -36,6 +36,6 @@ export default {
                 this.authScope = 'global'
             }
         },
-        i18nTitle: 'Nav["事件推送"]'
+        i18nTitle: '事件推送'
     })
 }

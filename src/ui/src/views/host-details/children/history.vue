@@ -21,9 +21,9 @@
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="handleRowClick">
-            <bk-table-column prop="op_desc" :label="$t('HostResourcePool[\'变更内容\']')" sortable="custom"></bk-table-column>
-            <bk-table-column prop="operator" :label="$t('HostResourcePool[\'操作账号\']')" sortable="custom"></bk-table-column>
-            <bk-table-column prop="op_time" :label="$t('HostResourcePool[\'操作时间\']')" sortable="custom">
+            <bk-table-column prop="op_desc" :label="$t('变更内容')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="operator" :label="$t('操作账号')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="op_time" :label="$t('操作时间')" sortable="custom">
                 <template slot-scope="{ row }">
                     {{$tools.formatTime(row['op_time'])}}
                 </template>
@@ -32,7 +32,7 @@
         <bk-sideslider
             :is-show.sync="details.show"
             :width="800"
-            :title="$t('OperationAudit[\'操作详情\']')">
+            :title="$t('操作详情')">
             <cmdb-host-history-details :details="details.data" slot="content" v-if="details.show"></cmdb-host-history-details>
         </bk-sideslider>
     </div>

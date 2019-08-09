@@ -8,7 +8,7 @@
                     class="search-keywords"
                     type="text"
                     maxlength="32"
-                    :placeholder="$t('Common[\'请输入搜索内容\']')"
+                    :placeholder="$t('请输入搜索内容')"
                     v-model.trim="query.queryString"
                     @input="handleInputSearch"
                     @keypress.enter="handleSearch">
@@ -19,7 +19,7 @@
                 <span class="classify-item"
                     :class="['classify-item', { 'classify-active': -1 === currentClassify }]"
                     @click="toggleClassify(-1)">
-                    {{$t("Index['全部结果']")}}（{{allSearchCount}}）
+                    {{$t('全部结果')}}（{{allSearchCount}}）
                 </span>
                 <span class="classify-item"
                     :class="['classify-item', { 'classify-active': index === currentClassify }]"
@@ -44,7 +44,7 @@
                                 v-html="`${modelClassifyName[source['bk_obj_id']]} - ${source.bk_inst_name.toString()}`"
                                 @click="jumpPage(source)"></div>
                             <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]" @click="jumpPage(source)">
-                                <span class="desc-item" v-html="`${$t('Index[\'模型ID\']')}${source['bk_obj_id']}`"> </span>
+                                <span class="desc-item" v-html="`${$t('模型ID')}${source['bk_obj_id']}`"> </span>
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap[source['bk_obj_id']]"
                                     :key="childIndex"
@@ -58,7 +58,7 @@
                                 v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"
                                 @click="jumpPage(source)"></div>
                             <div class="results-desc" v-if="propertyMap['host']" @click="jumpPage(source)">
-                                <span class="desc-item" v-html="`${$t('Index[\'主机ID\']')}${source['bk_host_id']}`"> </span>
+                                <span class="desc-item" v-html="`${$t('主机ID')}${source['bk_host_id']}`"> </span>
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap['host']"
                                     :key="childIndex"
@@ -83,7 +83,7 @@
                     </div>
                 </div>
                 <div class="pagination-info">
-                    <span class="mr10">{{$tc("Common['共计N条']", pagination['total'], { N: pagination['total'] })}}</span>
+                    <span class="mr10">{{$tc('共计N条', pagination['total'], { N: pagination['total'] })}}</span>
                     <bk-pagination
                         size="small"
                         align="right"
@@ -99,7 +99,7 @@
         </div>
         <div class="no-data" v-show="!hasData && showNoData && !searching">
             <img src="../../../assets/images/full-text-search.png" alt="no-data">
-            <p>{{$t("Index['搜不到相关内容']")}}</p>
+            <p>{{$t('搜不到相关内容')}}</p>
         </div>
     </div>
 </template>
@@ -191,7 +191,7 @@
             this.$store.commit('setHeaderStatus', {
                 back: true
             })
-            this.$store.commit('setHeaderTitle', this.$t('Common["搜索结果"]'))
+            this.$store.commit('setHeaderTitle', this.$t('搜索结果'))
             this.query.queryString = this.$route.query.keywords
         },
         mounted () {
@@ -355,13 +355,13 @@
                     const isPauserd = this.getModelById(source['bk_obj_id'])['bk_ispaused']
                     if (model['bk_classification_id'] === 'bk_biz_topo') {
                         this.$bkMessage({
-                            message: this.$t("Index['主线模型无法查看']"),
+                            message: this.$t('主线模型无法查看'),
                             theme: 'warning'
                         })
                         return
                     } else if (isPauserd) {
                         this.$bkMessage({
-                            message: this.$t("Index['该模型已停用']"),
+                            message: this.$t('该模型已停用'),
                             theme: 'warning'
                         })
                         return
@@ -415,7 +415,7 @@
                 if (target.value.length === 32) {
                     this.toggleTips = this.$tooltips({
                         duration: -1,
-                        content: this.$t("Index['最大支持搜索32个字符']"),
+                        content: this.$t('最大支持搜索32个字符'),
                         placements: ['top'],
                         customClass: 'full-text-tips',
                         target: target

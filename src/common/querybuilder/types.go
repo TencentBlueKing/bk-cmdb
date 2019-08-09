@@ -36,6 +36,17 @@ func (c Condition) Validate() error {
 	return fmt.Errorf("unexpected condition: %s", c)
 }
 
+func (c Condition) ToMgo() (mgoOperator string, err error) {
+	switch c {
+	case ConditionOr:
+		return common.BKDBOR, nil
+	case ConditionAnd:
+		return common.BKDBAND, nil
+	default:
+		return "", fmt.Errorf("unexpected operator %s", c)
+	}
+}
+
 var (
 	ConditionAnd = Condition("AND")
 	ConditionOr  = Condition("OR")
@@ -370,8 +381,12 @@ func (r CombinedRule) ToMgo() (mgoFilter map[string]interface{}, key string, err
 		}
 		filters = append(filters, filter)
 	}
+	mgoOperator, err := r.Condition.ToMgo()
+	if err != nil {
+		return nil, "condition", err
+	}
 	mgoFilter = map[string]interface{}{
-		string(ConditionAnd): filters,
+		mgoOperator: filters,
 	}
 	return mgoFilter, "", nil
 }

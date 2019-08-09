@@ -31,10 +31,10 @@
                 :prop="column.id"
                 :label="column.name">
             </bk-table-column>
-            <bk-table-column :label="$t('Common[\'操作\']')">
+            <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <span class="text-primary" @click="showTips($event, row)" v-if="$isAuthorized(updateAuth)">
-                        {{$t('Association["取消关联"]')}}
+                        {{$t('取消关联')}}
                     </span>
                     <span class="text-primary disabled"
                         v-else
@@ -42,16 +42,16 @@
                             active: true,
                             auth: [updateAuth]
                         }">
-                        {{$t('Association["取消关联"]')}}
+                        {{$t('取消关联')}}
                     </span>
                 </template>
             </bk-table-column>
         </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.item">
-            <p class="tips-content">{{$t('Association["确认取消"]')}}</p>
+            <p class="tips-content">{{$t('确认取消')}}</p>
             <div class="tips-option">
-                <bk-button class="tips-button" theme="primary" @click="cancelAssociation">{{$t('Common["确认"]')}}</bk-button>
-                <bk-button class="tips-button" theme="default" @click="hideTips">{{$t('Common["取消"]')}}</bk-button>
+                <bk-button class="tips-button" theme="primary" @click="cancelAssociation">{{$t('确认')}}</bk-button>
+                <bk-button class="tips-button" theme="default" @click="hideTips">{{$t('取消')}}</bk-button>
             </div>
         </div>
     </div>
@@ -328,13 +328,13 @@
                         this.pagination.current = 1
                         this.getInstances()
                     })
-                    this.$success(this.$t('Association["取消关联成功"]'))
+                    this.$success(this.$t('取消关联成功'))
                 } catch (e) {
                     console.error(e)
                 }
             },
             getPaginationInfo () {
-                return this.$tc('Common["页码"]', this.pagination.current, {
+                return this.$tc('页码', this.pagination.current, {
                     current: this.pagination.current,
                     count: this.pagination.count,
                     total: this.totalPage

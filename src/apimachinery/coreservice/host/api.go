@@ -421,13 +421,13 @@ func (h *host) GetHostModulesIDs(ctx context.Context, header http.Header, dat *m
 	return
 }
 
-func (h *host) ListHostByTopoNode(ctx context.Context, header http.Header, option metadata.ListHostByTopoNodeOption) (metadata.ListHostResult, error) {
+func (h *host) ListHosts(ctx context.Context, header http.Header, option metadata.ListHosts) (metadata.ListHostResult, error) {
 	type Result struct {
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.ListHostResult `json:"data"`
 	}
 	result := Result{}
-	subPath := "/findmany/hosts/list_by_topo_node"
+	subPath := "/findmany/hosts/list_hosts"
 
 	err := h.client.Post().
 		WithContext(ctx).

@@ -119,7 +119,8 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.DELETE("/hosts/module/biz/delete").To(s.DeleteHostFromBusiness))
 
 	// next generation host search api
-	api.Route(api.POST("/hosts/list_by_topo_node").To(s.ListHostByTopoNode))
+	api.Route(api.POST("/hosts/list_hosts_without_app").To(s.ListHostsWithNoBiz))
+	api.Route(api.POST("/hosts/app/{appid}/list_hosts").To(s.ListBizHosts))
 
 	api.Route(api.POST("/userapi").To(s.AddUserCustomQuery))
 	api.Route(api.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))

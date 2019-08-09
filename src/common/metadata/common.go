@@ -249,3 +249,7 @@ type UpdateParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Data      map[string]interface{} `json:"data"`
 }
+type ListHostWithoutAppResponse struct {
+	BaseResp `json:",inline"`
+	Data     ListHostResult `json:"data"`
+}

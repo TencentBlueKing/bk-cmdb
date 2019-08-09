@@ -10,7 +10,7 @@
                     <bk-button class="options-button" theme="primary"
                         :disabled="!table.checked.length || !$isAuthorized(editAuth)"
                         @click="handleMultipleEdit">
-                        {{$t('Common["编辑"]')}}
+                        {{$t('编辑')}}
                     </bk-button>
                 </span>
                 <span class="inline-block-middle mr10"
@@ -21,7 +21,7 @@
                     <bk-button class="options-button" theme="default"
                         :disabled="!table.checked.length || !$isAuthorized(transferAuth)"
                         @click="transfer.show = true">
-                        {{$t('BusinessTopology["转移"]')}}
+                        {{$t('转移')}}
                     </bk-button>
                 </span>
                 <bk-button class="options-button mr10"
@@ -29,7 +29,7 @@
                     type="submit"
                     form="exportForm"
                     :disabled="!table.checked.length">
-                    {{$t('ModelManagement["导出"]')}}
+                    {{$t('导出')}}
                 </bk-button>
                 <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
                     <input type="hidden" name="bk_host_id" :value="table.checked">
@@ -82,11 +82,11 @@
                 </cmdb-host-filter>
                 <bk-button class="options-button ml10"
                     icon="icon-cc-setting"
-                    v-bk-tooltips.top="$t('BusinessTopology[\'列表显示属性配置\']')"
+                    v-bk-tooltips.top="$t('列表显示属性配置')"
                     @click="columnsConfig.show = true">
                 </bk-button>
                 <bk-button class="options-button ml10" v-if="showHistory"
-                    v-bk-tooltips="$t('Common[\'查看删除历史\']')"
+                    v-bk-tooltips="$t('查看删除历史')"
                     icon="icon-cc-history"
                     @click="routeToHistory">
                 </bk-button>
@@ -121,7 +121,7 @@
             :width="800"
             :before-close="handleSliderBeforeClose">
             <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.show">
-                <bk-tab-panel name="attribute" :label="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+                <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-form-multiple v-if="tab.attribute.type === 'multiple'"
                         ref="multipleForm"
                         :properties="properties.host"
@@ -137,7 +137,7 @@
         <bk-sideslider
             :is-show.sync="columnsConfig.show"
             :width="600"
-            :title="$t('BusinessTopology[\'列表显示属性配置\']')">
+            :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
                 v-if="columnsConfig.show"
                 :properties="columnsConfigProperties"
@@ -157,7 +157,7 @@
             :width="720">
             <div class="transfer-title" slot="tools">
                 <i class="icon icon-cc-shift mr5"></i>
-                <span>{{$t('Common[\'主机转移\']')}}</span>
+                <span>{{$t('主机转移')}}</span>
                 <span v-if="selectedHosts.length === 1">{{selectedHosts[0]['host']['bk_host_innerip']}}</span>
             </div>
             <div class="transfer-content">
@@ -523,12 +523,12 @@
                 })
                 if (copyText.length) {
                     this.$copyText(copyText.join('\n')).then(() => {
-                        this.$success(this.$t('Common["复制成功"]'))
+                        this.$success(this.$t('复制成功'))
                     }, () => {
-                        this.$error(this.$t('Common["复制失败"]'))
+                        this.$error(this.$t('复制失败'))
                     })
                 } else {
-                    this.$info(this.$t('Common["该字段无可复制的值"]'))
+                    this.$info(this.$t('该字段无可复制的值'))
                 }
             },
             handleSelectionChange (selection) {
@@ -561,7 +561,7 @@
             },
             batchUpdate (params) {
                 return this.updateHost({ params }).then(data => {
-                    this.$success(this.$t('Common[\'保存成功\']'))
+                    this.$success(this.$t('保存成功'))
                     this.getHostList()
                     return data
                 })
@@ -574,7 +574,7 @@
                     })
                 })
                 this.tab.attribute.type = 'multiple'
-                this.slider.title = this.$t('HostResourcePool[\'主机属性\']')
+                this.slider.title = this.$t('主机属性')
                 this.slider.show = true
             },
             async handleMultipleSave (changedValues) {
@@ -610,8 +610,8 @@
                     if (Object.keys(changedValues).length) {
                         return new Promise((resolve, reject) => {
                             this.$bkInfo({
-                                title: this.$t('Common["确认退出"]'),
-                                subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                                title: this.$t('确认退出'),
+                                subTitle: this.$t('退出会导致未保存信息丢失'),
                                 extCls: 'bk-dialog-sub-header-center',
                                 confirmFn: () => {
                                     resolve(true)
