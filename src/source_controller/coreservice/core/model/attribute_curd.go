@@ -73,7 +73,7 @@ func (m *modelAttribute) checkAttributeMustNotEmpty(ctx core.ContextParams, attr
 
 func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribute metadata.Attribute) error {
 	if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
-		return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.PropertyID)
+		return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
 	} else if attribute.PropertyID != "" {
 		match, err := regexp.MatchString(`^[a-z\d_]+$`, attribute.PropertyID)
 		if nil != err {
@@ -85,24 +85,24 @@ func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribut
 	}
 
 	if common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
-		return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.PropertyName)
+		return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
 	}
 
 	if attribute.Placeholder != "" {
 		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(attribute.Placeholder) {
-			return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.Placeholder)
+			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)
 		}
 	}
 
 	if attribute.Unit != "" {
-		if 20 < utf8.RuneCountInString(attribute.Unit) {
-			return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.Unit)
+		if common.AttributeUnitMaxLength < utf8.RuneCountInString(attribute.Unit) {
+			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_uint"), common.AttributeUnitMaxLength)
 		}
 	}
 
 	if opt, ok := attribute.Option.(string); ok && opt != "" {
 		if common.AttributeOptionMaxLength < utf8.RuneCountInString(opt) {
-			return ctx.Error.Errorf(common.CCErrCommOverLimit, opt)
+			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_option_regex"), common.AttributeOptionMaxLength)
 		}
 	}
 
