@@ -359,6 +359,7 @@
                     })
                     const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
                         params: this.$injectMetadata({
+                            bk_module_id: this.currentNode.data.bk_inst_id,
                             with_name: true,
                             page: {
                                 start: (this.pagination.current - 1) * this.pagination.size,
@@ -383,7 +384,6 @@
                 } catch (e) {
                     console.error(e)
                     this.instances = []
-                    this.pagination.count = 0
                 }
             },
             async getHistoryLabel () {
