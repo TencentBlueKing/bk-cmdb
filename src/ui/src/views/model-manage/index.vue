@@ -20,7 +20,7 @@
                     <bk-button theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
                         @click="showModelDialog(false)">
-                        {{$t('ModelManagement["新建模型"]')}}
+                        {{createModelBtn}}
                     </bk-button>
                 </span>
                 <span v-else style="display: inline-block;"
@@ -32,7 +32,7 @@
                         v-bk-tooltips="$t('ModelManagement[\'新增模型提示\']')"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
                         @click="showModelDialog(false)">
-                        {{$t('ModelManagement["新建模型"]')}}
+                        {{createModelBtn}}
                     </bk-button>
                 </span>
                 <span style="display: inline-block;"
@@ -43,7 +43,7 @@
                     <bk-button theme="default"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
                         @click="showGroupDialog(false)">
-                        {{$t('ModelManagement["新建分组"]')}}
+                        {{createGroupBtn}}
                     </bk-button>
                 </span>
             </div>
@@ -261,6 +261,12 @@
                 } else {
                     return this.filterClassifications
                 }
+            },
+            createGroupBtn () {
+                return this.isAdminView ? this.$t('ModelManagement["新建分组"]') : this.$t('ModelManagement["新建业务分组"]')
+            },
+            createModelBtn () {
+                return this.isAdminView ? this.$t('ModelManagement["新建模型"]') : this.$t('ModelManagement["新建业务模型"]')
             }
         },
         watch: {

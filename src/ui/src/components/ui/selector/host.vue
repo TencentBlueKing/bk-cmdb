@@ -20,7 +20,7 @@
                 </div>
                 <bk-table class="host-table"
                     :data="list"
-                    :height="286"
+                    :height="290"
                     @selection-change="handleSelectHost">
                     <bk-table-column type="selection" fixed width="60" align="center" class-name="bk-table-selection"></bk-table-column>
                     <bk-table-column v-for="column in header"

@@ -19,7 +19,7 @@
                 <i :class="['node-model-icon fl', { 'is-selected': node.selected }, { 'is-template': isTemplate(node) }]">{{modelIconMap[data.bk_obj_id]}}</i>
                 <span v-if="showCreate(node, data)"
                     class="fr"
-                    style="display: inline-block;"
+                    style="display: inline-block; font-size: 0;"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.C_TOPO),
                         auth: [$OPERATION.C_TOPO]
@@ -297,6 +297,19 @@
 <style lang="scss" scoped>
     .topology-tree-wrapper {
         height: 100%;
+        /deep/ .bk-big-tree-node {
+            .node-options {
+                .bk-icon {
+                    font-size: 16px;
+                    margin: 0;
+                    line-height: 38px;
+                    color: #c4c6cc;
+                }
+            }
+            &.is-selected .node-options .bk-icon{
+                color: #3a84ff;
+            }
+        }
     }
     .node-info {
         .node-model-icon {
@@ -306,7 +319,7 @@
             text-align: center;
             font-style: normal;
             font-size: 12px;
-            margin: 9px 4px 0 6px;
+            margin: 8px 8px 0 6px;
             border-radius: 50%;
             background-color: #c4c6cc;
             color: #fff;
@@ -320,7 +333,7 @@
         .node-button {
             height: 24px;
             padding: 0 6px;
-            margin: 0 4px;
+            margin: 0 10px 0 4px;
             line-height: 22px;
             border-radius: 4px;
             font-size: 12px;
@@ -333,7 +346,7 @@
             font-size: 14px;
             .node-name {
                 @include ellipsis;
-                margin-right: 4px;
+                margin-right: 8px;
             }
             .instance-num {
                 margin-right: 5px;
