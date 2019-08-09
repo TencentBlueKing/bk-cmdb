@@ -9,28 +9,28 @@
             <div class="dialog-content">
                 <div class="model-header">
                     <p class="title">{{ editTitle }}</p>
-                    <i class="modal-close icon icon-cc-tips-close" @click="closeChart()"></i>
+                    <i class="modal-close bk-icon icon-close" @click="closeChart()"></i>
                 </div>
                 <div class="content clearfix">
                     <div class="content-item">
                         <label class="label-text">
-                            {{$t('Operation["图表类型"]')}}
+                            {{$t('图表类型')}}
                         </label>
                         <label class="cmdb-form-radio cmdb-radio-big">
                             <input type="radio" name="required" :value="true"
                                 v-model="chartType" :disabled="openType === 'edit'">
-                            <span class="cmdb-radio-text">{{$t('ModelManagement["自定义"]')}}</span>
+                            <span class="cmdb-radio-text">{{$t('自定义')}}</span>
                         </label>
                         <label class="cmdb-form-radio cmdb-radio-big">
                             <input type="radio" name="required" :value="false"
                                 v-model="chartType" :disabled="openType === 'edit'">
-                            <span class="cmdb-radio-text">{{$t('ModelManagement["内置"]')}}</span>
+                            <span class="cmdb-radio-text">{{$t('内置')}}</span>
                         </label>
                     </div>
                     <div v-if="!chartType">
                         <div class="content-item">
                             <label class="label-text">
-                                {{$t('Operation["图表名称"]')}}
+                                {{$t('图表名称')}}
                             </label>
                             <span class="cmdb-form-item">
                                 <cmdb-selector
@@ -49,16 +49,16 @@
                     <div v-if="chartType">
                         <div class="content-item">
                             <label class="label-text">
-                                {{$t('Operation["图表名称"]')}}
+                                {{$t('图表名称')}}
                             </label>
                             <span class="cmdb-form-item">
-                                <input class="cmdb-form-input" placeholder="请输入图表名称" v-model="chartData.name" name="collectionName" v-validate="'required'">
+                                <input class="cmdb-form-input" :placeholder="$t('请输入图表名称')" v-model="chartData.name" name="collectionName" v-validate="'required'">
                                 <span class="form-error">{{errors.first('collectionName')}}</span>
                             </span>
                         </div>
                         <div class="content-item" v-if="chartData.bk_obj_id !== 'host'">
                             <label class="label-text">
-                                {{$t('Operation["统计对象"]')}}
+                                {{$t('统计对象')}}
                             </label>
                             <span class="cmdb-form-item">
                                 <cmdb-selector
@@ -75,7 +75,7 @@
                         </div>
                         <div class="content-item">
                             <label class="label-text">
-                                {{$t('Operation["统计维度"]')}}
+                                {{$t('统计维度')}}
                             </label>
                             <span class="cmdb-form-item">
                                 <cmdb-selector
@@ -92,21 +92,21 @@
                         </div>
                         <div class="content-item">
                             <label class="label-text">
-                                {{$t('Operation["图表类型"]')}}
+                                {{$t('图表类型')}}
                             </label>
                             <label class="cmdb-form-radio cmdb-radio-big">
                                 <input type="radio" name="present" value="pie" v-model="chartData.chart_type">
-                                <span class="cmdb-radio-text cmdb-radio-text-icon">{{$t('Operation["饼图"]')}}</span>
+                                <span class="cmdb-radio-text cmdb-radio-text-icon">{{$t('饼图')}}</span>
                             </label>
                             <label class="cmdb-form-radio cmdb-radio-big">
                                 <input type="radio" name="present" value="bar" v-model="chartData.chart_type">
-                                <span class="cmdb-radio-text cmdb-radio-text-icon">{{$t('Operation["柱状图"]')}}</span>
+                                <span class="cmdb-radio-text cmdb-radio-text-icon">{{$t('柱状图')}}</span>
                             </label>
                         </div>
                     </div>
                     <div class="content-item">
                         <label class="label-text">
-                            {{$t('Operation["图表宽度"]')}}
+                            {{$t('图表宽度')}}
                         </label>
                         <label class="cmdb-form-radio cmdb-radio-big">
                             <input type="radio" name="width" value="50" v-model="chartData.width">
@@ -119,22 +119,27 @@
                     </div>
                     <div class="content-item">
                         <label class="label-text-x">
-                            {{$t('Operation["横轴坐标数量"]')}}
+                            <bk-popover placement="right" :content="$t('横轴可视范围展示的坐标数量')">
+                                {{$t('横轴坐标数量')}}
+                            </bk-popover>
                         </label>
                         <label class="cmdb-form-item">
                             <div class="axis-picker">
-                                <input class="cmdb-form-input form-input" v-model="chartData.x_axis_count">
+                                <input class="cmdb-form-input form-input"
+                                    v-validate="'required|number'" name="chartNumber"
+                                    v-model="chartData.x_axis_count">
                                 <i class="bk-icon icon-angle-down" @click="calculate('down')"></i>
                                 <i class="bk-icon icon-angle-up" @click="calculate('up')"></i>
                             </div>
-                            <span class="form-error">{{errors.first('chartName')}}</span>
+                            <span class="tips">{{$t('考虑显示效果，上限为25个，100%宽度建议显示20个，50%宽度10个')}}
+                                <span class="form-error">{{errors.first('chartNumber')}}</span>
+                            </span>
                         </label>
-                        <span class="tips">{{$t('Operation["考虑显示效果，上限为25个，100%宽度建议显示20个，50%宽度10个"]')}}</span>
                     </div>
                 </div>
                 <div class="footer" slot="footer">
-                    <bk-button theme="default" @click="closeChart">{{$t("Common['取消']")}}</bk-button>
-                    <bk-button theme="primary" @click="confirm">{{$t("Common['确定']")}}</bk-button>
+                    <bk-button theme="primary" @click="confirm">{{$t('确定')}}</bk-button>
+                    <bk-button theme="default" @click="closeChart">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </bk-dialog>
@@ -164,7 +169,7 @@
                         config_id: null,
                         bk_obj_id: 'host',
                         chart_type: 'pie',
-                        field: 'bk_os_type',
+                        field: '',
                         width: '50',
                         x_axis_count: 10
                     }
@@ -176,29 +181,29 @@
                 seList: {
                     host: [
                         {
-                            name: '按操作系统类型统计',
+                            name: this.$t('按操作系统类型统计'),
                             repType: 'host_os_chart'
                         },
                         {
-                            name: '按业务统计',
+                            name: this.$t('按业务统计'),
                             repType: 'host_biz_chart'
                         },
                         {
-                            name: '按云区域统计',
+                            name: this.$t('按云区域统计'),
                             repType: 'host_cloud_chart'
                         },
                         {
-                            name: '主机数量变化趋势',
+                            name: this.$t('主机数量变化趋势'),
                             repType: 'host_change_biz_chart'
                         }
                     ],
                     inst: [
                         {
-                            name: '实例数量统计',
+                            name: this.$t('实例数量统计'),
                             repType: 'model_inst_chart'
                         },
                         {
-                            name: '实例变更统计',
+                            name: this.$t('实例变更统计'),
                             repType: 'model_inst_change_chart'
                         }
                     ],
@@ -277,10 +282,11 @@
                     }
                 })
                 this.$validator.reset()
-                this.chartData.field = ''
+                if (this.openType === 'add') this.chartData.field = ''
             },
             confirm () {
                 this.chartData.report_type = this.chartType ? 'custom' : this.typeFilter[0].repType
+                this.chartData.x_axis_count = parseInt(this.chartData.x_axis_count)
                 const data = this.$tools.clone(this.chartData)
                 this.$validator.validateAll().then(result => {
                     if (result) {
@@ -318,8 +324,8 @@
                 return obj
             },
             initTitle () {
-                if (this.openType !== 'add') this.editTitle = this.$t('Common["编辑"]') + '【' + this.chartData.title + '】'
-                else this.editTitle = this.chartData.bk_obj_id === 'host' ? this.$t('Operation["新增主机统计图表"]') : this.$t('Operation["新增实例统计图表"]')
+                if (this.openType !== 'add') this.editTitle = this.$t('编辑') + '【' + this.chartData.title + '】'
+                else this.editTitle = this.chartData.bk_obj_id === 'host' ? this.$t('新增主机统计图表') : this.$t('新增实例统计图表')
             }
         }
     }
@@ -337,6 +343,15 @@
                 top: 15px;
                 color:#D8D8D8;
                 cursor: pointer;
+                width: 26px;
+                height: 26px;
+                line-height: 26px;
+                text-align: center;
+                border-radius: 50%;
+                font-weight: 700;
+                &:hover {
+                     background-color: #f0f1f5;
+                 }
             }
             .title {
                 display: inline-block;
@@ -386,12 +401,12 @@
                             right:8px;
                             &:nth-child(2){
                                 bottom:4px
-                             }
+                            }
                             &:nth-child(3){
                                  top: 4px;
-                             }
+                            }
                         }
-    }
+                    }
                 }
                 .form-input{
                     float:left;
@@ -414,8 +429,8 @@
                     font-size:11px;
                     color:rgba(151,155,165,1);
                     line-height:15px;
-                    margin-left: 122px;
                     margin-top: 6px;
+                    position: absolute;
                 }
             }
         }
@@ -425,11 +440,12 @@
         height: 50px;
         line-height: 50px;
         font-size: 0;
-        text-align: center;
+        text-align: right;
+        padding-right: 14px;
+        background:rgba(250,251,253,1);
         button {
-            float: right;
-            margin-right: 20px;
-            margin-top: 7px;
+            vertical-align: middle;
+            margin-right: 10px;
         }
     }
     .form-error {
