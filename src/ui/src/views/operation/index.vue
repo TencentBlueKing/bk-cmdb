@@ -5,7 +5,7 @@
                 <div class="item-left">
                     <span v-if="navData.biz">{{ navData.biz }}</span>
                     <span v-if="!navData.biz">0</span>
-                    <span>{{$t('Operation["业务总数"]')}}</span>
+                    <span>{{$t('业务总数')}}</span>
                 </div>
                 <div class="item-right item-right-left">
                     <i class="icon icon-cc-operate-biz"></i>
@@ -15,7 +15,7 @@
                 <div class="item-left">
                     <span v-if="navData.host">{{ navData.host }}</span>
                     <span v-if="!navData.host">0</span>
-                    <span>{{$t('Operation["主机总数"]')}}</span>
+                    <span>{{$t('主机总数')}}</span>
                 </div>
                 <div class="item-right item-right-right">
                     <i class="icon icon-cc-host"></i>
@@ -25,7 +25,7 @@
                 <div class="item-left">
                     <span v-if="navData.model">{{ navData.model }}</span>
                     <span v-if="!navData.model">0</span>
-                    <span>{{$t('Operation["模型总数"]')}}</span>
+                    <span>{{$t('模型总数')}}</span>
                 </div>
                 <div class="item-right item-right-left">
                     <i class="menu-icon icon-cc-operate-module"></i>
@@ -35,7 +35,7 @@
                 <div class="item-left">
                     <span v-if="navData.inst">{{ navData.inst }}</span>
                     <span v-if="!navData.inst">0</span>
-                    <span>{{$t('Operation["实例总数"]')}}
+                    <span>{{$t('实例总数')}}
                         <bk-popover :delay="300" :offset="10" placement="top" class="operate-pop">
                             <i class="menu-icon icon-cc-attribute"></i>
                             <span class="popover-content" slot="content">
@@ -50,9 +50,9 @@
             </div>
         </div>
         <div class="operation-top">
-            <span class="operation-title">{{$t('Operation["主机统计"]')}}</span>
+            <span class="operation-title">{{$t('主机统计')}}</span>
             <i class="icon icon-cc-operate-add" @click="openNew('add', 'host')">
-                <div class="title-block">{{$t('Operation["添加主机图表"]')}}</div>
+                <div class="title-block">{{$t('添加主机图表')}}</div>
             </i>
         </div>
         <div v-for="(item, key) in hostData.disList"
@@ -65,11 +65,11 @@
                     <div class="charts-options">
                         <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
                             @click="moveChart('host', 'up', key, hostData.disList)">
-                            <div class="title-block">{{$t('Operation["已置顶，无法上移"]')}}</div>
+                            <div class="title-block">{{$t('已置顶，无法上移')}}</div>
                         </i>
                         <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === hostData.disList.length - 1 }"
                             @click="moveChart('host', 'down', key, hostData.disList)">
-                            <div class="title-block">{{$t('Operation["已置底，无法下移"]')}}</div>
+                            <div class="title-block">{{$t('已置底，无法下移')}}</div>
                         </i>
                         <i class="icon icon-cc-edit-shape"
                             @click="openNew('edit', 'host', item, key)"></i>
@@ -79,7 +79,7 @@
                 </div>
                 <div class="operation-charts" :id="item.report_type + item.config_id"></div>
                 <div v-if="item.noData" class="null-data">
-                    <span>{{$t('Common["暂无数据"]')}}</span>
+                    <span>{{$t('暂无数据')}}</span>
                 </div>
                 <div class="chart-date" v-if="item.showDate">
                     <cmdb-form-date-range
@@ -93,9 +93,9 @@
             </div>
         </div>
         <div class="operation-top">
-            <span class="operation-title">{{$t('Operation["实例统计"]')}}</span>
+            <span class="operation-title">{{$t('实例统计')}}</span>
             <i class="icon icon-cc-operate-add" @click="openNew('add', 'inst')">
-                <div class="title-block">{{$t('Operation["添加实例图表"]')}}</div>
+                <div class="title-block">{{$t('添加实例图表')}}</div>
             </i>
         </div>
         <div v-for="(item, key) in instData.disList"
@@ -108,11 +108,11 @@
                     <div class="charts-options">
                         <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
                             @click="moveChart('inst', 'up', key, instData.disList)">
-                            <div class="title-block">{{$t('Operation["已置顶，无法上移"]')}}</div>
+                            <div class="title-block">{{$t('已置顶，无法上移')}}</div>
                         </i>
                         <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === instData.disList.length - 1 }"
                             @click="moveChart('inst', 'down', key, instData.disList)">
-                            <div class="title-block">{{$t('Operation["已置底，无法下移"]')}}</div>
+                            <div class="title-block">{{$t('已置底，无法下移')}}</div>
                         </i>
                         <i class="icon icon-cc-edit-shape" @click="openNew('edit', 'inst', item, key)"></i>
                         <i class="icon icon-cc-tips-close"
@@ -121,7 +121,7 @@
                 </div>
                 <div class="operation-charts" :id="item.report_type + item.config_id"></div>
                 <div v-if="item.noData" class="null-data">
-                    <span>{{$t('Common["暂无数据"]')}}</span>
+                    <span>{{$t('暂无数据')}}</span>
                 </div>
             </div>
         </div>
@@ -146,7 +146,7 @@
         },
         data () {
             return {
-                tooltip: this.$t('Operation["不包含业务、主机模型及实例"]'),
+                tooltip: this.$t('不包含业务、主机模型及实例'),
                 isShow: false,
                 newChart: {},
                 editType: {
@@ -173,7 +173,7 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Operation["统计报表"]'))
+            this.$store.commit('setHeaderTitle', this.$t('统计报表'))
             this.getChartList()
         },
         methods: {
