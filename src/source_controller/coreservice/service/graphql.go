@@ -13,31 +13,18 @@
 package service
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/storage/dal"
 	"context"
 	"fmt"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 
 	"github.com/graphql-go/graphql"
 )
-
-type user struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-var data = map[string]user{"1": {
-	ID:   "1",
-	Name: "hoffer",
-}, "2": {
-	ID:   "2",
-	Name: "reagen",
-}}
 
 type Host struct {
 	HostID   int64  `json:"bk_host_id" bson:"bk_host_id"`           // 主机ID(host_id)								数字
@@ -66,56 +53,44 @@ var HostType = graphql.NewObject(
 	},
 )
 
-var queryType = graphql.NewObject(
-	graphql.ObjectConfig{
-		Name: "Query",
-		Fields: graphql.Fields{
-			"host": &graphql.Field{
-				Type: HostType,
-				Args: graphql.FieldConfigArgument{
-					common.BKHostIDField: &graphql.ArgumentConfig{
-						Type: graphql.Int,
-					},
-				},
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					hostIDIf, isOK := p.Args[common.BKHostIDField]
-					if isOK == false {
-						return nil, fmt.Errorf("key: %s not found", common.BKHostIDField)
-					}
-					hostID, err := util.GetInt64ByInterface(hostIDIf)
-					if err != nil {
-						return nil, fmt.Errorf("value %+v of key %s not found", hostIDIf, common.BKHostIDField)
-					}
-
-					hostFilter := map[string]interface{}{
-						common.BKHostIDField: hostID,
-					}
-					host := Host{}
-					if err := DbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).One(context.Background(), &host); err != nil {
-						return nil, fmt.Errorf("select host failed, err: %+v", err)
-					}
-					return host, nil
+var ObjectConfig = graphql.ObjectConfig{
+	Name: "Query",
+	Fields: graphql.Fields{
+		"host": &graphql.Field{
+			Type: HostType,
+			Args: graphql.FieldConfigArgument{
+				common.BKHostIDField: &graphql.ArgumentConfig{
+					Type: graphql.Int,
 				},
 			},
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				hostIDIf, isOK := p.Args[common.BKHostIDField]
+				if isOK == false {
+					return nil, fmt.Errorf("key: %s not found", common.BKHostIDField)
+				}
+				hostID, err := util.GetInt64ByInterface(hostIDIf)
+				if err != nil {
+					return nil, fmt.Errorf("value %+v of key %s not found", hostIDIf, common.BKHostIDField)
+				}
+
+				hostFilter := map[string]interface{}{
+					common.BKHostIDField: hostID,
+				}
+				host := Host{}
+				if err := DbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).One(context.Background(), &host); err != nil {
+					return nil, fmt.Errorf("select host failed, err: %+v", err)
+				}
+				return host, nil
+			},
 		},
-	})
+	},
+}
 
 var schema, _ = graphql.NewSchema(
 	graphql.SchemaConfig{
-		Query: queryType,
+		Query: graphql.NewObject(ObjectConfig),
 	},
 )
-
-func executeQuery(query string, schema graphql.Schema) *graphql.Result {
-	result := graphql.Do(graphql.Params{
-		Schema:        schema,
-		RequestString: query,
-	})
-	if len(result.Errors) > 0 {
-		blog.Infof("wrong result, unexpected errors: %v", result.Errors)
-	}
-	return result
-}
 
 var DbProxy dal.RDB
 
@@ -126,7 +101,12 @@ func (s *coreService) SearchGraphql(params core.ContextParams, pathParams, query
 		return nil, fmt.Errorf("query not found, data: %+v", data)
 	}
 	query := util.GetStrByInterface(queryIf)
-	result := executeQuery(query, schema)
-
+	result := graphql.Do(graphql.Params{
+		Schema:        schema,
+		RequestString: query,
+	})
+	if len(result.Errors) > 0 {
+		blog.Infof("wrong result, unexpected errors: %v", result.Errors)
+	}
 	return result, nil
 }
