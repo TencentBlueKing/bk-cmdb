@@ -3,7 +3,7 @@
         <feature-tips
             class="process-tips"
             :show-tips="true"
-            :desc="$t('ProcessManagement[\'添加进程提示\']')">
+            :desc="$t('添加进程提示')">
         </feature-tips>
         <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
@@ -27,7 +27,7 @@
                                     </i>
                                     <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="property['isLocking'] !== undefined && property['bk_property_id'] !== 'bk_func_name'">
                                         <input type="checkbox">
-                                        <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
+                                        <span class="cmdb-checkbox-text">{{$t('锁定')}}</span>
                                     </label>
                                 </div>
                                 <div class="property-value">
@@ -56,9 +56,9 @@
                 <bk-button class="button-save" theme="primary"
                     :disabled="saveDisabled || !hasChange || $loading()"
                     @click="handleSave">
-                    {{$t("Common['保存']")}}
+                    {{$t('保存')}}
                 </bk-button>
-                <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
+                <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>
         </div>

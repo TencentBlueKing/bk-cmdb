@@ -3,7 +3,7 @@
         <feature-tips
             :feature-name="'eventpush'"
             :show-tips="showFeatureTips"
-            :desc="$t('EventPush[\'事件推送顶部提示\']')"
+            :desc="$t('事件推送顶部提示')"
             :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'"
             @close-tips="showFeatureTips = false">
         </feature-tips>
@@ -16,7 +16,7 @@
                 <bk-button theme="primary"
                     :disabled="!$isAuthorized($OPERATION.C_EVENT)"
                     @click="createPush">
-                    {{$t('Common["新建"]')}}
+                    {{$t('新建')}}
                 </bk-button>
             </span>
         </div>
@@ -28,15 +28,15 @@
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="subscription_name" :label="$t('EventPush[\'推送名称\']')" sortable="custom">
+            <bk-table-column prop="subscription_name" :label="$t('推送名称')" sortable="custom">
             </bk-table-column>
-            <bk-table-column prop="system_name" :label="$t('EventPush[\'系统名称\']')" sortable="custom">
+            <bk-table-column prop="system_name" :label="$t('系统名称')" sortable="custom">
             </bk-table-column>
-            <bk-table-column prop="operator" :label="$t('EventPush[\'操作人\']')" sortable="custom">
+            <bk-table-column prop="operator" :label="$t('操作人')" sortable="custom">
             </bk-table-column>
-            <bk-table-column prop="last_time" :label="$t('EventPush[\'更新时间\']')" sortable="custom">
+            <bk-table-column prop="last_time" :label="$t('更新时间')" sortable="custom">
             </bk-table-column>
-            <bk-table-column prop="statistics" :label="$t('EventPush[\'推送情况（近一周）\']')">
+            <bk-table-column prop="statistics" :label="$t('推送情况（近一周)')">
                 <template slot-scope="{ row }">
                     <i class="circle"
                         :class="{
@@ -44,15 +44,15 @@
                             'success': !row.statistics.failure
                         }">
                     </i>
-                    {{$t('EventPush[\'失败\']')}} {{row.statistics.failure}} / {{$t('EventPush[\'总量\']')}} {{row.statistics.total}}
+                    {{$t('失败')}} {{row.statistics.failure}} / {{$t('总量')}} {{row.statistics.total}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="setting" :label="$t('EventPush[\'配置\']')">
+            <bk-table-column prop="setting" :label="$t('配置')">
                 <template slot-scope="{ row }">
                     <span class="text-primary mr20"
                         v-if="$isAuthorized($OPERATION.U_EVENT)"
                         @click.stop="editPush(row)">
-                        {{$t('Common["编辑"]')}}
+                        {{$t('编辑')}}
                     </span>
                     <span class="text-primary disabled mr20"
                         v-else
@@ -60,12 +60,12 @@
                             active: true,
                             auth: [$OPERATION.U_EVENT]
                         }">
-                        {{$t('Common["编辑"]')}}
+                        {{$t('编辑')}}
                     </span>
                     <span class="text-danger"
                         v-if="$isAuthorized($OPERATION.D_EVENT)"
                         @click.stop="deleteConfirm(row)">
-                        {{$t('Common["删除"]')}}
+                        {{$t('删除')}}
                     </span>
                     <span class="text-danger disabled"
                         v-else
@@ -73,13 +73,13 @@
                             active: true,
                             auth: [$OPERATION.U_EVENT]
                         }">
-                        {{$t('Common["删除"]')}}
+                        {{$t('删除')}}
                     </span>
                 </template>
             </bk-table-column>
             <div slot="empty">
-                <p>{{$t("Common['暂时没有数据']")}}</p>
-                <p>{{$t("EventPush['事件推送功能提示']")}}</p>
+                <p>{{$t('暂时没有数据')}}</p>
+                <p>{{$t('事件推送功能提示')}}</p>
             </div>
         </bk-table>
         <bk-sideslider
@@ -148,8 +148,8 @@
                 if (this.$refs.detail.isCloseConfirmShow()) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["确认退出"]'),
-                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 resolve(true)
@@ -165,17 +165,17 @@
             createPush () {
                 this.slider.isShow = true
                 this.slider.type = 'create'
-                this.slider.title = this.$t('EventPush["新增推送"]')
+                this.slider.title = this.$t('新增推送')
             },
             editPush (item) {
                 this.curPush = { ...item }
                 this.slider.isShow = true
                 this.slider.type = 'edit'
-                this.slider.title = this.$t('EventPush["编辑推送"]')
+                this.slider.title = this.$t('编辑推送')
             },
             deleteConfirm (item) {
                 this.$bkInfo({
-                    title: this.$tc('EventPush["删除推送确认"]', item['subscription_name'], { name: item['subscription_name'] }),
+                    title: this.$tc('删除推送确认', item['subscription_name'], { name: item['subscription_name'] }),
                     confirmFn: () => {
                         this.deletePush(item['subscription_id'])
                     }
@@ -183,7 +183,7 @@
             },
             async deletePush (subscriptionId) {
                 await this.unsubcribeEvent({ bkBizId: 0, subscriptionId })
-                this.$success(this.$t('EventPush["删除推送成功"]'))
+                this.$success(this.$t('删除推送成功'))
                 this.getTableData()
             },
             saveSuccess () {

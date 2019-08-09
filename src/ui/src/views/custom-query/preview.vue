@@ -1,7 +1,7 @@
 <template>
     <div class="userapi-preview-wrapper">
         <div class="userapi-preview" v-click-outside="closePreview">
-            <h3 class="preview-title">{{$t("CustomQuery['预览查询']")}}</h3>
+            <h3 class="preview-title">{{$t('预览查询')}}</h3>
             <i class="bk-icon icon-close" @click="closePreview"></i>
             <bk-table
                 v-bkloading="{ isLoading: $loading('searchHost') }"
@@ -110,21 +110,21 @@
                         header = {
                             objId: 'set',
                             id: 'bk_set_name',
-                            name: this.$t("Hosts['集群']"),
+                            name: this.$t('集群'),
                             sortable: false
                         }
                     } else if (propertyId === 'bk_module_name') {
                         header = {
                             objId: 'module',
                             id: 'bk_module_name',
-                            name: this.$t("Hosts['模块']"),
+                            name: this.$t('模块'),
                             sortable: false
                         }
                     } else if (propertyId === 'bk_biz_name') {
                         header = {
                             objId: 'biz',
                             id: 'bk_biz_name',
-                            name: this.$t("Common['业务']")
+                            name: this.$t('业务')
                         }
                     } else {
                         const property = this.attribute.host.properties.find(property => propertyId === property['bk_property_id'])

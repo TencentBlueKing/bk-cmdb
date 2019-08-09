@@ -64,7 +64,7 @@
                             <i class="property-copy icon-cc-details-copy" @click="handleCopy($tools.getPropertyText(property, host), childIndex)"></i>
                             <transition name="fade">
                                 <span class="copy-tips" v-if="showCopyTips === childIndex">
-                                    {{$t('Common[\'复制成功\']')}}
+                                    {{$t('复制成功')}}
                                 </span>
                             </transition>
                         </div>
@@ -157,7 +157,7 @@
                         clearTimeout(timer)
                     }, 200)
                 }, () => {
-                    this.$error(this.$t('Common["复制失败"]'))
+                    this.$error(this.$t('复制失败'))
                 })
             }
         }

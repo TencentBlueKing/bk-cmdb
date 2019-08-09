@@ -2,19 +2,19 @@
     <div class="device-wrapper">
         <div class="title">
             <bk-button theme="primary" @click="showPropertyDialog('create')">
-                {{$t('NetworkDiscovery["新增属性"]')}}
+                {{$t('新增属性')}}
             </bk-button>
             <bk-button theme="default"
                 :loading="$loading('deleteNetcollectProperty')"
                 :disabled="!table.checked.length"
                 @click="deleteProperty">
-                {{$t('Common["删除"]')}}
+                {{$t('删除')}}
             </bk-button>
             <bk-button theme="default" @click="importSlider.isShow = true">
-                {{$t('ModelManagement["导入"]')}}
+                {{$t('导入')}}
             </bk-button>
             <bk-button theme="default" form="exportForm" :disabled="!table.checked.length">
-                {{$t('ModelManagement["导出"]')}}
+                {{$t('导出')}}
             </bk-button>
             <form id="exportForm" :action="url.export" method="POST" hidden>
                 <input type="hidden" name="netcollect_property_id" :value="table.checked.join(',')">
@@ -30,7 +30,7 @@
                 </bk-select>
                 <bk-input class="cmdb-form-input"
                     type="text"
-                    :placeholder="$t('Common[\'请输入\']')"
+                    :placeholder="$t('请输入')"
                     v-model.trim="filter.text"
                     @enter="getTableData">
                 </bk-input>
@@ -61,7 +61,7 @@
             <div>
                 <div>
                     <label class="label first">
-                        <span>{{$t('NetworkDiscovery["所属设备"]')}}<span class="color-danger">*</span></span>
+                        <span>{{$t('所属设备')}}<span class="color-danger">*</span></span>
                     </label>
                     <bk-select
                         searchable
@@ -90,7 +90,7 @@
                 </div>
                 <div>
                     <label class="label">
-                        <span>{{$t('NetworkDiscovery["采集方式"]')}}<span class="color-danger">*</span></span>
+                        <span>{{$t('采集方式')}}<span class="color-danger">*</span></span>
                     </label>
                     <bk-select v-model="propertyDialog.data.action">
                         <bk-option v-for="(option, index) in propertyDialog.actionList"
@@ -107,7 +107,7 @@
                 </div>
                 <div>
                     <label class="label">
-                        <span>{{$t('NetworkDiscovery["模型属性"]')}}<span class="color-danger">*</span></span>
+                        <span>{{$t('模型属性')}}<span class="color-danger">*</span></span>
                     </label>
                     <bk-select
                         searchable
@@ -127,10 +127,10 @@
                 </div>
                 <div class="footer">
                     <bk-button theme="primary" @click="saveProperty" :loading="$loading(['createNetcollectProperty', 'updateNetcollectProperty'])">
-                        {{$t('Common["保存"]')}}
+                        {{$t('保存')}}
                     </bk-button>
                     <bk-button theme="default" @click="hidePropertyDialog">
-                        {{$t('Common["取消"]')}}
+                        {{$t('取消')}}
                     </bk-button>
                 </div>
             </div>
@@ -138,7 +138,7 @@
         <bk-sideslider
             :width="800"
             :is-show.sync="importSlider.isShow"
-            :title="$t('HostResourcePool[\'批量导入\']')">
+            :title="$t('批量导入')">
             <cmdb-import v-if="importSlider.isShow" slot="content"
                 :template-url="url.template"
                 :import-url="url.import"
@@ -164,7 +164,7 @@
                 propertyDialog: {
                     isShow: false,
                     isEdit: false,
-                    title: this.$t('NetworkDiscovery[\'新增属性\']'),
+                    title: this.$t('新增属性'),
                     deviceList: [],
                     attrList: [],
                     actionList: [{
@@ -185,13 +185,13 @@
                 filter: {
                     typeList: [{
                         id: 'device_name',
-                        name: this.$t('NetworkDiscovery["所属设备"]')
+                        name: this.$t('所属设备')
                     }, {
                         id: 'bk_obj_name',
-                        name: this.$t('OperationAudit["模型"]')
+                        name: this.$t('模型')
                     }, {
                         id: 'bk_property_name',
-                        name: this.$t('NetworkDiscovery["模型属性"]')
+                        name: this.$t('模型属性')
                     }],
                     type: 'device_name',
                     text: ''
@@ -205,19 +205,19 @@
                         name: 'ID'
                     }, {
                         id: 'device_name',
-                        name: this.$t('NetworkDiscovery["所属设备"]')
+                        name: this.$t('所属设备')
                     }, {
                         id: 'unit',
-                        name: this.$t('NetworkDiscovery["计量单位"]')
+                        name: this.$t('计量单位')
                     }, {
                         id: 'oid',
                         name: 'oid'
                     }, {
                         id: 'bk_obj_name',
-                        name: this.$t('OperationAudit["模型"]')
+                        name: this.$t('模型')
                     }, {
                         id: 'bk_property_name',
-                        name: this.$t('NetworkDiscovery["模型属性"]')
+                        name: this.$t('模型属性')
                     }],
                     list: [],
                     checked: [],
@@ -267,7 +267,7 @@
             ]),
             deleteProperty () {
                 this.$bkInfo({
-                    title: this.$t('NetworkDiscovery["确认删除属性"]'),
+                    title: this.$t('确认删除属性'),
                     confirmFn: async () => {
                         const params = {
                             netcollect_property_id: this.table.checked
@@ -285,10 +285,10 @@
                     this.propertyDialog.data['oid'] = ''
                     this.propertyDialog.data['action'] = ''
                     this.propertyDialog.data['bk_property_id'] = ''
-                    this.propertyDialog.title = this.$t('NetworkDiscovery["新增属性"]')
+                    this.propertyDialog.title = this.$t('新增属性')
                 } else {
                     this.propertyDialog.isEdit = true
-                    this.propertyDialog.title = this.$t('NetworkDiscovery["编辑属性"]')
+                    this.propertyDialog.title = this.$t('编辑属性')
                 }
                 this.propertyDialog.isShow = true
             },

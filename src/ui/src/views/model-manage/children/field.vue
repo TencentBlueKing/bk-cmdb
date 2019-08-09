@@ -8,7 +8,7 @@
                 <bk-button class="create-btn" theme="primary"
                     :disabled="createDisabled || isReadOnly || !updateAuth"
                     @click="createField">
-                    {{$t('ModelManagement["新建字段"]')}}
+                    {{$t('新建字段')}}
                 </bk-button>
             </span>
         </div>
@@ -22,7 +22,7 @@
             }"
             @sort-change="handleSortChange"
             @cell-click="handleShowDetails">
-            <bk-table-column prop="isrequired" :label="$t('ModelManagement[\'必填\']')" width="60" sortable="custom">
+            <bk-table-column prop="isrequired" :label="$t('必填')" width="60" sortable="custom">
                 <template slot-scope="{ row }">
                     <i class="field-required-icon bk-icon icon-check-1" v-if="row.isrequired"></i>
                 </template>
@@ -31,38 +31,38 @@
                 min-width="110"
                 sortable="custom"
                 class-name="is-highlight"
-                :label="$t('ModelManagement[\'唯一标识\']')">
+                :label="$t('唯一标识')">
                 <template slot-scope="{ row }">
                     <span
                         v-if="row['ispre']"
                         :class="['field-pre', $i18n.locale]">
-                        {{$t('ModelManagement["内置"]')}}
+                        {{$t('内置')}}
                     </span>
                     <span class="field-id">{{row['bk_property_id']}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_property_name" :label="$t('ModelManagement[\'名称\']')" sortable="custom"></bk-table-column>
-            <bk-table-column prop="bk_property_type" :label="$t('ModelManagement[\'字段类型\']')" sortable="custom">
+            <bk-table-column prop="bk_property_name" :label="$t('名称')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="bk_property_type" :label="$t('字段类型')" sortable="custom">
                 <template slot-scope="{ row }">
                     <span>{{fieldTypeMap[row['bk_property_type']]}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="create_time" :label="$t('ModelManagement[\'创建时间\']')" sortable="custom">
+            <bk-table-column prop="create_time" :label="$t('创建时间')" sortable="custom">
                 <template slot-scope="{ row }">
                     {{$tools.formatTime(row['create_time'])}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="operation" :label="$t('Common[\'操作\']')" v-if="updateAuth">
+            <bk-table-column prop="operation" :label="$t('操作')" v-if="updateAuth">
                 <template slot-scope="{ row }">
                     <button class="text-primary mr10"
                         :disabled="!isFieldEditable(row)"
                         @click.stop="editField(row)">
-                        {{$t('Common["编辑"]')}}
+                        {{$t('编辑')}}
                     </button>
                     <button class="text-primary"
                         :disabled="!isFieldEditable(row)"
                         @click.stop="deleteField(row)">
-                        {{$t('Common["删除"]')}}
+                        {{$t('删除')}}
                     </button>
                 </template>
             </bk-table-column>
@@ -100,20 +100,20 @@
                 slider: {
                     isShow: false,
                     isEditField: false,
-                    title: this.$t('ModelManagement["新建字段"]'),
+                    title: this.$t('新建字段'),
                     curField: {},
                     type: ''
                 },
                 fieldTypeMap: {
-                    'singlechar': this.$t('ModelManagement["短字符"]'),
-                    'int': this.$t('ModelManagement["数字"]'),
-                    'float': this.$t('ModelManagement["浮点"]'),
-                    'enum': this.$t('ModelManagement["枚举"]'),
-                    'date': this.$t('ModelManagement["日期"]'),
-                    'time': this.$t('ModelManagement["时间"]'),
-                    'longchar': this.$t('ModelManagement["长字符"]'),
-                    'objuser': this.$t('ModelManagement["用户"]'),
-                    'timezone': this.$t('ModelManagement["时区"]'),
+                    'singlechar': this.$t('短字符'),
+                    'int': this.$t('数字'),
+                    'float': this.$t('浮点'),
+                    'enum': this.$t('枚举'),
+                    'date': this.$t('日期'),
+                    'time': this.$t('时间'),
+                    'longchar': this.$t('长字符'),
+                    'objuser': this.$t('用户'),
+                    'timezone': this.$t('时区'),
                     'bool': 'bool'
                 },
                 table: {
@@ -177,7 +177,7 @@
             createField () {
                 this.slider.isEditField = false
                 this.slider.isReadOnly = false
-                this.slider.title = this.$t('ModelManagement["新建字段"]')
+                this.slider.title = this.$t('新建字段')
                 this.slider.curField = {}
                 this.slider.type = false
                 this.slider.isShow = true
@@ -185,14 +185,14 @@
             editField (item) {
                 this.slider.isEditField = true
                 this.slider.isReadOnly = this.isReadOnly
-                this.slider.title = this.$t('ModelManagement["编辑字段"]')
+                this.slider.title = this.$t('编辑字段')
                 this.slider.curField = item
                 this.slider.type = false
                 this.slider.isShow = true
             },
             deleteField (field) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除字段？"]', field['bk_property_name'], { name: field['bk_property_name'] }),
+                    title: this.$tc('确定删除字段？', field['bk_property_name'], { name: field['bk_property_name'] }),
                     confirmFn: async () => {
                         await this.deleteObjectAttribute({
                             id: field.id,
@@ -244,8 +244,8 @@
                 if (hasChanged) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["确认退出"]'),
-                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.slider.isShow = false
@@ -264,7 +264,7 @@
                 if (column.property === 'operation') return
                 this.slider.isEditField = true
                 this.slider.isReadOnly = true
-                this.slider.title = this.$t('ModelManagement["字段详情"]')
+                this.slider.title = this.$t('字段详情')
                 this.slider.curField = row
                 this.slider.type = true
                 this.slider.isShow = true

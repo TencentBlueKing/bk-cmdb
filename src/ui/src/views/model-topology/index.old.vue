@@ -10,42 +10,42 @@
                     <bk-button class="edit-button" theme="primary"
                         :disabled="!$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS)"
                         @click="editTopo">
-                        {{$t('ModelManagement["编辑拓扑"]')}}
+                        {{$t('编辑拓扑')}}
                     </bk-button>
                 </span>
             </template>
             <template v-else>
                 <bk-button theme="primary" @click="exitEdit">
-                    {{$t('Common["返回"]')}}
+                    {{$t('返回')}}
                 </bk-button>
-                <p class="edit-cue">{{$t('ModelManagement["所有更改已自动保存"]')}}</p>
+                <p class="edit-cue">{{$t('所有更改已自动保存')}}</p>
             </template>
             <div class="vis-button-group">
-                <i class="bk-icon icon-full-screen" @click="resizeFull" v-bk-tooltips="$t('ModelManagement[\'还原\']')"></i>
-                <i class="bk-icon icon-plus" @click="zoomIn" v-bk-tooltips="$t('ModelManagement[\'放大\']')"></i>
-                <i class="bk-icon icon-minus" @click="zoomOut" v-bk-tooltips="$t('ModelManagement[\'缩小\']')"></i>
+                <i class="bk-icon icon-full-screen" @click="resizeFull" v-bk-tooltips="$t('还原')"></i>
+                <i class="bk-icon icon-plus" @click="zoomIn" v-bk-tooltips="$t('放大')"></i>
+                <i class="bk-icon icon-minus" @click="zoomOut" v-bk-tooltips="$t('缩小')"></i>
                 <i class="icon-cc-setting"
-                    v-bk-tooltips="$t('ModelManagement[\'拓扑显示设置\']')"
+                    v-bk-tooltips="$t('拓扑显示设置')"
                     @click="showSlider('theDisplay')">
                 </i>
                 <div class="topo-example" v-if="!isAdminView">
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('ModelManagement["业务私有模型"]')}}</span>
+                        <span>{{$t('业务私有模型')}}</span>
                     </p>
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('ModelManagement["公有模型"]')}}</span>
+                        <span>{{$t('公有模型')}}</span>
                     </p>
                 </div>
                 <div class="topo-example" v-else>
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('ModelManagement["自定义模型"]')}}</span>
+                        <span>{{$t('自定义模型')}}</span>
                     </p>
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('ModelManagement["内置模型"]')}}</span>
+                        <span>{{$t('内置模型')}}</span>
                     </p>
                 </div>
             </div>
@@ -178,7 +178,7 @@
                     isShow: false,
                     content: '',
                     properties: {},
-                    title: this.$t('ModelManagement["拓扑显示设置"]')
+                    title: this.$t('拓扑显示设置')
                 },
                 displayConfig: {
                     isShowModelName: true,
@@ -413,8 +413,8 @@
                 })
                 if (asstNum) {
                     this.$bkInfo({
-                        title: this.$t('ModelManagement["移除失败"]'),
-                        subTitle: this.$tc('ModelManagement["移除失败提示"]', asstNum, { asstNum })
+                        title: this.$t('移除失败'),
+                        subTitle: this.$tc('移除失败提示', asstNum, { asstNum })
                     })
                 }
                 return !!asstNum
@@ -427,8 +427,8 @@
                     return
                 }
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确定移除模型?"]'),
-                    subTitle: this.$t('ModelManagement["移除模型提示"]'),
+                    title: this.$t('确定移除模型?'),
+                    subTitle: this.$t('移除模型提示'),
                     confirmFn: () => {
                         const node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
                         node.position = { x: null, y: null }
@@ -528,7 +528,7 @@
                         toObjId: this.topoEdit.activeEdge.to,
                         topoModelList: this.localTopoModelList
                     }
-                    this.slider.title = this.$t('ModelManagement["新建关联"]')
+                    this.slider.title = this.$t('新建关联')
                     this.showSlider('theRelation')
                 }
             },
@@ -696,7 +696,7 @@
                             isShowModelName: this.displayConfig.isShowModelName,
                             isShowModelAsst: this.displayConfig.isShowModelAsst
                         }
-                        this.slider.title = this.$t('ModelManagement["拓扑显示设置"]')
+                        this.slider.title = this.$t('拓扑显示设置')
                         slider.width = 600
                         break
                     case 'theRelation':

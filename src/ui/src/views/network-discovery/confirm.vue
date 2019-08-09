@@ -2,25 +2,25 @@
     <div class="network-confirm-wrapper">
         <div class="filter-wrapper" :class="{ 'open': filter.isShow }">
             <bk-button theme="default" @click="toggleFilter">
-                {{$t('NetworkDiscovery["批量操作"]')}}
+                {{$t('批量操作')}}
                 <i class="bk-icon icon-angle-down"></i>
             </bk-button>
             <div class="filter-details clearfix" v-show="filter.isShow">
                 <div class="details-left">
                     <bk-button theme="default" @click="toggleIgnore(true)">
-                        {{$t('NetworkDiscovery["忽略"]')}}
+                        {{$t('忽略')}}
                     </bk-button>
                     <bk-button theme="default" @click="toggleIgnore(false)">
-                        {{$t('NetworkDiscovery["取消忽略"]')}}
+                        {{$t('取消忽略')}}
                     </bk-button>
                     <label class="cmdb-form-checkbox">
                         <input type="checkbox" v-model="filter.isShowIgnore">
-                        <span class="cmdb-checkbox-text">{{$t('NetworkDiscovery["显示忽略"]')}}</span>
+                        <span class="cmdb-checkbox-text">{{$t('显示忽略')}}</span>
                     </label>
                 </div>
                 <div class="details-right clearfix">
                     <bk-select v-model="filterCopy.action"
-                        :placeholder="$t('NetworkDiscovery[\'全部变更\']')">
+                        :placeholder="$t('全部变更')">
                         <bk-option v-for="(option, index) in changeList"
                             :key="index"
                             :id="option.id"
@@ -28,16 +28,16 @@
                         </bk-option>
                     </bk-select>
                     <bk-select v-model="filterCopy.bk_obj_name"
-                        :placeholder="$t('NetworkDiscovery[\'全部类型\']')">
+                        :placeholder="$t('全部类型')">
                         <bk-option v-for="(option, index) in typeList"
                             :key="index"
                             :id="option.id"
                             :name="option.name">
                         </bk-option>
                     </bk-select>
-                    <bk-input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')"></bk-input>
+                    <bk-input type="text" class="cmdb-form-input" :placeholder="$t('请输入IP')"></bk-input>
                     <bk-button theme="default" @click="search">
-                        {{$t('Common["查询"]')}}
+                        {{$t('查询')}}
                     </bk-button>
                 </div>
             </div>
@@ -63,8 +63,8 @@
                 </label>
                 <template v-else-if="header.id === 'operation'">
                     <div :key="index">
-                        <span class="text-primary" @click.stop="showDetails(item)">{{$t('NetworkDiscovery["详情"]')}}</span>
-                        <span class="text-primary" @click.stop="item.ignore = !item.ignore">{{item.ignore ? $t('NetworkDiscovery["取消忽略"]') : $t('NetworkDiscovery["忽略"]')}}</span>
+                        <span class="text-primary" @click.stop="showDetails(item)">{{$t('详情')}}</span>
+                        <span class="text-primary" @click.stop="item.ignore = !item.ignore">{{item.ignore ? $t('取消忽略') : $t('忽略')}}</span>
                     </div>
                 </template>
                 <template v-else-if="header.id === 'action'">
@@ -95,7 +95,7 @@
         </bk-sideslider>
         <div class="footer">
             <bk-button theme="primary" @click="showResultDialog">
-                {{$t('NetworkDiscovery["确认变更"]')}}
+                {{$t('确认变更')}}
             </bk-button>
         </div>
         <bk-dialog
@@ -106,29 +106,29 @@
             :close-icon="false"
             :width="448">
             <div>
-                <h2>{{$t('NetworkDiscovery["执行结果"]')}}</h2>
+                <h2>{{$t('执行结果')}}</h2>
                 <div class="dialog-content">
                     <p>
-                        <span class="info">{{$t('NetworkDiscovery["属性变更成功"]')}}</span>
+                        <span class="info">{{$t('属性变更成功')}}</span>
                         <span class="number">{{resultDialog.data['change_attribute_success']}}条</span>
                     </p>
                     <p>
-                        <span class="info">{{$t('NetworkDiscovery["关联关系变更成功"]')}}</span>
+                        <span class="info">{{$t('关联关系变更成功')}}</span>
                         <span class="number">{{resultDialog.data['change_associations_success']}}条</span>
                     </p>
                     <p class="fail">
-                        <span class="info">{{$t('NetworkDiscovery["属性变更失败"]')}}</span>
+                        <span class="info">{{$t('属性变更失败')}}</span>
                         <span class="number">{{resultDialog.data['change_attribute_failure']}}条</span>
                     </p>
                     <p class="fail">
-                        <span class="info">{{$t('NetworkDiscovery["关联关系变更失败"]')}}</span>
+                        <span class="info">{{$t('关联关系变更失败')}}</span>
                         <span class="number">{{resultDialog.data['change_associations_failure']}}条</span>
                     </p>
                 </div>
                 <div class="dialog-details" v-if="resultDialog.data.errors.length">
                     <p @click="toggleDialogDetails">
                         <i class="bk-icon icon-angle-down"></i>
-                        <span>{{$t('NetworkDiscovery["展开详情"]')}}</span>
+                        <span>{{$t('展开详情')}}</span>
                     </p>
                     <transition name="toggle-slide">
                         <div class="detail-content-box" v-if="resultDialog.isDetailsShow">
@@ -142,7 +142,7 @@
                 </div>
                 <div class="footer">
                     <bk-button theme="primary" @click="resultDialog.isShow = false">
-                        {{$t('Hosts["确认"]')}}
+                        {{$t('确认')}}
                     </bk-button>
                 </div>
             </div>
@@ -150,20 +150,20 @@
         <bk-dialog
             class="bk-dialog-no-padding confirm-dialog"
             v-model="confirmDialog.isShow"
-            :title="$t('NetworkDiscovery[\'退出确认\']')"
+            :title="$t('退出确认')"
             :show-footer="false"
             :mask-close="false"
             :width="390">
             <div class="dialog-content">
                 <p>
-                    {{$t('NetworkDiscovery["当前改动尚未生效，是否放弃？"]')}}
+                    {{$t('当前改动尚未生效，是否放弃？')}}
                 </p>
                 <div class="footer">
                     <bk-button theme="default" @click="routeToLeave">
-                        {{$t('NetworkDiscovery["放弃改动"]')}}
+                        {{$t('放弃改动')}}
                     </bk-button>
                     <bk-button theme="default" @click="confirmDialog.isShow = false">
-                        {{$t('Common["取消"]')}}
+                        {{$t('取消')}}
                     </bk-button>
                 </div>
             </div>
@@ -210,43 +210,43 @@
                 },
                 changeList: [{
                     id: 'create',
-                    name: this.$t("Common['新增']")
+                    name: this.$t('新增')
                 }, {
                     id: 'update',
-                    name: this.$t("NetworkDiscovery['变更']")
+                    name: this.$t('变更')
                 }, {
                     id: 'delete',
-                    name: this.$t("Common['删除']")
+                    name: this.$t('删除')
                 }],
                 typeList: [{
                     id: 'switch',
-                    name: this.$t("NetworkDiscovery['交换机']")
+                    name: this.$t('交换机')
                 }, {
                     id: 'host',
-                    name: this.$t("Hosts['主机']")
+                    name: this.$t('主机')
                 }],
                 table: {
                     header: [{
                         id: 'action',
-                        name: this.$t('NetworkDiscovery["变更方式"]')
+                        name: this.$t('变更方式')
                     }, {
                         id: 'bk_obj_name',
-                        name: this.$t('ModelManagement["类型"]')
+                        name: this.$t('类型')
                     }, {
                         id: 'bk_inst_key',
-                        name: this.$t('NetworkDiscovery["唯一标识"]')
+                        name: this.$t('唯一标识')
                     }, {
                         id: 'bk_host_innerip',
                         name: 'IP'
                     }, {
                         id: 'configuration',
-                        name: this.$t('NetworkDiscovery["配置信息"]')
+                        name: this.$t('配置信息')
                     }, {
                         id: 'last_time',
-                        name: this.$t('NetworkDiscovery["发现时间"]')
+                        name: this.$t('发现时间')
                     }, {
                         id: 'operation',
-                        name: this.$t('Association["操作"]'),
+                        name: this.$t('操作'),
                         sortable: false
                     }],
                     list: [],
@@ -261,9 +261,9 @@
                     sort: '-last_time'
                 },
                 actionMap: {
-                    'create': this.$t("Common['新增']"),
-                    'update': this.$t("NetworkDiscovery['变更']"),
-                    'delete': this.$t("Common['删除']")
+                    'create': this.$t('新增'),
+                    'update': this.$t('变更'),
+                    'delete': this.$t('删除')
                 },
                 activeItem: {
                     index: 0,
@@ -324,7 +324,7 @@
             }
         },
         created () {
-            this.$route.meta.title = `${this.cloudName}${this.$t('NetworkDiscovery["变更确认"]')}`
+            this.$route.meta.title = `${this.cloudName}${this.$t('变更确认')}`
             this.getTableData()
         },
         methods: {

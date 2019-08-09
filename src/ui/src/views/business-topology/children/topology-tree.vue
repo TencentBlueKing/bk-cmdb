@@ -28,7 +28,7 @@
                         theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_TOPO)"
                         @click.stop="showCreateDialog(node)">
-                        {{$t('Common[\'新建\']')}}
+                        {{$t('新建')}}
                     </bk-button>
                 </span>
                 <div class="info-content">
@@ -244,7 +244,7 @@
                         ...data
                     }
                     this.$refs.tree.addNode(nodeData, parentNode.id, 0)
-                    this.$success(this.$t('Common[\'新建成功\']'))
+                    this.$success(this.$t('新建成功'))
                     this.handleCancelCreateNode()
                 } catch (e) {
                     console.error(e)

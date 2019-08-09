@@ -111,10 +111,10 @@
         },
         computed: {
             editText () {
-                return this.editButtonText || this.$t("Common['编辑']")
+                return this.editButtonText || this.$t('编辑')
             },
             deleteText () {
-                return this.deleteButtonText || this.$t("Common['删除']")
+                return this.deleteButtonText || this.$t('删除')
             }
         },
         mounted () {

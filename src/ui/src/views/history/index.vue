@@ -1,8 +1,8 @@
 <template>
     <div class="history-layout">
         <div class="history-options clearfix">
-            <label class="fl">{{$t('Common["已删除历史"]')}}</label>
-            <bk-button class="fr ml10" theme="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
+            <label class="fl">{{$t('已删除历史')}}</label>
+            <bk-button class="fr ml10" theme="primary" @click="back">{{$t('返回')}}</bk-button>
             <bk-date-picker class="history-date-range fr"
                 placement="bottom-end"
                 type="daterange"
@@ -184,7 +184,7 @@
                 })).concat([{
                     id: 'op_time',
                     width: 180,
-                    name: this.$t('Common["更新时间"]')
+                    name: this.$t('更新时间')
                 }])
                 return Promise.resolve(this.header)
             },
