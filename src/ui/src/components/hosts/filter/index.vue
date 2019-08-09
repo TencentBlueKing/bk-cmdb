@@ -109,9 +109,9 @@
                                 interactive: true,
                                 hideOnClick: false
                             }">
-                            <bk-button theme="default" @click="handleCreateCollection">{{$t('收藏条件')}}</bk-button>
+                            <bk-button theme="default" @click="handleCreateCollection">{{$t('收藏此条件')}}</bk-button>
                             <section class="collection" slot="content">
-                                <label class="collection-title">{{$t('收藏条件')}}</label>
+                                <label class="collection-title">{{$t('收藏此条件')}}</label>
                                 <bk-input class="collection-name"
                                     :placeholder="$t('请填写名称')"
                                     v-model="collectionName">

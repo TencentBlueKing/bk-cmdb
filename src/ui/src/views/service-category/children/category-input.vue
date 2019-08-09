@@ -1,7 +1,6 @@
 <template>
     <div class="cagetory-input" v-click-outside="handleCancel">
-        <bk-input type="text" class="bk-form-control"
-            :style="setStyle"
+        <bk-input type="text"
             :ref="inputRef"
             :placeholder="placeholder"
             v-model="localValue">
@@ -33,10 +32,6 @@
             editId: {
                 type: Number,
                 default: 0
-            },
-            setStyle: {
-                type: Object,
-                default: () => {}
             }
         },
         data () {
@@ -70,16 +65,13 @@
         font-weight: normal;
         .bk-form-control {
             flex: 1;
-            font-size: 14px;
+            font-size: 0;
             height: 32px;
             line-height: 32px;
             margin-right: 10px;
-            /deep/.bk-form-input {
-                border: none;
-                    background-color: transparent;
-                &:focus {
-                    background-color: transparent !important;
-                }
+            /deep/ .bk-form-input {
+                font-size: 14px;
+                line-height: 32px;
             }
         }
         .text-primary {
