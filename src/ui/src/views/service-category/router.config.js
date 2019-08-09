@@ -23,7 +23,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'serviceCagetory',
-            i18n: 'Nav["服务分类"]',
+            i18n: '服务分类',
             path: path,
             order: 3,
             parent: NAV_SERVICE_MANAGEMENT,
@@ -35,7 +35,7 @@ export default {
                 this.authScope = 'business'
             }
         },
-        i18nTitle: 'Nav["服务分类"]',
+        i18nTitle: '服务分类',
         requireBusiness: true
     })
 }

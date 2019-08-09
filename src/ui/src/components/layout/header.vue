@@ -23,7 +23,7 @@
                     <ul class="user-dropdown" v-show="isShowUserDropdown">
                         <li class="user-dropdown-item" @click="logOut">
                             <i class="icon-cc-logout"></i>
-                            {{$t("Common['注销']")}}
+                            {{$t('注销')}}
                         </li>
                     </ul>
                 </transition>
@@ -33,11 +33,11 @@
                 <div class="helper-list" v-show="isShowHelper">
                     <a href="http://docs.bk.tencent.com/product_white_paper/cmdb/" target="_blank" class="helper-link"
                         @click="isShowHelper = false">
-                        {{$t('Common["帮助文档"]')}}
+                        {{$t('帮助文档')}}
                     </a>
                     <a href="https://github.com/Tencent/bk-cmdb" target="_blank" class="helper-link"
                         @click="isShowHelper = false">
-                        {{$t('Common["开源社区"]')}}
+                        {{$t('开源社区')}}
                     </a>
                 </div>
             </div>
@@ -54,11 +54,11 @@
                     <span class="fr" @click="handleCloseTips">我知道了</span>
                 </div>
                 <div class="admin" @click="toggleAdminView">
-                    {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
+                    {{isAdminView ? $t('返回业务管理') : $t('管理员后台')}}
                 </div>
             </bk-popover>
             <div class="admin" v-else-if="hasAdminEntrance" @click="toggleAdminView">
-                {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
+                {{isAdminView ? $t('返回业务管理') : $t('管理员后台')}}
             </div>
         </div>
     </header>
@@ -88,7 +88,7 @@
                 return this.$store.state.auth.adminEntranceAuth.is_pass
             },
             userRole () {
-                return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
+                return this.admin ? this.$t('管理员') : this.$t('普通用户')
             },
             showTips () {
                 return this.featureTipsParams['adminTips']

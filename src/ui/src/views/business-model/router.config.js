@@ -15,7 +15,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'businessModel',
-            i18n: 'Nav["业务层级"]',
+            i18n: '业务层级',
             path: path,
             order: 3,
             parent: NAV_MODEL_MANAGEMENT
@@ -26,6 +26,6 @@ export default {
                 this.authScope = 'global'
             }
         },
-        i18nTitle: 'Nav["业务层级"]'
+        i18nTitle: '业务层级'
     })
 }

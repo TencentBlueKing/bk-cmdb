@@ -2,7 +2,7 @@
     <div class="model-icon-list">
         <div class="page clearfix">
             <bk-input type="text" class="cmdb-form-input"
-                :placeholder="$t('ModelManagement[\'请输入关键词\']')"
+                :placeholder="$t('请输入关键词')"
                 v-model.trim="searchText">
             </bk-input>
             <div class="page-btn">

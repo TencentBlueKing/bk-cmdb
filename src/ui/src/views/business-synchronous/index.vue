@@ -3,26 +3,26 @@
         <template v-if="noFindData">
             <div class="no-content">
                 <img src="../../assets/images/no-content.png" alt="no-content">
-                <p>{{$t("BusinessSynchronous['找不到更新信息']")}}</p>
-                <bk-button theme="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
+                <p>{{$t('找不到更新信息')}}</p>
+                <bk-button theme="primary" @click="handleGoBackModule">{{$t('返回')}}</bk-button>
             </div>
         </template>
         <template v-else-if="isLatsetData">
             <div class="no-content">
                 <img src="../../assets/images/latset-data.png" alt="no-content">
-                <p>{{$t("BusinessSynchronous['最新数据']")}}</p>
-                <bk-button theme="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
+                <p>{{$t('最新数据')}}</p>
+                <bk-button theme="primary" @click="handleGoBackModule">{{$t('返回')}}</bk-button>
             </div>
         </template>
         <template v-else-if="list.length">
             <feature-tips
                 :show-tips="showFeatureTips"
-                :desc="$t('BusinessSynchronous[\'功能提示\']')">
+                :desc="$t('功能提示')">
             </feature-tips>
             <p class="tips" :style="{ 'padding-top': showFeatureTips ? '24px' : '0' }">
-                {{$t("BusinessSynchronous['请确认']")}}
+                {{$t('请确认')}}
                 <span>{{treePath}}</span>
-                {{$t("BusinessSynchronous['模版更新信息']")}}
+                {{$t('模版更新信息')}}
             </p>
             <div class="info-tab">
                 <div class="tab-head">
@@ -46,22 +46,22 @@
                         :key="index">
                         <div class="change-box">
                             <div class="title">
-                                <h3>{{$t("BusinessSynchronous['变更内容']")}}</h3>
+                                <h3>{{$t('变更内容')}}</h3>
                                 <span v-if="process['operational_type'] === 'changed'">（{{properties[process['process_template_id']].length}}）</span>
                             </div>
                             <div class="process-name"
                                 v-show="process['operational_type'] === 'changed'">
-                                {{$t("ProcessManagement['进程名称']")}}：<span style="color: #313238;">{{process['process_template_name']}}</span>
+                                {{$t('进程名称')}}：<span style="color: #313238;">{{process['process_template_name']}}</span>
                             </div>
                             <div class="process-name mb50"
                                 v-show="process['operational_type'] === 'added'">
-                                {{$t("BusinessSynchronous['模板中新增进程']")}}
+                                {{$t('模板中新增进程')}}
                                 <span style="font-weight: bold;">{{process['process_template_name']}}</span>
                             </div>
                             <div class="process-name mb50"
                                 v-show="process['operational_type'] === 'removed'">
                                 <span style="font-weight: bold;">{{process['process_template_name']}}</span>
-                                {{$t("BusinessSynchronous['从模版中删除']")}}
+                                {{$t('从模版中删除')}}
                             </div>
                             <div class="process-info clearfix" v-show="process['operational_type'] === 'changed'">
                                 <div class="info-item fl"
@@ -73,7 +73,7 @@
                         </div>
                         <div class="instances-box">
                             <div class="title">
-                                <h3>{{$t("BusinessSynchronous['涉及实例']")}}</h3>
+                                <h3>{{$t('涉及实例')}}</h3>
                                 <span>（{{process['service_instances'].length}}）</span>
                             </div>
                             <div class="service-instances">
@@ -95,9 +95,9 @@
                     :disabled="readNum !== list.length"
                     theme="primary"
                     @click="handleSubmitSync">
-                    {{$t("BusinessSynchronous['确认并同步']")}}
+                    {{$t('确认并同步')}}
                 </bk-button>
-                <bk-button @click="handleGoBackModule">{{$t("Common['取消']")}}</bk-button>
+                <bk-button @click="handleGoBackModule">{{$t('取消')}}</bk-button>
             </div>
         </template>
 
@@ -284,7 +284,7 @@
                             service_template_id: this.serviceTemplateId
                         })
                     })
-                    this.$store.commit('setHeaderTitle', `${this.$t("BusinessSynchronous['同步模板']")}【${this.viewsTitle}】`)
+                    this.$store.commit('setHeaderTitle', `${this.$t('同步模板')}【${this.viewsTitle}】`)
                 } catch (error) {
                     console.error(error)
                     this.noFindData = true
@@ -308,7 +308,7 @@
                             property_id: property['bk_property_id'],
                             property_name: property['bk_property_name'],
                             before_value: this.changedData.type === 'added' ? '--' : propertyValue,
-                            show_value: this.changedData.type === 'removed' ? this.$t("BusinessSynchronous['该进程已删除']") : propertyValue
+                            show_value: this.changedData.type === 'removed' ? this.$t('该进程已删除') : propertyValue
                         }
                     })
             },
@@ -409,7 +409,7 @@
                         service_instances: this.instanceIds
                     })
                 }).then(() => {
-                    this.$success(this.$t('BusinessSynchronous["同步成功"]'))
+                    this.$success(this.$t('同步成功'))
                     this.handleGoBackModule()
                 })
             },

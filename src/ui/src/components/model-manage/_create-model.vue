@@ -12,11 +12,11 @@
                     <div class="icon-wrapper" @click="modelDialog.isIconListShow = true">
                         <i :class="modelDialog.data['bk_obj_icon']"></i>
                     </div>
-                    <div class="text">{{$t('ModelManagement["选择图标"]')}}</div>
+                    <div class="text">{{$t('选择图标')}}</div>
                 </div>
                 <div class="content-right">
                     <div class="label-item" v-if="!isMainLine">
-                        <span class="label-title">{{$t('ModelManagement["所属分组"]')}}</span>
+                        <span class="label-title">{{$t('所属分组')}}</span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelGroup') }">
                             <bk-select style="width: 100%;"
@@ -24,7 +24,7 @@
                                 v-validate="'required'"
                                 name="modelGroup"
                                 :scroll-height="200"
-                                :empty-text="isAdminView ? '' : $t('ModelManagement[\'无自定义分组\']')">
+                                :empty-text="isAdminView ? '' : $t('无自定义分组')">
                                 <bk-option v-for="(option, index) in localClassifications"
                                     :key="index"
                                     :id="option.bk_classification_id"
@@ -35,32 +35,32 @@
                         </div>
                     </div>
                     <label>
-                        <span class="label-title">{{$t('ModelManagement["唯一标识"]')}}</span>
+                        <span class="label-title">{{$t('唯一标识')}}</span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelId') }">
                             <bk-input type="text" class="cmdb-form-input"
                                 name="modelId"
-                                :placeholder="$t('ModelManagement[\'请输入唯一标识\']')"
+                                :placeholder="$t('请输入唯一标识')"
                                 v-model.trim="modelDialog.data['bk_obj_id']"
                                 v-validate="'required|modelId'">
                             </bk-input>
                             <p class="form-error" :title="errors.first('modelId')">{{errors.first('modelId')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
+                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('下划线，数字，英文小写的组合')"></i>
                     </label>
                     <label>
-                        <span class="label-title">{{$t('ModelManagement["名称"]')}}</span>
+                        <span class="label-title">{{$t('名称')}}</span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelName') }">
                             <bk-input type="text" class="cmdb-form-input"
                                 name="modelName"
-                                :placeholder="$t('ModelManagement[\'请输入名称\']')"
+                                :placeholder="$t('请输入名称')"
                                 v-validate="'required|singlechar'"
                                 v-model.trim="modelDialog.data['bk_obj_name']">
                             </bk-input>
                             <p class="form-error" :title="errors.first('modelName')">{{errors.first('modelName')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('ModelManagement[\'请填写模型名\']')"></i>
+                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('请填写模型名')"></i>
                     </label>
                 </div>
             </div>
@@ -75,8 +75,8 @@
             </div>
         </div>
         <div slot="footer" class="footer">
-            <bk-button theme="primary" @click="confirm">{{$t("Common['保存']")}}</bk-button>
-            <bk-button theme="default" @click="cancel">{{$t("Common['取消']")}}</bk-button>
+            <bk-button theme="primary" @click="confirm">{{$t('保存')}}</bk-button>
+            <bk-button theme="default" @click="cancel">{{$t('取消')}}</bk-button>
         </div>
     </bk-dialog>
 </template>

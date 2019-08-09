@@ -1,6 +1,6 @@
 <template>
     <bk-input type="text"
-        :placeholder="placeholder || $t('Form[\'请输入长字符\']')"
+        :placeholder="placeholder || $t('请输入长字符')"
         :maxlength="maxlength"
         :value="value"
         :disabled="disabled"

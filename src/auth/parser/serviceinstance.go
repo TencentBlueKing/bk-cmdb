@@ -112,7 +112,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		Name:                  "removeServiceInstanceLabelsPattern",
 		Description:           "服务实例删除label",
 		Pattern:               "/api/v3/deletemany/proc/service_instance/labels",
-		HTTPMethod:            http.MethodPost,
+		HTTPMethod:            http.MethodDelete,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceInstance,
 		ResourceAction:        meta.Find,

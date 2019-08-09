@@ -3,7 +3,7 @@
         <feature-tips
             :feature-name="'category'"
             :show-tips="showFeatureTips"
-            :desc="$t('ServiceCategory[\'服务分类功能提示\']')"
+            :desc="$t('服务分类功能提示')"
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="category-list">
@@ -51,7 +51,7 @@
                                         :disabled="!$isAuthorized($OPERATION.C_SERVICE_CATEGORY)"
                                         :text="true"
                                         @click="handleShowAddChild(mainCategory['id'])">
-                                        {{$t("ServiceCategory['添加二级分类']")}}
+                                        {{$t('添加二级分类')}}
                                     </bk-button>
                                 </span>
                                 <span
@@ -64,16 +64,16 @@
                                         :text="true"
                                         :disabled="!$isAuthorized($OPERATION.D_SERVICE_CATEGORY)"
                                         @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
-                                        {{$t("Common['删除']")}}
+                                        {{$t('删除')}}
                                     </bk-button>
                                 </span>
                                 <bk-button class="menu-btn" v-else-if="!mainCategory['child_category_list'].length"
                                     :text="true"
                                     @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
-                                    {{$t("Common['删除']")}}
+                                    {{$t('删除')}}
                                 </bk-button>
                                 <span class="menu-btn no-allow-btn" v-else v-bk-tooltips="deleteBtnTips">
-                                    {{$t("Common['删除']")}}
+                                    {{$t('删除')}}
                                 </span>
                             </div>
                         </cmdb-dot-menu>
@@ -85,7 +85,7 @@
                             class="child-input"
                             ref="editInput"
                             :input-ref="'categoryInput'"
-                            :placeholder="$t('ServiceCategory[\'请输入二级分类\']')"
+                            :placeholder="$t('请输入二级分类')"
                             :edit-id="mainCategory['bk_root_id']"
                             name="categoryName"
                             v-validate="'required|namedCharacter'"
@@ -102,7 +102,7 @@
                             class="child-input"
                             ref="editInput"
                             :input-ref="'categoryInput'"
-                            :placeholder="$t('ServiceCategory[\'请输入二级分类\']')"
+                            :placeholder="$t('请输入二级分类')"
                             name="categoryName"
                             v-validate="'required|namedCharacter'"
                             v-model="childCategoryName"
@@ -189,10 +189,10 @@
         data () {
             return {
                 tooltips: {
-                    content: this.$t("ServiceCategory['二级分类删除提示']")
+                    content: this.$t('二级分类删除提示')
                 },
                 deleteBtnTips: {
-                    content: this.$t("ServiceCategory['请先清空二级分类']"),
+                    content: this.$t('请先清空二级分类'),
                     placements: ['right']
                 },
                 showFeatureTips: false,
@@ -248,7 +248,7 @@
                         name
                     })
                 }).then(res => {
-                    this.$success(this.$t('Common["保存成功"]'))
+                    this.$success(this.$t('保存成功'))
                     this.showAddMianCategory = false
                     this.handleCloseAddChild()
                     if (rootId) {
@@ -268,7 +268,7 @@
             async handleAddCategory (name, bk_root_id = 0) {
                 if (!await this.$validator.validateAll()) {
                     this.$bkMessage({
-                        message: this.errors.first('categoryName') || this.$t("ServiceCategory['请输入分类名称']"),
+                        message: this.errors.first('categoryName') || this.$t('请输入分类名称'),
                         theme: 'error'
                     })
                 } else {
@@ -278,7 +278,7 @@
             async handleEditCategory (data, type, mainIndex) {
                 if (!await this.$validator.validateAll()) {
                     this.$bkMessage({
-                        message: this.errors.first('categoryName') || this.$t("ServiceCategory['请输入分类名称']"),
+                        message: this.errors.first('categoryName') || this.$t('请输入分类名称'),
                         theme: 'error'
                     })
                 } else if (data.name === this.mainCategoryName || data.name === this.childCategoryName) {
@@ -291,7 +291,7 @@
                             name: type === 'main' ? this.mainCategoryName : this.childCategoryName
                         })
                     }).then(res => {
-                        this.$success(this.$t('Common["保存成功"]'))
+                        this.$success(this.$t('保存成功'))
                         this.handleCloseEditChild()
                         this.handleCloseEditMain()
                         if (mainIndex !== undefined && type === 'child') {
@@ -310,7 +310,7 @@
             },
             handleDeleteCategory (id, type, index) {
                 this.$bkInfo({
-                    title: this.$t("ServiceCategory['确认删除分类']"),
+                    title: this.$t('确认删除分类'),
                     zIndex: 999,
                     confirmFn: async () => {
                         await this.deleteServiceCategory({
@@ -321,7 +321,7 @@
                                 requestId: 'delete_proc_services_category'
                             }
                         }).then(() => {
-                            this.$success(this.$t('Common["删除成功"]'))
+                            this.$success(this.$t('删除成功'))
                             if (type === 'main') {
                                 this.list.splice(index, 1)
                             } else {

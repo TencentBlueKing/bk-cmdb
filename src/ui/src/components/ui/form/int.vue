@@ -1,6 +1,6 @@
 <template>
     <bk-input type="text"
-        :placeholder="placeholder || $t('Form[\'请输入数字\']')"
+        :placeholder="placeholder || $t('请输入数字')"
         :value="value"
         :maxlength="maxlength"
         :disabled="disabled"

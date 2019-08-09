@@ -67,11 +67,11 @@
                     'multiasst': ['$regex', '$eq', '$ne']
                 },
                 operatorLabel: {
-                    '$nin': this.$t("Common['不包含']"),
-                    '$in': this.$t("Common['包含']"),
-                    '$regex': this.$t("Common['包含']"),
-                    '$eq': this.$t("Common['等于']"),
-                    '$ne': this.$t("Common['不等于']")
+                    '$nin': this.$t('不包含'),
+                    '$in': this.$t('包含'),
+                    '$regex': this.$t('包含'),
+                    '$eq': this.$t('等于'),
+                    '$ne': this.$t('不等于')
                 }
             }
         },

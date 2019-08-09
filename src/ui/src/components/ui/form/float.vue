@@ -1,6 +1,6 @@
 <template>
     <bk-input type="text"
-        :placeholder="placeholder || $t('Form[\'请输入浮点数\']')"
+        :placeholder="placeholder || $t('请输入浮点数')"
         :value="value"
         :disabled="disabled"
         @blur="handleInput"

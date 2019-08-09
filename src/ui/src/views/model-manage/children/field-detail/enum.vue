@@ -7,18 +7,18 @@
                         :value="index"
                         name="enum-radio"
                         v-model="defaultIndex"
-                        v-bk-tooltips="$t('ModelManagement[\'将设置为下拉选项默认选项\']')"
+                        v-bk-tooltips="$t('将设置为下拉选项默认选项')"
                         @change="handleChange(defaultIndex)" :disabled="isReadOnly">
                 </div>
                 <div class="enum-label">
-                    {{$t('ModelManagement["枚举"]')}}{{index + 1}}
+                    {{$t('枚举')}}{{index + 1}}
                 </div>
             </div>
             <div class="enum-id">
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has(`id${index}`) }">
                     <bk-input type="text"
                         class="cmdb-form-input"
-                        :placeholder="$t('ModelManagement[\'请输入ID\']')"
+                        :placeholder="$t('请输入ID')"
                         v-model.trim="item.id"
                         v-validate="`required|enumId|repeat:${getOtherId(index)}`"
                         @input="handleInput"
@@ -32,7 +32,7 @@
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has(`name${index}`) }">
                     <bk-input type="text"
                         class="cmdb-form-input"
-                        :placeholder="$t('ModelManagement[\'请输入名称英文数字\']')"
+                        :placeholder="$t('请输入名称英文数字')"
                         v-model.trim="item.name"
                         v-validate="`required|enumName|repeat:${getOtherName(index)}`"
                         @input="handleInput"

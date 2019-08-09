@@ -4,7 +4,7 @@
             v-show="fullScreen"
             @click="toggleFullScreen(false)">
             <i class="icon-cc-resize-small"></i>
-            {{$t('Common["退出"]')}}
+            {{$t('退出')}}
         </bk-button>
         <div class="tolology-loading" v-bkloading="{ isLoading: $loading(getRelationRequestId) }">
             <div class="topology-container" ref="container">
@@ -26,7 +26,7 @@
             @mouseleave="handleTooltipsLeave">
             <a class="tooltips-option" href="javascript:void(0)"
                 @click="handleShowDetails">
-                {{$t('Common["详情信息"]')}}
+                {{$t('详情信息')}}
             </a>
         </div>
         <cmdb-topo-details

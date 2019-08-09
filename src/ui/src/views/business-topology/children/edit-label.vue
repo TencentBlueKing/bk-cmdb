@@ -7,7 +7,7 @@
                         :data-vv-name="'key-' + index"
                         v-validate="getValidateRules(index, 'key')"
                         v-model="label.key"
-                        :placeholder="$t('BusinessTopology[\'添加标签键\']')">
+                        :placeholder="$t('添加标签键')">
                     <p class="input-error">{{errors.first('key-' + index)}}</p>
                 </div>
                 <div class="label-value" :class="{ 'is-error': errors.has('value-' + index) }">
@@ -15,7 +15,7 @@
                         :data-vv-name="'value-' + index"
                         v-validate="getValidateRules(index, 'value')"
                         v-model="label.value"
-                        :placeholder="$t('BusinessTopology[\'标签值\']')">
+                        :placeholder="$t('标签值')">
                     <p class="input-error">{{errors.first('value-' + index)}}</p>
                 </div>
                 <i class="bk-icon icon-plus-circle-shape icon-btn"
@@ -116,7 +116,7 @@
                 const currentTag = this.list[index]
                 if (!currentTag.key || !currentTag.value) {
                     this.$bkMessage({
-                        message: this.$t("BusinessTopology['请填写完整标签键/值']"),
+                        message: this.$t('请填写完整标签键/值'),
                         theme: 'warning'
                     })
                     return
