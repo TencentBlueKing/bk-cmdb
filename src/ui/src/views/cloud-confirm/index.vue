@@ -5,10 +5,10 @@
                 theme="primary"
                 @click="batchConfirm"
                 :disabled="!table.checked.length">
-                <span>{{$t("Cloud['批量确认']")}}</span>
+                <span>{{$t('批量确认')}}</span>
             </bk-button>
             <div class="confirm-options-button fr">
-                <bk-button class="button-history" v-bk-tooltips.bottom="$t('Cloud[\'查看确认记录\']')" @click="confirmHistory">
+                <bk-button class="button-history" v-bk-tooltips.bottom="$t('查看确认记录')" @click="confirmHistory">
                     <i class="icon-cc-history"></i>
                 </bk-button>
             </div>
@@ -48,39 +48,39 @@
             @page-change="handlePageChange"
             @selection-change="handleSelectChange">
             <bk-table-column type="selection" fixed width="60" align="center" class-name="bk-table-selection"></bk-table-column>
-            <bk-table-column prop="bk_host_innerip" :label="$t('Cloud[\'资源名称\']')"></bk-table-column>
-            <bk-table-column prop="bk_resource_type" :label="$t('Cloud[\'资源类型\']')">
+            <bk-table-column prop="bk_host_innerip" :label="$t('资源名称')"></bk-table-column>
+            <bk-table-column prop="bk_resource_type" :label="$t('资源类型')">
                 <template slot-scope="{ row }">
                     <span class="attr-changed" v-if="row.bk_resource_type === 'change'">
-                        {{$t('Cloud["变更"]')}}
+                        {{$t('变更')}}
                     </span>
                     <span class="new-add" v-else>
-                        {{$t('Cloud["新增"]')}}
+                        {{$t('新增')}}
                     </span>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_obj_id" :label="$t('Cloud[\'模型\']')">
+            <bk-table-column prop="bk_obj_id" :label="$t('模型')">
                 <template>
-                    {{ $t('Hosts["主机"]')}}
+                    {{ $t('主机')}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_task_name" :label="$t('Cloud[\'任务名称\']')"></bk-table-column>
-            <bk-table-column prop="bk_account_type" :label="$t('Cloud[\'账号类型\']')">
+            <bk-table-column prop="bk_task_name" :label="$t('任务名称')"></bk-table-column>
+            <bk-table-column prop="bk_account_type" :label="$t('账号类型')">
                 <template slot-scope="{ row }">
-                    <span v-if="row.bk_account_type === 'tencent_cloud'">{{$t('Cloud[\'腾讯云\']')}}</span>
+                    <span v-if="row.bk_account_type === 'tencent_cloud'">{{$t('腾讯云')}}</span>
                     <span v-else>{{row.bk_account_type}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_account_admin" :label="$t('Cloud[\'任务维护人\']')"></bk-table-column>
-            <bk-table-column prop="create_time" :label="$t('Cloud[\'发现时间\']')"></bk-table-column>
-            <bk-table-column :label="$t('Cloud[\'操作\']')" fixed="right">
+            <bk-table-column prop="bk_account_admin" :label="$t('任务维护人')"></bk-table-column>
+            <bk-table-column prop="create_time" :label="$t('发现时间')"></bk-table-column>
+            <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <span class="text-primary mr20" @click.stop="singleConfirm(row)">{{$t('Hosts["确认"]')}}</span>
+                    <span class="text-primary mr20" @click.stop="singleConfirm(row)">{{$t('确认')}}</span>
                 </template>
             </bk-table-column>
             <div class="empty-info" slot="empty">
-                <p>{{$t("Cloud['暂时没有数据，请确保先添加云资源发现任务，']")}}
-                    <span class="text-primary" @click="handleAdd">{{ $t('Cloud["去添加"]')}}</span>
+                <p>{{$t('暂时没有数据，请确保先添加云资源发现任务，')}}
+                    <span class="text-primary" @click="handleAdd">{{ $t('去添加')}}</span>
                 </p>
             </div>
         </bk-table>
@@ -95,10 +95,10 @@
                 selector: {
                     list: [{
                         id: 0,
-                        name: this.$t('Cloud["模型"]')
+                        name: this.$t('模型')
                     }, {
                         id: 1,
-                        name: this.$t('Cloud["账号类型"]')
+                        name: this.$t('账号类型')
                     }],
                     defaultDemo: {
                         selected: 1
@@ -139,8 +139,8 @@
         computed: {
             batchConfirmTips () {
                 let tips = {}
-                tips = this.$t("Cloud['您将批量确认']") + this.table.checked.length + this.$t("Cloud['个资源实例，']")
-                    + this.$t("Cloud['确认后的资源实例将被录入到主机资源池中']")
+                tips = this.$t('您将批量确认') + this.table.checked.length + this.$t('个资源实例，')
+                    + this.$t('确认后的资源实例将被录入到主机资源池中')
                 return tips
             }
         },
@@ -203,11 +203,11 @@
                 const params = {}
                 params['bk_resource_id'] = this.table.checked
                 this.$bkInfo({
-                    title: this.$t("Cloud['批量资源确认']"),
+                    title: this.$t('批量资源确认'),
                     subTitle: this.batchConfirmTips,
                     confirmFn: async () => {
                         await this.handleConfirm(params)
-                        this.$success(this.$t('Cloud["资源批量确认确认成功"]'))
+                        this.$success(this.$t('资源批量确认确认成功'))
                         this.handlePageChange(1)
                     }
                 })
@@ -218,11 +218,11 @@
                 arr.push(item['bk_resource_id'])
                 params['bk_resource_id'] = arr
                 this.$bkInfo({
-                    title: this.$t("Cloud['资源确认']"),
-                    subTitle: this.$t("Cloud['确认后的资源实例将被录入到主机资源池中']"),
+                    title: this.$t('资源确认'),
+                    subTitle: this.$t('确认后的资源实例将被录入到主机资源池中'),
                     confirmFn: async () => {
                         await this.handleConfirm(params)
-                        this.$success(this.$t('Cloud["确认成功"]'))
+                        this.$success(this.$t('确认成功'))
                         this.handlePageChange(1)
                     }
                 })

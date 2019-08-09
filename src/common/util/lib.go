@@ -15,7 +15,6 @@ package util
 import (
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -24,7 +23,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/storage/dal"
+
 	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
 )
 
@@ -75,6 +76,18 @@ func ExtractRequestIDFromContext(ctx context.Context) string {
 	return ""
 }
 
+func ExtractOwnerFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+	owner := ctx.Value(common.ContextRequestOwnerField)
+	ownerValue, ok := owner.(string)
+	if ok == true {
+		return ownerValue
+	}
+	return ""
+}
+
 func NewContextFromGinContext(c *gin.Context) context.Context {
 	return NewContextFromHTTPHeader(c.Request.Header)
 }
@@ -120,6 +133,7 @@ func GetHTTPCCTransaction(header http.Header) string {
 func GetDBContext(parent context.Context, header http.Header) context.Context {
 	rid := header.Get(common.BKHTTPCCRequestID)
 	user := GetUser(header)
+	owner := GetOwnerID(header)
 	ctx := context.WithValue(parent, common.CCContextKeyJoinOption, dal.JoinOption{
 		RequestID: rid,
 		TxnID:     header.Get(common.BKHTTPCCTransactionID),
@@ -127,6 +141,7 @@ func GetDBContext(parent context.Context, header http.Header) context.Context {
 	})
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
+	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
 	return ctx
 }
 

@@ -56,10 +56,10 @@
                     <bk-button class="button-save" theme="primary"
                         :disabled="!$isAuthorized(saveAuth) || !hasChange || $loading()"
                         @click="handleSave">
-                        {{$t("Common['保存']")}}
+                        {{$t('保存')}}
                     </bk-button>
                 </span>
-                <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
+                <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>
         </div>

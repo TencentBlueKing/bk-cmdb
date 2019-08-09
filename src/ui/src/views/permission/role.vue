@@ -3,7 +3,7 @@
         <div class="role-options clearfix">
             <div class="role-options-create fl">
                 <bk-button theme="primary" @click="createRole">
-                    {{$t('Common["新建"]')}}
+                    {{$t('新建')}}
                 </bk-button>
             </div>
             <div class="role-options-search fr clearfix">
@@ -18,7 +18,7 @@
                 </bk-select>
                 <bk-input class="search-input"
                     :right-icon="'bk-icon icon-search'"
-                    :placeholder="$t('Common[\'请输入\']')"
+                    :placeholder="$t('请输入')"
                     type="text"
                     id="SearchUserName"
                     v-model.trim="filter.text"
@@ -34,19 +34,19 @@
             v-bkloading="{ isLoading: $loading('searchUserGroup') }"
             :data="table.list"
             :max-height="$APP.height - 240">
-            <bk-table-column prop="group_name" :label="$t('Permission[\'角色名\']')"></bk-table-column>
-            <bk-table-column prop="user_list" :label="$t('Permission[\'角色成员\']')"></bk-table-column>
-            <bk-table-column :label="$t('Permission[\'操作\']')" align="center">
+            <bk-table-column prop="group_name" :label="$t('角色名')"></bk-table-column>
+            <bk-table-column prop="user_list" :label="$t('角色成员')"></bk-table-column>
+            <bk-table-column :label="$t('操作')" align="center">
                 <template slot-scope="{ row }">
-                    <span class="text-primary" @click="showDetails(row)">{{$t('Permission["权限详情"]')}}</span>
-                    <span class="text-primary" @click.stop="editRole(row)">{{$t('Common["编辑"]')}}</span>
-                    <span class="text-danger" @click.stop="confirmDeleteRole(row)">{{$t('Common["删除"]')}}</span>
+                    <span class="text-primary" @click="showDetails(row)">{{$t('权限详情')}}</span>
+                    <span class="text-primary" @click.stop="editRole(row)">{{$t('编辑')}}</span>
+                    <span class="text-danger" @click.stop="confirmDeleteRole(row)">{{$t('删除')}}</span>
                 </template>
             </bk-table-column>
             <div class="empty-info" slot="empty">
-                <p>{{$t("Common['暂时没有数据']")}}</p>
-                <p>{{$t("Permission['当前并无角色，可点击下方按钮新增']")}}</p>
-                <bk-button class="process-btn" theme="primary" @click="createRole">{{$t("Permission['新建角色']")}}</bk-button>
+                <p>{{$t('暂时没有数据')}}</p>
+                <p>{{$t('当前并无角色，可点击下方按钮新增')}}</p>
+                <bk-button class="process-btn" theme="primary" @click="createRole">{{$t('新建角色')}}</bk-button>
             </div>
         </bk-table>
         <v-role-form
@@ -88,10 +88,10 @@
                 },
                 typeList: [{
                     id: 'group_name',
-                    name: this.$t('Permission["角色名"]')
+                    name: this.$t('角色名')
                 }, {
                     id: 'user_list',
-                    name: this.$t('Permission["角色成员"]')
+                    name: this.$t('角色成员')
                 }],
                 table: {
                     list: []
@@ -126,7 +126,7 @@
             ]),
             showDetails (item) {
                 this.slider.groupId = item['group_id']
-                this.slider.title = `${item['group_name']} ${this.$t('Permission["权限详情"]')}`
+                this.slider.title = `${item['group_name']} ${this.$t('权限详情')}`
                 this.slider.isShow = true
             },
             handleCreateSuccess () {
@@ -139,7 +139,7 @@
             },
             confirmDeleteRole (role) {
                 this.$bkInfo({
-                    title: this.$tc('Permission["确认删除角色"]', role['group_name'], { name: role['group_name'] }),
+                    title: this.$tc('确认删除角色', role['group_name'], { name: role['group_name'] }),
                     confirmFn: () => {
                         this.deleteRole(role)
                     }
@@ -147,7 +147,7 @@
             },
             async deleteRole (role) {
                 await this.deleteUserGroup({ bkGroupId: role['group_id'] })
-                this.$success(this.$t('Permission["删除成功"]'))
+                this.$success(this.$t('删除成功'))
                 this.getRoleList()
             },
             editRole (role) {

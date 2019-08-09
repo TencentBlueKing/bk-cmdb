@@ -2,7 +2,7 @@
     <transition name="fade" duration="200">
         <div class="selector-layout" v-if="visible">
             <div class="host-wrapper">
-                <h2 class="title">{{$t('BusinessTopology["添加主机"]')}}</h2>
+                <h2 class="title">{{$t('添加主机')}}</h2>
                 <div class="options">
                     <cmdb-selector class="options-selector"
                         v-model="filter.module"
@@ -10,11 +10,11 @@
                     </cmdb-selector>
                     <cmdb-input class="options-filter" icon="bk-icon icon-search"
                         v-model.trim="filter.ip"
-                        :placeholder="$t('BusinessTopology[\'请输入IP\']')"
+                        :placeholder="$t('请输入IP')"
                         @icon-click="infiniteIdentifier++"
                         @enter="infiniteIdentifier++">
                     </cmdb-input>
-                    <i18n class="options-count fr" path="BusinessTopology['已选择主机']">
+                    <i18n class="options-count fr" path="已选择主机">
                         <span place="count">{{checked.length}}</span>
                     </i18n>
                 </div>
@@ -46,9 +46,9 @@
                 <div class="button-wrapper">
                     <bk-button class="button" theme="primary"
                         :disabled="!checked.length"
-                        @click="handleConfirm">{{$t('Common["确定"]')}}
+                        @click="handleConfirm">{{$t('确定')}}
                     </bk-button>
-                    <bk-button class="button" theme="default" @click="handleCancel">{{$t('Common["取消"]')}}</bk-button>
+                    <bk-button class="button" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </div>
@@ -101,7 +101,7 @@
             modules () {
                 return [{
                     id: 'biz',
-                    name: this.$t('BusinessTopology["业务主机"]')
+                    name: this.$t('业务主机')
                 }, {
                     id: this.moduleInstance.bk_module_id,
                     name: this.moduleInstance.bk_module_name

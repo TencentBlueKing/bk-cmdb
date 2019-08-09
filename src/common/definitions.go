@@ -1073,8 +1073,9 @@ const (
 )
 
 const (
-	ContextRequestIDField   = "request_id"
-	ContextRequestUserField = "request_user"
+	ContextRequestIDField    = "request_id"
+	ContextRequestUserField  = "request_user"
+	ContextRequestOwnerField = "request_owner"
 )
 
 const (
@@ -1089,6 +1090,10 @@ const (
 	ModelAndInstCount    = "model_and_inst_count"
 	ModelInstChart       = "model_inst_chart"
 	ModelInstChangeChart = "model_inst_change_chart"
+	CreateObject         = "create object"
+	DeleteObject         = "delete object"
+	UpdateObject         = "update object"
+	OperationDescription = "op_desc"
 )
 
 // 云同步

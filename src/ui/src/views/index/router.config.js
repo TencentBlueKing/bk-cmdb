@@ -10,13 +10,13 @@ export default [{
     meta: new Meta({
         menu: {
             id: NAV_INDEX,
-            i18n: 'Nav["首页"]',
+            i18n: '首页',
             path: path
         },
         auth: {
             view: null
         },
-        i18nTitle: 'Index["首页"]'
+        i18nTitle: '首页'
     })
 }, {
     name: 'search',

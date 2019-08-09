@@ -2,7 +2,7 @@
     <div>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["源模型"]')}}
+                {{$t('源模型"]')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
@@ -11,7 +11,7 @@
         </label>
         <label class="form-label exchange-icon-wrapper">
             <span class="label-text">
-                {{$t('ModelManagement["目标模型"]')}}
+                {{$t('目标模型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
@@ -23,7 +23,7 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["关联类型"]')}}
+                {{$t('关联类型')}}
                 <span class="color-danger">*</span>
             </span>
             <ul class="relation-label cmdb-form-item clearfix" :class="{ 'is-error': errors.has('asstId') }">
@@ -37,7 +37,7 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["关联描述"]')}}
+                {{$t('关联描述')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
@@ -45,14 +45,14 @@
                     name="asstName"
                     v-validate="'required|singlechar'"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
-                    :placeholder="$t('ModelManagement[\'请输入关联描述\']')">
+                    :placeholder="$t('请输入关联描述')">
                 </bk-input>
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
         </label>
         <div class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["源-目标约束"]')}}
+                {{$t('源-目标约束')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('mapping') }">
@@ -68,10 +68,10 @@
         </div>
         <div class="btn-group">
             <bk-button theme="primary" :loading="$loading('createObjectAssociation')" @click="saveRelation">
-                {{$t('Common["确定"]')}}
+                {{$t('确定')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">
-                {{$t('Common["取消"]')}}
+                {{$t('取消')}}
             </bk-button>
         </div>
     </div>

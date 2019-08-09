@@ -13,8 +13,8 @@
 package metadata
 
 import (
+	"configcenter/src/common/querybuilder"
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -115,11 +115,16 @@ type HostModuleFind struct {
 	Page      BasePage `json:"page"`
 }
 
-type ListHostByTopoNodeParameter struct {
-	Metadata  Metadata `json:"metadata"`
-	SetIDs    []int64  `json:"bk_set_ids"`
-	ModuleIDs []int64  `json:"bk_module_ids"`
-	Page      BasePage `json:"page"`
+type ListHostsParameter struct {
+	SetIDs             []int64                   `json:"bk_set_ids"`
+	ModuleIDs          []int64                   `json:"bk_module_ids"`
+	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Page               BasePage                  `json:"page"`
+}
+
+type ListHostsWithNoBizParameter struct {
+	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Page               BasePage                  `json:"page"`
 }
 
 type TimeRange struct {
@@ -127,28 +132,32 @@ type TimeRange struct {
 	End   *time.Time
 }
 
-type ListHostByTopoNodeOption struct {
-	BizID     int64    `json:"bk_biz_id,omitempty"`
-	SetIDs    []int64  `json:"bk_set_ids"`
-	ModuleIDs []int64  `json:"bk_module_ids"`
-	Page      BasePage `json:"page"`
+type ListHosts struct {
+	BizID              int64                     `json:"bk_biz_id,omitempty"`
+	SetIDs             []int64                   `json:"bk_set_ids"`
+	ModuleIDs          []int64                   `json:"bk_module_ids"`
+	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Page               BasePage                  `json:"page"`
 }
 
-func (option ListHostByTopoNodeOption) Validate() (string, error) {
-	if option.BizID == 0 {
-		return common.BKAppIDField, errors.New("bk_biz_id field shouldn't be empty")
-	}
-
+func (option ListHosts) Validate() (string, error) {
 	if key, err := option.Page.Validate(); err != nil {
 		return fmt.Sprintf("page.%s", key), err
+	}
+
+	if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		return fmt.Sprintf("host_property_filter.%s", key), err
 	}
 
 	return "", nil
 }
 
-func (option ListHostByTopoNodeOption) GetHostPropertyFilter(ctx context.Context) (map[string]interface{}, error) {
-	_ = util.ExtractRequestIDFromContext(ctx)
-	return make(map[string]interface{}), nil
+func (option ListHosts) GetHostPropertyFilter(ctx context.Context) (map[string]interface{}, error) {
+	mgoFilter, key, err := option.HostPropertyFilter.ToMgo()
+	if err != nil {
+		return nil, fmt.Errorf("invalid key:host_property_filter.%s, err: %s", key, err)
+	}
+	return mgoFilter, nil
 }
 
 // ip search info

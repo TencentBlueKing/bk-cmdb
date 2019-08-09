@@ -3,7 +3,7 @@
         <feature-tips
             :feature-name="'association'"
             :show-tips="showFeatureTips"
-            :desc="$t('ModelManagement[\'关联关系提示\']')"
+            :desc="$t('关联关系提示')"
             :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94'"
             @close-tips="showFeatureTips = false">
         </feature-tips>
@@ -17,7 +17,7 @@
                     class="create-btn"
                     :disabled="!$isAuthorized($OPERATION.C_RELATION)"
                     @click="createRelation">
-                    {{$t('Common["新建"]')}}
+                    {{$t('新建')}}
                 </bk-button>
             </span>
             <label class="search-input">
@@ -25,7 +25,7 @@
                 <bk-input type="text" class="cmdb-form-input"
                     v-model.trim="searchText"
                     :right-icon="'bk-icon icon-search'"
-                    :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')"
+                    :placeholder="$t('请输入关联类型名称')"
                     @enter="searchRelation(true)">
                 </bk-input>
             </label>
@@ -37,24 +37,24 @@
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange">
-            <bk-table-column prop="bk_asst_id" :label="$t('ModelManagement[\'唯一标识\']')" sortable="custom" class-name="is-highlight">
+            <bk-table-column prop="bk_asst_id" :label="$t('唯一标识')" sortable="custom" class-name="is-highlight">
                 <template slot-scope="{ row }">
                     <div style="cursor: pointer; padding: 10px 0;" @click.stop="handleShowDetails(row)">
                         {{row['bk_asst_id']}}
                     </div>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_asst_name" :label="$t('Hosts[\'名称\']')" sortable="custom">
+            <bk-table-column prop="bk_asst_name" :label="$t('名称')" sortable="custom">
                 <template slot-scope="{ row }">
                     {{row['bk_asst_name'] || '--'}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="src_des" :label="$t('ModelManagement[\'源->目标描述\']')" sortable="custom"></bk-table-column>
-            <bk-table-column prop="dest_des" :label="$t('ModelManagement[\'目标->源描述\']')" sortable="custom"></bk-table-column>
-            <bk-table-column prop="count" :label="$t('ModelManagement[\'使用数\']')"></bk-table-column>
+            <bk-table-column prop="src_des" :label="$t('源->目标描述')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="dest_des" :label="$t('目标->源描述')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="count" :label="$t('使用数')"></bk-table-column>
             <bk-table-column v-if="isAdminView"
                 fixed="right"
-                :label="$t('Common[\'操作\']')">
+                :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <span class="text-primary disabled mr10"
                         v-cursor="{
@@ -62,12 +62,12 @@
                             auth: [$OPERATION.U_RELATION]
                         }"
                         v-if="row.ispre || !$isAuthorized($OPERATION.U_RELATION)">
-                        {{$t('Common["编辑"]')}}
+                        {{$t('编辑')}}
                     </span>
                     <span class="text-primary mr10"
                         v-else
                         @click.stop="editRelation(row)">
-                        {{$t('Common["编辑"]')}}
+                        {{$t('编辑')}}
                     </span>
                     <span class="text-primary disabled"
                         v-cursor="{
@@ -75,12 +75,12 @@
                             auth: [$OPERATION.D_RELATION]
                         }"
                         v-if="row.ispre || !$isAuthorized($OPERATION.D_RELATION)">
-                        {{$t('Common["删除"]')}}
+                        {{$t('删除')}}
                     </span>
                     <span class="text-primary"
                         v-else
                         @click.stop="deleteRelation(row)">
-                        {{$t('Common["删除"]')}}
+                        {{$t('删除')}}
                     </span>
                 </template>
             </bk-table-column>
@@ -121,7 +121,7 @@
                 slider: {
                     isShow: false,
                     isEdit: false,
-                    title: this.$t('ModelManagement["新建关联类型"]'),
+                    title: this.$t('新建关联类型'),
                     relation: {},
                     isReadOnly: false
                 },
@@ -205,13 +205,13 @@
                 this.table.list.splice()
             },
             createRelation () {
-                this.slider.title = this.$t('ModelManagement["新建关联类型"]')
+                this.slider.title = this.$t('新建关联类型')
                 this.slider.isReadOnly = false
                 this.slider.isEdit = false
                 this.slider.isShow = true
             },
             editRelation (relation) {
-                this.slider.title = this.$t('ModelManagement["编辑关联类型"]')
+                this.slider.title = this.$t('编辑关联类型')
                 this.slider.isReadOnly = false
                 this.slider.relation = relation
                 this.slider.isEdit = true
@@ -219,7 +219,7 @@
             },
             deleteRelation (relation) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除关联类型？"]', relation['bk_asst_name'], { name: relation['bk_asst_name'] }),
+                    title: this.$tc('确定删除关联类型？', relation['bk_asst_name'], { name: relation['bk_asst_name'] }),
                     confirmFn: async () => {
                         await this.deleteAssociationType({
                             id: relation.id,
@@ -252,8 +252,8 @@
                 if (hasChanged) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["确认退出"]'),
-                            subTitle: this.$t('Common["退出会导致未保存信息丢失"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.slider.isShow = false
@@ -269,7 +269,7 @@
                 return true
             },
             handleShowDetails (relation) {
-                this.slider.title = this.$t('ModelManagement["关联类型详情"]')
+                this.slider.title = this.$t('关联类型详情')
                 this.slider.relation = relation
                 this.slider.isReadOnly = true
                 this.slider.isEdit = true

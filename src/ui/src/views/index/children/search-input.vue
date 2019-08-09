@@ -4,7 +4,7 @@
             class="search-keywords"
             type="text"
             maxlength="32"
-            :placeholder="$t('Common[\'请输入搜索内容\']')"
+            :placeholder="$t('请输入搜索内容')"
             v-model.trim="queryString"
             @keypress.enter="handleSearch">
         <div class="search-btn">

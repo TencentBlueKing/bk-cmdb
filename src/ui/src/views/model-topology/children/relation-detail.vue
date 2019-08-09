@@ -2,7 +2,7 @@
     <div>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["源模型"]')}}
+                {{$t('源模型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
@@ -11,7 +11,7 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["目标模型"]')}}
+                {{$t('目标模型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
@@ -20,7 +20,7 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["关联描述"]')}}
+                {{$t('关联描述')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
@@ -35,7 +35,7 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["源-目标约束"]')}}
+                {{$t('源-目标约束')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
@@ -51,10 +51,10 @@
         </label>
         <div class="btn-group" v-if="isEdit && relationInfo.bk_asst_id !== 'bk_mainline'">
             <bk-button theme="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
-                {{$t('Common["确定"]')}}
+                {{$t('确定')}}
             </bk-button>
             <bk-button theme="danger" @click="deleteRelation" :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')">
-                {{$t('ModelManagement["删除关联"]')}}
+                {{$t('删除关联')}}
             </bk-button>
         </div>
     </div>
@@ -154,7 +154,7 @@
             },
             deleteRelation () {
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确定删除关联关系?"]'),
+                    title: this.$t('确定删除关联关系?'),
                     confirmFn: async () => {
                         await this.deleteObjectAssociation({
                             id: this.relationInfo.id,
