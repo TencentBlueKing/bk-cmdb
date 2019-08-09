@@ -1,7 +1,7 @@
 <template>
-    <div class="chart-detail">
+    <div style="width: 100%;height: 100%;">
         <bk-dialog v-model="showDia"
-            class="bk-dialog-no-padding bk-dialog-no-tools group-dialog dialog"
+            class="bk-dialog-no-padding bk-dialog-no-tools"
             :close-icon="false"
             :mask-close="false"
             :show-footer="false"
@@ -251,7 +251,8 @@
             }
         },
         created () {
-            this.maxNum = this.chartData.chart_type === 'pie' ? this.chartData.data.data[0].labels.length : this.chartData.data.data[0].x.length
+            if (this.openType !== 'add') this.maxNum = this.chartData.chart_type === 'pie' ? this.chartData.data.data[0].labels.length : this.chartData.data.data[0].x.length
+            else this.maxNum = 25
             this.initTitle()
             this.chartType = this.chartData.report_type === 'custom'
             this.getDemList(this.chartData.bk_obj_id)
@@ -268,7 +269,6 @@
                 if (flag === 'up') {
                     this.chartData.x_axis_count += 1
                     this.maxNum = parseInt(this.maxNum) >= 25 ? 25 : this.maxNum
-                    console.log(this.maxNum)
                     if (this.chartData.x_axis_count > this.maxNum) {
                         this.chartData.x_axis_count = this.maxNum
                     }

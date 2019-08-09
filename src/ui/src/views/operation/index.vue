@@ -367,7 +367,7 @@
                     type: 'category',
                     nticks: item.x_axis_count,
                     range: [-0.5, item.x_axis_count - 0.5],
-                    fixRange: item.x_axis_count > item.data.data[0].x.length,
+                    fixRange: item.x_axis_count >= item.data.data[0].x.length,
                     colorway: ['#3A84FF', '#A3C5FD', '#59D178', '#94F5A4', '#38C1E2', '#A1EDFF', '#4159F9', '#7888F0', '#EFAF4B', '#FEDB89', '#FF5656', '#FD9C9C'],
                     legend: {
                         orientation: 'h',
@@ -504,7 +504,6 @@
                 this.updatePosition()
             },
             deleteChart (type, key, list, item) {
-                console.log(item)
                 this.$bkInfo({
                     title: this.$tc('Operation["是否确认删除"]'),
                     subTitle: '确定要删除【' + item.name + '】',
@@ -523,6 +522,8 @@
             async openNew (type, host, data, key) {
                 this.editType.hostType = host
                 this.editType.key = key
+                this.editType.openType = type
+                console.log(type)
                 if (type === 'edit') {
                     this.newChart = this.$tools.clone(data)
                     this.newChart.title = data.name
@@ -539,7 +540,6 @@
                         x_axis_count: 10
                     }
                 }
-                this.editType.openType = type
                 this.isShow = true
             },
             async saveData (data) {
@@ -796,7 +796,7 @@
         .chart-date{
             line-height: 48px;
             position: absolute;
-            right: 15px;
+            right: 25px;
             top: 0;
             width: 250px;
         }
