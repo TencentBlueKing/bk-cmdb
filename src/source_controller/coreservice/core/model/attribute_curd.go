@@ -22,6 +22,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
+	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -57,8 +59,51 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 		return 0, err
 	}
 
+	// check name duplicate
+	err = m.checkUnique(ctx, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName)
+	if err != nil {
+		blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+		return 0, err
+	}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Insert(ctx, attribute)
 	return id, err
+}
+
+func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objID, propertyID, propertyName string) error {
+	cond := mongo.NewCondition()
+	cond = cond.Element(mongo.Field(common.BKObjIDField).Eq(objID))
+
+	nameFieldCond := mongo.Field(common.BKPropertyNameField).Eq(propertyName)
+	if isCreate {
+		idFieldCond := mongo.Field(common.BKPropertyIDField).Eq(propertyID)
+		cond = cond.Or(nameFieldCond, idFieldCond)
+	} else {
+		// update attribute. not change name, 无需判断
+		if propertyName == "" {
+			return nil
+		}
+		cond = cond.Element(nameFieldCond)
+	}
+
+	condMap := util.SetModOwner(cond.ToMapStr(), ctx.SupplierAccount)
+
+	resultAttrs := []metadata.Attribute{}
+	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).All(ctx, &resultAttrs)
+	blog.V(5).Infof("checkUnique db cond:%#v, result:%#v, rid:%s", condMap, resultAttrs, ctx.ReqID)
+	if err != nil {
+		blog.ErrorJSON("checkUnique select error. err:%s, cond:%s, rid:%s", err.Error(), condMap, ctx.ReqID)
+		return ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	}
+	for _, attrItem := range resultAttrs {
+		if attrItem.PropertyID == propertyID && isCreate {
+			return ctx.Error.Errorf(common.CCErrCommDuplicateItem, ctx.Lang.Language("model_attr_bk_property_id"))
+		}
+		if attrItem.PropertyName == propertyName {
+			return ctx.Error.Errorf(common.CCErrCommDuplicateItem, ctx.Lang.Language("model_attr_bk_property_name"))
+		}
+	}
+
+	return nil
 }
 
 func (m *modelAttribute) checkAttributeMustNotEmpty(ctx core.ContextParams, attribute metadata.Attribute) error {
@@ -111,12 +156,17 @@ func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribut
 
 func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.count(ctx, cond)
-	if 0 == cnt {
+	dbAttributeArr, err := m.search(ctx, cond)
+	if err != nil {
+		blog.Errorf("request(%s): find nothing by the condition(%#v)  error(%s)", ctx.ReqID, cond.ToMapStr(), err.Error())
+		return 0, err
+	}
+	if 0 == len(dbAttributeArr) {
 		blog.Errorf("request(%s): find nothing by the condition(%#v)", ctx.ReqID, cond.ToMapStr())
 		return cnt, nil
 	}
 
+	// 删除不可更新字段， 避免由于传入数据，修改字段
 	data.Remove(metadata.AttributeFieldPropertyID)
 	data.Remove(metadata.AttributeFieldSupplierAccount)
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
@@ -128,6 +178,12 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 	}
 
 	if err = m.checkAttributeValidity(ctx, attribute); err != nil {
+		return 0, err
+	}
+
+	err = m.checkUnique(ctx, true, dbAttributeArr[0].ObjectID, attribute.PropertyID, attribute.PropertyName)
+	if err != nil {
+		blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
 		return 0, err
 	}
 
