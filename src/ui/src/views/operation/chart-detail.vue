@@ -1,5 +1,5 @@
 <template>
-    <div style="width: 100%;height: 100%;">
+    <div>
         <bk-dialog v-model="showDia"
             class="bk-dialog-no-padding bk-dialog-no-tools"
             :close-icon="false"
