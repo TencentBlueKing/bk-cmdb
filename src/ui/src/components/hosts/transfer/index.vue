@@ -24,6 +24,7 @@
                     :expand-on-click="false"
                     :show-checkbox="shouldShowCheckbox"
                     :before-check="beforeNodeCheck"
+                    :check-strictly="false"
                     @node-click="handleNodeClick"
                     @check-change="handleNodeCheck">
                     <div class="node-info clearfix" slot-scope="{ node, data }">
