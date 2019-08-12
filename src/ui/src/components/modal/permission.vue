@@ -79,7 +79,7 @@
                         }).join('\n')
                     }
                     return {
-                        scope: this.getPermissionText(datum, 'scope_type_name', 'scope_name'),
+                        scope: this.getPermissionText(datum, 'scope_type_name', datum.scope_type === 'system' ? null : 'scope_name'),
                         resource: resource,
                         action: datum.action_name
                     }
@@ -87,7 +87,7 @@
             },
             getPermissionText (data, necessaryKey, extraKey, split = '：') {
                 const text = [data[necessaryKey]]
-                if (data[extraKey]) {
+                if (extraKey && data[extraKey]) {
                     text.push(data[extraKey])
                 }
                 return text.join(split).trim()
