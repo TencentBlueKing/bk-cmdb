@@ -7,7 +7,7 @@
                         :data-vv-name="'key-' + index"
                         v-validate="getValidateRules(index, 'key')"
                         v-model="label.key"
-                        :placeholder="$t('添加标签键')">
+                        :placeholder="$t('标签键')">
                     <p class="input-error">{{errors.first('key-' + index)}}</p>
                 </div>
                 <div class="label-value" :class="{ 'is-error': errors.has('value-' + index) }">
