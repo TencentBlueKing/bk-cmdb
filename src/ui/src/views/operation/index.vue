@@ -523,7 +523,6 @@
                 this.editType.hostType = host
                 this.editType.key = key
                 this.editType.openType = type
-                console.log(type)
                 if (type === 'edit') {
                     this.newChart = this.$tools.clone(data)
                     this.newChart.title = data.name

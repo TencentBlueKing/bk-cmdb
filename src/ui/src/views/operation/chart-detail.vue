@@ -1,6 +1,6 @@
 <template>
     <div>
-        <bk-dialog v-model="showDia"
+        <bk-dialog v-model="showDia" :position="{ top: 100 }"
             class="bk-dialog-no-padding bk-dialog-no-tools"
             :close-icon="false"
             :mask-close="false"
