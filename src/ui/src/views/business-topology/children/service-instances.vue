@@ -121,31 +121,14 @@
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleBeforeClose">
                 <template slot="bind_ip">
-                    <div class="bind-ip-wrapper">
-                        <bk-select class="bind-ip-select"
-                            :disabled="checkDisabled(bindIpProperty)"
-                            v-model="bindIp">
-                            <div class="input-box" slot="trigger">
-                                <input :class="['bind-ip-text', { 'custom-error': errors.has('bindIp') }]"
-                                    name="bindIp"
-                                    autocomplete="off"
-                                    :placeholder="$t('请选择或输入IP')"
-                                    :disabled="checkDisabled(bindIpProperty)"
-                                    :options="bindIpProperty.option || []"
-                                    v-validate="getValidateRules(bindIpProperty)"
-                                    v-model="bindIp">
-                            </div>
-                            <bk-option v-for="(option, index) in processBindIp"
-                                :key="index"
-                                :id="option.id"
-                                :name="option.name">
-                            </bk-option>
-                        </bk-select>
-                        <span class="custom-form-error"
-                            :title="errors.first('bindIp')">
-                            {{errors.first('bindIp')}}
-                        </span>
-                    </div>
+                    <cmdb-input-select
+                        :disabled="checkDisabled"
+                        :name="'bindIp'"
+                        :placeholder="$t('请选择或输入IP')"
+                        :options="processBindIp"
+                        :validate="validateRules"
+                        v-model="bindIp">
+                    </cmdb-input-select>
                 </template>
             </cmdb-form>
         </bk-sideslider>
@@ -285,6 +268,21 @@
             },
             bindIpProperty () {
                 return this.processForm.properties.find(property => property['bk_property_id'] === 'bind_ip') || {}
+            },
+            validateRules () {
+                const rules = {}
+                if (this.bindIpProperty.isrequired) {
+                    rules['required'] = true
+                }
+                rules['regex'] = this.bindIpProperty.option
+                return rules
+            },
+            checkDisabled () {
+                const property = this.bindIpProperty
+                if (this.processForm.type === 'create') {
+                    return false
+                }
+                return !property.editable || property.isreadonly || this.processForm.disabledProperties.includes('bind_ip')
             }
         },
         watch: {
@@ -540,43 +538,6 @@
                     this.processBindIp = []
                     console.error(e)
                 }
-            },
-            checkDisabled (property) {
-                if (this.processForm.type === 'create') {
-                    return false
-                }
-                return !property.editable || property.isreadonly || this.processForm.disabledProperties.includes(property.bk_property_id)
-            },
-            getValidateRules (property) {
-                const rules = {}
-                const {
-                    bk_property_type: propertyType,
-                    option,
-                    isrequired
-                } = property
-                if (isrequired) {
-                    rules.required = true
-                }
-                if (option) {
-                    if (propertyType === 'int') {
-                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
-                            rules['min_value'] = option.min
-                        }
-                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
-                            rules['max_value'] = option.max
-                        }
-                    } else if (['singlechar', 'longchar'].includes(propertyType)) {
-                        rules['regex'] = option
-                    }
-                }
-                if (['singlechar', 'longchar'].includes(propertyType)) {
-                    rules[propertyType] = true
-                    rules[`${propertyType}Length`] = true
-                }
-                if (propertyType === 'float') {
-                    rules['float'] = true
-                }
-                return rules
             },
             async getProcessTemplate (processTemplateId) {
                 if (this.processTemplateMap.hasOwnProperty(processTemplateId)) {
@@ -1048,40 +1009,6 @@
         span {
             color: #979ba5;
             font-size: 14px;
-        }
-    }
-    .bind-ip-wrapper {
-        position: relative;
-        .bind-ip-select {
-            width: 100%;
-            border: none !important;
-        }
-        .input-box {
-            position: relative;
-            z-index: 2;
-            .bind-ip-text {
-                width: 100%;
-                height: 32px;
-                line-height: 30px;
-                padding: 0 10px;
-                font-size: 14px;
-                border: 1px solid #c4c6cc;
-                border-radius: 2px;
-                outline: none;
-                &::placeholder {
-                    color: #c4c6cc;
-                }
-            }
-        }
-        .custom-form-error {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            line-height: 14px;
-            font-size: 12px;
-            color: #ff5656;
-            max-width: 100%;
-            @include ellipsis;
         }
     }
 </style>
