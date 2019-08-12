@@ -20,7 +20,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row, $index }">
-                    <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess($index)">
+                    <a href="javascript:void(0)" class="text-primary mr10" @click="handleEditProcess($index)">
                         {{$t('编辑')}}
                     </a>
                     <a href="javascript:void(0)" class="text-primary"
@@ -57,6 +57,33 @@
                 :uneditable-properties="immutableProperties"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleBeforeClose">
+                <template slot="bind_ip">
+                    <div class="bind-ip-wrapper">
+                        <bk-select class="bind-ip-select"
+                            :disabled="checkDisabled(bindIpProperty)"
+                            v-model="bindIp">
+                            <div class="input-box" slot="trigger">
+                                <input :class="['bind-ip-text', { 'custom-error': errors.has('bindIp') }]"
+                                    name="bindIp"
+                                    autocomplete="off"
+                                    :placeholder="$t('请选择或输入IP')"
+                                    :disabled="checkDisabled(bindIpProperty)"
+                                    :options="bindIpProperty.option || []"
+                                    v-validate="getValidateRules(bindIpProperty)"
+                                    v-model="bindIp">
+                            </div>
+                            <bk-option v-for="(option, optionIndex) in processBindIp"
+                                :key="optionIndex"
+                                :id="option.id"
+                                :name="option.name">
+                            </bk-option>
+                        </bk-select>
+                        <span class="custom-form-error"
+                            :title="errors.first('bindIp')">
+                            {{errors.first('bindIp')}}
+                        </span>
+                    </div>
+                </template>
             </cmdb-form>
         </bk-sideslider>
     </div>
@@ -112,7 +139,9 @@
                 tooltips: {
                     content: this.$t('请为主机添加进程'),
                     placement: 'right'
-                }
+                },
+                processBindIp: [],
+                bindIp: ''
             }
         },
         computed: {
@@ -151,6 +180,14 @@
                     })
                 }
                 return properties
+            },
+            bindIpProperty () {
+                return this.processProperties.find(property => property['bk_property_id'] === 'bind_ip') || {}
+            }
+        },
+        watch: {
+            bindIp (value) {
+                this.$refs.processForm.values.bind_ip = value
             }
         },
         created () {
@@ -194,10 +231,12 @@
                 this.$emit('delete-instance', this.index)
             },
             handleAddProcess () {
+                this.getInstanceIpByHost(this.id)
                 this.processForm.instance = {}
                 this.processForm.type = 'create'
                 this.processForm.show = true
                 this.$nextTick(() => {
+                    this.bindIp = ''
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -207,6 +246,62 @@
                         }
                     })
                 })
+            },
+            async getInstanceIpByHost (hostId) {
+                try {
+                    const res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
+                        hostId,
+                        config: {
+                            requestId: 'getInstanceIpByHost'
+                        }
+                    })
+                    this.processBindIp = res.options.map(ip => {
+                        return {
+                            id: ip,
+                            name: ip
+                        }
+                    })
+                } catch (e) {
+                    this.processBindIp = []
+                    console.error(e)
+                }
+            },
+            checkDisabled (property) {
+                if (this.processForm.type === 'create') {
+                    return false
+                }
+                return !property.editable || property.isreadonly
+            },
+            getValidateRules (property) {
+                const rules = {}
+                const {
+                    bk_property_type: propertyType,
+                    option,
+                    isrequired
+                } = property
+                if (isrequired) {
+                    rules.required = true
+                }
+                if (option) {
+                    if (propertyType === 'int') {
+                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
+                            rules['min_value'] = option.min
+                        }
+                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
+                            rules['max_value'] = option.max
+                        }
+                    } else if (['singlechar', 'longchar'].includes(propertyType)) {
+                        rules['regex'] = option
+                    }
+                }
+                if (['singlechar', 'longchar'].includes(propertyType)) {
+                    rules[propertyType] = true
+                    rules[`${propertyType}Length`] = true
+                }
+                if (propertyType === 'float') {
+                    rules['float'] = true
+                }
+                return rules
             },
             handleSaveProcess (values) {
                 this.processForm.unwatch && this.processForm.unwatch()
@@ -241,10 +336,15 @@
                 this.handleCancelCreateProcess()
             },
             handleEditProcess (rowIndex) {
+                this.getInstanceIpByHost(this.id)
                 this.processForm.instance = this.processList[rowIndex]
                 this.processForm.rowIndex = rowIndex
                 this.processForm.type = 'update'
                 this.processForm.show = true
+
+                this.$nextTick(() => {
+                    this.bindIp = this.$tools.getInstFormValues(this.processProperties, this.processForm.instance)['bind_ip']
+                })
             },
             handleDeleteProcess (rowIndex) {
                 this.processList.splice(rowIndex, 1)
@@ -290,6 +390,40 @@
         .bk-icon,
         span {
             @include inlineBlock;
+        }
+    }
+    .bind-ip-wrapper {
+        position: relative;
+        .bind-ip-select {
+            width: 100%;
+            border: none !important;
+        }
+        .input-box {
+            position: relative;
+            z-index: 2;
+            .bind-ip-text {
+                width: 100%;
+                height: 32px;
+                line-height: 30px;
+                padding: 0 10px;
+                font-size: 14px;
+                border: 1px solid #c4c6cc;
+                border-radius: 2px;
+                outline: none;
+                &::placeholder {
+                    color: #c4c6cc;
+                }
+            }
+        }
+        .custom-form-error {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            line-height: 14px;
+            font-size: 12px;
+            color: #ff5656;
+            max-width: 100%;
+            @include ellipsis;
         }
     }
 </style>

@@ -59,6 +59,33 @@
                 :inst="processForm.instance"
                 @on-submit="handleSubmit"
                 @on-cancel="handleBeforeClose">
+                <template slot="bind_ip">
+                    <div class="bind-ip-wrapper">
+                        <bk-select class="bind-ip-select"
+                            :disabled="checkDisabled(bindIpProperty)"
+                            v-model="bindIp">
+                            <div class="input-box" slot="trigger">
+                                <input :class="['bind-ip-text', { 'custom-error': errors.has('bindIp') }]"
+                                    name="bindIp"
+                                    autocomplete="off"
+                                    :placeholder="$t('请选择或输入IP')"
+                                    :disabled="checkDisabled(bindIpProperty)"
+                                    :options="bindIpProperty.option || []"
+                                    v-validate="getValidateRules(bindIpProperty)"
+                                    v-model="bindIp">
+                            </div>
+                            <bk-option v-for="(option, index) in processBindIp"
+                                :key="index"
+                                :id="option.id"
+                                :name="option.name">
+                            </bk-option>
+                        </bk-select>
+                        <span class="custom-form-error"
+                            :title="errors.first('bindIp')">
+                            {{errors.first('bindIp')}}
+                        </span>
+                    </div>
+                </template>
             </cmdb-form>
         </bk-sideslider>
     </div>
@@ -87,7 +114,9 @@
                     type: 'single',
                     title: '',
                     instance: {}
-                }
+                },
+                processBindIp: [],
+                bindIp: ''
             }
         },
         computed: {
@@ -125,11 +154,20 @@
                             return sourceProcess[property.bk_property_id] === cloneProcess[property.bk_property_id]
                         })
                 })
+            },
+            bindIpProperty () {
+                return this.properties.find(property => property['bk_property_id'] === 'bind_ip') || {}
+            },
+            hostId () {
+                return parseInt(this.$route.params.hostId)
             }
         },
         watch: {
             sourceProcesses (source) {
                 this.cloneProcesses = this.$tools.clone(source)
+            },
+            bindIp (value) {
+                this.$refs.processForm.values.bind_ip = value
             }
         },
         async created () {
@@ -189,11 +227,13 @@
                 this.checked = selection.map(row => row.bk_process_id)
             },
             handleBatchEdit () {
+                this.getInstanceIpByHost(this.hostId)
                 this.processForm.type = 'batch'
                 this.processForm.title = this.$t('批量编辑')
                 this.processForm.instance = {}
                 this.processForm.show = true
                 this.$nextTick(() => {
+                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance)['bind_ip']
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -205,11 +245,13 @@
                 })
             },
             handleEditProcess (item) {
+                this.getInstanceIpByHost(this.hostId)
                 this.processForm.type = 'single'
                 this.processForm.title = `${this.$t('编辑进程')}${item.bk_process_name}`
                 this.processForm.instance = this.cloneProcesses.find(target => target.bk_process_id === item.bk_process_id)
                 this.processForm.show = true
                 this.$nextTick(() => {
+                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance)['bind_ip']
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -219,6 +261,62 @@
                         }
                     })
                 })
+            },
+            async getInstanceIpByHost (hostId) {
+                try {
+                    const res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
+                        hostId,
+                        config: {
+                            requestId: 'getInstanceIpByHost'
+                        }
+                    })
+                    this.processBindIp = res.options.map(ip => {
+                        return {
+                            id: ip,
+                            name: ip
+                        }
+                    })
+                } catch (e) {
+                    this.processBindIp = []
+                    console.error(e)
+                }
+            },
+            checkDisabled (property) {
+                if (this.processForm.type === 'create') {
+                    return false
+                }
+                return !property.editable || property.isreadonly
+            },
+            getValidateRules (property) {
+                const rules = {}
+                const {
+                    bk_property_type: propertyType,
+                    option,
+                    isrequired
+                } = property
+                if (isrequired) {
+                    rules.required = true
+                }
+                if (option) {
+                    if (propertyType === 'int') {
+                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
+                            rules['min_value'] = option.min
+                        }
+                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
+                            rules['max_value'] = option.max
+                        }
+                    } else if (['singlechar', 'longchar'].includes(propertyType)) {
+                        rules['regex'] = option
+                    }
+                }
+                if (['singlechar', 'longchar'].includes(propertyType)) {
+                    rules[propertyType] = true
+                    rules[`${propertyType}Length`] = true
+                }
+                if (propertyType === 'float') {
+                    rules['float'] = true
+                }
+                return rules
             },
             handleSubmit (values, changedValues) {
                 if (this.processForm.type === 'single') {
@@ -318,6 +416,40 @@
         .icon-exclamation-circle {
             @include inlineBlock(-1px);
             color: #FFB848;
+        }
+    }
+    .bind-ip-wrapper {
+        position: relative;
+        .bind-ip-select {
+            width: 100%;
+            border: none !important;
+        }
+        .input-box {
+            position: relative;
+            z-index: 2;
+            .bind-ip-text {
+                width: 100%;
+                height: 32px;
+                line-height: 30px;
+                padding: 0 10px;
+                font-size: 14px;
+                border: 1px solid #c4c6cc;
+                border-radius: 2px;
+                outline: none;
+                &::placeholder {
+                    color: #c4c6cc;
+                }
+            }
+        }
+        .custom-form-error {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            line-height: 14px;
+            font-size: 12px;
+            color: #ff5656;
+            max-width: 100%;
+            @include ellipsis;
         }
     }
 </style>
