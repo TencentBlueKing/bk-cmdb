@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="11px" height="6px" viewBox="0 0 11 6" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 55.2 (78181) - https://sketchapp.com -->
+    <title>三角形</title>
+    <desc>Created with Sketch.</desc>
+    <g id="服务目录" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="业务拓扑添加模版备份" transform="translate(-118.000000, -315.000000)" fill="#C4C6CC">
+            <g id="编组-3" transform="translate(60.000000, 75.733333)">
+                <g id="树状拓扑" transform="translate(0.000000, 88.266667)">
+                    <g id="业务模块" transform="translate(0.000000, 144.000000)">
+                        <polygon id="三角形" transform="translate(63.500000, 10.000000) scale(1, -1) translate(-63.500000, -10.000000) " points="63.5 7 69 13 58 13"></polygon>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
