@@ -913,10 +913,10 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 		}
 	}
 
-	if pt.ProcessName.Value == nil {
+	if pt.ProcessName.Value == nil || len(*pt.ProcessName.Value) == 0 {
 		return "bk_process_name", fmt.Errorf("field [%s] is required", "bk_process_name")
 	}
-	if pt.FuncName.Value == nil {
+	if pt.FuncName.Value == nil || len(*pt.FuncName.Value) == 0 {
 		return "bk_func_name", fmt.Errorf("field [%s] is required", "bk_func_name")
 	}
 	if pt.AutoTimeGapSeconds.Value != nil {
