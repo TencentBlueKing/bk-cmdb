@@ -63,10 +63,12 @@
                     </cmdb-form-bool>
                     <div class="options-search">
                         <bk-search-select
+                            ref="searchSelect"
                             :show-condition="false"
                             :placeholder="$t('实例名称/标签')"
                             :data="searchSelect"
                             v-model="searchSelectData"
+                            @menu-child-condition-select="handleConditionSelect"
                             @change="handleSearch">
                         </bk-search-select>
                     </div>
@@ -175,7 +177,11 @@
                         name: this.$t('标签'),
                         id: 1,
                         multiable: true,
-                        children: []
+                        children: [{
+                            id: '',
+                            name: ''
+                        }],
+                        conditions: []
                     }
                 ],
                 searchSelectData: [],
@@ -201,7 +207,8 @@
                     list: []
                 },
                 isCarryParams: false,
-                topoStatus: false
+                topoStatus: false,
+                historyLabels: {}
             }
         },
         computed: {
@@ -332,19 +339,22 @@
                     const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
                         || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
                     const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
-                    const labelKeys = []
+                    const submitLabel = {}
                     labels.forEach(label => {
-                        label.values.forEach(value => {
-                            if (!labelKeys.includes(value.name)) {
-                                labelKeys.push(value.name)
+                        const conditionId = label.condition.id
+                        if (!submitLabel[conditionId]) {
+                            submitLabel[conditionId] = [label.values[0].id]
+                        } else {
+                            if (submitLabel[conditionId].indexOf(label.values[0].id) < 0) {
+                                submitLabel[conditionId].push(label.values[0].id)
                             }
-                        })
+                        }
                     })
-                    const selectors = labelKeys.map(key => {
+                    const selectors = Object.keys(submitLabel).map(key => {
                         return {
                             key: key,
-                            operator: 'exists',
-                            values: []
+                            operator: 'in',
+                            values: submitLabel[key]
                         }
                     })
                     const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
@@ -386,11 +396,12 @@
                 })
                 const keys = Object.keys(historyLabels).map(key => {
                     return {
-                        name: key,
+                        name: key + ' : ',
                         id: key
                     }
                 })
-                this.$set(this.searchSelect[1], 'children', keys)
+                this.historyLabels = historyLabels
+                this.$set(this.searchSelect[1], 'conditions', keys)
             },
             handleSearch () {
                 this.inSearch = true
@@ -751,6 +762,19 @@
             handleSetEditBox () {
                 this.editLabel.visiable = false
                 this.editLabel.list = []
+            },
+            handleConditionSelect (cur, index) {
+                const values = this.historyLabels[cur.id]
+                const children = values.map(item => {
+                    return {
+                        id: item,
+                        name: item
+                    }
+                })
+                const el = this.$refs.searchSelect
+                el.curItem.children = children
+                el.updateChildMenu(cur, index, false)
+                el.showChildMenu(children)
             }
         }
     }

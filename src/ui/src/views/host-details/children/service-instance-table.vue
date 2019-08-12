@@ -262,14 +262,15 @@
     }
     .table-title {
         height: 40px;
-        padding: 0 11px;
+        padding: 0 9px;
         line-height: 40px;
         border-radius: 2px 2px 0 0;
         background-color: #DCDEE5;
         overflow: hidden;
         cursor: pointer;
         .title-icon {
-            font-size: 12px;
+            font-size: 14px;
+            margin: 0 2px 0 6px;
             color: #63656E;
             @include inlineBlock;
         }

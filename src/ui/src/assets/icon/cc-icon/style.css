@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'icomoon';
-  src:  url('fonts/icomoon.eot?a0456u');
-  src:  url('fonts/icomoon.eot?a0456u#iefix') format('embedded-opentype'),
-    url('fonts/icomoon.ttf?a0456u') format('truetype'),
-    url('fonts/icomoon.woff?a0456u') format('woff'),
-    url('fonts/icomoon.svg?a0456u#icomoon') format('svg');
+  src:  url('fonts/icomoon.eot?letygm');
+  src:  url('fonts/icomoon.eot?letygm#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?letygm') format('truetype'),
+    url('fonts/icomoon.woff?letygm') format('woff'),
+    url('fonts/icomoon.svg?letygm#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -24,22 +24,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.icon-cc-operate-biz:before {
-  content: "\e9c2";
-  color: #fff;
-}
-.icon-cc-operate-exam:before {
-  content: "\e9c3";
-  color: #fff;
-}
-.icon-cc-operate-module:before {
-  content: "\e9c4";
-  color: #fff;
-}
-.icon-cc-operate-add:before {
-  content: "\e9c0";
-  color: #3a84ff;
-}
 .icon-cc-activeMQ:before {
   content: "\e900";
 }
@@ -580,39 +564,42 @@
 .icon-cc-tree:before {
   content: "\e9b3";
 }
-.icon-cc-triangle:before {
+.icon-cc-tree-triangle:before {
   content: "\e9b4";
 }
-.icon-cc-triangle-sider:before {
+.icon-cc-triangle:before {
   content: "\e9b5";
 }
-.icon-cc-unix:before {
+.icon-cc-triangle-sider:before {
   content: "\e9b6";
 }
-.icon-cc-ups:before {
+.icon-cc-unix:before {
   content: "\e9b7";
 }
-.icon-cc-user:before {
+.icon-cc-ups:before {
   content: "\e9b8";
 }
-.icon-cc-virtual:before {
+.icon-cc-user:before {
   content: "\e9b9";
 }
-.icon-cc-vmware:before {
+.icon-cc-virtual:before {
   content: "\e9ba";
 }
-.icon-cc-vsphere:before {
+.icon-cc-vmware:before {
   content: "\e9bb";
 }
-.icon-cc-weblogic:before {
+.icon-cc-vsphere:before {
   content: "\e9bc";
 }
-.icon-cc-win:before {
+.icon-cc-weblogic:before {
   content: "\e9bd";
 }
-.icon-cc-win7:before {
+.icon-cc-win:before {
   content: "\e9be";
 }
-.icon-cc-wireless:before {
+.icon-cc-win7:before {
   content: "\e9bf";
+}
+.icon-cc-wireless:before {
+  content: "\e9c0";
 }
