@@ -432,23 +432,23 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Data.Count).To(Equal(0))
 		})
 
-		It("transfer host to idle module", func() {
+		It("transfer host to fault module", func() {
 			input := map[string]interface{}{
 				"bk_biz_id": bizId,
 				"bk_host_id": []int64{
 					hostId2,
 				},
 				"bk_module_id": []int64{
-					idleModuleId,
+					faultModuleId,
 				},
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("search idle host", func() {
+		It("search fault host", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
@@ -458,7 +458,42 @@ var _ = Describe("host test", func() {
 							map[string]interface{}{
 								"field":    "bk_module_id",
 								"operator": "$eq",
-								"value":    idleModuleId,
+								"value":    faultModuleId,
+							},
+						},
+						Fields: []string{},
+					},
+				},
+			}
+			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(0))
+		})
+
+		It("transfer host to fault module", func() {
+			input := &metadata.DefaultModuleHostConfigParams{
+				ApplicationID: bizId,
+				HostID: []int64{
+					hostId2,
+				},
+			}
+			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("search fault host", func() {
+			input := &params.HostCommonSearch{
+				AppID: int(bizId),
+				Condition: []params.SearchCondition{
+					params.SearchCondition{
+						ObjectID: "module",
+						Condition: []interface{}{
+							map[string]interface{}{
+								"field":    "bk_module_id",
+								"operator": "$eq",
+								"value":    faultModuleId,
 							},
 						},
 						Fields: []string{},
@@ -509,6 +544,43 @@ var _ = Describe("host test", func() {
 			}
 			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("search idle host", func() {
+			input := &params.HostCommonSearch{
+				AppID: int(bizId),
+				Condition: []params.SearchCondition{
+					params.SearchCondition{
+						ObjectID: "module",
+						Condition: []interface{}{
+							map[string]interface{}{
+								"field":    "bk_module_id",
+								"operator": "$eq",
+								"value":    idleModuleId,
+							},
+						},
+						Fields: []string{},
+					},
+				},
+			}
+			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(1))
+			data := rsp.Data.Info[0]["host"].(map[string]interface{})
+			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.4"))
+		})
+
+		It("transfer host to idle module", func() {
+			input := &metadata.DefaultModuleHostConfigParams{
+				ApplicationID: bizId,
+				HostID: []int64{
+					hostId2,
+				},
+			}
+			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
@@ -537,7 +609,7 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			data1 := rsp.Data.Info[0]["host"].(map[string]interface{})
+			data1 := rsp.Data.Info[1]["host"].(map[string]interface{})
 			Expect("1.0.0.2").To(SatisfyAny(Equal(data["bk_host_innerip"].(string)), Equal(data1["bk_host_innerip"].(string))))
 		})
 
@@ -626,6 +698,37 @@ var _ = Describe("host test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(3))
+		})
+
+		It("search resource host change start limit", func() {
+			input := &params.HostCommonSearch{
+				AppID: -1,
+				Condition: []params.SearchCondition{
+					params.SearchCondition{
+						ObjectID: "biz",
+						Condition: []interface{}{
+							map[string]interface{}{
+								"field":    "default",
+								"operator": "$eq",
+								"value":    1,
+							},
+						},
+						Fields: []string{},
+					},
+				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Start: 2,
+					Limit: 2,
+				},
+			}
+			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(3))
+			Expect(len(rsp.Data.Info)).To(Equal(1))
+			data := rsp.Data.Info[0]["host"].(map[string]interface{})
+			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.5"))
 		})
 
 		It("search idle host", func() {
