@@ -105,6 +105,77 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(serviceInstanceIDs)
 }
 
+func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
+	input := new(metadata.GetServiceInstanceInModuleInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get service instances in module, but parse biz id failed, err: %v", err)
+		return
+	}
+
+	option := &metadata.ListServiceInstanceOption{
+		BusinessID: bizID,
+		ModuleID:   input.ModuleID,
+		Page:       input.Page,
+		SearchKey:  input.SearchKey,
+		Selectors:  input.Selectors,
+	}
+	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
+		return
+	}
+
+	serviceInstanceIDs := make([]int64, 0)
+	for _, instance := range instances.Info {
+		serviceInstanceIDs = append(serviceInstanceIDs, instance.ID)
+	}
+	listRelationOption := &metadata.ListProcessInstanceRelationOption{
+		BusinessID:         bizID,
+		ServiceInstanceIDs: serviceInstanceIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, listRelationOption)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance relations failed, list option: %+v, err: %v", listRelationOption, err)
+		return
+	}
+
+	// service_instance_id -> process count
+	processCountMap := make(map[int64]int)
+	for _, relation := range relations.Info {
+		if _, ok := processCountMap[relation.ServiceInstanceID]; ok == false {
+			processCountMap[relation.ServiceInstanceID] = 0
+		}
+		processCountMap[relation.ServiceInstanceID] += 1
+	}
+
+	// insert `process_count` field
+	serviceInstanceDetails := make([]map[string]interface{}, 0)
+	for _, instance := range instances.Info {
+		item, err := mapstr.Struct2Map(instance)
+		if err != nil {
+		}
+		item["process_count"] = 0
+		if count, ok := processCountMap[instance.ID]; ok == true {
+			item["process_count"] = count
+		}
+		serviceInstanceDetails = append(serviceInstanceDetails, item)
+	}
+	result := metadata.MultipleMap{
+		Count: instances.Count,
+		Info:  serviceInstanceDetails,
+	}
+	ctx.RespEntity(result)
+}
+
 func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 	input := new(metadata.GetServiceInstanceInModuleInput)
 	if err := ctx.DecodeInto(input); err != nil {
