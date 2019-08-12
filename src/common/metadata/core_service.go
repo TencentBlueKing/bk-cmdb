@@ -456,3 +456,8 @@ type GetProc2ModuleResult struct {
 	BaseResp `json:",inline"`
 	Data     []Proc2Module `json:"data"`
 }
+
+type MultipleMap struct {
+	Count uint64                   `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
+}
