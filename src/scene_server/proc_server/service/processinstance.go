@@ -374,7 +374,11 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	}
 	if listResult.Data.Count > 0 {
 		blog.Errorf("validateRawInstanceUnique failed, bk_process_name duplicated under service instance, err: %v, rid: %s", serviceInstance.Metadata, err, ctx.Kit.Rid)
-		return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, processInfo.ProcessName)
+		processName := ""
+		if processInfo.ProcessName != nil {
+			processName = *processInfo.ProcessName
+		}
+		return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, processName)
 	}
 
 	// func name unique
@@ -395,7 +399,15 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	}
 	if listFuncNameResult.Data.Count > 0 {
 		blog.Errorf("validateRawInstanceUnique failed, bk_func_name and bk_start_param_regex duplicated under service instance, err: %v, rid: %s", err, ctx.Kit.Rid)
-		return ctx.Kit.CCError.CCError(common.CCErrCoreServiceFuncNameDuplicated)
+		startParamRegex := ""
+		if processInfo.StartParamRegex != nil {
+			startParamRegex = *processInfo.StartParamRegex
+		}
+		processName := ""
+		if processInfo.FuncName != nil {
+			processName = *processInfo.FuncName
+		}
+		return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, processName, startParamRegex)
 	}
 	return nil
 }
