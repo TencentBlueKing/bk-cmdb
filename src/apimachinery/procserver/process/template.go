@@ -9,7 +9,7 @@ import (
 
 func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/createmany/proc/process_template"
+	subPath := "/createmany/proc/proc_template"
 
 	err = p.client.Post().
 		WithContext(ctx).
@@ -23,7 +23,7 @@ func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, data
 
 func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/deletemany/proc/process_template"
+	subPath := "/deletemany/proc/proc_template"
 
 	err = p.client.Delete().
 		WithContext(ctx).
@@ -37,7 +37,7 @@ func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, data
 
 func (p *process) SearchProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/findmany/proc/process_template"
+	subPath := "/findmany/proc/proc_template"
 
 	err = p.client.Post().
 		WithContext(ctx).
@@ -51,7 +51,7 @@ func (p *process) SearchProcessTemplate(ctx context.Context, h http.Header, data
 
 func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/update/proc/process_template"
+	subPath := "/update/proc/proc_template"
 
 	err = p.client.Put().
 		WithContext(ctx).

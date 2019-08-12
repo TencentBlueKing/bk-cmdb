@@ -62,3 +62,17 @@ func (s *service) UpdateServiceTemplate(ctx context.Context, h http.Header, data
 		Into(resp)
 	return
 }
+
+func (s *service) RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/delete/proc/template_binding_on_module"
+
+	err = s.client.Delete().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
