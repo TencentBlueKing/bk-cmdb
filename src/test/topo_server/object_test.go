@@ -18,6 +18,7 @@ var _ = Describe("object test", func() {
 	var bizId string
 	var childInstId string
 	var setId string
+	var childInstIdInt, bizIdInt int64
 	objectClient := topoServerClient.Object()
 	instClient := topoServerClient.Instance()
 
@@ -38,7 +39,8 @@ var _ = Describe("object test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data).To(ContainElement("abc"))
-			bizId = strconv.FormatInt(int64(rsp.Data["bk_biz_id"].(float64)), 10)
+			bizIdInt := int64(rsp.Data["bk_biz_id"].(float64))
+			bizId = strconv.FormatInt(bizIdInt, 10)
 		})
 
 		It("create mainline object bk_obj_id = 'test_object' and bk_obj_name='test_object'", func() {
@@ -155,7 +157,8 @@ var _ = Describe("object test", func() {
 			Expect(child["bk_obj_id"].(string)).To(Equal("cc_test_object"))
 			Expect(child["bk_obj_name"].(string)).To(Equal("cc_test_object"))
 			Expect(len(child["child"].([]interface{}))).To(Equal(0))
-			childInstId = strconv.FormatInt(int64(child["bk_inst_id"].(float64)), 10)
+			childInstIdInt := int64(child["bk_inst_id"].(float64))
+			childInstId = strconv.FormatInt(childInstIdInt, 10)
 		})
 
 		It("search instance topo child", func() {
@@ -645,14 +648,8 @@ var _ = Describe("object test", func() {
 
 	Describe("set test", func() {
 		var setId1 string
-		var childInstIdInt, bizIdInt int64
 
 		It(fmt.Sprintf("create set bk_biz_id=%s and bk_parent_id=%s", bizId, childInstId), func() {
-			var err error
-			childInstIdInt, err = strconv.ParseInt(childInstId, 10, 64)
-			Expect(err).NotTo(HaveOccurred())
-			bizIdInt, err = strconv.ParseInt(bizId, 10, 64)
-			Expect(err).NotTo(HaveOccurred())
 			input := mapstr.MapStr{
 				"bk_set_name":         "cc_set",
 				"bk_parent_id":        childInstIdInt,
@@ -703,7 +700,7 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(true))
 		})
 
-		It(fmt.Sprintf("search set"), func() {
+		It("search set", func() {
 			input := &params.SearchParams{
 				Condition: map[string]interface{}{},
 				Page: map[string]interface{}{
