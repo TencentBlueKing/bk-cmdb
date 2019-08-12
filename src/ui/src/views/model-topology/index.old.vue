@@ -412,10 +412,7 @@
                     }
                 })
                 if (asstNum) {
-                    this.$bkInfo({
-                        title: this.$t('移除失败'),
-                        subTitle: this.$tc('移除失败提示', asstNum, { asstNum })
-                    })
+                    this.$error(this.$tc('移除失败提示', asstNum, { asstNum }))
                 }
                 return !!asstNum
             },
