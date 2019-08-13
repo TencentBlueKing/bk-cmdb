@@ -380,7 +380,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		ServiceInstance  *metadata.ServiceInstance
 		ChangedAttribute []metadata.ProcessChangedAttribute
 	}
-	removed := make(map[int64][]recorder)
+	removed := make(map[string][]recorder)
 	changed := make(map[int64][]recorder)
 	unchanged := make(map[int64][]recorder)
 	added := make(map[int64][]recorder)
@@ -406,9 +406,10 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 			property, exist := pTemplateMap[relation.ProcessTemplateID]
 			if !exist {
 				// process's template doesn't exist means the template has already been removed.
-				removed[relation.ProcessTemplateID] = append(removed[relation.ProcessTemplateID], recorder{
+				processName := *process.ProcessName
+				removed[processName] = append(removed[processName], recorder{
 					ProcessID:       relation.ProcessID,
-					ProcessName:     *process.ProcessName,
+					ProcessName:     processName,
 					ServiceInstance: &serviceInstance,
 				})
 				continue
@@ -450,14 +451,15 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	}
 
 	// it's time to rearrange the data
-	differences := metadata.ProcessTemplateWithInstancesDifference{
-		Unchanged: make([]metadata.ServiceInstanceDifferenceDetail, 0),
-		Changed:   make([]metadata.ServiceInstanceDifferenceDetail, 0),
-		Added:     make([]metadata.ServiceInstanceDifferenceDetail, 0),
-		Removed:   make([]metadata.ServiceInstanceDifferenceDetail, 0),
+	moduleDifference := metadata.ModuleDiffWithTemplateDetail{
+		Unchanged:     make([]metadata.ServiceInstanceDifference, 0),
+		Changed:       make([]metadata.ServiceInstanceDifference, 0),
+		Added:         make([]metadata.ServiceInstanceDifference, 0),
+		Removed:       make([]metadata.ServiceInstanceDifference, 0),
+		HasDifference: false,
 	}
 
-	for removedID, records := range removed {
+	for _, records := range removed {
 		if len(records) == 0 {
 			continue
 		}
@@ -470,8 +472,8 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 			}
 			serviceInstances = append(serviceInstances, item)
 		}
-		differences.Removed = append(differences.Removed, metadata.ServiceInstanceDifferenceDetail{
-			ProcessTemplateID:    removedID,
+		moduleDifference.Removed = append(moduleDifference.Removed, metadata.ServiceInstanceDifference{
+			ProcessTemplateID:    0,
 			ProcessTemplateName:  processTemplateName,
 			ServiceInstanceCount: len(serviceInstances),
 			ServiceInstances:     serviceInstances,
@@ -487,7 +489,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		for _, record := range records {
 			serviceInstances = append(serviceInstances, metadata.ServiceDifferenceDetails{ServiceInstance: *record.ServiceInstance})
 		}
-		differences.Unchanged = append(differences.Unchanged, metadata.ServiceInstanceDifferenceDetail{
+		moduleDifference.Unchanged = append(moduleDifference.Unchanged, metadata.ServiceInstanceDifference{
 			ProcessTemplateID:    unchangedID,
 			ProcessTemplateName:  processTemplateName,
 			ServiceInstanceCount: len(serviceInstances),
@@ -506,7 +508,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				ChangedAttributes: record.ChangedAttribute,
 			})
 		}
-		differences.Changed = append(differences.Changed, metadata.ServiceInstanceDifferenceDetail{
+		moduleDifference.Changed = append(moduleDifference.Changed, metadata.ServiceInstanceDifference{
 			ProcessTemplateID:    changedID,
 			ProcessTemplateName:  records[0].ProcessName,
 			ServiceInstanceCount: len(serviceInstances),
@@ -520,7 +522,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 			sInstances = append(sInstances, metadata.ServiceDifferenceDetails{ServiceInstance: *s.ServiceInstance})
 		}
 
-		differences.Added = append(differences.Added, metadata.ServiceInstanceDifferenceDetail{
+		moduleDifference.Added = append(moduleDifference.Added, metadata.ServiceInstanceDifference{
 			ProcessTemplateID:    addedID,
 			ProcessTemplateName:  pTemplateMap[addedID].ProcessName,
 			ServiceInstanceCount: len(sInstances),
@@ -528,7 +530,13 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		})
 	}
 
-	ctx.RespEntity(differences)
+	if len(moduleDifference.Added) > 0 ||
+		len(moduleDifference.Changed) > 0 ||
+		len(moduleDifference.Removed) > 0 {
+		moduleDifference.HasDifference = true
+	}
+
+	ctx.RespEntity(moduleDifference)
 }
 
 // SyncServiceInstanceByTemplate sync the service instance with it's bounded service template.
