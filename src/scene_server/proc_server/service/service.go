@@ -30,12 +30,14 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
+	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/remote"
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
 	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type srvComm struct {
@@ -60,6 +62,8 @@ type ProcServer struct {
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
 	Logic              *logics.Logic
+	// be careful, if txn server is disabled, it will be nil
+	Txn *remote.Mongo
 }
 
 func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
@@ -205,8 +209,6 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 }
 
 func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
-
-	//
 	esbAddr, addrOk := current.ConfigMap["esb.addr"]
 	esbAppCode, appCodeOk := current.ConfigMap["esb.appCode"]
 	esbAppSecret, appSecretOk := current.ConfigMap["esb.appSecret"]
@@ -242,4 +244,9 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 		}
 	}
 	ps.ConfigMap = current.ConfigMap
+
+	dbPrefix := "mongodb"
+	mongoCfg := mongo.ParseConfigFromKV(dbPrefix, current.ConfigMap)
+	ps.Config.Mongo = &mongoCfg
+
 }
