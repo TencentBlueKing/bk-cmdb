@@ -8,6 +8,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	"configcenter/src/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -19,6 +20,8 @@ var _ = Describe("host test", func() {
 
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'cc_biz'", func() {
+			test.ClearDatabase()
+
 			input := map[string]interface{}{
 				"life_cycle":        "2",
 				"language":          "1",
@@ -145,6 +148,27 @@ var _ = Describe("host test", func() {
 			Expect(data["bk_asset_id"].(string)).To(Equal("addhost_excel_asset_1"))
 			Expect(data["bk_host_name"].(string)).To(Equal("1.0.0.2"))
 			hostId2 = int64(data["bk_host_id"].(float64))
+		})
+
+		It("search host using multiple ips", func() {
+			input := &params.HostCommonSearch{
+				AppID: int(bizId),
+				Ip: params.IPInfo{
+					Data: []string{
+						"1.0.0.1",
+						"1.0.0.2",
+					},
+					Exact: 1,
+					Flag:  "bk_host_innerip|bk_host_outerip",
+				},
+				Page: params.PageInfo{
+					Sort: "bk_host_id",
+				},
+			}
+			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(2))
 		})
 
 		// This api is marked as deprecated
@@ -310,6 +334,22 @@ var _ = Describe("host test", func() {
 		})
 
 		It("transfer host module", func() {
+			input := map[string]interface{}{
+				"bk_biz_id": bizId,
+				"bk_host_id": []int64{
+					hostId2,
+				},
+				"bk_module_id": []int64{
+					moduleId,
+				},
+				"is_increment": true,
+			}
+			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("transfer host same module", func() {
 			input := map[string]interface{}{
 				"bk_biz_id": bizId,
 				"bk_host_id": []int64{
