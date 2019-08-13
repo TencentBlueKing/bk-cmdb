@@ -477,10 +477,10 @@
                 }
                 .built-in-sign {
                     display: inline-block;
-                    width: 32px;
                     height: 19px;
                     line-height: 18px;
                     margin: 0 0 0 4px;
+                    padding: 0 6px;
                     font-size: 12px;
                     color: #ffffff;
                     text-align: center;
