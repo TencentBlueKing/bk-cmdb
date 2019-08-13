@@ -106,7 +106,7 @@ type ListServiceInstanceDetailRequest struct {
 	Selectors          selector.Selectors `json:"selectors,omitempty"`
 }
 
-type DiffServiceInstanceWithTemplateOption struct {
+type DiffModuleWithTemplateOption struct {
 	Metadata Metadata `json:"metadata"`
 	ModuleID int64    `json:"bk_module_id"`
 }
@@ -154,11 +154,20 @@ type ProcessChangedAttribute struct {
 
 // ModuleDiffWithTemplateDetail 模块与服务模板间的差异
 type ModuleDiffWithTemplateDetail struct {
-	Unchanged     []ServiceInstanceDifference `json:"unchanged"`
-	Changed       []ServiceInstanceDifference `json:"changed"`
-	Added         []ServiceInstanceDifference `json:"added"`
-	Removed       []ServiceInstanceDifference `json:"removed"`
-	HasDifference bool                        `json:"has_difference"`
+	Unchanged         []ServiceInstanceDifference `json:"unchanged"`
+	Changed           []ServiceInstanceDifference `json:"changed"`
+	Added             []ServiceInstanceDifference `json:"added"`
+	Removed           []ServiceInstanceDifference `json:"removed"`
+	ChangedAttributes []ModuleChangedAttribute    `json:"changed_attributes"`
+	HasDifference     bool                        `json:"has_difference"`
+}
+
+type ModuleChangedAttribute struct {
+	ID                    int64       `json:"id"`
+	PropertyID            string      `json:"property_id"`
+	PropertyName          string      `json:"property_name"`
+	PropertyValue         interface{} `json:"property_value"`
+	TemplatePropertyValue interface{} `json:"template_property_value"`
 }
 
 // ServiceInstanceDifference 服务实例内的进程信息与进程模板ID不一致的服务实例列表

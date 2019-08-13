@@ -13,8 +13,12 @@
 package service
 
 import (
+	"context"
+	"net/http"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -274,7 +278,7 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 // add: a new process template is added, compared to the service instance belongs to this service template.
 // deleted: a process is already deleted, compared to the service instance belongs to this service template.
 func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
-	diffOption := new(metadata.DiffServiceInstanceWithTemplateOption)
+	diffOption := new(metadata.DiffModuleWithTemplateOption)
 	if err := ctx.DecodeInto(diffOption); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -415,8 +419,8 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				continue
 			}
 
-			diff := ps.Logic.DiffWithProcessTemplate(property.Property, process, attributeMap)
-			if len(diff) == 0 {
+			changedAttributes := ps.Logic.DiffWithProcessTemplate(property.Property, process, attributeMap)
+			if len(changedAttributes) == 0 {
 				// nothing changed
 				unchanged[relation.ProcessTemplateID] = append(unchanged[relation.ProcessTemplateID], recorder{
 					ProcessID:       relation.ProcessID,
@@ -431,7 +435,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				ProcessID:        relation.ProcessID,
 				ProcessName:      *process.ProcessName,
 				ServiceInstance:  &serviceInstance,
-				ChangedAttribute: diff,
+				ChangedAttribute: changedAttributes,
 			})
 		}
 
@@ -530,13 +534,80 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		})
 	}
 
+	moduleChangedAttributes, err := ps.CalculateModuleAttributeDifference(ctx.Kit.Ctx, ctx.Kit.Header, *module)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed,
+			"get difference between with module and service template failed, diff module attributes failed, moduleID: %d, %v", module.ModuleID, err)
+		return
+	}
+	moduleDifference.ChangedAttributes = moduleChangedAttributes
+
 	if len(moduleDifference.Added) > 0 ||
 		len(moduleDifference.Changed) > 0 ||
-		len(moduleDifference.Removed) > 0 {
+		len(moduleDifference.Removed) > 0 ||
+		len(moduleDifference.ChangedAttributes) > 0 {
 		moduleDifference.HasDifference = true
 	}
 
 	ctx.RespEntity(moduleDifference)
+}
+
+func (ps *ProcServer) CalculateModuleAttributeDifference(ctx context.Context, header http.Header, module metadata.ModuleInst) ([]metadata.ModuleChangedAttribute, errors.CCErrorCoder) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	changedAttributes := make([]metadata.ModuleChangedAttribute, 0)
+	if module.ServiceTemplateID == common.ServiceTemplateIDNotSet {
+		return changedAttributes, nil
+	}
+	serviceTpl, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx, header, module.ServiceTemplateID)
+	if err != nil {
+		return nil, err
+	}
+
+	// just for better performance
+	if module.ServiceCategoryID == serviceTpl.ServiceCategoryID &&
+		module.ModuleName == serviceTpl.Name {
+		return changedAttributes, nil
+	}
+
+	// find process object's attribute
+	filter := &metadata.QueryCondition{
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKObjIDField: common.BKInnerObjIDModule,
+		}),
+	}
+	attrResult, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx, header, common.BKInnerObjIDProc, filter)
+	if e != nil {
+		blog.Errorf("read module attributes failed, filter: %+v, err: %+v, rid: %s", rid)
+		return nil, errors.New(common.CCErrCommDBSelectFailed, "db select failed")
+	}
+	attributeMap := make(map[string]metadata.Attribute)
+	for _, attr := range attrResult.Data.Info {
+		attributeMap[attr.PropertyID] = attr
+	}
+	if module.ServiceCategoryID != serviceTpl.ServiceCategoryID {
+		field := "service_category_id"
+		changedAttribute := metadata.ModuleChangedAttribute{
+			ID:                    attributeMap[field].ID,
+			PropertyID:            field,
+			PropertyName:          attributeMap[field].PropertyName,
+			PropertyValue:         module.ServiceCategoryID,
+			TemplatePropertyValue: serviceTpl.ServiceCategoryID,
+		}
+		changedAttributes = append(changedAttributes, changedAttribute)
+	}
+	if module.ModuleName != serviceTpl.Name {
+		field := "bk_module_name"
+		changedAttribute := metadata.ModuleChangedAttribute{
+			ID:                    attributeMap[field].ID,
+			PropertyID:            field,
+			PropertyName:          attributeMap[field].PropertyName,
+			PropertyValue:         module.ModuleName,
+			TemplatePropertyValue: serviceTpl.Name,
+		}
+		changedAttributes = append(changedAttributes, changedAttribute)
+	}
+	return changedAttributes, nil
 }
 
 // SyncServiceInstanceByTemplate sync the service instance with it's bounded service template.
