@@ -67,6 +67,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("configuration item not found")
 	}
+
+	// transaction client
+	txn, err := procSvr.Config.Mongo.GetTransactionClient(engine)
+	if err != nil {
+		blog.Errorf("new transaction client failed, err: %+v", err)
+	}
+	procSvr.Txn = txn
+
 	authConf, err := authcenter.ParseConfigFromKV("auth", procSvr.ConfigMap)
 	if err != nil {
 		return err

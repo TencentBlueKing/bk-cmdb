@@ -29,6 +29,7 @@ import (
 // createServiceInstances 创建服务实例
 // 支持直接创建和通过模板创建，用 module 是否绑定模版信息区分两种情况
 func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
+	rid := ctx.Kit.Rid
 	input := new(metadata.CreateServiceInstanceForServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -65,6 +66,29 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		err := ctx.Kit.CCError.Errorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, module.ModuleID, bizID)
 		ctx.RespWithError(err, common.CCErrCoreServiceHasModuleNotBelongBusiness, "create service instance failed, module %d not belongs to biz %d, err: %v", input.ModuleID, bizID, err)
 		return
+	}
+
+	if ps.Txn != nil {
+		header := ctx.Kit.Header
+		tx, err := ps.Txn.Start(context.Background())
+		if err != nil {
+			blog.Errorf("start transaction failed, err: %+v", err)
+			return
+		}
+		header = tx.TxnInfo().IntoHeader(header)
+		ctx.Kit.Header = header
+
+		defer func() {
+			if err != nil {
+				if txErr := tx.Abort(ctx.Kit.Ctx); txErr != nil {
+					blog.Errorf("create service instance failed, abort transation failed, err: %v, rid: %s", err, rid)
+				}
+			} else {
+				if txErr := tx.Commit(ctx.Kit.Ctx); txErr != nil {
+					blog.Errorf("create service instance failed, transaction commit failed, err: %v, rid: %s", err, rid)
+				}
+			}
+		}()
 	}
 
 	serviceInstanceIDs := make([]int64, 0)
