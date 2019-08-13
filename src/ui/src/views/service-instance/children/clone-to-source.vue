@@ -262,12 +262,19 @@
             },
             async getInstanceIpByHost (hostId) {
                 try {
-                    const res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
-                        hostId,
-                        config: {
-                            requestId: 'getInstanceIpByHost'
-                        }
-                    })
+                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    let res = null
+                    if (instanceIpMap.hasOwnProperty(hostId)) {
+                        res = instanceIpMap[hostId]
+                    } else {
+                        res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
+                            hostId,
+                            config: {
+                                requestId: 'getInstanceIpByHost'
+                            }
+                        })
+                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                    }
                     this.processBindIp = res.options.map(ip => {
                         return {
                             id: ip,
