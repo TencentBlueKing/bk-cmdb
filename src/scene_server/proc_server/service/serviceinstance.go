@@ -383,9 +383,9 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	removed := make(map[int64][]recorder)
 	changed := make(map[int64][]recorder)
 	unchanged := make(map[int64][]recorder)
-	added := make(map[int64]bool, 0)
+	added := make(map[int64][]recorder)
 	processTemplateReferenced := make(map[int64]int64)
-	for _, serviceInstance := range serviceInstances.Info {
+	for idx, serviceInstance := range serviceInstances.Info {
 		relations := serviceRelationMap[serviceInstance.ID]
 
 		for _, relation := range relations {
@@ -435,13 +435,17 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		}
 
 		// check whether a new process template has been added.
-		for templateID := range pTemplateMap {
+		for templateID, processTemplate := range pTemplateMap {
 			if _, exist := processTemplateReferenced[templateID]; exist == true {
 				continue
 			}
 			// the process template does not exist in all the service instances,
 			// which means a new process template is added.
-			added[templateID] = true
+			record := recorder{
+				ProcessName:     processTemplate.ProcessName,
+				ServiceInstance: &serviceInstances.Info[idx],
+			}
+			added[templateID] = append(added[templateID], record)
 		}
 	}
 
@@ -510,10 +514,10 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		})
 	}
 
-	for addedID := range added {
+	for addedID, records := range added {
 		sInstances := make([]metadata.ServiceDifferenceDetails, 0)
-		for _, s := range serviceInstances.Info {
-			sInstances = append(sInstances, metadata.ServiceDifferenceDetails{ServiceInstance: s})
+		for _, s := range records {
+			sInstances = append(sInstances, metadata.ServiceDifferenceDetails{ServiceInstance: *s.ServiceInstance})
 		}
 
 		differences.Added = append(differences.Added, metadata.ServiceInstanceDifferenceDetail{

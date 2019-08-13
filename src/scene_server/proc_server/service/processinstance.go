@@ -310,12 +310,10 @@ func (ps *ProcServer) getModule(ctx *rest.Contexts, moduleID int64) (*metadata.M
 }
 
 func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInstanceID int64, processInfo *metadata.Process) errors.CCErrorCoder {
-	if processInfo.ProcessName != nil &&
-		(len(*processInfo.ProcessName) == 0 || len(*processInfo.ProcessName) > common.NameFieldMaxLength) {
+	if processInfo.ProcessName != nil && (len(*processInfo.ProcessName) == 0 || len(*processInfo.ProcessName) > common.NameFieldMaxLength) {
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessNameField)
 	}
-	if processInfo.FuncName != nil &&
-		(len(*processInfo.FuncName) == 0 || len(*processInfo.ProcessName) > common.NameFieldMaxLength) {
+	if processInfo.FuncName != nil && (len(*processInfo.FuncName) == 0 || len(*processInfo.ProcessName) > common.NameFieldMaxLength) {
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
 	}
 	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
