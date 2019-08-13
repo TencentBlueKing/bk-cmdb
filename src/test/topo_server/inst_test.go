@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common/metadata"
+	"configcenter/src/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,6 +17,7 @@ var _ = Describe("inst test", func() {
 	instClient := topoServerClient.Instance()
 
 	It("create inst bk_obj_id='bk_switch'", func() {
+		test.ClearDatabase()
 		input := map[string]interface{}{
 			"bk_asset_id":  "123",
 			"bk_inst_name": "wejeidjew",

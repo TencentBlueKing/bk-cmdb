@@ -338,6 +338,56 @@ var _ = Describe("host abnormal test", func() {
 				hostId2 = int64(data["bk_host_id"].(float64))
 				Expect(rsp.Data.Count).To(Equal(3))
 			})
+
+			It("create object attribute for host", func() {
+				input := &metadata.ObjAttDes{
+					Attribute: metadata.Attribute{
+						OwnerID:       "0",
+						ObjectID:      "host",
+						PropertyID:    "a",
+						PropertyName:  "a",
+						PropertyGroup: "default",
+						IsEditable:    true,
+						PropertyType:  "singleasst",
+					},
+				}
+				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+			})
+
+			It("update host using created attr", func() {
+				input := map[string]interface{}{
+					"bk_host_id": fmt.Sprintf("%v", hostId),
+					"a":          "2",
+				}
+				rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
+			})
+
+			It("update host using delete attr", func() {
+				input := map[string]interface{}{
+					"bk_host_id": fmt.Sprintf("%v", hostId),
+					"a":          "",
+				}
+				rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
+			})
+
+			It("search biz host", func() {
+				input := &params.HostCommonSearch{
+					AppID: int(bizId),
+					Page: params.PageInfo{
+						Sort: "bk_host_id",
+					},
+				}
+				rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Data.Count).To(Equal(3))
+			})
 		})
 
 		Describe("add host using excel test", func() {
@@ -1888,7 +1938,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("delete host empty bk_host_id", func() {
 			input := map[string]interface{}{
-				"bk_host_id": "",
+				"bk_host_id":          "",
 				"bk_supplier_account": "0",
 			}
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
@@ -1898,7 +1948,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("delete host one invalid bk_host_id", func() {
 			input := map[string]interface{}{
-				"bk_host_id": fmt.Sprintf("%v,abc", hostId1),
+				"bk_host_id":          fmt.Sprintf("%v,abc", hostId1),
 				"bk_supplier_account": "0",
 			}
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
@@ -1908,7 +1958,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("delete host one nonexist bk_host_id", func() {
 			input := map[string]interface{}{
-				"bk_host_id": fmt.Sprintf("%v,%v", hostId3, 100),
+				"bk_host_id":          fmt.Sprintf("%v,%v", hostId3, 100),
 				"bk_supplier_account": "0",
 			}
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)

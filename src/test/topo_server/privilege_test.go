@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common/metadata"
+	"configcenter/src/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,6 +16,7 @@ var _ = Describe("privilege test", func() {
 	privilegeClient := topoServerClient.Privilege()
 
 	It("search user group", func() {
+		test.ClearDatabase()
 		input := map[string]interface{}{
 			"group_name": "",
 			"user_list":  "",

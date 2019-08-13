@@ -74,6 +74,62 @@ var _ = Describe("user operation test", func() {
 			favId = rsp.Data.(map[string]interface{})["id"].(string)
 		})
 
+		It("create user favorites less info", func() {
+			input := &metadata.FavouriteParms{
+				QueryParams: "[]",
+				Name:        "1234",
+				IsDefault:   2,
+			}
+			rsp, err := hostServerClient.AddHostFavourite(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create user favorites less query_params", func() {
+			input := &metadata.FavouriteParms{
+				Info:      fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":1,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
+				Name:      "12345",
+				IsDefault: 2,
+			}
+			rsp, err := hostServerClient.AddHostFavourite(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create user favorites less isdefault", func() {
+			input := &metadata.FavouriteParms{
+				Info:        fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":1,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
+				QueryParams: "[]",
+				Name:        "123456",
+			}
+			rsp, err := hostServerClient.AddHostFavourite(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create user favorites less name", func() {
+			input := &metadata.FavouriteParms{
+				Info:        fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":1,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
+				QueryParams: "[]",
+				IsDefault:   2,
+			}
+			rsp, err := hostServerClient.AddHostFavourite(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create user favorites same name", func() {
+			input := &metadata.FavouriteParms{
+				Info:        fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":1,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
+				QueryParams: "[]",
+				Name:        "123",
+				IsDefault:   2,
+			}
+			rsp, err := hostServerClient.AddHostFavourite(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
 		It("search user favorites", func() {
 			input := &metadata.QueryInput{
 				Start: 0,
@@ -92,6 +148,12 @@ var _ = Describe("user operation test", func() {
 			Expect(rsp.Result).To(Equal(true))
 		})
 
+		It("increase user favorites nonexist id", func() {
+			rsp, err := hostServerClient.IncrHostFavouritesCount(context.Background(), "123456", header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
 		It("update user favorites", func() {
 			input := &metadata.FavouriteParms{
 				ID:          favId,
@@ -104,6 +166,33 @@ var _ = Describe("user operation test", func() {
 			rsp, err := hostServerClient.UpdateHostFavouriteByID(context.Background(), favId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("update user favorites nonexist id", func() {
+			input := &metadata.FavouriteParms{
+				ID:          "1000",
+				Info:        fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":1,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
+				QueryParams: "[]",
+				Name:        "1234",
+				IsDefault:   2,
+				Count:       2,
+			}
+			rsp, err := hostServerClient.UpdateHostFavouriteByID(context.Background(), favId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("update user favorites less name", func() {
+			input := &metadata.FavouriteParms{
+				ID:          favId,
+				Info:        fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":1,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
+				QueryParams: "[]",
+				IsDefault:   2,
+				Count:       2,
+			}
+			rsp, err := hostServerClient.UpdateHostFavouriteByID(context.Background(), favId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
 		})
 
 		It("search user favorites", func() {
@@ -122,6 +211,12 @@ var _ = Describe("user operation test", func() {
 			rsp, err := hostServerClient.DeleteHostFavouriteByID(context.Background(), favId, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("delete user favorites nonexist id", func() {
+			rsp, err := hostServerClient.DeleteHostFavouriteByID(context.Background(), "123456", header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
 		})
 
 		It("search user favorites", func() {
@@ -152,6 +247,47 @@ var _ = Describe("user operation test", func() {
 			queryId = rsp.Data.(map[string]interface{})["id"].(string)
 		})
 
+		It("create custom query less biz_id", func() {
+			input := map[string]interface{}{
+				"info": "{\"condition\":[{\"bk_obj_id\":\"set\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"module\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"biz\",\"condition\":[{\"field\":\"default\",\"operator\":\"$ne\",\"value\":1}],\"fields\":[]},{\"bk_obj_id\":\"host\",\"condition\":[],\"fields\":[\"bk_host_innerip\",\"bk_biz_name\",\"bk_set_name\",\"bk_module_name\",\"bk_cloud_id\"]}]}",
+				"name": "1234",
+			}
+			rsp, err := hostServerClient.AddUserCustomQuery(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create custom query less info", func() {
+			input := map[string]interface{}{
+				"bk_biz_id": bizId,
+				"name":      "12345",
+			}
+			rsp, err := hostServerClient.AddUserCustomQuery(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create custom query less name", func() {
+			input := map[string]interface{}{
+				"bk_biz_id": bizId,
+				"info":      "{\"condition\":[{\"bk_obj_id\":\"set\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"module\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"biz\",\"condition\":[{\"field\":\"default\",\"operator\":\"$ne\",\"value\":1}],\"fields\":[]},{\"bk_obj_id\":\"host\",\"condition\":[],\"fields\":[\"bk_host_innerip\",\"bk_biz_name\",\"bk_set_name\",\"bk_module_name\",\"bk_cloud_id\"]}]}",
+			}
+			rsp, err := hostServerClient.AddUserCustomQuery(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create custom query same name", func() {
+			input := map[string]interface{}{
+				"bk_biz_id": bizId,
+				"info":      "{\"condition\":[{\"bk_obj_id\":\"set\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"module\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"biz\",\"condition\":[{\"field\":\"default\",\"operator\":\"$ne\",\"value\":1}],\"fields\":[]},{\"bk_obj_id\":\"host\",\"condition\":[],\"fields\":[\"bk_host_innerip\",\"bk_biz_name\",\"bk_set_name\",\"bk_module_name\",\"bk_cloud_id\"]}]}",
+				"name":      "123",
+			}
+			rsp, err := hostServerClient.AddUserCustomQuery(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
 		It("search custom query", func() {
 			input := &metadata.QueryInput{
 				Start: 0,
@@ -169,6 +305,18 @@ var _ = Describe("user operation test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["info"]).To(Equal("{\"condition\":[{\"bk_obj_id\":\"set\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"module\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"biz\",\"condition\":[{\"field\":\"default\",\"operator\":\"$ne\",\"value\":1}],\"fields\":[]},{\"bk_obj_id\":\"host\",\"condition\":[],\"fields\":[\"bk_host_innerip\",\"bk_biz_name\",\"bk_set_name\",\"bk_module_name\",\"bk_cloud_id\"]}]}"))
 			Expect(rsp.Data["name"]).To(Equal("123"))
+		})
+
+		It("get nonexist custom query detail", func() {
+			rsp, err := hostServerClient.GetUserCustomQueryDetail(context.Background(), strconv.FormatInt(bizId, 10), "100", header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("get unmatching biz and custom query detail", func() {
+			rsp, err := hostServerClient.GetUserCustomQueryDetail(context.Background(), "2", queryId, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("update custom query", func() {
@@ -240,10 +388,64 @@ var _ = Describe("user operation test", func() {
 			Expect(int64(host["bk_host_id"].(float64))).To(Equal(hostId))
 		})
 
+		It("get custom query data invalid biz_id", func() {
+			rsp, err := hostServerClient.GetUserCustomQueryResult(context.Background(), "1000", queryId, "0", "10", header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("get custom query data invalid id", func() {
+			rsp, err := hostServerClient.GetUserCustomQueryResult(context.Background(), strconv.FormatInt(bizId, 10), "123456", "0", "10", header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("get custom query data unmatching id and biz_id", func() {
+			rsp, err := hostServerClient.GetUserCustomQueryResult(context.Background(), "2", queryId, "0", "10", header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("get custom query data invalid start", func() {
+			rsp, err := hostServerClient.GetUserCustomQueryResult(context.Background(), strconv.FormatInt(bizId, 10), queryId, "erfre", "10", header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("get custom query data invalid limit", func() {
+			rsp, err := hostServerClient.GetUserCustomQueryResult(context.Background(), strconv.FormatInt(bizId, 10), queryId, "0", "erfre", header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
 		It("delete custom query", func() {
 			rsp, err := hostServerClient.DeleteUserCustomQuery(context.Background(), strconv.FormatInt(bizId, 10), queryId, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("delete custom query invalid biz_id", func() {
+			rsp, err := hostServerClient.DeleteUserCustomQuery(context.Background(), "1234", queryId, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("delete custom query invalid id", func() {
+			rsp, err := hostServerClient.DeleteUserCustomQuery(context.Background(), strconv.FormatInt(bizId, 10), "12345", header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("delete custom query unmatching biz_id and id", func() {
+			rsp, err := hostServerClient.DeleteUserCustomQuery(context.Background(), "2", queryId, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("delete custom query teice", func() {
+			rsp, err := hostServerClient.DeleteUserCustomQuery(context.Background(), strconv.FormatInt(bizId, 10), queryId, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
 		})
 
 		It("search custom query", func() {
