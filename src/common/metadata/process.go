@@ -152,20 +152,24 @@ type ProcessChangedAttribute struct {
 	TemplatePropertyValue interface{} `json:"template_property_value"`
 }
 
-type ProcessTemplateWithInstancesDifference struct {
-	Unchanged []ServiceInstanceDifferenceDetail `json:"unchanged"`
-	Changed   []ServiceInstanceDifferenceDetail `json:"changed"`
-	Added     []ServiceInstanceDifferenceDetail `json:"added"`
-	Removed   []ServiceInstanceDifferenceDetail `json:"removed"`
+// ModuleDiffWithTemplateDetail 模块与服务模板间的差异
+type ModuleDiffWithTemplateDetail struct {
+	Unchanged     []ServiceInstanceDifference `json:"unchanged"`
+	Changed       []ServiceInstanceDifference `json:"changed"`
+	Added         []ServiceInstanceDifference `json:"added"`
+	Removed       []ServiceInstanceDifference `json:"removed"`
+	HasDifference bool                        `json:"has_difference"`
 }
 
-type ServiceInstanceDifferenceDetail struct {
+// ServiceInstanceDifference 服务实例内的进程信息与进程模板ID不一致的服务实例列表
+type ServiceInstanceDifference struct {
 	ProcessTemplateID    int64                      `json:"process_template_id"`
 	ProcessTemplateName  string                     `json:"process_template_name"`
 	ServiceInstanceCount int                        `json:"service_instance_count"`
 	ServiceInstances     []ServiceDifferenceDetails `json:"service_instances"`
 }
 
+// ServiceDifferenceDetails 服务实例与模板差异信息
 type ServiceDifferenceDetails struct {
 	ServiceInstance   ServiceInstance           `json:"service_instance"`
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes,omitempty"`
