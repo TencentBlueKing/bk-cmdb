@@ -1780,6 +1780,20 @@ var _ = Describe("service template test", func() {
 			Expect(len(data)).To(Equal(0))
 		})
 
+		It("search module", func() {
+			input := &params.SearchParams{
+				Condition: map[string]interface{}{},
+				Page: map[string]interface{}{
+					"sort": "id",
+				},
+			}
+			rsp, err := instClient.SearchModule(context.Background(), "0", strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			j, err := json.Marshal(rsp)
+			Expect(j).To(ContainSubstring("\"service_category_id\":2"))
+		})
+
 		It("remove service instance with template without process", func() {
 			input := map[string]interface{}{
 				"metadata": map[string]interface{}{

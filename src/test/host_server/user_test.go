@@ -195,7 +195,7 @@ var _ = Describe("user operation test", func() {
 				"bk_biz_id": bizId,
 				"host_info": map[string]interface{}{
 					"4": map[string]interface{}{
-						"bk_host_innerip": "1.0.0.1",
+						"bk_host_innerip": "3.0.0.1",
 						"bk_asset_id":     "addhost_api_asset_1",
 						"bk_cloud_id":     0,
 					},
@@ -210,7 +210,7 @@ var _ = Describe("user operation test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Ip: params.IPInfo{
-					Data:  []string{"1.0.0.1"},
+					Data:  []string{"3.0.0.1"},
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
@@ -223,7 +223,7 @@ var _ = Describe("user operation test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.1"))
+			Expect(data["bk_host_innerip"].(string)).To(Equal("3.0.0.1"))
 			hostId = int64(data["bk_host_id"].(float64))
 		})
 
@@ -236,7 +236,7 @@ var _ = Describe("user operation test", func() {
 			json.Unmarshal(j, &data)
 			Expect(data.Data.Count).To(Equal(1))
 			host := data.Data.Info[0]["host"].(map[string]interface{})
-			Expect(host["bk_host_innerip"].(string)).To(Equal("1.0.0.1"))
+			Expect(host["bk_host_innerip"].(string)).To(Equal("3.0.0.1"))
 			Expect(int64(host["bk_host_id"].(float64))).To(Equal(hostId))
 		})
 
