@@ -9,6 +9,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	"configcenter/src/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -24,6 +25,7 @@ var _ = Describe("object test", func() {
 
 	Describe("mainline object test", func() {
 		It("create business bk_biz_name = 'abc'", func() {
+			test.ClearDatabase()
 			input := map[string]interface{}{
 				"life_cycle":        "2",
 				"language":          "1",
@@ -67,6 +69,129 @@ var _ = Describe("object test", func() {
 			for k, v := range data {
 				Expect(rsp.Data.(map[string]interface{})).To(HaveKeyWithValue(k, v))
 			}
+		})
+
+		It("create same mainline object", func() {
+			input := &metadata.MainLineObject{
+				Object: metadata.Object{
+					ObjCls:     "bk_biz_topo",
+					ObjectID:   "test_object",
+					ObjectName: "test_object",
+					OwnerID:    "0",
+					ObjIcon:    "icon-cc-business",
+				},
+				AssociationID: "biz",
+			}
+			rsp, err := objectClient.CreateModel(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create mainline object nonexist bk_asst_obj_id", func() {
+			input := &metadata.MainLineObject{
+				Object: metadata.Object{
+					ObjCls:     "bk_biz_topo",
+					ObjectID:   "test_object",
+					ObjectName: "test_object",
+					OwnerID:    "0",
+					ObjIcon:    "icon-cc-business",
+				},
+				AssociationID: "xxx",
+			}
+			rsp, err := objectClient.CreateModel(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create mainline object empty bk_asst_obj_id", func() {
+			input := &metadata.MainLineObject{
+				Object: metadata.Object{
+					ObjCls:     "bk_biz_topo",
+					ObjectID:   "test_object",
+					ObjectName: "test_object",
+					OwnerID:    "0",
+					ObjIcon:    "icon-cc-business",
+				},
+				AssociationID: "",
+			}
+			rsp, err := objectClient.CreateModel(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create mainline object less bk_asst_obj_id", func() {
+			input := &metadata.MainLineObject{
+				Object: metadata.Object{
+					ObjCls:     "bk_biz_topo",
+					ObjectID:   "test_object",
+					ObjectName: "test_object",
+					OwnerID:    "0",
+					ObjIcon:    "icon-cc-business",
+				},
+			}
+			rsp, err := objectClient.CreateModel(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create mainline object less bk_obj_id", func() {
+			input := &metadata.MainLineObject{
+				Object: metadata.Object{
+					ObjCls:     "bk_biz_topo",
+					ObjectName: "test_object",
+					OwnerID:    "0",
+					ObjIcon:    "icon-cc-business",
+				},
+				AssociationID: "biz",
+			}
+			rsp, err := objectClient.CreateModel(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create mainline object less bk_obj_name", func() {
+			input := &metadata.MainLineObject{
+				Object: metadata.Object{
+					ObjCls:   "bk_biz_topo",
+					ObjectID: "test_object",
+					OwnerID:  "0",
+					ObjIcon:  "icon-cc-business",
+				},
+				AssociationID: "biz",
+			}
+			rsp, err := objectClient.CreateModel(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create mainline object less bk_obj_icon", func() {
+			input := &metadata.MainLineObject{
+				Object: metadata.Object{
+					ObjCls:     "bk_biz_topo",
+					ObjectID:   "test_object",
+					ObjectName: "test_object",
+					OwnerID:    "0",
+				},
+				AssociationID: "biz",
+			}
+			rsp, err := objectClient.CreateModel(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("create mainline object less bk_classification_id", func() {
+			input := &metadata.MainLineObject{
+				Object: metadata.Object{
+					ObjectID:   "test_object",
+					ObjectName: "test_object",
+					OwnerID:    "0",
+					ObjIcon:    "icon-cc-business",
+				},
+				AssociationID: "biz",
+			}
+			rsp, err := objectClient.CreateModel(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
 		})
 
 		It("delete mainline object bk_obj_id = 'test_object'", func() {
