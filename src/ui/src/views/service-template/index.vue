@@ -41,7 +41,7 @@
                 </cmdb-selector>
                 <bk-input type="text"
                     class="filter-search fl"
-                    :placeholder="$t('搜索')"
+                    :placeholder="$t('模板名称搜索')"
                     :right-icon="'bk-icon icon-search'"
                     v-model.trim="filter.templateName"
                     @enter="searchByTemplateName">
@@ -274,11 +274,11 @@
     .template-wrapper {
         .filter-text {
             .bk-select {
-                width: 180px;
+                width: 184px;
                 margin-right: 10px;
             }
             .filter-search {
-                width: 200px;
+                width: 210px;
                 position: relative;
             }
         }
