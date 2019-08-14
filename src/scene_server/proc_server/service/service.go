@@ -56,7 +56,7 @@ type ProcServer struct {
 	*backbone.Engine
 	EsbConfigChn       chan esbutil.EsbConfig
 	Config             *options.Config
-	EsbServ            esbserver.EsbClientInterface
+	EsbSrv             esbserver.EsbClientInterface
 	Cache              *redis.Client
 	procHostInstConfig logics.ProcHostInstConfig
 	ConfigMap          map[string]string
@@ -80,12 +80,11 @@ func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(ps.Engine, header, ps.Cache, ps.EsbServ, &ps.procHostInstConfig),
+		lgc:           logics.NewLogics(ps.Engine, header, ps.Cache, ps.EsbSrv, &ps.procHostInstConfig),
 	}
 }
 
 func (ps *ProcServer) WebService() *restful.Container {
-
 	getErrFunc := func() errors.CCErrorIf {
 		return ps.Engine.CCErr
 	}
@@ -204,7 +203,7 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 		Message: meta.Message,
 	}
 	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteEntity(answer)
+	_ = resp.WriteEntity(answer)
 }
 
 func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
@@ -247,5 +246,4 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 	dbPrefix := "mongodb"
 	mongoCfg := mongo.ParseConfigFromKV(dbPrefix, current.ConfigMap)
 	ps.Config.Mongo = &mongoCfg
-
 }
