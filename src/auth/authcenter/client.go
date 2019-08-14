@@ -435,7 +435,7 @@ func (a *authClient) GetAnyAuthorizedScopes(ctx context.Context, scopeID string,
 	resp := ListAuthorizedScopeResult{}
 
 	err := a.client.Post().
-		SubResourcef("/bkiam/api/v1/perm/systems/%s/scope_type/%s/authorized-scopes", SystemIDCMDB, ScopeTypeIDBiz).
+		SubResourcef("/bkiam/api/v1/perm/systems/%s/scope_type/%s/authorized-scopes", SystemIDCMDB, scopeID).
 		WithContext(ctx).
 		WithHeaders(a.basicHeader).
 		Body(body).
