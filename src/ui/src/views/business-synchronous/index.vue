@@ -17,7 +17,7 @@
         <template v-else-if="list.length">
             <feature-tips
                 :show-tips="showFeatureTips"
-                :desc="$t('功能提示')">
+                :desc="$t('同步模版功能提示')">
             </feature-tips>
             <p class="tips" :style="{ 'padding-top': showFeatureTips ? '24px' : '0' }">
                 {{$t('请确认')}}

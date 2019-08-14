@@ -3,7 +3,7 @@
         <feature-tips
             :feature-name="'serviceTemplate'"
             :show-tips="showFeatureTips"
-            :desc="$t('功能提示')"
+            :desc="$t('服务模板功能提示')"
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="template-filter clearfix">
