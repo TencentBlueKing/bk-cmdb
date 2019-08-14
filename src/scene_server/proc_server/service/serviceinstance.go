@@ -68,28 +68,26 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		return
 	}
 
-	if ps.TransactionClient != nil {
-		header := ctx.Kit.Header
-		tx, err := ps.TransactionClient.Start(context.Background())
-		if err != nil {
-			blog.Errorf("start transaction failed, err: %+v", err)
-			return
-		}
-		header = tx.TxnInfo().IntoHeader(header)
-		ctx.Kit.Header = header
-
-		defer func() {
-			if err != nil {
-				if txErr := tx.Abort(ctx.Kit.Ctx); txErr != nil {
-					blog.Errorf("create service instance failed, abort transation failed, err: %v, rid: %s", err, rid)
-				}
-			} else {
-				if txErr := tx.Commit(ctx.Kit.Ctx); txErr != nil {
-					blog.Errorf("create service instance failed, transaction commit failed, err: %v, rid: %s", err, rid)
-				}
-			}
-		}()
+	header := ctx.Kit.Header
+	tx, err := ps.TransactionClient.Start(context.Background())
+	if err != nil {
+		blog.Errorf("start transaction failed, err: %+v", err)
+		return
 	}
+	header = tx.TxnInfo().IntoHeader(header)
+	ctx.Kit.Header = header
+
+	defer func() {
+		if err != nil {
+			if txErr := tx.Abort(ctx.Kit.Ctx); txErr != nil {
+				blog.Errorf("create service instance failed, abort transation failed, err: %v, rid: %s", txErr, rid)
+			}
+		} else {
+			if txErr := tx.Commit(ctx.Kit.Ctx); txErr != nil {
+				blog.Errorf("create service instance failed, transaction commit failed, err: %v, rid: %s", txErr, rid)
+			}
+		}
+	}()
 
 	serviceInstanceIDs := make([]int64, 0)
 	for _, inst := range input.Instances {
@@ -101,8 +99,9 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 			HostID:            inst.HostID,
 		}
 
+		var serviceInstance *metadata.ServiceInstance
 		// create service instance at first
-		serviceInstance, err := ps.CoreAPI.CoreService().Process().CreateServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instance)
+		serviceInstance, err = ps.CoreAPI.CoreService().Process().CreateServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instance)
 		if err != nil {
 			ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, moduleID: %d, err: %s", input.ModuleID, err.Error())
 			return
@@ -115,13 +114,13 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 				ServiceInstanceID: serviceInstance.ID,
 				Processes:         inst.Processes,
 			}
-			if _, err := ps.createProcessInstances(ctx, createProcessInput); err != nil {
+			if _, err = ps.createProcessInstances(ctx, createProcessInput); err != nil {
 				ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, create process instances failed, moduleID: %d, err: %s", input.ModuleID, err.Error())
 				return
 			}
 		}
 		if module.ServiceTemplateID == 0 {
-			if err := ps.CoreAPI.CoreService().Process().ReconstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstance.ID); err != nil {
+			if err = ps.CoreAPI.CoreService().Process().ReconstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstance.ID); err != nil {
 				ctx.RespWithError(err, common.CCErrProcReconstructServiceInstanceNameFailed, "create service instance failed, reconstruct service instance name failed, instanceID: %d, err: %s", serviceInstance.ID, err.Error())
 				return
 			}

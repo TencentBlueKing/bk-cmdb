@@ -72,6 +72,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	txn, err := procSvr.Config.Mongo.GetTransactionClient(engine)
 	if err != nil {
 		blog.Errorf("new transaction client failed, err: %+v", err)
+		return fmt.Errorf("new transaction client failed, err: %+v", err)
 	}
 	procSvr.TransactionClient = txn
 
@@ -97,7 +98,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, authorize)
 	procSvr.Engine = engine
-	procSvr.EsbServ = esbSrv
+	procSvr.EsbSrv = esbSrv
 	procSvr.Cache = cacheDB
 	procSvr.Logic = &logics.Logic{
 		Engine: procSvr.Engine,
