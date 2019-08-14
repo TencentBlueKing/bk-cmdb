@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/mongodb/options/aggregateopt"
@@ -548,8 +549,15 @@ func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replace
 	}, nil
 }
 
-// UpdateUnsetMany update data support $unset command
-func (c *collection) UpdateUnsetMany(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.Many) (*mongodb.UpdateResult, error) {
+// UpdateMany update data support $unset command
+func (c *collection) Update(ctx context.Context, filter interface{}, update map[string]interface{}, opts *updateopt.Many) (*mongodb.UpdateResult, error) {
+
+	// Must be an operator
+	for key := range update {
+		if !strings.HasPrefix(key, "$") {
+			return nil, errors.New("operator not exist")
+		}
+	}
 
 	updateOption := &options.UpdateOptions{}
 	if nil != opts {
@@ -560,7 +568,7 @@ func (c *collection) UpdateUnsetMany(ctx context.Context, filter interface{}, up
 	if nil != c.innerSession {
 		returnResult := &mongodb.UpdateResult{}
 		err := mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
-			updateResult, err := c.innerCollection.UpdateMany(mctx, filter, bson.M{"$unset": update}, updateOption)
+			updateResult, err := c.innerCollection.UpdateMany(mctx, filter, update, updateOption)
 			if nil != err {
 				return err
 			}
@@ -577,7 +585,7 @@ func (c *collection) UpdateUnsetMany(ctx context.Context, filter interface{}, up
 	}
 
 	// no session
-	updateResult, err := c.innerCollection.UpdateMany(ctx, filter, bson.M{"$set": update}, updateOption)
+	updateResult, err := c.innerCollection.UpdateMany(ctx, filter, update, updateOption)
 	if nil != err {
 		return &mongodb.UpdateResult{}, err
 	}

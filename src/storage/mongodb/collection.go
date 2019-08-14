@@ -49,5 +49,5 @@ type CollectionInterface interface {
 
 	ReplaceOne(ctx context.Context, filter interface{}, replacement interface{}, opts *replaceopt.One) (*ReplaceOneResult, error)
 
-	UpdateUnsetMany(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.Many) (*UpdateResult, error)
+	Update(ctx context.Context, filter interface{}, update map[string]interface{}, opts *updateopt.Many) (*UpdateResult, error)
 }

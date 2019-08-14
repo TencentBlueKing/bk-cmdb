@@ -57,6 +57,7 @@ func (d *count) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPR
 	if nil == err {
 		reply.Success = true
 	} else {
+		blog.ErrorJSON("count execute error.  errr: %s, raw data: %s, rid:%s", err.Error(), msg, msg.RequestID)
 		reply.Message = err.Error()
 	}
 
