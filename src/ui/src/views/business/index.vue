@@ -115,7 +115,7 @@
                         @on-cancel="handleCancel">
                     </cmdb-form>
                 </bk-tab-panel>
-                <bk-tab-panel name="relevance" :label="$t('关联')" :visible="attribute.type !== 'create'">
+                <bk-tab-panel name="relevance" :label="$t('关联Relation')" :visible="attribute.type !== 'create'">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
