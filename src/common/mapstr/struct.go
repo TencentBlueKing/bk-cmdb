@@ -13,6 +13,7 @@
 package mapstr
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -257,4 +258,18 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.IsNil()
 	}
 	return false
+}
+
+// Struct2Map is a safer version of NewFromStruct
+// TODO: replace with mitchellh/mapstructure
+func Struct2Map(v interface{}) (map[string]interface{}, error) {
+	bytes, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	data := make(map[string]interface{})
+	if err := json.Unmarshal(bytes, &data); err != nil {
+		return nil, err
+	}
+	return data, nil
 }

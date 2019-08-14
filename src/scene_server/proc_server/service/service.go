@@ -138,6 +138,7 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	// service instance
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance", Handler: ps.CreateServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance", Handler: ps.SearchServiceInstancesInModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance", Handler: ps.SearchServiceInstancesInModuleWeb})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/with_host", Handler: ps.ListServiceInstancesWithHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance/with_host", Handler: ps.ListServiceInstancesWithHostWeb})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/details", Handler: ps.ListServiceInstancesDetails})
