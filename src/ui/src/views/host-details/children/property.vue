@@ -302,12 +302,12 @@
         .bk-icon {
             display: inline-block;
             vertical-align: middle;
-            width: 26px;
-            height: 26px;
+            width: 30px;
+            height: 30px;
             margin: 0 0 0 6px;
             border-radius: 2px;
             border: 1px solid #c4c6cc;
-            line-height: 24px;
+            line-height: 28px;
             font-size: 12px;
             text-align: center;
             cursor: pointer;
@@ -342,7 +342,7 @@
         .form-component {
             display: inline-block;
             vertical-align: middle;
-            width: 280px;
+            width: 270px;
             height: 30px;
             margin: 0 4px 0 0;
             /deep/ {

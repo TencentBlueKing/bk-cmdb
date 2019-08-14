@@ -18,9 +18,8 @@
                     auth: [$OPERATION.BUSINESS_ARCHIVE]
                 }">
                     <bk-button class="button-history"
-                        icon="icon-cc-history2"
+                        icon="icon-cc-history"
                         v-bk-tooltips.bottom="$t('查看已归档业务')"
-
                         :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
                         @click="routeToHistory">
                     </bk-button>
@@ -493,6 +492,9 @@
     .filter-value{
         width: 320px;
         border-radius: 0 2px 2px 0;
+        /deep/ .bk-form-input {
+            border-radius: 0 2px 2px 0;
+        }
     }
     .filter-search{
         position: absolute;
@@ -503,7 +505,15 @@
 }
 .options-button{
     font-size: 0;
+    .bk-button {
+        width: 32px;
+        padding: 0;
+        /deep/ .bk-icon {
+            line-height: 14px;
+        }
+    }
     .button-history{
+        margin-right: 10px;
         border-radius: 2px 0 0 2px;
     }
     .button-setting{
