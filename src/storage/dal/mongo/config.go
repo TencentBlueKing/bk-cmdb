@@ -16,6 +16,12 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
+
+	"configcenter/src/common/backbone"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/remote"
 )
 
 // Config config
@@ -83,4 +89,28 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
 		Mechanism:    conifgmap[prefix+".mechanism"],
 		Enable:       conifgmap[prefix+".enable"],
 	}
+}
+
+func (c Config) GetMongoClient(engine *backbone.Engine) (db dal.RDB, err error) {
+	if c.Enable == "true" {
+		db, err = local.NewMgo(c.BuildURI(), time.Minute)
+	} else {
+		db, err = remote.NewWithDiscover(engine)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
+	}
+	return
+}
+
+func (c Config) GetTransactionClient(engine *backbone.Engine) (client dal.Transcation, err error) {
+	if c.Enable == "true" {
+		client, err = local.NewMgo(c.BuildURI(), time.Minute)
+	} else {
+		client, err = remote.NewWithDiscover(engine)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
+	}
+	return
 }

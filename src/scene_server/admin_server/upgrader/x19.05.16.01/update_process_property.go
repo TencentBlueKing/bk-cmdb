@@ -18,6 +18,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
+	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -525,5 +527,22 @@ func updateFuncIDProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		return err
 	}
 
+	return nil
+}
+
+func UpdateProcPortPropertyGroupName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	// update proc_port group name
+	row := &metadata.Group{
+		ObjectID:   common.BKInnerObjIDProc,
+		GroupID:    mCommon.ProcPort,
+		GroupName:  mCommon.ProcPortName,
+		GroupIndex: 2,
+		OwnerID:    conf.OwnerID,
+		IsDefault:  true,
+	}
+	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNamePropertyGroup, row, "id", []string{common.BKObjIDField, "bk_group_id"}, []string{"id"}); err != nil {
+		blog.Errorf("add data for  %s table error  %s", common.BKTableNamePropertyGroup, err)
+		return err
+	}
 	return nil
 }

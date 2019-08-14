@@ -138,7 +138,7 @@ func (p *processOperation) processNameUniqueValidate(ctx core.ContextParams, tem
 		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
-		return ctx.Error.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated)
+		return ctx.Error.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, funcName, startRegex)
 	}
 	return nil
 }

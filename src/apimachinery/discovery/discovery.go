@@ -111,8 +111,7 @@ func (d *discover) TMServer() Interface {
 	return d.servers[types.CC_MODULE_TXC]
 }
 
-// IsMster current is master
+// IsMaster check whether current is master
 func (d *discover) IsMaster() bool {
-
 	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().Address())
 }
