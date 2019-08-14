@@ -103,11 +103,11 @@ func (c Config) GetMongoClient(engine *backbone.Engine) (db dal.RDB, err error) 
 	return
 }
 
-func (c Config) GetTransactionClient(engine *backbone.Engine) (txn *remote.Mongo, err error) {
+func (c Config) GetTransactionClient(engine *backbone.Engine) (client dal.Transcation, err error) {
 	if c.Enable == "true" {
-		return nil, nil
+		client, err = local.NewMgo(c.BuildURI(), time.Minute)
 	} else {
-		txn, err = remote.NewWithDiscover(engine)
+		client, err = remote.NewWithDiscover(engine)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
