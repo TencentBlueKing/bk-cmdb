@@ -30,12 +30,14 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
 	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type srvComm struct {
@@ -54,12 +56,13 @@ type ProcServer struct {
 	*backbone.Engine
 	EsbConfigChn       chan esbutil.EsbConfig
 	Config             *options.Config
-	EsbServ            esbserver.EsbClientInterface
+	EsbSrv             esbserver.EsbClientInterface
 	Cache              *redis.Client
 	procHostInstConfig logics.ProcHostInstConfig
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
 	Logic              *logics.Logic
+	TransactionClient  dal.Transcation
 }
 
 func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
@@ -77,12 +80,11 @@ func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(ps.Engine, header, ps.Cache, ps.EsbServ, &ps.procHostInstConfig),
+		lgc:           logics.NewLogics(ps.Engine, header, ps.Cache, ps.EsbSrv, &ps.procHostInstConfig),
 	}
 }
 
 func (ps *ProcServer) WebService() *restful.Container {
-
 	getErrFunc := func() errors.CCErrorIf {
 		return ps.Engine.CCErr
 	}
@@ -202,12 +204,10 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 		Message: meta.Message,
 	}
 	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteEntity(answer)
+	_ = resp.WriteEntity(answer)
 }
 
 func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
-
-	//
 	esbAddr, addrOk := current.ConfigMap["esb.addr"]
 	esbAppCode, appCodeOk := current.ConfigMap["esb.appCode"]
 	esbAppSecret, appSecretOk := current.ConfigMap["esb.appSecret"]
@@ -243,4 +243,8 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 		}
 	}
 	ps.ConfigMap = current.ConfigMap
+
+	dbPrefix := "mongodb"
+	mongoCfg := mongo.ParseConfigFromKV(dbPrefix, current.ConfigMap)
+	ps.Config.Mongo = &mongoCfg
 }

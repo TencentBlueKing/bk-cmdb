@@ -43,7 +43,7 @@
                     theme="check-view-color"
                     placement="bottom-end">
                     <div slot="content" class="popover-main">
-                        <span>这里可以切换显示标签或路径</span>
+                        <span>{{$t('标签或路径切换')}}</span>
                         <i class="bk-icon icon-close" @click="handleCheckViewStatus"></i>
                     </div>
                     <div class="options-check-view">
@@ -340,7 +340,7 @@
     .popover-main {
         @include inlineBlock;
         .bk-icon {
-            margin: -2px 0 0 10px;
+            margin: 0 0 0 10px;
             cursor: pointer;
         }
     }

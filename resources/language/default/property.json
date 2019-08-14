@@ -25,6 +25,8 @@
     "module_property_bk_module_name": "模块名",
     "module_property_bk_module_type": "模块类型",
     "module_property_operator": "主要维护人",
+    "module_property_service_category_id": "服务分类ID",
+    "module_property_service_template_id": "服务模板ID",
     "module_property_bk_bak_operator": "备份维护人",
     "plat_property_bk_cloud_name": "云区域",
     "plat_property_bk_supplier_account": "供应商",

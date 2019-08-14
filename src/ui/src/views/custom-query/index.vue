@@ -102,7 +102,7 @@
                     isCloseConfirmShow: false,
                     type: 'create',
                     id: null,
-                    title: this.$t('新增查询')
+                    title: this.$t('新建查询')
                 }
             }
         },

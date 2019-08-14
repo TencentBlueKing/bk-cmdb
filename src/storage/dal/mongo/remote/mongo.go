@@ -20,13 +20,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var _ dal.DB = (*Mongo)(nil)
@@ -50,7 +51,8 @@ type Mongo struct {
 func NewWithDiscover(engine *backbone.Engine) (db *Mongo, err error) {
 	var pool *rpc.Pool
 	for retry := 1; retry <= maxRetry; retry++ {
-		p, err := rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
+		tmServer := engine.ServiceManageInterface.TMServer()
+		p, err := rpc.NewClientPool("tcp", tmServer.GetServers, "/txn/v3/rpc")
 		if err == nil {
 			pool = p
 			break
@@ -58,6 +60,7 @@ func NewWithDiscover(engine *backbone.Engine) (db *Mongo, err error) {
 		if maxRetry == retry {
 			return nil, err
 		}
+		blog.Infof("waiting for tsn server ready, retry: %d", retry)
 		time.Sleep(time.Millisecond * 100)
 	}
 

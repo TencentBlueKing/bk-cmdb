@@ -123,6 +123,7 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 	// update fields to local object
 	// template.Name = input.Name
 	if input.ServiceCategoryID != 0 {
+		// 允许模块的服务分类信息与模板的服务分类信息不一致，模块同步按钮会调整模块的分类信息, 详情见 issue #2927
 		template.ServiceCategoryID = input.ServiceCategoryID
 
 		bizID, e := metadata.BizIDFromMetadata(template.Metadata)

@@ -120,6 +120,16 @@
                 :property-groups="processForm.propertyGroups"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleBeforeClose">
+                <template slot="bind_ip">
+                    <cmdb-input-select
+                        :disabled="checkDisabled"
+                        :name="'bindIp'"
+                        :placeholder="$t('请选择或输入IP')"
+                        :options="processBindIp"
+                        :validate="validateRules"
+                        v-model="bindIp">
+                    </cmdb-input-select>
+                </template>
             </cmdb-form>
         </bk-sideslider>
 
@@ -208,7 +218,9 @@
                 },
                 isCarryParams: false,
                 topoStatus: false,
-                historyLabels: {}
+                historyLabels: {},
+                processBindIp: [],
+                bindIp: ''
             }
         },
         computed: {
@@ -253,6 +265,24 @@
                     disabled: !this.checked.length,
                     auth: 'U_SERVICE_INSTANCE'
                 }]
+            },
+            bindIpProperty () {
+                return this.processForm.properties.find(property => property['bk_property_id'] === 'bind_ip') || {}
+            },
+            validateRules () {
+                const rules = {}
+                if (this.bindIpProperty.isrequired) {
+                    rules['required'] = true
+                }
+                rules['regex'] = this.bindIpProperty.option
+                return rules
+            },
+            checkDisabled () {
+                const property = this.bindIpProperty
+                if (this.processForm.type === 'create') {
+                    return false
+                }
+                return !property.editable || property.isreadonly || this.processForm.disabledProperties.includes('bind_ip')
             }
         },
         watch: {
@@ -262,10 +292,16 @@
                         this.searchSelectData = []
                     }
                     await this.getServiceInstances()
-                    if (node.data.service_template_id && this.instances.length) {
-                        this.getServiceInstanceDifferences()
-                    }
+                    const timer = setTimeout(() => {
+                        if (node.data.service_template_id && this.instances.length) {
+                            this.getServiceInstanceDifferences()
+                        }
+                        clearTimeout(timer)
+                    }, 0)
                 }
+            },
+            bindIp (value) {
+                this.$refs.processForm.values.bind_ip = value
             }
         },
         async created () {
@@ -445,12 +481,14 @@
                 }
             },
             handleCreateProcess (referenceService) {
+                this.getInstanceIpByHost(referenceService.instance.bk_host_id)
                 this.processForm.referenceService = referenceService
                 this.processForm.type = 'create'
                 this.processForm.title = `${this.$t('添加进程')}(${referenceService.instance.name})`
                 this.processForm.instance = {}
                 this.processForm.show = true
                 this.$nextTick(() => {
+                    this.bindIp = ''
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -462,11 +500,15 @@
                 })
             },
             async handleUpdateProcess (processInstance, referenceService) {
+                this.getInstanceIpByHost(processInstance.relation.bk_host_id)
                 this.processForm.referenceService = referenceService
                 this.processForm.type = 'update'
                 this.processForm.title = this.$t('编辑进程')
                 this.processForm.instance = processInstance.property
                 this.processForm.show = true
+                this.$nextTick(() => {
+                    this.bindIp = this.$tools.getInstFormValues(this.processForm.properties, processInstance.property)['bind_ip']
+                })
 
                 const processTemplateId = processInstance.relation.process_template_id
                 if (processTemplateId) {
@@ -479,6 +521,32 @@
                         }
                     })
                     this.processForm.disabledProperties = disabledProperties
+                }
+            },
+            async getInstanceIpByHost (hostId) {
+                try {
+                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    let res = null
+                    if (instanceIpMap.hasOwnProperty(hostId)) {
+                        res = instanceIpMap[hostId]
+                    } else {
+                        res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
+                            hostId,
+                            config: {
+                                requestId: 'getInstanceIpByHost'
+                            }
+                        })
+                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                    }
+                    this.processBindIp = res.options.map(ip => {
+                        return {
+                            id: ip,
+                            name: ip
+                        }
+                    })
+                } catch (e) {
+                    this.processBindIp = []
+                    console.error(e)
                 }
             },
             async getProcessTemplate (processTemplateId) {
