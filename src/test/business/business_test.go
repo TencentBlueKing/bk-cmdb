@@ -13,6 +13,7 @@
 package business_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -20,9 +21,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/test/run"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
 )
 
 func CopyHeader(h http.Header) http.Header {

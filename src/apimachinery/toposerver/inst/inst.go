@@ -121,7 +121,7 @@ func (t *instanceClient) SelectInstsByAssociation(ctx context.Context, ownerID s
 
 func (t *instanceClient) SelectInst(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := fmt.Sprintf("/inst/search/owner/%s/%s/%s", ownerID, objID, instID)
+	subPath := fmt.Sprintf("/inst/search/%s/%s/%s", ownerID, objID, instID)
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -133,8 +133,8 @@ func (t *instanceClient) SelectInst(ctx context.Context, ownerID string, objID s
 	return
 }
 
-func (t *instanceClient) SelectTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
-	resp = new(metadata.SearchInstResult)
+func (t *instanceClient) SelectTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchTopoResult, err error) {
+	resp = new(metadata.SearchTopoResult)
 	subPath := fmt.Sprintf("/inst/search/topo/owner/%s/object/%s/inst/%s", ownerID, objID, instID)
 
 	err = t.client.Post().
@@ -147,8 +147,8 @@ func (t *instanceClient) SelectTopo(ctx context.Context, ownerID string, objID s
 	return
 }
 
-func (t *instanceClient) SelectAssociationTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
-	resp = new(metadata.SearchInstResult)
+func (t *instanceClient) SelectAssociationTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchAssociationTopoResult, err error) {
+	resp = new(metadata.SearchAssociationTopoResult)
 	subPath := fmt.Sprintf("/inst/association/topo/search/owner/%s/object/%s/inst/%s", ownerID, objID, instID)
 
 	err = t.client.Post().
