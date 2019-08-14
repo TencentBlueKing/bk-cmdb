@@ -148,7 +148,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 	// check bk_token
 	ccToken := session.Get(common.HTTPCookieBKToken)
 	if ccToken == nil {
-		blog.Infof("session key %s not found, rid: %s", common.HTTPCookieBKToken, rid)
+		blog.Errorf("session key %s not found, rid: %s", common.HTTPCookieBKToken, rid)
 		return user.LoginUser(c)
 	}
 
