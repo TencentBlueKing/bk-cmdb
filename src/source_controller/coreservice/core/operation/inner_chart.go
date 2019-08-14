@@ -24,13 +24,23 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *operationManager) TimerFreshData(params core.ContextParams) {
-	m.ModelInst(params)
-	m.ModelInstChange(params)
-	m.BizHostCountChange(params)
+func (m *operationManager) TimerFreshData(params core.ContextParams) error {
+	if err := m.ModelInst(params); err != nil {
+		blog.Errorf("TimerFreshData, count model's instance, search model info fail ,err: %v, rid: %v", err)
+		return err
+	}
+	if err := m.ModelInstChange(params); err != nil {
+		blog.Errorf("TimerFreshData, model inst change count fail, err: %v", err)
+		return err
+	}
+	if err := m.BizHostCountChange(params); err != nil {
+		blog.Errorf("TimerFreshData fail, biz host change count fail, err: %v", err)
+		return err
+	}
+	return nil
 }
 
-func (m *operationManager) ModelInst(ctx core.ContextParams) {
+func (m *operationManager) ModelInst(ctx core.ContextParams) error {
 	modelInstCount := make([]metadata.StringIDCount, 0)
 
 	opt := mapstr.MapStr{}
@@ -38,22 +48,23 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 	modelInfo := make([]metadata.Object, 0)
 	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(opt).All(ctx, &modelInfo); err != nil {
 		blog.Errorf("count model's instance, search model info fail ,err: %v, rid: %v", err, ctx.ReqID)
-		return
+		return err
 	}
 	instCount, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(opt).Count(ctx)
 	if err != nil {
 		blog.Errorf("count model's instance, search inst count fail ,err: %v, rid: %v", err, ctx.ReqID)
-		return
+		return err
 	}
 
 	if instCount == 0 {
-		m.ObjectBaseEmpty(ctx, modelInfo)
-		return
+		err = m.ObjectBaseEmpty(ctx, modelInfo)
+		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, ctx.ReqID)
+		return err
 	}
 	pipeline := []M{{"$group": M{"_id": "$bk_obj_id", "count": M{"$sum": 1}}}}
-	if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &modelInstCount); err != nil {
+	if err = m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &modelInstCount); err != nil {
 		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, ctx.ReqID)
-		return
+		return err
 	}
 
 	allModels := make([]metadata.ObjectIDName, 0)
@@ -82,26 +93,26 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 		}
 	}
 
-	if err := m.UpdateInnerChartData(ctx, common.ModelInstChart, modelInstNumber); err != nil {
+	if err = m.UpdateInnerChartData(ctx, common.ModelInstChart, modelInstNumber); err != nil {
 		blog.Errorf("update inner chart ModelInst data fail, err: %v, rid: %v", err, ctx.ReqID)
-		return
+		return err
 	}
 
-	return
+	return nil
 }
 
-func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
+func (m *operationManager) ModelInstChange(ctx core.ContextParams) error {
 	operationLog, err := m.StatisticOperationLog(ctx)
 	if err != nil {
 		blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, ctx.ReqID)
-		return
+		return err
 	}
 
 	cond := mapstr.MapStr{}
 	modelData := make([]metadata.Object, 0)
-	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).All(ctx, &modelData); nil != err {
+	if err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).All(ctx, &modelData); nil != err {
 		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.ReqID, cond, err.Error())
-		return
+		return err
 	}
 
 	modelInstChange := metadata.ModelInstChange{}
@@ -149,41 +160,45 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 		}
 	}
 
-	if err := m.UpdateInnerChartData(ctx, common.ModelInstChangeChart, modelInstData); err != nil {
+	if err = m.UpdateInnerChartData(ctx, common.ModelInstChangeChart, modelInstData); err != nil {
 		blog.Errorf("update inner chart ModelInstChange data fail, err: %v, rid: %v", err, ctx.ReqID)
-		return
+		return err
 	}
 
-	return
+	return nil
 }
 
-func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
+func (m *operationManager) BizHostCountChange(ctx core.ContextParams) error {
 	bizHost, err := m.SearchBizHost(ctx)
+	if err != nil {
+		blog.Errorf("search biz's host count fail, err: %v, rid: %v", err, ctx.ReqID)
+		return err
+	}
 
 	opt := M{"bk_data_status": M{"$ne": "disabled"}, "bk_biz_id": M{"$ne": 1}}
 	bizInfo := make([]metadata.BizInst, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
 		blog.Errorf("biz's host count, search biz info fail ,err: %v, rid: %v", err, ctx.ReqID)
-		return
+		return err
 	}
 
 	if bizHost == nil {
 		blog.V(3).Info("table cc_ModuleHostConfig is empty, rid: %v", ctx.ReqID)
 
-		m.BizHostEmpty(ctx, bizInfo)
-		return
-	}
-	if err != nil {
-		blog.Errorf("search biz's host count fail, err: %v, rid: %v", err, ctx.ReqID)
-		return
+		err = m.BizHostEmpty(ctx, bizInfo)
+		if err != nil {
+			blog.Errorf("search biz's host count fail, err: %v, rid: %v", err, ctx.ReqID)
+			return err
+		}
+		return nil
 	}
 
 	condition := mapstr.MapStr{}
 	condition[common.OperationReportType] = common.HostChangeBizChart
 	bizHostChange := make([]metadata.HostChangeChartData, 0)
-	if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).All(ctx, &bizHostChange); err != nil {
+	if err = m.dbProxy.Table(common.BKTableNameChartData).Find(condition).All(ctx, &bizHostChange); err != nil {
 		blog.Errorf("get host change data fail, err: %v, rid: %v", err, ctx.ReqID)
-		return
+		return err
 	}
 
 	firstBizHostChange := metadata.HostChangeChartData{}
@@ -194,56 +209,48 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 			if info.Id != biz.BizID {
 				continue
 			}
+			currentData := metadata.BizHostChart{}
+			currentData.Id.Time = now
+			currentData.Count = info.Count
 			if len(bizHostChange) > 0 {
-				subHour := now.Sub(bizHostChange[0].UpdateTime).Hours()
+				subHour := now.Sub(bizHostChange[0].UpdateTime.Time).Hours()
 				if subHour < 24 {
 					blog.V(3).Info("Less than 24 hours since the last update, return")
-					return
+					return nil
 				}
 				if len(bizHostChange[0].Data) > 0 {
-					bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], metadata.BizHostChart{
-						Id:    now,
-						Count: info.Count,
-					})
+					bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], currentData)
 				} else {
 					bizHostChange[0].Data = map[string][]metadata.BizHostChart{}
-					bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], metadata.BizHostChart{
-						Id:    now,
-						Count: info.Count,
-					})
+					bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], currentData)
 				}
-				bizHostChange[0].UpdateTime = time.Now()
+				bizHostChange[0].UpdateTime.Time = time.Now()
 			} else {
 				if len(firstBizHostChange.Data) > 0 {
-					firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
-						Id:    now,
-						Count: info.Count,
-					})
+					firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], currentData)
 				} else {
 					firstBizHostChange.OwnerID = "0"
 					firstBizHostChange.ReportType = common.HostChangeBizChart
 					firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
-					firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
-						Id:    now,
-						Count: info.Count,
-					})
+					firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], currentData)
 				}
-				firstBizHostChange.UpdateTime = time.Now()
+				firstBizHostChange.UpdateTime.Time = time.Now()
 			}
 		}
 	}
 
 	if len(bizHostChange) > 0 {
-		if err := m.dbProxy.Table(common.BKTableNameChartData).Update(ctx, condition, bizHostChange[0]); err != nil {
+		if err = m.dbProxy.Table(common.BKTableNameChartData).Update(ctx, condition, bizHostChange[0]); err != nil {
 			blog.Errorf("update biz host change chart fail, err: %v, rid: %v", err, ctx.ReqID)
-			return
+			return err
 		}
 	} else {
-		if err := m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, firstBizHostChange); err != nil {
+		if err = m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, firstBizHostChange); err != nil {
 			blog.Errorf("update biz host change fail, err: %v, rid: %v", err, ctx.ReqID)
-			return
+			return err
 		}
 	}
+	return nil
 }
 
 func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.IntIDCount, error) {
@@ -460,7 +467,7 @@ func (m *operationManager) StatisticOperationLog(ctx core.ContextParams) (*metad
 }
 
 // BizHostEmpty cc_ModuleHOstConfig为空的情况下, 统计业务下主机为0
-func (m *operationManager) BizHostEmpty(ctx core.ContextParams, bizInfo []metadata.BizInst) {
+func (m *operationManager) BizHostEmpty(ctx core.ContextParams, bizInfo []metadata.BizInst) error {
 	firstBizHostChange := metadata.HostChangeChartData{}
 	now := time.Now()
 
@@ -468,37 +475,35 @@ func (m *operationManager) BizHostEmpty(ctx core.ContextParams, bizInfo []metada
 	chartExist, err := m.dbProxy.Table(common.BKTableNameChartData).Find(opt).Count(ctx)
 	if err != nil {
 		blog.Errorf("update biz host change chart fail, err: %v, rid: %v", err, ctx.ReqID)
-		return
+		return err
 	}
 	if chartExist > 0 {
-		return
+		return nil
 	}
 	for _, biz := range bizInfo {
+		currentData := metadata.BizHostChart{}
+		currentData.Id.Time = now
+		currentData.Count = 0
 		if len(firstBizHostChange.Data) > 0 {
-			firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
-				Id:    now,
-				Count: 0,
-			})
+			firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], currentData)
 		} else {
 			firstBizHostChange.OwnerID = "0"
 			firstBizHostChange.ReportType = common.HostChangeBizChart
 			firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
-			firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
-				Id:    now,
-				Count: 0,
-			})
+			firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], currentData)
 		}
-		firstBizHostChange.UpdateTime = time.Now()
+		firstBizHostChange.UpdateTime.Time = time.Now()
 	}
 
-	if err := m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, firstBizHostChange); err != nil {
+	if err = m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, firstBizHostChange); err != nil {
 		blog.Errorf("update biz host change fail, err: %v, rid: %v", err, ctx.ReqID)
-		return
+		return err
 	}
+	return nil
 }
 
 // ObjectBaseEmpty cc_ObjectBase为空的情况下,统计模型下的实例为0
-func (m *operationManager) ObjectBaseEmpty(ctx core.ContextParams, modelInfo []metadata.Object) {
+func (m *operationManager) ObjectBaseEmpty(ctx core.ContextParams, modelInfo []metadata.Object) error {
 	modelInstNumber := make([]metadata.IDStringCountInt64, 0)
 	for _, model := range modelInfo {
 		if !util.IsInnerObject(model.ObjectID) {
@@ -512,6 +517,7 @@ func (m *operationManager) ObjectBaseEmpty(ctx core.ContextParams, modelInfo []m
 
 	if err := m.UpdateInnerChartData(ctx, common.ModelInstChart, modelInstNumber); err != nil {
 		blog.Errorf("update inner chart ModelInst data fail, err: %v, rid: %v", err, ctx.ReqID)
-		return
+		return err
 	}
+	return nil
 }

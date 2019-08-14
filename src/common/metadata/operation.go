@@ -14,21 +14,20 @@ package metadata
 
 import (
 	"configcenter/src/common"
-	"time"
 )
 
 type ChartConfig struct {
 	ConfigID   uint64 `json:"config_id" bson:"config_id"`
 	Metadata   `field:"metadata" json:"metadata" bson:"metadata"`
-	ReportType string    `json:"report_type" bson:"report_type"`
-	Name       string    `json:"name" bson:"name"`
-	CreateTime time.Time `json:"create_time" bson:"create_time"`
-	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	ObjID      string    `json:"bk_obj_id" bson:"bk_obj_id"`
-	Width      string    `json:"width" bson:"width"`
-	ChartType  string    `json:"chart_type" bson:"chart_type"`
-	Field      string    `json:"field" bson:"field"`
-	XAxisCount int64     `json:"x_axis_count" bson:"x_axis_count"`
+	ReportType string `json:"report_type" bson:"report_type"`
+	Name       string `json:"name" bson:"name"`
+	CreateTime Time   `json:"create_time" bson:"create_time"`
+	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ObjID      string `json:"bk_obj_id" bson:"bk_obj_id"`
+	Width      string `json:"width" bson:"width"`
+	ChartType  string `json:"chart_type" bson:"chart_type"`
+	Field      string `json:"field" bson:"field"`
+	XAxisCount int64  `json:"x_axis_count" bson:"x_axis_count"`
 }
 
 type ChartPosition struct {
@@ -84,12 +83,12 @@ type HostChangeChartData struct {
 	ReportType string                    `json:"report_type" bson:"report_type"`
 	Data       map[string][]BizHostChart `json:"data" bson:"data"`
 	OwnerID    string                    `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	UpdateTime time.Time                 `json:"update_time" bson:"update_time"`
+	UpdateTime Time                      `json:"update_time" bson:"update_time"`
 }
 
 type BizHostChart struct {
-	Id    time.Time `json:"id" bson:"id"`
-	Count int64     `json:"count" bson:"count"`
+	Id    Time  `json:"id" bson:"id"`
+	Count int64 `json:"count" bson:"count"`
 }
 
 type IDStringCountInt64 struct {
@@ -124,11 +123,11 @@ type SearchChartConfig struct {
 }
 
 type CloudMapping struct {
-	CreateTime time.Time `json:"create_time" bson:"create_time"`
-	LastTime   time.Time `json:"last_time" bson:"lsat_time"`
-	CloudName  string    `json:"bk_cloud_name" bson:"bk_cloud_name"`
-	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	CloudID    int64     `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	CreateTime Time   `json:"create_time" bson:"create_time"`
+	LastTime   Time   `json:"last_time" bson:"lsat_time"`
+	CloudName  string `json:"bk_cloud_name" bson:"bk_cloud_name"`
+	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	CloudID    int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
 }
 
 type AttributesOptions []AttributesOption

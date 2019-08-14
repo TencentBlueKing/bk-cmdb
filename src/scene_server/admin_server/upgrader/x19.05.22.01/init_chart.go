@@ -13,12 +13,13 @@
 package x19_05_22_01
 
 import (
+	"context"
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-	"context"
-	"time"
 )
 
 func initInnerChart(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -31,7 +32,7 @@ func initInnerChart(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		}
 		innerChart := metadata.InnerChartsMap[chart]
 		innerChart.ConfigID = configID
-		innerChart.CreateTime = time.Now()
+		innerChart.CreateTime.Time = time.Now()
 		innerChart.OwnerID = conf.OwnerID
 		if err := db.Table(common.BKTableNameChartConfig).Insert(ctx, innerChart); err != nil {
 			return err

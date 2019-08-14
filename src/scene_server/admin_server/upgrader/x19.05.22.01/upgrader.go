@@ -14,11 +14,12 @@ package x19_05_22_01
 
 import (
 	"context"
-	"gopkg.in/mgo.v2"
 
 	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+
+	"gopkg.in/mgo.v2"
 )
 
 func addChartConfigTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
