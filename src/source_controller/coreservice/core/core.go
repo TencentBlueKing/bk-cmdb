@@ -181,7 +181,7 @@ type StatisticOperation interface {
 	DeleteOperationChart(ctx ContextParams, id int64) (interface{}, error)
 	UpdateOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
 	SearchTimerChartData(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
-	TimerFreshData(params ContextParams)
+	TimerFreshData(params ContextParams) error
 }
 
 // Core core itnerfaces methods

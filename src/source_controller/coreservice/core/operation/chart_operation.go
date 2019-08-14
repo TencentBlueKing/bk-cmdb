@@ -26,13 +26,13 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Find(opt).All(ctx, &chartConfig); err != nil {
 		blog.Errorf("SearchOperationChart fail, err: %v, rid: %v", err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.CCError(1116005)
 	}
 
 	chartPosition := make([]metadata.ChartPosition, 0)
 	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Find(opt).All(ctx, &chartPosition); err != nil {
 		blog.Errorf("SearchOperationChart fail, err: %v, rid: %v", err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.CCError(1116005)
 	}
 
 	if len(chartConfig) == 0 || len(chartPosition) == 0 {
@@ -79,7 +79,7 @@ func (m *operationManager) CreateOperationChart(ctx core.ContextParams, inputPar
 
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Insert(ctx, inputParam); err != nil {
 		blog.Errorf("CreateOperationChart fail, err: %v, rid: %v", err, ctx.ReqID)
-		return 0, err
+		return 0, ctx.Error.CCError(1116002)
 	}
 
 	return configID, nil
@@ -90,12 +90,12 @@ func (m *operationManager) UpdateChartPosition(ctx core.ContextParams, inputPara
 
 	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Delete(ctx, opt); err != nil {
 		blog.Errorf("UpdateChartPosition, delete chart position info fail, err: %v, rid: %v", err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.CCError(1116008)
 	}
 
 	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Insert(ctx, inputParam); err != nil {
 		blog.Errorf("UpdateChartPosition, update chart position fail, err: %v, rid: %v", err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.CCError(1116008)
 	}
 
 	return nil, nil
@@ -106,7 +106,7 @@ func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, id int64
 	opt[common.OperationConfigID] = id
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Delete(ctx, opt); err != nil {
 		blog.Errorf("DeleteOperationChart fail, err: %v, rid: %v", err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.CCError(1116004)
 	}
 
 	return nil, nil
@@ -117,7 +117,7 @@ func (m *operationManager) UpdateOperationChart(ctx core.ContextParams, inputPar
 	opt[common.OperationConfigID] = inputParam[common.OperationConfigID]
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Update(ctx, opt, inputParam); err != nil {
 		blog.Errorf("UpdateOperationChart fail,chartName: %v, id: %v err: %v, rid: %v", opt["name"], inputParam[common.OperationConfigID], err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.CCError(1116006)
 	}
 
 	return nil, nil

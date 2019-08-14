@@ -72,7 +72,7 @@ func (s *coreService) CreateOperationChart(params core.ContextParams, pathParams
 	}
 
 	ownerID := util.GetOwnerID(params.Header)
-	chartConfig.CreateTime = time.Now()
+	chartConfig.CreateTime.Time = time.Now()
 	chartConfig.OwnerID = ownerID
 	result, err := s.core.StatisticOperation().CreateOperationChart(params, chartConfig)
 	if err != nil {
@@ -218,7 +218,9 @@ func (s *coreService) TimerFreshData(params core.ContextParams, pathParams, quer
 		return false, nil
 	}
 
-	s.core.StatisticOperation().TimerFreshData(params)
+	if err = s.core.StatisticOperation().TimerFreshData(params); err != nil {
+		blog.Errorf("TimerFreshData fail, err: %v, rid: %v", err, params.ReqID)
+	}
 
 	return true, nil
 }

@@ -13,7 +13,6 @@
 package logics
 
 import (
-	"gopkg.in/redis.v5"
 	"net/http"
 
 	"configcenter/src/auth/extensions"
@@ -23,6 +22,8 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdpartyclient/esbserver"
+
+	"gopkg.in/redis.v5"
 )
 
 type Logics struct {
