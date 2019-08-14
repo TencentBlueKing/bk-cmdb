@@ -263,10 +263,10 @@
                 }
             },
             createGroupBtn () {
-                return this.isAdminView ? this.$t('ModelManagement["新建分组"]') : this.$t('ModelManagement["新建业务分组"]')
+                return this.isAdminView ? this.$t('新建分组') : this.$t('新建业务分组')
             },
             createModelBtn () {
-                return this.isAdminView ? this.$t('ModelManagement["新建模型"]') : this.$t('ModelManagement["新建业务模型"]')
+                return this.isAdminView ? this.$t('新建模型') : this.$t('新建业务模型')
             }
         },
         watch: {
@@ -444,7 +444,7 @@
 
 <style lang="scss" scoped>
     .group-wrapper {
-        padding: 100px 0 20px 0;
+        padding: 122px 0 20px 0;
     }
     .btn-group {
         position: absolute;

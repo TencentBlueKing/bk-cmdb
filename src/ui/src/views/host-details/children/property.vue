@@ -63,7 +63,9 @@
                         <div class="copy-box">
                             <i class="property-copy icon-cc-details-copy" @click="handleCopy($tools.getPropertyText(property, host), childIndex)"></i>
                             <transition name="fade">
-                                <span class="copy-tips" v-if="showCopyTips === childIndex">
+                                <span class="copy-tips"
+                                    :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
+                                    v-if="showCopyTips === childIndex">
                                     {{$t('复制成功')}}
                                 </span>
                             </transition>
@@ -259,7 +261,7 @@
                     position: absolute;
                     top: -22px;
                     left: -18px;
-                    width: 70px;
+                    min-width: 70px;
                     height: 26px;
                     line-height: 26px;
                     font-size: 12px;

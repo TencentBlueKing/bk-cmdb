@@ -168,7 +168,12 @@
                                 bk_module_id: this.moduleId,
                                 instances: serviceInstanceTables.map(table => {
                                     return {
-                                        bk_host_id: table.id
+                                        bk_host_id: table.id,
+                                        processes: table.processList.map(item => {
+                                            return {
+                                                process_info: item
+                                            }
+                                        })
                                     }
                                 })
                             })
