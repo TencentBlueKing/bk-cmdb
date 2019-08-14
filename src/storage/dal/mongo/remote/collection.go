@@ -84,8 +84,48 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 
 // UpdateMultiModel 根据操作符更新数据。
 func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
-	// TODO
-	return errors.New("not support UpdateOp method")
+
+	doc := make(map[string]interface{}, 0)
+	for _, item := range updateModel {
+		if _, ok := doc[item.Op]; ok {
+			return errors.New(item.Op + " appear multiple times")
+		}
+		doc["$"+item.Op] = item.Doc
+	}
+
+	// build msg
+	msg := types.OPUpdateOperation{}
+	msg.OPCode = types.OPUpdateByOperatorCode
+	msg.Collection = c.collection
+
+	if err := msg.DOC.Encode(doc); err != nil {
+		return err
+	}
+	if err := msg.Selector.Encode(filter); err != nil {
+		return err
+	}
+
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+	return nil
+
 }
 
 // Delete 删除数据

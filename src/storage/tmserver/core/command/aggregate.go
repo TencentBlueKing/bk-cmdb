@@ -59,6 +59,7 @@ func (d *aggregate) Execute(ctx core.ContextParams, decoder rpc.Request) (*types
 	if nil == err {
 		reply.Success = true
 	} else {
+		blog.ErrorJSON("aggregate execute error.  errr: %s, raw data: %s, rid:%s", err.Error(), msg, msg.RequestID)
 		reply.Message = err.Error()
 	}
 
