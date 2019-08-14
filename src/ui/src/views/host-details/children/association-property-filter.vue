@@ -14,7 +14,7 @@
             v-model="localSelected.operator"
             @on-selected="handleOperatorSelected">
         </cmdb-selector>
-        <div class="property-value fl" style="width: 325px;"
+        <div class="property-value fl" style="width: 315px;"
             v-if="Object.keys(selectedProperty).length">
             <component
                 :is="`cmdb-form-${selectedProperty['bk_property_type']}`"

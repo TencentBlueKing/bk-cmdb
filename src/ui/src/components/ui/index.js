@@ -25,6 +25,7 @@ import collapse from './collapse/collapse'
 import dotMenu from './dot-menu/dot-menu.vue'
 import input from './form/input.vue'
 import searchInput from './form/search-input.vue'
+import inputSelect from './selector/input-select.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -51,7 +52,8 @@ const install = (Vue, opts = {}) => {
         collapse,
         dotMenu,
         input,
-        searchInput
+        searchInput,
+        inputSelect
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -83,5 +85,6 @@ export default {
     collapseTransition,
     dotMenu,
     input,
-    searchInput
+    searchInput,
+    inputSelect
 }

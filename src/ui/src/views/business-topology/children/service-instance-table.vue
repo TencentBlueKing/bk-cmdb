@@ -11,7 +11,7 @@
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
-            <i class="bk-icon icon-exclamation" v-if="localExpanded && withTemplate && showTips" v-bk-tooltips="tooltips"></i>
+            <i class="bk-icon icon-exclamation" v-if="withTemplate && !instance.process_count" v-bk-tooltips="tooltips"></i>
             <cmdb-dot-menu class="instance-menu" ref="dotMenu" @click.native.stop>
                 <ul class="menu-list"
                     @mouseenter="handleShowDotMenu"
@@ -168,7 +168,6 @@
                     visiable: false,
                     id: null
                 },
-                showTips: false,
                 show: true,
                 checked: false,
                 localExpanded: this.expanded,
@@ -285,7 +284,6 @@
                             requestId: this.requestId.processList
                         }
                     })
-                    this.showTips = !this.list.length
                 } catch (e) {
                     this.list = []
                     console.error(e)

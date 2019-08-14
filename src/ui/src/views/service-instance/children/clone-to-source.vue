@@ -59,6 +59,16 @@
                 :inst="processForm.instance"
                 @on-submit="handleSubmit"
                 @on-cancel="handleBeforeClose">
+                <template slot="bind_ip">
+                    <cmdb-input-select
+                        :disabled="checkDisabled"
+                        :name="'bindIp'"
+                        :placeholder="$t('请选择或输入IP')"
+                        :options="processBindIp"
+                        :validate="validateRules"
+                        v-model="bindIp">
+                    </cmdb-input-select>
+                </template>
             </cmdb-form>
         </bk-sideslider>
     </div>
@@ -87,7 +97,9 @@
                     type: 'single',
                     title: '',
                     instance: {}
-                }
+                },
+                processBindIp: [],
+                bindIp: ''
             }
         },
         computed: {
@@ -125,11 +137,35 @@
                             return sourceProcess[property.bk_property_id] === cloneProcess[property.bk_property_id]
                         })
                 })
+            },
+            bindIpProperty () {
+                return this.properties.find(property => property['bk_property_id'] === 'bind_ip') || {}
+            },
+            hostId () {
+                return parseInt(this.$route.params.hostId)
+            },
+            validateRules () {
+                const rules = {}
+                if (this.bindIpProperty.isrequired) {
+                    rules['required'] = true
+                }
+                rules['regex'] = this.bindIpProperty.option
+                return rules
+            },
+            checkDisabled () {
+                const property = this.bindIpProperty
+                if (this.processForm.type === 'create') {
+                    return false
+                }
+                return !property.editable || property.isreadonly
             }
         },
         watch: {
             sourceProcesses (source) {
                 this.cloneProcesses = this.$tools.clone(source)
+            },
+            bindIp (value) {
+                this.$refs.processForm.values.bind_ip = value
             }
         },
         async created () {
@@ -189,11 +225,13 @@
                 this.checked = selection.map(row => row.bk_process_id)
             },
             handleBatchEdit () {
+                this.getInstanceIpByHost(this.hostId)
                 this.processForm.type = 'batch'
                 this.processForm.title = this.$t('批量编辑')
                 this.processForm.instance = {}
                 this.processForm.show = true
                 this.$nextTick(() => {
+                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance)['bind_ip']
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -205,11 +243,13 @@
                 })
             },
             handleEditProcess (item) {
+                this.getInstanceIpByHost(this.hostId)
                 this.processForm.type = 'single'
                 this.processForm.title = `${this.$t('编辑进程')}${item.bk_process_name}`
                 this.processForm.instance = this.cloneProcesses.find(target => target.bk_process_id === item.bk_process_id)
                 this.processForm.show = true
                 this.$nextTick(() => {
+                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance)['bind_ip']
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -219,6 +259,32 @@
                         }
                     })
                 })
+            },
+            async getInstanceIpByHost (hostId) {
+                try {
+                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    let res = null
+                    if (instanceIpMap.hasOwnProperty(hostId)) {
+                        res = instanceIpMap[hostId]
+                    } else {
+                        res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
+                            hostId,
+                            config: {
+                                requestId: 'getInstanceIpByHost'
+                            }
+                        })
+                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                    }
+                    this.processBindIp = res.options.map(ip => {
+                        return {
+                            id: ip,
+                            name: ip
+                        }
+                    })
+                } catch (e) {
+                    this.processBindIp = []
+                    console.error(e)
+                }
             },
             handleSubmit (values, changedValues) {
                 if (this.processForm.type === 'single') {
