@@ -30,8 +30,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/mongo/remote"
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
@@ -62,8 +62,7 @@ type ProcServer struct {
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
 	Logic              *logics.Logic
-	// be careful, if txn server is disabled, it will be nil
-	Txn *remote.Mongo
+	TransactionClient  dal.Transcation
 }
 
 func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {

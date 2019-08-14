@@ -68,9 +68,9 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		return
 	}
 
-	if ps.Txn != nil {
+	if ps.TransactionClient != nil {
 		header := ctx.Kit.Header
-		tx, err := ps.Txn.Start(context.Background())
+		tx, err := ps.TransactionClient.Start(context.Background())
 		if err != nil {
 			blog.Errorf("start transaction failed, err: %+v", err)
 			return
