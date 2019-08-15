@@ -57,7 +57,8 @@ func (f *FieldValid) ValidID(params types.ContextParams, value string) error {
 // ValidName check the name
 func (f *FieldValid) ValidName(params types.ContextParams, value string) error {
 	if 20 < utf8.RuneCountInString(value) {
-		return params.Err.Errorf(common.CCErrCommOverLimit, value)
+		return params.Err.Errorf(common.CCErrCommValExceedMaxFailed,
+			params.Lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
 	}
 	return nil
 }
@@ -65,7 +66,8 @@ func (f *FieldValid) ValidName(params types.ContextParams, value string) error {
 // ValidPlaceHoler check the PlaceHoler
 func (f *FieldValid) ValidPlaceHoler(params types.ContextParams, value string) error {
 	if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(value) {
-		return params.Err.Errorf(common.CCErrCommOverLimit, value)
+		return params.Err.Errorf(common.CCErrCommValExceedMaxFailed,
+			params.Lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)
 	}
 	return nil
 }

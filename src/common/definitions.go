@@ -1059,6 +1059,7 @@ const (
 	AttributeOptionMaxLength      = 1000
 	AttributeIDMaxLength          = 20
 	AttributeNameMaxLength        = 20
+	AttributeUnitMaxLength        = 20
 )
 
 const (
