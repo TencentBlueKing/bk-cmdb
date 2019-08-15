@@ -75,17 +75,17 @@
                     <bk-option :id="0" :name="$t('已分配主机')"></bk-option>
                     <bk-option :id="1" :name="$t('未分配主机')"></bk-option>
                 </bk-select>
-                <cmdb-host-filter class="ml10"
+                <cmdb-host-filter class="ml10 filter-icon"
                     ref="hostFilter"
                     :properties="filterProperties"
                     :show-scope="showScope">
                 </cmdb-host-filter>
-                <bk-button class="options-button ml10"
+                <bk-button class="options-button icon-btn ml10"
                     icon="icon-cc-setting"
                     v-bk-tooltips.top="$t('列表显示属性配置')"
                     @click="columnsConfig.show = true">
                 </bk-button>
-                <bk-button class="options-button ml10" v-if="showHistory"
+                <bk-button class="options-button icon-btn ml10" v-if="showHistory"
                     v-bk-tooltips="$t('查看删除历史')"
                     icon="icon-cc-history"
                     @click="routeToHistory">
@@ -647,6 +647,19 @@
 <style lang="scss" scoped>
     .hosts-options{
         font-size: 0;
+        .filter-icon {
+            width: 32px;
+            /deep/ .bk-button {
+                width: 32px;
+                padding: 0;
+                line-height: 14px;
+            }
+        }
+        .icon-btn {
+            width: 32px;
+            padding: 0;
+            line-height: 14px;
+        }
         .options-button{
             position: relative;
             display: inline-block;

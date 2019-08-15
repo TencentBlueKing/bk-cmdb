@@ -26,7 +26,7 @@
                     href="javascript:void(0)"
                     v-if="topology.length > 2"
                     @click="viewAll">
-                    {{$t('更多')}}
+                    {{$t('更多信息')}}
                     <i class="bk-icon icon-angle-down" :class="{ 'is-all-show': showAll }"></i>
                 </a>
             </div>
