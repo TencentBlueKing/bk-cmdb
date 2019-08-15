@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"configcenter/src/test"
+	"configcenter/src/test/reporter"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,7 +17,10 @@ var instClient = test.GetClientSet().TopoServer().Instance()
 
 func TestHostServer(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "HostServer Suite")
+	reporters := []Reporter{
+		reporter.NewHtmlReporter(test.GetReportDir()+"hostserver.html", test.GetReportUrl(), true),
+	}
+	RunSpecsWithDefaultAndCustomReporters(t, "HostServer Suite", reporters)
 }
 
 var _ = BeforeSuite(func() {

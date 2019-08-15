@@ -1,6 +1,7 @@
 package proc_server_test
 
 import (
+	"configcenter/src/test/reporter"
 	"context"
 	"strconv"
 	"testing"
@@ -25,7 +26,10 @@ var bizId, hostId1, hostId2, setId int64
 
 func TestProcServer(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "ProcServer Suite")
+	reporters := []Reporter{
+		reporter.NewHtmlReporter(test.GetReportDir()+"procserver.html", test.GetReportUrl(), true),
+	}
+	RunSpecsWithDefaultAndCustomReporters(t, "ProcServer Suite", reporters)
 }
 
 var _ = BeforeSuite(func() {

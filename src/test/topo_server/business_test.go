@@ -68,6 +68,23 @@ var _ = Describe("business test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
+	It("create business invalid bk_biz_name", func() {
+		input := map[string]interface{}{
+			"life_cycle":        "2",
+			"language":          "1",
+			"bk_biz_maintainer": "admin",
+			"bk_biz_productor":  "",
+			"bk_biz_tester":     "",
+			"bk_biz_developer":  "",
+			"operator":          "",
+			"bk_biz_name":       "~!@#$%^&*()_+-=",
+			"time_zone":         "Africa/Accra",
+		}
+		rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
 	It("create business bk_biz_name = 'mmrmm'", func() {
 		input := map[string]interface{}{
 			"life_cycle":        "1",
@@ -220,6 +237,16 @@ var _ = Describe("business test", func() {
 	It("update business using exist bk_biz_name", func() {
 		input := map[string]interface{}{
 			"bk_biz_name": "mmrmm",
+			"life_cycle":  "2",
+		}
+		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", bizId, header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("update business using invalid bk_biz_name", func() {
+		input := map[string]interface{}{
+			"bk_biz_name": "~!@#$%^&*()_+-=",
 			"life_cycle":  "2",
 		}
 		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", bizId, header, input)
