@@ -72,7 +72,7 @@
                     name: this.$t('新增')
                 }, {
                     id: 'update',
-                    name: this.$t('变更')
+                    name: this.$t('变更update')
                 }, {
                     id: 'delete',
                     name: this.$t('删除')
@@ -121,7 +121,7 @@
                 },
                 actionMap: {
                     'create': this.$t('新增'),
-                    'update': this.$t('变更'),
+                    'update': this.$t('变更update'),
                     'delete': this.$t('删除')
                 }
             }
