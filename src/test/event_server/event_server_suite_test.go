@@ -8,6 +8,7 @@ import (
 
 	"configcenter/src/common/metadata"
 	"configcenter/src/test"
+	"configcenter/src/test/reporter"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,7 +19,10 @@ var eventServerClient = test.GetClientSet().EventServer()
 
 func TestEventServer(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "EventServer Suite")
+	reporters := []Reporter{
+		reporter.NewHtmlReporter(test.GetReportDir()+"eventserver.html", test.GetReportUrl(), true),
+	}
+	RunSpecsWithDefaultAndCustomReporters(t, "EventServer Suite", reporters)
 }
 
 var _ = BeforeSuite(func() {
