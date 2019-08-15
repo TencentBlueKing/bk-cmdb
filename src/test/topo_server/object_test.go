@@ -810,6 +810,20 @@ var _ = Describe("object test", func() {
 			setId1 = strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)
 		})
 
+		It("create set invalid bk_set_name", func() {
+			input := mapstr.MapStr{
+				"bk_set_name":         "~!@#$%^&*()_+-=",
+				"bk_parent_id":        childInstIdInt,
+				"bk_supplier_account": "0",
+				"bk_biz_id":           bizIdInt,
+				"bk_service_status":   "1",
+				"bk_set_env":          "2",
+			}
+			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
 		It("update set", func() {
 			input := map[string]interface{}{
 				"bk_set_name": "new_test",
@@ -817,6 +831,15 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.UpdateSet(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("update set invalid bk_set_name", func() {
+			input := map[string]interface{}{
+				"bk_set_name": "~!@#$%^&*()_+-=",
+			}
+			rsp, err := instClient.UpdateSet(context.Background(), bizId, setId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
 		})
 
 		It("delete set", func() {
@@ -876,6 +899,18 @@ var _ = Describe("object test", func() {
 			moduleId1 = strconv.FormatInt(int64(rsp.Data["bk_module_id"].(float64)), 10)
 		})
 
+		It("create module invalid bk_module_name", func() {
+			input := map[string]interface{}{
+				"bk_module_name":      "~!@#$%^&*()_+-=",
+				"bk_parent_id":        1,
+				"service_category_id": 2,
+				"service_template_id": 0,
+			}
+			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
 		It("update module", func() {
 			input := map[string]interface{}{
 				"bk_module_name": "new_module",
@@ -883,6 +918,15 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("update module invalid bk_module_name", func() {
+			input := map[string]interface{}{
+				"bk_module_name": "~!@#$%^&*()_+-=",
+			}
+			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
 		})
 
 		It("delete module", func() {

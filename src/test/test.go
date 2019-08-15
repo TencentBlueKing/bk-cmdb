@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"configcenter/src/apimachinery"
@@ -23,6 +24,8 @@ import (
 var clientSet apimachinery.ClientSetInterface
 var tConfig TestConfig
 var header http.Header
+var reportUrl string
+var reportDir string
 
 type TestConfig struct {
 	ZkAddr         string
@@ -36,6 +39,8 @@ func init() {
 	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load test.")
 	flag.IntVar(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")
 	flag.StringVar(&tConfig.MongoURI, "mongo-addr", "mongodb://127.0.0.1:27017/cmdb", "mongodb URI")
+	flag.StringVar(&reportUrl, "report-url", "http://127.0.0.1:8080/", "html report base url")
+	flag.StringVar(&reportDir, "report-dir", "report", "report directory")
 	flag.Parse()
 
 	run.Concurrent = tConfig.Concurrent
@@ -84,4 +89,18 @@ func ClearDatabase() {
 	}
 	db.Close()
 	clientSet.AdminServer().Migrate(context.Background(), "0", "community", header)
+}
+
+func GetReportUrl() string {
+	if !strings.HasSuffix(reportUrl, "/") {
+		reportUrl = reportUrl + "/"
+	}
+	return reportUrl
+}
+
+func GetReportDir() string {
+	if !strings.HasSuffix(reportDir, "/") {
+		reportDir = reportDir + "/"
+	}
+	return reportDir
 }
