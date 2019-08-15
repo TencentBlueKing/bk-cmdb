@@ -32,7 +32,7 @@
                         {{ $t('服务器错误') }}
                     </span>
                     <span v-else>
-                        {{$t('新增')}} ({{row.new_add}}) / {{$t('变更')}} ({{row.attr_changed}})
+                        {{$t('新增')}} ({{row.new_add}}) / {{$t('变更update')}} ({{row.attr_changed}})
                     </span>
                 </template>
             </bk-table-column>
