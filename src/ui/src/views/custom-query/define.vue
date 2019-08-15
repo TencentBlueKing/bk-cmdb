@@ -562,7 +562,7 @@
             deleteUserAPI () {
                 this.$bkInfo({
                     title: this.$t('确定删除'),
-                    subTitle: this.$t('确认要删除', { name: this.apiParams.name }),
+                    subTitle: this.$t('确认要删除分组', { name: this.apiParams.name }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         await this.deleteCustomQuery({
