@@ -1,0 +1,11 @@
+
+{
+
+    "model_attr_bk_property_id":"ID",
+    "model_attr_bk_property_name": "Name",
+    "model_attr_option_regex":"Regex",
+    "model_attr_uint": "Unit",
+    "model_attr_placeholder":"Tips",
+
+    "":""
+}
