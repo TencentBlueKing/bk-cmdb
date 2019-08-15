@@ -49,6 +49,17 @@ var _ = Describe("inst test", func() {
 		instId1 = int64(rsp.Data["bk_inst_id"].(float64))
 	})
 
+	It("create inst invalid bk_inst_name", func() {
+		input := map[string]interface{}{
+			"bk_asset_id":  "234",
+			"bk_inst_name": "~!@#$%^&*()_+-=",
+			"bk_sn":        "1234",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_switch", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
 	It("update inst", func() {
 		input := map[string]interface{}{
 			"bk_inst_name": "aaa",
@@ -56,6 +67,15 @@ var _ = Describe("inst test", func() {
 		rsp, err := instClient.UpdateInst(context.Background(), "0", "bk_switch", instId, header, input)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It("update inst invalid bk_inst_name", func() {
+		input := map[string]interface{}{
+			"bk_inst_name": "~!@#$%^&*()_+-=",
+		}
+		rsp, err := instClient.UpdateInst(context.Background(), "0", "bk_switch", instId, header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
 	})
 
 	It("delete inst", func() {
