@@ -34,15 +34,15 @@
                     v-model="assignBusiness"
                     @on-selected="handleAssignHosts">
                 </cmdb-selector>
-                <cmdb-button-group
-                    :buttons="buttons"
-                    :expand="!isAdminView">
-                </cmdb-button-group>
                 <cmdb-clipboard-selector class="options-clipboard"
                     :list="clipboardList"
                     :disabled="!table.checked.length"
                     @on-copy="handleCopy">
                 </cmdb-clipboard-selector>
+                <cmdb-button-group
+                    :buttons="buttons"
+                    :expand="!isAdminView">
+                </cmdb-button-group>
             </template>
         </cmdb-hosts-table>
         <bk-sideslider
@@ -435,7 +435,7 @@
         }
     }
     .options-clipboard {
-        margin: 0 0 0 10px;
+        margin: 0 10px 0 0px;
     }
     .options-business-selector{
         display: inline-block;

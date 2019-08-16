@@ -94,6 +94,11 @@
             background-color: #f0f1f5;
         }
     }
+    .bk-table-pagination-wrapper {
+        .bk-page-count-right {
+            top: 15px;
+        }
+    }
 }
 
 .bk-big-tree {
@@ -142,6 +147,14 @@
         height: calc(100% - 58px);
         .bk-tab-content {
             height: 100%;
+        }
+    }
+}
+
+[bk-language='en'] {
+    .bk-table-pagination-wrapper {
+        .bk-page-count-right {
+            left: 140px;
         }
     }
 }
