@@ -1,5 +1,5 @@
 <template>
-    <bk-input type="text"
+    <bk-input type="text" ref="input"
         :placeholder="placeholder || $t('请输入数字')"
         :value="value"
         :maxlength="maxlength"
@@ -56,7 +56,7 @@
                 if (isNaN(value)) {
                     value = null
                 }
-                event.target.value = value
+                this.$refs.input.curValue = value
                 this.localValue = value
             },
             handleChange () {
