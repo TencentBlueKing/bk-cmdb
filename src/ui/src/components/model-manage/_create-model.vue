@@ -167,7 +167,7 @@
 
 <style lang="scss" scoped>
     .dialog {
-        /deep/.bk-dialog-tool {
+        /deep/ .bk-dialog-tool {
             display: none;
         }
         .dialog-content {

@@ -364,7 +364,7 @@
                             service_template_id: this.withTemplate
                         })
                     }).then(res => {
-                        this.topoStatus = res.added.length + res.changed.length > 0
+                        this.topoStatus = res.has_difference
                     })
                 } catch (error) {
                     console.error(error)
@@ -1016,6 +1016,7 @@
         }
     }
     .reset-header {
+        text-align: left;
         span {
             color: #979ba5;
             font-size: 14px;
