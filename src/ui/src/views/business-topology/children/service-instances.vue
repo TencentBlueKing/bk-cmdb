@@ -1016,6 +1016,7 @@
         }
     }
     .reset-header {
+        text-align: left;
         span {
             color: #979ba5;
             font-size: 14px;
