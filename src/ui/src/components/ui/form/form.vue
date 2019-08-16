@@ -151,7 +151,10 @@
             },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, this.inst)
-                this.refrenceValues = this.$tools.clone(this.values)
+                const timer = setTimeout(() => {
+                    this.refrenceValues = this.$tools.clone(this.values)
+                    clearTimeout(timer)
+                })
             },
             checkGroupAvailable (properties) {
                 const availabelProperties = properties.filter(property => {
