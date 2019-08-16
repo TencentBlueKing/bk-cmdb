@@ -66,7 +66,7 @@
                 @delete="getUserAPIList"
                 @create="handleCreate"
                 @update="getUserAPIList"
-                @cancel="hideUserAPISlider">
+                @cancel="handleSliderBeforeClose">
             </v-define>
         </bk-sideslider>
     </div>
@@ -140,6 +140,7 @@
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 resolve(true)
+                                this.hideUserAPISlider()
                             },
                             cancelFn: () => {
                                 resolve(false)
@@ -147,6 +148,7 @@
                         })
                     })
                 }
+                this.hideUserAPISlider()
                 return true
             },
             handleCreate (data) {
