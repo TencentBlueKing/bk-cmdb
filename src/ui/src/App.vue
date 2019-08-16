@@ -1,5 +1,5 @@
 <template>
-    <div id="app">
+    <div id="app" :bk-language="$i18n.locale">
         <div class="browser-tips" v-if="showBrowserTips">
             <span class="tips-text">{{$t('您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果')}}</span>
             <i class="tips-icon bk-icon icon-close-circle-shape" @click="showBrowserTips = false"></i>

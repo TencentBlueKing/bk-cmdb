@@ -1,95 +1,102 @@
 <template>
     <div class="hosts-table-layout">
         <div class="hosts-options">
-            <slot name="options-left">
-                <span class="inline-block-middle mr10"
-                    v-cursor="{
-                        active: !$isAuthorized(editAuth),
-                        auth: [editAuth]
-                    }">
-                    <bk-button class="options-button" theme="primary"
-                        :disabled="!table.checked.length || !$isAuthorized(editAuth)"
-                        @click="handleMultipleEdit">
-                        {{$t('编辑')}}
+            <div class="options-left">
+                <slot name="options-left">
+                    <span class="inline-block-middle mr10"
+                        v-cursor="{
+                            active: !$isAuthorized(editAuth),
+                            auth: [editAuth]
+                        }">
+                        <bk-button class="options-button" theme="primary"
+                            :disabled="!table.checked.length || !$isAuthorized(editAuth)"
+                            @click="handleMultipleEdit">
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </span>
+                    <span class="inline-block-middle mr10"
+                        v-cursor="{
+                            active: !$isAuthorized(transferAuth),
+                            auth: [transferAuth]
+                        }">
+                        <bk-button class="options-button" theme="default"
+                            :disabled="!table.checked.length || !$isAuthorized(transferAuth)"
+                            @click="transfer.show = true">
+                            {{$t('转移')}}
+                        </bk-button>
+                    </span>
+                    <bk-button class="options-button mr10"
+                        theme="default"
+                        type="submit"
+                        form="exportForm"
+                        :disabled="!table.checked.length">
+                        {{$t('导出')}}
                     </bk-button>
-                </span>
-                <span class="inline-block-middle mr10"
-                    v-cursor="{
-                        active: !$isAuthorized(transferAuth),
-                        auth: [transferAuth]
-                    }">
-                    <bk-button class="options-button" theme="default"
-                        :disabled="!table.checked.length || !$isAuthorized(transferAuth)"
-                        @click="transfer.show = true">
-                        {{$t('转移')}}
+                    <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
+                        <input type="hidden" name="bk_host_id" :value="table.checked">
+                        <input type="hidden" name="export_custom_fields"
+                            v-if="usercustom[columnsConfigKey]"
+                            :value="usercustom[columnsConfigKey]">
+                        <input type="hidden" name="bk_biz_id" value="-1">
+                        <input type="hidden" name="metadata"
+                            v-if="$route.name !== 'resource'"
+                            :value="JSON.stringify($injectMetadata().metadata)">
+                    </form>
+                    <cmdb-clipboard-selector class="options-button"
+                        :list="clipboardList"
+                        :disabled="!table.checked.length"
+                        @on-copy="handleCopy">
+                    </cmdb-clipboard-selector>
+                </slot>
+            </div>
+            <div class="options-right clearfix">
+                <div class="fl">
+                    <i class="options-split"></i>
+                    <bk-select class="options-collection"
+                        v-if="showScope"
+                        v-model="scope"
+                        :clearable="false">
+                        <bk-option id="all" :name="$t('全部主机')"></bk-option>
+                        <bk-option :id="0" :name="$t('已分配主机')"></bk-option>
+                        <bk-option :id="1" :name="$t('未分配主机')"></bk-option>
+                    </bk-select>
+                </div>
+                <div class="fr">
+                    <bk-select class="options-collection"
+                        v-if="showCollection"
+                        ref="collectionSelector"
+                        v-model="selectedCollection"
+                        :loading="$loading('searchCollection')"
+                        :placeholder="$t('请选择收藏条件')"
+                        @change="handleSelectCollection">
+                        <bk-option v-for="collection in collectionList"
+                            :key="collection.id"
+                            :id="collection.id"
+                            :name="collection.name">
+                        </bk-option>
+                        <div slot="extension">
+                            <a href="javascript:void(0)" class="collection-create" @click="handleCreateCollection">
+                                <i class="bk-icon icon-plus-circle"></i>
+                                {{$t('新增条件')}}
+                            </a>
+                        </div>
+                    </bk-select>
+                    <cmdb-host-filter class="ml10"
+                        ref="hostFilter"
+                        :properties="filterProperties"
+                        :show-scope="showScope">
+                    </cmdb-host-filter>
+                    <bk-button class="options-button icon-btn ml10"
+                        icon="icon-cc-setting"
+                        v-bk-tooltips.top="$t('列表显示属性配置')"
+                        @click="columnsConfig.show = true">
                     </bk-button>
-                </span>
-                <bk-button class="options-button mr10"
-                    theme="default"
-                    type="submit"
-                    form="exportForm"
-                    :disabled="!table.checked.length">
-                    {{$t('导出')}}
-                </bk-button>
-                <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
-                    <input type="hidden" name="bk_host_id" :value="table.checked">
-                    <input type="hidden" name="export_custom_fields"
-                        v-if="usercustom[columnsConfigKey]"
-                        :value="usercustom[columnsConfigKey]">
-                    <input type="hidden" name="bk_biz_id" value="-1">
-                    <input type="hidden" name="metadata"
-                        v-if="$route.name !== 'resource'"
-                        :value="JSON.stringify($injectMetadata().metadata)">
-                </form>
-                <cmdb-clipboard-selector class="options-button"
-                    :list="clipboardList"
-                    :disabled="!table.checked.length"
-                    @on-copy="handleCopy">
-                </cmdb-clipboard-selector>
-            </slot>
-            <div class="fr">
-                <bk-select class="options-collection"
-                    v-if="showCollection"
-                    ref="collectionSelector"
-                    v-model="selectedCollection"
-                    :loading="$loading('searchCollection')"
-                    :placeholder="$t('请选择收藏条件')"
-                    @change="handleSelectCollection">
-                    <bk-option v-for="collection in collectionList"
-                        :key="collection.id"
-                        :id="collection.id"
-                        :name="collection.name">
-                    </bk-option>
-                    <div slot="extension">
-                        <a href="javascript:void(0)" class="collection-create" @click="handleCreateCollection">
-                            <i class="bk-icon icon-plus-circle"></i>
-                            {{$t('新增条件')}}
-                        </a>
-                    </div>
-                </bk-select>
-                <bk-select class="options-collection"
-                    v-if="showScope"
-                    v-model="scope"
-                    :clearable="false">
-                    <bk-option id="all" :name="$t('全部')"></bk-option>
-                    <bk-option :id="0" :name="$t('已分配主机')"></bk-option>
-                    <bk-option :id="1" :name="$t('未分配主机')"></bk-option>
-                </bk-select>
-                <cmdb-host-filter class="ml10 filter-icon"
-                    ref="hostFilter"
-                    :properties="filterProperties"
-                    :show-scope="showScope">
-                </cmdb-host-filter>
-                <bk-button class="options-button icon-btn ml10"
-                    icon="icon-cc-setting"
-                    v-bk-tooltips.top="$t('列表显示属性配置')"
-                    @click="columnsConfig.show = true">
-                </bk-button>
-                <bk-button class="options-button icon-btn ml10" v-if="showHistory"
-                    v-bk-tooltips="$t('查看删除历史')"
-                    icon="icon-cc-history"
-                    @click="routeToHistory">
-                </bk-button>
+                    <bk-button class="options-button icon-btn ml10" v-if="showHistory"
+                        v-bk-tooltips="$t('查看删除历史')"
+                        icon="icon-cc-history"
+                        @click="routeToHistory">
+                    </bk-button>
+                </div>
             </div>
         </div>
         <bk-table class="hosts-table"
@@ -647,12 +654,17 @@
 <style lang="scss" scoped>
     .hosts-options{
         font-size: 0;
-        .filter-icon {
-            width: 32px;
-            /deep/ .bk-button {
-                width: 32px;
-                padding: 0;
-                line-height: 14px;
+        .options-left {
+            float: left;
+        }
+        .options-right {
+            overflow: hidden;
+            .options-split {
+                @include inlineBlock;
+                width: 2px;
+                height: 20px;
+                margin: 0 10px;
+                background-color: #DCDEE5;
             }
         }
         .icon-btn {
