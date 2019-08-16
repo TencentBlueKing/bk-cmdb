@@ -103,7 +103,7 @@
     "1101077":"update association type failed",
     "1101078":"delete association type failed",
     "1101080":"topo module not found",
-    "1101081":"delete topo app forbbiden",
+    "1101081":"delete topo app forbidden",
     "1101082": "bk_mainline association type can't use in this scene",
     "1101083":"association type inconsistent with caller method",
     "1101084": "the model stopped to use",
@@ -111,5 +111,7 @@
     "1101086": "full text search client not initialized",
     "1101086": "get authorized business list failed",
     "1101087": "you are archiving a business that has hosts",
+    "1101088": "search failed",
+    "1101089": "es search does not initialized",
     "": "" 
 }
