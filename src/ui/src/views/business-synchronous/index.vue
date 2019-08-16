@@ -27,13 +27,13 @@
             <div class="info-tab">
                 <div class="tab-head">
                     <div class="tab-nav">
-                        <div :class="['nav-item', {
-                                 'delete-item': process['operational_type'] === 'removed',
-                                 'active': showContentId === process['process_template_id']
-                             }]"
-                            v-for="(process, index) in list"
+                        <div v-for="(process, index) in list"
+                            :class="['nav-item', {
+                                'delete-item': process['operational_type'] === 'removed',
+                                'active': showContentId === (process['process_template_name'] + index)
+                            }]"
                             :key="index"
-                            @click="handleContentView(process['process_template_id'], index)">
+                            @click="handleContentView(process['process_template_name'], index)">
                             <span>{{process['process_template_name']}}</span>
                             <i :class="['badge', { 'has-read': process['has_read'] }]">{{process['service_instance_count'] | badge}}</i>
                         </div>
@@ -41,8 +41,8 @@
                 </div>
                 <div class="tab-content">
                     <section class="tab-pane"
-                        v-show="showContentId === process['process_template_id']"
                         v-for="(process, index) in list"
+                        v-show="showContentId === (process['process_template_name'] + index)"
                         :key="index">
                         <div class="change-box">
                             <div class="title">
@@ -80,7 +80,7 @@
                                 <div class="instances-item"
                                     v-for="(instance, instanceIndex) in process['service_instances']"
                                     :key="instanceIndex"
-                                    @click="hanldeInstanceDetails(instance, process['operational_type'], process['process_template_id'])">
+                                    @click="hanldeInstanceDetails(instance, process['operational_type'], process['process_template_id'], process['process_template_name'])">
                                     <h6>{{instance['service_instance']['name']}}</h6>
                                     <span v-if="process['operational_type'] === 'changed'">（{{instance['changed_attributes'].length}}）</span>
                                 </div>
@@ -219,7 +219,7 @@
                 await this.getModuleInstance()
                 if (this.list.length) {
                     this.isLatsetData = false
-                    this.showContentId = this.list[0]['process_template_id']
+                    this.showContentId = this.list[0]['process_template_name'] + 0
                     this.$set(this.list[0], 'has_read', true)
                 } else {
                     this.isLatsetData = true
@@ -278,11 +278,18 @@
             },
             async getServiceInstanceDifferences () {
                 try {
-                    this.differenData = await this.searchServiceInstanceDifferences({
+                    await this.searchServiceInstanceDifferences({
                         params: this.$injectMetadata({
                             bk_module_id: Number(this.routerParams.moduleId),
                             service_template_id: this.serviceTemplateId
                         })
+                    }).then(res => {
+                        this.differenData = {
+                            added: res.added,
+                            changed: res.changed,
+                            removed: res.removed,
+                            unchanged: res.unchanged
+                        }
                     })
                     this.$store.commit('setHeaderTitle', `${this.$t('同步模板')}【${this.viewsTitle}】`)
                 } catch (error) {
@@ -327,8 +334,8 @@
                     return list.filter(property => property['before_value'])
                 }
             },
-            handleContentView (id, index) {
-                this.showContentId = id
+            handleContentView (name, index) {
+                this.showContentId = (name + index)
                 if (!this.list[index]['has_read']) {
                     this.$set(this.list[index], 'has_read', true)
                     this.readNum++
@@ -357,11 +364,10 @@
             async hanldeInstanceDetails (instance, type, processId) {
                 const instanceId = instance['service_instance']['id']
                 this.slider.title = instance['service_instance']['name']
-                this.changedData.current = instance['changed_attributes']
                 this.changedData.type = type
                 if (type === 'changed') {
                     this.slider.details = this.getTableShowList(instance['changed_attributes'])
-                } else if (type === 'remove') {
+                } else if (type === 'removed') {
                     if (this.instanceMap.hasOwnProperty(instanceId)) {
                         this.changedData.instanceDetails = this.instanceMap[instanceId]
                     } else {
@@ -371,6 +377,8 @@
                                     service_instance_id: instanceId
                                 })
                             })
+                            const targetProcess = result.filter(process => !process.relation.process_template_id)
+                            console.log(targetProcess)
                             this.changedData.instanceDetails = result[0]['property']
                             this.$store.commit('businessSync/setInstance', {
                                 id: instanceId,
