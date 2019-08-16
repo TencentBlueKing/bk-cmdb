@@ -77,7 +77,7 @@
                 box-shadow: 0 -5px 0 0 var(--hoverColor), 0 5px 0 0 var(--hoverColor);
             }
         }
-        /deep/.bk-tooltip-ref {
+        /deep/ .bk-tooltip-ref {
             width: 100%;
             outline: none;
         }

@@ -481,7 +481,7 @@
     "启动路径": "Work Path",
     "启动用户": "User",
     "锁定": "Locking",
-    "添加进程提示": "Fill in the instructions: Check \"Lock\", the value of this field will be set to a fixed value. This field does not support modification when creating a service instance. If it is not checked, it will be set to the default value and support subsequent modifications.",
+    "添加进程提示": "The fields defined in the template cannot be modified in the service instance.",
     "基本属性": "Basic Attribute",
     "端口信息": "Port Information",
     "其他属性": "Other Attributes",
@@ -802,7 +802,7 @@
     "模板未定义进程提示": "You can add process in template fist or add host directly",
     "暂无符合条件的实例": "There are no matched instances with input condition",
     "删除模块提示": "Need to remove all service instances under the module first",
-    "模块名称提示": "The module name must be consistent with the service template name.",
+    "模块名称提示": "The module name must be the same as the service template name.",
     "请为主机添加进程": "Please add process to the host",
     "实例名称/标签": "Instance name / Tag",
     "标签键": "Label key, English / number",
@@ -859,5 +859,6 @@
     "应用收藏条件失败，转换数据错误": "Application collection condition failed, conversion data error",
     "请选择收藏条件": "Please select condition",
     "新增条件": "Add condition",
-    "收藏此条件": "Collect this condition"
+    "收藏此条件": "Collect this condition",
+    "添加节点已选择": "Selected"
 }

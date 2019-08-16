@@ -586,7 +586,7 @@
             }
             .label-tips {
                 padding: 0;
-                /deep/.bk-tooltip-ref {
+                /deep/ .bk-tooltip-ref {
                     padding: 0 6px;
                     span {
                         line-height: 16px;
