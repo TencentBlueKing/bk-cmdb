@@ -136,7 +136,7 @@
                         :object-unique="objectUnique"
                         :save-auth="saveAuth"
                         @on-submit="handleMultipleSave"
-                        @on-cancel="handleMultipleCancel">
+                        @on-cancel="handleSliderBeforeClose">
                     </cmdb-form-multiple>
                 </bk-tab-panel>
             </bk-tab>
@@ -621,7 +621,7 @@
                                 subTitle: this.$t('退出会导致未保存信息丢失'),
                                 extCls: 'bk-dialog-sub-header-center',
                                 confirmFn: () => {
-                                    resolve(true)
+                                    this.slider.show = false
                                 },
                                 cancelFn: () => {
                                     resolve(false)
@@ -629,9 +629,9 @@
                             })
                         })
                     }
-                    return true
+                    this.slider.show = false
                 }
-                return true
+                this.slider.show = false
             },
             handleQuickSearch (property, value, operator) {
                 this.$emit('on-quick-search', property, value, operator)

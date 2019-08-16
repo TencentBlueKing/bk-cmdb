@@ -498,11 +498,14 @@
                 this.userProperties = properties
                 this.toggleUserAPISelector(false)
                 this.name = detail['name']
-                this.dataCopy = {
-                    name: detail['name'],
-                    userProperties: this.$tools.clone(properties),
-                    attributeSelected: this.attribute.selected
-                }
+                const timer = setTimeout(() => {
+                    this.dataCopy = {
+                        name: detail['name'],
+                        userProperties: this.$tools.clone(properties),
+                        attributeSelected: this.attribute.selected
+                    }
+                    clearTimeout(timer)
+                })
             },
             getUserPropertyValue (property, originalProperty) {
                 if (
