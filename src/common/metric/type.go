@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 )
 
 type MetricFamily struct {
@@ -76,7 +76,7 @@ type HealthInfo struct {
 	Module     string `json:"module"`
 	Address    string `json:"address"`
 	HealthMeta `json:",inline"`
-	AtTime     metadata.Time `json:"at_time"`
+	AtTime     timeutil.Time `json:"at_time"`
 }
 
 type Action struct {

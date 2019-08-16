@@ -16,9 +16,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal"
 
@@ -112,7 +112,7 @@ func (ps *ProctrlServer) Healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_PROCCONTROLLER,
 		HealthMeta: meta,
-		AtTime:     metadata.Now(),
+		AtTime:     timeutil.Now(),
 	}
 
 	answer := metric.HealthResponse{

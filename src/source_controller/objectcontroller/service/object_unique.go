@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 
@@ -93,7 +94,7 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 		Keys:      dat.Keys,
 		Ispre:     false,
 		OwnerID:   ownerID,
-		LastTime:  metadata.Now(),
+		LastTime:  timeutil.Now(),
 	}
 
 	err = db.Table(common.BKTableNameObjUnique).Insert(ctx, &unique)
@@ -128,7 +129,7 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	unique.LastTime = metadata.Now()
+	unique.LastTime = timeutil.Now()
 
 	for _, key := range unique.Keys {
 		switch key.Kind {

@@ -14,21 +14,21 @@ package service
 import (
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+
+	"github.com/emicklei/go-restful"
 )
 
 type ProcServer struct {
@@ -148,7 +148,7 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_HOST,
 		HealthMeta: meta,
-		AtTime:     metadata.Now(),
+		AtTime:     timeutil.Now(),
 	}
 
 	answer := metric.HealthResponse{

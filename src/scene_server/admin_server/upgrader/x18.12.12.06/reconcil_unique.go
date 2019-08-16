@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -104,7 +105,7 @@ func buildUnique(propertyIDToProperty map[string]metadata.Attribute, model, fiel
 		},
 		Ispre:    false,
 		OwnerID:  common.BKDefaultOwnerID,
-		LastTime: metadata.Now(),
+		LastTime: timeutil.Now(),
 	}
 }
 

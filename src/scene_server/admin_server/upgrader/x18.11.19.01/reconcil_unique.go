@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -131,7 +132,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: timeutil.Now(),
 		},
 		// process
 		{
@@ -149,7 +150,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: timeutil.Now(),
 		},
 		{
 			ObjID:     common.BKInnerObjIDProc,
@@ -166,7 +167,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: timeutil.Now(),
 		},
 		// biz
 		{
@@ -180,7 +181,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: timeutil.Now(),
 		},
 		// set
 		{
@@ -202,7 +203,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: timeutil.Now(),
 		},
 		// module
 		{
@@ -224,7 +225,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: timeutil.Now(),
 		},
 		// cloud area
 		{
@@ -238,7 +239,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: timeutil.Now(),
 		},
 	}
 
@@ -266,7 +267,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			Keys:      keys,
 			Ispre:     false,
 			OwnerID:   ownerID,
-			LastTime:  metadata.Now(),
+			LastTime:  timeutil.Now(),
 		}
 		uniques = append(uniques, unique)
 	}

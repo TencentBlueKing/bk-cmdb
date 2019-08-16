@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 
@@ -45,7 +46,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	now := metadata.Now()
+	now := timeutil.Now()
 	sub.Operator = util.GetUser(req.Request.Header)
 	if sub.TimeOut <= 0 {
 		sub.TimeOut = 10
@@ -208,7 +209,7 @@ func (s *Service) rebook(id int64, ownerID string, sub *metadata.Subscription) e
 	if sub.TimeOut <= 0 {
 		sub.TimeOut = 10
 	}
-	now := metadata.Now()
+	now := timeutil.Now()
 	sub.LastTime = now
 	sub.OwnerID = ownerID
 

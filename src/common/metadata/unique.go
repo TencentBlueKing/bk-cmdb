@@ -16,16 +16,18 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"configcenter/src/common/timeutil"
 )
 
 type ObjectUnique struct {
-	ID        uint64      `json:"id" bson:"id"`
-	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
-	MustCheck bool        `json:"must_check" bson:"must_check"`
-	Keys      []UinqueKey `json:"keys" bson:"keys"`
-	Ispre     bool        `json:"ispre" bson:"ispre"`
-	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	LastTime  Time        `json:"last_time" bson:"last_time"`
+	ID        uint64        `json:"id" bson:"id"`
+	ObjID     string        `json:"bk_obj_id" bson:"bk_obj_id"`
+	MustCheck bool          `json:"must_check" bson:"must_check"`
+	Keys      []UinqueKey   `json:"keys" bson:"keys"`
+	Ispre     bool          `json:"ispre" bson:"ispre"`
+	OwnerID   string        `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime  timeutil.Time `json:"last_time" bson:"last_time"`
 }
 
 func (u ObjectUnique) KeysHash() string {
@@ -59,9 +61,9 @@ type CreateUniqueResult struct {
 }
 
 type UpdateUniqueRequest struct {
-	MustCheck bool        `json:"must_check" bson:"must_check"`
-	Keys      []UinqueKey `json:"keys" bson:"keys"`
-	LastTime  Time        `json:"last_time" bson:"last_time"`
+	MustCheck bool          `json:"must_check" bson:"must_check"`
+	Keys      []UinqueKey   `json:"keys" bson:"keys"`
+	LastTime  timeutil.Time `json:"last_time" bson:"last_time"`
 }
 
 type UpdateUniqueResult struct {

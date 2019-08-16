@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/types"
 )
 
@@ -253,7 +254,7 @@ func (s *Service) healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_APISERVER,
 		HealthMeta: meta,
-		AtTime:     metadata.Now(),
+		AtTime:     timeutil.Now(),
 	}
 
 	answer := metric.HealthResponse{

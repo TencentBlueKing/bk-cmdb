@@ -1,14 +1,14 @@
 package metric
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/metadata"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/timeutil"
 )
 
 var metricController *MetricController
@@ -49,7 +49,7 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 			Module:     conf.ModuleName,
 			Address:    conf.ServerAddress,
 			HealthMeta: h,
-			AtTime:     metadata.Now(),
+			AtTime:     timeutil.Now(),
 		}
 
 		rsp := HealthResponse{

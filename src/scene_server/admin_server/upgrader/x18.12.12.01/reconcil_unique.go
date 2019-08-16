@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -70,7 +71,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: timeutil.Now(),
 		},
 	}
 

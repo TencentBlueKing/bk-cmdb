@@ -19,6 +19,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"configcenter/src/common/timeutil"
 )
 
 type RspSubscriptionCreate struct {
@@ -54,18 +56,18 @@ type RspSubscriptionTestCallback struct {
 
 // Subscription define
 type Subscription struct {
-	SubscriptionID   int64       `bson:"subscription_id" json:"subscription_id"`
-	SubscriptionName string      `bson:"subscription_name" json:"subscription_name"`
-	SystemName       string      `bson:"system_name" json:"system_name"`
-	CallbackURL      string      `bson:"callback_url" json:"callback_url"`
-	ConfirmMode      string      `bson:"confirm_mode" json:"confirm_mode"`
-	ConfirmPattern   string      `bson:"confirm_pattern" json:"confirm_pattern"`
-	TimeOut          int64       `bson:"time_out" json:"time_out"`                   // second
-	SubscriptionForm string      `bson:"subscription_form" json:"subscription_form"` // json format
-	Operator         string      `bson:"operator" json:"operator"`
-	OwnerID          string      `bson:"bk_supplier_account" json:"bk_supplier_account"`
-	LastTime         Time        `bson:"last_time" json:"last_time"`
-	Statistics       *Statistics `bson:"-" json:"statistics"`
+	SubscriptionID   int64         `bson:"subscription_id" json:"subscription_id"`
+	SubscriptionName string        `bson:"subscription_name" json:"subscription_name"`
+	SystemName       string        `bson:"system_name" json:"system_name"`
+	CallbackURL      string        `bson:"callback_url" json:"callback_url"`
+	ConfirmMode      string        `bson:"confirm_mode" json:"confirm_mode"`
+	ConfirmPattern   string        `bson:"confirm_pattern" json:"confirm_pattern"`
+	TimeOut          int64         `bson:"time_out" json:"time_out"`                   // second
+	SubscriptionForm string        `bson:"subscription_form" json:"subscription_form"` // json format
+	Operator         string        `bson:"operator" json:"operator"`
+	OwnerID          string        `bson:"bk_supplier_account" json:"bk_supplier_account"`
+	LastTime         timeutil.Time `bson:"last_time" json:"last_time"`
+	Statistics       *Statistics   `bson:"-" json:"statistics"`
 }
 
 // Report define sending statistic
@@ -99,16 +101,16 @@ func (s Subscription) GetTimeout() time.Duration {
 }
 
 type EventInst struct {
-	ID          int64       `json:"event_id,omitempty"`
-	TxnID       string      `json:"txn_id"`
-	EventType   string      `json:"event_type"`
-	Action      string      `json:"action"`
-	ActionTime  Time        `json:"action_time"`
-	ObjType     string      `json:"obj_type"`
-	Data        []EventData `json:"data"`
-	OwnerID     string      `json:"bk_supplier_account"`
-	RequestID   string      `json:"request_id"`
-	RequestTime Time        `json:"request_time"`
+	ID          int64         `json:"event_id,omitempty"`
+	TxnID       string        `json:"txn_id"`
+	EventType   string        `json:"event_type"`
+	Action      string        `json:"action"`
+	ActionTime  timeutil.Time `json:"action_time"`
+	ObjType     string        `json:"obj_type"`
+	Data        []EventData   `json:"data"`
+	OwnerID     string        `json:"bk_supplier_account"`
+	RequestID   string        `json:"request_id"`
+	RequestTime timeutil.Time `json:"request_time"`
 }
 
 func (e *EventInst) MarshalBinary() (data []byte, err error) {

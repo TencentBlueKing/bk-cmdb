@@ -20,8 +20,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/types"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
@@ -29,7 +29,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
@@ -116,7 +116,7 @@ func (s *Service) Healthz(c *gin.Context) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_WEBSERVER,
 		HealthMeta: meta,
-		AtTime:     metadata.Now(),
+		AtTime:     timeutil.Now(),
 	}
 
 	answer := metric.HealthResponse{

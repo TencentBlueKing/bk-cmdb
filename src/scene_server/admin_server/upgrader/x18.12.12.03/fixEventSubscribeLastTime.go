@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -29,7 +29,7 @@ func fixEventSubscribeLastTime(ctx context.Context, db dal.RDB, conf *upgrader.C
 	cond.Field(common.BKSubscriptionNameField).Like("process instance refresh")
 
 	data := mapstr.MapStr{
-		common.LastTimeField: metadata.Now(),
+		common.LastTimeField: timeutil.Now(),
 	}
 
 	err := db.Table(common.BKTableNameSubscription).Update(ctx, cond.ToMapStr(), data)

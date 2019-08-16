@@ -10,13 +10,14 @@
  * limitations under the License.
  */
 
-package metadata
+package timeutil
 
 import (
-	"database/sql/driver"
 	"fmt"
 	"strconv"
 	"time"
+
+	"database/sql/driver"
 
 	"gopkg.in/mgo.v2/bson"
 )

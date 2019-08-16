@@ -16,14 +16,14 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal"
 
 	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
@@ -90,7 +90,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_DATACOLLECTION,
 		HealthMeta: meta,
-		AtTime:     metadata.Now(),
+		AtTime:     timeutil.Now(),
 	}
 
 	answer := metric.HealthResponse{

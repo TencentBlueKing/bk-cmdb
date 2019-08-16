@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 
@@ -120,7 +121,7 @@ func addProcFreshInstance(ctx context.Context, db dal.RDB, conf *upgrader.Config
 			SubscriptionForm: "hostupdate,moduletransfer,update,processmodule,processupdate",
 			OwnerID:          common.BKDefaultOwnerID,
 			Operator:         conf.User,
-			LastTime:         metadata.Now(),
+			LastTime:         timeutil.Now(),
 		}
 		return db.Table(tableName).Insert(ctx, subscription)
 	}

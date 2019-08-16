@@ -13,8 +13,6 @@
 package service
 
 import (
-	"configcenter/src/common/metadata"
-
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery/discovery"
@@ -23,6 +21,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
@@ -160,7 +159,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_HOST,
 		HealthMeta: meta,
-		AtTime:     metadata.Now(),
+		AtTime:     timeutil.Now(),
 	}
 
 	answer := metric.HealthResponse{
