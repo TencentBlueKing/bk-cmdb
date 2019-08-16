@@ -206,7 +206,7 @@
             &:focus {
                 z-index: 2;
             }
-            /deep/.bk-form-input {
+            /deep/ .bk-form-input {
                 float: left;
             }
         }

@@ -111,7 +111,7 @@
                         :type="attribute.type"
                         :save-auth="saveAuth"
                         @on-submit="handleSave"
-                        @on-cancel="handleCancel">
+                        @on-cancel="handleSliderBeforeClose">
                     </cmdb-form>
                 </bk-tab-panel>
                 <bk-tab-panel name="relevance" :label="$t('关联Relation')" :visible="attribute.type !== 'create'">
@@ -465,6 +465,7 @@
                                 extCls: 'bk-dialog-sub-header-center',
                                 confirmFn: () => {
                                     resolve(true)
+                                    this.handleCancel()
                                 },
                                 cancelFn: () => {
                                     resolve(false)
@@ -472,8 +473,10 @@
                             })
                         })
                     }
+                    this.handleCancel()
                     return true
                 }
+                this.handleCancel()
                 return true
             }
         }
