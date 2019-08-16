@@ -25,7 +25,7 @@
                 cursor: 'pointer'
             }"
             @cell-click="handleShowDetails">
-            <bk-table-column :label="$t('校验规则')">
+            <bk-table-column :label="$t('校验规则')" class-name="is-highlight">
                 <template slot-scope="{ row }">
                     {{getRuleName(row.keys)}}
                 </template>
@@ -39,12 +39,12 @@
                 v-if="updateAuth && !isTopoModel"
                 :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <button class="text-primary mr10"
+                    <button class="text-primary mr10 operation-btn"
                         :disabled="!isEditable(row)"
                         @click.stop="editVerification(row)">
                         {{$t('编辑')}}
                     </button>
-                    <button class="text-primary"
+                    <button class="text-primary operation-btn"
                         :disabled="!isEditable(row)"
                         @click.stop="deleteVerification(row)">
                         {{$t('删除')}}
@@ -223,5 +223,9 @@
     }
     .verification-table {
         margin: 14px 0 0 0;
+    }
+    .operation-btn[disabled] {
+        color: #dcdee5 !important;
+        opacity: 1 !important;
     }
 </style>

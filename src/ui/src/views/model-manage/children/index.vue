@@ -575,6 +575,7 @@
             height: 100px;
             line-height: 100px;
             .label-btn {
+                outline: 0;
                 position: relative;
                 &.disabled {
                     cursor: not-allowed;
