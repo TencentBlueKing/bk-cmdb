@@ -481,7 +481,7 @@
     "启动路径": "Work Path",
     "启动用户": "User",
     "锁定": "Locking",
-    "添加进程提示": "Fill in the instructions: Check \"Lock\", the value of this field will be set to a fixed value. This field does not support modification when creating a service instance. If it is not checked, it will be set to the default value and support subsequent modifications.",
+    "添加进程提示": "The fields defined in the template cannot be modified in the service instance.",
     "基本属性": "Basic Attribute",
     "端口信息": "Port Information",
     "其他属性": "Other Attributes",
