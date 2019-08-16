@@ -53,11 +53,13 @@ func (ps *parseStream) topology() *parseStream {
 }
 
 var (
-	createBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/?$`)
-	updateBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
-	deleteBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
-	findBusinessRegexp         = regexp.MustCompile(`^/api/v3/biz/search/[^\s/]+/?$`)
-	updateBusinessStatusRegexp = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	createBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/?$`)
+	updateBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
+	deleteBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
+	findBusinessRegexp               = regexp.MustCompile(`^/api/v3/biz/search/[^\s/]+/?$`)
+	findResourcePoolBusinessRegexp   = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/search/?$`)
+	createResourcePoolBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/?$`)
+	updateBusinessStatusRegexp       = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
 )
 
 const findReducedBusinessList = `/api/v3/biz/with_reduced`
@@ -88,6 +90,18 @@ func (ps *parseStream) business() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.Business,
 					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(createResourcePoolBusinessRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -175,6 +189,20 @@ func (ps *parseStream) business() *parseStream {
 	// find business, this is not a normalize api.
 	// TODO: update this api format
 	if ps.hitRegexp(findBusinessRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.FindMany,
+				},
+				// we don't know if one or more business is to find, so we assume it's a find many
+				// business operation.
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findResourcePoolBusinessRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

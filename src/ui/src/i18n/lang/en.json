@@ -862,5 +862,6 @@
     "收藏此条件": "Collect this condition",
     "添加节点已选择": "Selected",
     "新建集群": "New Set",
-    "内置模型组不支持添加和修改": "Built-in model groups do not support adding and modifying"
+    "内置模型组不支持添加和修改": "Built-in model groups do not support adding and modifying",
+    "全部主机": "All Hosts"
 }

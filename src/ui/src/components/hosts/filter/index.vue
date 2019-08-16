@@ -448,6 +448,11 @@
 </script>
 
 <style lang="scss" scoped="true">
+    .filter-trigger {
+        width: 32px;
+        padding: 0;
+        line-height: 14px;
+    }
     .filter-trigger.is-active {
         color: #3A84FF;
     }

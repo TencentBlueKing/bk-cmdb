@@ -60,6 +60,10 @@ func NewEsClient(esAddr string, tlsConfig *tls.Config) (*elastic.Client, error) 
 		return nil, err
 	}
 	blog.Debug("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
+	// it's amazing that we found new client result success with value nil once a time.
+	if client == nil {
+		blog.Errorf("Elasticsearch client create success, but result client is unexpected nil, rid: %s")
+	}
 	return client, nil
 }
 
