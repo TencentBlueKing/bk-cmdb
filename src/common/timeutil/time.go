@@ -89,5 +89,5 @@ type tmptime struct {
 
 // Now retruns now
 func Now() Time {
-	return Time{time.Now().UTC()}
+	return Time{time.Now()}
 }

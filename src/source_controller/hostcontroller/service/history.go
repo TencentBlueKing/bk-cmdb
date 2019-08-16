@@ -17,11 +17,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -55,7 +55,7 @@ func (s *Service) AddHistory(req *restful.Request, resp *restful.Response) {
 		User:       user,
 		Content:    bodyData.Content,
 		OwnerID:    ownerID,
-		CreateTime: time.Now().UTC(),
+		CreateTime: timeutil.Now(),
 	}
 
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)

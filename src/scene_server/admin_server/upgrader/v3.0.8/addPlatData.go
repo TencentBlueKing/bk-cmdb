@@ -14,10 +14,10 @@ package v3v0v8
 
 import (
 	"context"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -30,8 +30,8 @@ func addPlatData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 			common.BKCloudNameField: "default area",
 			common.BKOwnerIDField:   common.BKDefaultOwnerID,
 			common.BKCloudIDField:   common.BKDefaultDirSubArea,
-			common.CreateTimeField:  time.Now(),
-			common.LastTimeField:    time.Now(),
+			common.CreateTimeField:  timeutil.Now(),
+			common.LastTimeField:    timeutil.Now(),
 		},
 	}
 	for _, row := range rows {

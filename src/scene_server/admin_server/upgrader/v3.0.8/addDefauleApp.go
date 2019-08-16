@@ -14,11 +14,11 @@ package v3v0v8
 
 import (
 	"context"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage/dal"
@@ -45,8 +45,8 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	defaultBiz[common.BKOwnerIDField] = conf.OwnerID
 	defaultBiz[common.BKSupplierIDField] = common.BKDefaultSupplierID
 	defaultBiz[common.BKDefaultField] = common.DefaultAppFlag
-	defaultBiz[common.CreateTimeField] = time.Now()
-	defaultBiz[common.LastTimeField] = time.Now()
+	defaultBiz[common.CreateTimeField] = timeutil.Now()
+	defaultBiz[common.LastTimeField] = timeutil.Now()
 	filled := fillEmptyFields(defaultBiz, AppRow())
 	bizID, _, err := upgrader.Upsert(ctx, db, "cc_ApplicationBase", defaultBiz, common.BKAppIDField, []string{common.BKOwnerIDField, common.BKAppNameField, common.BKDefaultField}, append(filled, common.BKAppIDField))
 	if err != nil {
@@ -61,8 +61,8 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	defaultSet[common.BKSetNameField] = common.DefaultResSetName
 	defaultSet[common.BKDefaultField] = common.DefaultResSetFlag
 	defaultSet[common.BKOwnerIDField] = conf.OwnerID
-	defaultSet[common.CreateTimeField] = time.Now()
-	defaultSet[common.LastTimeField] = time.Now()
+	defaultSet[common.CreateTimeField] = timeutil.Now()
+	defaultSet[common.LastTimeField] = timeutil.Now()
 	filled = fillEmptyFields(defaultSet, SetRow())
 	setID, _, err := upgrader.Upsert(ctx, db, "cc_SetBase", defaultSet, common.BKSetIDField, []string{common.BKOwnerIDField, common.BKSetNameField, common.BKAppIDField, common.BKDefaultField}, append(filled, common.BKSetIDField))
 	if err != nil {
@@ -78,8 +78,8 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	defaultResModule[common.BKModuleNameField] = common.DefaultResModuleName
 	defaultResModule[common.BKDefaultField] = common.DefaultResModuleFlag
 	defaultResModule[common.BKOwnerIDField] = conf.OwnerID
-	defaultResModule[common.CreateTimeField] = time.Now()
-	defaultResModule[common.LastTimeField] = time.Now()
+	defaultResModule[common.CreateTimeField] = timeutil.Now()
+	defaultResModule[common.LastTimeField] = timeutil.Now()
 	filled = fillEmptyFields(defaultResModule, ModuleRow())
 	_, _, err = upgrader.Upsert(ctx, db, "cc_ModuleBase", defaultResModule, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}, append(filled, common.BKModuleIDField))
 	if err != nil {
@@ -93,8 +93,8 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	defaultFaultModule[common.BKModuleNameField] = common.DefaultFaultModuleName
 	defaultFaultModule[common.BKDefaultField] = common.DefaultFaultModuleFlag
 	defaultFaultModule[common.BKOwnerIDField] = conf.OwnerID
-	defaultFaultModule[common.CreateTimeField] = time.Now()
-	defaultFaultModule[common.LastTimeField] = time.Now()
+	defaultFaultModule[common.CreateTimeField] = timeutil.Now()
+	defaultFaultModule[common.LastTimeField] = timeutil.Now()
 	filled = fillEmptyFields(defaultFaultModule, ModuleRow())
 	_, _, err = upgrader.Upsert(ctx, db, "cc_ModuleBase", defaultFaultModule, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}, append(filled, common.BKModuleIDField))
 	if err != nil {
@@ -155,7 +155,7 @@ func fillEmptyFields(data map[string]interface{}, rows []*Attribute) []string {
 		filled = append(filled, fieldName)
 	}
 	filled = append(filled, common.CreateTimeField)
-	data[common.CreateTimeField] = time.Now()
-	data[common.LastTimeField] = time.Now()
+	data[common.CreateTimeField] = timeutil.Now()
+	data[common.LastTimeField] = timeutil.Now()
 	return filled
 }

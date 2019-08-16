@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
@@ -203,8 +204,8 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 	change := mgo.Change{
 		Update: bson.M{
 			"$inc":         bson.M{"SequenceID": int64(1)},
-			"$setOnInsert": bson.M{"create_time": time.Now()},
-			"$set":         bson.M{"last_time": time.Now()},
+			"$setOnInsert": bson.M{"create_time": timeutil.Now()},
+			"$set":         bson.M{"last_time": timeutil.Now()},
 		},
 		ReturnNew: true,
 		Upsert:    true,

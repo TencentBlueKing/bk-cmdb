@@ -14,13 +14,13 @@ package x18_10_30_01
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -163,7 +163,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			updateInst := mapstr.New()
 			updateInst.Set("bk_obj_asst_id", asst.AssociationName)
 			updateInst.Set("bk_asst_id", asst.AsstKindID)
-			updateInst.Set("last_time", time.Now())
+			updateInst.Set("last_time", timeutil.Now())
 			err = db.Table(common.BKTableNameInstAsst).Update(ctx, updateCond.ToMapStr(), updateInst)
 			if err != nil {
 				return err
@@ -220,7 +220,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 				updateInst.Set(flag, true)
 
-				updateInst.Set("last_time", time.Now())
+				updateInst.Set("last_time", timeutil.Now())
 				if err = db.Table(common.BKTableNameInstAsst).Update(ctx,
 					mapstr.MapStr{
 						"id": instAsst.ID,

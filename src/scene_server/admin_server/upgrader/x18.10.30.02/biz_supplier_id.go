@@ -13,37 +13,37 @@ package x18_10_30_02
 
 import (
 	"context"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
 type attribute struct {
-	ID            int64       `json:"id" bson:"id"`
-	OwnerID       string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	ObjectID      string      `json:"bk_obj_id" bson:"bk_obj_id"`
-	PropertyID    string      `json:"bk_property_id" bson:"bk_property_id"`
-	PropertyName  string      `json:"bk_property_name" bson:"bk_property_name"`
-	PropertyGroup string      `json:"bk_property_group" bson:"bk_property_group"`
-	PropertyIndex int64       `json:"bk_property_index" bson:"bk_property_index"`
-	Unit          string      `json:"unit" bson:"unit"`
-	Placeholder   string      `json:"placeholder" bson:"placeholder"`
-	IsEditable    bool        `json:"editable" bson:"editable"`
-	IsPre         bool        `json:"ispre" bson:"ispre"`
-	IsRequired    bool        `json:"isrequired" bson:"isrequired"`
-	IsReadOnly    bool        `json:"isreadonly" bson:"isreadonly"`
-	IsOnly        bool        `json:"isonly" bson:"isonly"`
-	IsSystem      bool        `json:"bk_issystem" bson:"bk_issystem"`
-	IsAPI         bool        `json:"bk_isapi" bson:"bk_isapi"`
-	PropertyType  string      `json:"bk_property_type" bson:"bk_property_type"`
-	Option        interface{} `json:"option" bson:"option"`
-	Description   string      `json:"description" bson:"description"`
-	Creator       string      `json:"creator" bson:"creator"`
-	CreateTime    *time.Time  `bson:"creaet_time"`
-	LastTime      *time.Time  `bson:"last_time"`
+	ID            int64          `json:"id" bson:"id"`
+	OwnerID       string         `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ObjectID      string         `json:"bk_obj_id" bson:"bk_obj_id"`
+	PropertyID    string         `json:"bk_property_id" bson:"bk_property_id"`
+	PropertyName  string         `json:"bk_property_name" bson:"bk_property_name"`
+	PropertyGroup string         `json:"bk_property_group" bson:"bk_property_group"`
+	PropertyIndex int64          `json:"bk_property_index" bson:"bk_property_index"`
+	Unit          string         `json:"unit" bson:"unit"`
+	Placeholder   string         `json:"placeholder" bson:"placeholder"`
+	IsEditable    bool           `json:"editable" bson:"editable"`
+	IsPre         bool           `json:"ispre" bson:"ispre"`
+	IsRequired    bool           `json:"isrequired" bson:"isrequired"`
+	IsReadOnly    bool           `json:"isreadonly" bson:"isreadonly"`
+	IsOnly        bool           `json:"isonly" bson:"isonly"`
+	IsSystem      bool           `json:"bk_issystem" bson:"bk_issystem"`
+	IsAPI         bool           `json:"bk_isapi" bson:"bk_isapi"`
+	PropertyType  string         `json:"bk_property_type" bson:"bk_property_type"`
+	Option        interface{}    `json:"option" bson:"option"`
+	Description   string         `json:"description" bson:"description"`
+	Creator       string         `json:"creator" bson:"creator"`
+	CreateTime    *timeutil.Time `bson:"creaet_time"`
+	LastTime      *timeutil.Time `bson:"last_time"`
 }
 
 func addBizSuupierID(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -53,7 +53,7 @@ func addBizSuupierID(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	if nil != err {
 		return err
 	}
-	ts := time.Now().UTC()
+	ts := timeutil.Now()
 	attributeArr = append(attributeArr, attribute{
 		ID:            int64(attrID),
 		OwnerID:       conf.OwnerID,

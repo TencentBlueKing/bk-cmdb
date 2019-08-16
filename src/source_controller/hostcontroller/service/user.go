@@ -18,11 +18,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -79,11 +79,11 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 		Info:       addQuery.Info,
 		Name:       addQuery.Name,
 		ID:         id,
-		CreateTime: time.Now().UTC(),
+		CreateTime: timeutil.Now(),
 		CreateUser: addQuery.CreateUser,
 		OwnerID:    ownerID,
 		ModifyUser: addQuery.CreateUser,
-		UpdateTime: time.Now().UTC(),
+		UpdateTime: timeutil.Now(),
 	}
 
 	err = s.Instance.Table(common.BKTableNameUserAPI).Insert(ctx, userQuery)
@@ -150,7 +150,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 		}
 	}
 
-	data.UpdateTime = time.Now().UTC()
+	data.UpdateTime = timeutil.Now()
 	data.ModifyUser = util.GetUser(req.Request.Header)
 	data.AppID = appID
 	data.OwnerID = ownerID

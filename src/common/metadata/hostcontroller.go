@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/timeutil"
 )
 
 type ID struct {
@@ -57,11 +58,11 @@ type AddHistoryResult struct {
 }
 
 type HistoryMeta struct {
-	ID         string    `json:"id,omitempty" bson:"id,omitempty" `
-	User       string    `json:"user,omitempty" bson:"user,omitempty"`
-	Content    string    `json:"content,omitempty" bson:"content,omitempty"`
-	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
-	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ID         string        `json:"id,omitempty" bson:"id,omitempty" `
+	User       string        `json:"user,omitempty" bson:"user,omitempty"`
+	Content    string        `json:"content,omitempty" bson:"content,omitempty"`
+	CreateTime timeutil.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
+	OwnerID    string        `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type HistoryResult struct {
@@ -169,16 +170,16 @@ type FavouriteParms struct {
 }
 
 type FavouriteMeta struct {
-	ID          string    `json:"id,omitempty" bson:"id,omitempty"`
-	Info        string    `json:"info,omitempty" bson:"info,omitempty"`
-	Name        string    `json:"name,omitempty" bson:"name,omitempty"`
-	Count       int       `json:"count,omitempty" bson:"count,omitempty"`
-	User        string    `json:"user,omitempty" bson:"user,omitempty"`
-	IsDefault   int       `json:"is_default,omitempty" bson:"is_default,omitempty"`
-	OwnerID     string    `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"`
-	QueryParams string    `json:"query_params,omitempty" bson:"query_params,omitempty"`
-	CreateTime  time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
-	UpdateTime  time.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
+	ID          string        `json:"id,omitempty" bson:"id,omitempty"`
+	Info        string        `json:"info,omitempty" bson:"info,omitempty"`
+	Name        string        `json:"name,omitempty" bson:"name,omitempty"`
+	Count       int           `json:"count,omitempty" bson:"count,omitempty"`
+	User        string        `json:"user,omitempty" bson:"user,omitempty"`
+	IsDefault   int           `json:"is_default,omitempty" bson:"is_default,omitempty"`
+	OwnerID     string        `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"`
+	QueryParams string        `json:"query_params,omitempty" bson:"query_params,omitempty"`
+	CreateTime  timeutil.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
+	UpdateTime  timeutil.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
 }
 
 type GetUserConfigDetailResult struct {
@@ -187,15 +188,15 @@ type GetUserConfigDetailResult struct {
 }
 
 type UserConfigMeta struct {
-	AppID      int64     `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
-	Info       string    `json:"info,omitempty" bson:"info,omitempty"`
-	Name       string    `json:"name,omitempty" bson:"name,omitempty"`
-	ID         string    `json:"id,omitempty" bson:"id,omitempty"`
-	CreateTime time.Time `json:"create_time" bson:"create_time,omitempty"`
-	CreateUser string    `json:"create_user" bson:"create_user,omitempty"`
-	ModifyUser string    `json:"modify_user" bson:"modify_user,omitempty"`
-	UpdateTime time.Time `json:"last_time" bson:"last_time,omitempty"`
-	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	AppID      int64         `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
+	Info       string        `json:"info,omitempty" bson:"info,omitempty"`
+	Name       string        `json:"name,omitempty" bson:"name,omitempty"`
+	ID         string        `json:"id,omitempty" bson:"id,omitempty"`
+	CreateTime timeutil.Time `json:"create_time" bson:"create_time,omitempty"`
+	CreateUser string        `json:"create_user" bson:"create_user,omitempty"`
+	ModifyUser string        `json:"modify_user" bson:"modify_user,omitempty"`
+	UpdateTime timeutil.Time `json:"last_time" bson:"last_time,omitempty"`
+	OwnerID    string        `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type AddConfigQuery struct {

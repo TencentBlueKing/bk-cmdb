@@ -13,25 +13,24 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strconv"
-	"time"
-
-	"encoding/json"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/timeutil"
 )
 
 type Transaction struct {
-	TxnID      string    `bson:"bk_txn_id"`     // 事务ID,uuid
-	RequestID  string    `bson:"bk_request_id"` // 请求ID,可选项
-	Processor  string    `bson:"processor"`     // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
-	Status     TxStatus  `bson:"status"`        // 事务状态，作为定时补偿判断条件，这个字段需要加索引
-	CreateTime time.Time `bson:"create_time"`   // 创建时间，作为定时补偿判断条件和统计信息存在，这个字段需要加索引
-	LastTime   time.Time `bson:"last_time"`     // 修改时间，作为统计信息存在
+	TxnID      string        `bson:"bk_txn_id"`     // 事务ID,uuid
+	RequestID  string        `bson:"bk_request_id"` // 请求ID,可选项
+	Processor  string        `bson:"processor"`     // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
+	Status     TxStatus      `bson:"status"`        // 事务状态，作为定时补偿判断条件，这个字段需要加索引
+	CreateTime timeutil.Time `bson:"create_time"`   // 创建时间，作为定时补偿判断条件和统计信息存在，这个字段需要加索引
+	LastTime   timeutil.Time `bson:"last_time"`     // 修改时间，作为统计信息存在
 }
 
 func (t Transaction) IntoHeader(header http.Header) http.Header {

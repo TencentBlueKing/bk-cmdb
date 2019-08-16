@@ -18,7 +18,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -26,7 +25,7 @@ import (
 	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 
-	simplejson "github.com/bitly/go-simplejson"
+	"github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
 
@@ -56,10 +55,10 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 	}
 
 	// save to the storage
-	obj.CreateTime = new(time.Time)
-	*obj.CreateTime = time.Now()
-	obj.LastTime = new(time.Time)
-	*obj.LastTime = time.Now()
+	obj.CreateTime = new(timeutil.Time)
+	*obj.CreateTime = timeutil.Now()
+	obj.LastTime = new(timeutil.Time)
+	*obj.LastTime = timeutil.Now()
 	obj.OwnerID = ownerID
 
 	// get id

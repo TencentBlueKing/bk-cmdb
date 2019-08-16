@@ -15,10 +15,10 @@ package x18_09_30_01
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -49,8 +49,8 @@ func cleanBKCloud(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err e
 			common.BKCloudNameField: common.DefaultCloudName,
 			common.BKOwnerIDField:   common.BKDefaultOwnerID,
 			common.BKCloudIDField:   common.BKDefaultDirSubArea,
-			common.CreateTimeField:  time.Now(),
-			common.LastTimeField:    time.Now(),
+			common.CreateTimeField:  timeutil.Now(),
+			common.LastTimeField:    timeutil.Now(),
 			flag:                    true,
 		}
 	}

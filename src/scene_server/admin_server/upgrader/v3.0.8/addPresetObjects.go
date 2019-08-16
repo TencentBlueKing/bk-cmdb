@@ -14,11 +14,11 @@ package v3v0v8
 
 import (
 	"context"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -154,7 +154,7 @@ func getObjectDesData(ownerID string) []*metadata.ObjectDes {
 		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDApache, ObjectName: "apache", ObjIcon: "icon-cc-apache", Position: `{"bk_middleware":{"x":-500,"y":-50}}`},
 		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDTomcat, ObjectName: "tomcat", ObjIcon: "icon-cc-tomcat", Position: `{"bk_middleware":{"x":-350,"y":-50}}`},
 	}
-	t := time.Now()
+	t := timeutil.Now()
 	for _, r := range dataRows {
 		r.CreateTime = &t
 		r.LastTime = &t
@@ -209,8 +209,8 @@ func getObjAttDescData(ownerID string) []*Attribute {
 	dataRows = append(dataRows, ApacheRow()...)
 	dataRows = append(dataRows, TomcatRow()...)
 
-	t := new(time.Time)
-	*t = time.Now()
+	t := new(timeutil.Time)
+	*t = timeutil.Now()
 	for _, r := range predataRows {
 		r.OwnerID = ownerID
 		r.IsPre = true

@@ -15,14 +15,14 @@ package logics
 import (
 	"context"
 	"strings"
-	"time"
-
-	"github.com/google/go-cmp/cmp"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // AddLogMulti insert multiple row
@@ -42,7 +42,7 @@ func (lgc *Logics) AddLogMulti(ctx context.Context, appID int64, opType auditopl
 			ExtKey:        "",
 			OpDesc:        opDesc,
 			Content:       content.Content,
-			CreateTime:    time.Now(),
+			CreateTime:    timeutil.Now(),
 			InstID:        content.ID,
 		}
 		logRows = append(logRows, row)
@@ -72,7 +72,7 @@ func (lgc *Logics) AddLogMultiWithExtKey(ctx context.Context, appID int64, opTyp
 			ExtKey:        content.ExtKey,
 			OpDesc:        opDesc,
 			Content:       content.Content,
-			CreateTime:    time.Now(),
+			CreateTime:    timeutil.Now(),
 			InstID:        content.ID,
 		}
 		logRows = append(logRows, row)
@@ -99,7 +99,7 @@ func (lgc *Logics) AddLogWithStr(ctx context.Context, appID, instID int64, opTyp
 		ExtKey:        extKey,
 		OpDesc:        opDesc,
 		Content:       content,
-		CreateTime:    time.Now(),
+		CreateTime:    timeutil.Now(),
 		InstID:        instID,
 	}
 	err := lgc.Instance.Table(common.BKTableNameOperationLog).Insert(ctx, logRow)

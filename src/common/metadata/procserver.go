@@ -13,9 +13,9 @@ package metadata
 
 import (
 	"net/http"
-	"time"
 
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/timeutil"
 )
 
 type ProcModuleConfig struct {
@@ -195,7 +195,7 @@ type ProcessOperateTask struct {
 	GseTaskID   string                              `json:"gse_task_id" bson:"gse_task_id"`
 	Namespace   string                              `json:"namespace" bson:"namespace"`
 	Status      ProcOpTaskStatus                    `json:"status" bson:"status"`
-	CreateTime  time.Time                           `json:"create_time" bson:"create_time"`
+	CreateTime  timeutil.Time                       `json:"create_time" bson:"create_time"`
 	OwnerID     string                              `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	User        string                              `json:"user,omitempty" bson:"user,omitempty"`
 	Detail      map[string]ProcessOperateTaskDetail `json:"detail" bson:"detail"`

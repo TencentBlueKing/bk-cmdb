@@ -22,13 +22,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/rs/xid"
-	"gopkg.in/redis.v5"
-
 	bkc "configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	httpcli "configcenter/src/common/http/httpclient"
+
+	"github.com/rs/xid"
+	"gopkg.in/redis.v5"
 )
 
 type Discover struct {
@@ -83,8 +83,8 @@ func NewDiscover(ctx context.Context, chanName string, maxSize int, redisCli, su
 		maxConcurrent:          runtime.NumCPU(),
 		getMasterInterval:      time.Second * 11,
 		masterProcLockLiveTime: getMasterProcIntervalTime + time.Second*10,
-		ctx:     ctx,
-		pheader: pheader,
+		ctx:                    ctx,
+		pheader:                pheader,
 	}
 	discover.Engine = backbone
 	return discover

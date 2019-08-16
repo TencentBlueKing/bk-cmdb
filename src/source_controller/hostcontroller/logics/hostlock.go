@@ -16,13 +16,13 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 )
 
@@ -48,7 +48,7 @@ func (lgc *Logics) LockHost(ctx context.Context, header http.Header, input *meta
 	}
 
 	var insertDataArr []interface{}
-	ts := time.Now().UTC()
+	ts := timeutil.Now()
 	for _, ip := range input.IPS {
 		conds := mapstr.MapStr{common.BKHostInnerIPField: ip, common.BKCloudIDField: input.CloudID}
 		cnt, err := lgc.Instance.Table(common.BKTableNameHostLock).Find(util.SetQueryOwner(conds, util.GetOwnerID(header))).Count(ctx)

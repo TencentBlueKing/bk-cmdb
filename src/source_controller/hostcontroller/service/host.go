@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -27,7 +26,7 @@ import (
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 const (
@@ -120,7 +119,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	input[common.CreateTimeField] = time.Now()
+	input[common.CreateTimeField] = timeutil.Now()
 	input = util.SetModOwner(input, ownerID)
 	var idName string
 	id, err := s.Logics.CreateObject(ctx, objType, input, &idName)

@@ -13,17 +13,17 @@
 package timeutil
 
 import (
+	"encoding/json"
+	"errors"
+	"strconv"
 	"time"
-
-	"configcenter/src/common"
-	"configcenter/src/common/util"
 
 	"github.com/coccyx/timeparser"
 )
 
 var (
 	// 需要转换的时间的标志
-	convTimeFields []string = []string{common.CreateTimeField, common.LastTimeField}
+	convTimeFields []string = []string{"create_time", "last_time"}
 )
 
 func GetCurrentTimeStr() string {
@@ -143,7 +143,7 @@ func convItemToTime(val interface{}) (interface{}, error) {
 		return ts.UTC(), nil
 
 	default:
-		ts, err := util.GetInt64ByInterface(val)
+		ts, err := getInt64ByInterface(val)
 		if nil != err {
 			return 0, err
 		}
@@ -180,4 +180,33 @@ func NewTicker(d time.Duration) *Ticker {
 		close(t.C)
 	}()
 	return t
+}
+
+func getInt64ByInterface(a interface{}) (int64, error) {
+	var id int64 = 0
+	var err error
+	switch a.(type) {
+	case int:
+		id = int64(a.(int))
+	case int32:
+		id = int64(a.(int32))
+	case int64:
+		id = int64(a.(int64))
+	case json.Number:
+		var tmpID int64
+		tmpID, err = a.(json.Number).Int64()
+		id = int64(tmpID)
+	case float64:
+		tmpID := a.(float64)
+		id = int64(tmpID)
+	case float32:
+		tmpID := a.(float32)
+		id = int64(tmpID)
+	case string:
+		id, err = strconv.ParseInt(a.(string), 10, 64)
+	default:
+		err = errors.New("not numeric")
+
+	}
+	return id, err
 }

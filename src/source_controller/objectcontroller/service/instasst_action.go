@@ -13,22 +13,22 @@
 package service
 
 import (
-	"configcenter/src/common/mapstr"
 	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
-
-	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/eventclient"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // CreateInstAssociation create instance association map
@@ -95,7 +95,7 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 		AsstInstID:        request.AsstInstId,
 		AssociationKindID: objResult.AsstKindID,
 		OwnerID:           ownerID,
-		CreateTime:        time.Now(),
+		CreateTime:        timeutil.Now(),
 	}
 
 	err = db.Table(common.BKTableNameInstAsst).Insert(ctx, data)

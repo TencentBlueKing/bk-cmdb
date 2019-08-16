@@ -13,10 +13,9 @@
 package metadata
 
 import (
-	"time"
-
 	"configcenter/src/common"
 	types "configcenter/src/common/mapstr"
+	"configcenter/src/common/timeutil"
 )
 
 const (
@@ -38,20 +37,20 @@ const (
 
 // Object object metadata definition
 type Object struct {
-	ID          int64      `field:"id" json:"id" bson:"id"`
-	ObjCls      string     `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
-	ObjIcon     string     `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`
-	ObjectID    string     `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
-	ObjectName  string     `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
-	IsPre       bool       `field:"ispre" json:"ispre" bson:"ispre"`
-	IsPaused    bool       `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused"`
-	Position    string     `field:"position" json:"position" bson:"position"`
-	OwnerID     string     `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-	Description string     `field:"description" json:"description" bson:"description"`
-	Creator     string     `field:"creator" json:"creator" bson:"creator"`
-	Modifier    string     `field:"modifier" json:"modifier" bson:"modifier"`
-	CreateTime  *time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime    *time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	ID          int64          `field:"id" json:"id" bson:"id"`
+	ObjCls      string         `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
+	ObjIcon     string         `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`
+	ObjectID    string         `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectName  string         `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
+	IsPre       bool           `field:"ispre" json:"ispre" bson:"ispre"`
+	IsPaused    bool           `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused"`
+	Position    string         `field:"position" json:"position" bson:"position"`
+	OwnerID     string         `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Description string         `field:"description" json:"description" bson:"description"`
+	Creator     string         `field:"creator" json:"creator" bson:"creator"`
+	Modifier    string         `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime  *timeutil.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime    *timeutil.Time `field:"last_time" json:"last_time" bson:"last_time"`
 }
 
 // GetDefaultInstPropertyName get default inst
@@ -170,21 +169,21 @@ type MainLineObject struct {
 }
 
 type ObjectDes struct {
-	ID          int        `bson:"id"                   json:"id"`
-	ObjCls      string     `bson:"bk_classification_id" json:"bk_classification_id"`
-	ObjIcon     string     `bson:"bk_obj_icon"          json:"bk_obj_icon"`
-	ObjectID    string     `bson:"bk_obj_id"            json:"bk_obj_id"`
-	ObjectName  string     `bson:"bk_obj_name"          json:"bk_obj_name"`
-	IsPre       bool       `bson:"ispre"                json:"ispre"`
-	IsPaused    bool       `bson:"bk_ispaused"          json:"bk_ispaused"`
-	Position    string     `bson:"position"             json:"position"`
-	OwnerID     string     `bson:"bk_supplier_account"  json:"bk_supplier_account"`
-	Description string     `bson:"description"          json:"description"`
-	Creator     string     `bson:"creator"              json:"creator"`
-	Modifier    string     `bson:"modifier"             json:"modifier"`
-	CreateTime  *time.Time `bson:"create_time"          json:"create_time"`
-	LastTime    *time.Time `bson:"last_time"            json:"last_time"`
-	Page        *BasePage  `bson:"-"                    json:"page,omitempty"`
+	ID          int            `bson:"id"                   json:"id"`
+	ObjCls      string         `bson:"bk_classification_id" json:"bk_classification_id"`
+	ObjIcon     string         `bson:"bk_obj_icon"          json:"bk_obj_icon"`
+	ObjectID    string         `bson:"bk_obj_id"            json:"bk_obj_id"`
+	ObjectName  string         `bson:"bk_obj_name"          json:"bk_obj_name"`
+	IsPre       bool           `bson:"ispre"                json:"ispre"`
+	IsPaused    bool           `bson:"bk_ispaused"          json:"bk_ispaused"`
+	Position    string         `bson:"position"             json:"position"`
+	OwnerID     string         `bson:"bk_supplier_account"  json:"bk_supplier_account"`
+	Description string         `bson:"description"          json:"description"`
+	Creator     string         `bson:"creator"              json:"creator"`
+	Modifier    string         `bson:"modifier"             json:"modifier"`
+	CreateTime  *timeutil.Time `bson:"create_time"          json:"create_time"`
+	LastTime    *timeutil.Time `bson:"last_time"            json:"last_time"`
+	Page        *BasePage      `bson:"-"                    json:"page,omitempty"`
 }
 
 type ObjectClsDes struct {

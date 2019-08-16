@@ -16,11 +16,11 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -66,8 +66,8 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 		IsDefault:   paras.IsDefault,
 		QueryParams: paras.QueryParams,
 		OwnerID:     ownerID,
-		CreateTime:  time.Now().UTC(),
-		UpdateTime:  time.Now().UTC(),
+		CreateTime:  timeutil.Now(),
+		UpdateTime:  timeutil.Now(),
 	}
 	err = s.Instance.Table(common.BKTableNameHostFavorite).Insert(ctx, fav)
 	if err != nil {
@@ -95,7 +95,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	fav.UpdateTime = time.Now().UTC()
+	fav.UpdateTime = timeutil.Now()
 
 	query := common.KvMap{"user": user, "id": id}
 	query = util.SetModOwner(query, ownerID)

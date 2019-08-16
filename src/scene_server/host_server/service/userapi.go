@@ -17,12 +17,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -79,7 +79,7 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 	}
 
 	params["modify_user"] = util.GetActionUser(req)
-	params[common.LastTimeField] = time.Now().UTC()
+	params[common.LastTimeField] = timeutil.Now()
 	result, err := s.CoreAPI.HostController().User().UpdateUserConfig(context.Background(), req.PathParameter("bk_biz_id"), req.PathParameter("id"), req.Request.Header, params)
 	if nil != err || (nil == err && !result.Result) {
 		if nil == err {

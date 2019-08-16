@@ -18,7 +18,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -58,10 +57,10 @@ func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response
 	}
 
 	// save to the storage
-	obj.CreateTime = new(time.Time)
-	*obj.CreateTime = time.Now()
-	obj.LastTime = new(time.Time)
-	*obj.LastTime = time.Now()
+	obj.CreateTime = new(timeutil.Time)
+	*obj.CreateTime = timeutil.Now()
+	obj.LastTime = new(timeutil.Time)
+	*obj.LastTime = timeutil.Now()
 
 	if obj.IsPre {
 		if obj.PropertyID == common.BKInstNameField {

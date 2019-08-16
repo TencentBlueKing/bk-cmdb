@@ -20,16 +20,16 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 
-	simplejson "github.com/bitly/go-simplejson"
+	"github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
 
@@ -134,7 +134,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	data[common.LastTimeField] = time.Now()
+	data[common.LastTimeField] = timeutil.Now()
 	condition := input["condition"]
 	condition = util.SetModOwner(condition, ownerID)
 
@@ -264,8 +264,8 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	value, _ := ioutil.ReadAll(req.Request.Body)
 	js, _ := simplejson.NewJson([]byte(value))
 	input, _ := js.Map()
-	input[common.CreateTimeField] = time.Now()
-	input[common.LastTimeField] = time.Now()
+	input[common.CreateTimeField] = timeutil.Now()
+	input[common.LastTimeField] = timeutil.Now()
 	input = util.SetModOwner(input, ownerID)
 	blog.Infof("create object type:%s,data:%v", objType, input)
 	var idName string

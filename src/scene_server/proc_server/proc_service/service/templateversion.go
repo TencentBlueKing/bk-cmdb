@@ -16,12 +16,12 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	types "configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
 
@@ -123,7 +123,7 @@ func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.
 		return
 	}
 
-	input[common.CreateTimeField] = time.Now().UTC()
+	input[common.CreateTimeField] = timeutil.Now()
 
 	ret, err := ps.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDTempVersion, pHeader, input)
 	if nil != err || !ret.Result {

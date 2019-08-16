@@ -15,15 +15,14 @@ package v3v0v8
 import (
 	"context"
 	"fmt"
-
 	"strings"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -124,7 +123,7 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 		ExtKey:        "",
 		OpDesc:        "create app",
 		Content:       auditContent,
-		CreateTime:    time.Now(),
+		CreateTime:    timeutil.Now(),
 		InstID:        int64(bizID),
 	}
 	if preData != nil {
@@ -250,7 +249,7 @@ func addBKProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID 
 			ExtKey:        "",
 			OpDesc:        "create process",
 			Content:       auditContent,
-			CreateTime:    time.Now(),
+			CreateTime:    timeutil.Now(),
 			InstID:        int64(processID),
 		}
 		if preData != nil {
@@ -276,8 +275,8 @@ func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID
 		setModelData[common.BKOwnerIDField] = conf.OwnerID
 		setModelData[common.BKInstParentStr] = bizID
 		setModelData[common.BKDefaultField] = 0
-		setModelData[common.CreateTimeField] = time.Now()
-		setModelData[common.LastTimeField] = time.Now()
+		setModelData[common.CreateTimeField] = timeutil.Now()
+		setModelData[common.LastTimeField] = timeutil.Now()
 		filled := fillEmptyFields(setModelData, SetRow())
 		var preData map[string]interface{}
 		setID, preData, err := upgrader.Upsert(ctx, db, "cc_SetBase", setModelData, common.BKSetIDField, []string{common.BKSetNameField, common.BKOwnerIDField, common.BKAppIDField}, append(filled, common.BKSetIDField))
@@ -307,7 +306,7 @@ func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID
 			ExtKey:        "",
 			OpDesc:        "create set",
 			Content:       auditContent,
-			CreateTime:    time.Now(),
+			CreateTime:    timeutil.Now(),
 			InstID:        int64(setID),
 		}
 		if preData != nil {
@@ -368,7 +367,7 @@ func addModuleInSet(ctx context.Context, db dal.RDB, conf *upgrader.Config, modu
 			ExtKey:        "",
 			OpDesc:        "create module",
 			Content:       auditContent,
-			CreateTime:    time.Now(),
+			CreateTime:    timeutil.Now(),
 			InstID:        int64(moduleID),
 		}
 		if preData != nil {
@@ -424,7 +423,7 @@ func addModule2Process(ctx context.Context, db dal.RDB, conf *upgrader.Config, p
 			ExtKey:        "",
 			OpDesc:        fmt.Sprintf("bind module [%s]", moduleName),
 			Content:       "",
-			CreateTime:    time.Now(),
+			CreateTime:    timeutil.Now(),
 			InstID:        int64(bizID),
 		}
 		if err = db.Table(logRow.TableName()).Insert(ctx, logRow); err != nil {

@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/mongobyc"
 	"configcenter/src/storage/server/app/options"
@@ -110,7 +111,7 @@ func (tm *TxnManager) reconcileCache() {
 		case <-ticker.C:
 			tm.sessionMutex.Lock()
 			for _, session := range tm.cache {
-				if time.Since(session.Txninst.LastTime) > tm.txnLifeLimit {
+				if time.Since(session.Txninst.LastTime.Time) > tm.txnLifeLimit {
 					// ignore the abort error, cause the session will not be used again
 					go tm.Abort(session.Txninst.TxnID)
 				}
@@ -136,11 +137,11 @@ func (tm *TxnManager) reconcilePersistence() {
 			}
 
 			for _, txn := range txns {
-				if time.Since(txn.LastTime) > tm.txnLifeLimit {
+				if time.Since(txn.LastTime.Time) > tm.txnLifeLimit {
 					filter := dal.NewFilterBuilder().Eq(common.BKTxnIDField, txn.TxnID).Build()
 					update := types.Document{
 						"status":             types.TxStatusException,
-						common.LastTimeField: time.Now(),
+						common.LastTimeField: timeutil.Now(),
 					}
 					_, err := tm.db.Collection(common.BKTableNameTransaction).UpdateOne(tm.ctx, filter, update, nil)
 					if nil != err {
@@ -179,8 +180,8 @@ func (tm *TxnManager) CreateTransaction(requestID string) (*Session, error) {
 		RequestID:  requestID,
 		Processor:  tm.processor,
 		Status:     types.TxStatusOnProgress,
-		CreateTime: time.Now(),
-		LastTime:   time.Now(),
+		CreateTime: timeutil.Now(),
+		LastTime:   timeutil.Now(),
 	}
 
 	if !tm.enable {
@@ -247,7 +248,7 @@ func (tm *TxnManager) Commit(txnID string) error {
 	filter := dal.NewFilterBuilder().Eq(common.BKTxnIDField, txnID).Build()
 	update := types.Document{
 		"status":             session.Txninst.Status,
-		common.LastTimeField: time.Now(),
+		common.LastTimeField: timeutil.Now(),
 	}
 	_, err := tm.db.Collection(common.BKTableNameTransaction).UpdateOne(tm.ctx, filter, update, nil)
 	if nil != err {
@@ -277,7 +278,7 @@ func (tm *TxnManager) Abort(txnID string) error {
 	filter := dal.NewFilterBuilder().Eq(common.BKTxnIDField, txnID).Build()
 	update := types.Document{
 		"status":             session.Txninst.Status,
-		common.LastTimeField: time.Now(),
+		common.LastTimeField: timeutil.Now(),
 	}
 
 	_, err := tm.db.Collection(common.BKTableNameTransaction).UpdateOne(tm.ctx, filter, update, nil)

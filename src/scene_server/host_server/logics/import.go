@@ -17,13 +17,13 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
 	hutil "configcenter/src/scene_server/host_server/util"
@@ -259,7 +259,7 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 
 	}
 
-	input := make(map[string]interface{}, 2) //更新主机数据
+	input := make(map[string]interface{}, 2) // 更新主机数据
 	input["condition"] = map[string]interface{}{common.BKHostIDField: hostID}
 	input["data"] = host
 
@@ -284,7 +284,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 	if nil != err {
 		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("import_row_int_error_str", index, err.Error()))
 	}
-	host[common.CreateTimeField] = time.Now().UTC()
+	host[common.CreateTimeField] = timeutil.Now()
 	result, err := h.CoreAPI.HostController().Host().AddHost(context.Background(), h.pheader, host)
 	if err != nil || (err == nil && !result.Result) {
 		blog.Errorf("add host by ip:%s, err:%v, reply err:%s", ip, err, result.ErrMsg)

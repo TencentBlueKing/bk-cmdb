@@ -26,6 +26,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/storage/dal"
 
 	"github.com/rs/xid"
@@ -50,8 +51,8 @@ type HostSnap struct {
 	hostChanName []string
 	msgChan      chan string
 	maxSize      int
-	ts           time.Time
-	lastMesgTs   time.Time
+	ts           timeutil.Time
+	lastMesgTs   timeutil.Time
 	isMaster     bool
 	sync.Mutex
 	interrupt     chan error
@@ -94,7 +95,7 @@ func NewHostSnap(ctx context.Context, chanName []string, maxSize int, redisCli, 
 		snapCli:       snapCli,
 		ctx:           ctx,
 		db:            db,
-		ts:            time.Now(),
+		ts:            timeutil.Now(),
 		id:            xid.New().String()[5:],
 		maxconcurrent: maxconcurrent,
 		wg:            &sync.WaitGroup{},
@@ -156,7 +157,7 @@ func (h *HostSnap) Run() {
 		case msg = <-h.msgChan:
 
 			h.Lock()
-			h.ts = time.Now()
+			h.ts = timeutil.Now()
 			msgs = make([]string, 0, h.maxSize*2)
 			timeoutCh := time.After(time.Second)
 			msgs = append(msgs, msg)
@@ -203,7 +204,7 @@ func (h *HostSnap) Run() {
 var routeCnt = int64(0)
 var handleCnt = int64(0)
 var handlelock = sync.Mutex{}
-var handlets = time.Now()
+var handlets = timeutil.Now()
 
 func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 	defer atomic.AddInt64(&routeCnt, -1)
@@ -215,9 +216,9 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 		handlelock.Lock()
 		handleCnt++
 		if handleCnt%10000 == 0 {
-			blog.Infof("handle rate: %d/sec", int(float64(handleCnt)/time.Now().Sub(handlets).Seconds()))
+			blog.Infof("handle rate: %d/sec", int(float64(handleCnt)/timeutil.Now().Sub(handlets.Time).Seconds()))
 			handleCnt = 0
-			handlets = time.Now()
+			handlets = timeutil.Now()
 		}
 		handlelock.Unlock()
 		select {
@@ -546,7 +547,7 @@ func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
 		}
 	}()
 
-	var ts = time.Now()
+	var ts = timeutil.Now()
 	var cnt int64
 	blog.Infof("subcribing channel %v", chanName)
 	for {
@@ -582,13 +583,13 @@ func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
 		if chanlen != 0 && chanlen%10 == 0 {
 			blog.Infof("buff len %d", chanlen)
 		}
-		h.lastMesgTs = time.Now()
+		h.lastMesgTs = timeutil.Now()
 		h.msgChan <- msg.Payload
 		cnt++
 		if cnt%10000 == 0 {
-			blog.Infof("receive rate: %d/sec", int(float64(cnt)/time.Now().Sub(ts).Seconds()))
+			blog.Infof("receive rate: %d/sec", int(float64(cnt)/timeutil.Now().Sub(ts.Time).Seconds()))
 			cnt = 0
-			ts = time.Now()
+			ts = timeutil.Now()
 		}
 	}
 }
@@ -722,7 +723,7 @@ func (h *HostSnap) healthCheck(closeChan chan struct{}) {
 			if err := h.snapCli.Ping().Err(); err != nil {
 				channelstatus = common.CCErrHostGetSnapshotChannelClose
 				blog.Errorf("snap redis server connection error: %s", err.Error())
-			} else if time.Now().Sub(h.lastMesgTs) > time.Minute {
+			} else if timeutil.Now().Sub(h.lastMesgTs.Time) > time.Minute {
 				blog.Errorf("snapchannel was empty in last 1 min ")
 				channelstatus = common.CCErrHostGetSnapshotChannelEmpty
 			} else {

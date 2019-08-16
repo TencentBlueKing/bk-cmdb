@@ -15,15 +15,15 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"time"
-
-	"github.com/emicklei/go-restful"
-	"github.com/gin-gonic/gin/json"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin/json"
 )
 
 func (ps *ProctrlServer) AddOperateTaskInfo(req *restful.Request, resp *restful.Response) {
@@ -43,7 +43,7 @@ func (ps *ProctrlServer) AddOperateTaskInfo(req *restful.Request, resp *restful.
 		return
 	}
 	insts := make([]interface{}, 0)
-	ts := time.Now().UTC()
+	ts := timeutil.Now()
 	for _, item := range input {
 		item.OwnerID = util.GetOwnerID(req.Request.Header)
 		item.User = util.GetUser(req.Request.Header)

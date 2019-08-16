@@ -13,9 +13,8 @@
 package metadata
 
 import (
-	"time"
-
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/timeutil"
 )
 
 type HostLockRequest struct {
@@ -34,11 +33,11 @@ type HostLockResultResponse struct {
 }
 
 type HostLockData struct {
-	User       string    `json:"bk_user" bson:"bk_user"`
-	IP         string    `json:"bk_host_innerip" bson:"bk_host_innerip"`
-	CloudID    int64     `json:"bk_cloud_id" bson:"bk_cloud_id"`
-	CreateTime time.Time `json:"create_time" bson:"create_time"`
-	OwnerID    string    `json:"-" bson:"bk_supplier_account"`
+	User       string        `json:"bk_user" bson:"bk_user"`
+	IP         string        `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	CloudID    int64         `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	CreateTime timeutil.Time `json:"create_time" bson:"create_time"`
+	OwnerID    string        `json:"-" bson:"bk_supplier_account"`
 }
 
 type HostLockQueryResponse struct {
