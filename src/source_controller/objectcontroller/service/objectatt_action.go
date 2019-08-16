@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 
 	"github.com/bitly/go-simplejson"
@@ -207,7 +208,7 @@ func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	js.Set(common.LastTimeField, util.GetCurrentTimeStr())
+	js.Set(common.LastTimeField, timeutil.GetCurrentTimeStr())
 
 	// decode json string
 	data, jsErr := js.Map()

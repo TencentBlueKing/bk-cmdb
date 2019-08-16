@@ -20,7 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/storage/dal"
 	ccredis "configcenter/src/storage/dal/redis"
 	daltypes "configcenter/src/storage/types"
@@ -96,7 +96,7 @@ func (th *TxnHandler) watchTransaction() {
 
 func (th *TxnHandler) fetchTimeout() {
 	defer th.wg.Done()
-	ticker := util.NewTicker(time.Second * 60)
+	ticker := timeutil.NewTicker(time.Second * 60)
 	opt := redis.ZRangeBy{
 		Min: "-inf",
 	}

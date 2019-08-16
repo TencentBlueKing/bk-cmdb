@@ -10,18 +10,19 @@
  * limitations under the License.
  */
 
-package util
+package timeutil
 
 import (
 	"time"
 
-	"github.com/coccyx/timeparser"
-
 	"configcenter/src/common"
+	"configcenter/src/common/util"
+
+	"github.com/coccyx/timeparser"
 )
 
 var (
-	//需要转换的时间的标志
+	// 需要转换的时间的标志
 	convTimeFields []string = []string{common.CreateTimeField, common.LastTimeField}
 )
 
@@ -54,7 +55,8 @@ func convTimeItem(item interface{}) (interface{}, error) {
 						break
 					}
 				}
-				if !timeTypeOk { //如果当前不需要转换，递归转
+				// 如果当前不需要转换，递归转
+				if !timeTypeOk {
 					arrItem[key], _ = convTimeItem(value)
 					continue
 				}
@@ -91,7 +93,7 @@ func convTimeItem(item interface{}) (interface{}, error) {
 			item = arrItem
 		}
 	case []interface{}:
-		//如果是数据，递归转换所有子项
+		// 如果是数据，递归转换所有子项
 		arrItem, ok := item.([]interface{})
 		if true == ok {
 			for index, value := range arrItem {
@@ -141,7 +143,7 @@ func convItemToTime(val interface{}) (interface{}, error) {
 		return ts.UTC(), nil
 
 	default:
-		ts, err := GetInt64ByInterface(val)
+		ts, err := util.GetInt64ByInterface(val)
 		if nil != err {
 			return 0, err
 		}

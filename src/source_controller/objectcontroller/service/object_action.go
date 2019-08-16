@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 
 	simplejson "github.com/bitly/go-simplejson"
@@ -79,7 +80,6 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 	blog.Errorf("failed to insert the object, error info is %s", err.Error())
 
 	resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
-
 }
 
 // DeleteObject 删除Object
@@ -117,7 +117,6 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 			return
 		}
-
 	}
 
 	condition = util.SetModOwner(condition, ownerID)
@@ -168,7 +167,7 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 	}
 
 	// update object into storage
-	js.Set(common.LastTimeField, util.GetCurrentTimeStr())
+	js.Set(common.LastTimeField, timeutil.GetCurrentTimeStr())
 
 	// decode json string
 	data, jsErr := js.Map()
@@ -188,7 +187,6 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 
 	// success
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
-
 }
 
 // SelectObjects 查询所有主机信息
@@ -247,5 +245,4 @@ func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) 
 
 	// success
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: results})
-
 }

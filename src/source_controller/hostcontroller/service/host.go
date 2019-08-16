@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/eventclient"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/timeutil"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -80,7 +81,7 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	condition := util.ConvParamsTime(dat.Condition)
+	condition := timeutil.ConvParamsTime(dat.Condition)
 	condition = util.SetModOwner(condition, ownerID)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 	result, err := s.Logics.GetObjectByCondition(ctx, lang, common.BKInnerObjIDHost, fieldArr, condition, dat.Sort, dat.Start, dat.Limit)
