@@ -54,12 +54,12 @@
             </bk-table-column>
             <bk-table-column prop="operation" :label="$t('操作')" v-if="updateAuth">
                 <template slot-scope="{ row }">
-                    <button class="text-primary mr10"
+                    <button class="text-primary mr10 operation-btn"
                         :disabled="!isFieldEditable(row)"
                         @click.stop="editField(row)">
                         {{$t('编辑')}}
                     </button>
-                    <button class="text-primary"
+                    <button class="text-primary operation-btn"
                         :disabled="!isFieldEditable(row)"
                         @click.stop="deleteField(row)">
                         {{$t('删除')}}
@@ -305,5 +305,9 @@
     }
     .text-primary {
         cursor: pointer;
+    }
+    .operation-btn[disabled] {
+        color: #dcdee5 !important;
+        opacity: 1 !important;
     }
 </style>

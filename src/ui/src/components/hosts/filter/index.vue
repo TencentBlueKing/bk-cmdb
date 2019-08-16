@@ -66,7 +66,7 @@
                             v-else-if="filterItem.bk_property_type === 'bool'"
                             v-model="filterItem.value">
                         </cmdb-form-bool-input>
-                        <cmdb-search-input class="filter-value"
+                        <cmdb-search-input class="filter-value" :style="{ '--index': 99 - index }"
                             v-else-if="['singlechar', 'longchar'].includes(filterItem.bk_property_type)"
                             v-model="filterItem.value">
                         </cmdb-search-input>
@@ -502,6 +502,11 @@
         }
         .filter-value {
             flex: 1;
+            &.cmdb-search-input {
+                /deep/ .search-input-wrapper {
+                    z-index: var(--index);
+                }
+            }
         }
     }
     .filter-options {
