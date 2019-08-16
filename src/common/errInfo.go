@@ -426,8 +426,8 @@ const (
 	CCErrTopoArchiveBusinessHasHost            = 1101087
 
 	// full text find err
-	CCErrorTopoFullTextFindErr              = 1101085
-	CCErrorTopoFullTextClientNotInitialized = 1101086
+	CCErrorTopoFullTextFindErr              = 1101088
+	CCErrorTopoFullTextClientNotInitialized = 1101089
 
 	// object controller 1102XXX
 
