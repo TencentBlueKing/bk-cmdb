@@ -41,7 +41,7 @@
             v-model="createInfo.show"
             :show-footer="false"
             :mask-close="false"
-            :width="createInfo.nextModelId === 'module' ? 580 : 400"
+            :width="580"
             @after-leave="handleAfterCancelCreateNode"
             @cancel="handleCancelCreateNode">
             <template v-if="createInfo.nextModelId === 'module'">
