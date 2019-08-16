@@ -157,7 +157,10 @@
             },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, {})
-                this.refrenceValues = this.$tools.clone(this.values)
+                const timer = setTimeout(() => {
+                    this.refrenceValues = this.$tools.clone(this.values)
+                    clearTimeout(timer)
+                })
             },
             initEditableStatus () {
                 const editable = {}
