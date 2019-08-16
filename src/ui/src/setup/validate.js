@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import { language } from '@/i18n'
 import veeValidate, { Validator } from 'vee-validate'
+import cnMessages from 'vee-validate/dist/locale/zh_CN'
 import stringLength from 'utf8-byte-length'
 
 const customRules = {
@@ -194,7 +195,11 @@ const dictionary = {
 for (const rule in customRules) {
     Validator.extend(rule, customRules[rule])
 }
-Validator.localize(language)
+if (language === 'en') {
+    Validator.localize(language)
+} else {
+    Validator.localize(language, cnMessages)
+}
 Vue.use(veeValidate, {
     locale: language,
     dictionary
