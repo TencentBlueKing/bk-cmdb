@@ -508,7 +508,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				removed[processName] = append(removed[processName], recorder{
 					ProcessID:       relation.ProcessID,
 					ProcessName:     processName,
-					ServiceInstance: &serviceInstance,
+					ServiceInstance: &serviceInstances.Info[idx],
 				})
 				continue
 			}
@@ -519,7 +519,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				unchanged[relation.ProcessTemplateID] = append(unchanged[relation.ProcessTemplateID], recorder{
 					ProcessID:       relation.ProcessID,
 					ProcessName:     *process.ProcessName,
-					ServiceInstance: &serviceInstance,
+					ServiceInstance: &serviceInstances.Info[idx],
 				})
 				continue
 			}
@@ -528,7 +528,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 			changed[relation.ProcessTemplateID] = append(changed[relation.ProcessTemplateID], recorder{
 				ProcessID:        relation.ProcessID,
 				ProcessName:      *process.ProcessName,
-				ServiceInstance:  &serviceInstance,
+				ServiceInstance:  &serviceInstances.Info[idx],
 				ChangedAttribute: changedAttributes,
 			})
 		}
@@ -564,9 +564,9 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		processTemplateName := records[0].ProcessName
 
 		serviceInstances := make([]metadata.ServiceDifferenceDetails, 0)
-		for _, record := range records {
+		for idx := range records {
 			item := metadata.ServiceDifferenceDetails{
-				ServiceInstance: *record.ServiceInstance,
+				ServiceInstance: *records[idx].ServiceInstance,
 			}
 			serviceInstances = append(serviceInstances, item)
 		}
