@@ -286,7 +286,7 @@
     }
     .property-popover {
         display: inline-block;
-        /deep/.bk-tooltip-ref {
+        /deep/ .bk-tooltip-ref {
             outline: none;
         }
     }
