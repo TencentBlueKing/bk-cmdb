@@ -86,12 +86,12 @@
                         :properties="filterProperties"
                         :show-scope="showScope">
                     </cmdb-host-filter>
-                    <bk-button class="options-button ml10"
+                    <bk-button class="options-button icon-btn ml10"
                         icon="icon-cc-setting"
                         v-bk-tooltips.top="$t('列表显示属性配置')"
                         @click="columnsConfig.show = true">
                     </bk-button>
-                    <bk-button class="options-button ml10" v-if="showHistory"
+                    <bk-button class="options-button icon-btn ml10" v-if="showHistory"
                         v-bk-tooltips="$t('查看删除历史')"
                         icon="icon-cc-history"
                         @click="routeToHistory">
@@ -666,6 +666,11 @@
                 margin: 0 10px;
                 background-color: #DCDEE5;
             }
+        }
+        .icon-btn {
+            width: 32px;
+            padding: 0;
+            line-height: 14px;
         }
         .options-button{
             position: relative;

@@ -159,7 +159,7 @@
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
                 </bk-tab-panel>
-                <bk-tab-panel name="relevance" :label="$t('关联')" :visible="['update', 'details'].includes(attribute.type)">
+                <bk-tab-panel name="relevance" :label="$t('关联Relation')" :visible="['update', 'details'].includes(attribute.type)">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         :auth="$OPERATION.U_INST"

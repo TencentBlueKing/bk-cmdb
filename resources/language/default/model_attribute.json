@@ -1,0 +1,10 @@
+{
+
+    "model_attr_bk_property_id":"唯一标识",
+    "model_attr_bk_property_name": "名称",
+    "model_attr_option_regex":"正则校验",
+    "model_attr_uint": "单位",
+    "model_attr_placeholder":"用户提示",
+
+    "":""
+}
