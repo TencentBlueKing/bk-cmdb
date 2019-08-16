@@ -117,7 +117,6 @@ func validModelConfigPrivi(ctx context.Context, modelPrivi string, method string
 		if util.InArray(types.BK_CC_CREATE, priviArr) && !util.InArray(types.BK_CC_SEARCH, pathArr) {
 			return true
 		}
-
 	}
 
 	// valid delete privilege
