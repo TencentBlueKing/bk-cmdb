@@ -48,6 +48,10 @@ func (c *Collection) Find(filter dal.Filter) dal.Find {
 }
 
 // Update 更新数据
+func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interface{}) error {
+	panic("unimplemented Upsert operation")
+}
+
 func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
 	// build msg
 	msg := types.OPUpdateOperation{}
