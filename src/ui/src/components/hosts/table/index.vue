@@ -50,10 +50,9 @@
                 </slot>
             </div>
             <div class="options-right clearfix">
-                <div class="fl">
+                <div class="fl" v-if="showScope">
                     <i class="options-split"></i>
                     <bk-select class="options-collection"
-                        v-if="showScope"
                         v-model="scope"
                         :clearable="false">
                         <bk-option id="all" :name="$t('全部主机')"></bk-option>

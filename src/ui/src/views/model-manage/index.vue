@@ -1,5 +1,5 @@
 <template>
-    <div class="group-wrapper">
+    <div class="group-wrapper" :style="{ 'padding-top': showFeatureTips ? '114px' : '72px' }">
         <cmdb-main-inject
             :style="{ 'padding-top': showFeatureTips ? '10px' : '' }"
             inject-type="prepend"
@@ -460,7 +460,7 @@
 
 <style lang="scss" scoped>
     .group-wrapper {
-        padding: 122px 0 20px 0;
+        padding: 72px 0 20px 0;
     }
     .btn-group {
         position: absolute;

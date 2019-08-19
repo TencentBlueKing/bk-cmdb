@@ -1,17 +1,18 @@
 <template>
     <div class="service-table-layout">
-        <div class="title">
-            <div class="fl" @click="localExpanded = !localExpanded">
+        <div class="title" @click="localExpanded = !localExpanded">
+            <div class="fl">
                 <i class="bk-icon icon-down-shape" v-if="localExpanded"></i>
                 <i class="bk-icon icon-right-shape" v-else></i>
                 {{name}}
                 <i class="bk-icon icon-exclamation" v-if="showTips && !processList.length" v-bk-tooltips="tooltips"></i>
             </div>
             <div class="fr">
-                <i class="bk-icon icon-close" v-if="deletable" @click="handleDelete"></i>
+                <i class="bk-icon icon-close" v-if="deletable" @click.stop="handleDelete"></i>
             </div>
         </div>
         <bk-table
+            v-show="localExpanded"
             :data="processFlattenList">
             <bk-table-column v-for="column in header"
                 :key="column.id"
@@ -328,6 +329,7 @@
         line-height: 40px;
         border-radius: 2px 2px 0 0;
         background-color: #DCDEE5;
+        cursor: pointer;
         .bk-icon {
             font-size: 12px;
             font-weight: bold;

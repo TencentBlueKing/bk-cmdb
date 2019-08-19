@@ -39,7 +39,7 @@
                 <bk-popover
                     ref="popoverCheckView"
                     :always="true"
-                    :width="210"
+                    :width="224"
                     theme="check-view-color"
                     placement="bottom-end">
                     <div slot="content" class="popover-main">
@@ -349,7 +349,9 @@
         z-index: 99;
     }
     .popover-main {
-        @include inlineBlock;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         .bk-icon {
             margin: 0 0 0 10px;
             cursor: pointer;
