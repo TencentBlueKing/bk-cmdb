@@ -9,7 +9,7 @@ const magicboxLanguageMap = {
 }
 
 i18n.mergeLocaleMessage(i18n.locale, magicboxLanguageMap[i18n.locale])
-
+magicbox.locale.use(magicboxLanguageMap[i18n.locale])
 Vue.use(magicbox, {
     'bk-sideslider': {
         quickClose: true,

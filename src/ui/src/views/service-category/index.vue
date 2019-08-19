@@ -15,7 +15,7 @@
                         <category-input
                             ref="editInput"
                             :input-ref="'categoryInput'"
-                            :placeholder="$t('ServiceCategory[\'请输入一级分类\']')"
+                            :placeholder="$t('请输入一级分类')"
                             name="categoryName"
                             v-validate="'required|namedCharacter'"
                             v-model="mainCategoryName"
@@ -39,6 +39,7 @@
                                     <i class="icon-cc-edit-shape"></i>
                                 </bk-button>
                             </span>
+                            <span v-else class="built-in-sign">{{$t('内置')}}</span>
                         </div>
                         <cmdb-dot-menu class="dot-menu-operation" v-if="!mainCategory['is_built_in']">
                             <div class="menu-operational">
@@ -94,9 +95,12 @@
                             @on-cancel="handleCloseAddChild">
                         </category-input>
                     </div>
-                    <div :class="['child-item', editChildStatus === childCategory['id'] ? 'child-edit' : '']"
-                        v-for="(childCategory, childIndex) in mainCategory['child_category_list']"
-                        :key="childIndex">
+                    <div v-for="(childCategory, childIndex) in mainCategory['child_category_list']"
+                        :key="childIndex"
+                        :class="['child-item', {
+                            'child-edit': editChildStatus === childCategory['id'],
+                            'is-built-in': childCategory['is_built_in']
+                        }]">
                         <category-input
                             v-if="editChildStatus === childCategory['id']"
                             class="child-input"
@@ -154,7 +158,7 @@
                         <category-input
                             ref="addCategoryInput"
                             :input-ref="'categoryInput'"
-                            :placeholder="$t('ServiceCategory[\'请输入一级分类\']')"
+                            :placeholder="$t('请输入一级分类')"
                             name="categoryName"
                             v-validate="'required|namedCharacter'"
                             v-model="categoryName"
@@ -449,6 +453,7 @@
                 display: flex;
                 align-items: center;
                 /deep/ .cagetory-input .bk-form-input{
+                    font-size: 14px;
                     color: #63656e;
                     background-color: transparent !important;
                     border: none;
@@ -469,6 +474,18 @@
                 }
                 &:hover .icon-cc-edit-shape {
                     display: inline !important;
+                }
+                .built-in-sign {
+                    display: inline-block;
+                    height: 19px;
+                    line-height: 18px;
+                    margin: 0 0 0 4px;
+                    padding: 0 6px;
+                    font-size: 12px;
+                    color: #ffffff;
+                    text-align: center;
+                    background-color: #d3d5dd;
+                    border-radius: 2px;
                 }
             }
             .dot-menu-operation {
@@ -495,7 +512,7 @@
                         height: 32px;
                     }
                 }
-                &:hover {
+                &:hover:not(.is-built-in) {
                     .child-title {
                         padding-right: 10px;
                         background-color: #fafbfd;
@@ -556,7 +573,7 @@
                     width: 100%;
                 }
                 .child-input {
-                    /deep/.bk-form-input {
+                    /deep/ .bk-form-input {
                         vertical-align: top;
                         border: 1px solid #c4c6cc;
                         background-color: #ffffff !important;

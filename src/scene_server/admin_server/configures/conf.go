@@ -13,13 +13,13 @@
 package configures
 
 import (
-	"encoding/json"
-	"path/filepath"
-
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
@@ -134,6 +134,7 @@ func (cc *ConfCenter) writeLanguageRes2Center(languageres string) error {
 // file is [modulename].conf \
 func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 	modules := make([]string, 0)
+	confFileSuffix := ".conf"
 
 	modules = append(modules, types.CC_MODULE_APISERVER)
 	modules = append(modules, types.CC_MODULE_DATACOLLECTION)
@@ -148,8 +149,24 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 	modules = append(modules, types.CC_MODULE_SYNCHRONZESERVER)
 	modules = append(modules, types.CC_MODULE_OPERATION)
 
+	dirSubList, err := ioutil.ReadDir(confRootPath)
+	if err != nil {
+		blog.Errorf("get configure directory file error. err:%s", confRootPath)
+		return err
+	}
+	for _, item := range dirSubList {
+		if item.IsDir() {
+			continue
+		}
+
+		if strings.HasPrefix(item.Name(), "cc_") && strings.HasSuffix(item.Name(), confFileSuffix) {
+			modules = append(modules, strings.Replace(item.Name(), ".conf", "", 1))
+		}
+	}
+
 	for _, moduleName := range modules {
-		filePath := filepath.Join(confRootPath, moduleName+".conf")
+
+		filePath := filepath.Join(confRootPath, moduleName+confFileSuffix)
 		key := types.CC_SERVCONF_BASEPATH + "/" + moduleName
 		if err := cc.writeConfigure(filePath, key); err != nil {
 			blog.Warnf("fail to write configure of module(%s) into center", moduleName)

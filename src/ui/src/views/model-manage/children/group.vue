@@ -6,7 +6,7 @@
             <div class="group-header clearfix">
                 <div class="header-title fl">
                     <template v-if="group.info['bk_group_id'] !== 'none' && group === groupInEditing">
-                        <bk-input type="text" class="title-input cmdb-form-input"
+                        <bk-input type="text" class="title-input"
                             ref="titleInput"
                             v-model.trim="groupNameInEditing">
                         </bk-input>
@@ -595,9 +595,12 @@
             }
             .title-input {
                 width: 180px;
-                height: 29px;
-                line-height: 27px;
-                margin: -4px 0 0 0;
+                display: inline-block;
+                top: -5px;
+                /deep/ .bk-form-input {
+                    height: 28px;
+                    line-height: 28px;
+                }
             }
             .title-input-button {
                 display: inline-block;
@@ -735,12 +738,15 @@
             }
         }
         .add-group-input {
-            font-size: 16px;
+            font-size: 0;
             display: inline-block;
             vertical-align: middle;
             width: 180px;
-            height: 29px;
-            line-height: 27px;
+            /deep/ .bk-form-input {
+                font-size: 14px;
+                height: 30px;
+                line-height: 30px;
+            }
         }
         .add-group-button {
             display: inline-block;

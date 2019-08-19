@@ -49,9 +49,9 @@
                 theme="custom-color"
                 placement="bottom-end">
                 <div slot="content" class="tooltips-main clearfix">
-                    <h3>管理员后台搬到这里了</h3>
-                    <p>在管理员后台，可以对跨业务的资源如硬件设备，网络设备等进行管理</p>
-                    <span class="fr" @click="handleCloseTips">我知道了</span>
+                    <h3>{{$t('管理员后台提示')}}</h3>
+                    <p>{{$t('管理员后台描述')}}</p>
+                    <span class="fr" @click="handleCloseTips">{{$t('我知道了')}}</span>
                 </div>
                 <div class="admin" @click="toggleAdminView">
                     {{isAdminView ? $t('返回业务管理') : $t('管理员后台')}}

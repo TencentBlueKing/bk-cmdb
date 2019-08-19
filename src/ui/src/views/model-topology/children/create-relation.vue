@@ -2,7 +2,7 @@
     <div>
         <label class="form-label">
             <span class="label-text">
-                {{$t('源模型"]')}}
+                {{$t('源模型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
@@ -56,7 +56,7 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('mapping') }">
-                <cmdb-selector
+                <cmdb-selector style="width: 100%;"
                     :list="mappingList"
                     v-validate="'required'"
                     name="mapping"

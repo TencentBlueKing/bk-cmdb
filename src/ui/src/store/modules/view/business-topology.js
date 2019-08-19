@@ -5,6 +5,7 @@ const state = {
     serviceTemplateMap: {},
     processTemplateMap: {},
     categoryMap: {},
+    instanceIpMap: {},
     selectedNode: null,
     selectedNodeInstance: null,
     hostSelectorVisible: false,
@@ -54,10 +55,16 @@ const mutations = {
         state.serviceTemplateMap = {}
         state.processTemplateMap = {}
         state.categoryMap = {}
+        state.instanceIpMap = {}
         state.selectedNode = null
         state.selectedNodeInstance = null
         state.hostSelectorVisible = false
         state.selectedHost = []
+    },
+    setInstanceIp (state, { hostId, res }) {
+        console.log(hostId)
+        console.log(res)
+        Vue.set(state.instanceIpMap, hostId, res)
     }
 }
 

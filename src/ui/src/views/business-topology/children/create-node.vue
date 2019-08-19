@@ -1,7 +1,7 @@
 <template>
     <div class="node-create-layout">
         <h2 class="node-create-title">{{$t('新建节点')}}</h2>
-        <div class="node-create-path">{{topoPath}}</div>
+        <div class="node-create-path">{{$t('添加节点已选择')}}：{{topoPath}}</div>
         <div class="node-create-form">
             <div class="form-group"
                 v-for="(property, index) in sortedProperties"
@@ -123,13 +123,13 @@
         position: relative;
     }
     .node-create-title {
-        padding: 20px 20px 0;
+        padding: 20px 26px 0;
         line-height: 30px;
         font-size: 22px;
         color: #333948;
     }
     .node-create-path {
-        padding: 20px;
+        padding: 12px 26px 20px;
         font-size: 14px;
     }
     .node-create-form {
@@ -137,7 +137,7 @@
         @include scrollbar-y;
         .form-group {
             position: relative;
-            padding: 0 20px 16px;
+            padding: 0 26px 16px;
             .form-label {
                 position: relative;
                 display: inline-block;

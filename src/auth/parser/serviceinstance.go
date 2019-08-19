@@ -37,6 +37,14 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:          meta.ProcessServiceInstance,
 		ResourceAction:        meta.FindMany,
 	}, {
+		Name:                  "findServiceInstanceWebPattern",
+		Description:           "list 服务实例",
+		Pattern:               "/api/v3/findmany/proc/web/service_instance",
+		HTTPMethod:            http.MethodPost,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceInstance,
+		ResourceAction:        meta.FindMany,
+	}, {
 		Name:                  "findServiceInstanceDetailsPattern",
 		Description:           "list 服务实例详情",
 		Pattern:               "/api/v3/findmany/proc/service_instance/details",

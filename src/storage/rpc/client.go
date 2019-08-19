@@ -267,11 +267,11 @@ func (c *client) handleRequest(req *Message) {
 	c.messageMutex.Unlock()
 
 	c.send <- req
-	blog.V(5).Infof("[rpc client]sent message data: %s", req.Data)
+	blog.V(7).Infof("[rpc client]sent message data: %s", req.Data)
 }
 
 func (c *client) handleResponse(resp *Message) {
-	blog.V(5).Infof("[rpc client]receive message data: %s", resp.Data)
+	blog.V(7).Infof("[rpc client]receive message data: %s", resp.Data)
 	resp.codec = c.codec
 	if resp.transportErr != nil {
 		// Terminate all in flight

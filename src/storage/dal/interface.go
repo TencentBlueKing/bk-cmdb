@@ -90,6 +90,8 @@ type Table interface {
 	Insert(ctx context.Context, docs interface{}) error
 	// Update 更新数据
 	Update(ctx context.Context, filter Filter, doc interface{}) error
+	// update or insert data
+	Upsert(ctx context.Context, filter Filter, doc interface{}) error
 	// UpdateMultiModel  data based on operators.
 	UpdateMultiModel(ctx context.Context, filter Filter, updateModel ...ModeUpdate) error
 	// Delete 删除数据

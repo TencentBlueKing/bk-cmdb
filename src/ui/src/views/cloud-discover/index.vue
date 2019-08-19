@@ -45,7 +45,7 @@
                 <template slot-scope="{ row }">
                     <span v-if="row.bk_last_sync_time === ''">--</span>
                     <span v-else>
-                        {{$t('新增')}} ({{row.new_add}}) / {{$t('变更')}} ({{row.attr_changed}})
+                        {{$t('新增')}} ({{row.new_add}}) / {{$t('变更update')}} ({{row.attr_changed}})
                     </span>
                 </template>
             </bk-table-column>

@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import { language } from '@/i18n'
 import veeValidate, { Validator } from 'vee-validate'
+import cnMessages from 'vee-validate/dist/locale/zh_CN'
 import stringLength from 'utf8-byte-length'
 
 const customRules = {
@@ -145,7 +146,7 @@ const dictionary = {
             namedCharacter: () => '格式不正确，特殊符号仅支持(:_-)',
             min_value: () => '该值小于最小值',
             max_value: () => '该值大于最大值',
-            instanceTag: () => '请输入正确的内容',
+            instanceTag: () => '请输入英文 / 数字',
             repeatTagKey: () => '标签键不能重复'
         },
         custom: {
@@ -180,7 +181,7 @@ const dictionary = {
             namedCharacter: () => 'Special symbols only support(:_-)',
             min_value: () => 'This value is less than the minimum',
             max_value: () => 'This value is greater than the maximum',
-            instanceTag: () => 'Please enter the correct content',
+            instanceTag: () => 'Please enter English / Number',
             repeatTagKey: () => 'Label key cannot be repeated'
         },
         custom: {
@@ -194,7 +195,11 @@ const dictionary = {
 for (const rule in customRules) {
     Validator.extend(rule, customRules[rule])
 }
-Validator.localize(language)
+if (language === 'en') {
+    Validator.localize(language)
+} else {
+    Validator.localize(language, cnMessages)
+}
 Vue.use(veeValidate, {
     locale: language,
     dictionary

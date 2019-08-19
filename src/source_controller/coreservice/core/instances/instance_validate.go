@@ -108,8 +108,10 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		}
 		property, ok := valid.propertys[key]
 		if !ok {
-			blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, ctx.ReqID)
-			return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
+			delete(instanceData, key)
+			continue
+			// blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, ctx.ReqID)
+			// return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		fieldType := property.PropertyType
 		switch fieldType {

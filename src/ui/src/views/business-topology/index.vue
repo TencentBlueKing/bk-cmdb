@@ -1,5 +1,5 @@
 <template>
-    <div class="layout">
+    <div class="info-layout">
         <cmdb-resize-layout class="tree-layout fl"
             direction="right"
             :handler-offset="3"
@@ -61,7 +61,8 @@
 </script>
 
 <style lang="scss" scoped>
-    .layout {
+    .info-layout {
+        min-width: 1200px;
         height: 100%;
         padding: 0;
     }
@@ -77,11 +78,15 @@
         .bk-tab {
             height: 100%;
         }
-        /deep/.bk-tab-section {
+        .layout {
+            height: 100%;
+            padding: 0;
+        }
+        /deep/ .bk-tab-section {
             height: calc(100% - 42px);
             padding-top: 14px;
         }
-        /deep/.bk-tab-content {
+        /deep/ .bk-tab-content {
             height: 100%;
         }
     }

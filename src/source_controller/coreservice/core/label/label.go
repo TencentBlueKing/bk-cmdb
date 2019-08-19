@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/selector"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -39,9 +40,26 @@ func (p *labelOperation) AddLabel(ctx core.ContextParams, tableName string, opti
 		return ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "label."+field)
 	}
 
+	idField := common.GetInstIDField(tableName)
+
+	// check all instance validate
+	option.InstanceIDs = util.IntArrayUnique(option.InstanceIDs)
+	countFilter := map[string]interface{}{
+		idField: map[string]interface{}{
+			common.BKDBIN: option.InstanceIDs,
+		},
+	}
+	if count, err := p.dbProxy.Table(tableName).Find(countFilter).Count(ctx.Context); err != nil {
+		blog.ErrorJSON("AddLabel failed, db count instances failed, filter: %s, err: %s, rid: %s", countFilter, err.Error(), ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	} else if count != uint64(len(option.InstanceIDs)) {
+		blog.ErrorJSON("AddLabel failed, some instance not valid, filter: %s, result count: %d, rid: %s", countFilter, count, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "instance_ids")
+	}
+
 	for _, instanceID := range option.InstanceIDs {
 		filter := map[string]interface{}{
-			common.BKFieldID: instanceID,
+			idField: instanceID,
 		}
 		data := &selector.LabelInstance{}
 		if err := p.dbProxy.Table(tableName).Find(filter).One(ctx.Context, data); err != nil {
@@ -62,9 +80,26 @@ func (p *labelOperation) AddLabel(ctx core.ContextParams, tableName string, opti
 }
 
 func (p *labelOperation) RemoveLabel(ctx core.ContextParams, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder {
+	idField := common.GetInstIDField(tableName)
+
+	// check all instance validate
+	option.InstanceIDs = util.IntArrayUnique(option.InstanceIDs)
+	countFilter := map[string]interface{}{
+		idField: map[string]interface{}{
+			common.BKDBIN: option.InstanceIDs,
+		},
+	}
+	if count, err := p.dbProxy.Table(tableName).Find(countFilter).Count(ctx.Context); err != nil {
+		blog.ErrorJSON("RemoveLabel failed, db count instances failed, filter: %s, err: %s, rid: %s", countFilter, err.Error(), ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	} else if count != uint64(len(option.InstanceIDs)) {
+		blog.ErrorJSON("RemoveLabel failed, some instance not valid, filter: %s, result count: %d, rid: %s", countFilter, count, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "instance_ids")
+	}
+
 	for _, instanceID := range option.InstanceIDs {
 		filter := map[string]interface{}{
-			common.BKFieldID: instanceID,
+			idField: instanceID,
 		}
 		data := &selector.LabelInstance{}
 		if err := p.dbProxy.Table(tableName).Find(filter).One(ctx.Context, data); err != nil {
