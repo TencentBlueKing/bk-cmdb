@@ -411,6 +411,7 @@ func (m *operationManager) UpdateInnerChartData(ctx core.ContextParams, reportTy
 func (m *operationManager) StatisticOperationLog(ctx core.ContextParams) (*metadata.StatisticInstOperation, error) {
 	lastTime := time.Now().AddDate(0, 0, -30)
 
+	innerObject := []string{"host", "biz", "set", "cloud", "module", "process"}
 	opt := mapstr.MapStr{}
 	opt[common.OperationDescription] = common.CreateObject
 	createCount, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(opt).Count(ctx)
@@ -420,7 +421,7 @@ func (m *operationManager) StatisticOperationLog(ctx core.ContextParams) (*metad
 	}
 	createInstCount := make([]metadata.StringIDCount, 0)
 	if createCount > 0 {
-		createPipe := []M{{"$match": M{"op_desc": "create object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": "$content.cur_data.bk_obj_id", "count": M{"$sum": 1}}}}
+		createPipe := []M{{"$match": M{"op_type": 1, "op_target": M{"$nin": innerObject}}}, {"$group": M{"_id": "$op_target", "count": M{"$sum": 1}}}}
 		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, createPipe, &createInstCount); err != nil {
 			blog.Errorf("aggregate: count create object fail, err: %v, rid", err, ctx.ReqID)
 			return nil, err
@@ -435,7 +436,7 @@ func (m *operationManager) StatisticOperationLog(ctx core.ContextParams) (*metad
 	}
 	deleteInstCount := make([]metadata.StringIDCount, 0)
 	if deleteCount > 0 {
-		deletePipe := []M{{"$match": M{"op_desc": "delete object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": "$content.pre_data.bk_obj_id", "count": M{"$sum": 1}}}}
+		deletePipe := []M{{"$match": M{"op_type": 3, "op_target": M{"$nin": innerObject}}}, {"$group": M{"_id": "$op_target", "count": M{"$sum": 1}}}}
 		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, deletePipe, &deleteInstCount); err != nil {
 			blog.Errorf("aggregate: count delete object fail, err: %v, rid: %v", err, ctx.ReqID)
 			return nil, err
@@ -450,7 +451,8 @@ func (m *operationManager) StatisticOperationLog(ctx core.ContextParams) (*metad
 	}
 	updateInstCount := make([]metadata.UpdateInstCount, 0)
 	if updateCount > 0 {
-		updatePipe := []M{{"$match": M{"op_desc": "update object", "op_time": M{"$gte": lastTime}}}, {"$group": M{"_id": M{"bk_obj_id": "$content.cur_data.bk_obj_id", "inst_id": "$content.cur_data.bk_inst_id"}, "count": M{"$sum": 1}}}}
+		updatePipe := []M{{"$match": M{"op_type": 2, "op_time": M{"$gte": lastTime}, "op_target": M{"$nin": innerObject}}},
+			{"$group": M{"_id": M{"bk_obj_id": "$op_target", "inst_id": "$inst_id"}, "count": M{"$sum": 1}}}}
 		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, updatePipe, &updateInstCount); err != nil {
 			blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, ctx.ReqID)
 			return nil, err
