@@ -174,10 +174,14 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 		innerCond.Field(common.BKModuleIDField).In(moduleIDS)
 	}
 
+	// module table don't have metadata field
+	params.MetaData = nil
 	return m.inst.DeleteInst(params, obj, innerCond, false)
 }
 
 func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {
+	// module table don't have metadata field
+	params.MetaData = nil
 	return m.inst.FindInst(params, obj, cond, false)
 }
 
@@ -188,5 +192,7 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 	innerCond.Field(common.BKSetIDField).Eq(setID)
 	innerCond.Field(common.BKModuleIDField).Eq(moduleID)
 
+	// module table don't have metadata field
+	params.MetaData = nil
 	return m.inst.UpdateInst(params, data, obj, innerCond, -1)
 }
