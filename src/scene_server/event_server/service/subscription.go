@@ -137,7 +137,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	if err = s.auth.RegisterResource(s.ctx, iamResource); err != nil {
 		blog.Errorf("register subscribe to iam failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
-		resp.WriteError(http.StatusInternalServerError, result)
+		resp.WriteError(http.StatusOK, result)
 		return
 	}
 
@@ -362,7 +362,6 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 	}
 
 	results := make([]metadata.Subscription, 0)
-	blog.Debug("selector:%+v, rid: %s", condition, rid)
 
 	if selErr := s.db.Table(common.BKTableNameSubscription).Find(condition).Fields(fields...).Sort(sortOption).Start(uint64(skip)).Limit(uint64(limit)).All(s.ctx, &results); nil != selErr {
 		blog.Errorf("select data failed, error information is %s, input:%v, rid: %s", selErr, data, rid)
