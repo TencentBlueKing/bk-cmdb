@@ -71,7 +71,7 @@
                         v-else
                         v-cursor="{
                             active: true,
-                            auth: [$OPERATION.U_EVENT]
+                            auth: [$OPERATION.D_EVENT]
                         }">
                         {{$t('删除')}}
                     </span>

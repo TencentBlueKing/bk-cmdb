@@ -261,6 +261,7 @@
             width: 100%;
             height: calc(100% + 60px);
             background: #fff;
+            z-index: 99;
             .back {
                 position: absolute;
                 right: -47px;
