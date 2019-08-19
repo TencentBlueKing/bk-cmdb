@@ -62,9 +62,12 @@ func (d *find) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRe
 	if msg.Sort != "" {
 		itemArr := strings.Split(msg.Sort, ",")
 		for _, item := range itemArr {
+			item := strings.TrimSpace(item)
 			if item != "" {
 				if item[0] == '-' && len(item) != 1 {
-					opt.Sort = append(opt.Sort, findopt.SortItem{Name: item[1:], Descending: true})
+					opt.Sort = append(opt.Sort, findopt.SortItem{Name: strings.TrimSpace(item[1:]), Descending: true})
+				} else if item[0] == '+' && len(item) != 1 {
+					opt.Sort = append(opt.Sort, findopt.SortItem{Name: strings.TrimSpace(item[1:]), Descending: false})
 				} else {
 					opt.Sort = append(opt.Sort, findopt.SortItem{Name: item, Descending: false})
 				}
