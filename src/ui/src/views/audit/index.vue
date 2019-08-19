@@ -351,7 +351,8 @@
             .title-name{
                 display: inline-block;
                 vertical-align: middle;
-                width: 40px;
+                min-width: 40px;
+                max-width: 48px;
                 font-size: 14px;
                 padding-right: 5px;
             }

@@ -1,7 +1,7 @@
 <template>
     <div class="node-create-layout">
         <h2 class="node-create-title">{{$t('新增模块')}}</h2>
-        <div class="node-create-path" :title="topoPath">{{$t('已选择')}}：{{topoPath}}</div>
+        <div class="node-create-path" :title="topoPath">{{$t('添加节点已选择')}}：{{topoPath}}</div>
         <div class="node-create-form">
             <div class="form-item clearfix mt30">
                 <div class="create-type fl">
@@ -63,7 +63,7 @@
                 <span class="form-error" v-if="errors.has('moduleName')">{{errors.first('moduleName')}}</span>
             </div>
             <div class="form-item clearfix" v-if="!withTemplate">
-                <label>{{$t('服务实例分类"')}}<font color="red">*</font></label>
+                <label>{{$t('服务实例分类')}}<font color="red">*</font></label>
                 <cmdb-selector class="service-class fl"
                     v-model="firstClass"
                     v-validate.disabled="'required'"

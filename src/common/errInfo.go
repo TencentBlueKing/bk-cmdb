@@ -197,6 +197,9 @@ const (
 	CCErrConstructDBFilterFailed = 1199071
 	CCErrGetNoAuthSkipUrlFailed  = 1199072
 
+	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
+	CCErrCommValExceedMaxFailed = 1199073
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
@@ -423,8 +426,8 @@ const (
 	CCErrTopoArchiveBusinessHasHost            = 1101087
 
 	// full text find err
-	CCErrorTopoFullTextFindErr              = 1101085
-	CCErrorTopoFullTextClientNotInitialized = 1101086
+	CCErrorTopoFullTextFindErr              = 1101088
+	CCErrorTopoFullTextClientNotInitialized = 1101089
 
 	// object controller 1102XXX
 

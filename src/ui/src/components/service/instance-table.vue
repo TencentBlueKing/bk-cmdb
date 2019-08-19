@@ -20,7 +20,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row, $index }">
-                    <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess($index)">
+                    <a href="javascript:void(0)" class="text-primary mr10" @click="handleEditProcess($index)">
                         {{$t('编辑')}}
                     </a>
                     <a href="javascript:void(0)" class="text-primary"
@@ -57,6 +57,16 @@
                 :uneditable-properties="immutableProperties"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleBeforeClose">
+                <template slot="bind_ip">
+                    <cmdb-input-select
+                        :disabled="checkDisabled"
+                        :name="'bindIp'"
+                        :placeholder="$t('请选择或输入IP')"
+                        :options="processBindIp"
+                        :validate="validateRules"
+                        v-model="bindIp">
+                    </cmdb-input-select>
+                </template>
             </cmdb-form>
         </bk-sideslider>
     </div>
@@ -112,7 +122,9 @@
                 tooltips: {
                     content: this.$t('请为主机添加进程'),
                     placement: 'right'
-                }
+                },
+                processBindIp: [],
+                bindIp: ''
             }
         },
         computed: {
@@ -151,6 +163,29 @@
                     })
                 }
                 return properties
+            },
+            bindIpProperty () {
+                return this.processProperties.find(property => property['bk_property_id'] === 'bind_ip') || {}
+            },
+            validateRules () {
+                const rules = {}
+                if (this.bindIpProperty.isrequired) {
+                    rules['required'] = true
+                }
+                rules['regex'] = this.bindIpProperty.option
+                return rules
+            },
+            checkDisabled () {
+                const property = this.bindIpProperty
+                if (this.processForm.type === 'create') {
+                    return false
+                }
+                return !property.editable || property.isreadonly
+            }
+        },
+        watch: {
+            bindIp (value) {
+                this.$refs.processForm.values.bind_ip = value
             }
         },
         created () {
@@ -194,10 +229,12 @@
                 this.$emit('delete-instance', this.index)
             },
             handleAddProcess () {
+                this.getInstanceIpByHost(this.id)
                 this.processForm.instance = {}
                 this.processForm.type = 'create'
                 this.processForm.show = true
                 this.$nextTick(() => {
+                    this.bindIp = ''
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -207,6 +244,32 @@
                         }
                     })
                 })
+            },
+            async getInstanceIpByHost (hostId) {
+                try {
+                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    let res = null
+                    if (instanceIpMap.hasOwnProperty(hostId)) {
+                        res = instanceIpMap[hostId]
+                    } else {
+                        res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
+                            hostId,
+                            config: {
+                                requestId: 'getInstanceIpByHost'
+                            }
+                        })
+                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                    }
+                    this.processBindIp = res.options.map(ip => {
+                        return {
+                            id: ip,
+                            name: ip
+                        }
+                    })
+                } catch (e) {
+                    this.processBindIp = []
+                    console.error(e)
+                }
             },
             handleSaveProcess (values) {
                 this.processForm.unwatch && this.processForm.unwatch()
@@ -241,10 +304,15 @@
                 this.handleCancelCreateProcess()
             },
             handleEditProcess (rowIndex) {
+                this.getInstanceIpByHost(this.id)
                 this.processForm.instance = this.processList[rowIndex]
                 this.processForm.rowIndex = rowIndex
                 this.processForm.type = 'update'
                 this.processForm.show = true
+
+                this.$nextTick(() => {
+                    this.bindIp = this.$tools.getInstFormValues(this.processProperties, this.processForm.instance)['bind_ip']
+                })
             },
             handleDeleteProcess (rowIndex) {
                 this.processList.splice(rowIndex, 1)

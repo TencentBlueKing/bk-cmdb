@@ -196,6 +196,14 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 	return err
 }
 
+// upsert 更新数据
+func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interface{}) error {
+	c.dbc.Refresh()
+	data := bson.M{"$set": doc}
+	_, err := c.dbc.DB(c.dbname).C(c.collName).Upsert(filter, data)
+	return err
+}
+
 // UpdateMultiModel 根据不同的操作符去更新数据
 func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
 	c.dbc.Refresh()

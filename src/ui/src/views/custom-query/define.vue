@@ -498,11 +498,14 @@
                 this.userProperties = properties
                 this.toggleUserAPISelector(false)
                 this.name = detail['name']
-                this.dataCopy = {
-                    name: detail['name'],
-                    userProperties: this.$tools.clone(properties),
-                    attributeSelected: this.attribute.selected
-                }
+                const timer = setTimeout(() => {
+                    this.dataCopy = {
+                        name: detail['name'],
+                        userProperties: this.$tools.clone(properties),
+                        attributeSelected: this.attribute.selected
+                    }
+                    clearTimeout(timer)
+                })
             },
             getUserPropertyValue (property, originalProperty) {
                 if (
@@ -562,7 +565,7 @@
             deleteUserAPI () {
                 this.$bkInfo({
                     title: this.$t('确定删除'),
-                    subTitle: this.$t('确认要删除', { name: this.apiParams.name }),
+                    subTitle: this.$t('确认要删除分组', { name: this.apiParams.name }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         await this.deleteCustomQuery({

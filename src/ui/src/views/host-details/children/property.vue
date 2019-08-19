@@ -63,7 +63,9 @@
                         <div class="copy-box">
                             <i class="property-copy icon-cc-details-copy" @click="handleCopy($tools.getPropertyText(property, host), childIndex)"></i>
                             <transition name="fade">
-                                <span class="copy-tips" v-if="showCopyTips === childIndex">
+                                <span class="copy-tips"
+                                    :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
+                                    v-if="showCopyTips === childIndex">
                                     {{$t('复制成功')}}
                                 </span>
                             </transition>
@@ -259,7 +261,7 @@
                     position: absolute;
                     top: -22px;
                     left: -18px;
-                    width: 70px;
+                    min-width: 70px;
                     height: 26px;
                     line-height: 26px;
                     font-size: 12px;
@@ -284,7 +286,7 @@
     }
     .property-popover {
         display: inline-block;
-        /deep/.bk-tooltip-ref {
+        /deep/ .bk-tooltip-ref {
             outline: none;
         }
     }
@@ -300,12 +302,12 @@
         .bk-icon {
             display: inline-block;
             vertical-align: middle;
-            width: 26px;
-            height: 26px;
+            width: 30px;
+            height: 30px;
             margin: 0 0 0 6px;
             border-radius: 2px;
             border: 1px solid #c4c6cc;
-            line-height: 24px;
+            line-height: 28px;
             font-size: 12px;
             text-align: center;
             cursor: pointer;
@@ -340,7 +342,7 @@
         .form-component {
             display: inline-block;
             vertical-align: middle;
-            width: 280px;
+            width: 270px;
             height: 30px;
             margin: 0 4px 0 0;
             /deep/ {

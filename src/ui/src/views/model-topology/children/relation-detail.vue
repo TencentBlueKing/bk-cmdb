@@ -39,7 +39,7 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
-                <cmdb-selector
+                <cmdb-selector style="width: 100%;"
                     :disabled="true"
                     :list="mappingList"
                     v-validate="'required'"

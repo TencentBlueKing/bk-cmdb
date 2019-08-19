@@ -66,7 +66,7 @@
                 @delete="getUserAPIList"
                 @create="handleCreate"
                 @update="getUserAPIList"
-                @cancel="hideUserAPISlider">
+                @cancel="handleSliderBeforeClose">
             </v-define>
         </bk-sideslider>
     </div>
@@ -102,7 +102,7 @@
                     isCloseConfirmShow: false,
                     type: 'create',
                     id: null,
-                    title: this.$t('新增查询')
+                    title: this.$t('新建查询')
                 }
             }
         },
@@ -140,6 +140,7 @@
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 resolve(true)
+                                this.hideUserAPISlider()
                             },
                             cancelFn: () => {
                                 resolve(false)
@@ -147,6 +148,7 @@
                         })
                     })
                 }
+                this.hideUserAPISlider()
                 return true
             },
             handleCreate (data) {

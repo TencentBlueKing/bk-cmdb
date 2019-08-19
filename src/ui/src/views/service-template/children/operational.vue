@@ -486,6 +486,8 @@
                 padding-left: 30px;
             }
             .process-create {
+                display: flex;
+                align-items: center;
                 padding-bottom: 14px;
                 .create-btn {
                     padding: 0 16px;
