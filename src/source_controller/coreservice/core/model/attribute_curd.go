@@ -83,6 +83,9 @@ func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objI
 			return nil
 		}
 		cond = cond.Element(nameFieldCond)
+
+		idFieldCond := mongo.Field(common.BKPropertyIDField).Neq(propertyID)
+		cond = cond.Element(idFieldCond)
 	}
 
 	condMap := util.SetModOwner(cond.ToMapStr(), ctx.SupplierAccount)
@@ -182,10 +185,12 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 		return 0, err
 	}
 
-	err = m.checkUnique(ctx, false, dbAttributeArr[0].ObjectID, attribute.PropertyID, attribute.PropertyName)
-	if err != nil {
-		blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
-		return 0, err
+	for _, dbAttribute := range dbAttributeArr {
+		err = m.checkUnique(ctx, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName)
+		if err != nil {
+			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+			return 0, err
+		}
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
