@@ -167,6 +167,7 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 	}
 
 	// 删除不可更新字段， 避免由于传入数据，修改字段
+	// TODO: 改成白名单方式
 	data.Remove(metadata.AttributeFieldPropertyID)
 	data.Remove(metadata.AttributeFieldSupplierAccount)
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
@@ -181,7 +182,7 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 		return 0, err
 	}
 
-	err = m.checkUnique(ctx, true, dbAttributeArr[0].ObjectID, attribute.PropertyID, attribute.PropertyName)
+	err = m.checkUnique(ctx, false, dbAttributeArr[0].ObjectID, attribute.PropertyID, attribute.PropertyName)
 	if err != nil {
 		blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
 		return 0, err
