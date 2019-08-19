@@ -13,11 +13,11 @@
                         {{$t('新增关联')}}
                     </bk-button>
                 </span>
-                <cmdb-form-bool v-if="hasAssociation"
+                <bk-checkbox v-if="hasAssociation"
                     :size="16" class="options-checkbox"
                     @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('全部展开')}}</span>
-                </cmdb-form-bool>
+                </bk-checkbox>
                 <bk-button theme="default" class="options-button" v-show="false">{{$t('批量取消')}}</bk-button>
             </div>
             <div class="fr">
