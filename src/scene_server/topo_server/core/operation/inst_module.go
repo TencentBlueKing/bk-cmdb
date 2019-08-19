@@ -53,10 +53,16 @@ func (m *module) SetProxy(inst InstOperationInterface) {
 	m.inst = inst
 }
 
-func (m *module) hasHost(params types.ContextParams, bizID int64, moduleIDS []int64) (bool, error) {
+func (m *module) hasHost(params types.ContextParams, bizID int64, setIDs, moduleIDS []int64) (bool, error) {
 	option := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		ModuleIDArr:   moduleIDS,
+	}
+	if len(setIDs) > 0 {
+		option.SetIDArr = setIDs
+	}
+	if len(moduleIDS) > 0 {
+		option.ModuleIDArr = moduleIDS
 	}
 	rsp, err := m.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), params.Header, option)
 	if nil != err {
@@ -145,9 +151,9 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	return m.inst.CreateInst(params, obj, data)
 }
 
-func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setID, moduleIDS []int64) error {
+func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setIDs, moduleIDS []int64) error {
 
-	exists, err := m.hasHost(params, bizID, moduleIDS)
+	exists, err := m.hasHost(params, bizID, setIDs, moduleIDS)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to delete the modules, err: %s, rid: %s", err.Error(), params.ReqID)
 		return err
@@ -160,8 +166,8 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 
 	innerCond := condition.CreateCondition()
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
-	if nil != setID {
-		innerCond.Field(common.BKSetIDField).In(setID)
+	if nil != setIDs {
+		innerCond.Field(common.BKSetIDField).In(setIDs)
 	}
 
 	if nil != moduleIDS {
