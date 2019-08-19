@@ -29,5 +29,11 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade x19.08.19.01] removeProcFreshInstance failed, err: %s", err.Error())
 		return err
 	}
+
+	err = updateIPRegex(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x19.08.19.01] updateIPRegex failed, err: %s", err.Error())
+		return err
+	}
 	return nil
 }
