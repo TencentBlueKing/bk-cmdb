@@ -245,7 +245,8 @@
         position: relative;
     }
     .node-create-title {
-        padding: 20px 26px 0;
+        margin-top: -14px;
+        padding: 0 26px;
         line-height: 30px;
         font-size: 22px;
         color: #333948;

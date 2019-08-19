@@ -1,11 +1,11 @@
 <template>
     <div class="table-layout" v-show="show">
         <div class="table-title" @click="localExpanded = !localExpanded">
-            <cmdb-form-bool class="title-checkbox"
+            <bk-checkbox class="title-checkbox"
                 :size="16"
                 v-model="checked"
                 @click.native.stop>
-            </cmdb-form-bool>
+            </bk-checkbox>
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
@@ -262,12 +262,22 @@
     }
     .table-title {
         height: 40px;
-        padding: 0 9px;
+        padding: 0 10px;
         line-height: 40px;
         border-radius: 2px 2px 0 0;
         background-color: #DCDEE5;
         overflow: hidden;
         cursor: pointer;
+        .title-checkbox {
+            /deep/ .bk-checkbox {
+                background-color: #fff;
+            }
+            &.is-checked {
+                /deep/ .bk-checkbox {
+                    background-color: #3a84ff !important;
+                }
+            }
+        }
         .title-icon {
             font-size: 14px;
             margin: 0 2px 0 6px;
