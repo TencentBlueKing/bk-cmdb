@@ -1,12 +1,12 @@
 <template>
     <div class="service-wrapper">
         <div class="options">
-            <cmdb-form-bool class="options-checkall"
+            <bk-checkbox class="options-checkall"
                 :size="16"
-                :checked="isCheckAll"
+                v-model="isCheckAll"
                 :title="$t('全选本页')"
                 @change="handleCheckALL">
-            </cmdb-form-bool>
+            </bk-checkbox>
             <span style="display: inline-block;"
                 v-cursor="{
                     active: !$isAuthorized($OPERATION.D_SERVICE_INSTANCE),
@@ -19,12 +19,12 @@
                 </bk-button>
             </span>
             <div class="option-right fr">
-                <cmdb-form-bool class="options-checkbox"
+                <bk-checkbox class="options-checkbox"
                     :size="16"
-                    :checked="isExpandAll"
+                    v-model="isExpandAll"
                     @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('全部展开')}}</span>
-                </cmdb-form-bool>
+                </bk-checkbox>
                 <div class="options-search">
                     <bk-search-select
                         ref="searchSelect"
@@ -68,7 +68,12 @@
                 @check-change="handleCheckChange">
             </service-instance-table>
         </div>
-        <bk-table v-if="!instances.length" :data="[]"></bk-table>
+        <bk-table v-if="!instances.length" :data="[]">
+            <div slot="empty" class="empty-text">
+                <img src="../../../assets/images/empty-content.png" alt="">
+                <p>暂无服务实例，<span @click="handleGoAddInstance">跳转服务拓扑添加</span></p>
+            </div>
+        </bk-table>
         <bk-pagination class="pagination"
             align="right"
             size="small"
@@ -306,6 +311,11 @@
                 el.curItem.children = children
                 el.updateChildMenu(cur, index, false)
                 el.showChildMenu(children)
+            },
+            handleGoAddInstance () {
+                this.$router.replace({
+                    name: 'topology'
+                })
             }
         }
     }
@@ -313,6 +323,7 @@
 
 <style lang="scss" scoped>
     .service-wrapper {
+        height: calc(100% - 30px);
         padding: 14px 0 0 0;
     }
     .options-checkall {
@@ -370,7 +381,20 @@
         }
     }
     .tables {
-        padding-top: 16px;
+        @include scrollbar-y;
+        max-height: calc(100% - 80px);
+        margin: 16px 0 10px;
+    }
+    .empty-text {
+        text-align: center;
+        p {
+            font-size: 14px;
+            margin: -10px 0 0;
+        }
+        span {
+            color: #3a84ff;
+            cursor: pointer;
+        }
     }
 </style>
 

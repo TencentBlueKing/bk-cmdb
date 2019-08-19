@@ -2,12 +2,12 @@
     <div class="layout" v-bkloading="{ isLoading: $loading('getModuleServiceInstances') }">
         <template v-if="instances.length || inSearch">
             <div class="options">
-                <cmdb-form-bool class="options-checkall"
+                <bk-checkbox class="options-checkall"
                     :size="16"
-                    :checked="isCheckAll"
+                    v-model="isCheckAll"
                     :title="$t('全选本页')"
                     @change="handleCheckALL">
-                </cmdb-form-bool>
+                </bk-checkbox>
                 <span style="display: inline-block;"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
@@ -55,12 +55,12 @@
                     </bk-button>
                 </span>
                 <div class="options-right fr">
-                    <cmdb-form-bool class="options-checkbox"
+                    <bk-checkbox class="options-checkbox"
                         :size="16"
-                        :checked="isExpandAll"
+                        v-model="isExpandAll"
                         @change="handleExpandAll">
                         <span class="checkbox-label">{{$t('全部展开')}}</span>
-                    </cmdb-form-bool>
+                    </bk-checkbox>
                     <div class="options-search">
                         <bk-search-select
                             ref="searchSelect"
