@@ -37,7 +37,7 @@
                 </div>
             </div>
         </bk-big-tree>
-        <bk-dialog class="bk-dialog-no-padding bk-dialog-no-tools"
+        <bk-dialog class="bk-dialog-no-padding"
             v-model="createInfo.show"
             :show-footer="false"
             :mask-close="false"
@@ -53,6 +53,7 @@
             </template>
             <template v-else>
                 <create-node v-if="createInfo.visible"
+                    :next-model-id="createInfo.nextModelId"
                     :properties="createInfo.properties"
                     :parent-node="createInfo.parentNode"
                     @submit="handleCreateNode"
