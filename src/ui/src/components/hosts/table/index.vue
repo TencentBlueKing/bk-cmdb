@@ -118,7 +118,7 @@
                 :fixed="column.id === 'bk_host_innerip'"
                 :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
-                    {{getHostCellText(column, row)}}
+                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type) }}
                 </template>
             </bk-table-column>
         </bk-table>
@@ -184,11 +184,15 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
+    import hostValueFilter from '@/filters/host'
     export default {
         components: {
             cmdbColumnsConfig,
             cmdbTransferHost,
             cmdbHostFilter
+        },
+        filters: {
+            hostValueFilter
         },
         props: {
             columnsConfigProperties: {
@@ -433,10 +437,11 @@
                 const properties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
                 this.table.header = properties.map(property => {
                     return {
-                        id: property['bk_property_id'],
-                        name: property['bk_property_name'],
-                        objId: property['bk_obj_id'],
-                        sortable: property['bk_obj_id'] === 'host' && !['foreignkey'].includes(property['bk_property_type'])
+                        id: property.bk_property_id,
+                        name: property.bk_property_name,
+                        type: property.bk_property_type,
+                        objId: property.bk_obj_id,
+                        sortable: property.bk_obj_id === 'host' && !['foreignkey'].includes(property.bk_property_type)
                     }
                 })
                 this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
