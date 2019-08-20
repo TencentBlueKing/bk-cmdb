@@ -58,10 +58,15 @@
             selected (selected) {
                 this.$emit('input', selected)
                 this.$emit('on-selected', selected)
+            },
+            disabled (disabled) {
+                this.setInitData()
             }
         },
         created () {
-            this.setInitData()
+            if (!this.disabled) {
+                this.setInitData()
+            }
         },
         methods: {
             setInitData () {

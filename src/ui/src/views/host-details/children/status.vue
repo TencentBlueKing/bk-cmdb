@@ -10,10 +10,6 @@
             </h2>
             <ul class="info-list clearfix">
                 <li class="info-item fl">
-                    <span class="item-label">{{$t('总流入量')}}</span>
-                    <span class="itme-value"></span>
-                </li>
-                <li class="info-item fl">
                     <span class="item-label">{{$t('总流入量')}}：</span>
                     <span class="item-value">{{(snapshot.rcvRate / 100).toFixed(2)}}Mb/s</span>
                 </li>

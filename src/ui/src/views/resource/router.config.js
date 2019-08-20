@@ -25,7 +25,8 @@ export default {
             i18n: '主机',
             path: path,
             order: 2,
-            parent: NAV_BASIC_RESOURCE
+            parent: NAV_BASIC_RESOURCE,
+            businessView: false
         },
         auth: {
             operation: Object.values(OPERATION),
