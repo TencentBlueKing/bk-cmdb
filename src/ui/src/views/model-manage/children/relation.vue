@@ -221,7 +221,7 @@
             },
             async searchRelationList () {
                 const [source, dest] = await Promise.all([this.searchAsSource(), this.searchAsDest()])
-                this.table.list = [...source, ...dest]
+                this.table.list = [...source, ...dest.filter(des => !source.some(src => src.id === des.id))]
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
