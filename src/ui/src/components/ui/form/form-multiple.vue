@@ -13,10 +13,10 @@
                                 v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
                                 :key="propertyIndex">
                                 <div class="property-name">
-                                    <cmdb-form-bool class="property-name-checkbox"
+                                    <bk-checkbox class="property-name-checkbox"
                                         :id="`property-name-${property['bk_property_id']}`"
                                         v-model="editable[property['bk_property_id']]">
-                                    </cmdb-form-bool>
+                                    </bk-checkbox>
                                     <label class="property-name-text"
                                         :for="`property-name-${property['bk_property_id']}`"
                                         :class="{ required: property['isrequired'] }">
@@ -279,8 +279,6 @@
                 line-height: 18px;
             }
             .property-name-checkbox{
-                transform: scale(0.667);
-                vertical-align: top;
                 margin: 0 6px 0 0;
             }
             .property-name-text{
