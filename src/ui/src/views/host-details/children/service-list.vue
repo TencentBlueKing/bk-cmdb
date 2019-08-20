@@ -68,7 +68,7 @@
                 @check-change="handleCheckChange">
             </service-instance-table>
         </div>
-        <bk-table v-if="!instances.length" :data="[]"></bk-table>
+        <bk-table v-if="!instances.length" :data="[]" class="mb10"></bk-table>
         <bk-pagination class="pagination"
             align="right"
             size="small"

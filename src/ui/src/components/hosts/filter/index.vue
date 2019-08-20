@@ -285,13 +285,15 @@
             },
             async handleSaveCollection () {
                 try {
-                    await this.$store.dispatch('hostFavorites/createFavorites', {
-                        params: this.getCollectionParams(),
+                    const data = this.getCollectionParams()
+                    const result = await this.$store.dispatch('hostFavorites/createFavorites', {
+                        params: data,
                         config: {
                             requestId: 'createCollection'
                         }
                     })
                     this.$success(this.$t('收藏成功'))
+                    this.$store.commit('hosts/addCollection', Object.assign({}, data, result))
                     this.handleCancelCollection()
                 } catch (e) {
                     console.error(e)

@@ -6,7 +6,7 @@
             <div class="form-group"
                 v-for="(property, index) in sortedProperties"
                 :key="index">
-                <label :class="['form-label', {
+                <label :class="['form-label', 'inline-block-middle', {
                     required: property['isrequired']
                 }]">
                     {{property['bk_property_name']}}

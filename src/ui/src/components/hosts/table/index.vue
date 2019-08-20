@@ -3,17 +3,11 @@
         <div class="hosts-options">
             <div class="options-left">
                 <slot name="options-left">
-                    <span class="inline-block-middle mr10"
-                        v-cursor="{
-                            active: !$isAuthorized(editAuth),
-                            auth: [editAuth]
-                        }">
-                        <bk-button class="options-button" theme="primary"
-                            :disabled="!table.checked.length || !$isAuthorized(editAuth)"
-                            @click="handleMultipleEdit">
-                            {{$t('编辑')}}
-                        </bk-button>
-                    </span>
+                    <bk-button class="options-button mr10" theme="primary"
+                        :disabled="!table.checked.length || !$isAuthorized(editAuth)"
+                        @click="handleMultipleEdit">
+                        {{$t('编辑')}}
+                    </bk-button>
                     <span class="inline-block-middle mr10"
                         v-cursor="{
                             active: !$isAuthorized(transferAuth),
@@ -89,7 +83,7 @@
                     <bk-button class="options-button icon-btn ml10"
                         icon="icon-cc-setting"
                         v-bk-tooltips.top="$t('列表显示属性配置')"
-                        @click="columnsConfig.show = true">
+                        @click="handleColumnConfigClick">
                     </bk-button>
                     <bk-button class="options-button icon-btn ml10" v-if="showHistory"
                         v-bk-tooltips="$t('查看删除历史')"
@@ -651,6 +645,10 @@
                         from: this.$route.fullPath
                     }
                 })
+            },
+            handleColumnConfigClick () {
+                this.$refs.hostFilter.$refs.filterPopper.instance.hide()
+                this.columnsConfig.show = true
             }
         }
     }

@@ -26,7 +26,8 @@ export default [{
             id: 'business',
             i18n: '业务',
             path: businessPath,
-            parent: NAV_BASIC_RESOURCE
+            parent: NAV_BASIC_RESOURCE,
+            businessView: false
         },
         auth: {
             operation: Object.values(OPERATION),
@@ -48,6 +49,9 @@ export default [{
                 this.authScope = 'global'
             }
         },
-        i18nTitle: '业务'
+        i18nTitle: '业务',
+        checkAvailable: (to, from, app) => {
+            return app.$store.getters.isAdminView
+        }
     })
 }]
