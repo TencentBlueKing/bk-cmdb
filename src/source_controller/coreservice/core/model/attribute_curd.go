@@ -83,6 +83,9 @@ func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objI
 			return nil
 		}
 		cond = cond.Element(nameFieldCond)
+
+		idFieldCond := mongo.Field(common.BKPropertyIDField).Neq(propertyID)
+		cond = cond.Element(idFieldCond)
 	}
 
 	condMap := util.SetModOwner(cond.ToMapStr(), ctx.SupplierAccount)
@@ -165,8 +168,15 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 		blog.Errorf("request(%s): find nothing by the condition(%#v)", ctx.ReqID, cond.ToMapStr())
 		return cnt, nil
 	}
+	for _, dbAttribute := range dbAttributeArr {
+		if dbAttribute.IsPre == true {
+			blog.Warnf("try to update pre record, record: %+v, rid: %s", dbAttribute, ctx.ReqID)
+			return 0, ctx.Error.CCError(common.CCErrCommOperateBuiltInItemForbidden)
+		}
+	}
 
 	// 删除不可更新字段， 避免由于传入数据，修改字段
+	// TODO: 改成白名单方式
 	data.Remove(metadata.AttributeFieldPropertyID)
 	data.Remove(metadata.AttributeFieldSupplierAccount)
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
@@ -181,10 +191,12 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 		return 0, err
 	}
 
-	err = m.checkUnique(ctx, true, dbAttributeArr[0].ObjectID, attribute.PropertyID, attribute.PropertyName)
-	if err != nil {
-		blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
-		return 0, err
+	for _, dbAttribute := range dbAttributeArr {
+		err = m.checkUnique(ctx, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName)
+		if err != nil {
+			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+			return 0, err
+		}
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
