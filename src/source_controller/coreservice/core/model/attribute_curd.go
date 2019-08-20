@@ -82,10 +82,9 @@ func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objI
 		if propertyName == "" {
 			return nil
 		}
-		cond = cond.Element(nameFieldCond)
 
 		idFieldCond := mongo.Field(common.BKPropertyIDField).Neq(propertyID)
-		cond = cond.Element(idFieldCond)
+		cond = cond.Element(nameFieldCond, idFieldCond)
 	}
 
 	condMap := util.SetModOwner(cond.ToMapStr(), ctx.SupplierAccount)
@@ -98,7 +97,7 @@ func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objI
 		return ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	for _, attrItem := range resultAttrs {
-		if attrItem.PropertyID == propertyID && isCreate {
+		if attrItem.PropertyID == propertyID {
 			return ctx.Error.Errorf(common.CCErrCommDuplicateItem, ctx.Lang.Language("model_attr_bk_property_id"))
 		}
 		if attrItem.PropertyName == propertyName {
@@ -194,7 +193,7 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 	for _, dbAttribute := range dbAttributeArr {
 		err = m.checkUnique(ctx, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName)
 		if err != nil {
-			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+			blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
 			return 0, err
 		}
 	}
