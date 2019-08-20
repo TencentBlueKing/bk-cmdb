@@ -429,6 +429,9 @@ const (
 	CCErrorTopoFullTextFindErr              = 1101088
 	CCErrorTopoFullTextClientNotInitialized = 1101089
 
+	CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden = 1101090
+	CCErrorTopoUpdateModuleFromTplNameForbidden            = 1101091
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
