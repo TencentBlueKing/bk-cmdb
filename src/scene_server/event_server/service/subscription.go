@@ -212,6 +212,21 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	msg, _ := json.Marshal(&sub)
 	s.cache.Publish(types.EventCacheProcessChannel, "delete"+string(msg))
 
+	// deregister subscription from iam
+	iamResource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Name:       sub.SubscriptionName,
+			Type:       meta.EventPushing,
+			InstanceID: sub.SubscriptionID,
+		},
+	}
+	if err = s.auth.DeregisterResource(s.ctx, iamResource); err != nil {
+		blog.Errorf("deregister subscribe to iam failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
+		resp.WriteError(http.StatusOK, result)
+		return
+	}
+
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
@@ -246,6 +261,22 @@ func (s *Service) UpdateSubscription(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
+
+	// deregister subscription from iam
+	iamResource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Name:       sub.SubscriptionName,
+			Type:       meta.EventPushing,
+			InstanceID: sub.SubscriptionID,
+		},
+	}
+	if err := s.auth.UpdateResource(s.ctx, &iamResource); err != nil {
+		blog.Errorf("deregister subscribe to iam failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
+		resp.WriteError(http.StatusOK, result)
+		return
+	}
+
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
