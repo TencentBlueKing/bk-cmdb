@@ -72,8 +72,16 @@ func (d *find) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRe
 					opt.Sort = append(opt.Sort, findopt.SortItem{Name: sortName, Descending: false})
 				}
 
+			} else {
+				sortItemName := strings.TrimPrefix(strings.TrimPrefix(item, "+"), "-")
+				sortItem := findopt.SortItem{Name: sortItemName, Descending: false}
+				if strings.HasPrefix(item, "-") {
+					sortItem.Descending = true
+				}
+				opt.Sort = append(opt.Sort, sortItem)
 			}
 		}
+		blog.V(5).Infof("[MONGO OPERATION] db find operate. sort: %#v, rid:%s", opt.Sort, msg.RequestID)
 	}
 
 	var targetCol mongodb.CollectionInterface

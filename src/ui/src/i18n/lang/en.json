@@ -179,7 +179,7 @@
     "全部结果": "all",
     "该模型已停用": "The model has been disabled",
     "主线模型无法查看": "Mainline model connot be viewed",
-    "模型ID": "Model ID:",
+    "实例ID": "Instance ID:",
     "主机ID": "Host ID:",
     "最大支持搜索32个字符": "Maximum support for searching 32 characters",
     "操作审计": "Operation Audit",
@@ -860,6 +860,10 @@
     "请选择收藏条件": "Please select condition",
     "新增条件": "Add condition",
     "收藏此条件": "Collect this condition",
+    "添加节点已选择": "Selected",
+    "新建集群": "New Set",
+    "内置模型组不支持添加和修改": "Built-in model groups do not support adding and modifying",
     "全部主机": "All Hosts",
-    "添加节点已选择": "Selected"
+    "已关联": "Associated",
+    "克隆实例": "Clone Instance"
 }
