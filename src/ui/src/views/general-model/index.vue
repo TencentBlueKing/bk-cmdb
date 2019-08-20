@@ -476,6 +476,10 @@
             },
             getTableData () {
                 this.getInstList().then(data => {
+                    if (data.count && !data.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getTableData()
+                    }
                     this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
                     this.setAllHostList(data.info)
@@ -569,7 +573,7 @@
                         }).then(() => {
                             this.slider.show = false
                             this.$success(this.$t('删除成功'))
-                            this.handlePageChange(1)
+                            this.getTableData()
                         })
                     }
                 })
@@ -664,7 +668,7 @@
                 }).then(() => {
                     this.$success(this.$t('删除成功'))
                     this.table.checked = []
-                    this.handlePageChange(1)
+                    this.getTableData()
                 })
             },
             handleApplyColumnsConfig (properties) {
@@ -752,7 +756,7 @@
     .filter-search{
         position: absolute;
         right: 10px;
-        top: 11px;
+        top: 8px;
         cursor: pointer;
     }
 }

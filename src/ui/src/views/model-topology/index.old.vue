@@ -41,10 +41,6 @@
                 <div class="topo-example" v-else>
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('自定义模型')}}</span>
-                    </p>
-                    <p class="example-item">
-                        <i></i>
                         <span>{{$t('内置模型')}}</span>
                     </p>
                 </div>

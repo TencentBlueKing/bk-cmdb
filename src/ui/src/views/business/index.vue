@@ -346,6 +346,10 @@
             },
             getTableData () {
                 this.getBusinessList().then(data => {
+                    if (data.count && !data.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getTableData()
+                    }
                     this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
                     return data
@@ -397,7 +401,7 @@
                         this.archiveBusiness(inst['bk_biz_id']).then(() => {
                             this.slider.show = false
                             this.$success(this.$t('归档成功'))
-                            this.handlePageChange(1)
+                            this.getTableData()
                             this.$http.cancel('post_searchBusiness_$ne_disabled')
                         })
                     }
