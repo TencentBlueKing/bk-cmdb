@@ -36,7 +36,6 @@
                                         :disabled="type === 'update' && ['bk_func_name'].includes(property['bk_property_id']) || !values[property['bk_property_id']]['as_default_value']"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
                                         :options="property.option || []"
-                                        :allow-clear="['bind_ip'].includes(property['bk_property_id'])"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
                                         v-validate="getValidateRules(property)"
