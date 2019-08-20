@@ -100,6 +100,11 @@
                             v-model="property.value"
                             :disabled="!editable">
                         </cmdb-form-bool-input>
+                        <cmdb-search-input class="filter-field-value filter-field-char fl"
+                            v-else-if="['singlechar', 'longchar'].includes(property.propertyType)"
+                            v-model="property.value"
+                            :disabled="!editable">
+                        </cmdb-search-input>
                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
                             v-else
                             :is="`cmdb-form-${property.propertyType}`"
@@ -368,6 +373,12 @@
                             operator: property.operator,
                             value: property.value === 'true'
                         })
+                    } else if (property.operator === '$multilike') {
+                        param.condition.push({
+                            field: property.propertyId,
+                            operator: property.operator,
+                            value: property.value.split('\n').filter(str => str.trim().length).map(str => str.trim())
+                        })
                     } else {
                         let operator = property.operator
                         let value = property.value
@@ -513,6 +524,8 @@
                     && ['bk_module_name', 'bk_set_name'].includes(originalProperty['bk_property_id'])
                 ) {
                     return property.value[property.value.length - 1]
+                } else if (property.operator === '$multilike' && Array.isArray(property.value)) {
+                    return property.value.join('\n')
                 }
                 return property.value
             },

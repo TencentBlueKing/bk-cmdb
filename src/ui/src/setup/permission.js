@@ -20,7 +20,7 @@ const convertAuth = authList => {
     })
 }
 
-const translateAuth = async (authList = []) => {
+export const translateAuth = async (authList = []) => {
     if (!authList.length) {
         return authList
     }
