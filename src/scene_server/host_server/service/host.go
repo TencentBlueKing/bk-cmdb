@@ -72,12 +72,12 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Delete, iHostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", iHostIDArr, err, srvData.rid)
 		if err != auth.NoAuthorizeError {
-			_ = resp.WriteEntity(&meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
 		perm, err := s.AuthManager.GenDeleteHostBatchNoPermissionResp(srvData.ctx, srvData.header, iHostIDArr)
 		if err != nil {
-			resp.WriteEntity(&meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
+			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
 		resp.WriteEntity(perm)
@@ -507,12 +507,12 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, srvData.rid)
 		if err != auth.NoAuthorizeError {
-			_ = resp.WriteEntity(&meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
 		perm, err := s.AuthManager.GenDeleteHostBatchNoPermissionResp(srvData.ctx, srvData.header, hostIDArr)
 		if err != auth.NoAuthorizeError {
-			resp.WriteEntity(&meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
+			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
 		resp.WriteEntity(perm)
