@@ -348,18 +348,9 @@ func (b *business) GetInternalModule(params types.ContextParams, obj model.Objec
 	}
 
 	for _, module := range modules {
-		id, err := module.GetInstID()
-		if nil != err {
-			return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
-		}
-		name, err := module.GetInstName()
-		if nil != err {
-			return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
-		}
-
 		result.Module = append(result.Module, metadata.InnerModule{
-			ModuleID:   id,
-			ModuleName: name,
+			ModuleID:   module.ModuleID,
+			ModuleName: module.ModuleName,
 		})
 	}
 
