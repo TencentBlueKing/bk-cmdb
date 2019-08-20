@@ -32,7 +32,7 @@
         </div>
         <div class="results-wrapper" ref="resultsWrapper"
             :class="{ 'searching': searching }"
-            v-bkloading="{ 'isLoading': $loading(requestId), 'afterLeave': loadingClose }">
+            v-bkloading="{ 'isLoading': $loading(requestId), 'afterLeave': loadingClose, opacity: 1 }">
             <div v-show="hasData">
                 <div class="results-list" ref="resultsList">
                     <div class="results-item"
@@ -44,7 +44,7 @@
                                 v-html="`${modelClassifyName[source['bk_obj_id']]} - ${source.bk_inst_name.toString()}`"
                                 @click="jumpPage(source)"></div>
                             <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]" @click="jumpPage(source)">
-                                <span class="desc-item" v-html="`${$t('模型ID')}${source['bk_obj_id']}`"> </span>
+                                <span class="desc-item" v-html="`${$t('实例ID')}：${source['bk_inst_id']}`"> </span>
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap[source['bk_obj_id']]"
                                     :key="childIndex"
