@@ -21,7 +21,7 @@
                 cursor: 'pointer'
             }"
             @cell-click="handleShowDetails">
-            <bk-table-column prop="bk_obj_asst_id" :label="$t('唯一标识')">
+            <bk-table-column prop="bk_obj_asst_id" :label="$t('唯一标识')" class-name="is-highlight">
                 <template slot-scope="{ row }">
                     <span
                         v-if="row.ispre"
@@ -53,12 +53,12 @@
             </bk-table-column>
             <bk-table-column prop="operation" :label="$t('操作')" v-if="updateAuth">
                 <template slot-scope="{ row }">
-                    <button class="text-primary mr10"
+                    <button class="text-primary mr10 operation-btn"
                         :disabled="!isEditable(row)"
                         @click.stop="editRelation(row)">
                         {{$t('编辑')}}
                     </button>
-                    <button class="text-primary"
+                    <button class="text-primary operation-btn"
                         :disabled="!isEditable(row)"
                         @click.stop="deleteRelation(row)">
                         {{$t('删除')}}
@@ -221,7 +221,7 @@
             },
             async searchRelationList () {
                 const [source, dest] = await Promise.all([this.searchAsSource(), this.searchAsDest()])
-                this.table.list = [...source, ...dest]
+                this.table.list = [...source, ...dest.filter(des => !source.some(src => src.id === des.id))]
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
@@ -283,10 +283,13 @@
         }
     }
     .relation-id {
-        display: inline-block;
         vertical-align: middle;
     }
     .text-primary {
         cursor: pointer;
+    }
+    .operation-btn[disabled] {
+        color: #dcdee5 !important;
+        opacity: 1 !important;
     }
 </style>

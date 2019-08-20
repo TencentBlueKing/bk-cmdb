@@ -66,7 +66,7 @@
                             v-else-if="filterItem.bk_property_type === 'bool'"
                             v-model="filterItem.value">
                         </cmdb-form-bool-input>
-                        <cmdb-search-input class="filter-value"
+                        <cmdb-search-input class="filter-value" :style="{ '--index': 99 - index }"
                             v-else-if="['singlechar', 'longchar'].includes(filterItem.bk_property_type)"
                             v-model="filterItem.value">
                         </cmdb-search-input>
@@ -285,13 +285,15 @@
             },
             async handleSaveCollection () {
                 try {
-                    await this.$store.dispatch('hostFavorites/createFavorites', {
-                        params: this.getCollectionParams(),
+                    const data = this.getCollectionParams()
+                    const result = await this.$store.dispatch('hostFavorites/createFavorites', {
+                        params: data,
                         config: {
                             requestId: 'createCollection'
                         }
                     })
                     this.$success(this.$t('收藏成功'))
+                    this.$store.commit('hosts/addCollection', Object.assign({}, data, result))
                     this.handleCancelCollection()
                 } catch (e) {
                     console.error(e)
@@ -507,6 +509,11 @@
         }
         .filter-value {
             flex: 1;
+            &.cmdb-search-input {
+                /deep/ .search-input-wrapper {
+                    z-index: var(--index);
+                }
+            }
         }
     }
     .filter-options {

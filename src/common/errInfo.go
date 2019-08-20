@@ -428,7 +428,9 @@ const (
 	CCErrorTopoFullTextFindErr              = 1101088
 	CCErrorTopoFullTextClientNotInitialized = 1101089
 
-	CCErrTopoCanNotAddRequiredAttributeForMainleModel = 1101090
+	CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden = 1101090
+	CCErrorTopoUpdateModuleFromTplNameForbidden            = 1101091
+	CCErrTopoCanNotAddRequiredAttributeForMainleModel = 1101092
 
 	// object controller 1102XXX
 

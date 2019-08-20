@@ -70,7 +70,7 @@
         width: 280px;
         height: 100%;
         padding: 20px 0;
-        border-right: 1px solid $cmdbBorderColor;
+        border-right: 1px solid #dcdee5;
     }
     .tab-layout {
         height: 100%;

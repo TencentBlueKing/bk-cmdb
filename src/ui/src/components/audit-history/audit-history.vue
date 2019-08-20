@@ -29,7 +29,7 @@
             <bk-table-column :label="$t('操作账号')" prop="operator"></bk-table-column>
             <bk-table-column :label="$t('操作时间')" prop="op_time">
                 <template slot-scope="{ row }">
-                    {{$tools.formatTime(row.op_time)}}
+                    {{row.op_time | formatter('time')}}
                 </template>
             </bk-table-column>
         </bk-table>

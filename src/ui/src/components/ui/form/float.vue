@@ -1,5 +1,5 @@
 <template>
-    <bk-input type="text"
+    <bk-input type="text" ref="input"
         :placeholder="placeholder || $t('请输入浮点数')"
         :value="value"
         :disabled="disabled"
@@ -47,10 +47,10 @@
         },
         methods: {
             handleInput (value, event) {
-                if (this.validateFloat(event.target.value)) {
-                    this.localValue = parseFloat(event.target.value)
+                if (this.validateFloat(value)) {
+                    this.localValue = parseFloat(value)
                 } else {
-                    event.target.value = null
+                    this.$refs.input.curValue = null
                     this.localValue = null
                 }
             },

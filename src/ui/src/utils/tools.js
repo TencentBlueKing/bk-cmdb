@@ -80,7 +80,7 @@ export function getPropertyText (property, item) {
             return String(propertyValue).length ? propertyValue : '--'
         }
     }
-    return propertyValue
+    return propertyValue.toString()
 }
 
 /**

@@ -3,17 +3,11 @@
         <div class="hosts-options">
             <div class="options-left">
                 <slot name="options-left">
-                    <span class="inline-block-middle mr10"
-                        v-cursor="{
-                            active: !$isAuthorized(editAuth),
-                            auth: [editAuth]
-                        }">
-                        <bk-button class="options-button" theme="primary"
-                            :disabled="!table.checked.length || !$isAuthorized(editAuth)"
-                            @click="handleMultipleEdit">
-                            {{$t('编辑')}}
-                        </bk-button>
-                    </span>
+                    <bk-button class="options-button mr10" theme="primary"
+                        :disabled="!table.checked.length || !$isAuthorized(editAuth)"
+                        @click="handleMultipleEdit">
+                        {{$t('编辑')}}
+                    </bk-button>
                     <span class="inline-block-middle mr10"
                         v-cursor="{
                             active: !$isAuthorized(transferAuth),
@@ -50,10 +44,9 @@
                 </slot>
             </div>
             <div class="options-right clearfix">
-                <div class="fl">
+                <div class="fl" v-if="showScope">
                     <i class="options-split"></i>
                     <bk-select class="options-collection"
-                        v-if="showScope"
                         v-model="scope"
                         :clearable="false">
                         <bk-option id="all" :name="$t('全部主机')"></bk-option>
@@ -89,7 +82,7 @@
                     <bk-button class="options-button icon-btn ml10"
                         icon="icon-cc-setting"
                         v-bk-tooltips.top="$t('列表显示属性配置')"
-                        @click="columnsConfig.show = true">
+                        @click="handleColumnConfigClick">
                     </bk-button>
                     <bk-button class="options-button icon-btn ml10" v-if="showHistory"
                         v-bk-tooltips="$t('查看删除历史')"
@@ -118,7 +111,7 @@
                 :fixed="column.id === 'bk_host_innerip'"
                 :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
-                    {{getHostCellText(column, row)}}
+                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type) }}
                 </template>
             </bk-table-column>
         </bk-table>
@@ -184,11 +177,15 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
+    import hostValueFilter from '@/filters/host'
     export default {
         components: {
             cmdbColumnsConfig,
             cmdbTransferHost,
             cmdbHostFilter
+        },
+        filters: {
+            hostValueFilter
         },
         props: {
             columnsConfigProperties: {
@@ -433,10 +430,11 @@
                 const properties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
                 this.table.header = properties.map(property => {
                     return {
-                        id: property['bk_property_id'],
-                        name: property['bk_property_name'],
-                        objId: property['bk_obj_id'],
-                        sortable: property['bk_obj_id'] === 'host' && !['foreignkey'].includes(property['bk_property_type'])
+                        id: property.bk_property_id,
+                        name: property.bk_property_name,
+                        type: property.bk_property_type,
+                        objId: property.bk_obj_id,
+                        sortable: property.bk_obj_id === 'host' && !['foreignkey'].includes(property.bk_property_type)
                     }
                 })
                 this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
@@ -646,6 +644,10 @@
                         from: this.$route.fullPath
                     }
                 })
+            },
+            handleColumnConfigClick () {
+                this.$refs.hostFilter.$refs.filterPopper.instance.hide()
+                this.columnsConfig.show = true
             }
         }
     }

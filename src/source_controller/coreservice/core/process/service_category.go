@@ -53,9 +53,12 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 	// check name unique in business scope
 	var count uint64
 	filter := map[string]interface{}{
-		common.MetadataField:   category.Metadata,
 		common.BKParentIDField: category.ParentID,
 		"name":                 category.Name,
+	}
+	bizFilter := metadata.PublicAndBizCondition(category.Metadata)
+	for key, value := range bizFilter {
+		filter[key] = value
 	}
 	if count, err = p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).Count(ctx); nil != err {
 		blog.Errorf("CreateServiceCategory failed, mongodb query failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceCategory, filter, err, ctx.ReqID)
@@ -152,12 +155,15 @@ func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categor
 
 	// check name unique in business scope
 	uniqueFilter := map[string]interface{}{
-		common.MetadataField:   category.Metadata,
 		common.BKFieldName:     category.Name,
 		common.BKParentIDField: category.ParentID,
 		common.BKFieldID: map[string]interface{}{
 			common.BKDBNE: categoryID,
 		},
+	}
+	bizFilter := metadata.PublicAndBizCondition(category.Metadata)
+	for key, value := range bizFilter {
+		uniqueFilter[key] = value
 	}
 	count, e := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(uniqueFilter).Count(ctx)
 	if e != nil {

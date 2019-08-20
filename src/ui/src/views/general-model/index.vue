@@ -128,7 +128,7 @@
             :title="slider.title"
             :width="800"
             :before-close="handleSliderBeforeClose">
-            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.show">
+            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.contentShow">
                 <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
@@ -241,6 +241,7 @@
                 },
                 slider: {
                     show: false,
+                    contentShow: false,
                     title: ''
                 },
                 tab: {
@@ -307,6 +308,9 @@
                 if (!show) {
                     this.tab.active = 'attribute'
                 }
+                this.$nextTick(() => {
+                    this.slider.contentShow = show
+                })
             },
             customColumns () {
                 this.setTableHeader()
@@ -476,6 +480,10 @@
             },
             getTableData () {
                 this.getInstList().then(data => {
+                    if (data.count && !data.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getTableData()
+                    }
                     this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
                     this.setAllHostList(data.info)
@@ -569,7 +577,7 @@
                         }).then(() => {
                             this.slider.show = false
                             this.$success(this.$t('删除成功'))
-                            this.handlePageChange(1)
+                            this.getTableData()
                         })
                     }
                 })
@@ -664,7 +672,7 @@
                 }).then(() => {
                     this.$success(this.$t('删除成功'))
                     this.table.checked = []
-                    this.handlePageChange(1)
+                    this.getTableData()
                 })
             },
             handleApplyColumnsConfig (properties) {
@@ -692,8 +700,7 @@
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {
                     const $form = this.attribute.type === 'multiple' ? this.$refs.multipleForm : this.$refs.form
-                    const changedValues = $form.changedValues
-                    if (Object.keys(changedValues).length) {
+                    if ($form.hasChange) {
                         return new Promise((resolve, reject) => {
                             this.$bkInfo({
                                 title: this.$t('确认退出'),
@@ -752,7 +759,7 @@
     .filter-search{
         position: absolute;
         right: 10px;
-        top: 11px;
+        top: 8px;
         cursor: pointer;
     }
 }
