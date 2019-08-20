@@ -42,7 +42,9 @@
             }
         },
         created () {
-            this.setRows()
+            if (this.focus) {
+                this.setRows()
+            }
         },
         methods: {
             setLocalValue () {

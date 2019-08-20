@@ -281,7 +281,7 @@
             getModelInstances (config) {
                 return this.$store.dispatch('objectCommonInst/searchInst', {
                     objId: this.id,
-                    params: {
+                    params: this.$injectMetadata({
                         fields: {},
                         condition: {
                             [this.id]: [{
@@ -294,7 +294,7 @@
                             ...this.page,
                             sort: 'bk_inst_id'
                         }
-                    },
+                    }),
                     config
                 }).then(data => {
                     data = data || {

@@ -64,7 +64,7 @@
             },
             setList () {
                 const permission = this.permission
-                this.list = permission.map(datum => {
+                const list = permission.map(datum => {
                     const scope = [datum.scope_type_name]
                     if (datum.scope_id) {
                         scope.push(datum.scope_name)
@@ -84,6 +84,18 @@
                         action: datum.action_name
                     }
                 })
+                const uniqueList = []
+                list.forEach(item => {
+                    const exist = uniqueList.some(unique => {
+                        return item.resource === unique.resource
+                            && item.scope === unique.scope
+                            && item.action === unique.action
+                    })
+                    if (!exist) {
+                        uniqueList.push(item)
+                    }
+                })
+                this.list = uniqueList
             },
             getPermissionText (data, necessaryKey, extraKey, split = '：') {
                 const text = [data[necessaryKey]]
