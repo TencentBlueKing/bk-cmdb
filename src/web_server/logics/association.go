@@ -48,7 +48,7 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 	return retAsstObjIDInstInfoMap, nil
 }
 
-func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64) ([]*metadata.InstAsst, error) {
+func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, metadataParams *metadata.Metadata) ([]*metadata.InstAsst, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -57,6 +57,9 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKInstIDField).In(instIDArr)
 	input.Condition = cond.ToMapStr()
+	if metadataParams != nil {
+		input.Condition.Set(common.MetadataField, metadataParams)
+	}
 
 	result, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
 	if err != nil {
