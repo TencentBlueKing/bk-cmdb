@@ -425,12 +425,12 @@ const (
 	CCErrorTopoGetAuthorizedBusinessListFailed = 1101086
 	CCErrTopoArchiveBusinessHasHost            = 1101087
 
-	// full text find err
 	CCErrorTopoFullTextFindErr              = 1101088
 	CCErrorTopoFullTextClientNotInitialized = 1101089
 
 	CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden = 1101090
 	CCErrorTopoUpdateModuleFromTplNameForbidden            = 1101091
+	CCErrTopoCanNotAddRequiredAttributeForMailineModel     = 1101092
 
 	// object controller 1102XXX
 

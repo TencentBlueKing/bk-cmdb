@@ -13,17 +13,21 @@
 package operation
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
-	"context"
 )
 
 // AttributeOperationInterface attribute operation methods
@@ -67,11 +71,23 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 
 	var err error
 	att := a.modelFactory.CreateAttribute(params)
-
 	err = att.Parse(data)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to parse the attribute data (%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
 		return nil, err
+	}
+
+	// check if the object is mainline object, if yes. then user can not create required attribute.
+	yes, err := a.isMainlineModel(params.Header, att.Attribute().ObjectID)
+	if err != nil {
+		blog.Warnf("add object attribute, but not allow to add required attribute to mainline object: %+v. rid: %d.", data, params.ReqID)
+		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+	}
+
+	if yes {
+		if att.Attribute().IsRequired {
+			return nil, params.Err.Error(common.CCErrTopoCanNotAddRequiredAttributeForMailineModel)
+		}
 	}
 
 	// check the object id
@@ -231,4 +247,29 @@ func (a *attribute) UpdateObjectAttribute(params types.ContextParams, data mapst
 	}
 
 	return nil
+}
+
+func (a *attribute) isMainlineModel(head http.Header, modelID string) (bool, error) {
+	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
+	asst, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), head,
+		&metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		return false, err
+	}
+
+	if !asst.Result {
+		return false, errors.New(asst.Code, asst.ErrMsg)
+	}
+
+	if len(asst.Data.Info) <= 0 {
+		return false, fmt.Errorf("model association [%+v] not found", cond)
+	}
+
+	for _, mainline := range asst.Data.Info {
+		if mainline.ObjectID == modelID {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
