@@ -182,6 +182,10 @@
                         requestId: 'searchAssociationType'
                     }
                 }).then(data => {
+                    if (data.count && !data.info.length) {
+                        this.table.pagination.current -= 1
+                        this.searchRelation()
+                    }
                     this.table.list = data.info
                     this.searchUsageCount()
                     this.table.pagination.count = data.count
