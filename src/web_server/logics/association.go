@@ -94,7 +94,7 @@ func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Head
 
 	instResult, err := lgc.CoreAPI.ApiServer().SearchInsts(ctx, header, objID, instAsstCond)
 	if err != nil {
-		blog.Errorf("GetAssocationData fetch %s association instance error:%s, input;%+v, rid:%s", objID, err.Error(), instAsstCond, rid)
+		blog.ErrorJSON("GetAssocationData fetch %s association instance error:%s, input:%s, rid:%s", objID, err.Error(), instAsstCond.ToMapStr(), rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
