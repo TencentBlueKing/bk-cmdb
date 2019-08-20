@@ -112,5 +112,7 @@
     "1101087": "you are archiving a business that has hosts",
     "1101088": "full text search failed",
     "1101089": "es search does not initialized",
+    "1101090": "update service category on module create by template forbidden",
+    "1101091": "update name field on module create by template forbidden",
     "": "" 
 }
