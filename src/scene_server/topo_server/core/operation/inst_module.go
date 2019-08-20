@@ -31,7 +31,7 @@ import (
 type ModuleOperationInterface interface {
 	CreateModule(params types.ContextParams, obj model.Object, bizID, setID int64, data mapstr.MapStr) (inst.Inst, error)
 	DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setID, moduleIDS []int64) error
-	FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error)
+	FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []metadata.ModuleInst, err error)
 	UpdateModule(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error
 
 	SetProxy(inst InstOperationInterface)
@@ -53,10 +53,16 @@ func (m *module) SetProxy(inst InstOperationInterface) {
 	m.inst = inst
 }
 
-func (m *module) hasHost(params types.ContextParams, bizID int64, moduleIDS []int64) (bool, error) {
+func (m *module) hasHost(params types.ContextParams, bizID int64, setIDs, moduleIDS []int64) (bool, error) {
 	option := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		ModuleIDArr:   moduleIDS,
+	}
+	if len(setIDs) > 0 {
+		option.SetIDArr = setIDs
+	}
+	if len(moduleIDS) > 0 {
+		option.ModuleIDArr = moduleIDS
 	}
 	rsp, err := m.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), params.Header, option)
 	if nil != err {
@@ -145,9 +151,9 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	return m.inst.CreateInst(params, obj, data)
 }
 
-func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setID, moduleIDS []int64) error {
+func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setIDs, moduleIDS []int64) error {
 
-	exists, err := m.hasHost(params, bizID, moduleIDS)
+	exists, err := m.hasHost(params, bizID, setIDs, moduleIDS)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to delete the modules, err: %s, rid: %s", err.Error(), params.ReqID)
 		return err
@@ -160,19 +166,36 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 
 	innerCond := condition.CreateCondition()
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
-	if nil != setID {
-		innerCond.Field(common.BKSetIDField).In(setID)
+	if nil != setIDs {
+		innerCond.Field(common.BKSetIDField).In(setIDs)
 	}
 
 	if nil != moduleIDS {
 		innerCond.Field(common.BKModuleIDField).In(moduleIDS)
 	}
 
+	// module table doesn't have metadata field
+	params.MetaData = nil
 	return m.inst.DeleteInst(params, obj, innerCond, false)
 }
 
-func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {
-	return m.inst.FindInst(params, obj, cond, false)
+func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []metadata.ModuleInst, err error) {
+	// module table doesn't have metadata field
+	params.MetaData = nil
+	count, resultData, err := m.inst.FindInst(params, obj, cond, false)
+	if err != nil {
+		return 0, nil, err
+	}
+	moduleInstances := make([]metadata.ModuleInst, 0)
+	for _, item := range resultData {
+		moduleInstance := metadata.ModuleInst{}
+		if err := mapstr.DecodeFromMapStr(&moduleInstance, item.ToMapStr()); err != nil {
+			blog.Errorf("unmarshal module into struct failed, module: %+v, rid: %s", item, params.ReqID)
+			return 0, nil, err
+		}
+		moduleInstances = append(moduleInstances, moduleInstance)
+	}
+	return count, moduleInstances, err
 }
 
 func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error {
@@ -182,5 +205,64 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 	innerCond.Field(common.BKSetIDField).Eq(setID)
 	innerCond.Field(common.BKModuleIDField).Eq(moduleID)
 
-	return m.inst.UpdateInst(params, data, obj, innerCond, -1)
+	findCond := &metadata.QueryInput{
+		Condition: innerCond.ToMapStr(),
+	}
+	var err error
+	count, moduleInstances, err := m.FindModule(params, obj, findCond)
+	if err != nil {
+		blog.Errorf("update module failed, find module failed, filter: %+v, err: %s, rid: %s", findCond, err.Error(), params.ReqID)
+		return err
+	}
+	if count == 0 {
+		return params.Err.CCErrorf(common.CCErrCommNotFound)
+	}
+	if count > 1 {
+		return params.Err.CCErrorf(common.CCErrCommGetMultipleObject)
+	}
+
+	moduleInstance := moduleInstances[0]
+	if moduleInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+		if val, ok := data[common.BKServiceCategoryIDField]; ok == true {
+			serviceCategoryID, err := util.GetInt64ByInterface(val)
+			if err != nil {
+				return params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+			}
+			if serviceCategoryID != moduleInstance.ServiceCategoryID {
+				return params.Err.CCError(common.CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden)
+			}
+		}
+
+		if val, ok := data[common.BKModuleNameField]; ok == true {
+			name := util.GetStrByInterface(val)
+			if len(name) == 0 {
+				delete(data, common.BKModuleNameField)
+			} else if name != moduleInstance.ModuleName {
+				return params.Err.CCError(common.CCErrorTopoUpdateModuleFromTplNameForbidden)
+			}
+		}
+	}
+	updateItems := map[string]interface{}{}
+	if val, ok := data[common.BKModuleNameField]; ok == true {
+		updateItems[common.BKModuleNameField] = val
+	}
+	if val, ok := data[common.BKOperatorField]; ok == true {
+		updateItems[common.BKOperatorField] = val
+	}
+	if val, ok := data[common.BKBakOperatorField]; ok == true {
+		updateItems[common.BKBakOperatorField] = val
+	}
+	if val, ok := data[common.BKServiceCategoryIDField]; ok == true {
+		updateItems[common.BKServiceCategoryIDField] = val
+	}
+	if val, ok := data[common.BKModuleTypeField]; ok == true {
+		updateItems[common.BKModuleTypeField] = val
+	}
+
+	// module table don't have metadata field
+	params.MetaData = nil
+	if err := m.inst.UpdateInst(params, updateItems, obj, innerCond, -1); err != nil {
+		return err
+	}
+	return nil
 }

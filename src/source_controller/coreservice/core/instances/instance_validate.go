@@ -253,28 +253,5 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 		}
 	}
 
-	if objID == common.BKInnerObjIDModule {
-		if err := m.validModuleUpdate(ctx, instanceData, instID); err != nil {
-			return err
-		}
-	}
-
 	return valid.validUpdateUnique(ctx, instanceData, instMetaData, instID, m)
-}
-
-func (m *instanceManager) validModuleUpdate(ctx core.ContextParams, instanceData mapstr.MapStr, instID uint64) error {
-	module := metadata.ModuleInst{}
-	filter := map[string]interface{}{
-		common.BKModuleIDField: instID,
-	}
-	if err := m.dbProxy.Table(common.BKTableNameBaseModule).Find(filter).One(ctx.Context, &module); err != nil {
-		blog.Errorf("validModuleUpdate failed, err: %+v, rid: %s", err, ctx.ReqID)
-		return err
-	}
-	delete(instanceData, common.BKServiceTemplateIDField)
-	delete(instanceData, common.BKServiceCategoryIDField)
-	if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
-		delete(instanceData, common.BKModuleNameField)
-	}
-	return nil
 }

@@ -32,7 +32,8 @@ export default [{
             i18n: '模型',
             path: modelPath,
             order: 1,
-            parent: NAV_MODEL_MANAGEMENT
+            parent: NAV_MODEL_MANAGEMENT,
+            businessView: false
         },
         auth: {
             operation: Object.values(OPERATION),
@@ -79,6 +80,9 @@ export default [{
             }
         },
         checkAvailable: (to, from, app) => {
+            if (!app.$store.getters.isAdminView) {
+                return false
+            }
             const modelId = to.params.modelId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
             return !!model

@@ -32,7 +32,7 @@
         </div>
         <div class="results-wrapper" ref="resultsWrapper"
             :class="{ 'searching': searching }"
-            v-bkloading="{ 'isLoading': $loading(requestId), 'afterLeave': loadingClose }">
+            v-bkloading="{ 'isLoading': $loading(requestId), 'afterLeave': loadingClose, opacity: 1 }">
             <div v-show="hasData">
                 <div class="results-list" ref="resultsList">
                     <div class="results-item"
@@ -44,7 +44,7 @@
                                 v-html="`${modelClassifyName[source['bk_obj_id']]} - ${source.bk_inst_name.toString()}`"
                                 @click="jumpPage(source)"></div>
                             <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]" @click="jumpPage(source)">
-                                <span class="desc-item" v-html="`${$t('模型ID')}${source['bk_obj_id']}`"> </span>
+                                <span class="desc-item" v-html="`${$t('实例ID')}：${source['bk_inst_id']}`"> </span>
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap[source['bk_obj_id']]"
                                     :key="childIndex"
@@ -413,23 +413,26 @@
                 const target = el.srcElement
                 this.searchTriggerType = 'input'
                 if (target.value.length === 32) {
-                    this.toggleTips = this.$tooltips({
-                        duration: -1,
+                    this.toggleTips && this.toggleTips.destroy()
+                    this.toggleTips = this.$bkPopover(this.$refs.searchInput, {
+                        theme: 'dark max-length-tips',
                         content: this.$t('最大支持搜索32个字符'),
-                        placements: ['top'],
-                        customClass: 'full-text-tips',
-                        target: target
+                        zIndex: 9999,
+                        trigger: 'manual',
+                        boundary: 'window',
+                        arrow: true
+                    })
+                    this.$nextTick(() => {
+                        this.toggleTips.show()
                     })
                 } else if (this.toggleTips) {
-                    this.toggleTips.duration = 0
-                    this.toggleTips.hiddenTooltips()
+                    this.toggleTips.hide()
                 }
             },
             handleClearInput () {
                 this.query.queryString = ''
                 if (this.toggleTips) {
-                    this.toggleTips.duration = 0
-                    this.toggleTips.hiddenTooltips()
+                    this.toggleTips.hide()
                 }
             }
         }
@@ -569,5 +572,10 @@
                 width: 104px;
             }
         }
+    }
+    .max-length-tips-theme {
+        font-size: 12px;
+        padding: 6px 12px;
+        left: 248px !important;
     }
 </style>

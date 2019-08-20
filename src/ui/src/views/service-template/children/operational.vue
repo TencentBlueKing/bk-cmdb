@@ -375,6 +375,7 @@
                                     })
                                 }
                             }).then(() => {
+                                this.$success(this.$t('删除成功'))
                                 this.getProcessList()
                             })
                         }

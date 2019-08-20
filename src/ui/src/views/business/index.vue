@@ -75,8 +75,9 @@
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column class-name="is-highlight" prop="bk_biz_id" label="ID" width="50" align="center" fixed></bk-table-column>
+            <bk-table-column prop="bk_biz_id" label="ID" width="50" align="center" fixed></bk-table-column>
             <bk-table-column v-for="column in table.header"
+                :class-name="column.id === 'bk_biz_name' ? 'is-highlight' : ''"
                 sortable="custom"
                 :fixed="column.id === 'bk_biz_name'"
                 :key="column.id"
@@ -345,6 +346,10 @@
             },
             getTableData () {
                 this.getBusinessList().then(data => {
+                    if (data.count && !data.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getTableData()
+                    }
                     this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
                     return data
@@ -396,7 +401,7 @@
                         this.archiveBusiness(inst['bk_biz_id']).then(() => {
                             this.slider.show = false
                             this.$success(this.$t('归档成功'))
-                            this.handlePageChange(1)
+                            this.getTableData()
                             this.$http.cancel('post_searchBusiness_$ne_disabled')
                         })
                     }

@@ -100,6 +100,10 @@
             isShow: {
                 type: Boolean,
                 default: false
+            },
+            groupId: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -148,6 +152,9 @@
                     this.modelDialog.data['bk_obj_name'] = ''
                     this.$validator.reset()
                 }
+            },
+            groupId (value) {
+                this.modelDialog.data.bk_classification_id = value
             }
         },
         methods: {
@@ -159,6 +166,7 @@
             },
             cancel () {
                 this.$emit('update:isShow', false)
+                this.$emit('update:groupId', '')
                 this.$validator.reset()
             }
         }
@@ -253,6 +261,7 @@
             width: 100%;
             height: calc(100% + 60px);
             background: #fff;
+            z-index: 99;
             .back {
                 position: absolute;
                 right: -47px;

@@ -137,7 +137,6 @@
             cursor: pointer;
             &.create {
                 font-size: 30px;
-                padding-top: 10px;
                 height: 60px;
             }
             &:hover,

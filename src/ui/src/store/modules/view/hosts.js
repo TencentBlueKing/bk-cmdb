@@ -35,6 +35,9 @@ const mutations = {
     setCollection (state, collection) {
         state.collection = collection
     },
+    addCollection (state, collection) {
+        state.collectionList.push(collection)
+    },
     updateCollection (state, updatedData) {
         Object.assign(state.collection, updatedData)
     },

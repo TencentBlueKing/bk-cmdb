@@ -170,7 +170,7 @@
                         requestId: 'getInstRelation'
                     }
                 })
-                return Promise.resolve(root)
+                return Promise.resolve(root || { prev: [], next: [] })
             },
             getAvailableAssociation (data, reference = [], mainLine = []) {
                 return data.filter(association => {

@@ -12,6 +12,7 @@
 package util
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -108,4 +109,11 @@ func IntArrIntersection(slice1 []int64, slice2 []int64) []int64 {
 		}
 	}
 	return intersectInt
+}
+
+func PrettyIPStr(ips []string) string {
+	if len(ips) > 2 {
+		return fmt.Sprintf("%s ...", strings.Join(ips[:2], ","))
+	}
+	return strings.Join(ips, ",")
 }
