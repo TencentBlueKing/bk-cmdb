@@ -181,6 +181,7 @@ type ServiceInstanceDifference struct {
 // ServiceDifferenceDetails 服务实例与模板差异信息
 type ServiceDifferenceDetails struct {
 	ServiceInstance   ServiceInstance           `json:"service_instance"`
+	Process           *Process                  `json:"process"`
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes,omitempty"`
 }
 
