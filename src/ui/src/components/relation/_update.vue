@@ -387,15 +387,19 @@
                 } else {
                     this.confirm.id = instId
                     this.confirm.instance && this.confirm.instance.destroy()
-                    this.confirm.instance = this.$tooltips({
-                        duration: -1,
+                    this.confirm.instance = this.$bkPopover(event.target, {
+                        content: this.$refs.confirmTips,
                         theme: 'light',
                         zIndex: 9999,
                         width: 230,
-                        container: document.body,
-                        target: event.target
+                        trigger: 'manual',
+                        boundary: 'window',
+                        arrow: true,
+                        interactive: true
                     })
-                    this.confirm.instance.$el.append(this.$refs.confirmTips)
+                    this.$nextTick(() => {
+                        this.confirm.instance.show()
+                    })
                 }
             },
             confirmUpdate () {
@@ -403,7 +407,7 @@
                 this.cancelUpdate()
             },
             cancelUpdate () {
-                this.confirm.instance && this.confirm.instance.setVisible(false)
+                this.confirm.instance && this.confirm.instance.hide()
             },
             async getInstance () {
                 const objId = this.currentAsstObj
@@ -562,7 +566,7 @@
         border: none;
     }
     .confirm-tips {
-        padding: 9px 22px;
+        padding: 9px;
         .tips-content {
             color: $cmdbTextColor;
             line-height: 20px;

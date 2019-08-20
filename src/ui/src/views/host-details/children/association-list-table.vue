@@ -47,11 +47,11 @@
                 </template>
             </bk-table-column>
         </bk-table>
-        <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.item">
+        <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.show">
             <p class="tips-content">{{$t('确认取消')}}</p>
             <div class="tips-option">
-                <bk-button class="tips-button" theme="primary" @click="cancelAssociation">{{$t('确认')}}</bk-button>
-                <bk-button class="tips-button" theme="default" @click="hideTips">{{$t('取消')}}</bk-button>
+                <bk-button class="tips-button" theme="primary" @click.stop="cancelAssociation">{{$t('确认')}}</bk-button>
+                <bk-button class="tips-button" theme="default" @click.stop="hideTips">{{$t('取消')}}</bk-button>
             </div>
         </div>
     </div>
@@ -89,7 +89,9 @@
                 confirm: {
                     instance: null,
                     item: null,
-                    target: null
+                    target: null,
+                    id: null,
+                    show: false
                 }
             }
         },
@@ -329,6 +331,7 @@
                         this.getInstances()
                     })
                     this.$success(this.$t('取消关联成功'))
+                    this.hideTips()
                 } catch (e) {
                     console.error(e)
                 }
@@ -353,21 +356,26 @@
                 if (event && event.target === this.confirm.target) {
                     return false
                 }
-                this.confirm.instance && this.confirm.instance.setVisible(false)
+                this.confirm.instance && this.confirm.instance.hide()
             },
             showTips (event, item) {
                 this.confirm.item = item
-                this.confirm.target = event.target
+                this.confirm.id = item.bk_inst_id
                 this.confirm.instance && this.confirm.instance.destroy()
-                this.confirm.instance = this.$tooltips({
-                    duration: 100,
+                this.confirm.instance = this.$bkPopover(event.target, {
+                    content: this.$refs.confirmTips,
                     theme: 'light',
                     zIndex: 9999,
                     width: 200,
-                    container: document.body,
-                    target: event.target
+                    trigger: 'manual',
+                    boundary: 'window',
+                    arrow: true,
+                    interactive: true
                 })
-                this.confirm.instance.$el.append(this.$refs.confirmTips)
+                this.confirm.show = true
+                this.$nextTick(() => {
+                    this.confirm.instance.show()
+                })
             }
         }
     }
@@ -418,7 +426,7 @@
         }
     }
     .confirm-tips {
-        padding: 9px;
+        padding: 9px 0;
         text-align: center;
         .tips-content {
             color: $cmdbTextColor;
