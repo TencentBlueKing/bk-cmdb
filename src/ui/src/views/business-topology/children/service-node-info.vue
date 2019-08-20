@@ -452,7 +452,7 @@
                         requestId: 'updateNodeInstance'
                     }
                 }).then(async () => {
-                    const serviceInfo = await this.getServiceInfo({ service_category_id: value.service_category_id })
+                    const serviceInfo = await this.getServiceInfo({ service_category_id: value.service_category_id || this.instance.service_category_id })
                     Object.assign(this.instance, serviceInfo)
                 })
             },
