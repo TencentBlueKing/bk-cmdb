@@ -165,7 +165,7 @@
                 <span class="inline-block-middle"
                     v-cursor="{
                         active: !editable,
-                        auth: [$OPERATION.U_CUSTOM_QUERY]
+                        auth: [$OPERATION.D_CUSTOM_QUERY]
                     }">
                     <bk-button theme="danger" class="userapi-btn button-delete"
                         v-if="type === 'update'"
@@ -284,7 +284,7 @@
             ]),
             editable () {
                 if (this.type === 'update') {
-                    return this.$isAuthorized(this.$OPERATION.U_CUSTOM_QUERY)
+                    return this.$isAuthorized(this.$OPERATION.D_CUSTOM_QUERY)
                 }
                 return true
             },
@@ -931,6 +931,9 @@
             .button-delete {
                 background-color: #fff;
                 color: #ff5656;
+                &:disabled {
+                    color: #dcdee5;
+                }
             }
         }
     }

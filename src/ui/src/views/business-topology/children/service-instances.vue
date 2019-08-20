@@ -291,6 +291,7 @@
                     if (!this.isCarryParams) {
                         this.searchSelectData = []
                     }
+                    this.pagination.current = 1
                     await this.getServiceInstances()
                     const timer = setTimeout(() => {
                         if (node.data.service_template_id && this.instances.length) {
@@ -411,6 +412,10 @@
                             cancelPrevious: true
                         }
                     })
+                    if (data.count && !data.info.length) {
+                        this.pagination.current -= 1
+                        this.getServiceInstances()
+                    }
                     this.isCarryParams = false
                     this.checked = []
                     this.isCheckAll = false
@@ -566,7 +571,12 @@
                 return Promise.resolve(data.property)
             },
             handleDeleteInstance (id) {
-                this.instances = this.instances.filter(instance => instance.id !== id)
+                const filterInstances = this.instances.filter(instance => instance.id !== id)
+                if (!filterInstances.length && this.pagination.current > 1) {
+                    this.pagination.current -= 1
+                    this.getServiceInstances()
+                }
+                this.instances = filterInstances
             },
             async handleSaveProcess (values, changedValues, instance) {
                 try {
@@ -706,7 +716,12 @@
                                 node.data.service_instance_count = node.data.service_instance_count - deleteNum
                             })
                             this.$success(this.$t('删除成功'))
-                            this.instances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
+                            const filterInstances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
+                            if (!filterInstances.length && this.pagination.current > 1) {
+                                this.pagination.current -= 1
+                                this.getServiceInstances()
+                            }
+                            this.instances = filterInstances
                             this.checked = []
                         } catch (e) {
                             console.error(e)
