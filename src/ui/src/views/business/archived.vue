@@ -107,6 +107,10 @@
                         requestId: 'searchArchivedBusiness'
                     }
                 }).then(business => {
+                    if (business.count && !business.info.length) {
+                        this.pagination.current -= 1
+                        this.getTableData()
+                    }
                     this.pagination.count = business.count
                     this.list = this.$tools.flattenList(this.properties, business.info.map(biz => {
                         biz['last_time'] = this.$tools.formatTime(biz['last_time'], 'YYYY-MM-DD HH:mm:ss')
@@ -147,7 +151,7 @@
                 }).then(() => {
                     this.$http.cancel('post_searchBusiness_$ne_disabled')
                     this.$success(this.$t('恢复业务成功'))
-                    this.handlePageChange(1)
+                    this.getTableData()
                 })
             },
             handleSizeChange (size) {

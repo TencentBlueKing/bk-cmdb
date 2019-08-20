@@ -74,11 +74,12 @@
                 <p>暂无服务实例，<span @click="handleGoAddInstance">跳转服务拓扑添加</span></p>
             </div>
         </bk-table>
-        <bk-pagination class="pagination"
+        <bk-pagination v-if="instances.length"
+            class="pagination"
             align="right"
             size="small"
             :current="pagination.current"
-            :count="pagination.totalPage"
+            :count="pagination.count"
             :limit="pagination.size"
             @change="handlePageChange"
             @limit-change="handleSizeChange">
@@ -114,7 +115,7 @@
                 searchSelectData: [],
                 pagination: {
                     current: 1,
-                    totalPage: 0,
+                    count: 0,
                     size: 10
                 },
                 checked: [],
@@ -184,7 +185,7 @@
                     this.checked = []
                     this.isCheckAll = false
                     this.isExpandAll = false
-                    this.pagination.totalPage = Math.ceil(data.count / this.pagination.size)
+                    this.pagination.count = data.count
                     this.instances = data.info
                 } catch (e) {
                     console.error(e)
@@ -210,7 +211,12 @@
                 this.$set(this.searchSelect[1], 'conditions', keys)
             },
             handleDeleteInstance (id) {
-                this.instances = this.instances.filter(instance => instance.id !== id)
+                const filterInstances = this.instances.filter(instance => instance.id !== id)
+                if (!filterInstances.length && this.pagination.current > 1) {
+                    this.pagination.current -= 1
+                    this.getHostSeriveInstances()
+                }
+                this.instances = filterInstances
             },
             handleCheckALL (checked) {
                 this.searchSelectData = []
@@ -244,7 +250,12 @@
                                     requestId: 'batchDeleteServiceInstance'
                                 }
                             })
-                            this.instances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
+                            const filterInstances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
+                            if (!filterInstances.length && this.pagination.current > 1) {
+                                this.pagination.current -= 1
+                                this.getHostSeriveInstances()
+                            }
+                            this.instances = filterInstances
                             this.checked = []
                         } catch (e) {
                             console.error(e)
