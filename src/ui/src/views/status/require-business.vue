@@ -7,7 +7,7 @@
                 <p>{{$t('点击下方按钮申请')}}</p>
             </div>
             <div class="btns">
-                <bk-button theme="primary" @click="handleApplyPermission">
+                <bk-button theme="primary" @click="handleApplyPermission" :loading="$loading('getSkipUrl')">
                     {{$t('申请业务权限')}}
                 </bk-button>
             </div>
@@ -15,23 +15,33 @@
     </div>
 </template>
 <script>
+    import { mapGetters } from 'vuex'
     export default {
+        computed: {
+            ...mapGetters(['permission'])
+        },
         created () {
             this.$store.commit('setHeaderTitle', '')
         },
+        beforeRouteEnter (to, from, next) {
+            if (from.fullPath === '/') {
+                next({ name: 'index' })
+            } else {
+                next()
+            }
+        },
         methods: {
-            handleApplyPermission () {
-                const topWindow = window.top
-                const isPaasConsole = topWindow !== window
-                const authCenter = window.Site.authCenter || {}
-                if (isPaasConsole) {
-                    topWindow.postMessage(JSON.stringify({
-                        action: 'open_other_app',
-                        app_code: authCenter.appCode,
-                        app_url: 'apply-by-system'
-                    }), '*')
-                } else {
-                    window.open(authCenter.url)
+            async handleApplyPermission () {
+                try {
+                    const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
+                        params: this.permission,
+                        config: {
+                            requestId: 'getSkipUrl'
+                        }
+                    })
+                    window.open(skipUrl)
+                } catch (e) {
+                    console.error(e)
                 }
             }
         }
