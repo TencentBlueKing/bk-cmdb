@@ -73,21 +73,15 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommDuplicateItem, common.BKSubscriptionNameField),
 		}
-		resp.WriteError(http.StatusInternalServerError, result)
+		resp.WriteError(http.StatusOK, result)
 		return
 	}
-	// TODO: is it necessary to do update operation?
+
 	if len(existSubscriptions) > 0 {
-		subscriptionID := existSubscriptions[0].SubscriptionID
-		if err = s.updateSubscription(header, subscriptionID, ownerID, sub); err != nil {
-			result := &metadata.RespError{
-				Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed),
-			}
-			resp.WriteError(http.StatusBadRequest, result)
-			return
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommDuplicateItem, common.BKSubscriptionNameField),
 		}
-		result := NewCreateSubscriptionResult(sub.SubscriptionID)
-		resp.WriteEntity(result)
+		resp.WriteError(http.StatusOK, result)
 		return
 	}
 
