@@ -2,12 +2,12 @@
     <div class="layout" v-bkloading="{ isLoading: $loading('getModuleServiceInstances') }">
         <template v-if="instances.length || inSearch">
             <div class="options">
-                <cmdb-form-bool class="options-checkall"
+                <bk-checkbox class="options-checkall"
                     :size="16"
-                    :checked="isCheckAll"
+                    v-model="isCheckAll"
                     :title="$t('全选本页')"
                     @change="handleCheckALL">
-                </cmdb-form-bool>
+                </bk-checkbox>
                 <span style="display: inline-block;"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
@@ -55,12 +55,12 @@
                     </bk-button>
                 </span>
                 <div class="options-right fr">
-                    <cmdb-form-bool class="options-checkbox"
+                    <bk-checkbox class="options-checkbox"
                         :size="16"
-                        :checked="isExpandAll"
+                        v-model="isExpandAll"
                         @change="handleExpandAll">
                         <span class="checkbox-label">{{$t('全部展开')}}</span>
-                    </cmdb-form-bool>
+                    </bk-checkbox>
                     <div class="options-search">
                         <bk-search-select
                             ref="searchSelect"
@@ -291,6 +291,7 @@
                     if (!this.isCarryParams) {
                         this.searchSelectData = []
                     }
+                    this.pagination.current = 1
                     await this.getServiceInstances()
                     const timer = setTimeout(() => {
                         if (node.data.service_template_id && this.instances.length) {
@@ -411,6 +412,10 @@
                             cancelPrevious: true
                         }
                     })
+                    if (data.count && !data.info.length) {
+                        this.pagination.current -= 1
+                        this.getServiceInstances()
+                    }
                     this.isCarryParams = false
                     this.checked = []
                     this.isCheckAll = false
@@ -566,7 +571,12 @@
                 return Promise.resolve(data.property)
             },
             handleDeleteInstance (id) {
-                this.instances = this.instances.filter(instance => instance.id !== id)
+                const filterInstances = this.instances.filter(instance => instance.id !== id)
+                if (!filterInstances.length && this.pagination.current > 1) {
+                    this.pagination.current -= 1
+                    this.getServiceInstances()
+                }
+                this.instances = filterInstances
             },
             async handleSaveProcess (values, changedValues, instance) {
                 try {
@@ -706,7 +716,12 @@
                                 node.data.service_instance_count = node.data.service_instance_count - deleteNum
                             })
                             this.$success(this.$t('删除成功'))
-                            this.instances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
+                            const filterInstances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
+                            if (!filterInstances.length && this.pagination.current > 1) {
+                                this.pagination.current -= 1
+                                this.getServiceInstances()
+                            }
+                            this.instances = filterInstances
                             this.checked = []
                         } catch (e) {
                             console.error(e)

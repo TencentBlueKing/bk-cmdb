@@ -71,7 +71,7 @@
                         v-else
                         v-cursor="{
                             active: true,
-                            auth: [$OPERATION.U_EVENT]
+                            auth: [$OPERATION.D_EVENT]
                         }">
                         {{$t('删除')}}
                     </span>
@@ -207,6 +207,10 @@
                     }
                 }
                 const res = await this.searchSubscription({ bkBizId: 0, params, config: { requestId: 'searchSubscription' } })
+                if (res.count && !res.info.length) {
+                    this.table.pagination.current -= 1
+                    this.getTableData()
+                }
                 res.info.map(item => {
                     item['subscription_form'] = item['subscription_form'].split(',')
                     item['last_time'] = formatTime(item['last_time'])

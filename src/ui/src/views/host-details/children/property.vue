@@ -8,7 +8,7 @@
             <h2 class="group-name">{{group.bk_group_name}}</h2>
             <ul class="property-list">
                 <li class="property-item"
-                    v-for="(property, childIndex) in group.properties"
+                    v-for="property in group.properties"
                     :key="property.id">
                     <span class="property-name"
                         :title="property.bk_property_name">
@@ -61,11 +61,11 @@
                     </template>
                     <template v-if="$tools.getPropertyText(property, host) !== '--' && property !== editState.property">
                         <div class="copy-box">
-                            <i class="property-copy icon-cc-details-copy" @click="handleCopy($tools.getPropertyText(property, host), childIndex)"></i>
+                            <i class="property-copy icon-cc-details-copy" @click="handleCopy($tools.getPropertyText(property, host), property.bk_property_id)"></i>
                             <transition name="fade">
                                 <span class="copy-tips"
                                     :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
-                                    v-if="showCopyTips === childIndex">
+                                    v-if="showCopyTips === property.bk_property_id">
                                     {{$t('复制成功')}}
                                 </span>
                             </transition>
@@ -151,9 +151,9 @@
                 const threshold = Math.max(rangeWidth - target.offsetWidth, target.scrollWidth - target.offsetWidth)
                 this.$set(this.tooltipState, property.bk_property_id, threshold > 0.5)
             },
-            handleCopy (copyText, index) {
+            handleCopy (copyText, propertyId) {
                 this.$copyText(copyText).then(() => {
-                    this.showCopyTips = index
+                    this.showCopyTips = propertyId
                     const timer = setTimeout(() => {
                         this.showCopyTips = false
                         clearTimeout(timer)

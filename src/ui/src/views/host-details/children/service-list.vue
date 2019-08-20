@@ -1,12 +1,12 @@
 <template>
     <div class="service-wrapper">
         <div class="options">
-            <cmdb-form-bool class="options-checkall"
+            <bk-checkbox class="options-checkall"
                 :size="16"
-                :checked="isCheckAll"
+                v-model="isCheckAll"
                 :title="$t('全选本页')"
                 @change="handleCheckALL">
-            </cmdb-form-bool>
+            </bk-checkbox>
             <span style="display: inline-block;"
                 v-cursor="{
                     active: !$isAuthorized($OPERATION.D_SERVICE_INSTANCE),
@@ -19,12 +19,12 @@
                 </bk-button>
             </span>
             <div class="option-right fr">
-                <cmdb-form-bool class="options-checkbox"
+                <bk-checkbox class="options-checkbox"
                     :size="16"
-                    :checked="isExpandAll"
+                    v-model="isExpandAll"
                     @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('全部展开')}}</span>
-                </cmdb-form-bool>
+                </bk-checkbox>
                 <div class="options-search">
                     <bk-search-select
                         ref="searchSelect"
@@ -39,7 +39,7 @@
                 <bk-popover
                     ref="popoverCheckView"
                     :always="true"
-                    :width="210"
+                    :width="224"
                     theme="check-view-color"
                     placement="bottom-end">
                     <div slot="content" class="popover-main">
@@ -68,12 +68,18 @@
                 @check-change="handleCheckChange">
             </service-instance-table>
         </div>
-        <bk-table v-if="!instances.length" :data="[]" class="mb10"></bk-table>
-        <bk-pagination class="pagination"
+        <bk-table v-if="!instances.length" :data="[]" class="mb10">
+            <div slot="empty" class="empty-text">
+                <img src="../../../assets/images/empty-content.png" alt="">
+                <p>暂无服务实例，<span @click="handleGoAddInstance">跳转服务拓扑添加</span></p>
+            </div>
+        </bk-table>
+        <bk-pagination v-if="instances.length"
+            class="pagination"
             align="right"
             size="small"
             :current="pagination.current"
-            :count="pagination.totalPage"
+            :count="pagination.count"
             :limit="pagination.size"
             @change="handlePageChange"
             @limit-change="handleSizeChange">
@@ -109,7 +115,7 @@
                 searchSelectData: [],
                 pagination: {
                     current: 1,
-                    totalPage: 0,
+                    count: 0,
                     size: 10
                 },
                 checked: [],
@@ -179,7 +185,7 @@
                     this.checked = []
                     this.isCheckAll = false
                     this.isExpandAll = false
-                    this.pagination.totalPage = Math.ceil(data.count / this.pagination.size)
+                    this.pagination.count = data.count
                     this.instances = data.info
                 } catch (e) {
                     console.error(e)
@@ -205,7 +211,12 @@
                 this.$set(this.searchSelect[1], 'conditions', keys)
             },
             handleDeleteInstance (id) {
-                this.instances = this.instances.filter(instance => instance.id !== id)
+                const filterInstances = this.instances.filter(instance => instance.id !== id)
+                if (!filterInstances.length && this.pagination.current > 1) {
+                    this.pagination.current -= 1
+                    this.getHostSeriveInstances()
+                }
+                this.instances = filterInstances
             },
             handleCheckALL (checked) {
                 this.searchSelectData = []
@@ -239,7 +250,12 @@
                                     requestId: 'batchDeleteServiceInstance'
                                 }
                             })
-                            this.instances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
+                            const filterInstances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
+                            if (!filterInstances.length && this.pagination.current > 1) {
+                                this.pagination.current -= 1
+                                this.getHostSeriveInstances()
+                            }
+                            this.instances = filterInstances
                             this.checked = []
                         } catch (e) {
                             console.error(e)
@@ -306,6 +322,11 @@
                 el.curItem.children = children
                 el.updateChildMenu(cur, index, false)
                 el.showChildMenu(children)
+            },
+            handleGoAddInstance () {
+                this.$router.replace({
+                    name: 'topology'
+                })
             }
         }
     }
@@ -313,6 +334,7 @@
 
 <style lang="scss" scoped>
     .service-wrapper {
+        height: calc(100% - 30px);
         padding: 14px 0 0 0;
     }
     .options-checkall {
@@ -338,7 +360,9 @@
         z-index: 99;
     }
     .popover-main {
-        @include inlineBlock;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         .bk-icon {
             margin: 0 0 0 10px;
             cursor: pointer;
@@ -370,7 +394,20 @@
         }
     }
     .tables {
-        padding-top: 16px;
+        @include scrollbar-y;
+        max-height: calc(100% - 80px);
+        margin: 16px 0 10px;
+    }
+    .empty-text {
+        text-align: center;
+        p {
+            font-size: 14px;
+            margin: -10px 0 0;
+        }
+        span {
+            color: #3a84ff;
+            cursor: pointer;
+        }
     }
 </style>
 

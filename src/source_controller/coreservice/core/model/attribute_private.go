@@ -21,10 +21,11 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelAttribute) isExists(ctx core.ContextParams, propertyID string, meta metadata.Metadata) (oneAttribute *metadata.Attribute, exists bool, err error) {
+func (m *modelAttribute) isExists(ctx core.ContextParams, objID, propertyID string, meta metadata.Metadata) (oneAttribute *metadata.Attribute, exists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldPropertyID, Val: propertyID})
+	cond.Element(&mongo.Eq{Key: common.BKOIDField, Val: objID})
 
 	// ATTETION: Currently only business dimension isolation is done,
 	//           and there may be isolation requirements for other dimensions in the future.
