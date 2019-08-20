@@ -179,7 +179,7 @@
     "全部结果": "all",
     "该模型已停用": "The model has been disabled",
     "主线模型无法查看": "Mainline model connot be viewed",
-    "模型ID": "Model ID:",
+    "实例ID": "Instance ID:",
     "主机ID": "Host ID:",
     "最大支持搜索32个字符": "Maximum support for searching 32 characters",
     "操作审计": "Operation Audit",
