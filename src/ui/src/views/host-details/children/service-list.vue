@@ -68,7 +68,7 @@
                 @check-change="handleCheckChange">
             </service-instance-table>
         </div>
-        <bk-table v-if="!instances.length" :data="[]">
+        <bk-table v-if="!instances.length" :data="[]" class="mb10">
             <div slot="empty" class="empty-text">
                 <img src="../../../assets/images/empty-content.png" alt="">
                 <p>暂无服务实例，<span @click="handleGoAddInstance">跳转服务拓扑添加</span></p>

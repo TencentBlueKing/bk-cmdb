@@ -19,7 +19,8 @@ export default {
             i18n: '模型拓扑',
             path: path,
             order: 2,
-            parent: NAV_MODEL_MANAGEMENT
+            parent: NAV_MODEL_MANAGEMENT,
+            businessView: false
         },
         auth: {
             operation: Object.values(OPERATION),
