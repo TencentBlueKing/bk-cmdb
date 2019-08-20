@@ -82,7 +82,7 @@ func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objI
 		if propertyName == "" {
 			return nil
 		}
-		
+
 		idFieldCond := mongo.Field(common.BKPropertyIDField).Neq(propertyID)
 		cond = cond.Element(nameFieldCond, idFieldCond)
 	}
@@ -190,19 +190,12 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 		return 0, err
 	}
 
-<<<<<<< HEAD
 	for _, dbAttribute := range dbAttributeArr {
 		err = m.checkUnique(ctx, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName)
 		if err != nil {
-			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+			blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
 			return 0, err
 		}
-=======
-	err = m.checkUnique(ctx, false, dbAttributeArr[0].ObjectID, dbAttributeArr[0].PropertyID, attribute.PropertyName)
-	if err != nil {
-		blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
-		return 0, err
->>>>>>> fix:import model attribute bug issue #2978
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
