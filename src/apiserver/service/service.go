@@ -18,14 +18,9 @@ import (
 	compatiblev2 "configcenter/src/apiserver/core/compatiblev2/service"
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/parser"
-	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/rdapi"
-	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 )
