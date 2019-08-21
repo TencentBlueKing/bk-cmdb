@@ -376,9 +376,10 @@
                         const property = this.modelProperties.find(property => property['bk_property_id'] === key)
                         let propertyValue = ''
                         if (['enum'].includes(property['bk_property_type'])) {
-                            propertyValue = property['option'].find(option => option['id'] === instance[key])['name']
+                            const enumValue = property['option'].find(option => option['id'] === instance[key])
+                            propertyValue = enumValue ? enumValue['name'] : enumValue
                         } else if (['bool'].includes(property['bk_property_type'])) {
-                            propertyValue = instance[key] ? '是' : '否'
+                            propertyValue = instance[key] ? this.$t('是') : this.$t('否')
                         } else {
                             propertyValue = instance[key]
                         }
@@ -422,8 +423,8 @@
                         result['before_value'] = property['option'].find(option => option['id'] === item['property_value'])['name']
                         result['show_value'] = property['option'].find(option => option['id'] === item['template_property_value']['value'])['name']
                     } else if (['bool'].includes(property['bk_property_type'])) {
-                        result['before_value'] = item['property_value'] ? '是' : '否'
-                        result['show_value'] = item['template_property_value']['value'] ? '是' : '否'
+                        result['before_value'] = item['property_value'] ? this.$t('是') : this.$t('否')
+                        result['show_value'] = item['template_property_value']['value'] ? this.$t('是') : this.$t('否')
                     } else {
                         result['before_value'] = item['property_value']
                         result['show_value'] = item['property_id'] === 'bind_ip'
