@@ -729,7 +729,7 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 			process["protocol"] = *t.Protocol.Value
 			changed = true
 		} else if t.Protocol.Value != nil && i.Protocol != nil && *t.Protocol.Value != *i.Protocol {
-			process["protocol"] = *t.ProcNum.Value
+			process["protocol"] = *t.Protocol.Value
 			changed = true
 		}
 	}
