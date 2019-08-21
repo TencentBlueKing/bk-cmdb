@@ -370,37 +370,37 @@ const (
 
 	CCErrorTopoAssociationKindHasBeenUsed                     = 1101060
 	CCErrorTopoCreateMultipleInstancesForOneToManyAssociation = 1101061
-	CCErrTopoAppDeleteFailed                                  = 1001031
-	CCErrTopoAppUpdateFailed                                  = 1001032
-	CCErrTopoAppSearchFailed                                  = 1001033
-	CCErrTopoAppCreateFailed                                  = 1001034
-	CCErrTopoForbiddenToDeleteModelFailed                     = 1001035
-	CCErrTopoMainlineCreatFailed                              = 1001037
-	CCErrTopoMainlineDeleteFailed                             = 1001038
-	CCErrTopoMainlineSelectFailed                             = 1001039
-	CCErrTopoTopoSelectFailed                                 = 1001040
-	CCErrTopoUserGroupCreateFailed                            = 1001041
-	CCErrTopoUserGroupDeleteFailed                            = 1001042
-	CCErrTopoUserGroupUpdateFailed                            = 1001043
-	CCErrTopoUserGroupSelectFailed                            = 1001044
-	CCErrTopoUserGroupPrivilegeUpdateFailed                   = 1001045
-	CCErrTopoUserGroupPrivilegeSelectFailed                   = 1001046
-	CCErrTopoUserPrivilegeSelectFailed                        = 1001047
-	CCErrTopoRolePrivilegeCreateFailed                        = 1001048
-	CCErrTopoDeleteMainLineObjectAndInstNameRepeat            = 1001049
-	CCErrHostNotAllowedToMutiBiz                              = 1001050
-	CCErrTopoGraphicsSearchFailed                             = 1001051
-	CCErrTopoGraphicsUpdateFailed                             = 1001052
-	CCErrTopoObjectUniqueCreateFailed                         = 1001060
-	CCErrTopoObjectUniqueUpdateFailed                         = 1001061
-	CCErrTopoObjectUniqueDeleteFailed                         = 1001062
-	CCErrTopoObjectUniqueSearchFailed                         = 1001063
-	CCErrTopoObjectPropertyNotFound                           = 1001064
-	CCErrTopoObjectPropertyUsedByUnique                       = 1001065
-	CCErrTopoObjectUniqueKeyKindInvalid                       = 1001066
-	CCErrTopoObjectUniquePresetCouldNotDelOrEdit              = 1001067
-	CCErrTopoObjectUniqueCanNotHasMultipleMustCheck           = 1001068
-	CCErrTopoObjectUniqueShouldHaveMoreThanOne                = 1001069
+	CCErrTopoAppDeleteFailed                                  = 1101131
+	CCErrTopoAppUpdateFailed                                  = 1101132
+	CCErrTopoAppSearchFailed                                  = 1101133
+	CCErrTopoAppCreateFailed                                  = 1101134
+	CCErrTopoForbiddenToDeleteModelFailed                     = 1101135
+	CCErrTopoMainlineCreatFailed                              = 1101137
+	CCErrTopoMainlineDeleteFailed                             = 1101138
+	CCErrTopoMainlineSelectFailed                             = 1101139
+	CCErrTopoTopoSelectFailed                                 = 1101140
+	CCErrTopoUserGroupCreateFailed                            = 1101141
+	CCErrTopoUserGroupDeleteFailed                            = 1101142
+	CCErrTopoUserGroupUpdateFailed                            = 1101143
+	CCErrTopoUserGroupSelectFailed                            = 1101144
+	CCErrTopoUserGroupPrivilegeUpdateFailed                   = 1101145
+	CCErrTopoUserGroupPrivilegeSelectFailed                   = 1101146
+	CCErrTopoUserPrivilegeSelectFailed                        = 1101147
+	CCErrTopoRolePrivilegeCreateFailed                        = 1101148
+	CCErrTopoDeleteMainLineObjectAndInstNameRepeat            = 1101149
+	CCErrHostNotAllowedToMutiBiz                              = 1101150
+	CCErrTopoGraphicsSearchFailed                             = 1101151
+	CCErrTopoGraphicsUpdateFailed                             = 1101152
+	CCErrTopoObjectUniqueCreateFailed                         = 1101160
+	CCErrTopoObjectUniqueUpdateFailed                         = 1101161
+	CCErrTopoObjectUniqueDeleteFailed                         = 1101162
+	CCErrTopoObjectUniqueSearchFailed                         = 1101163
+	CCErrTopoObjectPropertyNotFound                           = 1101164
+	CCErrTopoObjectPropertyUsedByUnique                       = 1101165
+	CCErrTopoObjectUniqueKeyKindInvalid                       = 1101166
+	CCErrTopoObjectUniquePresetCouldNotDelOrEdit              = 1101167
+	CCErrTopoObjectUniqueCanNotHasMultipleMustCheck           = 1101168
+	CCErrTopoObjectUniqueShouldHaveMoreThanOne                = 1101069
 	// association kind has been apply to object
 	CCErrorTopoAssKindHasApplyToObject = 1101070
 	// pre definition association kind can not be delete
@@ -425,12 +425,12 @@ const (
 	CCErrorTopoGetAuthorizedBusinessListFailed = 1101086
 	CCErrTopoArchiveBusinessHasHost            = 1101087
 
-	// full text find err
 	CCErrorTopoFullTextFindErr              = 1101088
 	CCErrorTopoFullTextClientNotInitialized = 1101089
 
 	CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden = 1101090
 	CCErrorTopoUpdateModuleFromTplNameForbidden            = 1101091
+	CCErrTopoCanNotAddRequiredAttributeForMailineModel     = 1101092
 
 	// object controller 1102XXX
 
@@ -580,7 +580,7 @@ const (
 	CCErrHostFiledValdFail        = 1110007
 	CCErrHostNotFound             = 1110008
 	CCErrHostLength               = 1110009
-	CCErrHostDetailFail           = 1110010
+	CCErrHostDetailFail           = 1111011
 	CCErrHostSnap                 = 1110011
 	CCErrHostFeildValidFail       = 1110012
 	CCErrHostFavCreateFail        = 1110013

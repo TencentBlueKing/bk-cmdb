@@ -571,7 +571,7 @@
         border-right: none;
     }
     .confirm-tips {
-        padding: 9px 22px;
+        padding: 9px;
         .tips-content {
             color: $cmdbTextColor;
             line-height: 20px;

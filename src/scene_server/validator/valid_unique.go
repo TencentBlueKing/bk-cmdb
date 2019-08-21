@@ -240,7 +240,6 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 	searchCond := make(map[string]interface{})
 	searchCond[common.GetInstIDField(objID)] = instID
 	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
-		objID = common.BKInnerObjIDObject
 		searchCond[common.BKObjIDField] = valid.objID
 	}
 
