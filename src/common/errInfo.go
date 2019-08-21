@@ -195,7 +195,7 @@ const (
 
 	// 构造DB查询条件失败
 	CCErrConstructDBFilterFailed = 1199071
-	CCErrGetNoAuthSkipUrlFailed  = 1199072
+	CCErrGetNoAuthSkipURLFailed  = 1199072
 
 	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
 	CCErrCommValExceedMaxFailed = 1199073
