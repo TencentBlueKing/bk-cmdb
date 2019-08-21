@@ -472,8 +472,7 @@
                     params: this.$injectMetadata({
                         service_template_id: this.serviceTemplateId,
                         bk_module_id: Number(this.routerParams.moduleId),
-                        service_instances: this.instanceIds,
-                        service_category_id: this.changedAttributes.template_property_value
+                        service_instances: this.instanceIds
                     })
                 }).then(() => {
                     this.$success(this.$t('同步成功'))
