@@ -908,6 +908,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	serviceTemplate, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, module.ServiceTemplateID)
 	if err != nil {
 		ctx.RespAutoError(err)
+		return
 	}
 
 	// step 7:
@@ -923,11 +924,13 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	}
 	resp, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleUpdateOption)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrTopoModuleUpdateFailed, "", moduleUpdateOption)
+		ctx.RespWithError(err, common.CCErrTopoModuleUpdateFailed, "sync module field failed, http failed, option: %+v", moduleUpdateOption)
+		return
 	}
 	if resp.Result == false || resp.Code != 0 {
 		err := ctx.Kit.CCError.New(resp.Code, resp.ErrMsg)
-		ctx.RespWithError(err, common.CCErrTopoModuleUpdateFailed, "sync module service category and name failed", moduleUpdateOption)
+		ctx.RespWithError(err, common.CCErrTopoModuleUpdateFailed, "sync module service category and name failed, option: %+v", moduleUpdateOption)
+		return
 	}
 
 	// Finally, we do the force sync successfully.
