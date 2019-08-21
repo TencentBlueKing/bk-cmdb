@@ -384,7 +384,7 @@
     "编辑校验": "Modify rule",
     "查看校验": "View rule",
     "是": "Yes",
-    "确定删除唯一校验": "Confirm delete rule",
+    "确定删除唯一校验": "Confirm delete the {name} rule?",
     "暂无字段": "Empty",
     "内置": "Built-in",
     "确认要删除此分组": "Confirm to delete this group",
