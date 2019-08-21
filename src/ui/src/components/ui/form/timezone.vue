@@ -56,9 +56,7 @@
             }
         },
         created () {
-            if (!this.disabled) {
-                this.selected = this.value ? this.value : 'Asia/Shanghai'
-            }
+            this.selected = this.value ? this.value : 'Asia/Shanghai'
         }
     }
 </script>
