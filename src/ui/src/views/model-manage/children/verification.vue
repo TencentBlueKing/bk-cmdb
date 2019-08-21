@@ -30,7 +30,7 @@
                     {{getRuleName(row.keys)}}
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('是否为必须校验')">
+            <bk-table-column :label="$t('属性为空值是否校验')">
                 <template slot-scope="{ row }">
                     {{row.must_check ? $t('是') : $t('否')}}
                 </template>
@@ -45,7 +45,7 @@
                         {{$t('编辑')}}
                     </button>
                     <button class="text-primary operation-btn"
-                        :disabled="!isEditable(row)"
+                        :disabled="!isEditable(row) || row.must_check"
                         @click.stop="deleteVerification(row)">
                         {{$t('删除')}}
                     </button>
@@ -179,7 +179,7 @@
             },
             deleteVerification (verification) {
                 this.$bkInfo({
-                    title: this.$tc('确定删除唯一校验？', this.getRuleName(verification.keys), { name: this.getRuleName(verification.keys) }),
+                    title: this.$tc('确定删除唯一校验', this.getRuleName(verification.keys), { name: this.getRuleName(verification.keys) }),
                     confirmFn: async () => {
                         await this.deleteObjectUniqueConstraints({
                             objId: verification['bk_obj_id'],
