@@ -713,6 +713,10 @@ const (
 	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
 	CCErrCoreServiceModuleNotBoundWithTemplate                                = 1113021
 	CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate                    = 1113022
+	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 删除多个模型中的%s数据
+	CCErrCoreServiceDeleteMultpleObjectIDRecordErr = 1113023
+	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 不允许删除在唯一校验中的字段
+	CCErrCoreServiceNotAllowUnqiueAttr = 1113024
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
