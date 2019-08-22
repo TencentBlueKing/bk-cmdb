@@ -57,7 +57,7 @@
             }
         },
         computed: {
-            ...mapState('hosts', ['collection']),
+            ...mapState('hosts', ['filterList']),
             groups () {
                 return Object.keys(this.properties).map(modelId => {
                     const model = this.$store.getters['objectModelClassify/getModelById'](modelId) || {}
@@ -86,10 +86,11 @@
             }
         },
         watch: {
-            properties () {
-                this.setSelection()
+            async properties () {
+                await this.setSelection()
+                this.setSelectionState()
             },
-            collection () {
+            filterList () {
                 this.setSelectionState()
             }
         },
@@ -107,12 +108,11 @@
                 this.selection = selection
             },
             setSelectionState () {
-                const collection = this.collection
-                if (collection) {
-                    const selectedCondition = JSON.parse(collection.query_params)
+                const list = this.filterList
+                if (list.length) {
                     this.selection.forEach(select => {
-                        const selected = selectedCondition.some(condition => {
-                            return condition.field === select.bk_property_id
+                        const selected = list.some(condition => {
+                            return condition.bk_property_id === select.bk_property_id
                                 && condition.bk_obj_id === select.bk_obj_id
                         })
                         select.__selected__ = selected

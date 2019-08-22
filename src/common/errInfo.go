@@ -195,7 +195,7 @@ const (
 
 	// 构造DB查询条件失败
 	CCErrConstructDBFilterFailed = 1199071
-	CCErrGetNoAuthSkipUrlFailed  = 1199072
+	CCErrGetNoAuthSkipURLFailed  = 1199072
 
 	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
 	CCErrCommValExceedMaxFailed = 1199073
@@ -713,6 +713,18 @@ const (
 	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
 	CCErrCoreServiceModuleNotBoundWithTemplate                                = 1113021
 	CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate                    = 1113022
+	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 删除多个模型中的%s数据
+	CCErrCoreServiceDeleteMultpleObjectIDRecordErr = 1113023
+	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 不允许删除在唯一校验中的字段
+	CCErrCoreServiceNotAllowUnqiueAttr = 1113024
+	// CCErrCoreServiceNotUpdatePredefinedAttrErr 修改不允许修改的属性的描述
+	CCErrCoreServiceNotUpdatePredefinedAttrErr = 1113025
+	// CCErrCoreServiceNotAllowAddRequiredFieldErr 模型[%s]不允许新加必填字段
+	CCErrCoreServiceNotAllowAddRequiredFieldErr = 1113026
+	// CCErrCoreServiceNotAllowAddRequiredFieldErr 模型[%s]不允许修改必填字段
+	CCErrCoreServiceNotAllowChangeRequiredFieldErr = 1113027
+	// CCErrCoreServiceNotAllowAddFieldErr 模型[%s]不允许新加字段
+	CCErrCoreServiceNotAllowAddFieldErr = 1113028
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900

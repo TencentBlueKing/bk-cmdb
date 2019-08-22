@@ -13,7 +13,7 @@
                         :placeholder="$t('请输入模版名称')"
                         :disabled="!isCreatedType"
                         v-model.trim="formData.templateName"
-                        v-validate="'required|singlechar'">
+                        v-validate="'required|singlechar|length:256'">
                     </bk-input>
                     <p class="form-error">{{errors.first('templateName')}}</p>
                 </div>

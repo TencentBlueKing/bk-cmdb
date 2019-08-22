@@ -15,7 +15,6 @@ package operation
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
@@ -28,6 +27,13 @@ import (
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
+
+type rowInfo struct {
+	Row  int64  `json:"row"`
+	Info string `json:"info"`
+	// value can empty, eg:parse error
+	PropertyID string `json:"bk_property_id"`
+}
 
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
@@ -114,11 +120,20 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 		subResult := mapstr.New()
 		if err := o.IsValidObject(params, objID); nil != err {
 			blog.Errorf("create model patch, but not a valid model id, model id: %s, rid: %s", objID, params.ReqID)
-			subResult["errors"] = fmt.Sprintf("the model(%s) is invalid", objID)
+			subResult["error"] = fmt.Sprintf("the model(%s) is invalid", objID)
 			result[objID] = subResult
 			hasError = true
 			continue
 		}
+
+		// 异常错误，比如接卸该行数据失败， 查询数据失败
+		var itemErr []rowInfo
+		// 新加属性失败
+		var addErr []rowInfo
+		// 更新属性失败
+		var setErr []rowInfo
+		// 成功数据的信息
+		var succInfo []rowInfo
 
 		// update the object's attribute
 		for idx, attr := range inputData.Attr {
@@ -127,8 +142,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 			targetAttr, err := metaAttr.Parse(attr)
 			if nil != err {
 				blog.Errorf("create object batch, but got invalid object attribute, object id: %s, rid: %s", objID, params.ReqID)
-				subResult["errors"] = err.Error()
-				result[objID] = subResult
+				itemErr = append(itemErr, rowInfo{Row: idx, Info: err.Error()})
 				hasError = true
 				continue
 			}
@@ -157,9 +171,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 			grps, err := o.grp.FindObjectGroup(params, grpCond)
 			if nil != err {
 				blog.Errorf("create object patch, but find object group failed, object id: %s, group: %s, rid: %s", objID, targetAttr.PropertyGroupName, params.ReqID)
-				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err)
-				subResult["errors"] = errStr
-				result[objID] = subResult
+				itemErr = append(itemErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 				hasError = true
 				continue
 			}
@@ -181,17 +193,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 				newGrp.SetGroup(g)
 				err := newGrp.Save(nil)
 				if nil != err {
-					errStr := params.Lang.Languagef("import_row_int_error_str", idx, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed))
-					if failed, ok := subResult["insert_failed"]; ok {
-						failedArr := failed.([]string)
-						failedArr = append(failedArr, errStr)
-						subResult["insert_failed"] = failedArr
-					} else {
-						subResult["insert_failed"] = []string{
-							errStr,
-						}
-					}
-					result[objID] = subResult
+					setErr = append(setErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 					hasError = true
 					continue
 				}
@@ -202,17 +204,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 			// create or update the attribute
 			attrID, err := attr.String(metadata.AttributeFieldPropertyID)
 			if nil != err {
-				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
-				if failed, ok := subResult["insert_failed"]; ok {
-					failedArr := failed.([]string)
-					failedArr = append(failedArr, errStr)
-					subResult["insert_failed"] = failedArr
-				} else {
-					subResult["insert_failed"] = []string{
-						errStr,
-					}
-				}
-				result[objID] = subResult
+				addErr = append(addErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 				hasError = true
 				continue
 			}
@@ -222,17 +214,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 			attrCond.Field(metadata.AttributeFieldPropertyID).Eq(attrID)
 			attrs, err := o.attr.FindObjectAttribute(params, attrCond)
 			if nil != err {
-				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
-				if failed, ok := subResult["insert_failed"]; ok {
-					failedArr := failed.([]string)
-					failedArr = append(failedArr, errStr)
-					subResult["insert_failed"] = failedArr
-				} else {
-					subResult["insert_failed"] = []string{
-						errStr,
-					}
-				}
-				result[objID] = subResult
+				addErr = append(addErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 				hasError = true
 				continue
 			}
@@ -241,17 +223,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 
 				newAttr := o.modelFactory.CreateAttribute(params)
 				if err = newAttr.Save(targetAttr.ToMapStr()); nil != err {
-					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
-					if failed, ok := subResult["insert_failed"]; ok {
-						failedArr := failed.([]string)
-						failedArr = append(failedArr, errStr)
-						subResult["insert_failed"] = failedArr
-					} else {
-						subResult["insert_failed"] = []string{
-							errStr,
-						}
-					}
-					result[objID] = subResult
+					addErr = append(addErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 					hasError = true
 					continue
 				}
@@ -260,41 +232,44 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 
 			for _, newAttr := range attrs {
 				if err := newAttr.Update(targetAttr.ToMapStr()); nil != err {
-					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
-					if failed, ok := subResult["update_failed"]; ok {
-						failedArr := failed.([]string)
-						failedArr = append(failedArr, errStr)
-						subResult["update_failed"] = failedArr
-					} else {
-						subResult["update_failed"] = []string{
-							errStr,
-						}
-					}
-					result[objID] = subResult
+					setErr = append(setErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 					hasError = true
 					continue
 				}
 
 			}
 
-			if failed, ok := subResult["success"]; ok {
-				failedArr := failed.([]string)
-				failedArr = append(failedArr, strconv.FormatInt(idx, 10))
-				subResult["success"] = failedArr
-			} else {
-				subResult["success"] = []string{
-					strconv.FormatInt(idx, 10),
-				}
-			}
-			result[objID] = subResult
+			succInfo = append(succInfo, rowInfo{Row: idx, Info: "", PropertyID: targetAttr.PropertyID})
 		}
 
+		// 将需要返回的信息更新到result中。 这个函数会修改result参数的值
+		o.setCreateObjectBatchObjResult(params, objID, result, itemErr, addErr, setErr, succInfo)
 	}
 
 	if hasError {
 		return result, params.Err.Error(common.CCErrCommNotAllSuccess)
 	}
 	return result, nil
+}
+
+// setCreateObjectBatchObjResult
+func (o *object) setCreateObjectBatchObjResult(params types.ContextParams, objID string, result mapstr.MapStr, itemErr, addErr, setErr, succInfo []rowInfo) {
+	subResult := mapstr.New()
+	if len(itemErr) > 0 {
+		subResult["errors"] = itemErr
+	}
+	if len(addErr) > 0 {
+		subResult["insert_failed"] = addErr
+	}
+	if len(setErr) > 0 {
+		subResult["update_failed"] = setErr
+	}
+	if len(succInfo) > 0 {
+		subResult["success"] = succInfo
+	}
+	if len(subResult) > 0 {
+		result[objID] = subResult
+	}
 }
 
 func (o *object) FindObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error) {

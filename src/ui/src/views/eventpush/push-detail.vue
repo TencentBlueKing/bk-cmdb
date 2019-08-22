@@ -23,7 +23,7 @@
                     <div class="item-content">
                         <bk-input type="text" class="cmdb-form-input" :placeholder="$t('请输入系统名称')"
                             v-model.trim="tempEventData['system_name']"
-                            v-validate="'singlechar'"
+                            v-validate="'singlechar|length:256'"
                             :data-vv-name="$t('系统名称')">
                         </bk-input>
                         <span v-show="errors.has($t('系统名称'))" class="color-danger">{{ errors.first($t('系统名称')) }}</span>
