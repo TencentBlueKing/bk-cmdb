@@ -58,7 +58,7 @@
                                 v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"
                                 @click="jumpPage(source)"></div>
                             <div class="results-desc" v-if="propertyMap['host']" @click="jumpPage(source)">
-                                <span class="desc-item" v-html="`${$t('主机ID')}${source['bk_host_id']}`"> </span>
+                                <span class="desc-item" v-html="`${$t('主机ID')}：${source['bk_host_id']}`"> </span>
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap['host']"
                                     :key="childIndex"
@@ -72,6 +72,7 @@
                                 v-html="`${modelClassifyName['biz']} - ${source.bk_biz_name.toString()}`"
                                 @click="jumpPage(source)"></div>
                             <div class="results-desc" v-if="propertyMap['biz']" @click="jumpPage(source)">
+                                <span class="desc-item" v-html="`${$t('业务ID')}：${source['bk_biz_id']}`"> </span>
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap['biz']"
                                     :key="childIndex"
@@ -390,12 +391,10 @@
             },
             getShowPropertyText (property, source, thisProperty) {
                 const cloneSource = this.$tools.clone(source)
-                const reg = /^\<em\>.+\<\/em\>$/
+                const reg = /\<em\>.+\<\/em\>/
                 const propertyValue = cloneSource[thisProperty].toString()
                 const isHeightLight = reg.test(propertyValue)
-                if (isHeightLight) {
-                    cloneSource[thisProperty] = propertyValue.replace(/(\<\/?em\>)/g, '')
-                }
+                cloneSource[thisProperty] = isHeightLight ? propertyValue.replace(/(\<\/?em\>)/g, '') : propertyValue
                 const flatternedText = this.$tools.getPropertyText(property, cloneSource)
                 return isHeightLight ? `<em>${flatternedText}</em>` : flatternedText
             },
