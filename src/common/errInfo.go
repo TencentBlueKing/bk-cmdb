@@ -717,6 +717,14 @@ const (
 	CCErrCoreServiceDeleteMultpleObjectIDRecordErr = 1113023
 	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 不允许删除在唯一校验中的字段
 	CCErrCoreServiceNotAllowUnqiueAttr = 1113024
+	// CCErrCoreServiceNotUpdatePredefinedAttrErr 修改不允许修改的属性的描述
+	CCErrCoreServiceNotUpdatePredefinedAttrErr = 1113025
+	// CCErrCoreServiceNotAllowAddRequiredFieldErr 模型[%s]不允许新加必填字段
+	CCErrCoreServiceNotAllowAddRequiredFieldErr = 1113026
+	// CCErrCoreServiceNotAllowAddRequiredFieldErr 模型[%s]不允许修改必填字段
+	CCErrCoreServiceNotAllowChangeRequiredFieldErr = 1113027
+	// CCErrCoreServiceNotAllowAddFieldErr 模型[%s]不允许新加字段
+	CCErrCoreServiceNotAllowAddFieldErr = 1113028
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
