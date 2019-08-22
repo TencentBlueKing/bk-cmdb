@@ -10,7 +10,7 @@
                         <bk-input type="text"
                             v-model="curPush.bk_task_name"
                             name="taskName"
-                            v-validate="'required|singlechar'"
+                            v-validate="'required|singlechar|length:256'"
                             class="cmdb-form-input">
                         </bk-input>
                     </div>
@@ -39,7 +39,7 @@
                         <bk-input type="text"
                             v-model="curPush.bk_secret_id"
                             name="ID"
-                            v-validate="'required|singlechar'"
+                            v-validate="'required|singlechar|length:256'"
                             class="cmdb-form-input">
                         </bk-input>
                     </div>
@@ -98,7 +98,7 @@
                         v-model="curPush.bk_account_admin"
                         :multiple="true"
                         name="maintain"
-                        v-validate="'required|singlechar'">
+                        v-validate="'required|singlechar|length:256'">
                     </cmdb-form-objuser>
                     <span v-show="errors.has('maintain')" class="color-danger">{{ errors.first('maintain') }}</span>
                 </li>

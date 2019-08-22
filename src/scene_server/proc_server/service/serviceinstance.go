@@ -475,6 +475,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	type recorder struct {
 		ProcessID        int64
 		ProcessName      string
+		Process          *metadata.Process
 		ServiceInstance  *metadata.ServiceInstance
 		ChangedAttribute []metadata.ProcessChangedAttribute
 	}
@@ -507,6 +508,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				processName := *process.ProcessName
 				removed[processName] = append(removed[processName], recorder{
 					ProcessID:       relation.ProcessID,
+					Process:         process,
 					ProcessName:     processName,
 					ServiceInstance: &serviceInstances.Info[idx],
 				})
@@ -567,6 +569,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		for idx := range records {
 			item := metadata.ServiceDifferenceDetails{
 				ServiceInstance: *records[idx].ServiceInstance,
+				Process:         records[idx].Process,
 			}
 			serviceInstances = append(serviceInstances, item)
 		}
@@ -899,6 +902,35 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 			ctx.RespWithError(err, common.CCErrProcReconstructServiceInstanceNameFailed, "sync service instance failed, reconstruct service instance name failed, instanceID: %d, err: %s", svcInstanceID, err.Error())
 			return
 		}
+	}
+
+	// get service template
+	serviceTemplate, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, module.ServiceTemplateID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// step 7:
+	// update module service category and name field
+	moduleUpdateOption := &metadata.UpdateOption{
+		Data: map[string]interface{}{
+			common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
+			common.BKModuleNameField:        serviceTemplate.Name,
+		},
+		Condition: map[string]interface{}{
+			common.BKModuleIDField: module.ModuleID,
+		},
+	}
+	resp, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleUpdateOption)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrTopoModuleUpdateFailed, "sync module field failed, http failed, option: %+v", moduleUpdateOption)
+		return
+	}
+	if resp.Result == false || resp.Code != 0 {
+		err := ctx.Kit.CCError.New(resp.Code, resp.ErrMsg)
+		ctx.RespWithError(err, common.CCErrTopoModuleUpdateFailed, "sync module service category and name failed, option: %+v", moduleUpdateOption)
+		return
 	}
 
 	// Finally, we do the force sync successfully.

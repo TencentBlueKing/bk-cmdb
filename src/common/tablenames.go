@@ -165,8 +165,8 @@ func GetInstTableName(objID string) string {
 		return BKTableNameBaseSet
 	case BKInnerObjIDModule:
 		return BKTableNameBaseModule
-	case BKInnerObjIDObject:
-		return BKTableNameBaseInst
+	// case BKInnerObjIDObject:
+	// 	return BKTableNameBaseInst
 	case BKInnerObjIDHost:
 		return BKTableNameBaseHost
 	case BKInnerObjIDProc:

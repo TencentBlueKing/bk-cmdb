@@ -205,7 +205,7 @@
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {
                     rules[propertyType] = true
-                    rules[`${propertyType}Length`] = true
+                    rules.length = propertyType === 'singlechar' ? 256 : 2000
                 }
                 if (propertyType === 'float') {
                     rules['float'] = true

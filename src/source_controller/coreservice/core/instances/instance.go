@@ -254,7 +254,7 @@ func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, obj
 	tableName := common.GetInstTableName(objID)
 	instIDFieldName := common.GetInstIDField(objID)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
-	blog.Errorf("cascade delete model instance get inst error:%v, rid: %s", origins, ctx.ReqID)
+	blog.V(5).Infof("cascade delete model instance get inst error:%v, rid: %s", origins, ctx.ReqID)
 	if nil != err {
 		blog.Errorf("cascade delete model instance get inst error:%v, rid: %s", err, ctx.ReqID)
 		return &metadata.DeletedCount{}, err

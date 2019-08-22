@@ -20,7 +20,7 @@
                     :placeholder="$t('请输入关联描述')"
                     :disabled="relationInfo.ispre || isReadOnly"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
-                    v-validate="'singlechar'">
+                    v-validate="'singlechar|length:256'">
                 </bk-input>
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
