@@ -106,7 +106,7 @@
             <bk-table-column v-for="column in table.header"
                 :key="column.id"
                 :label="column.name"
-                :sortable="column.sortable"
+                :sortable="column.sortable ? 'custom' : false"
                 :prop="column.id"
                 :fixed="column.id === 'bk_host_innerip'"
                 :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
@@ -418,7 +418,10 @@
                         console.error(e.message)
                     }
                 } else {
-                    this.$store.commit('hosts/clearFilter')
+                    this.$refs.hostFilter.handleReset()
+                    const key = this.$route.meta.filterPropertyKey
+                    const customData = this.$store.getters['userCustom/getCustomData'](key, [])
+                    this.$store.commit('hosts/setFilterList', customData)
                 }
             },
             handleCreateCollection () {
