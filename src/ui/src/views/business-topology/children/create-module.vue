@@ -55,7 +55,7 @@
                 </label>
                 <cmdb-form-singlechar
                     v-model="moduleName"
-                    v-validate="'required|singlechar'"
+                    v-validate="'required|singlechar|length:256'"
                     data-vv-name="moduleName"
                     key="moduleName"
                     :disabled="!!withTemplate">

@@ -17,7 +17,7 @@
                             :input-ref="'categoryInput'"
                             :placeholder="$t('请输入一级分类')"
                             name="categoryName"
-                            v-validate="'required|namedCharacter'"
+                            v-validate="'required|namedCharacter|length:256'"
                             v-model="mainCategoryName"
                             @on-confirm="handleEditCategory(mainCategory, 'main', index)"
                             @on-cancel="handleCloseEditMain">
@@ -89,7 +89,7 @@
                             :placeholder="$t('请输入二级分类')"
                             :edit-id="mainCategory['bk_root_id']"
                             name="categoryName"
-                            v-validate="'required|namedCharacter'"
+                            v-validate="'required|namedCharacter|length:256'"
                             v-model="categoryName"
                             @on-confirm="handleAddCategory"
                             @on-cancel="handleCloseAddChild">
@@ -108,7 +108,7 @@
                             :input-ref="'categoryInput'"
                             :placeholder="$t('请输入二级分类')"
                             name="categoryName"
-                            v-validate="'required|namedCharacter'"
+                            v-validate="'required|namedCharacter|length:256'"
                             v-model="childCategoryName"
                             @on-confirm="handleEditCategory(childCategory, 'child', index)"
                             @on-cancel="handleCloseEditChild">
@@ -160,7 +160,7 @@
                             :input-ref="'categoryInput'"
                             :placeholder="$t('请输入一级分类')"
                             name="categoryName"
-                            v-validate="'required|namedCharacter'"
+                            v-validate="'required|namedCharacter|length:256'"
                             v-model="categoryName"
                             @on-confirm="handleAddCategory"
                             @on-cancel="handleCloseAddBox">

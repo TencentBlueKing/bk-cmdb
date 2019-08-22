@@ -27,7 +27,7 @@
                         class="cmdb-form-input"
                         name="asstName"
                         :disabled="isReadOnly || isEdit && relation.ispre"
-                        v-validate="'required|singlechar'"
+                        v-validate="'required|singlechar|length:256'"
                         v-model.trim="relationInfo['bk_asst_name']"
                         :placeholder="$t('请输入名称')">
                     </bk-input>
@@ -44,7 +44,7 @@
                         class="cmdb-form-input"
                         name="srcDes"
                         :disabled="isReadOnly || isEdit && relation.ispre"
-                        v-validate="'required|singlechar'"
+                        v-validate="'required|singlechar|length:256'"
                         v-model.trim="relationInfo['src_des']"
                         :placeholder="$t('请输入关联描述如：连接、运行')">
                     <p class="form-error">{{errors.first('srcDes')}}</p>
@@ -60,7 +60,7 @@
                         class="cmdb-form-input"
                         name="destDes"
                         :disabled="isReadOnly || isEdit && relation.ispre"
-                        v-validate="'required|singlechar'"
+                        v-validate="'required|singlechar|length:256'"
                         v-model.trim="relationInfo['dest_des']"
                         :placeholder="$t('请输入关联描述如：属于、上联')">
                     </bk-input>
