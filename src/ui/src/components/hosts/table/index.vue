@@ -106,7 +106,7 @@
             <bk-table-column v-for="column in table.header"
                 :key="column.id"
                 :label="column.name"
-                :sortable="column.sortable"
+                :sortable="column.sortable ? 'custom' : false"
                 :prop="column.id"
                 :fixed="column.id === 'bk_host_innerip'"
                 :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">

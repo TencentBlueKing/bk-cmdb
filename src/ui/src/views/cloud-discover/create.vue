@@ -11,7 +11,7 @@
                             v-model="taskMap.bk_task_name"
                             class="cmdb-form-input"
                             name="taskName"
-                            v-validate="'required|singlechar'"
+                            v-validate="'required|singlechar|length:256'"
                             :placeholder="$t('请输入任务名称')">
                         </div>
                     </div>
@@ -42,7 +42,7 @@
                             v-model="taskMap.bk_secret_id"
                             class="cmdb-form-input"
                             name="ID"
-                            v-validate="'required|singlechar'"
+                            v-validate="'required|singlechar|length:256'"
                             :placeholder="$t('请输入ID')">
                         </bk-input>
                     </div>
@@ -62,7 +62,7 @@
                             v-model="taskMap.bk_secret_key"
                             class="cmdb-form-input"
                             name="Key"
-                            v-validate="'required|singlechar'"
+                            v-validate="'required|singlechar|length:256'"
                             :placeholder="$t('请输入key')">
                         </bk-input>
                     </div>
@@ -108,7 +108,7 @@
                         v-model="taskMap.bk_account_admin"
                         :multiple="true"
                         name="maintain"
-                        v-validate="'required|singlechar'">
+                        v-validate="'required|singlechar|length:256'">
                     </cmdb-form-objuser>
                     <div v-show="errors.has('maintain')" class="error-info color-danger">{{ errors.first('maintain') }}</div>
                 </li>

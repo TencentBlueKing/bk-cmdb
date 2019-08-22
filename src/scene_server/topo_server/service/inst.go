@@ -455,11 +455,11 @@ func (s *Service) SearchInstTopo(params types.ContextParams, pathParams, queryPa
 	objID := pathParams("bk_obj_id")
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("search inst topo failed, path parameter inst_id invalid, inst_id: %s, err: %+v, rid: %s", pathParams("inst_id"), err, params.ReqID)
+		blog.Errorf("search inst topo failed, path parameter inst_id invalid, object: %s inst_id: %s, err: %+v, rid: %s", objID, pathParams("inst_id"), err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
+	obj, err := s.Core.ObjectOperation().FindObjectWithID(params, instID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
 		return nil, err

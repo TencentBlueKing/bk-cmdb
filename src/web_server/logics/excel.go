@@ -141,7 +141,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	for instID := range instPrimaryInfo {
 		instIDArr = append(instIDArr, instID)
 	}
-	instAsst, err := lgc.fetchAssocationData(ctx, header, objID, instIDArr)
+	instAsst, err := lgc.fetchAssocationData(ctx, header, objID, instIDArr, meta)
 	if err != nil {
 		return err
 	}

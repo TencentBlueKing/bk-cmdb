@@ -991,7 +991,7 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 	}
 
 	preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, fCond)
-	rsp, err := c.clientSet.CoreService().Instance().UpdateInstance(context.Background(), params.Header, obj.GetObjectID(), &inputParams)
+	rsp, err := c.clientSet.CoreService().Instance().UpdateInstance(params.Context, params.Header, obj.GetObjectID(), &inputParams)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
