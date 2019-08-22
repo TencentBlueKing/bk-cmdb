@@ -38,7 +38,9 @@ type ObjectOperationInterface interface {
 	DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
 	FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error)
+	// Deprecated: not allowed to use anymore.
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
+	FindObjectWithID(params types.ContextParams, objectID int64) (model.Object, error)
 	UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface, unique UniqueOperationInterface)
@@ -323,10 +325,46 @@ func (o *object) FindObjectBatch(params types.ContextParams, data mapstr.MapStr)
 	return result, nil
 }
 
+// Deprecated:
+// It's not allowed to find a object with only bk_obj_id field, because it
+// may find the wrong object, as the public object id is unique, but the private business
+// object id can be same across the different business.
 func (o *object) FindSingleObject(params types.ContextParams, objectID string) (model.Object, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(objectID)
+
+	objs, err := o.FindObject(params, cond)
+	if nil != err {
+		blog.Errorf("get model failed, failed to get model by supplier account(%s) objects(%s), err: %s, rid: %s", params.SupplierAccount, objectID, err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	if len(objs) == 0 {
+		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) not found, result: %+v, rid: %s", params.SupplierAccount, objectID, objs, params.ReqID)
+		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Error(common.CCErrCommNotFound).Error())
+	}
+
+	if len(objs) > 1 {
+		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) get multiple, result: %+v, rid: %s", params.SupplierAccount, objectID, objs, params.ReqID)
+		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Error(common.CCErrCommGetMultipleObject).Error())
+	}
+
+	objects := make([]metadata.Object, 0)
+	for _, obj := range objs {
+		objects = append(objects, obj.Object())
+	}
+
+	for _, item := range objs {
+		return item, nil
+	}
+	return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Errorf(common.CCErrCommParamsIsInvalid, objectID).Error())
+}
+
+func (o *object) FindObjectWithID(params types.ContextParams, objectID int64) (model.Object, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field("id").Eq(objectID)
 
 	objs, err := o.FindObject(params, cond)
 	if nil != err {

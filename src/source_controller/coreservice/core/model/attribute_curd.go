@@ -82,10 +82,9 @@ func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objI
 		if propertyName == "" {
 			return nil
 		}
-		cond = cond.Element(nameFieldCond)
 
 		idFieldCond := mongo.Field(common.BKPropertyIDField).Neq(propertyID)
-		cond = cond.Element(idFieldCond)
+		cond = cond.Element(nameFieldCond, idFieldCond)
 	}
 
 	condMap := util.SetModOwner(cond.ToMapStr(), ctx.SupplierAccount)
@@ -98,7 +97,7 @@ func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objI
 		return ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	for _, attrItem := range resultAttrs {
-		if attrItem.PropertyID == propertyID && isCreate {
+		if attrItem.PropertyID == propertyID {
 			return ctx.Error.Errorf(common.CCErrCommDuplicateItem, ctx.Lang.Language("model_attr_bk_property_id"))
 		}
 		if attrItem.PropertyName == propertyName {
@@ -194,7 +193,7 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 	for _, dbAttribute := range dbAttributeArr {
 		err = m.checkUnique(ctx, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName)
 		if err != nil {
-			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+			blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
 			return 0, err
 		}
 	}
@@ -224,21 +223,72 @@ func (m *modelAttribute) searchReturnMapStr(ctx core.ContextParams, cond univers
 
 func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(ctx)
+	resultAttrs := []metadata.Attribute{}
+	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKObjIDField}
+
+	condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).Fields(fields...).All(ctx, &resultAttrs)
 	if nil != err {
 		blog.Errorf("request(%s): database count operation is failed, error info is %s", ctx.ReqID, err.Error())
-		return cnt, err
+		return 0, err
 	}
 
-	if 0 == cnt {
+	cnt = uint64(len(resultAttrs))
+	if cnt == 0 {
 		return cnt, nil
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Delete(ctx, cond.ToMapStr())
+	objIDArrMap := make(map[string][]int64, 0)
+	for _, attr := range resultAttrs {
+		objIDArrMap[attr.ObjectID] = append(objIDArrMap[attr.ObjectID], attr.ID)
+	}
+
+	exist, err := m.checkAttributeInUnique(ctx, objIDArrMap)
+	if err != nil {
+		blog.ErrorJSON("check attribute in unique error. err:%s, input:%s, rid:%s", err.Error(), condMap, ctx.ReqID)
+		return 0, err
+	}
+	// delete field in module unique. not allow delete
+	if exist {
+		blog.ErrorJSON("delete field in unique. delete cond:%s, field:%s, rid:%s", condMap, resultAttrs, ctx.ReqID)
+		return 0, ctx.Error.Error(common.CCErrCoreServiceNotAllowUnqiueAttr)
+	}
+
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Delete(ctx, condMap)
 	if nil != err {
 		blog.Errorf("request(%s): database deletion operation is failed, error info is %s", ctx.ReqID, err.Error())
 		return 0, err
 	}
 
 	return cnt, err
+}
+
+// checkAttributeInUnique 检查属性是否存在唯一校验中  objIDPropertyIDArr  属性的bk_obj_id和表中ID的集合
+func (m *modelAttribute) checkAttributeInUnique(ctx core.ContextParams, objIDPropertyIDArr map[string][]int64) (bool, error) {
+
+	cond := mongo.NewCondition()
+
+	var orCondArr []universalsql.ConditionElement
+	for objID, proeprtyIDArr := range objIDPropertyIDArr {
+		orCondItem := mongo.NewCondition()
+		orCondItem.Element(mongo.Field(common.BKObjIDField).Eq(objID))
+		orCondItem.Element(mongo.Field("keys.key_id").In(proeprtyIDArr))
+		orCondItem.Element(mongo.Field("keys.key_kind").Eq("property"))
+		orCondArr = append(orCondArr, orCondItem)
+	}
+
+	cond.Or(orCondArr...)
+	condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
+
+	cnt, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(condMap).Count(ctx)
+	if err != nil {
+		blog.ErrorJSON("checkAttributeInUnique db select error. err:%s, cond:%s, rid:%s", err.Error(), condMap, ctx.ReqID)
+		return false, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	if cnt > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }

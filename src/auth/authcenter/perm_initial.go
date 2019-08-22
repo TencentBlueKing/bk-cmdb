@@ -235,7 +235,7 @@ func (ac *AuthCenter) initDefaultUserRoleWithAuth(ctx context.Context) error {
 }
 
 var bizOperatorRoleAuth = RoleWithAuthResources{
-	RoleTemplateName: "业务运维",
+	RoleTemplateName: "运维",
 	TemplateID:       "business_maintainer",
 	Desc:             "a business's maintainer",
 	ResourceActions: []RoleAction{
