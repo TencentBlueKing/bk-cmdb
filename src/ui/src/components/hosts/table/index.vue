@@ -4,7 +4,7 @@
             <div class="options-left">
                 <slot name="options-left">
                     <bk-button class="options-button mr10" theme="primary"
-                        :disabled="!table.checked.length || !$isAuthorized(editAuth)"
+                        :disabled="!table.checked.length"
                         @click="handleMultipleEdit">
                         {{$t('编辑')}}
                     </bk-button>
