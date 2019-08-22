@@ -418,7 +418,10 @@
                         console.error(e.message)
                     }
                 } else {
-                    this.$store.commit('hosts/clearFilter')
+                    this.$refs.hostFilter.handleReset()
+                    const key = this.$route.meta.filterPropertyKey
+                    const customData = this.$store.getters['userCustom/getCustomData'](key, [])
+                    this.$store.commit('hosts/setFilterList', customData)
                 }
             },
             handleCreateCollection () {
