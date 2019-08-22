@@ -413,23 +413,26 @@
                 const target = el.srcElement
                 this.searchTriggerType = 'input'
                 if (target.value.length === 32) {
-                    this.toggleTips = this.$tooltips({
-                        duration: -1,
+                    this.toggleTips && this.toggleTips.destroy()
+                    this.toggleTips = this.$bkPopover(this.$refs.searchInput, {
+                        theme: 'dark max-length-tips',
                         content: this.$t('最大支持搜索32个字符'),
-                        placements: ['top'],
-                        customClass: 'full-text-tips',
-                        target: target
+                        zIndex: 9999,
+                        trigger: 'manual',
+                        boundary: 'window',
+                        arrow: true
+                    })
+                    this.$nextTick(() => {
+                        this.toggleTips.show()
                     })
                 } else if (this.toggleTips) {
-                    this.toggleTips.duration = 0
-                    this.toggleTips.hiddenTooltips()
+                    this.toggleTips.hide()
                 }
             },
             handleClearInput () {
                 this.query.queryString = ''
                 if (this.toggleTips) {
-                    this.toggleTips.duration = 0
-                    this.toggleTips.hiddenTooltips()
+                    this.toggleTips.hide()
                 }
             }
         }
@@ -569,5 +572,10 @@
                 width: 104px;
             }
         }
+    }
+    .max-length-tips-theme {
+        font-size: 12px;
+        padding: 6px 12px;
+        left: 248px !important;
     }
 </style>

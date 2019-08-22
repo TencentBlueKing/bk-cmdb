@@ -17,8 +17,11 @@ import (
 	"net/http"
 	"strings"
 
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/parser"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -102,4 +105,120 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	}
 
 	chain.ProcessFilter(req, resp)
+}
+
+func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		rid := util.GetHTTPCCRequestID(req.Request.Header)
+		path := req.Request.URL.Path
+
+		blog.V(7).Infof("authFilter on url: %s, rid: %s", path, rid)
+		if s.authorizer.Enabled() == false {
+			blog.V(7).Infof("auth disabled, skip auth filter, rid: %s", rid)
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		if path == "/api/v3/auth/verify" {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		if path == "/api/v3/auth/business_list" {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+		if path == "/api/v3/auth/admin_entrance" {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		if path == "/api/v3/auth/skip_url" {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		if path == "/api/v3/auth/convert" {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		// if common.BKSuperOwnerID == util.GetOwnerID(req.Request.Header) {
+		// 	blog.Errorf("authFilter failed, can not use super supplier account, rid: %s", rid)
+		// 	rsp := metadata.BaseResp{
+		// 		Code:   common.CCErrCommParseAuthAttributeFailed,
+		// 		ErrMsg: "invalid supplier account.",
+		// 		Result: false,
+		// 	}
+		// 	resp.WriteHeaderAndJson(http.StatusBadRequest, rsp, restful.MIME_JSON)
+		// 	return
+		// }
+
+		language := util.GetLanguage(req.Request.Header)
+		attribute, err := parser.ParseAttribute(req, s.engine)
+		if err != nil {
+			blog.Errorf("authFilter failed, caller: %s, parse auth attribute for %s %s failed, err: %v, rid: %s", req.Request.RemoteAddr, req.Request.Method, req.Request.URL.Path, err, rid)
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrCommParseAuthAttributeFailed,
+				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommParseAuthAttributeFailed).Error(),
+				Result: false,
+			}
+			resp.WriteAsJson(rsp)
+			return
+		}
+
+		// check if authorize is nil or not, which means to check if the authorize instance has
+		// already been initialized or not. if not, api server should not be used.
+		if nil == s.authorizer {
+			blog.Errorf("authorize instance has not been initialized, rid: %s", rid)
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrCommCheckAuthorizeFailed,
+				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+				Result: false,
+			}
+			resp.WriteAsJson(rsp)
+			return
+		}
+
+		blog.V(7).Infof("auth filter parse attribute result: %s, rid: %s", attribute, rid)
+		decision, err := s.authorizer.Authorize(req.Request.Context(), attribute)
+		if err != nil {
+			blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s", path, err, rid)
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrCommCheckAuthorizeFailed,
+				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+				Result: false,
+			}
+			resp.WriteAsJson(rsp)
+			return
+		}
+
+		if !decision.Authorized {
+			blog.V(4).Infof("authcenter.AdoptPermissions attribute: %+v, rid: %s", attribute, rid)
+			permissions, err := authcenter.AdoptPermissions(req.Request.Header, s.engine.CoreAPI, attribute.Resources)
+			if err != nil {
+				blog.Errorf("adopt permission failed, err: %v, rid: %s", err, rid)
+				rsp := metadata.BaseResp{
+					Code:   common.CCErrCommCheckAuthorizeFailed,
+					ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+					Result: false,
+				}
+				resp.WriteAsJson(rsp)
+				return
+			}
+			blog.Warnf("authFilter failed, url: %s, reason: %+v, permissions: %+v, rid: %s", path, decision, permissions, rid)
+			rsp := metadata.BaseResp{
+				Code:        9900403,
+				ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
+				Result:      false,
+				Permissions: permissions,
+			}
+			resp.WriteAsJson(rsp)
+			return
+		}
+
+		blog.V(7).Infof("authFilter authorize on url:%s success, rid: %s", path, rid)
+		fchain.ProcessFilter(req, resp)
+		return
+	}
 }

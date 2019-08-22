@@ -617,9 +617,9 @@ const (
 )
 
 var (
-	updateHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorite/[^\s/]+/?$`)
-	deleteHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorite/[^\s/]+/?$`)
-	increaseHostFavoriteRegexp = regexp.MustCompile(`^/api/v3/hosts/favorite/[^\s/]+/incr$`)
+	updateHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorites/[^\s/]+/?$`)
+	deleteHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorites/[^\s/]+/?$`)
+	increaseHostFavoriteRegexp = regexp.MustCompile(`^/api/v3/hosts/favorites/[^\s/]+/incr$`)
 )
 
 func (ps *parseStream) hostFavorite() *parseStream {

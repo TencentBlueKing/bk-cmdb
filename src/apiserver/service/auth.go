@@ -164,9 +164,9 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	resp.WriteEntity(metadata.NewSuccessResp(result.Data))
 }
 
-// returns the url which can helps to launch the bk-auth-center when a user do not
+// GetUserNoAuthSkipURL returns the url which can helps to launch the bk-auth-center when a user do not
 // have the authorize to access resource(s).
-func (s *service) GetUserNoAuthSkipUrl(req *restful.Request, resp *restful.Response) {
+func (s *service) GetUserNoAuthSkipURL(req *restful.Request, resp *restful.Response) {
 	reqHeader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(reqHeader))
 	rid := util.GetHTTPCCRequestID(reqHeader)
@@ -182,7 +182,7 @@ func (s *service) GetUserNoAuthSkipUrl(req *restful.Request, resp *restful.Respo
 	url, err := s.authorizer.GetNoAuthSkipUrl(req.Request.Context(), reqHeader, p)
 	if err != nil {
 		blog.Errorf("get user's skip url when no auth, but request to auth center failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrGetNoAuthSkipUrlFailed)})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrGetNoAuthSkipURLFailed)})
 		return
 	}
 

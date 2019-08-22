@@ -224,6 +224,9 @@ func (assoc *association) CreateCommonAssociation(params types.ContextParams, da
 		data.OnDelete = metadata.NoAction
 	}
 
+	// check if this association has already exist,
+	// if yes, it's not allowed to create this association
+
 	//  check the association
 	cond := condition.CreateCondition()
 	cond.Field(common.AssociatedObjectIDField).Eq(data.AsstObjID)

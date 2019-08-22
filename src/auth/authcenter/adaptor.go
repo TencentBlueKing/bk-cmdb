@@ -375,6 +375,10 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 				if err != nil {
 					return nil, err
 				}
+				// if no permission to find business, return directly.
+				if result.Code == common.CCNoPermission {
+					return result.Permissions, nil
+				}
 				if !result.Result {
 					return nil, errors.New(result.ErrMsg)
 				}
