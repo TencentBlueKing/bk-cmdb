@@ -44,7 +44,7 @@ func (d *insert) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 		reply.Message = err.Error()
 		return reply, err
 	}
-	blog.V(4).Infof("[MONGO OPERATION] %+v", &msg)
+	blog.V(4).Infof("[MONGO OPERATION] db insert, info:%#v, rid:%s", msg, msg.RequestID)
 
 	var targetCol mongodb.CollectionInterface
 	if nil != ctx.Session {
@@ -58,6 +58,7 @@ func (d *insert) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 	if nil == err {
 		reply.Success = true
 	} else {
+		blog.ErrorJSON("insert execute error.  errr: %s, raw data: %s, rid:%s", err.Error(), msg, msg.RequestID)
 		reply.Message = err.Error()
 	}
 	return reply, err

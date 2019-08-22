@@ -7,36 +7,38 @@
                         :value="index"
                         name="enum-radio"
                         v-model="defaultIndex"
-                        v-tooltip="$t('ModelManagement[\'将设置为下拉选项默认选项\']')"
+                        v-bk-tooltips="$t('将设置为下拉选项默认选项')"
                         @change="handleChange(defaultIndex)" :disabled="isReadOnly">
                 </div>
                 <div class="enum-label">
-                    {{$t('ModelManagement["枚举"]')}}{{index + 1}}
+                    {{$t('枚举')}}{{index + 1}}
                 </div>
             </div>
             <div class="enum-id">
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has(`id${index}`) }">
-                    <input type="text"
+                    <bk-input type="text"
                         class="cmdb-form-input"
-                        :placeholder="$t('ModelManagement[\'请输入ID\']')"
+                        :placeholder="$t('请输入ID')"
                         v-model.trim="item.id"
                         v-validate="`required|enumId|repeat:${getOtherId(index)}`"
                         @input="handleInput"
                         :disabled="isReadOnly"
                         :name="`id${index}`">
+                    </bk-input>
                     <p class="form-error">{{errors.first(`id${index}`)}}</p>
                 </div>
             </div>
             <div class="enum-name">
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has(`name${index}`) }">
-                    <input type="text"
+                    <bk-input type="text"
                         class="cmdb-form-input"
-                        :placeholder="$t('ModelManagement[\'请输入名称英文数字\']')"
+                        :placeholder="$t('请输入名称英文数字')"
                         v-model.trim="item.name"
                         v-validate="`required|enumName|repeat:${getOtherName(index)}`"
                         @input="handleInput"
                         :disabled="isReadOnly"
                         :name="`name${index}`">
+                    </bk-input>
                     <p class="form-error">{{errors.first(`name${index}`)}}</p>
                 </div>
             </div>
@@ -188,8 +190,8 @@
             }
             .enum-btn {
                 display: inline-block;
-                width: 36px;
-                height: 36px;
+                width: 32px;
+                height: 32px;
                 margin-left: 5px;
                 vertical-align: middle;
                 text-align: center;

@@ -2,8 +2,8 @@
     <div class="config-layout clearfix">
         <div class="config-wrapper config-unselected fl">
             <div class="wrapper-header unselected-header">
-                <label class="header-label">{{$t("Inst['隐藏属性']")}}</label>
-                <input class="header-filter" type="text" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="filter">
+                <label class="header-label">{{$t('隐藏属性')}}</label>
+                <bk-input class="header-filter" type="text" :placeholder="$t('搜索属性')" v-model.trim="filter"></bk-input>
             </div>
             <ul class="property-list property-list-unselected">
                 <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" :key="index" @click="selectProperty(property)">
@@ -14,7 +14,7 @@
         </div>
         <div class="config-wrapper config-selected fl">
             <div class="wrapper-header selected-header">
-                <label class="header-label">{{$t("Inst['已显示属性']")}}</label>
+                <label class="header-label">{{$t('已显示属性')}}</label>
             </div>
             <div class="property-list-layout">
                 <ul class="property-list property-list-selected">
@@ -31,7 +31,7 @@
                         <i class="icon-triple-dot"></i>
                         <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                         <i class="bk-icon icon-eye-slash-shape"
-                            v-tooltip="$t('Common[\'隐藏\']')"
+                            v-bk-tooltips="$t('隐藏')"
                             @click="unselectProperty(property)">
                         </i>
                     </li>
@@ -39,9 +39,9 @@
             </div>
         </div>
         <div class="config-options clearfix">
-            <bk-button class="config-button fl" type="primary" @click="handleApply">{{$t('Inst[\'应用\']')}}</bk-button>
-            <bk-button class="config-button fl" type="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
-            <bk-button class="config-button fr" type="default" @click="handleReset">{{$t("Common['还原默认']")}}</bk-button>
+            <bk-button class="config-button fl" theme="primary" @click="handleApply">{{$t('应用')}}</bk-button>
+            <bk-button class="config-button fl" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+            <bk-button class="config-button fr" theme="default" @click="handleReset">{{$t('还原默认')}}</bk-button>
         </div>
     </div>
 </template>
@@ -146,14 +146,14 @@
                 if (this.localSelected.length < this.max) {
                     this.localSelected.push(property['bk_property_id'])
                 } else {
-                    this.$info(this.$t('Common["最多选择N项"]', { n: this.max }))
+                    this.$info(this.$t('最多选择N项', { n: this.max }))
                 }
             },
             unselectProperty (property) {
                 if (this.localSelected.length > this.min) {
                     this.localSelected = this.localSelected.filter(propertyId => propertyId !== property['bk_property_id'])
                 } else {
-                    this.$info(this.$t('Common["至少选择N项"]', { n: this.min }))
+                    this.$info(this.$t('至少选择N项', { n: this.min }))
                 }
             },
             checkDisabled (property) {
@@ -161,9 +161,9 @@
             },
             handleApply () {
                 if (this.localSelected.length > this.max) {
-                    this.$info(this.$t('Common["最多选择N项"]', { n: this.max }))
+                    this.$info(this.$t('最多选择N项', { n: this.max }))
                 } else if (this.localSelected.length < this.min) {
-                    this.$info(this.$t('Common["至少选择N项"]', { n: this.min }))
+                    this.$info(this.$t('至少选择N项', { n: this.min }))
                 } else {
                     this.$emit('on-apply', [...this.undragbbleProperties, ...this.drabbleProperties])
                 }
@@ -173,7 +173,7 @@
             },
             handleReset () {
                 this.$bkInfo({
-                    title: this.$t("Common['是否要还原回系统默认显示属性？']"),
+                    title: this.$t('是否要还原回系统默认显示属性？'),
                     confirmFn: () => {
                         this.$emit('on-reset')
                     }
@@ -186,6 +186,7 @@
 <style lang="scss" scoped>
     .config-layout{
         height: 100%;
+        font-size: 14px;
     }
     .config-wrapper{
         width: 50%;
@@ -206,10 +207,6 @@
                 display: inline-block;
                 vertical-align: middle;
                 width: 120px;
-                height: 36px;
-                padding: 0 15px;
-                border: 1px solid $cmdbBorderColor;
-                border-radius: 2px;
             }
         }
     }

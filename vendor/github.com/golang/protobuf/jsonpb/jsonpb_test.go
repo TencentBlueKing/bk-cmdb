@@ -608,7 +608,7 @@ func TestMarshalAnyJSONPBMarshaler(t *testing.T) {
 	}
 	// same as expected above, but pretty-printed w/ indentation
 	expected =
-`{
+		`{
   "@type": "type.googleapis.com/` + dynamicMessageName + `",
   "baz": [
     0,
@@ -622,7 +622,6 @@ func TestMarshalAnyJSONPBMarshaler(t *testing.T) {
 		t.Errorf("marshalling JSON produced incorrect output: got %s, wanted %s", str, expected)
 	}
 }
-
 
 func TestMarshalWithCustomValidation(t *testing.T) {
 	msg := dynamicMessage{RawJson: `{ "foo": "bar", "baz": [0, 1, 2, 3] }`, Dummy: &dynamicMessage{}}

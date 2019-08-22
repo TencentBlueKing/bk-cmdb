@@ -14,6 +14,7 @@ package local
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -195,6 +196,29 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 	return err
 }
 
+// upsert 更新数据
+func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interface{}) error {
+	c.dbc.Refresh()
+	data := bson.M{"$set": doc}
+	_, err := c.dbc.DB(c.dbname).C(c.collName).Upsert(filter, data)
+	return err
+}
+
+// UpdateMultiModel 根据不同的操作符去更新数据
+func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
+	c.dbc.Refresh()
+	data := bson.M{}
+	for _, item := range updateModel {
+		if _, ok := data[item.Op]; ok {
+			return errors.New(item.Op + " appear multiple times")
+		}
+		data["$"+item.Op] = item.Doc
+	}
+
+	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(filter, data)
+	return err
+}
+
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 	c.dbc.Refresh()
@@ -229,8 +253,8 @@ type Idgen struct {
 	SequenceID uint64 `bson:"SequenceID"`
 }
 
-// StartTransaction 开启新事务
-func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
+// Start 开启新事务
+func (c *Mongo) Start(ctx context.Context) (dal.Transcation, error) {
 	return c, nil
 }
 
@@ -275,6 +299,11 @@ func (c *Mongo) DropTable(collName string) error {
 func (c *Mongo) CreateTable(collName string) error {
 	c.dbc.Refresh()
 	return c.dbc.DB(c.dbname).C(collName).Create(&mgo.CollectionInfo{})
+}
+
+// DB get dal interface
+func (c *Mongo) DB(collName string) dal.RDB {
+	return c
 }
 
 // CreateIndex 创建索引

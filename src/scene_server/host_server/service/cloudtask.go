@@ -34,7 +34,7 @@ func (s *Service) AddCloudTask(req *restful.Request, resp *restful.Response) {
 	taskList := new(meta.CloudTaskList)
 	if err := json.NewDecoder(req.Request.Body).Decode(taskList); err != nil {
 		blog.Errorf("add task failed with decode body err: %v,rid:%s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -42,11 +42,11 @@ func (s *Service) AddCloudTask(req *restful.Request, resp *restful.Response) {
 
 	if err := srvData.lgc.AddCloudTask(srvData.ctx, taskList); err != nil {
 		blog.Errorf("add task failed with err: %v, rid: %s", err.Error(), srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncCreateFail)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncCreateFail)})
 		return
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(nil))
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (s *Service) DeleteCloudTask(req *restful.Request, resp *restful.Response) {
@@ -56,7 +56,7 @@ func (s *Service) DeleteCloudTask(req *restful.Request, resp *restful.Response) 
 	int64ID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		blog.Errorf("DeleteCloudTask fail, taskID string convert to int64 fail, err: %v, rid: %v", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncDeleteSyncTaskFail)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncDeleteSyncTaskFail)})
 		return
 	}
 	_, err = s.CoreAPI.CoreService().Cloud().DeleteCloudSyncTask(srvData.ctx, srvData.header, int64ID)
@@ -66,7 +66,7 @@ func (s *Service) DeleteCloudTask(req *restful.Request, resp *restful.Response) 
 		retData["errors:"] = err
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(retData))
+	_ = resp.WriteEntity(meta.NewSuccessResp(retData))
 }
 
 func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) {
@@ -75,17 +75,18 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 	opt := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
 		blog.Errorf("search task fail, with decode body failed, err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	response, err := s.CoreAPI.CoreService().Cloud().SearchCloudSyncTask(srvData.ctx, srvData.header, opt)
 	if err != nil {
 		blog.Errorf("SearchCloudTask fail, search %v failed, err: %v, rid: %s", opt["bk_task_name"], err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetTaskFail)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetTaskFail)})
+		return
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(response))
+	_ = resp.WriteEntity(meta.NewSuccessResp(response))
 }
 
 func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) {
@@ -94,7 +95,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 	data := make(mapstr.MapStr, 0)
 	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
 		blog.Errorf("update task failed with decode body fail err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -107,20 +108,20 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 
 	if response.Count > 1 {
 		blog.Errorf("update task failed, task name already exits. rid: %s", srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudTaskNameAlreadyExist)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudTaskNameAlreadyExist)})
 		return
 	}
 
 	if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(srvData.ctx, srvData.header, data); err != nil {
 		blog.Errorf("update task failed err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
 		return
 	}
 
 	status, err := data.Bool("bk_status")
 	if err != nil {
 		blog.Errorf("UpdateCloudTask fail with interface convert to bool fail, err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
 		return
 	}
 
@@ -128,7 +129,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 		// 开启同步状态下，update:先关闭同步，更新数据后，再开启同步
 		if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(srvData.ctx, srvData.header, data); err != nil {
 			blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
+			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
 			return
 		}
 
@@ -139,12 +140,12 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 	} else {
 		if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(srvData.ctx, srvData.header, data); err != nil {
 			blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
+			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
 			return
 		}
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(nil))
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
@@ -153,13 +154,13 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 	opt := make(map[string]interface{}, 0)
 	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
 		blog.Errorf("StartCloudSync failed, err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(srvData.ctx, srvData.header, opt); err != nil {
 		blog.Errorf("StartCloudSync fail, because UpdateCloudSyncTask fail , %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 		return
 	}
 
@@ -175,8 +176,8 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 	}
 
 	if len(isRequired) > 0 {
-		blog.Errorf("%v", isRequired)
-		resp.WriteEntity(meta.NewSuccessResp(isRequired))
+		blog.Errorf("StartCloudSync required: %v, rid: %s", isRequired, srvData.rid)
+		_ = resp.WriteEntity(meta.NewSuccessResp(isRequired))
 		return
 	}
 
@@ -184,10 +185,11 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 
 	if err := srvData.lgc.FrontEndSyncSwitch(srvData.ctx, opt, false); err != nil {
 		blog.Errorf("StartCloudSync fail, err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncStartFail)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncStartFail)})
+		return
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(nil))
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (s *Service) CreateResourceConfirm(req *restful.Request, resp *restful.Response) {
@@ -196,7 +198,7 @@ func (s *Service) CreateResourceConfirm(req *restful.Request, resp *restful.Resp
 	resourceIDMap := make(map[string][]int64)
 	if err := json.NewDecoder(req.Request.Body).Decode(&resourceIDMap); err != nil {
 		blog.Errorf("resource confirm failed with decode body err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -220,7 +222,7 @@ func (s *Service) CreateResourceConfirm(req *restful.Request, resp *restful.Resp
 	for _, hostInfo := range cloudHostInfo {
 		addConfirm, ok := hostInfo["bk_confirm"].(bool)
 		if !ok {
-			blog.Errorf("interface convert to bool fail")
+			blog.Errorf("interface convert to bool fail, rid: %s", srvData.rid)
 			continue
 		}
 		if addConfirm {
@@ -229,7 +231,7 @@ func (s *Service) CreateResourceConfirm(req *restful.Request, resp *restful.Resp
 
 		attrConfirm, ok := hostInfo["bk_attr_confirm"].(bool)
 		if !ok {
-			blog.Errorf("interface convert to bool fail")
+			blog.Errorf("interface convert to bool fail, rid: %s", srvData.rid)
 			continue
 		}
 		if attrConfirm {
@@ -241,7 +243,8 @@ func (s *Service) CreateResourceConfirm(req *restful.Request, resp *restful.Resp
 		err := srvData.lgc.AddCloudHosts(srvData.ctx, AddHostList)
 		if err != nil {
 			blog.Errorf("ResourceConfirm fail, add cloud host failed, err: %v, rid: %s", err, srvData.rid)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudConfirmCreateFail)})
+			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudConfirmCreateFail)})
+			return
 		}
 	}
 
@@ -249,7 +252,8 @@ func (s *Service) CreateResourceConfirm(req *restful.Request, resp *restful.Resp
 		err := srvData.lgc.UpdateCloudHosts(srvData.ctx, updateHostList)
 		if err != nil {
 			blog.Errorf("create resource confirm fail, update cloud hosts failed, err: %v, rid: %s", err, srvData.rid)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudConfirmCreateFail)})
+			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudConfirmCreateFail)})
+			return
 		}
 	}
 
@@ -262,7 +266,7 @@ func (s *Service) CreateResourceConfirm(req *restful.Request, resp *restful.Resp
 		}
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(nil))
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (s *Service) SearchConfirm(req *restful.Request, resp *restful.Response) {
@@ -271,17 +275,18 @@ func (s *Service) SearchConfirm(req *restful.Request, resp *restful.Response) {
 	opt := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
 		blog.Errorf("SearchConfirm failed with decode body err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	response, err := s.CoreAPI.CoreService().Cloud().SearchConfirm(srvData.ctx, srvData.header, opt)
 	if err != nil {
 		blog.Errorf("search confirm instance failed, err:%v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetConfirmFail)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetConfirmFail)})
+		return
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(response))
+	_ = resp.WriteEntity(meta.NewSuccessResp(response))
 }
 
 func (s *Service) SearchAccount(req *restful.Request, resp *restful.Response) {
@@ -290,14 +295,14 @@ func (s *Service) SearchAccount(req *restful.Request, resp *restful.Response) {
 	opt := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
 		blog.Errorf("SearchAccount fail with decode body failed, err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	response, err := s.CoreAPI.CoreService().Cloud().SearchCloudSyncTask(srvData.ctx, srvData.header, opt)
 	if err != nil {
 		blog.Errorf("SearchAccount fail, task name: %v, err: %v, rid: %s", opt["bk_task_name"], err, srvData.rid)
-		resp.WriteEntity(meta.NewSuccessResp(err))
+		_ = resp.WriteEntity(meta.NewSuccessResp(err))
 	}
 
 	secretID := response.Info[0].SecretID
@@ -307,7 +312,7 @@ func (s *Service) SearchAccount(req *restful.Request, resp *restful.Response) {
 	decodeBytes, errDecode := base64.StdEncoding.DecodeString(secretKey)
 	if errDecode != nil {
 		blog.Errorf("Base64 decode secretKey failed. rid: %s", srvData.rid)
-		resp.WriteEntity(meta.NewSuccessResp(errDecode))
+		_ = resp.WriteEntity(meta.NewSuccessResp(errDecode))
 	}
 	secretKeyOrigin := string(decodeBytes)
 
@@ -315,7 +320,7 @@ func (s *Service) SearchAccount(req *restful.Request, resp *restful.Response) {
 	result["ID"] = secretID
 	result["Key"] = secretKeyOrigin
 
-	resp.WriteEntity(meta.NewSuccessResp(response))
+	_ = resp.WriteEntity(meta.NewSuccessResp(response))
 }
 
 func (s *Service) SearchCloudSyncHistory(req *restful.Request, resp *restful.Response) {
@@ -324,18 +329,18 @@ func (s *Service) SearchCloudSyncHistory(req *restful.Request, resp *restful.Res
 	opt := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
 		blog.Errorf("SearchCloudSyncHistory fail , but decode body failed, err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	response, err := s.CoreAPI.CoreService().Cloud().SearchSyncHistory(srvData.ctx, srvData.header, opt)
 	if err != nil {
 		blog.Errorf("SearchCloudSyncHistory failed, input: %v, err: %v, rid: %s", opt, err, srvData.rid)
-		resp.WriteEntity(meta.NewSuccessResp(err))
+		_ = resp.WriteEntity(meta.NewSuccessResp(err))
 		return
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(response))
+	_ = resp.WriteEntity(meta.NewSuccessResp(response))
 }
 
 func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response) {
@@ -344,7 +349,7 @@ func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response
 	resourceIDMap := make(map[string][]int64)
 	if err := json.NewDecoder(req.Request.Body).Decode(&resourceIDMap); err != nil {
 		blog.Errorf("AddConfirmHistory failed with decode body err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -356,19 +361,21 @@ func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response
 		response, err := s.CoreAPI.CoreService().Cloud().SearchConfirm(srvData.ctx, srvData.header, condition)
 		if err != nil {
 			blog.Errorf("AddConfirmHistory failed with search confirm fail, err: %v, rid: %s", err, srvData.rid)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudAddConfirmHistoryFail)})
+			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudAddConfirmHistoryFail)})
+			return
 		}
 
 		if response.Count > 0 {
 			opt := response.Info[0]
 			if _, err := s.CoreAPI.CoreService().Cloud().CreateConfirmHistory(srvData.ctx, srvData.header, opt); err != nil {
 				blog.Errorf("add confirm history failed, err: %v, rid: %s", err, srvData.rid)
-				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudAddConfirmHistoryFail)})
+				_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudAddConfirmHistoryFail)})
+				return
 			}
 		}
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(nil))
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (s *Service) SearchConfirmHistory(req *restful.Request, resp *restful.Response) {
@@ -377,15 +384,16 @@ func (s *Service) SearchConfirmHistory(req *restful.Request, resp *restful.Respo
 	opt := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
 		blog.Errorf("SearchConfirmHistory failed with decode body err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	response, err := s.CoreAPI.CoreService().Cloud().SearchConfirmHistory(context.Background(), srvData.header, opt)
 	if err != nil {
 		blog.Errorf("search confirm history failed, err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetConfirmHistoryFail)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetConfirmHistoryFail)})
+		return
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(response))
+	_ = resp.WriteEntity(meta.NewSuccessResp(response))
 }

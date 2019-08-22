@@ -116,6 +116,9 @@ func NewMetaDataFromBusinessID(value string) Metadata {
 	meta := Metadata{Label: label}
 	return meta
 }
+func NewMetadata(bizID int64) Metadata {
+	return NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+}
 
 func GetBusinessIDFromMeta(data interface{}) string {
 	if nil == data {
@@ -174,6 +177,14 @@ type MetadataWrapper struct {
 // Metadata  used to define the metadata for the resources
 type Metadata struct {
 	Label Label `field:"label" json:"label" bson:"label"`
+}
+
+func (md *Metadata) ParseBizID() (int64, error) {
+	bizID, err := BizIDFromMetadata(*md)
+	if err != nil {
+		return 0, err
+	}
+	return bizID, nil
 }
 
 func (md *Metadata) ToMapStr() mapstr.MapStr {

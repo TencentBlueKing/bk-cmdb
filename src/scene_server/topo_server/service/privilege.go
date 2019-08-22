@@ -20,28 +20,27 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// UpdateUserGroupPrivi search user goup
-func (s *Service) UpdateUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// UpdateUserGroupPrivilege search user group
+func (s *Service) UpdateUserGroupPrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	priviData := &metadata.PrivilegeUserGroup{}
-	_, err := priviData.Parse(data)
-	if nil != err {
-		blog.Errorf("[api-privilege] failed to parse the input data, error info is %s ", err.Error())
+	privilegeData := &metadata.PrivilegeUserGroup{}
+	if err := data.MarshalJSONInto(privilegeData); nil != err {
+		blog.Errorf("[api-privilege] failed to parse the input data, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err = s.Core.PermissionOperation().Permission(params).SetUserGroupPermission(params.SupplierAccount, pathParams("group_id"), priviData)
+	err := s.Core.PermissionOperation().Permission(params).SetUserGroupPermission(params.SupplierAccount, pathParams("group_id"), privilegeData)
 	return nil, err
 }
 
-// GetUserGroupPrivi search user goup
-func (s *Service) GetUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// GetUserGroupPrivilege search user group
+func (s *Service) GetUserGroupPrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	return s.Core.PermissionOperation().Permission(params).GetUserGroupPermission(params.SupplierAccount, pathParams("group_id"))
 }
 
-// GetUserPrivi search user goup
-func (s *Service) GetUserPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// GetUserPrivilege search user group
+func (s *Service) GetUserPrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	return s.Core.PermissionOperation().Permission(params).GetUserPermission(params.SupplierAccount, pathParams("user_name"))
 }

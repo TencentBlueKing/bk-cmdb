@@ -2,46 +2,76 @@
     <div class="layout" v-bkloading="{ isLoading: $loading('getModuleServiceInstances') }">
         <template v-if="instances.length || inSearch">
             <div class="options">
-                <cmdb-form-bool class="options-checkall"
+                <bk-checkbox class="options-checkall"
                     :size="16"
-                    :checked="isCheckAll"
-                    :title="$t('Common[\'全选本页\']')"
+                    v-model="isCheckAll"
+                    :title="$t('全选本页')"
                     @change="handleCheckALL">
-                </cmdb-form-bool>
-                <bk-button class="options-button" type="primary"
-                    @click="handleCreateServiceInstance">
-                    {{$t('BusinessTopology["添加服务实例"]')}}
-                </bk-button>
+                </bk-checkbox>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                        auth: [$OPERATION.C_SERVICE_INSTANCE]
+                    }">
+                    <bk-button class="options-button" theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                        @click="handleCreateServiceInstance">
+                        {{$t('添加服务实例')}}
+                    </bk-button>
+                </span>
                 <bk-dropdown-menu trigger="click">
-                    <bk-button class="options-button clipboard-trigger" type="default" slot="dropdown-trigger">
-                        {{$t('Common["更多"]')}}
+                    <bk-button class="options-button clipboard-trigger" theme="default" slot="dropdown-trigger">
+                        {{$t('更多')}}
                         <i class="bk-icon icon-angle-down"></i>
                     </bk-button>
                     <ul class="clipboard-list" slot="dropdown-content">
                         <li v-for="(item, index) in menuItem"
-                            :class="['clipboard-item', { 'is-disabled': item.disabled }]"
+                            :class="['clipboard-item', { 'is-disabled': item.disabled || (item.auth && !$isAuthorized($OPERATION[item.auth])) }]"
                             :key="index"
-                            @click="item.handler(item.disabled)">
-                            {{item.name}}
+                            @click="item.handler(item.disabled, item.auth)">
+                            <span v-if="item.auth"
+                                v-cursor="{
+                                    active: !$isAuthorized($OPERATION[item.auth]),
+                                    auth: [$OPERATION[item.auth]]
+                                }">
+                                {{item.name}}
+                            </span>
+                            <span v-else>{{item.name}}</span>
                         </li>
                     </ul>
                 </bk-dropdown-menu>
+                <span class="options-button sync-template-link"
+                    v-show="withTemplate"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
+                        auth: [$OPERATION.U_SERVICE_INSTANCE]
+                    }">
+                    <bk-button class="topo-sync"
+                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE) || !topoStatus"
+                        @click="handleSyncTemplate">
+                        <i class="bk-icon icon-refresh"></i>
+                        {{$t('同步模板')}}
+                        <span class="topo-status" v-show="topoStatus"></span>
+                    </bk-button>
+                </span>
                 <div class="options-right fr">
-                    <cmdb-form-bool class="options-checkbox"
+                    <bk-checkbox class="options-checkbox"
                         :size="16"
-                        :checked="isExpandAll"
+                        v-model="isExpandAll"
                         @change="handleExpandAll">
-                        <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
-                    </cmdb-form-bool>
-                    <cmdb-form-singlechar class="options-search"
-                        :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
-                        v-model="filter">
-                        <i class="bk-icon icon-close"
-                            v-show="filter.length"
-                            @click="handleClearFilter">
-                        </i>
-                        <i class="bk-icon icon-search" @click.stop="handleSearch"></i>
-                    </cmdb-form-singlechar>
+                        <span class="checkbox-label">{{$t('全部展开')}}</span>
+                    </bk-checkbox>
+                    <div class="options-search">
+                        <bk-search-select
+                            ref="searchSelect"
+                            :show-condition="false"
+                            :placeholder="$t('实例名称/标签')"
+                            :data="searchSelect"
+                            v-model="searchSelectData"
+                            @menu-child-condition-select="handleConditionSelect"
+                            @change="handleSearch">
+                        </bk-search-select>
+                    </div>
                 </div>
             </div>
             <div class="tables">
@@ -57,26 +87,27 @@
                     @check-change="handleCheckChange">
                 </service-instance-table>
             </div>
-            <bk-paging class="pagination"
-                pagination-able
-                location="left"
-                :cur-page="pagination.current"
-                :total-page="pagination.totalPage"
-                :pagination-count="pagination.size"
-                @page-change="handlePageChange"
-                @pagination-change="handleSizeChange">
-            </bk-paging>
+            <bk-pagination class="pagination"
+                align="right"
+                size="small"
+                :current="pagination.current"
+                :count="pagination.count"
+                :limit="pagination.size"
+                @change="handlePageChange"
+                @limit-change="handleSizeChange">
+            </bk-pagination>
             <div class="filter-empty" v-if="!instances.length">
                 <div class="filter-empty-content">
-                    <i class="bk-icon icon-empty"></i>
-                    <span>{{$t('BusinessTopology["暂无符合条件的实例"]')}}</span>
+                    <img class="img-empty" src="../../../assets/images/empty-content.png" alt="">
+                    <span>{{$t('暂无符合条件的实例')}}</span>
                 </div>
             </div>
         </template>
         <service-instance-empty v-else
             @create-instance-success="handleCreateInstanceSuccess">
         </service-instance-empty>
-        <cmdb-slider
+        <bk-sideslider
+            :width="800"
             :title="processForm.title"
             :is-show.sync="processForm.show"
             :before-close="handleBeforeClose">
@@ -89,18 +120,55 @@
                 :property-groups="processForm.propertyGroups"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleBeforeClose">
+                <template slot="bind_ip">
+                    <cmdb-input-select
+                        :disabled="checkDisabled"
+                        :name="'bindIp'"
+                        :placeholder="$t('请选择或输入IP')"
+                        :options="processBindIp"
+                        :validate="validateRules"
+                        v-model="bindIp">
+                    </cmdb-input-select>
+                </template>
             </cmdb-form>
-        </cmdb-slider>
+        </bk-sideslider>
+
+        <bk-dialog class="bk-dialog-no-padding"
+            v-model="editLabel.show"
+            :mask-close="false"
+            :width="580"
+            @confirm="handleSubmitBatchLabel"
+            @cancel="handleCloseBatchLable"
+            @after-leave="handleSetEditBox">
+            <div class="reset-header" slot="header">
+                {{$t('批量编辑')}}
+                <span>{{$tc('已选择实例', checked.length, { num: checked.length })}}</span>
+            </div>
+            <batch-edit-label ref="batchLabel"
+                v-if="editLabel.visiable"
+                :exisiting-label="editLabel.list">
+                <cmdb-edit-label
+                    ref="instanceLabel"
+                    slot="batch-add-label"
+                    class="edit-label"
+                    :default-list="[]">
+                </cmdb-edit-label>
+            </batch-edit-label>
+        </bk-dialog>
     </div>
 </template>
 
 <script>
     import serviceInstanceTable from './service-instance-table.vue'
     import serviceInstanceEmpty from './service-instance-empty.vue'
+    import batchEditLabel from './batch-edit-label.vue'
+    import cmdbEditLabel from './edit-label.vue'
     export default {
         components: {
             serviceInstanceTable,
-            serviceInstanceEmpty
+            serviceInstanceEmpty,
+            batchEditLabel,
+            cmdbEditLabel
         },
         data () {
             return {
@@ -110,9 +178,26 @@
                 filter: '',
                 inSearch: false,
                 instances: [],
+                searchSelect: [
+                    {
+                        name: this.$t('服务实例名'),
+                        id: 0
+                    },
+                    {
+                        name: this.$t('标签'),
+                        id: 1,
+                        multiable: true,
+                        children: [{
+                            id: '',
+                            name: ''
+                        }],
+                        conditions: []
+                    }
+                ],
+                searchSelectData: [],
                 pagination: {
                     current: 1,
-                    totalPage: 0,
+                    count: 0,
                     size: 10
                 },
                 processForm: {
@@ -125,15 +210,35 @@
                     properties: [],
                     propertyGroups: [],
                     unwatch: null
-                }
+                },
+                editLabel: {
+                    show: false,
+                    visiable: false,
+                    list: []
+                },
+                isCarryParams: false,
+                topoStatus: false,
+                historyLabels: {},
+                processBindIp: [],
+                bindIp: ''
             }
         },
         computed: {
+            targetInstanceName () {
+                return this.$route.query.instanceName || ''
+            },
             business () {
                 return this.$store.getters['objectBiz/bizId']
             },
             currentNode () {
                 return this.$store.state.businessTopology.selectedNode
+            },
+            isModuleNode () {
+                return this.currentNode && this.currentNode.data.bk_obj_id === 'module'
+            },
+            withTemplate () {
+                const nodeInstance = this.$store.state.businessTopology.selectedNodeInstance
+                return this.isModuleNode && nodeInstance && nodeInstance.service_template_id
             },
             currentModule () {
                 if (this.currentNode && this.currentNode.data.bk_obj_id === 'module') {
@@ -146,27 +251,76 @@
             },
             menuItem () {
                 return [{
-                    name: this.$t('BusinessTopology["批量删除"]'),
+                    name: this.$t('批量删除'),
                     handler: this.batchDelete,
-                    disabled: !this.checked.length
+                    disabled: !this.checked.length,
+                    auth: 'D_SERVICE_INSTANCE'
                 }, {
-                    name: this.$t('BusinessTopology["复制IP"]'),
+                    name: this.$t('复制IP'),
                     handler: this.copyIp,
                     disabled: !this.checked.length
+                }, {
+                    name: this.$t('编辑标签'),
+                    handler: this.handleShowBatchLabel,
+                    disabled: !this.checked.length,
+                    auth: 'U_SERVICE_INSTANCE'
                 }]
+            },
+            bindIpProperty () {
+                return this.processForm.properties.find(property => property['bk_property_id'] === 'bind_ip') || {}
+            },
+            validateRules () {
+                const rules = {}
+                if (this.bindIpProperty.isrequired) {
+                    rules['required'] = true
+                }
+                rules['regex'] = this.bindIpProperty.option
+                return rules
+            },
+            checkDisabled () {
+                const property = this.bindIpProperty
+                if (this.processForm.type === 'create') {
+                    return false
+                }
+                return !property.editable || property.isreadonly || this.processForm.disabledProperties.includes('bind_ip')
             }
         },
         watch: {
-            currentNode (node) {
+            async currentNode (node) {
                 if (node && node.data.bk_obj_id === 'module') {
-                    this.filter = ''
-                    this.getServiceInstances()
+                    if (!this.isCarryParams) {
+                        this.searchSelectData = []
+                    }
+                    this.pagination.current = 1
+                    await this.getServiceInstances()
+                    const timer = setTimeout(() => {
+                        if (node.data.service_template_id && this.instances.length) {
+                            this.getServiceInstanceDifferences()
+                        }
+                        clearTimeout(timer)
+                    }, 0)
                 }
+            },
+            bindIp (value) {
+                this.$refs.processForm.values.bind_ip = value
             }
         },
-        created () {
+        async created () {
+            await this.getHistoryLabel()
             this.getProcessProperties()
             this.getProcessPropertyGroups()
+            if (this.targetInstanceName) {
+                this.isCarryParams = true
+                this.searchSelectData.push({
+                    'name': '服务实例名',
+                    'id': 0,
+                    'values': [{
+                        'id': this.targetInstanceName,
+                        'name': this.targetInstanceName
+                    }]
+                })
+                this.searchSelect.shift()
+            }
         },
         methods: {
             async getProcessProperties () {
@@ -203,8 +357,43 @@
                     console.error(e)
                 }
             },
+            getServiceInstanceDifferences () {
+                try {
+                    this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
+                        params: this.$injectMetadata({
+                            bk_module_id: this.currentNode.data.bk_inst_id,
+                            service_template_id: this.withTemplate
+                        })
+                    }).then(res => {
+                        this.topoStatus = res.has_difference
+                    })
+                } catch (error) {
+                    console.error(error)
+                }
+            },
             async getServiceInstances () {
                 try {
+                    const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
+                        || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
+                    const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
+                    const submitLabel = {}
+                    labels.forEach(label => {
+                        const conditionId = label.condition.id
+                        if (!submitLabel[conditionId]) {
+                            submitLabel[conditionId] = [label.values[0].id]
+                        } else {
+                            if (submitLabel[conditionId].indexOf(label.values[0].id) < 0) {
+                                submitLabel[conditionId].push(label.values[0].id)
+                            }
+                        }
+                    })
+                    const selectors = Object.keys(submitLabel).map(key => {
+                        return {
+                            key: key,
+                            operator: 'in',
+                            values: submitLabel[key]
+                        }
+                    })
                     const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
                         params: this.$injectMetadata({
                             bk_module_id: this.currentNode.data.bk_inst_id,
@@ -213,29 +402,71 @@
                                 start: (this.pagination.current - 1) * this.pagination.size,
                                 limit: this.pagination.size
                             },
-                            search_key: this.filter
+                            search_key: searchKey
+                                ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
+                                : '',
+                            selectors: selectors
                         }),
                         config: {
                             requestId: 'getModuleServiceInstances',
                             cancelPrevious: true
                         }
                     })
+                    if (data.count && !data.info.length) {
+                        this.pagination.current -= 1
+                        this.getServiceInstances()
+                    }
+                    this.isCarryParams = false
                     this.checked = []
                     this.isCheckAll = false
                     this.isExpandAll = false
                     this.instances = data.info
-                    this.pagination.totalPage = Math.ceil(data.count / this.pagination.size)
+                    this.pagination.count = data.count
                 } catch (e) {
                     console.error(e)
                     this.instances = []
                 }
             },
+            async getHistoryLabel () {
+                const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
+                    params: this.$injectMetadata({}),
+                    config: {
+                        requestId: 'getHistoryLabel',
+                        cancelPrevious: true
+                    }
+                })
+                const keys = Object.keys(historyLabels).map(key => {
+                    return {
+                        name: key + ' : ',
+                        id: key
+                    }
+                })
+                this.historyLabels = historyLabels
+                this.$set(this.searchSelect[1], 'conditions', keys)
+            },
             handleSearch () {
                 this.inSearch = true
+                const instanceName = this.searchSelectData.filter(item => (item.id === 0 && item.hasOwnProperty('values'))
+                    || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
+                if (instanceName.length) {
+                    this.searchSelect[0].id === 0 && this.searchSelect.shift()
+                } else {
+                    this.searchSelect[0].id !== 0 && this.searchSelect.unshift({
+                        name: this.$t('服务实例名'),
+                        id: 0
+                    })
+                }
+                if (instanceName.length >= 2) {
+                    this.searchSelectData.pop()
+                    this.$bkMessage({
+                        message: this.$t('服务实例名重复'),
+                        theme: 'warning'
+                    })
+                    return
+                }
                 this.handlePageChange(1)
             },
             handleClearFilter () {
-                this.filter = ''
                 this.handleSearch()
             },
             handlePageChange (page) {
@@ -255,12 +486,14 @@
                 }
             },
             handleCreateProcess (referenceService) {
+                this.getInstanceIpByHost(referenceService.instance.bk_host_id)
                 this.processForm.referenceService = referenceService
                 this.processForm.type = 'create'
-                this.processForm.title = `${this.$t('BusinessTopology["添加进程"]')}(${referenceService.instance.name})`
+                this.processForm.title = `${this.$t('添加进程')}(${referenceService.instance.name})`
                 this.processForm.instance = {}
                 this.processForm.show = true
                 this.$nextTick(() => {
+                    this.bindIp = ''
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -272,11 +505,15 @@
                 })
             },
             async handleUpdateProcess (processInstance, referenceService) {
+                this.getInstanceIpByHost(processInstance.relation.bk_host_id)
                 this.processForm.referenceService = referenceService
                 this.processForm.type = 'update'
-                this.processForm.title = this.$t('BusinessTopology["编辑进程"]')
+                this.processForm.title = this.$t('编辑进程')
                 this.processForm.instance = processInstance.property
                 this.processForm.show = true
+                this.$nextTick(() => {
+                    this.bindIp = this.$tools.getInstFormValues(this.processForm.properties, processInstance.property)['bind_ip']
+                })
 
                 const processTemplateId = processInstance.relation.process_template_id
                 if (processTemplateId) {
@@ -289,6 +526,32 @@
                         }
                     })
                     this.processForm.disabledProperties = disabledProperties
+                }
+            },
+            async getInstanceIpByHost (hostId) {
+                try {
+                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    let res = null
+                    if (instanceIpMap.hasOwnProperty(hostId)) {
+                        res = instanceIpMap[hostId]
+                    } else {
+                        res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
+                            hostId,
+                            config: {
+                                requestId: 'getInstanceIpByHost'
+                            }
+                        })
+                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                    }
+                    this.processBindIp = res.options.map(ip => {
+                        return {
+                            id: ip,
+                            name: ip
+                        }
+                    })
+                } catch (e) {
+                    this.processBindIp = []
+                    console.error(e)
                 }
             },
             async getProcessTemplate (processTemplateId) {
@@ -308,7 +571,12 @@
                 return Promise.resolve(data.property)
             },
             handleDeleteInstance (id) {
-                this.instances = this.instances.filter(instance => instance.id !== id)
+                const filterInstances = this.instances.filter(instance => instance.id !== id)
+                if (!filterInstances.length && this.pagination.current > 1) {
+                    this.pagination.current -= 1
+                    this.getServiceInstances()
+                }
+                this.instances = filterInstances
             },
             async handleSaveProcess (values, changedValues, instance) {
                 try {
@@ -324,6 +592,7 @@
                     this.processForm.instance = null
                     this.processForm.referenceService = null
                     this.processForm.disabledProperties = []
+                    this.$success(this.$t('保存成功'))
                 } catch (e) {
                     console.error(e)
                 }
@@ -368,7 +637,9 @@
                 if (Object.keys(changedValues).length) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.handleCloseProcessForm()
                             },
@@ -388,7 +659,12 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        from: this.$route.fullPath,
+                        from: {
+                            name: this.$route.name,
+                            query: {
+                                module: this.currentModule.bk_module_id
+                            }
+                        },
                         title: this.currentNode.name
                     }
                 })
@@ -397,14 +673,14 @@
                 this.getServiceInstances()
             },
             handleCheckALL (checked) {
-                this.filter = ''
+                this.searchSelectData = []
                 this.isCheckAll = checked
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.checked = checked
                 })
             },
             handleExpandAll (expanded) {
-                this.filter = ''
+                this.searchSelectData = []
                 this.isExpandAll = expanded
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.localExpanded = expanded
@@ -415,16 +691,18 @@
                     return false
                 }
             },
-            batchDelete (disabled) {
-                if (disabled) {
+            batchDelete (disabled, auth) {
+                if (disabled || !this.$isAuthorized(this.$OPERATION[auth])) {
                     return false
                 }
                 this.$bkInfo({
-                    title: this.$t('BusinessTopology["确认删除实例"]'),
-                    content: this.$t('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
+                    title: this.$t('确认删除实例'),
+                    subTitle: this.$t('即将删除选中的实例', { count: this.checked.length }),
+                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         try {
                             const serviceInstanceIds = this.checked.map(instance => instance.id)
+                            const deleteNum = serviceInstanceIds.length
                             await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
                                 config: {
                                     data: this.$injectMetadata({
@@ -433,7 +711,17 @@
                                     requestId: 'batchDeleteServiceInstance'
                                 }
                             })
-                            this.instances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
+                            this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count - deleteNum
+                            this.currentNode.parents.forEach(node => {
+                                node.data.service_instance_count = node.data.service_instance_count - deleteNum
+                            })
+                            this.$success(this.$t('删除成功'))
+                            const filterInstances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
+                            if (!filterInstances.length && this.pagination.current > 1) {
+                                this.pagination.current -= 1
+                                this.getServiceInstances()
+                            }
+                            this.instances = filterInstances
                             this.checked = []
                         } catch (e) {
                             console.error(e)
@@ -443,18 +731,144 @@
             },
             copyIp () {
                 this.$copyText(this.checked.map(instance => instance.name.split('_')[0]).join('\n')).then(() => {
-                    this.$success(this.$t('Common["复制成功"]'))
+                    this.$success(this.$t('复制成功'))
                 }, () => {
-                    this.$error(this.$t('Common["复制失败"]'))
+                    this.$error(this.$t('复制失败'))
                 })
+            },
+            handleSyncTemplate () {
+                this.$router.push({
+                    name: 'synchronous',
+                    params: {
+                        moduleId: this.currentNode.data.bk_inst_id,
+                        setId: this.currentNode.parent.data.bk_inst_id
+                    },
+                    query: {
+                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / '),
+                        from: `${this.$route.path}?module=${this.currentNode.data.bk_inst_id}`
+                    }
+                })
+            },
+            handleShowBatchLabel (disabled, auth) {
+                if (disabled || !this.$isAuthorized(this.$OPERATION[auth])) {
+                    return false
+                }
+                try {
+                    this.editLabel.show = true
+                    this.editLabel.visiable = true
+                    const labelList = []
+                    const existingKeys = []
+                    for (const instance of this.checked) {
+                        const labels = instance.labels
+                        labels && Object.keys(labels).forEach(key => {
+                            const index = existingKeys.findIndex(exisitingKey => exisitingKey === key)
+                            if (index !== -1 && labels[key] === labelList[index].value) {
+                                labelList[index].instanceIds.push(instance.id)
+                            } else {
+                                labelList.push({
+                                    instanceIds: [instance.id],
+                                    key: key,
+                                    value: labels[key]
+                                })
+                                existingKeys.push(key)
+                            }
+                        })
+                    }
+                    this.editLabel.list = labelList
+                } catch (e) {
+                    console.error(e)
+                    this.editLabel.list = []
+                }
+            },
+            async handleSubmitBatchLabel () {
+                try {
+                    let status = ''
+                    const validator = this.$refs.instanceLabel.$validator
+                    const list = this.$refs.instanceLabel.submitList
+                    if (list.length && !await validator.validateAll()) {
+                        return
+                    }
+                    const removeList = this.$refs.batchLabel.removeList
+                    const removeKeys = []
+                    const instanceIds = []
+                    removeList.forEach(label => {
+                        removeKeys.push(label.key)
+                        instanceIds.push(...label.instanceIds)
+                    })
+                    if (removeList.length) {
+                        status = await this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
+                            config: {
+                                data: this.$injectMetadata({
+                                    instance_ids: instanceIds,
+                                    keys: removeKeys
+                                }),
+                                requestId: 'deleteInstanceLabel',
+                                transformData: false
+                            }
+                        })
+                    }
+                    if (list.length) {
+                        const serviceInstanceIds = this.checked.map(instance => instance.id)
+                        const labelSet = {}
+                        list.forEach(label => {
+                            labelSet[label.key] = label.value
+                        })
+                        status = await this.$store.dispatch('instanceLabel/createInstanceLabel', {
+                            params: this.$injectMetadata({
+                                instance_ids: serviceInstanceIds,
+                                labels: labelSet
+                            }),
+                            config: {
+                                requestId: 'createInstanceLabel',
+                                transformData: false
+                            }
+                        })
+                    }
+                    if (status && status.bk_error_msg === 'success') {
+                        this.$success(this.$t('保存成功'))
+                        this.searchSelectData = []
+                        this.getServiceInstances()
+                        this.handleCheckALL(false)
+                        this.getHistoryLabel()
+                    }
+                    this.handleCloseBatchLable()
+                    setTimeout(() => {
+                        this.handleSetEditBox()
+                    }, 200)
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleCloseBatchLable () {
+                this.editLabel.show = false
+            },
+            handleSetEditBox () {
+                this.editLabel.visiable = false
+                this.editLabel.list = []
+            },
+            handleConditionSelect (cur, index) {
+                const values = this.historyLabels[cur.id]
+                const children = values.map(item => {
+                    return {
+                        id: item,
+                        name: item
+                    }
+                })
+                const el = this.$refs.searchSelect
+                el.curItem.children = children
+                el.updateChildMenu(cur, index, false)
+                el.showChildMenu(children)
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
+    .layout {
+        padding: 14px 0 0 0;
+    }
     .options {
-        padding: 15px 0;
+        padding: 0 0 15px;
     }
     .options-button {
         height: 32px;
@@ -462,13 +876,25 @@
         margin: 0 0 0 6px;
         line-height: 30px;
     }
+    .topo-sync {
+        position: relative;
+        .topo-status {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 8px;
+            height: 8px;
+            background-color: #ea3636;
+            border-radius: 50%;
+        }
+    }
     .options-checkall {
         width: 36px;
         height: 32px;
         line-height: 30px;
         padding: 0 9px;
         text-align: center;
-        border: 1px solid #C4C6CC;
+        border: 1px solid #f0f1f5;
         border-radius: 2px;
     }
     .options-right {
@@ -484,7 +910,16 @@
     .options-search {
         @include inlineBlock;
         position: relative;
-        width: 240px;
+        min-width: 240px;
+        max-width: 280px;
+        height: 34px;
+        z-index: 99;
+        .bk-search-select {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
         .icon-search {
             position: absolute;
             top: 9px;
@@ -540,9 +975,12 @@
             height: 3px;
         }
         .clipboard-item{
-            padding: 0 15px;
             cursor: pointer;
             @include ellipsis;
+            span {
+                display: block;
+                padding: 0 15px;
+            }
             &:not(.is-disabled):hover{
                 background-color: #ebf4ff;
                 color: #3c96ff;
@@ -551,6 +989,24 @@
                 color: #c4c6cc;
                 cursor: not-allowed;
             }
+        }
+    }
+    .sync-template-link {
+        display: inline-block;
+        position: relative;
+        margin-left: 18px;
+        padding: 0;
+        &::before {
+            content: '';
+            position: absolute;
+            top: 7px;
+            left: -11px;;
+            width: 1px;
+            height: 20px;
+            background-color: #dcdee5;
+        }
+        .icon-refresh {
+            top: -1px;
         }
     }
     .tables {
@@ -568,12 +1024,17 @@
             display: table-cell;
             vertical-align: middle;
             text-align: center;
-            .icon-empty {
+            .img-empty {
                 display: block;
-                margin: 0 0 10px 0;
-                font-size: 65px;
-                color: #c3cdd7;
+                margin: 0 auto;
             }
+        }
+    }
+    .reset-header {
+        text-align: left;
+        span {
+            color: #979ba5;
+            font-size: 14px;
         }
     }
 </style>

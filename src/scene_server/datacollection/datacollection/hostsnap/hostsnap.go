@@ -25,7 +25,7 @@ import (
 	"configcenter/src/storage/dal"
 
 	"github.com/tidwall/gjson"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 var (
@@ -68,32 +68,32 @@ func (h *HostSnap) Analyze(mesg string) error {
 	val := gjson.Parse(data)
 	host := h.getHostByVal(&val)
 	if host == nil {
-		blog.Warnf("[datacollect][hostsnap] host not found, continue, %s", val.String())
+		blog.Warnf("[data-collection][hostsnap] host not found, continue, %s", val.String())
 		return nil
 	}
 	hostid := fmt.Sprint(host.get(common.BKHostIDField))
 	if hostid == "" {
-		blog.Warnf("[datacollect][hostsnap] host id not found, continue, %s", val.String())
+		blog.Warnf("[data-collection][hostsnap] host id not found, continue, %s", val.String())
 		return nil
 	}
 
 	if err := h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10).Err(); err != nil {
-		blog.Errorf("[datacollect][hostsnap] save snapshot %s to redis faile: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
+		blog.Errorf("[data-collection][hostsnap] save snapshot %s to redis failed: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
 	}
 
 	condition := map[string]interface{}{common.BKHostIDField: host.get(common.BKHostIDField)}
 	innerip, ok := host.get(common.BKHostInnerIPField).(string)
 	if !ok {
-		blog.Infof("[datacollect][hostsnap] innerip is empty, continue, %s", val.String())
+		blog.Infof("[data-collection][hostsnap] innerip is empty, continue, %s", val.String())
 		return nil
 	}
 	outip, ok := host.get(common.BKHostOuterIPField).(string)
 	if !ok {
-		blog.Warnf("[datacollect][hostsnap] outip is not string, %s", val.String())
+		blog.Warnf("[data-collection][hostsnap] outerip is not string, %s", val.String())
 	}
 	setter := parseSetter(&val, innerip, outip)
 	if needToUpdate(setter, host) {
-		blog.Infof("[datacollect][hostsnap] update host by %v, to %v", condition, setter)
+		blog.Infof("[data-collection][hostsnap] update host by %v, to %v", condition, setter)
 		if err := h.db.Table(common.BKTableNameBaseHost).Update(h.ctx, condition, setter); err != nil {
 			return fmt.Errorf("update host error: %v", err)
 		}
@@ -227,41 +227,41 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 
 	ips := getIPS(val)
 	if len(ips) > 0 {
-		blog.Infof("[datacollect][hostsnap] handle clouid: %s ips: %v", cloudid, ips)
+		blog.Infof("[data-collection][hostsnap] handle clouid: %s ips: %v", cloudid, ips)
 		for _, ip := range ips {
 			if host := h.getCache().get(cloudid + "::" + ip); host != nil {
 				return host
 			}
 		}
 
-		blog.Infof("[datacollect][hostsnap] ips not in cache clouid: %s,ip: %v", cloudid, ips)
-		clouidInt, err := strconv.Atoi(cloudid)
+		blog.Infof("[data-collection][hostsnap] ips not in cache clouid: %s,ip: %v", cloudid, ips)
+		cloudIDInt, err := strconv.Atoi(cloudid)
 		if nil != err {
-			blog.Infof("[datacollect][hostsnap] cloudid \"%s\" not integer", cloudid)
+			blog.Infof("[data-collection][hostsnap] cloudid \"%s\" not integer", cloudid)
 			return nil
 		}
 		condition := map[string]interface{}{
-			common.BKCloudIDField: clouidInt,
+			common.BKCloudIDField: cloudIDInt,
 			common.BKHostInnerIPField: map[string]interface{}{
 				common.BKDBIN: ips,
 			},
 			common.BKOwnerIDField: ownerID,
 		}
-		result := []map[string]interface{}{}
+		result := make([]map[string]interface{}, 0)
 		err = h.db.Table(common.BKTableNameBaseHost).Find(condition).All(h.ctx, &result)
 		if err != nil {
-			blog.Errorf("[datacollect][hostsnap] fetch db error %v", err)
+			blog.Errorf("[data-collection][hostsnap] fetch db error %v", err)
 		}
 		for index := range result {
-			cloudid := fmt.Sprint(result[index][common.BKCloudIDField])
-			innerip := fmt.Sprint(result[index][common.BKHostInnerIPField])
+			cloudID := fmt.Sprint(result[index][common.BKCloudIDField])
+			innerIP := fmt.Sprint(result[index][common.BKHostInnerIPField])
 			inst := &HostInst{data: result[index]}
-			h.setCache(cloudid+"::"+innerip, inst)
+			h.setCache(cloudID+"::"+innerIP, inst)
 			return inst
 		}
-		blog.Infof("[datacollect][hostsnap] ips not in cache and db, clouid: %v, ip: %v", cloudid, ips)
+		blog.Infof("[data-collection][hostsnap] ips not in cache and db, clouid: %v, ip: %v", cloudid, ips)
 	} else {
-		blog.Errorf("[datacollect][hostsnap] message has no ip, message:%s", val.String())
+		blog.Errorf("[data-collection][hostsnap] message has no ip, message:%s", val.String())
 	}
 	return nil
 }
@@ -315,10 +315,10 @@ func (h *HostSnap) fetch() *HostCache {
 	const limit = uint64(1000)
 	var start = uint64(0)
 	for {
-		result := []map[string]interface{}{}
+		result := make([]map[string]interface{}, 0)
 		err := h.db.Table(common.BKTableNameBaseHost).Find(nil).Start(start).Limit(limit).All(h.ctx, &result)
 		if err != nil {
-			blog.Errorf("[datacollect][hostsnap] fetch db error %v", err)
+			blog.Errorf("[data-collection][hostsnap] fetch db error %v", err)
 		}
 		for index := range result {
 			cloudid := fmt.Sprint(result[index][common.BKCloudIDField])
@@ -330,7 +330,7 @@ func (h *HostSnap) fetch() *HostCache {
 		}
 		start += limit
 	}
-	blog.Infof("[datacollect][hostsnap] success fetch %d collections to cache", len(hostcache.data))
+	blog.Infof("[data-collection][hostsnap] success fetch %d collections to cache", len(hostcache.data))
 	return hostcache
 }
 
@@ -371,3 +371,333 @@ func (h *HostCache) set(key string, value *HostInst) {
 }
 
 const MockMessage = "{\"localTime\": \"2017-09-19 16:57:00\", \"data\": \"{\\\"ip\\\":\\\"192.168.1.7\\\",\\\"bizid\\\":0,\\\"cloudid\\\":0,\\\"data\\\":{\\\"timezone\\\":8,\\\"datetime\\\":\\\"2017-09-19 16:57:07\\\",\\\"utctime\\\":\\\"2017-09-19 08:57:07\\\",\\\"country\\\":\\\"Asia\\\",\\\"city\\\":\\\"Shanghai\\\",\\\"cpu\\\":{\\\"cpuinfo\\\":[{\\\"cpu\\\":0,\\\"vendorID\\\":\\\"GenuineIntel\\\",\\\"family\\\":\\\"6\\\",\\\"model\\\":\\\"63\\\",\\\"stepping\\\":2,\\\"physicalID\\\":\\\"0\\\",\\\"coreID\\\":\\\"0\\\",\\\"cores\\\":1,\\\"modelName\\\":\\\"Intel(R) Xeon(R) CPU E5-26xx v3\\\",\\\"mhz\\\":2294.01,\\\"cacheSize\\\":4096,\\\"flags\\\":[\\\"fpu\\\",\\\"vme\\\",\\\"de\\\",\\\"pse\\\",\\\"tsc\\\",\\\"msr\\\",\\\"pae\\\",\\\"mce\\\",\\\"cx8\\\",\\\"apic\\\",\\\"sep\\\",\\\"mtrr\\\",\\\"pge\\\",\\\"mca\\\",\\\"cmov\\\",\\\"pat\\\",\\\"pse36\\\",\\\"clflush\\\",\\\"mmx\\\",\\\"fxsr\\\",\\\"sse\\\",\\\"sse2\\\",\\\"ss\\\",\\\"ht\\\",\\\"syscall\\\",\\\"nx\\\",\\\"lm\\\",\\\"constant_tsc\\\",\\\"up\\\",\\\"rep_good\\\",\\\"unfair_spinlock\\\",\\\"pni\\\",\\\"pclmulqdq\\\",\\\"ssse3\\\",\\\"fma\\\",\\\"cx16\\\",\\\"pcid\\\",\\\"sse4_1\\\",\\\"sse4_2\\\",\\\"x2apic\\\",\\\"movbe\\\",\\\"popcnt\\\",\\\"tsc_deadline_timer\\\",\\\"aes\\\",\\\"xsave\\\",\\\"avx\\\",\\\"f16c\\\",\\\"rdrand\\\",\\\"hypervisor\\\",\\\"lahf_lm\\\",\\\"abm\\\",\\\"xsaveopt\\\",\\\"bmi1\\\",\\\"avx2\\\",\\\"bmi2\\\"],\\\"microcode\\\":\\\"1\\\"}],\\\"per_usage\\\":[3.0232169701043103],\\\"total_usage\\\":3.0232169701043103,\\\"per_stat\\\":[{\\\"cpu\\\":\\\"cpu0\\\",\\\"user\\\":5206.09,\\\"system\\\":6107.04,\\\"idle\\\":337100.84,\\\"nice\\\":6.68,\\\"iowait\\\":528.24,\\\"irq\\\":0.02,\\\"softirq\\\":13.48,\\\"steal\\\":0,\\\"guest\\\":0,\\\"guestNice\\\":0,\\\"stolen\\\":0}],\\\"total_stat\\\":{\\\"cpu\\\":\\\"cpu-total\\\",\\\"user\\\":5206.09,\\\"system\\\":6107.04,\\\"idle\\\":337100.84,\\\"nice\\\":6.68,\\\"iowait\\\":528.24,\\\"irq\\\":0.02,\\\"softirq\\\":13.48,\\\"steal\\\":0,\\\"guest\\\":0,\\\"guestNice\\\":0,\\\"stolen\\\":0}},\\\"env\\\":{\\\"crontab\\\":[{\\\"user\\\":\\\"root\\\",\\\"content\\\":\\\"#secu-tcs-agent monitor, install at Fri Sep 15 16:12:02 CST 2017\\\\n* * * * * /usr/local/sa/agent/secu-tcs-agent-mon-safe.sh /usr/local/sa/agent \\\\u003e /dev/null 2\\\\u003e\\\\u00261\\\\n*/1 * * * * /usr/local/qcloud/stargate/admin/start.sh \\\\u003e /dev/null 2\\\\u003e\\\\u00261 \\\\u0026\\\\n*/20 * * * * /usr/sbin/ntpdate ntpupdate.tencentyun.com \\\\u003e/dev/null \\\\u0026\\\\n*/1 * * * * cd /usr/local/gse/gseagent; ./cron_agent.sh 1\\\\u003e/dev/null 2\\\\u003e\\\\u00261\\\\n\\\"}],\\\"host\\\":\\\"127.0.0.1  localhost  localhost.localdomain  VM_0_31_centos\\\\n::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\\\\n\\\",\\\"route\\\":\\\"Kernel IP routing table\\\\nDestination     Gateway         Genmask         Flags Metric Ref    Use Iface\\\\n10.0.0.0        0.0.0.0         255.255.255.0   U     0      0        0 eth0\\\\n169.254.0.0     0.0.0.0         255.255.0.0     U     1002   0        0 eth0\\\\n0.0.0.0         10.0.0.1        0.0.0.0         UG    0      0        0 eth0\\\\n\\\"},\\\"disk\\\":{\\\"diskstat\\\":{\\\"vda1\\\":{\\\"major\\\":252,\\\"minor\\\":1,\\\"readCount\\\":24347,\\\"mergedReadCount\\\":570,\\\"writeCount\\\":696357,\\\"mergedWriteCount\\\":4684783,\\\"readBytes\\\":783955968,\\\"writeBytes\\\":22041231360,\\\"readSectors\\\":1531164,\\\"writeSectors\\\":43049280,\\\"readTime\\\":80626,\\\"writeTime\\\":12704736,\\\"iopsInProgress\\\":0,\\\"ioTime\\\":822057,\\\"weightedIoTime\\\":12785026,\\\"name\\\":\\\"vda1\\\",\\\"serialNumber\\\":\\\"\\\",\\\"speedIORead\\\":0,\\\"speedByteRead\\\":0,\\\"speedIOWrite\\\":2.9,\\\"speedByteWrite\\\":171144.53333333333,\\\"util\\\":0.0025666666666666667,\\\"avgrq_sz\\\":115.26436781609195,\\\"avgqu_sz\\\":0.06568333333333334,\\\"await\\\":22.649425287356323,\\\"svctm\\\":0.8850574712643678}},\\\"partition\\\":[{\\\"device\\\":\\\"/dev/vda1\\\",\\\"mountpoint\\\":\\\"/\\\",\\\"fstype\\\":\\\"ext3\\\",\\\"opts\\\":\\\"rw,noatime,acl,user_xattr\\\"}],\\\"usage\\\":[{\\\"path\\\":\\\"/\\\",\\\"fstype\\\":\\\"ext2/ext3\\\",\\\"total\\\":52843638784,\\\"free\\\":47807447040,\\\"used\\\":2351915008,\\\"usedPercent\\\":4.4507060113962345,\\\"inodesTotal\\\":3276800,\\\"inodesUsed\\\":29554,\\\"inodesFree\\\":3247246,\\\"inodesUsedPercent\\\":0.9019165039062501}]},\\\"load\\\":{\\\"load_avg\\\":{\\\"load1\\\":0,\\\"load5\\\":0,\\\"load15\\\":0}},\\\"mem\\\":{\\\"meminfo\\\":{\\\"total\\\":1044832256,\\\"available\\\":805912576,\\\"used\\\":238919680,\\\"usedPercent\\\":22.866797864249705,\\\"free\\\":92041216,\\\"active\\\":521183232,\\\"inactive\\\":352964608,\\\"wired\\\":0,\\\"buffers\\\":110895104,\\\"cached\\\":602976256,\\\"writeback\\\":0,\\\"dirty\\\":151552,\\\"writebacktmp\\\":0},\\\"vmstat\\\":{\\\"total\\\":0,\\\"used\\\":0,\\\"free\\\":0,\\\"usedPercent\\\":0,\\\"sin\\\":0,\\\"sout\\\":0}},\\\"net\\\":{\\\"interface\\\":[{\\\"mtu\\\":65536,\\\"name\\\":\\\"lo\\\",\\\"hardwareaddr\\\":\\\"28:31:52:1d:c6:0a\\\",\\\"flags\\\":[\\\"up\\\",\\\"loopback\\\"],\\\"addrs\\\":[{\\\"addr\\\":\\\"127.0.0.1/8\\\"}]},{\\\"mtu\\\":1500,\\\"name\\\":\\\"eth0\\\",\\\"hardwareaddr\\\":\\\"52:54:00:19:2e:e8\\\",\\\"flags\\\":[\\\"up\\\",\\\"broadcast\\\",\\\"multicast\\\"],\\\"addrs\\\":[{\\\"addr\\\":\\\"127.0.0.1/24\\\"}]}],\\\"dev\\\":[{\\\"name\\\":\\\"lo\\\",\\\"speedSent\\\":0,\\\"speedRecv\\\":0,\\\"speedPacketsSent\\\":0,\\\"speedPacketsRecv\\\":0,\\\"bytesSent\\\":604,\\\"bytesRecv\\\":604,\\\"packetsSent\\\":2,\\\"packetsRecv\\\":2,\\\"errin\\\":0,\\\"errout\\\":0,\\\"dropin\\\":0,\\\"dropout\\\":0,\\\"fifoin\\\":0,\\\"fifoout\\\":0},{\\\"name\\\":\\\"eth0\\\",\\\"speedSent\\\":574,\\\"speedRecv\\\":214,\\\"speedPacketsSent\\\":3,\\\"speedPacketsRecv\\\":2,\\\"bytesSent\\\":161709123,\\\"bytesRecv\\\":285910298,\\\"packetsSent\\\":1116625,\\\"packetsRecv\\\":1167796,\\\"errin\\\":0,\\\"errout\\\":0,\\\"dropin\\\":0,\\\"dropout\\\":0,\\\"fifoin\\\":0,\\\"fifoout\\\":0}],\\\"netstat\\\":{\\\"established\\\":2,\\\"syncSent\\\":1,\\\"synRecv\\\":0,\\\"finWait1\\\":0,\\\"finWait2\\\":0,\\\"timeWait\\\":0,\\\"close\\\":0,\\\"closeWait\\\":0,\\\"lastAck\\\":0,\\\"listen\\\":2,\\\"closing\\\":0},\\\"protocolstat\\\":[{\\\"protocol\\\":\\\"udp\\\",\\\"stats\\\":{\\\"inDatagrams\\\":176253,\\\"inErrors\\\":0,\\\"noPorts\\\":1,\\\"outDatagrams\\\":199569,\\\"rcvbufErrors\\\":0,\\\"sndbufErrors\\\":0}}]},\\\"system\\\":{\\\"info\\\":{\\\"hostname\\\":\\\"VM_0_31_centos\\\",\\\"uptime\\\":348315,\\\"bootTime\\\":1505463112,\\\"procs\\\":142,\\\"os\\\":\\\"linux\\\",\\\"platform\\\":\\\"centos\\\",\\\"platformFamily\\\":\\\"rhel\\\",\\\"platformVersion\\\":\\\"6.2\\\",\\\"kernelVersion\\\":\\\"2.6.32-504.30.3.el6.x86_64\\\",\\\"virtualizationSystem\\\":\\\"\\\",\\\"virtualizationRole\\\":\\\"\\\",\\\"hostid\\\":\\\"96D0F4CA-2157-40E6-BF22-6A7CD9B6EB8C\\\",\\\"systemtype\\\":\\\"64-bit\\\"}}}}\", \"timestamp\": 1505811427, \"dtEventTime\": \"2017-09-19 16:57:07\", \"dtEventTimeStamp\": 1505811427000}"
+
+const MockMessageData = `{
+    "ip": "192.168.1.7",
+    "bizid": 0,
+    "cloudid": 0,
+    "data": {
+        "timezone": 8,
+        "datetime": "2017-09-19 16:57:07",
+        "utctime": "2017-09-19 08:57:07",
+        "country": "Asia",
+        "city": "Shanghai",
+        "cpu": {
+            "cpuinfo": [
+                {
+                    "cpu": 0,
+                    "vendorID": "GenuineIntel",
+                    "family": "6",
+                    "model": "63",
+                    "stepping": 2,
+                    "physicalID": "0",
+                    "coreID": "0",
+                    "cores": 1,
+                    "modelName": "Intel(R) Xeon(R) CPU E5-26xx v3",
+                    "mhz": 2294.01,
+                    "cacheSize": 4096,
+                    "flags": [
+                        "fpu",
+                        "vme",
+                        "de",
+                        "pse",
+                        "tsc",
+                        "msr",
+                        "pae",
+                        "mce",
+                        "cx8",
+                        "apic",
+                        "sep",
+                        "mtrr",
+                        "pge",
+                        "mca",
+                        "cmov",
+                        "pat",
+                        "pse36",
+                        "clflush",
+                        "mmx",
+                        "fxsr",
+                        "sse",
+                        "sse2",
+                        "ss",
+                        "ht",
+                        "syscall",
+                        "nx",
+                        "lm",
+                        "constant_tsc",
+                        "up",
+                        "rep_good",
+                        "unfair_spinlock",
+                        "pni",
+                        "pclmulqdq",
+                        "ssse3",
+                        "fma",
+                        "cx16",
+                        "pcid",
+                        "sse4_1",
+                        "sse4_2",
+                        "x2apic",
+                        "movbe",
+                        "popcnt",
+                        "tsc_deadline_timer",
+                        "aes",
+                        "xsave",
+                        "avx",
+                        "f16c",
+                        "rdrand",
+                        "hypervisor",
+                        "lahf_lm",
+                        "abm",
+                        "xsaveopt",
+                        "bmi1",
+                        "avx2",
+                        "bmi2"
+                    ],
+                    "microcode": "1"
+                }
+            ],
+            "per_usage": [
+                3.0232169701043103
+            ],
+            "total_usage": 3.0232169701043103,
+            "per_stat": [
+                {
+                    "cpu": "cpu0",
+                    "user": 5206.09,
+                    "system": 6107.04,
+                    "idle": 337100.84,
+                    "nice": 6.68,
+                    "iowait": 528.24,
+                    "irq": 0.02,
+                    "softirq": 13.48,
+                    "steal": 0,
+                    "guest": 0,
+                    "guestNice": 0,
+                    "stolen": 0
+                }
+            ],
+            "total_stat": {
+                "cpu": "cpu-total",
+                "user": 5206.09,
+                "system": 6107.04,
+                "idle": 337100.84,
+                "nice": 6.68,
+                "iowait": 528.24,
+                "irq": 0.02,
+                "softirq": 13.48,
+                "steal": 0,
+                "guest": 0,
+                "guestNice": 0,
+                "stolen": 0
+            }
+        },
+        BKHostOuterIPField       "env": {
+            "crontab": [
+                {
+                    "user": "root",
+                    "content": "#secu-tcs-agent monitor, install at Fri Sep 15 16:12:02 CST 2017\n* * * * * /usr/local/sa/agent/secu-tcs-agent-mon-safe.sh /usr/local/sa/agent > /dev/null 2>&1\n*/1 * * * * /usr/local/qcloud/stargate/admin/start.sh > /dev/null 2>&1 &\n*/20 * * * * /usr/sbin/ntpdate ntpupdate.tencentyun.com >/dev/null &\n*/1 * * * * cd /usr/local/gse/gseagent; ./cron_agent.sh 1>/dev/null 2>&1\n"
+                }
+            ],
+            "host": "127.0.0.1  localhost  localhost.localdomain  VM_0_31_centos\n::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n",
+            "route": "Kernel IP routing table\nDestination     Gateway         Genmask         Flags Metric Ref    Use Iface\n10.0.0.0        0.0.0.0         255.255.255.0   U     0      0        0 eth0\n169.254.0.0     0.0.0.0         255.255.0.0     U     1002   0        0 eth0\n0.0.0.0         10.0.0.1        0.0.0.0         UG    0      0        0 eth0\n"
+        },
+        "disk": {
+            "diskstat": {
+                "vda1": {
+                    "major": 252,
+                    "minor": 1,
+                    "readCount": 24347,
+                    "mergedReadCount": 570,
+                    "writeCount": 696357,
+                    "mergedWriteCount": 4684783,
+                    "readBytes": 783955968,
+                    "writeBytes": 22041231360,
+                    "readSectors": 1531164,
+                    "writeSectors": 43049280,
+                    "readTime": 80626,
+                    "writeTime": 12704736,
+                    "iopsInProgress": 0,
+                    "ioTime": 822057,
+                    "weightedIoTime": 12785026,
+                    "name": "vda1",
+                    "serialNumber": "",
+                    "speedIORead": 0,
+                    "speedByteRead": 0,
+                    "speedIOWrite": 2.9,
+                    "speedByteWrite": 171144.53333333333,
+                    "util": 0.0025666666666666667,
+                    "avgrq_sz": 115.26436781609195,
+                    "avgqu_sz": 0.06568333333333334,
+                    "await": 22.649425287356323,
+                    "svctm": 0.8850574712643678
+                }
+            },
+            "partition": [
+                {
+                    "device": "/dev/vda1",
+                    "mountpoint": "/",
+                    "fstype": "ext3",
+                    "opts": "rw,noatime,acl,user_xattr"
+                }
+            ],
+            "usage": [
+                {
+                    "path": "/",
+                    "fstype": "ext2/ext3",
+                    "total": 52843638784,
+                    "free": 47807447040,
+                    "used": 2351915008,
+                    "usedPercent": 4.4507060113962345,
+                    "inodesTotal": 3276800,
+                    "inodesUsed": 29554,
+                    "inodesFree": 3247246,
+                    "inodesUsedPercent": 0.9019165039062501
+                }
+            ]
+        },
+        "load": {
+            "load_avg": {
+                "load1": 0,
+                "load5": 0,
+                "load15": 0
+            }
+        },
+        "mem": {
+            "meminfo": {
+                "total": 1044832256,
+                "available": 805912576,
+                "used": 238919680,
+                "usedPercent": 22.866797864249705,
+                "free": 92041216,
+                "active": 521183232,
+                "inactive": 352964608,
+                "wired": 0,
+                "buffers": 110895104,
+                "cached": 602976256,
+                "writeback": 0,
+                "dirty": 151552,
+                "writebacktmp": 0
+            },
+            "vmstat": {
+                "total": 0,
+                "used": 0,
+                "free": 0,
+                "usedPercent": 0,
+                "sin": 0,
+                "sout": 0
+            }
+        },
+        "net": {
+            "interface": [
+                {
+                    "mtu": 65536,
+                    "name": "lo",
+                    "hardwareaddr": "28:31:52:1d:c6:0a",
+                    "flags": [
+                        "up",
+                        "loopback"
+                    ],
+                    "addrs": [
+                        {
+                            "addr": "127.0.0.1/8"
+                        }
+                    ]
+                },
+                {
+                    "mtu": 1500,
+                    "name": "eth0",
+                    "hardwareaddr": "52:54:00:19:2e:e8",
+                    "flags": [
+                        "up",
+                        "broadcast",
+                        "multicast"
+                    ],
+                    "addrs": [
+                        {
+                            "addr": "127.0.0.1/24"
+                        }
+                    ]
+                }
+            ],
+            "dev": [
+                {
+                    "name": "lo",
+                    "speedSent": 0,
+                    "speedRecv": 0,
+                    "speedPacketsSent": 0,
+                    "speedPacketsRecv": 0,
+                    "bytesSent": 604,
+                    "bytesRecv": 604,
+                    "packetsSent": 2,
+                    "packetsRecv": 2,
+                    "errin": 0,
+                    "errout": 0,
+                    "dropin": 0,
+                    "dropout": 0,
+                    "fifoin": 0,
+                    "fifoout": 0
+                },
+                {
+                    "name": "eth0",
+                    "speedSent": 574,
+                    "speedRecv": 214,
+                    "speedPacketsSent": 3,
+                    "speedPacketsRecv": 2,
+                    "bytesSent": 161709123,
+                    "bytesRecv": 285910298,
+                    "packetsSent": 1116625,
+                    "packetsRecv": 1167796,
+                    "errin": 0,
+                    "errout": 0,
+                    "dropin": 0,
+                    "dropout": 0,
+                    "fifoin": 0,
+                    "fifoout": 0
+                }
+            ],
+            "netstat": {
+                "established": 2,
+                "syncSent": 1,
+                "synRecv": 0,
+                "finWait1": 0,
+                "finWait2": 0,
+                "timeWait": 0,
+                "close": 0,
+                "closeWait": 0,
+                "lastAck": 0,
+                "listen": 2,
+                "closing": 0
+            },
+            "protocolstat": [
+                {
+                    "protocol": "udp",
+                    "stats": {
+                        "inDatagrams": 176253,
+                        "inErrors": 0,
+                        "noPorts": 1,
+                        "outDatagrams": 199569,
+                        "rcvbufErrors": 0,
+                        "sndbufErrors": 0
+                    }
+                }
+            ]
+        },
+        "system": {
+            "info": {
+                "hostname": "VM_0_31_centos",
+                "uptime": 348315,
+                "bootTime": 1505463112,
+                "procs": 142,
+                "os": "linux",
+                "platform": "centos",
+                "platformFamily": "rhel",
+                "platformVersion": "6.2",
+                "kernelVersion": "2.6.32-504.30.3.el6.x86_64",
+                "virtualizationSystem": "",
+                "virtualizationRole": "",
+                "hostid": "96D0F4CA-2157-40E6-BF22-6A7CD9B6EB8C",
+                "systemtype": "64-bit"
+            }
+        }
+    }
+}`

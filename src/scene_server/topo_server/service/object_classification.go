@@ -38,12 +38,12 @@ func (s *Service) SearchClassificationWithObjects(params types.ContextParams, pa
 
 		page, err := data.MapStr(metadata.PageName)
 		if nil != err {
-			blog.Errorf("failed to get the page , error info is %s", err.Error())
+			blog.Errorf("failed to get the page , error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, err
 		}
 
 		if err = cond.SetPage(page); nil != err {
-			blog.Errorf("failed to parse the page, error info is %s", err.Error())
+			blog.Errorf("failed to parse the page, error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, err
 		}
 
@@ -51,7 +51,7 @@ func (s *Service) SearchClassificationWithObjects(params types.ContextParams, pa
 	}
 
 	if err := cond.Parse(data); nil != err {
-		blog.Errorf("failed to parse the condition, error info is %s", err.Error())
+		blog.Errorf("failed to parse the condition, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -66,18 +66,21 @@ func (s *Service) SearchClassification(params types.ContextParams, pathParams, q
 
 		page, err := data.MapStr(metadata.PageName)
 		if nil != err {
-			blog.Errorf("failed to get the page , error info is %s", err.Error())
+			blog.Errorf("failed to get the page , error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, err
 		}
 
 		if err = cond.SetPage(page); nil != err {
-			blog.Errorf("failed to parse the page, error info is %s", err.Error())
+			blog.Errorf("failed to parse the page, error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, err
 		}
 
 		data.Remove(metadata.PageName)
 	}
-	cond.Parse(data)
+	if err := cond.Parse(data); err != nil {
+		blog.Errorf("parse condition from data failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
 
 	return s.Core.ClassificationOperation().FindClassification(params, cond)
 }
@@ -90,7 +93,7 @@ func (s *Service) UpdateClassification(params types.ContextParams, pathParams, q
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 	data.Remove(metadata.BKMetadata)
@@ -111,7 +114,7 @@ func (s *Service) DeleteClassification(params types.ContextParams, pathParams, q
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 

@@ -43,3 +43,22 @@ func (s *Service) Find(req *restful.Request, resp *restful.Response) {
 		Data:     *data,
 	})
 }
+
+// SetIdentifierFlag set cmdb synchronize identifier flag
+func (s *Service) SetIdentifierFlag(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	input := &metadata.SetIdenifierFlag{}
+	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+		blog.Errorf("SetIdentifierFlag , but decode body failed, err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	data, err := srvData.lgc.CoreAPI.CoreService().Synchronize().SetIdentifierFlag(srvData.ctx, srvData.header, input)
+	if err != nil {
+		blog.Errorf("SetIdentifierFlag error. error: %s,input:%#v,rid:%s", err.Error(), input, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
+		return
+	}
+	resp.WriteEntity(data)
+}

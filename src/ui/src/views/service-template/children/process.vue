@@ -1,36 +1,61 @@
 <template>
     <div class="process-wrapper">
-        <cmdb-table class="process-table" ref="table"
-            :loading="loading"
-            :checked.sync="table.checked"
-            :header="table.header"
-            :list="showList"
-            :pagination.sync="table.pagination"
-            :default-sort="table.defaultSort"
-            :wrapper-minus-height="300">
-            <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                <template v-if="header.id === 'operation'">
-                    <div :key="index">
-                        <button class="text-primary mr10"
-                            @click.stop="handleEdite(item['originData'])">
-                            {{$t('Common["编辑"]')}}
-                        </button>
-                        <button class="text-primary"
-                            @click.stop="handleDelete(item['originData'])">
-                            {{$t('Common["删除"]')}}
-                        </button>
-                    </div>
+        <bk-table class="process-table"
+            v-bkloading="{ isLoading: loading }"
+            :data="showList"
+            :max-height="$APP.height - 300">
+            <bk-table-column v-for="column in table.header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+                <template slot-scope="{ row }">
+                    <span v-if="column.id === 'bind_ip'">{{row[column.id] | ipText}}</span>
+                    <span v-else>{{row[column.id] || '--'}}</span>
                 </template>
-                <template v-else>
-                    <span :key="index">{{item[header.id] ? item[header.id] : '--'}}</span>
+            </bk-table-column>
+            <bk-table-column :label="$t('操作')">
+                <template slot-scope="{ row }">
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.U_SERVICE_TEMPLATE]
+                        }">
+                        <bk-button class="mr10"
+                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_TEMPLATE)"
+                            :text="true"
+                            @click.stop="handleEdite(row['originData'])">
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </span>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.D_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.D_SERVICE_TEMPLATE]
+                        }">
+                        <bk-button
+                            :disabled="!$isAuthorized($OPERATION.D_SERVICE_TEMPLATE)"
+                            :text="true"
+                            @click.stop="handleDelete(row['originData'])">
+                            {{$t('删除')}}
+                        </bk-button>
+                    </span>
                 </template>
-            </template>
-        </cmdb-table>
+            </bk-table-column>
+        </bk-table>
     </div>
 </template>
 
 <script>
     export default {
+        filters: {
+            ipText (value) {
+                if (['1', '2'].includes(value)) {
+                    const ip = ['127.0.0.1', '0.0.0.0']
+                    return ip[value - 1]
+                }
+                return value || '--'
+            }
+        },
         props: {
             list: {
                 type: Array,
@@ -55,41 +80,30 @@
                     header: [
                         {
                             id: 'bk_func_name',
-                            name: this.$t("ProcessManagement['进程名称']"),
+                            name: this.$t('进程名称'),
                             sortable: false
                         }, {
                             id: 'bk_process_name',
-                            name: this.$t("ProcessManagement['进程别名']"),
+                            name: this.$t('进程别名'),
                             sortable: false
                         }, {
                             id: 'bind_ip',
-                            name: this.$t("ProcessManagement['监听IP']"),
+                            name: this.$t('监听IP'),
                             sortable: false
                         }, {
                             id: 'port',
-                            name: this.$t("ProcessManagement['端口']"),
+                            name: this.$t('端口'),
                             sortable: false
                         }, {
                             id: 'work_path',
-                            name: this.$t("ProcessManagement['启动路径']"),
+                            name: this.$t('启动路径'),
                             sortable: false
                         }, {
                             id: 'user',
-                            name: this.$t("ProcessManagement['启动用户']"),
-                            sortable: false
-                        }, {
-                            id: 'operation',
-                            name: this.$t("Common['操作']"),
+                            name: this.$t('启动用户'),
                             sortable: false
                         }
-                    ],
-                    pagination: {
-                        current: 1,
-                        count: 0,
-                        size: 10
-                    },
-                    defaultSort: '-bk_process_id',
-                    sort: '-bk_process_id'
+                    ]
                 }
             }
         },
@@ -97,7 +111,6 @@
             showList () {
                 let list = this.list.map(template => {
                     const result = {}
-                    // const property = template['property']
                     Object.keys(template).map(key => {
                         const type = typeof template[key]
                         if (type === 'object') {

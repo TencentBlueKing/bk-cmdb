@@ -2,72 +2,77 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <div class="fl" v-tooltip="$t('ModelManagement[\'导入\']')"
+                <div class="fl mr10"
                     v-cursor="{
-                        active: !$isAuthorized([OPERATION.C_INST, OPERATION.U_INST]),
-                        auth: [OPERATION.C_INST, OPERATION.U_INST]
+                        active: !$isAuthorized($OPERATION.C_INST),
+                        auth: [$OPERATION.C_INST]
                     }">
-                    <bk-button class="models-button"
-                        :disabled="!$isAuthorized([OPERATION.C_INST, OPERATION.U_INST])"
-                        @click="importSlider.show = true">
-                        <i class="icon-cc-import"></i>
+                    <bk-button theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.C_INST)"
+                        @click="handleCreate">
+                        {{$t('新建')}}
                     </bk-button>
                 </div>
-                <div class="fl" v-tooltip="$t('ModelManagement[\'导出\']')">
-                    <bk-button class="models-button" type="default"
+                <div class="fl mr10"
+                    v-cursor="{
+                        active: !$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST]),
+                        auth: [$OPERATION.C_INST, $OPERATION.U_INST]
+                    }">
+                    <bk-button class="models-button"
+                        :disabled="!$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST])"
+                        @click="importSlider.show = true">
+                        {{$t('导入')}}
+                    </bk-button>
+                </div>
+                <div class="fl mr10">
+                    <bk-button class="models-button" theme="default"
                         :disabled="!table.checked.length"
                         @click="handleExport">
-                        <i class="icon-cc-derivation"></i>
+                        {{$t('导出')}}
                     </bk-button>
                 </div>
-                <div class="fl" v-tooltip="$t('Inst[\'批量更新\']')"
+                <div class="fl mr10"
                     v-cursor="{
-                        active: !$isAuthorized(OPERATION.U_INST),
-                        auth: [OPERATION.U_INST]
+                        active: !$isAuthorized($OPERATION.U_INST),
+                        auth: [$OPERATION.U_INST]
                     }">
                     <bk-button class="models-button"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_INST)"
+                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_INST)"
                         @click="handleMultipleEdit">
-                        <i class="icon-cc-edit"></i>
+                        {{$t('批量更新')}}
                     </bk-button>
                 </div>
-                <div class="fl" v-tooltip="$t('Common[\'删除\']')"
+                <div class="fl mr10"
                     v-cursor="{
-                        active: !$isAuthorized(OPERATION.D_INST),
-                        auth: [OPERATION.D_INST]
+                        active: !$isAuthorized($OPERATION.D_INST),
+                        auth: [$OPERATION.D_INST]
                     }">
                     <bk-button class="models-button button-delete"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.D_INST)"
+                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_INST)"
                         @click="handleMultipleDelete">
-                        <i class="icon-cc-del"></i>
-                    </bk-button>
-                </div>
-                <div class="fl" style="margin-left: 20px;"
-                    v-cursor="{
-                        active: !$isAuthorized(OPERATION.C_INST),
-                        auth: [OPERATION.C_INST]
-                    }">
-                    <bk-button type="primary"
-                        :disabled="!$isAuthorized(OPERATION.C_INST)"
-                        @click="handleCreate">
-                        {{$t("Common['新建']")}}
+                        {{$t('删除')}}
                     </bk-button>
                 </div>
             </div>
             <div class="options-button fr">
-                <bk-button v-tooltip="$t('Common[\'查看删除历史\']')" @click="routeToHistory">
+                <bk-button v-bk-tooltips="$t('查看删除历史')" @click="routeToHistory">
                     <i class="icon-cc-history"></i>
                 </bk-button>
-                <bk-button class="button-setting" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">
+                <bk-button class="button-setting" v-bk-tooltips="$t('列表显示属性配置')" @click="columnsConfig.show = true">
                     <i class="icon-cc-setting"></i>
                 </bk-button>
             </div>
             <div class="options-filter clearfix fr">
-                <bk-selector class="filter-selector fl"
-                    :searchable="true"
-                    :list="filter.options"
-                    :selected.sync="filter.id">
-                </bk-selector>
+                <bk-select class="filter-selector fl"
+                    v-model="filter.id"
+                    searchable
+                    :clearable="false">
+                    <bk-option v-for="(option, index) in filter.options"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
                 <cmdb-form-enum class="filter-value fl"
                     v-if="filter.type === 'enum'"
                     :options="$tools.getEnumOptions(properties, filter.id)"
@@ -75,49 +80,62 @@
                     v-model="filter.value"
                     @on-selected="getTableData">
                 </cmdb-form-enum>
-                <input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
+                <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
-                    :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
-                <input class="filter-value cmdb-form-input fl" type="text"
+                    :placeholder="$t('快速查询')"
+                    @enter="getTableData">
+                </bk-input>
+                <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
-                    :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
-                <input class="filter-value cmdb-form-input fl" type="text"
+                    :placeholder="$t('快速查询')"
+                    @enter="getTableData">
+                </bk-input>
+                <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
-                    :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
+                    :placeholder="$t('快速查询')"
+                    @enter="getTableData">
+                </bk-input>
                 <i class="filter-search bk-icon icon-search"
                     v-show="filter.type !== 'enum'"
                     @click="getTableData"></i>
             </div>
         </div>
-        <cmdb-table class="models-table" ref="table"
-            :loading="$loading()"
-            :checked.sync="table.checked"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :default-sort="table.defaultSort"
-            :wrapper-minus-height="157"
-            @handleRowClick="handleRowClick"
-            @handleSortChange="handleSortChange"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange"
-            @handleCheckAll="handleCheckAll">
-        </cmdb-table>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
-            <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+        <bk-table class="models-table" ref="table"
+            v-bkloading="{ isLoading: $loading() }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 160"
+            @row-click="handleRowClick"
+            @sort-change="handleSortChange"
+            @page-limit-change="handleSizeChange"
+            @page-change="handlePageChange"
+            @selection-change="handleSelectChange">
+            <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
+            <bk-table-column v-for="column in table.header"
+                sortable="custom"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name"
+                :class-name="column.id === 'bk_inst_name' ? 'is-highlight' : ''"
+                :fixed="column.id === 'bk_inst_name'">
+            </bk-table-column>
+        </bk-table>
+        <bk-sideslider
+            :is-show.sync="slider.show"
+            :title="slider.title"
+            :width="800"
+            :before-close="handleSliderBeforeClose">
+            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.contentShow">
+                <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.details"
-                        :edit-auth="OPERATION.U_INST"
-                        :delete-auth="OPERATION.D_INST"
+                        :edit-auth="$OPERATION.U_INST"
+                        :delete-auth="$OPERATION.D_INST"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
@@ -127,7 +145,7 @@
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
-                        :save-auth="attribute.type === 'update' ? OPERATION.U_INST : OPERATION.C_INST"
+                        :save-auth="attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
@@ -136,29 +154,30 @@
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :object-unique="objectUnique"
-                        :save-auth="OPERATION.U_INST"
+                        :save-auth="$OPERATION.U_INST"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
-                </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="['update', 'details'].includes(attribute.type)">
+                </bk-tab-panel>
+                <bk-tab-panel name="relevance" :label="$t('关联Relation')" :visible="['update', 'details'].includes(attribute.type)">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
-                        :auth="OPERATION.U_INST"
+                        :auth="$OPERATION.U_INST"
                         :obj-id="objId"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
-                </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="['update', 'details'].includes(attribute.type)">
+                </bk-tab-panel>
+                <bk-tab-panel name="history" :label="$t('变更记录')" :visible="['update', 'details'].includes(attribute.type)">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         :target="objId"
                         :inst-id="attribute.inst.details['bk_inst_id']">
                     </cmdb-audit-history>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
-        </cmdb-slider>
-        <cmdb-slider :is-show.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
+        </bk-sideslider>
+        <bk-sideslider :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
+                v-if="columnsConfig.show"
                 :properties="properties"
                 :selected="columnsConfig.selected"
                 :disabled-columns="columnsConfig.disabledColumns"
@@ -166,10 +185,11 @@
                 @on-cancel="columnsConfig.show = false"
                 @on-reset="handleResetColumnsConfig">
             </cmdb-columns-config>
-        </cmdb-slider>
-        <cmdb-slider
+        </bk-sideslider>
+        <bk-sideslider
             :is-show.sync="importSlider.show"
-            :title="$t('HostResourcePool[\'批量导入\']')">
+            :width="800"
+            :title="$t('批量导入')">
             <cmdb-import v-if="importSlider.show" slot="content"
                 :template-url="url.template"
                 :import-url="url.import"
@@ -178,7 +198,7 @@
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -188,7 +208,6 @@
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
     import cmdbImport from '@/components/import/import'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -198,7 +217,6 @@
         },
         data () {
             return {
-                OPERATION,
                 objectUnique: [],
                 properties: [],
                 propertyGroups: [],
@@ -209,7 +227,7 @@
                     allList: [],
                     pagination: {
                         count: 0,
-                        size: 10,
+                        limit: 10,
                         current: 1
                     },
                     defaultSort: 'bk_inst_id',
@@ -223,6 +241,7 @@
                 },
                 slider: {
                     show: false,
+                    contentShow: false,
                     title: ''
                 },
                 tab: {
@@ -282,10 +301,16 @@
                 this.filter.value = ''
                 this.filter.type = (this.$tools.getProperty(this.properties, id) || {})['bk_property_type']
             },
+            'filter.value' () {
+                this.$route.query.instId = null
+            },
             'slider.show' (show) {
                 if (!show) {
                     this.tab.active = 'attribute'
                 }
+                this.$nextTick(() => {
+                    this.slider.contentShow = show
+                })
             },
             customColumns () {
                 this.setTableHeader()
@@ -343,7 +368,7 @@
                     allList: [],
                     pagination: {
                         count: 0,
-                        size: 10,
+                        limit: 10,
                         current: 1
                     },
                     defaultSort: 'bk_inst_id',
@@ -382,16 +407,12 @@
                 this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
             },
             updateTableHeader (properties) {
-                this.table.header = [{
-                    id: 'bk_inst_id',
-                    type: 'checkbox',
-                    width: 50
-                }].concat(properties.map(property => {
+                this.table.header = properties.map(property => {
                     return {
                         id: property['bk_property_id'],
                         name: property['bk_property_name']
                     }
-                }))
+                })
             },
             async handleCheckAll (type) {
                 if (type === 'current') {
@@ -408,16 +429,19 @@
                 this.attribute.type = 'details'
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handlePageChange (page) {
                 this.table.pagination.current = page
                 this.getTableData()
+            },
+            handleSelectChange (selection) {
+                this.table.checked = selection.map(row => row.bk_inst_id)
             },
             getInstList (config = { cancelPrevious: true }) {
                 return this.searchInst({
@@ -456,6 +480,10 @@
             },
             getTableData () {
                 this.getInstList().then(data => {
+                    if (data.count && !data.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getTableData()
+                    }
                     this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
                     this.setAllHostList(data.info)
@@ -469,8 +497,8 @@
                     },
                     fields: {},
                     page: {
-                        start: this.table.pagination.size * (this.table.pagination.current - 1),
-                        limit: this.table.pagination.size,
+                        start: this.table.pagination.limit * (this.table.pagination.current - 1),
+                        limit: this.table.pagination.limit,
                         sort: this.table.sort
                     }
                 }
@@ -514,6 +542,13 @@
                             value: filterValue
                         })
                     }
+                } else if (this.$route.params.instId) {
+                    params.condition[this.objId].push({
+                        field: 'bk_inst_id',
+                        operator: '$in',
+                        value: [Number(this.$route.params.instId)]
+                    })
+                    this.$route.params.instId = null
                 }
                 return params
             },
@@ -527,11 +562,11 @@
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['创建']")} ${this.model['bk_obj_name']}`
+                this.slider.title = `${this.$t('创建')} ${this.model['bk_obj_name']}`
             },
             handleDelete (inst) {
                 this.$bkInfo({
-                    title: this.$t("Common['确认要删除']", { name: inst['bk_inst_name'] }),
+                    title: this.$t('确认要删除', { name: inst['bk_inst_name'] }),
                     confirmFn: () => {
                         this.deleteInst({
                             objId: this.objId,
@@ -541,8 +576,8 @@
                             }
                         }).then(() => {
                             this.slider.show = false
-                            this.$success(this.$t('Common["删除成功"]'))
-                            this.handlePageChange(1)
+                            this.$success(this.$t('删除成功'))
+                            this.getTableData()
                         })
                     }
                 })
@@ -563,7 +598,7 @@
                             this.attribute.inst.details = this.$tools.flattenItem(this.properties, item)
                         })
                         this.handleCancel()
-                        this.$success(this.$t("Common['修改成功']"))
+                        this.$success(this.$t('修改成功'))
                     })
                 } else {
                     this.createInst({
@@ -572,7 +607,7 @@
                     }).then(() => {
                         this.handlePageChange(1)
                         this.handleCancel()
-                        this.$success(this.$t("Inst['创建成功']"))
+                        this.$success(this.$t('创建成功'))
                     })
                 }
             },
@@ -591,7 +626,7 @@
                     })
                 })
                 this.attribute.type = 'multiple'
-                this.slider.title = this.$t('Inst[\'批量更新\']')
+                this.slider.title = this.$t('批量更新')
                 this.slider.show = true
             },
             handleMultipleSave (values) {
@@ -609,7 +644,7 @@
                         requestId: `${this.objId}BatchUpdate`
                     }
                 }).then(() => {
-                    this.$success(this.$t('Common["修改成功"]'))
+                    this.$success(this.$t('修改成功'))
                     this.handlePageChange(1)
                 })
             },
@@ -618,7 +653,7 @@
             },
             handleMultipleDelete () {
                 this.$bkInfo({
-                    title: this.$t("Common['确定删除选中的实例']"),
+                    title: this.$t('确定删除选中的实例'),
                     confirmFn: () => {
                         this.doBatchDeleteInst()
                     }
@@ -635,9 +670,9 @@
                         }, { inject: !this.isPublicModel })
                     }
                 }).then(() => {
-                    this.$success(this.$t('Common["删除成功"]'))
+                    this.$success(this.$t('删除成功'))
                     this.table.checked = []
-                    this.handlePageChange(1)
+                    this.getTableData()
                 })
             },
             handleApplyColumnsConfig (properties) {
@@ -665,11 +700,12 @@
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {
                     const $form = this.attribute.type === 'multiple' ? this.$refs.multipleForm : this.$refs.form
-                    const changedValues = $form.changedValues
-                    if (Object.keys(changedValues).length) {
+                    if ($form.hasChange) {
                         return new Promise((resolve, reject) => {
                             this.$bkInfo({
-                                title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                                title: this.$t('确认退出'),
+                                subTitle: this.$t('退出会导致未保存信息丢失'),
+                                extCls: 'bk-dialog-sub-header-center',
                                 confirmFn: () => {
                                     resolve(true)
                                 },
@@ -723,20 +759,22 @@
     .filter-search{
         position: absolute;
         right: 10px;
-        top: 11px;
+        top: 8px;
         cursor: pointer;
     }
 }
 .models-button{
     display: inline-block;
-    border-radius: 0;
-    margin-left: -1px;
     position: relative;
     &:hover{
         z-index: 1;
         &.button-delete {
             color: $cmdbDangerColor;
             border-color: $cmdbDangerColor;
+        }
+        /deep/ &.bk-button.bk-default[disabled] {
+            border-color: #dcdee5 !important;
+            color: #c4c6cc !important;
         }
     }
 }
@@ -752,6 +790,6 @@
     }
 }
 .models-table{
-    margin-top: 20px;
+    margin-top: 14px;
 }
 </style>

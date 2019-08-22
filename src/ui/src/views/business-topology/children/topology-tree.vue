@@ -1,6 +1,6 @@
 <template>
-    <div>
-        <cmdb-tree class="topology-tree"
+    <div class="topology-tree-wrapper">
+        <bk-big-tree class="topology-tree"
             ref="tree"
             v-bkloading="{
                 isLoading: $loading(['getTopologyData', 'getMainLine'])
@@ -10,38 +10,50 @@
                 nameKey: 'bk_inst_name',
                 childrenKey: 'child'
             }"
+            :expand-on-click="false"
+            selectable
             expand-icon="bk-icon icon-down-shape"
             collapse-icon="bk-icon icon-right-shape"
             @select-change="handleSelectChange">
             <div class="node-info clearfix" slot-scope="{ node, data }">
-                <i :class="['node-model-icon fl', { 'is-selected': node.selected }]">{{modelIconMap[data.bk_obj_id]}}</i>
-                <bk-button class="node-button fr"
-                    type="primary"
-                    v-if="showCreate(node, data)"
-                    @click.stop="showCreateDialog(node)">
-                    {{$t('Common[\'新建\']')}}
-                </bk-button>
-                <span class="node-name">{{data.bk_inst_name}}</span>
+                <i :class="['node-model-icon fl', { 'is-selected': node.selected }, { 'is-template': isTemplate(node) }]">{{modelIconMap[data.bk_obj_id]}}</i>
+                <span v-if="showCreate(node, data)"
+                    class="fr"
+                    style="display: inline-block; font-size: 0;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_TOPO),
+                        auth: [$OPERATION.C_TOPO]
+                    }">
+                    <bk-button class="node-button"
+                        theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.C_TOPO)"
+                        @click.stop="showCreateDialog(node)">
+                        {{$t('新建')}}
+                    </bk-button>
+                </span>
+                <div class="info-content">
+                    <span class="node-name">{{data.bk_inst_name}}</span>
+                    <span class="instance-num">{{data.service_instance_count}}</span>
+                </div>
             </div>
-        </cmdb-tree>
-        <bk-dialog
-            :is-show.sync="createInfo.show"
-            :has-header="false"
-            :has-footer="false"
-            :padding="0"
-            :quick-close="false"
-            :width="createInfo.nextModelId === 'module' ? 580 : 400"
-            @after-transition-leave="handleAfterCancelCreateNode"
+        </bk-big-tree>
+        <bk-dialog class="bk-dialog-no-padding"
+            v-model="createInfo.show"
+            :show-footer="false"
+            :mask-close="false"
+            :width="580"
+            @after-leave="handleAfterCancelCreateNode"
             @cancel="handleCancelCreateNode">
             <template v-if="createInfo.nextModelId === 'module'">
-                <create-module v-if="createInfo.visible" slot="content"
+                <create-module v-if="createInfo.visible"
                     :parent-node="createInfo.parentNode"
                     @submit="handleCreateNode"
                     @cancel="handleCancelCreateNode">
                 </create-module>
             </template>
             <template v-else>
-                <create-node v-if="createInfo.visible" slot="content"
+                <create-node v-if="createInfo.visible"
+                    :next-model-id="createInfo.nextModelId"
                     :properties="createInfo.properties"
                     :parent-node="createInfo.parentNode"
                     @submit="handleCreateNode"
@@ -92,6 +104,9 @@
                     map[model.bk_obj_id] = model.bk_obj_name[0]
                 })
                 return map
+            },
+            isBlueKing () {
+                return this.treeData[0].bk_inst_name === '蓝鲸'
             }
         },
         async created () {
@@ -99,6 +114,7 @@
                 this.getTopologyData(),
                 this.getMainLine()
             ])
+            this.getTopologyInstanceNum()
             this.treeData = data
             this.mainLine = mainLine
             this.$nextTick(() => {
@@ -133,13 +149,40 @@
                     }
                 })
             },
+            getTopologyInstanceNum () {
+                this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
+                    bizId: this.business,
+                    config: {
+                        requestId: 'getTopologyInstanceNum'
+                    }
+                }).then(data => {
+                    this.setNodeNum(data)
+                })
+            },
+            setNodeNum (data) {
+                data.forEach((datum, index) => {
+                    const id = this.idGenerator(datum)
+                    const node = this.$refs.tree.getNodeById(id)
+                    if (node) {
+                        const num = datum.service_instance_count
+                        datum.service_instance_count = num > 999 ? '999+' : num
+                        node.data = datum
+                    }
+                    const child = datum.child
+                    if (Array.isArray(child) && child.length) {
+                        this.setNodeNum(child)
+                    }
+                })
+            },
             idGenerator (data) {
                 return `${data.bk_obj_id}_${data.bk_inst_id}`
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
-                const isBlueKing = this.treeData[0].bk_inst_name === '蓝鲸'
-                return node.selected && !isModule && !isBlueKing
+                return node.selected && !isModule
+            },
+            isTemplate (node) {
+                return node.data.service_template_id
             },
             async showCreateDialog (node) {
                 const nodeModel = this.mainLine.find(data => data.bk_obj_id === node.data.bk_obj_id)
@@ -180,11 +223,11 @@
             async handleCreateNode (value) {
                 try {
                     const parentNode = this.createInfo.parentNode
-                    const formData = {
+                    const formData = this.$injectMetadata({
                         ...value,
                         'bk_biz_id': this.business,
                         'bk_parent_id': parentNode.data.bk_inst_id
-                    }
+                    })
                     const nextModelId = this.createInfo.nextModelId
                     const nextModel = this.mainLineModels.find(model => model.bk_obj_id === nextModelId)
                     const handlerMap = {
@@ -197,10 +240,12 @@
                         child: [],
                         bk_obj_name: nextModel.bk_obj_name,
                         bk_obj_id: nextModel.bk_obj_id,
+                        service_instance_count: 0,
+                        service_template_id: value.service_template_id,
                         ...data
                     }
                     this.$refs.tree.addNode(nodeData, parentNode.id, 0)
-                    this.$success(this.$t('Common[\'新建成功\']'))
+                    this.$success(this.$t('新建成功'))
                     this.handleCancelCreateNode()
                 } catch (e) {
                     console.error(e)
@@ -251,18 +296,37 @@
 </script>
 
 <style lang="scss" scoped>
+    .topology-tree-wrapper {
+        height: 100%;
+        /deep/ .bk-big-tree-node {
+            .node-options {
+                .bk-icon {
+                    font-size: 16px;
+                    margin: 0;
+                    line-height: 38px;
+                    color: #c4c6cc;
+                }
+            }
+            &.is-selected .node-options .bk-icon{
+                color: #3a84ff;
+            }
+        }
+    }
     .node-info {
         .node-model-icon {
             width: 22px;
             height: 22px;
-            line-height: 20px;
+            line-height: 21px;
             text-align: center;
             font-style: normal;
             font-size: 12px;
-            margin: 5px 4px 0 6px;
+            margin: 8px 8px 0 6px;
             border-radius: 50%;
             background-color: #c4c6cc;
             color: #fff;
+            &.is-template {
+                background-color: #97aed6;
+            }
             &.is-selected {
                 background-color: #3a84ff;
             }
@@ -270,16 +334,41 @@
         .node-button {
             height: 24px;
             padding: 0 6px;
-            margin: 4px;
+            margin: 0 10px 0 4px;
             line-height: 22px;
             border-radius: 4px;
             font-size: 12px;
+            min-width: auto;
         }
-        .node-name {
-            display: block;
-            line-height: 32px;
+        .info-content {
+            display: flex;
+            align-items: center;
+            line-height: 36px;
             font-size: 14px;
-            @include ellipsis;
+            .node-name {
+                @include ellipsis;
+                margin-right: 8px;
+            }
+            .instance-num {
+                margin-right: 5px;
+                padding: 0 5px;
+                height: 18px;
+                line-height: 17px;
+                border-radius: 2px;
+                background-color: #f0f1f5;
+                color: #979ba5;
+                font-size: 12px;
+                text-align: center;
+            }
+        }
+    }
+    .topology-tree {
+        height: 100%;
+        .bk-big-tree-node.is-selected {
+            .instance-num {
+                background-color: #a2c5fd;
+                color: #fff;
+            }
         }
     }
 </style>

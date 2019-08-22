@@ -6,7 +6,7 @@ import {
 import Cookies from 'js-cookie'
 
 const origin = {
-    url: 'auth/business-list',
+    url: 'biz/with_reduced',
     method: 'get'
 }
 const redirect = {

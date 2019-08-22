@@ -61,6 +61,21 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
+	// check name field unique under business
+	nameUniqueFilter := map[string]interface{}{
+		metadata.BKMetadata: metadata.NewMetadata(bizID),
+		common.BKFieldName:  template.Name,
+	}
+	count, err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(nameUniqueFilter).Count(ctx)
+	if err != nil {
+		blog.Errorf("CreateServiceTemplate failed, count same name instance failed, filter: %+v, err: %+v, rid: %s", nameUniqueFilter, err, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if count > 0 {
+		blog.Errorf("CreateServiceTemplate failed, category id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommDuplicateItem, common.BKFieldName)
+	}
+
 	// generate id field
 	id, err := p.dbProxy.NextSequence(ctx, common.BKTableNameServiceTemplate)
 	if nil != err {
@@ -97,6 +112,8 @@ func (p *processOperation) GetServiceTemplate(ctx core.ContextParams, templateID
 	return &template, nil
 }
 
+// UpdateServiceTemplate
+// not support update name field yet, so don't need validate name unique before update
 func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templateID int64, input metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	template, err := p.GetServiceTemplate(ctx, templateID)
 	if err != nil {
@@ -106,6 +123,7 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 	// update fields to local object
 	// template.Name = input.Name
 	if input.ServiceCategoryID != 0 {
+		// 允许模块的服务分类信息与模板的服务分类信息不一致，模块同步按钮会调整模块的分类信息, 详情见 issue #2927
 		template.ServiceCategoryID = input.ServiceCategoryID
 
 		bizID, e := metadata.BizIDFromMetadata(template.Metadata)
@@ -182,7 +200,7 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, option m
 
 	if option.ServiceTemplateIDs != nil {
 		filter[common.BKFieldID] = map[string][]int64{
-			common.BKDBIN: *option.ServiceTemplateIDs,
+			common.BKDBIN: option.ServiceTemplateIDs,
 		}
 	}
 

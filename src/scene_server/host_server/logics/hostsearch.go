@@ -16,6 +16,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -211,7 +212,6 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, errors.CCError) 
 	setIDArr := make([]int64, 0)
 	moduleIDArr := make([]int64, 0)
 
-	type idArrStruct []int64
 	hostAppSetModuleConfig := make(map[int64]map[int64]*appLevelInfo, 0)
 
 	blog.V(5).Infof("get modulehostconfig map:%v, rid:%s", mhconfig, sh.ccRid)
@@ -356,7 +356,7 @@ func (sh *searchHost) convInstInfoToAssociateInfo(instIDKey, instNameKey, objID 
 		}
 		instID, err := instInfo.Int64(instIDKey)
 		if err != nil {
-			return nil, sh.ccErr.Errorf(common.CCErrCommInstFieldConvFail, objID, instIDKey, "int", err.Error())
+			return nil, sh.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, objID, instIDKey, "int", err.Error())
 		}
 		asstInst.ID = strconv.FormatInt(instID, 10)
 		asstInst.ObjectID = instID
@@ -674,27 +674,35 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 	}
 
 	if 0 != len(sh.conds.hostCond.Fields) {
-		sh.conds.hostCond.Fields = append(sh.conds.hostCond.Fields, common.BKHostIDField)
+		sh.conds.hostCond.Fields = append(sh.conds.hostCond.Fields, common.BKHostIDField, common.BKCloudIDField)
 	}
 
 	condition := make(map[string]interface{})
-	hostParse.ParseHostParams(sh.conds.hostCond.Condition, condition)
-	hostParse.ParseHostIPParams(sh.hostSearchParam.Ip, condition)
+	err = hostParse.ParseHostParams(sh.conds.hostCond.Condition, condition)
+	if err != nil {
+		return err
+	}
+
+	err = hostParse.ParseHostIPParams(sh.hostSearchParam.Ip, condition)
+	if err != nil {
+		return err
+	}
 
 	query := &metadata.QueryInput{
 		Condition: condition,
 		Start:     sh.hostSearchParam.Page.Start,
 		Limit:     sh.hostSearchParam.Page.Limit,
 		Sort:      sh.hostSearchParam.Page.Sort,
+		Fields:    strings.Join(sh.conds.hostCond.Fields, ","),
 	}
 
-	gResult, err := sh.lgc.CoreAPI.HostController().Host().GetHosts(sh.ctx, sh.pheader, query)
+	gResult, err := sh.lgc.CoreAPI.CoreService().Host().GetHosts(sh.ctx, sh.pheader, query)
 	if err != nil {
-		blog.Errorf("get hosts failed, err: %v", err)
+		blog.Errorf("get hosts failed, err: %v, rid: %s", err, sh.ccRid)
 		return err
 	}
 	if !gResult.Result {
-		blog.Errorf("get host failed, error code:%d, error message:%s", gResult.Code, gResult.ErrMsg)
+		blog.Errorf("get host failed, error code:%d, error message:%s, rid: %s", gResult.Code, gResult.ErrMsg, sh.ccRid)
 		return sh.ccErr.New(gResult.Code, gResult.ErrMsg)
 	}
 
@@ -756,7 +764,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	for _, moduleHostConfig := range moduleHostConfigArr {
 		hostIDArrItem, err := sh.lgc.GetHostIDByCond(sh.ctx, moduleHostConfig)
 		if err != nil {
-			blog.Errorf("GetHostIDByCond get hosts failed, err: %v", err)
+			blog.Errorf("GetHostIDByCond get hosts failed, err: %v, rid: %s", err, sh.ccRid)
 			return err
 		}
 		hostIDArr = append(hostIDArr, hostIDArrItem...)

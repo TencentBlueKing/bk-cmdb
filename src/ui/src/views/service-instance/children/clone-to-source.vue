@@ -1,54 +1,76 @@
 <template>
     <div class="source-layout">
-        <p class="source-tips">{{$t('BusinessTopology["源实例主机提示"]')}}</p>
+        <p class="source-tips">{{$t('源实例主机提示')}}</p>
         <div class="table-options">
             <bk-button class="options-button"
                 :disabled="!checked.length"
                 @click="handleBatchEdit">
-                {{$t('Common["批量编辑"]')}}
+                {{$t('批量编辑')}}
             </bk-button>
         </div>
-        <cmdb-table class="source-table"
-            :sortable="false"
-            :cross-page-check="false"
-            :empty-height="42"
-            :header="header"
-            :list="flattenList"
-            :checked.sync="checked">
-            <template slot="__operation__" slot-scope="{ item }">
-                <button class="text-primary mr10" v-if="isRepeat(item)"
-                    @click="handleEditProcess(item)">
-                    <i class="bk-icon icon-exclamation-circle"></i>
-                    {{$t('Common["请编辑"]')}}
-                </button>
-                <button class="text-primary mr10" v-else
-                    @click="handleEditProcess(item)">
-                    {{$t('Common["编辑"]')}}
-                </button>
-            </template>
-        </cmdb-table>
+        <bk-table class="source-table"
+            :data="flattenList"
+            @selection-change="handleSelectChange">
+            <bk-table-column type="selection" align="center" width="60" fixed class-name="bk-table-selection"></bk-table-column>
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('操作')" fixed="right">
+                <template slot-scope="{ row }">
+                    <button class="text-primary mr10" v-if="isRepeat(row)"
+                        @click="handleEditProcess(row)">
+                        <i class="bk-icon icon-exclamation-circle"></i>
+                        {{$t('请编辑')}}
+                    </button>
+                    <button class="text-primary mr10" v-else
+                        @click="handleEditProcess(row)">
+                        {{$t('编辑')}}
+                    </button>
+                </template>
+            </bk-table-column>
+        </bk-table>
         <div class="page-options">
-            <bk-button class="options-button" type="primary"
-                :disabled="!!repeatedProcesses.length"
-                @click="doClone">
-                {{$t('Common["确定"]')}}
-            </bk-button>
-            <bk-button class="options-button" @click="backToModule">{{$t('Common["取消"]')}}</bk-button>
+            <span
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                    auth: [$OPERATION.C_SERVICE_INSTANCE]
+                }">
+                <bk-button class="options-button" theme="primary"
+                    :disabled="!!repeatedProcesses.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                    @click="doClone">
+                    {{$t('确定')}}
+                </bk-button>
+            </span>
+            <bk-button class="options-button" @click="backToModule">{{$t('取消')}}</bk-button>
         </div>
-        <cmdb-slider
+        <bk-sideslider
             :is-show.sync="processForm.show"
             :title="processForm.title"
+            :width="800"
             :before-close="handleBeforeClose">
             <cmdb-form slot="content"
                 ref="processForm"
+                v-if="processForm.show"
                 :properties="properties"
                 :property-groups="propertyGroups"
                 :object-unique="processForm.type === 'single' ? [] : propertyUnique"
                 :inst="processForm.instance"
                 @on-submit="handleSubmit"
                 @on-cancel="handleBeforeClose">
+                <template slot="bind_ip">
+                    <cmdb-input-select
+                        :disabled="checkDisabled"
+                        :name="'bindIp'"
+                        :placeholder="$t('请选择或输入IP')"
+                        :options="processBindIp"
+                        :validate="validateRules"
+                        v-model="bindIp">
+                    </cmdb-input-select>
+                </template>
             </cmdb-form>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -75,7 +97,9 @@
                     type: 'single',
                     title: '',
                     instance: {}
-                }
+                },
+                processBindIp: [],
+                bindIp: ''
             }
         },
         computed: {
@@ -95,14 +119,6 @@
                         name: property.bk_property_name
                     }
                 })
-                header.unshift({
-                    id: 'bk_process_id',
-                    type: 'checkbox'
-                })
-                header.push({
-                    id: '__operation__',
-                    name: this.$t('Common["操作"]')
-                })
                 return header
             },
             flattenList () {
@@ -121,11 +137,35 @@
                             return sourceProcess[property.bk_property_id] === cloneProcess[property.bk_property_id]
                         })
                 })
+            },
+            bindIpProperty () {
+                return this.properties.find(property => property['bk_property_id'] === 'bind_ip') || {}
+            },
+            hostId () {
+                return parseInt(this.$route.params.hostId)
+            },
+            validateRules () {
+                const rules = {}
+                if (this.bindIpProperty.isrequired) {
+                    rules['required'] = true
+                }
+                rules['regex'] = this.bindIpProperty.option
+                return rules
+            },
+            checkDisabled () {
+                const property = this.bindIpProperty
+                if (this.processForm.type === 'create') {
+                    return false
+                }
+                return !property.editable || property.isreadonly
             }
         },
         watch: {
             sourceProcesses (source) {
                 this.cloneProcesses = this.$tools.clone(source)
+            },
+            bindIp (value) {
+                this.$refs.processForm.values.bind_ip = value
             }
         },
         async created () {
@@ -181,17 +221,70 @@
             isRepeat (item) {
                 return this.repeatedProcesses.some(process => process.bk_process_id === item.bk_process_id)
             },
+            handleSelectChange (selection) {
+                this.checked = selection.map(row => row.bk_process_id)
+            },
             handleBatchEdit () {
+                this.getInstanceIpByHost(this.hostId)
                 this.processForm.type = 'batch'
-                this.processForm.title = this.$t('Common["批量编辑"]')
+                this.processForm.title = this.$t('批量编辑')
                 this.processForm.instance = {}
                 this.processForm.show = true
+                this.$nextTick(() => {
+                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance)['bind_ip']
+                    const { processForm } = this.$refs
+                    this.processForm.unwatch = processForm.$watch(() => {
+                        return processForm.values.bk_func_name
+                    }, (newVal, oldValue) => {
+                        if (processForm.values.bk_process_name === oldValue) {
+                            processForm.values.bk_process_name = newVal
+                        }
+                    })
+                })
             },
             handleEditProcess (item) {
+                this.getInstanceIpByHost(this.hostId)
                 this.processForm.type = 'single'
-                this.processForm.title = `${this.$t('BusinessTopology["编辑进程"]')}${item.bk_process_name}`
+                this.processForm.title = `${this.$t('编辑进程')}${item.bk_process_name}`
                 this.processForm.instance = this.cloneProcesses.find(target => target.bk_process_id === item.bk_process_id)
                 this.processForm.show = true
+                this.$nextTick(() => {
+                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance)['bind_ip']
+                    const { processForm } = this.$refs
+                    this.processForm.unwatch = processForm.$watch(() => {
+                        return processForm.values.bk_func_name
+                    }, (newVal, oldValue) => {
+                        if (processForm.values.bk_process_name === oldValue) {
+                            processForm.values.bk_process_name = newVal
+                        }
+                    })
+                })
+            },
+            async getInstanceIpByHost (hostId) {
+                try {
+                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    let res = null
+                    if (instanceIpMap.hasOwnProperty(hostId)) {
+                        res = instanceIpMap[hostId]
+                    } else {
+                        res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
+                            hostId,
+                            config: {
+                                requestId: 'getInstanceIpByHost'
+                            }
+                        })
+                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                    }
+                    this.processBindIp = res.options.map(ip => {
+                        return {
+                            id: ip,
+                            name: ip
+                        }
+                    })
+                } catch (e) {
+                    this.processBindIp = []
+                    console.error(e)
+                }
             },
             handleSubmit (values, changedValues) {
                 if (this.processForm.type === 'single') {
@@ -212,7 +305,9 @@
                 if (Object.keys(changedValues).length) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.handleCloseProcessForm()
                             },
@@ -238,9 +333,8 @@
                             ]
                         })
                     })
-                    this.$router.replace({
-                        path: this.$route.query.from
-                    })
+                    this.$success(this.$t('克隆成功'))
+                    this.backToModule()
                 } catch (e) {
                     console.error(e)
                 }

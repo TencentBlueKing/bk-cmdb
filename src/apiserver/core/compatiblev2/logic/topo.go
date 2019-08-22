@@ -78,7 +78,7 @@ func (lgc *Logics) GetAppTopo(ctx context.Context, appID int64, conds mapstr.Map
 		setID, err := setInfo.Int64(common.BKSetIDField)
 		if nil != err {
 			blog.Errorf("GetAppTopo get set id by getsets  return  info:%v  error:%v.rid:%s", setInfo, err, lgc.rid)
-			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
 		}
 		setName, _ := setInfo[common.BKSetNameField]
 		if nil == setName {
@@ -115,17 +115,17 @@ func getModuleMap(modules []mapstr.MapStr, appID int64, rid string, defErr error
 		setID, err := module.Int64(common.BKSetIDField)
 		if nil != err {
 			blog.Errorf("GetAppTopo get set id by getmodues  return info  error, module info:%v  error, rid:%s", module, rid)
-			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "SetID", "int", err.Error())
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvertFail, "module", "SetID", "int", err.Error())
 		}
 		moduleName, err := module.String(common.BKModuleNameField)
 		if err != nil {
-			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "ModuleName", "string", err.Error())
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvertFail, "module", "ModuleName", "string", err.Error())
 
 		}
 		moduleID, err := util.GetInt64ByInterface(module[common.BKModuleIDField])
 		if nil != err {
 			blog.Errorf("GetAppTopo get module id by getmodues  return info  error, module info:%v  error, rid:%s", module, rid)
-			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "ModuleID", "int", err.Error())
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvertFail, "module", "ModuleID", "int", err.Error())
 		}
 		_, ok := modulesMap[setID]
 		if false == ok {
@@ -228,12 +228,12 @@ func (lgc *Logics) SetModuleHostCount(ctx context.Context, data []mapstr.MapStr)
 			mouduleID, getErr := itemMap.Int64("ModuleID")
 			if nil != getErr {
 				blog.Errorf("SetModuleHostCount error. err:%v, info:%#v, rid:%s", getErr, itemMap, lgc.rid)
-				return lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "ModuleID", "int", getErr.Error())
+				return lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, "module", "ModuleID", "int", getErr.Error())
 			}
 			appID, getErr := itemMap.Int64("ApplicationID")
 			if nil != getErr {
 				blog.Errorf("SetModuleHostCount error. err:%v, info:%#v, rid:%s", getErr, itemMap, lgc.rid)
-				return lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, "App", "ApplicationID", "int", getErr.Error())
+				return lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, "App", "ApplicationID", "int", getErr.Error())
 			}
 			hostNum, getErr := lgc.GetModuleHostCount(ctx, appID, mouduleID)
 			if nil != getErr {

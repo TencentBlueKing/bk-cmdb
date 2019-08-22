@@ -23,16 +23,19 @@ export default {
     meta: new Meta({
         menu: {
             id: 'cloudDiscover',
-            i18n: 'Nav["云资源发现"]',
+            i18n: '云资源发现',
             path: path,
             order: 4,
             parent: NAV_BUSINESS_RESOURCE,
             adminView: false
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'global'
+            }
         },
         requireBusiness: true,
-        i18nTitle: 'Cloud["云资源发现"]'
+        i18nTitle: '云资源发现'
     })
 }

@@ -4,11 +4,11 @@
             <div class="display-setting">
                 <label class="cmdb-form-checkbox cmdb-checkbox-small">
                     <input type="checkbox" v-model="isShowName">
-                    <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示模型名称"]')}}</span>
+                    <span class="cmdb-checkbox-text">{{$t('显示模型名称')}}</span>
                 </label>
                 <label class="cmdb-form-checkbox cmdb-checkbox-small">
                     <input type="checkbox" v-model="isShowAsst">
-                    <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示关联名称"]')}}</span>
+                    <span class="cmdb-checkbox-text">{{$t('显示关联名称')}}</span>
                 </label>
             </div>
             <ul class="display-list">
@@ -27,12 +27,12 @@
                                     <div class="relation-detail" v-click-outside="hidePop" @click.stop v-if="activePop === model['bk_obj_id']">
                                         <div class="detail-title clearfix">
                                             <div class="fl">
-                                                <span class="title">{{$t('ModelManagement["模型关联"]')}}</span>
-                                                <span class="info">({{$t('ModelManagement["即视图中的连线"]')}})</span>
+                                                <span class="title">{{$t('模型关联')}}</span>
+                                                <span class="info">({{$t('即视图中的连线')}})</span>
                                             </div>
                                             <label class="fr cmdb-form-checkbox cmdb-checkbox-small">
                                                 <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
-                                                <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
+                                                <span class="cmdb-checkbox-text">{{$t('全选')}}</span>
                                             </label>
                                         </div>
                                         <ul class="relation-list clearfix">
@@ -52,11 +52,11 @@
             </ul>
         </div>
         <div class="button-group">
-            <bk-button type="primary" @click="saveDisplay">
-                {{$t('Common["确定"]')}}
+            <bk-button theme="primary" @click="saveDisplay">
+                {{$t('确定')}}
             </bk-button>
-            <bk-button type="default" @click="reset">
-                {{$t('ModelManagement["重置"]')}}
+            <bk-button theme="default" @click="reset">
+                {{$t('重置')}}
             </bk-button>
         </div>
     </div>

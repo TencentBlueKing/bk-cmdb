@@ -377,3 +377,19 @@ func (a *apiServer) SearchNetDevicePropertyBatch(ctx context.Context, h http.Hea
 
 	return
 }
+
+func (a *apiServer) ListHostWithoutApp(ctx context.Context, h http.Header, option metadata.ListHostsWithNoBizParameter) (resp *metadata.ListHostWithoutAppResponse, err error) {
+	resp = new(metadata.ListHostWithoutAppResponse)
+
+	subPath := "/hosts/list_hosts_without_app"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+
+	return
+}

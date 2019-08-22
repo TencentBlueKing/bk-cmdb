@@ -23,16 +23,19 @@ export default {
     meta: new Meta({
         menu: {
             id: 'customQuery',
-            i18n: 'Nav["动态分组"]',
+            i18n: '动态分组',
             path: path,
             order: 4,
             parent: NAV_BUSINESS_RESOURCE,
             adminView: false
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'business'
+            }
         },
         requireBusiness: true,
-        i18nTitle: 'Nav["动态分组"]'
+        i18nTitle: '动态分组'
     })
 }

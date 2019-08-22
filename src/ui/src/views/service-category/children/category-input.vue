@@ -1,15 +1,15 @@
 <template>
     <div class="cagetory-input" v-click-outside="handleCancel">
-        <input type="text" class="bk-form-input"
-            :style="setStyle"
+        <bk-input type="text"
             :ref="inputRef"
             :placeholder="placeholder"
             v-model="localValue">
+        </bk-input>
         <div class="operation">
             <span class="text-primary btn-confirm"
-                @click.stop="handleConfirm">{{$t("Common['确定']")}}
+                @click.stop="handleConfirm">{{$t('确定')}}
             </span>
-            <span class="text-primary" @click="handleCancel">{{$t("Common['取消']")}}</span>
+            <span class="text-primary" @click="handleCancel">{{$t('取消')}}</span>
         </div>
     </div>
 </template>
@@ -32,10 +32,6 @@
             editId: {
                 type: Number,
                 default: 0
-            },
-            setStyle: {
-                type: Object,
-                default: () => {}
             }
         },
         data () {
@@ -67,12 +63,16 @@
         @include space-between;
         width: 100%;
         font-weight: normal;
-        .bk-form-input {
+        .bk-form-control {
             flex: 1;
-            font-size: 14px;
+            font-size: 0;
             height: 32px;
             line-height: 32px;
             margin-right: 10px;
+            /deep/ .bk-form-input {
+                font-size: 14px;
+                line-height: 32px;
+            }
         }
         .text-primary {
             display: inline-block;

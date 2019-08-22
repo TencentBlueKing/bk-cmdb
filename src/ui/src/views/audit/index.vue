@@ -2,76 +2,124 @@
     <div class="audit-wrapper">
         <div class="title-content">
             <div class="group-content" v-if="isAdminView">
-                <span class="title-name">{{$t('Common["业务"]')}}</span>
+                <span class="title-name">{{$t('业务')}}</span>
                 <div class="selector-content">
-                    <bk-selector
-                        :list="authorizedBusiness"
-                        :selected.sync="filter.bizId"
-                        :searchable="true"
-                        :allow-clear="true"
-                        display-key="bk_biz_name"
-                        search-key="bk_biz_id"
-                        setting-key="bk_biz_id"
-                    ></bk-selector>
+                    <bk-select v-model="filter.bizId" searchable>
+                        <bk-option v-for="business in authorizedBusiness"
+                            :key="business.bk_biz_id"
+                            :id="business.bk_biz_id"
+                            :name="business.bk_biz_name">
+                        </bk-option>
+                    </bk-select>
                 </div>
             </div>
             <div class="group-content">
                 <span class="title-name">IP</span>
                 <div class="selector-content">
-                    <input class="cmdb-form-input" type="text" :placeholder="$t('OperationAudit[\'使用逗号分隔\']')" v-model.trim="filter.bkIP">
+                    <bk-input class="cmdb-form-input" type="text"
+                        :placeholder="$t('使用逗号分隔')"
+                        v-model.trim="filter.bkIP">
+                    </bk-input>
                 </div>
             </div>
             <div class="group-content">
-                <span class="title-name">{{$t('OperationAudit["模型"]')}}</span>
+                <span class="title-name">{{$t('模型')}}</span>
                 <div class="selector-content">
-                    <bk-selector
-                        :list="filterClassifications"
-                        :selected.sync="filter.classify"
-                        :has-children="true"
-                        :searchable="true"
-                        :allow-clear="true"
-                    ></bk-selector>
+                    <bk-select v-model="filter.classify" searchable>
+                        <bk-option-group v-for="group in filterClassifications"
+                            :key="group.id"
+                            :name="group.name">
+                            <bk-option v-for="classify in group.children"
+                                :key="classify.id"
+                                :id="classify.id"
+                                :name="classify.name">
+                            </bk-option>
+                        </bk-option-group>
+                    </bk-select>
                 </div>
             </div>
             <div class="group-content">
-                <span class="title-name">{{$t('OperationAudit[\'类型\']')}}</span>
+                <span class="title-name">{{$t('类型')}}</span>
                 <div class="selector-content">
-                    <bk-selector
-                        :list="operateTypeList"
-                        :selected.sync="filter.bkOpType"
-                    ></bk-selector>
+                    <bk-select
+                        v-model="filter.bkOpType"
+                        :clearable="false">
+                        <bk-option v-for="option in operateTypeList"
+                            :key="option.id"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
                 </div>
             </div>
             <div class="group-content">
-                <span class="title-name">{{$t('OperationAudit[\'时间\']')}}</span>
+                <span class="title-name">{{$t('时间')}}</span>
                 <div class="selector-content date-range-content">
                     <cmdb-form-date-range
                         class="date-range"
-                        position="left"
-                        :show-close="true"
-                        v-model="filter.bkCreateTime"></cmdb-form-date-range>
+                        :clearable="false"
+                        v-model="filter.bkCreateTime">
+                    </cmdb-form-date-range>
                 </div>
             </div>
             <div class="group-content button-group">
-                <bk-button type="primary" :loading="$loading('getOperationLog')" @click="handlePageChange(1)">{{$t('OperationAudit[\'查询\']')}}</bk-button>
+                <bk-button theme="primary" :loading="$loading('getOperationLog')" @click="handlePageChange(1)">{{$t('查询')}}</bk-button>
             </div>
         </div>
-        <cmdb-table
-            :loading="$loading('getOperationLog')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :wrapper-minus-height="220"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange"
-            @handleRowClick="handleRowClick"
-        ></cmdb-table>
-        <cmdb-slider
+        <bk-table
+            v-bkloading="{ isLoading: $loading('getOperationLog') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 250"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange"
+            @row-click="handleRowClick">
+            <bk-table-column
+                sortable="custom"
+                prop="operator"
+                :label="$t('操作账号')">
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="op_target"
+                :label="$t('对象')">
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="op_desc"
+                :label="$t('描述')">
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="bk_biz_id"
+                :label="$t('所属业务')">
+                <template slot-scope="{ row }">{{row.bk_biz_name}}</template>
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="ext_key"
+                label="IP">
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="op_type"
+                :label="$t('类型')">
+                <template slot-scope="{ row }">{{row.op_type_name}}</template>
+            </bk-table-column>
+            <bk-table-column
+                sortable="custom"
+                prop="op_time"
+                :label="$t('操作时间')">
+            </bk-table-column>
+        </bk-table>
+        <bk-sideslider
+            :quick-close="true"
             :is-show.sync="details.isShow"
-            :title="$t('OperationAudit[\'操作详情\']')">
-            <v-details :details="details.data" slot="content"></v-details>
-        </cmdb-slider>
+            :width="800"
+            :title="$t('操作详情')">
+            <v-details :details="details.data" slot="content" v-if="details.isShow"></v-details>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -89,55 +137,31 @@
                     bizId: '',
                     bkIP: '',
                     classify: '',
-                    bkOpType: '',
+                    bkOpType: 0,
                     bkCreateTime: []
                 },
                 operateTypeList: [{
-                    id: '',
-                    name: this.$t('OperationAudit["全部"]')
+                    id: 0,
+                    name: this.$t('全部')
                 }, {
                     id: 1,
-                    name: this.$t('Common["新增"]')
+                    name: this.$t('新增')
                 }, {
                     id: 2,
-                    name: this.$t('Common["修改"]')
+                    name: this.$t('修改')
                 }, {
                     id: 3,
-                    name: this.$t('Common["删除"]')
+                    name: this.$t('删除')
                 }, {
                     id: 100,
-                    name: this.$t('OperationAudit["关系变更"]')
+                    name: this.$t('关系变更')
                 }],
                 table: {
-                    header: [{
-                        id: 'operator',
-                        name: this.$t('OperationAudit["操作账号"]')
-                    }, {
-                        id: 'op_target',
-                        name: this.$t('OperationAudit["对象"]')
-                    }, {
-                        id: 'op_desc',
-                        name: this.$t('OperationAudit["描述"]')
-                    }, {
-                        id: 'bk_biz_name',
-                        name: this.$t('OperationAudit["所属业务"]'),
-                        sortKey: 'bk_biz_id'
-                    }, {
-                        id: 'ext_key',
-                        name: 'IP'
-                    }, {
-                        id: 'op_type_name',
-                        name: this.$t('OperationAudit["类型"]'),
-                        sortKey: 'op_type'
-                    }, {
-                        id: 'op_time',
-                        name: this.$t('OperationAudit["操作时间"]')
-                    }],
                     list: [],
                     pagination: {
                         current: 1,
                         count: 0,
-                        size: 10
+                        limit: 10
                     },
                     defaultSort: '-op_time',
                     sort: '-op_time'
@@ -163,10 +187,10 @@
                             name: classify['bk_classification_name'],
                             children: [{
                                 id: 'set',
-                                name: this.$t('Hosts["集群"]')
+                                name: this.$t('集群')
                             }, {
                                 id: 'module',
-                                name: this.$t('Hosts["模块"]')
+                                name: this.$t('模块')
                             }]
                         })
                     } else if (classify['bk_classification_id'] !== 'bk_host_manage') {
@@ -199,8 +223,8 @@
                     condition: {
                         op_time: opTime
                     },
-                    start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                    limit: this.table.pagination.size,
+                    start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                    limit: this.table.pagination.limit,
                     sort: this.table.sort
                 }
                 this.setParams(params.condition, 'bk_biz_id', this.isAdminView ? this.filter.bizId : this.bizId)
@@ -277,11 +301,11 @@
                 this.getTableData()
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
             handleRowClick (item) {
@@ -294,7 +318,7 @@
 
 <style lang="scss" scoped>
     .title-content{
-        padding: 0 0 20px 0;
+        padding: 0 0 14px 0;
         display: flex;
         align-items: center;
         justify-content: flex-start;
@@ -314,6 +338,9 @@
                 display: inline-block;
                 vertical-align: middle;
                 width: calc(100% - 40px);
+                .bk-select {
+                    width: 100%;
+                }
             }
             .search-btn{
                 padding: 0 19px;
@@ -324,7 +351,8 @@
             .title-name{
                 display: inline-block;
                 vertical-align: middle;
-                width: 40px;
+                min-width: 40px;
+                max-width: 48px;
                 font-size: 14px;
                 padding-right: 5px;
             }

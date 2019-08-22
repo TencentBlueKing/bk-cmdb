@@ -1,31 +1,32 @@
 <template>
     <div class="create-template-wrapper">
         <div class="info-group">
-            <h3>{{$t("ProcessManagement['基本属性']")}}</h3>
+            <h3>{{$t('基本属性')}}</h3>
             <div class="form-info clearfix">
                 <label class="label-text fl" for="templateName">
-                    {{$t('ServiceManagement["模板名称"]')}}
+                    {{$t('模板名称')}}
                     <span class="color-danger">*</span>
                 </label>
                 <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('templateName') }">
-                    <input type="text" class="cmdb-form-input" id="templateName"
+                    <bk-input type="text" class="cmdb-form-input" id="templateName"
                         name="templateName"
-                        :placeholder="$t('ServiceManagement[\'请输入模版名称\']')"
+                        :placeholder="$t('请输入模版名称')"
                         :disabled="!isCreatedType"
                         v-model.trim="formData.templateName"
                         v-validate="'required|singlechar'">
+                    </bk-input>
                     <p class="form-error">{{errors.first('templateName')}}</p>
                 </div>
             </div>
             <div class="form-info clearfix">
                 <span class="label-text fl">
-                    {{$t('ServiceManagement["服务分类"]')}}
+                    {{$t('服务分类')}}
                     <span class="color-danger">*</span>
                 </span>
                 <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('mainClassificationId') }" style="width: auto;">
                     <cmdb-selector
                         class="fl"
-                        :placeholder="$t('ServiceManagement[\'请选择一级分类\']')"
+                        :placeholder="$t('请选择一级分类')"
                         :auto-select="false"
                         :list="mainList"
                         v-validate="'required'"
@@ -38,7 +39,7 @@
                 <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('secondaryClassificationId') }" style="width: auto;">
                     <cmdb-selector
                         class="fl"
-                        :placeholder="$t('ServiceManagement[\'请选择二级分类\']')"
+                        :placeholder="$t('请选择二级分类')"
                         :auto-select="true"
                         :list="secondaryList"
                         :empty-text="emptyText"
@@ -51,14 +52,20 @@
             </div>
         </div>
         <div class="info-group">
-            <h3>{{$t("ProcessManagement['服务进程']")}}</h3>
+            <h3>{{$t('服务进程')}}</h3>
             <div class="precess-box">
                 <div class="process-create">
-                    <bk-button class="create-btn" @click="handleCreateProcess">
-                        <i class="bk-icon icon-plus"></i>
-                        <span>{{$t("ServiceManagement['新建进程']")}}</span>
-                    </bk-button>
-                    <span class="create-tips">{{$t("ServiceManagement['新建进程提示']")}}</span>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                        }">
+                        <bk-button class="create-btn" :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)" @click="handleCreateProcess">
+                            <i class="bk-icon icon-plus"></i>
+                            <span>{{$t('新建进程')}}</span>
+                        </bk-button>
+                    </span>
+                    <span class="create-tips">{{$t('新建进程提示')}}</span>
                 </div>
                 <process-table
                     v-if="processList.length"
@@ -69,13 +76,27 @@
                     :list="processList">
                 </process-table>
                 <div class="btn-box">
-                    <bk-button type="primary" @click="handleSubmit">{{$t("Common['确定']")}}</bk-button>
-                    <bk-button @click="handleCancelOperation">{{$t("Common['取消']")}}</bk-button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                        }">
+                        <bk-button theme="primary"
+                            :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
+                            @click="handleSubmit">
+                            {{$t('确定')}}
+                        </bk-button>
+                    </span>
+                    <bk-button @click="handleCancelOperation">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </div>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
-            <template slot="content">
+        <bk-sideslider
+            :is-show.sync="slider.show"
+            :title="slider.title"
+            :width="800"
+            :before-close="handleSliderBeforeClose">
+            <template slot="content" v-if="slider.show">
                 <process-form
                     ref="processForm"
                     :properties="properties"
@@ -89,29 +110,27 @@
                     @on-cancel="handleCancelProcess">
                 </process-form>
             </template>
-        </cmdb-slider>
+        </bk-sideslider>
         <bk-dialog
-            :is-show.sync="createdSucess.show"
+            v-model="createdSucess.show"
             :width="490"
             :close-icon="false"
-            :has-footer="false"
-            :has-header="false"
-            :title="createdSucess.title"
-            :content="createdSucess.content">
-            <div class="created-success" slot="content">
+            :show-footer="false"
+            :title="createdSucess.title">
+            <div class="created-success">
                 <div class="content">
                     <i class="bk-icon icon-check-1"></i>
-                    <p>{{$t("ServiceManagement['服务模板创建成功']")}}</p>
-                    <span>{{$tc("ServiceManagement['创建成功前往服务拓扑']", createdSucess.name, { name: createdSucess.name })}}</span>
+                    <p>{{$t('服务模板创建成功')}}</p>
+                    <span>{{$tc('创建成功前往服务拓扑', createdSucess.name, { name: createdSucess.name })}}</span>
                 </div>
                 <div class="btn-box">
                     <bk-button
-                        type="primary"
+                        theme="primary"
                         class="mr10"
                         @click="handleGoInstance">
-                        {{$t("ServiceManagement['创建服务实例']")}}
+                        {{$t('创建服务实例')}}
                     </bk-button>
-                    <bk-button @click="handleCancelOperation">{{$t("ServiceManagement['返回列表']")}}</bk-button>
+                    <bk-button @click="handleCancelOperation">{{$t('返回列表')}}</bk-button>
                 </div>
             </div>
         </bk-dialog>
@@ -138,7 +157,7 @@
                 processList: [],
                 originTemplateValues: {},
                 hasUsed: false,
-                emptyText: this.$t("ServiceManagement['请选择一级分类']"),
+                emptyText: this.$t('请选择一级分类'),
                 createdSucess: {
                     show: false,
                     name: ''
@@ -173,7 +192,7 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.isCreatedType ? this.$t("ServiceManagement['新建服务模版']") : '')
+            this.$store.commit('setHeaderTitle', this.isCreatedType ? this.$t('新建服务模版') : '')
             this.processList = this.localProcessTemplate
             try {
                 await this.reload()
@@ -226,7 +245,7 @@
                         bk_supplier_account: this.supplierAccount
                     }),
                     config: {
-                        requestId: `post_searchObjectAttribute_process`,
+                        requestId: `searchObjectAttribute_templateProcess`,
                         fromCache: false
                     }
                 })
@@ -296,7 +315,7 @@
             },
             handleSelect (id, data) {
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
-                this.emptyText = this.$t("ServiceManagement['没有二级分类']")
+                this.emptyText = this.$t('没有二级分类')
                 if (!this.secondaryList.length) {
                     this.formData.secondaryClassification = ''
                 }
@@ -331,7 +350,7 @@
             },
             handleCreateProcess () {
                 this.slider.show = true
-                this.slider.title = this.$t("ProcessManagement['添加进程']")
+                this.slider.title = this.$t('添加进程')
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
             },
@@ -343,7 +362,7 @@
             },
             handleDeleteProcess (template) {
                 this.$bkInfo({
-                    title: this.$t("ServiceManagement['确认删除模板进程']"),
+                    title: this.$t('确认删除模板进程'),
                     confirmFn: () => {
                         if (this.isCreatedType) {
                             this.deleteLocalProcessTemplate(template)
@@ -356,6 +375,7 @@
                                     })
                                 }
                             }).then(() => {
+                                this.$success(this.$t('删除成功'))
                                 this.getProcessList()
                             })
                         }
@@ -393,7 +413,7 @@
                         if (this.isCreatedType) {
                             this.handleSubmitProcessList()
                         } else {
-                            this.$success(this.$t('Common["保存成功"]'))
+                            this.$success(this.$t('保存成功'))
                             this.handleCancelOperation()
                         }
                     })
@@ -421,7 +441,9 @@
                 if (hasChanged) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 resolve(true)
                             },
@@ -439,29 +461,6 @@
 
 <style lang="scss" scoped>
     .create-template-wrapper {
-        .created-success {
-            font-size: 14px;
-            text-align: center;
-            color: #444444;
-            .bk-icon {
-                width: 60px;
-                height: 60px;
-                line-height: 60px;
-                font-size: 30px;
-                font-weight: bold;
-                color: #ffffff;
-                border-radius: 50%;
-                background-color: #2dcb56;
-                margin-top: 12px;
-            }
-            p {
-                font-size: 24px;
-                padding: 14px 0 24px;
-            }
-            .btn-box {
-                padding: 32px 0 36px;
-            }
-        }
         .info-group {
             h3 {
                 color: #63656e;
@@ -479,7 +478,7 @@
                 .cmdb-form-item {
                     width: 520px;
                 }
-                .bk-selector {
+                .bk-select {
                     width: 254px;
                     margin-right: 10px;
                 }
@@ -488,6 +487,8 @@
                 padding-left: 30px;
             }
             .process-create {
+                display: flex;
+                align-items: center;
                 padding-bottom: 14px;
                 .create-btn {
                     padding: 0 16px;
@@ -509,6 +510,29 @@
             .btn-box {
                 padding-top: 30px;
             }
+        }
+    }
+    .created-success {
+        font-size: 14px;
+        text-align: center;
+        color: #444444;
+        .bk-icon {
+            width: 60px;
+            height: 60px;
+            line-height: 60px;
+            font-size: 30px;
+            font-weight: bold;
+            color: #ffffff;
+            border-radius: 50%;
+            background-color: #2dcb56;
+            margin-top: 12px;
+        }
+        p {
+            font-size: 24px;
+            padding: 14px 0 24px;
+        }
+        .btn-box {
+            padding: 32px 0 36px;
         }
     }
 </style>

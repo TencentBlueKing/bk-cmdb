@@ -134,18 +134,13 @@ func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, cate
 	return nil
 }
 
-func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
+func (p *process) ListServiceCategories(ctx context.Context, h http.Header, option metadata.ListServiceCategoriesOption) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleServiceCategoryWithStatisticsResult)
 	subPath := "/findmany/process/service_category"
 
-	input := map[string]interface{}{
-		"bk_biz_id":       bizID,
-		"with_statistics": withStatistics,
-	}
-
 	err := p.client.Post().
 		WithContext(ctx).
-		Body(input).
+		Body(option).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -557,6 +552,29 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 	return &ret.Data, nil
 }
 
+func (p *process) ListServiceInstanceDetail(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder) {
+	ret := new(metadata.MultipleServiceInstanceDetailResult)
+	subPath := "/findmany/process/service_instance/details"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("ListServiceInstanceDetail failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
 /*
 	process instance relation api
 */
@@ -717,4 +735,49 @@ func (p *process) RemoveTemplateBindingOnModule(ctx context.Context, h http.Head
 	}
 
 	return nil, nil
+}
+
+func (p *process) ReconstructServiceInstanceName(ctx context.Context, h http.Header, instanceID int64) errors.CCErrorCoder {
+	ret := new(metadata.RemoveTemplateBoundOnModuleResult)
+	subPath := fmt.Sprintf("/update/process/service_instance_name/%d", instanceID)
+
+	err := p.client.Post().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("ReconstructServiceInstanceName failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return nil
+}
+
+func (p *process) GetProc2Module(ctx context.Context, h http.Header, option metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder) {
+	ret := new(metadata.GetProc2ModuleResult)
+	subPath := "/findmany/process/proc2module"
+
+	err := p.client.Post().
+		Body(option).
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("GetProc2Module failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
 }

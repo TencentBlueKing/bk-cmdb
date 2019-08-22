@@ -23,7 +23,7 @@ const (
 	CCSystemUnknownError = -2
 	CCSuccess            = 0
 	CCSuccessStr         = "success"
-	CCNoPermission = 9900403
+	CCNoPermission       = 9900403
 
 	// common error code 1199XXX
 
@@ -45,7 +45,7 @@ const (
 	// CCErrCommHTTPBodyEmpty  HTTP request body data is not set
 	CCErrCommHTTPBodyEmpty = 1199005
 
-	// CCErrCommParamsInvalid parameter validation in the body is not paased
+	// CCErrCommParamsInvalid parameter validation in the body is not pass
 	CCErrCommParamsInvalid = 1199006
 
 	// CCErrCommParamsNeedString  the parameter must be of type string
@@ -81,19 +81,19 @@ const (
 	// CCErrCommDBInsertFailed database cannot add data
 	CCErrCommDBInsertFailed = 1199018
 
-	//CCErrCommNotFound the goal does not exist
+	// CCErrCommNotFound the goal does not exist
 	CCErrCommNotFound = 1199019
 
-	//CCErrCommDBUpdateFailed database cannot update data
+	// CCErrCommDBUpdateFailed database cannot update data
 	CCErrCommDBUpdateFailed = 1199020
 
-	//CCErrCommDBDeleteFailed database cannot delete data
+	// CCErrCommDBDeleteFailed database cannot delete data
 	CCErrCommDBDeleteFailed = 1199021
 
-	//CCErrCommRelyOnServerAddressFailed dependent service did not start
+	// CCErrCommRelyOnServerAddressFailed dependent service did not start
 	CCErrCommRelyOnServerAddressFailed = 1199022
 
-	//CCErrCommExcelTemplateFailed unable to generate and download
+	// CCErrCommExcelTemplateFailed unable to generate and download
 	CCErrCommExcelTemplateFailed = 1199023
 
 	// CCErrCommParamsNeedTimeZone the parameter must be time zone type
@@ -108,13 +108,13 @@ const (
 	// CCErrCommNotAuthItem failed to get authorization information
 	CCErrCommNotAuthItem = 1199027
 
-	// CCErrCommNotAuthItem field valide failed
+	// CCErrCommNotAuthItem field validate failed
 	CCErrCommFieldNotValid = 1199028
 
-	//CCErrCommReplyDataFormatError Return data format error
+	// CCErrCommReplyDataFormatError Return data format error
 	CCErrCommReplyDataFormatError = 1199029
 
-	//CCErrCommReplyDataFormatError Return data format error
+	// CCErrCommReplyDataFormatError Return data format error
 	CCErrCommPostInputParseError = 1199030
 
 	// CCErrCommResourceInitFailed %s init failed
@@ -139,8 +139,8 @@ const (
 	CCErrCommInstDataNil = 1199038
 	// CCErrCommInstFieldNotFound  %s field does not exist in %s
 	CCErrCommInstFieldNotFound = 1199039
-	// CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
-	CCErrCommInstFieldConvFail = 1199040
+	// CCErrCommInstFieldConvertFail  convert %s  field %s to %s error %s
+	CCErrCommInstFieldConvertFail = 1199040
 	// CCErrCommUtilFail  handle %s error %s
 	CCErrCommUtilHandleFail = 1199041
 	// CCErrCommParamsNeedFloat the parameter must be float type
@@ -149,7 +149,7 @@ const (
 	CCErrCommFieldNotValidFail = 1199043
 
 	CCErrCommNotAllSuccess = 1199044
-	// parse auth attribute in apiserver rest filter failed.
+	// parse auth attribute in api server rest filter failed.
 	CCErrCommParseAuthAttributeFailed = 1199045
 
 	// authorize request to auth center failed
@@ -176,6 +176,29 @@ const (
 
 	CCErrCommParseDBFailed                     = 1199061
 	CCErrCommGetBusinessDefaultSetModuleFailed = 1199062
+
+	CCErrCommParametersCountNotEnough         = 1199063
+	CCErrCommFuncCalledWithInappropriateParam = 1199064
+
+	// CCErrCommStartTransactionFailed start transaction failed
+	CCErrCommStartTransactionFailed = 1199065
+	// CCErrCommCommitTransactionFailed commit transaction failed
+	CCErrCommCommitTransactionFailed = 1199066
+	// CCErrCommAbortTransactionFailed abort transaction failed
+	CCErrCommAbortTransactionFailed = 1199067
+
+	CCErrCommListAuthorizedResourcedFromIAMFailed = 1199068
+	CCErrParseAttrOptionEnumFailed                = 1199069
+
+	// CCErrCommParamsNotSupportXXErr 参数%s的值%s 无效
+	CCErrCommParamsValueInvalidError = 1199070
+
+	// 构造DB查询条件失败
+	CCErrConstructDBFilterFailed = 1199071
+	CCErrGetNoAuthSkipURLFailed  = 1199072
+
+	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
+	CCErrCommValExceedMaxFailed = 1199073
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -276,7 +299,7 @@ const (
 	// CCErrTopoObjectGroupSelectFailed unable to select a object group
 	CCErrTopoObjectGroupSelectFailed = 1101028
 
-	// CCErrTopoObjectClassificationHasObject the object classification can't be deleted under clssification
+	// CCErrTopoObjectClassificationHasObject the object classification can't be deleted under classification
 	CCErrTopoObjectClassificationHasObject = 1101029
 
 	// CCErrTopoHasHostCheckFailed cannot detect if host information is included
@@ -285,12 +308,12 @@ const (
 	// CCErrTopoHasHost include host
 	CCErrTopoHasHost = 1101030
 
-	// CCErrTopoGetCloudErrStrFaild get cloud error
-	CCErrTopoGetCloudErrStrFaild = 1101031
+	// CCErrTopoGetCloudErrStrFailed get cloud error
+	CCErrTopoGetCloudErrStrFailed = 1101031
 	// CCErrTopoCloudNotFound   cloud area not found
 	CCErrTopoCloudNotFound = 1101032
 
-	// CCErrTopoGetAppFaild search app err %s
+	// CCErrTopoGetAppFailed search app err %s
 	CCErrTopoGetAppFailed = 1101033
 	// CCErrTopoGetModuleFailed search  module err %s
 	CCErrTopoGetModuleFailed = 1101034
@@ -325,7 +348,7 @@ const (
 	// CCErrorTopoImportAssociation  import association error
 	CCErrorTopoImportAssociation = 1101049
 	// got multiple association kind with a id
-	CCErrorTopoGetMultipleAssoKindInstWithOneID = 1101050
+	CCErrorTopoGetMultipleAssocKindInstWithOneID = 1101050
 	// delete a pre-defined association kind.
 	CCErrorTopoDeletePredefinedAssociationKind = 1101051
 	// create new instance for a new association, but association map is 1:1
@@ -343,41 +366,41 @@ const (
 	// object instance's bk_inst_name filed is not string
 	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
 	// create model's instance patch, but instance's name is duplicate.
-	CCErrorTopoMutipleObjectInstanceName = 1101059
+	CCErrorTopoMultipleObjectInstanceName = 1101059
 
 	CCErrorTopoAssociationKindHasBeenUsed                     = 1101060
 	CCErrorTopoCreateMultipleInstancesForOneToManyAssociation = 1101061
-	CCErrTopoAppDeleteFailed                                  = 1001031
-	CCErrTopoAppUpdateFailed                                  = 1001032
-	CCErrTopoAppSearchFailed                                  = 1001033
-	CCErrTopoAppCreateFailed                                  = 1001034
-	CCErrTopoForbiddenToDeleteModelFailed                     = 1001035
-	CCErrTopoMainlineCreatFailed                              = 1001037
-	CCErrTopoMainlineDeleteFailed                             = 1001038
-	CCErrTopoMainlineSelectFailed                             = 1001039
-	CCErrTopoTopoSelectFailed                                 = 1001040
-	CCErrTopoUserGroupCreateFailed                            = 1001041
-	CCErrTopoUserGroupDeleteFailed                            = 1001042
-	CCErrTopoUserGroupUpdateFailed                            = 1001043
-	CCErrTopoUserGroupSelectFailed                            = 1001044
-	CCErrTopoUserGroupPrivilegeUpdateFailed                   = 1001045
-	CCErrTopoUserGroupPrivilegeSelectFailed                   = 1001046
-	CCErrTopoUserPrivilegeSelectFailed                        = 1001047
-	CCErrTopoRolePrivilegeCreateFailed                        = 1001048
-	CCErrTopoDeleteMainLineObjectAndInstNameRepeat            = 1001049
-	CCErrHostNotAllowedToMutiBiz                              = 1001050
-	CCErrTopoGraphicsSearchFailed                             = 1001051
-	CCErrTopoGraphicsUpdateFailed                             = 1001052
-	CCErrTopoObjectUniqueCreateFailed                         = 1001060
-	CCErrTopoObjectUniqueUpdateFailed                         = 1001061
-	CCErrTopoObjectUniqueDeleteFailed                         = 1001062
-	CCErrTopoObjectUniqueSearchFailed                         = 1001063
-	CCErrTopoObjectPropertyNotFound                           = 1001064
-	CCErrTopoObjectPropertyUsedByUnique                       = 1001065
-	CCErrTopoObjectUniqueKeyKindInvalid                       = 1001066
-	CCErrTopoObjectUniquePresetCouldNotDelOrEdit              = 1001067
-	CCErrTopoObjectUniqueCanNotHasMutiMustCheck               = 1001068
-	CCErrTopoObjectUniqueShouldHaveMoreThanOne                = 1001069
+	CCErrTopoAppDeleteFailed                                  = 1101131
+	CCErrTopoAppUpdateFailed                                  = 1101132
+	CCErrTopoAppSearchFailed                                  = 1101133
+	CCErrTopoAppCreateFailed                                  = 1101134
+	CCErrTopoForbiddenToDeleteModelFailed                     = 1101135
+	CCErrTopoMainlineCreatFailed                              = 1101137
+	CCErrTopoMainlineDeleteFailed                             = 1101138
+	CCErrTopoMainlineSelectFailed                             = 1101139
+	CCErrTopoTopoSelectFailed                                 = 1101140
+	CCErrTopoUserGroupCreateFailed                            = 1101141
+	CCErrTopoUserGroupDeleteFailed                            = 1101142
+	CCErrTopoUserGroupUpdateFailed                            = 1101143
+	CCErrTopoUserGroupSelectFailed                            = 1101144
+	CCErrTopoUserGroupPrivilegeUpdateFailed                   = 1101145
+	CCErrTopoUserGroupPrivilegeSelectFailed                   = 1101146
+	CCErrTopoUserPrivilegeSelectFailed                        = 1101147
+	CCErrTopoRolePrivilegeCreateFailed                        = 1101148
+	CCErrTopoDeleteMainLineObjectAndInstNameRepeat            = 1101149
+	CCErrHostNotAllowedToMutiBiz                              = 1101150
+	CCErrTopoGraphicsSearchFailed                             = 1101151
+	CCErrTopoGraphicsUpdateFailed                             = 1101152
+	CCErrTopoObjectUniqueCreateFailed                         = 1101160
+	CCErrTopoObjectUniqueUpdateFailed                         = 1101161
+	CCErrTopoObjectUniqueDeleteFailed                         = 1101162
+	CCErrTopoObjectUniqueSearchFailed                         = 1101163
+	CCErrTopoObjectPropertyNotFound                           = 1101164
+	CCErrTopoObjectPropertyUsedByUnique                       = 1101165
+	CCErrTopoObjectUniqueKeyKindInvalid                       = 1101166
+	CCErrTopoObjectUniquePresetCouldNotDelOrEdit              = 1101167
+	CCErrTopoObjectUniqueCanNotHasMultipleMustCheck           = 1101168
+	CCErrTopoObjectUniqueShouldHaveMoreThanOne                = 1101069
 	// association kind has been apply to object
 	CCErrorTopoAssKindHasApplyToObject = 1101070
 	// pre definition association kind can not be delete
@@ -386,19 +409,28 @@ const (
 	CCErrorAsstInstIsNotExist           = 1101073
 	CCErrorInstToAsstIsNotExist         = 1101074
 	CCErrorInstHasAsst                  = 1101075
-	CCErrTopoCreateAssoKindFailed       = 1101076
+	CCErrTopoCreateAssocKindFailed      = 1101076
 	CCErrTopoUpdateAssoKindFailed       = 1101077
 	CCErrTopoDeleteAssoKindFailed       = 1101078
-	CCErrTopoMulueIDNotfoundFailed      = 1101080
+	CCErrTopoModuleIDNotfoundFailed     = 1101080
 	CCErrTopoBkAppNotAllowedDelete      = 1101081
 	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
 	CCErrorTopoAssociationKindMainlineUnavailable = 1101082
 	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
 	CCErrorTopoAssociationKindInconsistent = 1101083
-	// CCErrorTopoModleStopped means model have been stopped to use
-	CCErrorTopoModleStopped = 1101084
+	// CCErrorTopoModelStopped means model have been stopped to use
+	CCErrorTopoModelStopped = 1101084
 	// mainline's object unique can not be updated, deleted or create new rules.
-	CCErrorTopoMainlineObjectCanNotBeChanged = 1101085
+	CCErrorTopoMainlineObjectCanNotBeChanged   = 1101085
+	CCErrorTopoGetAuthorizedBusinessListFailed = 1101086
+	CCErrTopoArchiveBusinessHasHost            = 1101087
+
+	CCErrorTopoFullTextFindErr              = 1101088
+	CCErrorTopoFullTextClientNotInitialized = 1101089
+
+	CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden = 1101090
+	CCErrorTopoUpdateModuleFromTplNameForbidden            = 1101091
+	CCErrTopoCanNotAddRequiredAttributeForMailineModel     = 1101092
 
 	// object controller 1102XXX
 
@@ -446,7 +478,7 @@ const (
 	// migrate 1105XXX
 	//  CCErrCommMigrateFailed failed to migrate
 	CCErrCommMigrateFailed        = 1105000
-	CCErrCommInitAuthcenterFailed = 1105001
+	CCErrCommInitAuthCenterFailed = 1105001
 
 	// host controller 1106XXX
 	CCErrHostSelectInst                  = 1106000
@@ -530,10 +562,13 @@ const (
 	CCErrCreateServiceInstanceWithWrongHTTPMethod         = 1108038
 	CCErrCreateRawProcessInstanceOnTemplateInstance       = 1108039
 	CCErrProcRemoveTemplateBindingOnModule                = 1108040
+	CCErrProcReconstructServiceInstanceNameFailed         = 1108041
+
+	CCErrProcUnbindModuleServiceTemplateDisabled = 1108042
 
 	// audit log 1109XXX
-	CCErrAuditSaveLogFaile      = 1109001
-	CCErrAuditTakeSnapshotFaile = 1109001
+	CCErrAuditSaveLogFailed      = 1109001
+	CCErrAuditTakeSnapshotFailed = 1109001
 
 	// host server
 	CCErrHostGetFail              = 1110001
@@ -545,7 +580,7 @@ const (
 	CCErrHostFiledValdFail        = 1110007
 	CCErrHostNotFound             = 1110008
 	CCErrHostLength               = 1110009
-	CCErrHostDetailFail           = 1110010
+	CCErrHostDetailFail           = 1111011
 	CCErrHostSnap                 = 1110011
 	CCErrHostFeildValidFail       = 1110012
 	CCErrHostFavCreateFail        = 1110013
@@ -578,17 +613,17 @@ const (
 	CCErrCloudSyncStartFail         = 1110039
 
 	// hostserver api machinery new error code
-	CCErrAddUserCustomQueryFaild       = 1110040
-	CCErrUpdateUserCustomQueryFaild    = 1110041
-	CCErrDeleteUserCustomQueryFaild    = 1110042
-	CCErrSearchUserCustomQueryFaild    = 1110043
-	CCErrGetUserCustomQueryDetailFaild = 1110044
-	CCErrHostModuleConfigFaild         = 1110045
-	CCErrHostGetSetFaild               = 1110046
-	CCErrHostGetAPPFail                = 1110047
-	CCErrHostAPPNotFoundFail           = 1110048
-	CCErrHostGetModuleFail             = 1110049
-	CCErrHostAgentStatusFail           = 1110050
+	CCErrAddUserCustomQueryFailed       = 1110040
+	CCErrUpdateUserCustomQueryFailed    = 1110041
+	CCErrDeleteUserCustomQueryFailed    = 1110042
+	CCErrSearchUserCustomQueryFailed    = 1110043
+	CCErrGetUserCustomQueryDetailFailed = 1110044
+	CCErrHostModuleConfigFailed         = 1110045
+	CCErrHostGetSetFailed               = 1110046
+	CCErrHostGetAPPFail                 = 1110047
+	CCErrHostAPPNotFoundFail            = 1110048
+	CCErrHostGetModuleFail              = 1110049
+	CCErrHostAgentStatusFail            = 1110050
 	// CCErrHostNotResourceFail The resource pool was not found"
 	CCErrHostNotResourceFail = 1110051
 	// CCErrHostBelongResourceFail The host is already in the resource pool
@@ -601,11 +636,11 @@ const (
 	CCErrDeleteHostFromBusiness = 1110055
 	// CCErrHostNotBelongIDLEModuleErr hostID[%#v] not belong to business
 	CCErrHostNotBelongIDLEModuleErr = 1110056
-	// CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed Module does not exist or there are multiple built-in modules
-	CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed = 1110057
-	CCErrHostSearchNeedObjectInstIDErr                    = 1110058
+	// CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed Module does not exist or there are multiple built-in modules
+	CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed = 1110057
+	CCErrHostSearchNeedObjectInstIDErr                        = 1110058
 
-	//web  1111XXX
+	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001
 	CCErrWebFileSaveFail                = 1111002
 	CCErrWebOpenFileFail                = 1111003
@@ -678,6 +713,10 @@ const (
 	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
 	CCErrCoreServiceModuleNotBoundWithTemplate                                = 1113021
 	CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate                    = 1113022
+	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 删除多个模型中的%s数据
+	CCErrCoreServiceDeleteMultpleObjectIDRecordErr = 1113023
+	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 不允许删除在唯一校验中的字段
+	CCErrCoreServiceNotAllowUnqiueAttr = 1113024
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
@@ -714,12 +753,12 @@ const (
 
 	/** TODO: 以下错误码需要改造 **/
 
-	//json
-	CC_ERR_Comm_JSON_DECODE     = 3001
-	CC_ERR_Comm_JSON_DECODE_STR = "json decode failed!"
-	CC_ERR_Comm_JSON_ENCODE     = 3002
-	CC_ERR_Comm_JSON_ENCODE_STR = "json encode failed!"
+	// json
+	CCErrCommJsonDecode    = 3001
+	CCErrCommJsonDecodeStr = "json decode failed!"
+	CCErrCommJsonEncode    = 3002
+	CCErrCommJsonEncodeStr = "json encode failed!"
 
-	Json_Marshal_ERR     = 9000
-	Json_Marshal_ERR_STR = "json marshal error"
+	JsonMarshalErr    = 9000
+	JsonMarshalErrStr = "json marshal error"
 )

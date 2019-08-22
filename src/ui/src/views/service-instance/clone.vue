@@ -1,7 +1,7 @@
 <template>
     <div class="clone-layout">
         <div class="host-type clearfix">
-            <label class="type-label fl">{{$t('克隆的主机')}}</label>
+            <label class="type-label fl">{{$t('克隆到')}}</label>
             <div class="type-item fl">
                 <input class="type-radio"
                     type="radio"
@@ -9,7 +9,7 @@
                     name="hostTarget"
                     v-model="hostTarget"
                     :value="targetName.source">
-                <label for="sourceHost">{{$t('BusinessTopology["当前主机"]')}}</label>
+                <label for="sourceHost">{{$t('当前主机')}}</label>
             </div>
             <div class="type-item fl">
                 <input class="type-radio"
@@ -18,7 +18,7 @@
                     name="hostTarget"
                     v-model="hostTarget"
                     :value="targetName.other">
-                <label for="otherHost">{{$t('BusinessTopology["其他主机"]')}}</label>
+                <label for="otherHost">{{$t('其他主机')}}</label>
             </div>
         </div>
         <component :is="hostTarget"
@@ -63,7 +63,7 @@
         },
         async created () {
             try {
-                this.$store.commit('setHeaderTitle', `${this.$t('BusinessTopology["克隆实例"]')}【${this.$route.query.title}】`)
+                this.$store.commit('setHeaderTitle', `${this.$t('克隆实例')}【${this.$route.query.title}】`)
                 const [module, processes] = await Promise.all([
                     this.getModuleInstance(),
                     this.getServiceInstanceProcesses()

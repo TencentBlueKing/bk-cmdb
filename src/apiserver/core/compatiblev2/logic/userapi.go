@@ -41,12 +41,12 @@ func (cli *UserAPI) GetNameByID(req *restful.Request, detailURL string) (string,
 
 	js, err := simplejson.NewJson([]byte(respV3))
 	if nil != err {
-		return "", err, common.CC_ERR_Comm_JSON_DECODE
+		return "", err, common.CCErrCommJsonDecode
 	}
 
 	resV3, err := js.Map()
 	if nil != err {
-		return "", err, common.CC_ERR_Comm_JSON_DECODE
+		return "", err, common.CCErrCommJsonDecode
 	}
 	result, _ := resV3["result"].(bool)
 

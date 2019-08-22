@@ -49,7 +49,7 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 		switch key.Kind {
 		case metadata.UniqueKeyKindProperty:
 		default:
-			blog.Errorf("[CreateObjectUnique] invalid key kind: %s", key.Kind)
+			blog.Errorf("[CreateObjectUnique] invalid key kind: %s, rid: %s", key.Kind, ctx.ReqID)
 			return 0, ctx.Error.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
 		}
 	}
@@ -60,24 +60,24 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 		cond.Field("must_check").Eq(true)
 		count, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(ctx)
 		if nil != err {
-			blog.Errorf("[CreateObjectUnique] check must check error: %#v", err)
+			blog.Errorf("[CreateObjectUnique] check must check error: %#v, rid: %s", err, ctx.ReqID)
 			return 0, ctx.Error.Error(common.CCErrObjectDBOpErrno)
 		}
 		if count > 0 {
-			blog.Errorf("[CreateObjectUnique] model could not have multiple must check unique")
-			return 0, ctx.Error.Error(common.CCErrTopoObjectUniqueCanNotHasMutiMustCheck)
+			blog.Errorf("[CreateObjectUnique] model could not have multiple must check unique, rid: %s", ctx.ReqID)
+			return 0, ctx.Error.Error(common.CCErrTopoObjectUniqueCanNotHasMultipleMustCheck)
 		}
 	}
 
 	err := m.recheckUniqueForExistsInsts(ctx, objID, inputParam.Data.Keys, inputParam.Data.MustCheck, inputParam.Data.Metadata)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v", objID, inputParam, err)
-		return 0, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
+		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v err: %#v, rid: %s", objID, inputParam, err, ctx.ReqID)
+		return 0, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "instance")
 	}
 
 	id, err := m.dbProxy.NextSequence(ctx, common.BKTableNameObjUnique)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] NextSequence error: %#v", err)
+		blog.Errorf("[CreateObjectUnique] NextSequence error: %#v, rid: %s", err, ctx.ReqID)
 		return 0, ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -96,7 +96,7 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 	}
 	err = m.dbProxy.Table(common.BKTableNameObjUnique).Insert(ctx, &unique)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] Insert error: %#v, raw: %#v", err, &unique)
+		blog.Errorf("[CreateObjectUnique] Insert error: %#v, raw: %#v, rid: %s", err, &unique, ctx.ReqID)
 		return 0, ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -112,7 +112,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 		switch key.Kind {
 		case metadata.UniqueKeyKindProperty:
 		default:
-			blog.Errorf("[UpdateObjectUnique] invalid key kind: %s", key.Kind)
+			blog.Errorf("[UpdateObjectUnique] invalid key kind: %s, rid: %s", key.Kind, ctx.ReqID)
 			return ctx.Error.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
 		}
 	}
@@ -124,19 +124,19 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 		cond.Field("id").NotEq(id)
 		count, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(ctx)
 		if nil != err {
-			blog.Errorf("[UpdateObjectUnique] check must check  error: %#v", err)
+			blog.Errorf("[UpdateObjectUnique] check must check  error: %#v, rid: %s", err, ctx.ReqID)
 			return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 		}
 		if count > 0 {
-			blog.Errorf("[UpdateObjectUnique] model could not have multiple must check unique")
-			return ctx.Error.Error(common.CCErrTopoObjectUniqueCanNotHasMutiMustCheck)
+			blog.Errorf("[UpdateObjectUnique] model could not have multiple must check unique, rid: %s", ctx.ReqID)
+			return ctx.Error.Error(common.CCErrTopoObjectUniqueCanNotHasMultipleMustCheck)
 		}
 	}
 
 	err := m.recheckUniqueForExistsInsts(ctx, objID, unique.Keys, unique.MustCheck, unique.Metadata)
 	if nil != err {
-		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v", objID, unique, err)
-		return ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
+		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v, rid: %s", objID, unique, err, ctx.ReqID)
+		return ctx.Error.Errorf(common.CCErrCommDuplicateItem, "instance")
 	}
 
 	cond := condition.CreateCondition()
@@ -150,18 +150,18 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 	oldunique := metadata.ObjectUnique{}
 	err = m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).One(ctx, &oldunique)
 	if nil != err {
-		blog.Errorf("[UpdateObjectUnique] find error: %s, raw: %#v", err, cond.ToMapStr())
+		blog.Errorf("[UpdateObjectUnique] find error: %s, raw: %#v, rid: %s", err, cond.ToMapStr(), ctx.ReqID)
 		return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
 	if oldunique.Ispre {
-		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %+v %v", oldunique, err)
+		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %+v %v, rid: %s", oldunique, err, ctx.ReqID)
 		return ctx.Error.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameObjUnique).Update(ctx, cond.ToMapStr(), &unique)
 	if nil != err {
-		blog.Errorf("[UpdateObjectUnique] Update error: %s, raw: %#v", err, &unique)
+		blog.Errorf("[UpdateObjectUnique] Update error: %s, raw: %#v, rid: %s", err, &unique, ctx.ReqID)
 		return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 	return nil
@@ -169,20 +169,30 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 
 func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID string, id uint64, meta metadata.DeleteModelAttrUnique) error {
 	cond := condition.CreateCondition()
-	cond.Field("id").Eq(id)
+	cond.Field(common.BKFieldID).Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKOwnerIDField).Eq(ctx.SupplierAccount)
 
 	unique := metadata.ObjectUnique{}
 	err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).One(ctx, &unique)
 	if nil != err {
-		blog.Errorf("[DeleteObjectUnique] find error: %s, raw: %#v", err, cond.ToMapStr())
+		blog.Errorf("[DeleteObjectUnique] find error: %s, raw: %#v, rid: %s", err, cond.ToMapStr(), ctx.ReqID)
 		return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
 	if unique.Ispre {
-		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain: %+v, %v", unique, err)
+		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain: %+v, %v, rid: %s", unique, err, ctx.ReqID)
 		return ctx.Error.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
+	}
+
+	exist, err := m.checkUniqueRequireExist(ctx, objID, []uint64{id})
+	if err != nil {
+		blog.ErrorJSON("deleteModelAttrUnique check unique require err:%s, cond:%s, rid:%s", err.Error(), cond.ToMapStr(), ctx.ReqID)
+		return err
+	}
+	if !exist {
+		blog.ErrorJSON("deleteModelAttrUnique check unique require result. not found other require unique, cond:%s, rid:%s", cond.ToMapStr(), ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne)
 	}
 
 	fCond := cond.ToMapStr()
@@ -195,7 +205,7 @@ func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID st
 
 	err = m.dbProxy.Table(common.BKTableNameObjUnique).Delete(ctx, fCond)
 	if nil != err {
-		blog.Errorf("[DeleteObjectUnique] Delete error: %s, raw: %#v", err, fCond)
+		blog.Errorf("[DeleteObjectUnique] Delete error: %s, raw: %#v, rid: %s", err, fCond, ctx.ReqID)
 		return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -228,7 +238,7 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 
 	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(fCond).All(ctx, &propertys)
 	if err != nil {
-		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts find propertys for %s failed %s: %s", objID, err)
+		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts find propertys for %s failed %s: %s, rid: %s", objID, err, ctx.ReqID)
 		return err
 	}
 
@@ -237,7 +247,7 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 		keynames = append(keynames, property.PropertyID)
 	}
 	if len(keynames) <= 0 {
-		blog.Warnf("[ObjectUnique] recheckUniqueForExistsInsts keys empty for [%s] %+v", objID, keys)
+		blog.Warnf("[ObjectUnique] recheckUniqueForExistsInsts keys empty for [%s] %+v, rid: %s", objID, keys, ctx.ReqID)
 		return nil
 	}
 
@@ -285,7 +295,7 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 	}{}
 	err = m.dbProxy.Table(common.GetInstTableName(objID)).AggregateOne(ctx, pipeline, &result)
 	if err != nil && !m.dbProxy.IsNotFoundError(err) {
-		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts failed %s, pipeline: %s", err, pipeline)
+		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts failed %s, pipeline: %s, rid: %s", err, pipeline, ctx.ReqID)
 		return err
 	}
 
@@ -294,4 +304,26 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 	}
 
 	return nil
+}
+
+// checkUniqueRequireExist  check if ehter is arequired qnique check
+// ignoreUnqiqueIDS 除ignoreUnqiqueIDS之外是否有唯一校验项目
+func (m *modelAttrUnique) checkUniqueRequireExist(ctx core.ContextParams, objID string, ignoreUnqiqueIDS []uint64) (bool, error) {
+	cond := condition.CreateCondition()
+	if len(ignoreUnqiqueIDS) > 0 {
+		cond.Field(common.BKFieldID).NotIn(ignoreUnqiqueIDS)
+	}
+	cond.Field(common.BKObjIDField).Eq(objID)
+	cond.Field("must_check").Eq(true)
+
+	cnt, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(ctx)
+	if nil != err {
+		blog.ErrorJSON("[checkUniqueRequireExist] find error: %s, raw: %s, rid: %s", err, cond.ToMapStr(), ctx.ReqID)
+		return false, ctx.Error.Error(common.CCErrObjectDBOpErrno)
+	}
+	if cnt > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }

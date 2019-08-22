@@ -82,7 +82,7 @@ func (phpapi *PHPAPI) GetHostByCond(ctx context.Context, param *meta.QueryCondit
 	return resMap, nil
 }
 
-//search host helpers
+// search host helpers
 func (phpapi *PHPAPI) GetHostMapByCond(ctx context.Context, condition map[string]interface{}) (map[int64]map[string]interface{}, []int64, errors.CCError) {
 	hostMap := make(map[int64]map[string]interface{})
 	hostIDArr := make([]int64, 0)
@@ -92,7 +92,7 @@ func (phpapi *PHPAPI) GetHostMapByCond(ctx context.Context, condition map[string
 		Fields:    "",
 		Condition: condition,
 	}
-	res, err := phpapi.logic.CoreAPI.HostController().Host().GetHosts(ctx, phpapi.header, searchParams)
+	res, err := phpapi.logic.CoreAPI.CoreService().Host().GetHosts(ctx, phpapi.header, searchParams)
 
 	if nil != err {
 		blog.Errorf("getHostMapByCond error params:%+v, error:%s,rid:%s", condition, err.Error(), phpapi.rid)
@@ -108,7 +108,7 @@ func (phpapi *PHPAPI) GetHostMapByCond(ctx context.Context, condition map[string
 		HostID, err := host.Int64(common.BKHostIDField)
 		if nil != err {
 			blog.Errorf("getHostMapByCond  hostID not integer, err:%s,input:%s,host:%+v,rid:%s", err.Error(), condition, host, phpapi.rid)
-			return nil, nil, phpapi.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+			return nil, nil, phpapi.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 		}
 
 		hostMap[HostID] = host
@@ -161,22 +161,12 @@ func (phpapi *PHPAPI) GetCustomerPropertyByOwner(ctx context.Context, objType st
 		return nil, phpapi.ccErr.New(res.Code, res.ErrMsg)
 	}
 	customAttrArr := make([]meta.Attribute, 0)
-	for _, attr := range res.Data.Info { //hostAttrArr {
+	for _, attr := range res.Data.Info { // hostAttrArr {
 		if false == attr.IsPre {
 			customAttrArr = append(customAttrArr, attr)
 		}
 	}
 	return customAttrArr, nil
-}
-
-// In_existIpArr exsit ip in array
-func (phpapi *PHPAPI) In_existIpArr(arr []string, ip string) bool {
-	for _, v := range arr {
-		if ip == v {
-			return true
-		}
-	}
-	return false
 }
 
 func (phpapi *PHPAPI) getObjByCondition(ctx context.Context, dat *meta.QueryCondition, objType string) ([]mapstr.MapStr, errors.CCError) {

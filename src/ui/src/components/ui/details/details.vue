@@ -38,7 +38,7 @@
                         active: !$isAuthorized(editAuth),
                         auth: [editAuth]
                     }">
-                    <bk-button class="button-edit" type="primary"
+                    <bk-button class="button-edit" theme="primary"
                         :disabled="!$isAuthorized(editAuth)"
                         @click="handleEdit">
                         {{editText}}
@@ -50,7 +50,7 @@
                         active: !$isAuthorized(deleteAuth),
                         auth: [deleteAuth]
                     }">
-                    <bk-button class="button-delete" type="danger"
+                    <bk-button class="button-delete" theme="danger"
                         :disabled="!$isAuthorized(deleteAuth)"
                         @click="handleDelete">
                         {{deleteText}}
@@ -111,10 +111,10 @@
         },
         computed: {
             editText () {
-                return this.editButtonText || this.$t("Common['编辑']")
+                return this.editButtonText || this.$t('编辑')
             },
             deleteText () {
-                return this.deleteButtonText || this.$t("Common['删除']")
+                return this.deleteButtonText || this.$t('删除')
             }
         },
         mounted () {

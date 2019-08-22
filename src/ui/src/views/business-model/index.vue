@@ -4,7 +4,7 @@
             style="text-align: left;"
             :feature-name="'modelBusiness'"
             :show-tips="showFeatureTips"
-            :desc="$t('ModelManagement[\'业务层级提示\']')"
+            :desc="$t('业务层级提示')"
             :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%882%EF%BC%89%E6%96%B0%E5%A2%9E%E8%87%AA%E5%AE%9A%E4%B9%89%E5%B1%82%E7%BA%A7'"
             @close-tips="showFeatureTips = false">
         </feature-tips>
@@ -31,7 +31,7 @@
                     }"
                     v-cursor="{
                         active: !createAuth,
-                        auth: [OPERATION.SYSTEM_TOPOLOGY]
+                        auth: [$OPERATION.SYSTEM_TOPOLOGY]
                     }"
                     v-if="canAddLevel(model)"
                     @click="handleAddLevel(model)">
@@ -41,7 +41,7 @@
         <the-create-model
             :is-show.sync="addLevel.showDialog"
             :is-main-line="true"
-            :title="$t('ModelManagement[\'新建层级\']')"
+            :title="$t('新建层级')"
             @confirm="handleCreateLevel"
         ></the-create-model>
     </div>
@@ -51,7 +51,6 @@
     import { mapGetters, mapActions } from 'vuex'
     import theCreateModel from '@/components/model-manage/_create-model'
     import featureTips from '@/components/feature-tips/index'
-    import { OPERATION } from './router.config.js'
     const NODE_MARGIN = 62
 
     export default {
@@ -62,7 +61,6 @@
         data () {
             return {
                 showFeatureTips: false,
-                OPERATION,
                 margin: NODE_MARGIN * 1.5,
                 topo: [],
                 innerModel: ['biz', 'set', 'module', 'host'],
@@ -76,7 +74,7 @@
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView', 'featureTipsParams']),
             ...mapGetters('objectModelClassify', ['models']),
             createAuth () {
-                return this.$isAuthorized(OPERATION.SYSTEM_TOPOLOGY)
+                return this.$isAuthorized(this.$OPERATION.SYSTEM_TOPOLOGY)
             }
         },
         created () {

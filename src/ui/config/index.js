@@ -6,7 +6,6 @@ const path = require('path')
 const fs = require('fs')
 
 const config = {
-    'BUILD_VERSION': '',
     'BUILD_TITLE': '配置平台 | 蓝鲸智云企业版',
     'BUILD_OUTPUT': '../bin/enterprise/cmdb'
 }
@@ -27,7 +26,8 @@ const dev = {
         'AUTH_CENTER': '{}',
         'BUILD_VERSION': 'dev',
         'USER_ROLE': '"1"',
-        'USER_NAME': '"admin"'
+        'USER_NAME': '"admin"',
+        'FULL_TEXT_SEARCH': '"off"'
     }),
 
     // Paths
@@ -88,12 +88,14 @@ module.exports = {
         config: Object.assign({}, config, {
             'API_URL': '{{.site}}',
             'API_VERSION': '{{.version}}',
+            'BUILD_VERSION': '{{.ccversion}}',
             'API_LOGIN': '{{.curl}}',
             'AGENT_URL': '{{.agentAppUrl}}',
             'AUTH_SCHEME': '{{.authscheme}}',
             'AUTH_CENTER': '{{.authCenter}}',
             'USER_ROLE': '{{.role}}',
-            'USER_NAME': '{{.userName}}'
+            'USER_NAME': '{{.userName}}',
+            'FULL_TEXT_SEARCH': '{{.fullTextSearch}}'
         }),
 
         // Template for index.html

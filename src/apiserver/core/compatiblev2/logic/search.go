@@ -77,7 +77,7 @@ func (lgc *Logics) GetAllHostAndModuleRelation(ctx context.Context) ([]mapstr.Ma
 		if nil != err {
 			blog.Errorf("GetAllHostAndModuleRelation not found app id, app info:%+v, owner:%s, rid:%s", app, lgc.ownerID, lgc.rid)
 			// CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
-			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 		hostInfoArr, ok := hostAppRelation[appID]
 		if ok {

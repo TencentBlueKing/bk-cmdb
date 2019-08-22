@@ -1,9 +1,10 @@
 <template>
     <div class="relation-topology-layout" :class="{ 'full-screen': fullScreen }">
-        <bk-button class="exit-full-screen icon-cc-resize-small" size="small" type="default"
+        <bk-button class="exit-full-screen" size="small" theme="default"
             v-show="fullScreen"
             @click="toggleFullScreen(false)">
-            {{$t('Common["退出"]')}}
+            <i class="icon-cc-resize-small"></i>
+            {{$t('退出')}}
         </bk-button>
         <div class="tolology-loading" v-bkloading="{ isLoading: $loading(getRelationRequestId) }">
             <div class="topology-container" ref="container">
@@ -25,7 +26,7 @@
             @mouseleave="handleTooltipsLeave">
             <a class="tooltips-option" href="javascript:void(0)"
                 @click="handleShowDetails">
-                {{$t('Common["详情信息"]')}}
+                {{$t('详情信息')}}
             </a>
         </div>
         <cmdb-topo-details
@@ -412,7 +413,7 @@
 
 <style lang="scss" scoped>
     .relation-topology-layout {
-        height: calc(100% - 64px);
+        height: 100%;
         background-color: #f9f9f9;
         position: relative;
         &.full-screen {

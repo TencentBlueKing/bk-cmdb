@@ -145,6 +145,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.Contains(string(*u), "/associationtype"):
 		from, to, isHit = rootPath, topoRoot, true
 
+	case strings.Contains(string(*u), "/find/full_text"):
+		from, to, isHit = rootPath, topoRoot, true
+
 	default:
 		isHit = false
 	}
@@ -155,6 +158,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	}
 	return false
 }
+
+// hostCloudAreaURLRegexp host server opeator cloud area api regex
+var hostCloudAreaURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(cloudarea|cloudarea/.*)$", verbs))
 
 // WithHost transform the host's url
 func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
@@ -180,7 +186,10 @@ func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 	case strings.HasPrefix(string(*u), rootPath+"/usercustom/"):
 		from, to, isHit = rootPath, hostRoot, true
 
-	case string(*u) == (rootPath + "/modulehost"):
+	case string(*u) == (rootPath + "/findmany/modulehost"):
+		from, to, isHit = rootPath, hostRoot, true
+
+	case hostCloudAreaURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, hostRoot, true
 
 	default:

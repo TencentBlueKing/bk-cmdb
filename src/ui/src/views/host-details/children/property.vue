@@ -1,19 +1,20 @@
 <template>
-    <div class="property">
+    <div class="property" v-bkloading="{
+        isLoading: $loading('updateHostInfo')
+    }">
         <div class="group"
             v-for="(group, index) in groupedProperties"
             :key="index">
             <h2 class="group-name">{{group.bk_group_name}}</h2>
-            <ul class="property-list clearfix">
-                <li class="property-item fl"
+            <ul class="property-list">
+                <li class="property-item"
                     v-for="property in group.properties"
                     :key="property.id">
                     <span class="property-name"
                         :title="property.bk_property_name">
                         {{property.bk_property_name}}
                     </span>
-                    <v-popover class="property-popover"
-                        trigger="hover"
+                    <bk-popover class="property-popover"
                         placement="bottom"
                         :disabled="!tooltipState[property.bk_property_id]"
                         :delay="300"
@@ -23,10 +24,10 @@
                             @mouseover="handleHover($event, property)">
                             {{$tools.getPropertyText(property, host)}}
                         </span>
-                        <span class="popover-content" slot="popover">
+                        <span class="popover-content" slot="content">
                             {{$tools.getPropertyText(property, host)}}
                         </span>
-                    </v-popover>
+                    </bk-popover>
                     <template v-if="isPropertyEditable(property)">
                         <i class="property-edit icon-cc-edit"
                             v-if="$isAuthorized(updateAuth)"
@@ -58,6 +59,18 @@
                             </span>
                         </div>
                     </template>
+                    <template v-if="$tools.getPropertyText(property, host) !== '--' && property !== editState.property">
+                        <div class="copy-box">
+                            <i class="property-copy icon-cc-details-copy" @click="handleCopy($tools.getPropertyText(property, host), property.bk_property_id)"></i>
+                            <transition name="fade">
+                                <span class="copy-tips"
+                                    :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
+                                    v-if="showCopyTips === property.bk_property_id">
+                                    {{$t('复制成功')}}
+                                </span>
+                            </transition>
+                        </div>
+                    </template>
                 </li>
             </ul>
         </div>
@@ -66,17 +79,17 @@
 
 <script>
     import { mapGetters, mapState } from 'vuex'
-    import { OPERATION, RESOURCE_HOST } from '../router.config.js'
+    import { RESOURCE_HOST } from '../router.config.js'
     export default {
         name: 'cmdb-host-property',
         data () {
             return {
-                OPERATION,
                 editState: {
                     property: null,
                     value: null
                 },
-                tooltipState: {}
+                tooltipState: {},
+                showCopyTips: false
             }
         },
         computed: {
@@ -88,9 +101,9 @@
             updateAuth () {
                 const isResourceHost = this.$route.name === RESOURCE_HOST
                 if (isResourceHost) {
-                    return OPERATION.U_RESOURCE_HOST
+                    return this.$OPERATION.U_RESOURCE_HOST
                 }
-                return OPERATION.U_HOST
+                return this.$OPERATION.U_HOST
             }
         },
         methods: {
@@ -103,19 +116,28 @@
                 this.editState.property = property
             },
             async confirm () {
-                const isValid = await this.$validator.validateAll()
-                if (!isValid) {
-                    return false
+                try {
+                    const isValid = await this.$validator.validateAll()
+                    if (!isValid) {
+                        return false
+                    }
+                    const { property, value } = this.editState
+                    await this.$store.dispatch('hostUpdate/updateHost', {
+                        params: this.$injectMetadata({
+                            [property.bk_property_id]: value,
+                            bk_host_id: this.host.bk_host_id
+                        }),
+                        config: {
+                            requestId: 'updateHostInfo'
+                        }
+                    })
+                    this.$store.commit('hostDetails/updateInfo', {
+                        [property.bk_property_id]: value
+                    })
+                    this.exitForm()
+                } catch (e) {
+                    console.error(e)
                 }
-                const { property, value } = this.editState
-                this.$store.dispatch('hostUpdate/updateHost', this.$injectMetadata({
-                    [property.bk_property_id]: value,
-                    bk_host_id: this.host.bk_host_id
-                }))
-                this.$store.commit('hostDetails/updateInfo', {
-                    [property.bk_property_id]: value
-                })
-                this.exitForm()
             },
             exitForm () {
                 this.editState.property = null
@@ -128,6 +150,17 @@
                 const rangeWidth = range.getBoundingClientRect().width
                 const threshold = Math.max(rangeWidth - target.offsetWidth, target.scrollWidth - target.offsetWidth)
                 this.$set(this.tooltipState, property.bk_property_id, threshold > 0.5)
+            },
+            handleCopy (copyText, propertyId) {
+                this.$copyText(copyText).then(() => {
+                    this.showCopyTips = propertyId
+                    const timer = setTimeout(() => {
+                        this.showCopyTips = false
+                        clearTimeout(timer)
+                    }, 200)
+                }, () => {
+                    this.$error(this.$t('复制失败'))
+                })
             }
         }
     }
@@ -145,7 +178,7 @@
             line-height: 21px;
             font-size: 16px;
             font-weight: normal;
-            color: #313238;
+            color: #333948;
             &:before {
                 content: "";
                 display: inline-block;
@@ -160,22 +193,27 @@
     .property-list {
         width: 1000px;
         margin: 25px 0 0 0;
-        line-height: 38px;
         color: #63656e;
+        display: flex;
+        flex-wrap: wrap;
         .property-item {
-            width: 50%;
-            font-size: 0;
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding-bottom: 8px;
+            display: flex;
             &:hover {
                 .property-edit {
+                    opacity: 1;
+                }
+                .property-copy {
                     display: inline-block;
                 }
             }
             .property-name {
                 position: relative;
-                display: inline-block;
                 width: 150px;
+                line-height: 30px;
                 padding: 0 16px 0 36px;
-                vertical-align: middle;
                 font-size: 14px;
                 color: #63656E;
                 @include ellipsis;
@@ -186,17 +224,20 @@
                 }
             }
             .property-value {
-                display: inline-block;
-                margin: 0 0 0 4px;
-                max-width: 310px;
+                margin: 6px 0 0 4px;
+                max-width: 296px;
                 font-size: 14px;
-                vertical-align: middle;
-                color: #313238;
-                @include ellipsis;
+                color: #313237;
+                overflow:hidden;
+                text-overflow:ellipsis;
+                word-break: break-all;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
             }
             .property-edit {
-                display: none;
-                margin: 0 0 0 8px;
+                opacity: 0;
+                margin: 8px 0 0 8px;
                 vertical-align: middle;
                 font-size: 16px;
                 color: #3c96ff;
@@ -205,18 +246,49 @@
                     opacity: .8;
                 }
                 &.disabled {
-                    opacity: 1;
                     color: #ccc;
                 }
             }
-            .property-form {
-                display: inline-block;
-                vertical-align: middle;
+            .property-copy {
+                margin: 6px 0 0 8px;
+                color: #3c96ff;
+                cursor: pointer;
+                display: none;
+            }
+            .copy-box {
+                position: relative;
+                .copy-tips {
+                    position: absolute;
+                    top: -22px;
+                    left: -18px;
+                    min-width: 70px;
+                    height: 26px;
+                    line-height: 26px;
+                    font-size: 12px;
+                    color: #ffffff;
+                    text-align: center;
+                    background-color: #9f9f9f;
+                    border-radius: 2px;
+                }
+                .fade-enter-active, .fade-leave-active {
+                    transition: all 0.5s;
+                }
+                .fade-enter {
+                    top: -14px;
+                    opacity: 0;
+                }
+                .fade-leave-to {
+                    top: -28px;
+                    opacity: 0;
+                }
             }
         }
     }
     .property-popover {
         display: inline-block;
+        /deep/ .bk-tooltip-ref {
+            outline: none;
+        }
     }
     .popover-content {
         display: inline-block;
@@ -230,12 +302,12 @@
         .bk-icon {
             display: inline-block;
             vertical-align: middle;
-            width: 26px;
-            height: 26px;
+            width: 30px;
+            height: 30px;
             margin: 0 0 0 6px;
             border-radius: 2px;
             border: 1px solid #c4c6cc;
-            line-height: 24px;
+            line-height: 28px;
             font-size: 12px;
             text-align: center;
             cursor: pointer;
@@ -248,6 +320,7 @@
             }
             &.form-cancel {
                 color: #979ba5;
+                font-size: 14px;
                 &:before {
                     display: inline-block;
                     transform: scale(0.66);
@@ -269,7 +342,7 @@
         .form-component {
             display: inline-block;
             vertical-align: middle;
-            width: 280px;
+            width: 270px;
             height: 30px;
             margin: 0 4px 0 0;
             /deep/ {
@@ -282,6 +355,10 @@
                 [name="date-select"] {
                     height: 30px ;
                     font-size: 14px !important;
+                }
+                .bk-form-input {
+                    height: 30px;
+                    float: left;
                 }
                 .bk-date-picker:after {
                     width: 30px;

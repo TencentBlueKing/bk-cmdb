@@ -7,26 +7,21 @@
                         active: !$isAuthorized(auth),
                         auth: [auth]
                     }">
-                    <bk-button class="options-button options-button-update" size="small" type="primary"
+                    <bk-button class="options-button options-button-update" size="small" theme="primary"
                         :disabled="!hasRelation || !$isAuthorized(auth)"
                         :class="{ active: activeComponent === 'cmdbRelationUpdate' }"
                         @click="handleShowUpdate">
-                        {{$t('Association["关联管理"]')}}
+                        {{$t('关联管理')}}
                         <i class="bk-icon icon-angle-down"></i>
                     </bk-button>
                 </span>
             </div>
             <div class="fr">
-                <bk-button type="default" class="options-full-screen"
+                <bk-button theme="default" class="options-full-screen"
                     v-show="activeComponent === 'cmdbRelationTopology'"
-                    v-tooltip="$t('Common[\'全屏\']')"
+                    v-bk-tooltips="$t('全屏')"
                     @click="handleFullScreen">
                     <i class="icon-cc-resize-full"></i>
-                </bk-button>
-                <bk-button class="options-button" :type="activeComponent === 'cmdbRelationTopology' ? 'primary' : 'default'"
-                    @click.prevent="activeComponent = 'cmdbRelationTopology'">
-                    <i class="icon-cc-resources"></i>
-                    {{$t('Association["拓扑"]')}}
                 </bk-button>
             </div>
         </div>
@@ -148,8 +143,8 @@
     }
     .relation-options {
         .options-full-screen {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             padding: 0;
             text-align: center;
             margin-right: 10px;
@@ -191,6 +186,6 @@
         }
     }
     .relation-component {
-        height: calc(100% - 54px);
+        height: calc(100% - 80px);
     }
 </style>

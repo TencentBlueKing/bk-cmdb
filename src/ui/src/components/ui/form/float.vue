@@ -1,12 +1,11 @@
 <template>
-    <div class="cmdb-form form-float">
-        <input class="cmdb-form-input form-float-input" type="text"
-            :placeholder="placeholder || $t('Form[\'请输入浮点数\']')"
-            :value="value"
-            :disabled="disabled"
-            @blur="handleInput($event)"
-            @change="handleChange">
-    </div>
+    <bk-input type="text" ref="input"
+        :placeholder="placeholder || $t('请输入浮点数')"
+        :value="value"
+        :disabled="disabled"
+        @blur="handleInput"
+        @change="handleChange">
+    </bk-input>
 </template>
 
 <script>
@@ -47,11 +46,11 @@
             this.localValue = this.value === '' ? null : this.value
         },
         methods: {
-            handleInput (event) {
-                if (this.validateFloat(event.target.value)) {
-                    this.localValue = parseFloat(event.target.value)
+            handleInput (value, event) {
+                if (this.validateFloat(value)) {
+                    this.localValue = parseFloat(value)
                 } else {
-                    event.target.value = null
+                    this.$refs.input.curValue = null
                     this.localValue = null
                 }
             },
@@ -64,18 +63,3 @@
         }
     }
 </script>
-
-<style lang="scss" scoped>
-    .form-float-input {
-        height: 36px;
-        width: 100%;
-        padding: 0 10px;
-        background-color: #fff;
-        border: 1px solid $cmdbBorderColor;
-        font-size: 14px;
-        outline: none;
-        &:focus{
-            border-color: $cmdbBorderFocusColor;
-        }
-    }
-</style>

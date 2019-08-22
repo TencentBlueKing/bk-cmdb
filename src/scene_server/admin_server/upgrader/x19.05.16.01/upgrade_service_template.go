@@ -183,6 +183,12 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 						inst.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 						inst.CreateTime = time.Now()
 						inst.LastTime = time.Now()
+						if inst.BindIP != nil {
+							tplBindIP := metadata.SocketBindType(*inst.BindIP)
+							*inst.BindIP = tplBindIP.IP()
+						} else {
+							inst.BindIP = new(string)
+						}
 						blog.InfoJSON("procInst: %s", inst)
 						if err = db.Table(common.BKTableNameBaseProcess).Insert(ctx, inst); err != nil {
 							return err
@@ -252,81 +258,86 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.ProcNum.Value = inst.ProcNum
 		template.ProcNum.AsDefaultValue = &True
 	}
-	if inst.StopCmd != "" {
-		template.StopCmd.Value = &inst.StopCmd
+	if inst.StopCmd != nil && len(*inst.StopCmd) > 0 {
+		template.StopCmd.Value = inst.StopCmd
 		template.StopCmd.AsDefaultValue = &True
 	}
-	if inst.RestartCmd != "" {
-		template.RestartCmd.Value = &inst.RestartCmd
+	if inst.RestartCmd != nil && len(*inst.RestartCmd) > 0 {
+		template.RestartCmd.Value = inst.RestartCmd
 		template.RestartCmd.AsDefaultValue = &True
 	}
-	if inst.ForceStopCmd != "" {
-		template.ForceStopCmd.Value = &inst.ForceStopCmd
+	if inst.ForceStopCmd != nil && len(*inst.ForceStopCmd) > 0 {
+		template.ForceStopCmd.Value = inst.ForceStopCmd
 		template.ForceStopCmd.AsDefaultValue = &True
 	}
-	if inst.FuncName != "" {
-		template.FuncName.Value = &inst.FuncName
+	if inst.FuncName != nil && len(*inst.FuncName) > 0 {
+		template.FuncName.Value = inst.FuncName
 		template.FuncName.AsDefaultValue = &True
 	}
-	if inst.WorkPath != "" {
-		template.WorkPath.Value = &inst.WorkPath
+	if inst.WorkPath != nil && len(*inst.WorkPath) > 0 {
+		template.WorkPath.Value = inst.WorkPath
 		template.WorkPath.AsDefaultValue = &True
 	}
 	if inst.BindIP != nil {
-		template.BindIP.Value = inst.BindIP
+		template.BindIP.Value = new(metadata.SocketBindType)
+		*template.BindIP.Value = metadata.SocketBindType(*inst.BindIP)
 		template.BindIP.AsDefaultValue = &True
 	}
 	if inst.Priority != nil && *inst.Priority > 0 {
 		template.Priority.Value = inst.Priority
 		template.Priority.AsDefaultValue = &True
 	}
-	if inst.ReloadCmd != "" {
-		template.ReloadCmd.Value = &inst.ReloadCmd
+	if inst.ReloadCmd != nil && len(*inst.ReloadCmd) > 0 {
+		template.ReloadCmd.Value = inst.ReloadCmd
 		template.ReloadCmd.AsDefaultValue = &True
 	}
-	if inst.ProcessName != "" {
-		template.ProcessName.Value = &inst.ProcessName
+	if inst.ProcessName != nil && len(*inst.ProcessName) > 0 {
+		template.ProcessName.Value = inst.ProcessName
 		template.ProcessName.AsDefaultValue = &True
 	}
-	if inst.Port != "" {
-		template.Port.Value = &inst.Port
+	if inst.Port != nil && len(*inst.Port) > 0 {
+		template.Port.Value = inst.Port
 		template.Port.AsDefaultValue = &True
 	}
-	if inst.PidFile != "" {
-		template.PidFile.Value = &inst.PidFile
+	if inst.PidFile != nil && len(*inst.PidFile) > 0 {
+		template.PidFile.Value = inst.PidFile
 		template.PidFile.AsDefaultValue = &True
 	}
-	if inst.AutoStart == true {
-		template.AutoStart.Value = &inst.AutoStart
+	if inst.AutoStart != nil {
+		template.AutoStart.Value = inst.AutoStart
 		template.AutoStart.AsDefaultValue = &True
 	}
 	if inst.AutoTimeGap != nil && *inst.AutoTimeGap > 0 {
 		template.AutoTimeGapSeconds.Value = inst.AutoTimeGap
 		template.AutoTimeGapSeconds.AsDefaultValue = &True
 	}
-	if inst.StartCmd != "" {
-		template.StartCmd.Value = &inst.StartCmd
+	if inst.StartCmd != nil && len(*inst.StartCmd) > 0 {
+		template.StartCmd.Value = inst.StartCmd
 		template.StartCmd.AsDefaultValue = &True
 	}
-	if inst.FuncID != "" {
-		template.FuncID.Value = &inst.FuncID
+	if inst.FuncID != nil && len(*inst.FuncID) > 0 {
+		template.FuncID.Value = inst.FuncID
 		template.FuncID.AsDefaultValue = &True
 	}
-	if inst.User != "" {
-		template.User.Value = &inst.User
+	if inst.User != nil && len(*inst.User) > 0 {
+		template.User.Value = inst.User
 		template.User.AsDefaultValue = &True
 	}
 	if inst.TimeoutSeconds != nil && *inst.TimeoutSeconds > 0 {
 		template.TimeoutSeconds.Value = inst.TimeoutSeconds
 		template.TimeoutSeconds.AsDefaultValue = &True
 	}
-	if inst.Protocol != "" {
-		template.Protocol.Value = &inst.Protocol
+	if inst.Protocol != nil && inst.Protocol.String() != "" {
+		template.Protocol.Value = inst.Protocol
 		template.Protocol.AsDefaultValue = &True
 	}
-	if inst.Description != "" {
-		template.Description.Value = &inst.Description
+	if inst.Description != nil && len(*inst.Description) > 0 {
+		template.Description.Value = inst.Description
 		template.Description.AsDefaultValue = &True
+	}
+	if inst.StartParamRegex != nil && len(*inst.StartParamRegex) > 0 {
+		template.StartParamRegex.Value = inst.StartParamRegex
+		template.StartParamRegex.AsDefaultValue = &True
 	}
 
 	return &template

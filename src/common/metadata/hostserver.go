@@ -13,6 +13,9 @@
 package metadata
 
 import (
+	"configcenter/src/common/querybuilder"
+	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -112,14 +115,59 @@ type HostModuleFind struct {
 	Page      BasePage `json:"page"`
 }
 
-//ip search info
+type ListHostsParameter struct {
+	SetIDs             []int64                   `json:"bk_set_ids"`
+	ModuleIDs          []int64                   `json:"bk_module_ids"`
+	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Page               BasePage                  `json:"page"`
+}
+
+type ListHostsWithNoBizParameter struct {
+	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Page               BasePage                  `json:"page"`
+}
+
+type TimeRange struct {
+	Start *time.Time
+	End   *time.Time
+}
+
+type ListHosts struct {
+	BizID              int64                     `json:"bk_biz_id,omitempty"`
+	SetIDs             []int64                   `json:"bk_set_ids"`
+	ModuleIDs          []int64                   `json:"bk_module_ids"`
+	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Page               BasePage                  `json:"page"`
+}
+
+func (option ListHosts) Validate() (string, error) {
+	if key, err := option.Page.Validate(); err != nil {
+		return fmt.Sprintf("page.%s", key), err
+	}
+
+	if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		return fmt.Sprintf("host_property_filter.%s", key), err
+	}
+
+	return "", nil
+}
+
+func (option ListHosts) GetHostPropertyFilter(ctx context.Context) (map[string]interface{}, error) {
+	mgoFilter, key, err := option.HostPropertyFilter.ToMgo()
+	if err != nil {
+		return nil, fmt.Errorf("invalid key:host_property_filter.%s, err: %s", key, err)
+	}
+	return mgoFilter, nil
+}
+
+// ip search info
 type IPInfo struct {
 	Data  []string `json:"data"`
 	Exact int64    `json:"exact"`
 	Flag  string   `json:"flag"`
 }
 
-//search condition
+// search condition
 type SearchCondition struct {
 	Fields    []string        `json:"fields"`
 	Condition []ConditionItem `json:"condition"`
@@ -129,6 +177,11 @@ type SearchCondition struct {
 type SearchHost struct {
 	Count int             `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
+}
+
+type ListHostResult struct {
+	Count int                      `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
 }
 
 func (sh SearchHost) ExtractHostIDs() *[]int64 {
@@ -292,4 +345,9 @@ type HostModuleRelationParameter struct {
 type DeleteHostFromBizParameter struct {
 	AppID     int64   `json:"bk_biz_id"`
 	HostIDArr []int64 `json:"bk_host_ids"`
+}
+
+// CloudAreaParameter search cloud area parameter
+type CloudAreaParameter struct {
+	Page BasePage `json:"page" bson:"page" field:"page"`
 }

@@ -108,8 +108,8 @@ func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, i
 		}
 		instHandler = instHandler.Sort(fileld)
 	}
-	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
-	blog.V(9).Infof("searchInstance with table: %s and parameters: %s, results: %+v", tableName, condition.ToMapStr(), results)
+	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).Fields(inputParam.Fields...).All(ctx, &results)
+	blog.V(9).Infof("searchInstance with table: %s and parameters: %s, results: %+v, rid: %s", tableName, condition.ToMapStr(), results, ctx.ReqID)
 
 	return results, err
 }

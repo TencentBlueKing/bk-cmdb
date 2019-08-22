@@ -2,12 +2,12 @@
     <div class="transfer-layout clearfix" v-bkloading="{ isLoading: loading }">
         <div class="columns-layout fl">
             <div class="business-layout">
-                <label class="business-label">{{$t('Common[\'业务\']')}}</label>
+                <label class="business-label">{{$t('业务')}}</label>
                 <cmdb-business-selector class="business-selector" v-model="businessId" :disabled="true">
                 </cmdb-business-selector>
             </div>
             <div class="tree-layout">
-                <cmdb-tree ref="topoTree" class="topo-tree"
+                <bk-big-tree ref="topoTree" class="topo-tree"
                     v-cursor="{
                         active: !$isAuthorized(transferResourceAuth),
                         auth: [transferResourceAuth],
@@ -21,20 +21,22 @@
                         childrenKey: 'child'
                     }"
                     :selectable="false"
+                    :expand-on-click="false"
                     :show-checkbox="shouldShowCheckbox"
                     :before-check="beforeNodeCheck"
+                    :check-strictly="false"
                     @node-click="handleNodeClick"
                     @check-change="handleNodeCheck">
                     <div class="node-info clearfix" slot-scope="{ node, data }">
                         <i :class="['node-model-icon fl', { 'is-checked': node.checked }]">{{modelIconMap[data.bk_obj_id]}}</i>
                         <span class="node-name">{{data.bk_inst_name}}</span>
                     </div>
-                </cmdb-tree>
+                </bk-big-tree>
             </div>
         </div>
         <div class="columns-layout fl">
             <div class="selected-layout">
-                <label class="selected-label">{{$t('Hosts["已选中模块"]')}}</label>
+                <label class="selected-label">{{$t('已选中模块')}}</label>
             </div>
             <div class="modules-layout">
                 <ul class="module-list">
@@ -52,22 +54,22 @@
         <div v-pre class="clearfix"></div>
         <div class="options-layout clearfix">
             <div class="increment-layout content-middle fl" v-if="showIncrementOption">
-                <label class="cmdb-form-radio cmdb-radio-small" for="increment" :title="$t('Hosts[\'增量更新\']')">
+                <label class="cmdb-form-radio cmdb-radio-small" for="increment" :title="$t('增量更新')">
                     <input id="increment" type="radio" v-model="increment" :value="true">
-                    <span class="cmdb-radio-text">{{$t('Hosts["增量更新"]')}}</span>
+                    <span class="cmdb-radio-text">{{$t('增量更新')}}</span>
                 </label>
-                <label class="cmdb-form-radio cmdb-radio-small" for="replacement" :title="$t('Hosts[\'完全替换\']')">
+                <label class="cmdb-form-radio cmdb-radio-small" for="replacement" :title="$t('完全替换')">
                     <input id="replacement" type="radio" v-model="increment" :value="false">
-                    <span class="cmdb-radio-text">{{$t('Hosts["完全替换"]')}}</span>
+                    <span class="cmdb-radio-text">{{$t('完全替换')}}</span>
                 </label>
             </div>
             <div class="button-layout content-middle fr">
-                <bk-button class="transfer-button" type="primary"
+                <bk-button class="transfer-button" theme="primary"
                     :disabled="!selectedModules.length"
                     @click="handleTransfer">
-                    {{$t('Common[\'确认转移\']')}}
+                    {{$t('确认转移')}}
                 </bk-button>
-                <bk-button class="transfer-button" type="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
+                <bk-button class="transfer-button" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
             </div>
         </div>
     </div>
@@ -114,13 +116,10 @@
                 return modules
             },
             showIncrementOption () {
-                if (this.selectedHosts.length === 1) {
-                    return false
-                }
                 const hasSpecialModule = this.selectedModules.some(node => {
                     return node.data.bk_inst_id === 'resource' || [1, 2].includes(node.data.default)
                 })
-                return !!this.selectedModules.length && !hasSpecialModule
+                return this.selectedModules.length && this.selectedHosts.length > 1 && !hasSpecialModule
             },
             loading () {
                 const requestIds = [
@@ -206,7 +205,7 @@
                         'default': 0,
                         'bk_obj_id': 'module',
                         'bk_inst_id': 'resource',
-                        'bk_inst_name': this.$t('HostResourcePool["资源池"]')
+                        'bk_inst_name': this.$t('资源池')
                     }, {
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
@@ -241,8 +240,8 @@
             shouldShowCheckbox (data) {
                 return data.bk_obj_id === 'module'
             },
-            handleNodeCheck (checked, nodes) {
-                this.selectedModules = nodes
+            handleNodeCheck (checked) {
+                this.selectedModules = checked.map(id => this.$refs.topoTree.getNodeById(id))
             },
             beforeNodeCheck (node) {
                 let confirmResolver
@@ -257,14 +256,15 @@
                 })
                 if (isSpecialNode && hasNormalNode) {
                     this.$bkInfo({
-                        title: this.$t('Common[\'转移确认\']', { target: data.bk_inst_name }),
+                        title: this.$t('转移确认', { target: data.bk_inst_name }),
                         confirmFn: () => {
                             this.$refs.topoTree.removeChecked({ emitEvent: true })
                             confirmResolver(true)
                         },
                         cancelFn: () => {
                             confirmResolver(false)
-                        }
+                        },
+                        zIndex: 2000
                     })
                 } else {
                     const specialNodes = this.selectedModules.filter(selectedNode => {
@@ -303,7 +303,7 @@
             getModulePath (node) {
                 const data = node.data
                 if (data.bk_inst_id === 'resource') {
-                    return this.$t('Common["主机资源池"]')
+                    return this.$t('主机资源池')
                 }
                 return node.parents.map(parent => parent.data.bk_inst_name).join('-')
             },
@@ -325,7 +325,7 @@
                     transferPromise = this.transerToModules(transferConfig)
                 }
                 transferPromise.then(() => {
-                    this.$success(this.$t('Common[\'转移成功\']'))
+                    this.$success(this.$t('转移成功'))
                     this.$emit('on-success')
                 })
             },
@@ -418,11 +418,11 @@
         .node-model-icon {
             width: 22px;
             height: 22px;
-            line-height: 20px;
+            line-height: 21px;
             text-align: center;
             font-style: normal;
             font-size: 12px;
-            margin: 5px 4px 0 6px;
+            margin: 9px 4px 0 6px;
             border-radius: 50%;
             background-color: #c4c6cc;
             color: #fff;

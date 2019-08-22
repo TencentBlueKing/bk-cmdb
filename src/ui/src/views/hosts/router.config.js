@@ -21,15 +21,19 @@ export default {
     meta: new Meta({
         menu: {
             id: 'hosts',
-            i18n: 'Nav["主机查询"]',
+            i18n: '业务主机',
             path: path,
             parent: NAV_BUSINESS_RESOURCE,
             adminView: false
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'business'
+            }
         },
         requireBusiness: true,
-        i18nTitle: 'Nav["主机查询"]'
+        i18nTitle: '业务主机',
+        filterPropertyKey: 'business_host_filter_properties'
     })
 }

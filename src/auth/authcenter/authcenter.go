@@ -13,6 +13,7 @@
 package authcenter
 
 import (
+	"configcenter/src/common/metadata"
 	"context"
 	"errors"
 	"fmt"
@@ -230,7 +231,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	businessesInputs := make(map[int64]AuthBatch)
 	businessesExactInputs := make(map[int64]AuthBatch)
 	for index, rsc := range resources {
-		action, err := adaptorAction(&rsc)
+		action, err := AdaptorAction(&rsc)
 		if err != nil {
 			blog.Errorf("auth batch, but adaptor action:%s failed, err: %v, rid: %s", rsc.Action, err, rid)
 			return nil, err
@@ -416,7 +417,10 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 }
 
-func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
+func (ac *AuthCenter) GetAnyAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
+	if !ac.Config.Enable {
+		return make([]int64, 0), nil
+	}
 	info := &Principal{
 		Type: cmdbUser,
 		ID:   user.UserName,
@@ -424,11 +428,10 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 
 	var appList []string
 	var err error
-	if ac.Config.Enable {
-		appList, err = ac.authClient.GetAuthorizedScopes(ctx, ScopeTypeIDBiz, info)
-		if err != nil {
-			return nil, err
-		}
+
+	appList, err = ac.authClient.GetAnyAuthorizedScopes(ctx, ScopeTypeIDBiz, info)
+	if err != nil {
+		return nil, err
 	}
 
 	businessIDs := make([]int64, 0)
@@ -442,6 +445,51 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 
 	return businessIDs, nil
 }
+
+// get a user's authorized read business list.
+func (ac *AuthCenter) GetExactAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
+	if !ac.Config.Enable {
+		return make([]int64, 0), nil
+	}
+
+	option := &ListAuthorizedResources{
+		Principal: Principal{
+			Type: cmdbUser,
+			ID:   user.UserName,
+		},
+		ScopeInfo: ScopeInfo{
+			ScopeType: ScopeTypeIDSystem,
+			ScopeID:   SystemIDCMDB,
+		},
+		TypeActions: []TypeAction{
+			{
+				ActionID:     Get,
+				ResourceType: SysBusinessInstance,
+			},
+		},
+		DataType: "array",
+		Exact:    true,
+	}
+	appListRsc, err := ac.authClient.GetAuthorizedResources(ctx, option)
+	if err != nil {
+		return nil, err
+	}
+
+	businessIDs := make([]int64, 0)
+	for _, appRsc := range appListRsc {
+		for _, appList := range appRsc.ResourceIDs {
+			for _, app := range appList {
+				id, err := strconv.ParseInt(app.ResourceID, 10, 64)
+				if err != nil {
+					return businessIDs, err
+				}
+				businessIDs = append(businessIDs, id)
+			}
+		}
+	}
+
+	return businessIDs, nil
+}
 func (ac *AuthCenter) AdminEntrance(ctx context.Context, user meta.UserInfo) ([]string, error) {
 	info := &Principal{
 		Type: cmdbUser,
@@ -451,7 +499,7 @@ func (ac *AuthCenter) AdminEntrance(ctx context.Context, user meta.UserInfo) ([]
 	var systemList []string
 	var err error
 	if ac.Config.Enable {
-		systemList, err = ac.authClient.GetAuthorizedScopes(ctx, ScopeTypeIDSystem, info)
+		systemList, err = ac.authClient.GetAnyAuthorizedScopes(ctx, ScopeTypeIDSystem, info)
 		if err != nil {
 			return nil, err
 		}
@@ -533,6 +581,10 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 
 func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*RegisterInfo, error) {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
+	user := commonutil.ExtractRequestUserFromContext(ctx)
+	if len(user) == 0 {
+		user = cmdbUserID
+	}
 
 	if ac.Config.Enable == false {
 		blog.V(5).Infof("auth disabled, auth config: %+v, rid: %s", ac.Config, rid)
@@ -545,7 +597,7 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 	}
 	info := RegisterInfo{}
 	info.CreatorType = cmdbUser
-	info.CreatorID = cmdbUserID
+	info.CreatorID = user
 	info.Resources = make([]ResourceEntity, 0)
 	for _, r := range rs {
 		if len(r.Basic.Type) == 0 {
@@ -654,7 +706,7 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	if err != nil {
 		return nil, err
 	}
-	resourceType, err := convertResourceType(r.Type, r.BusinessID)
+	resourceType, err := ConvertResourceType(r.Type, r.BusinessID)
 	if err != nil {
 		return nil, err
 	}
@@ -742,4 +794,34 @@ func (ac *AuthCenter) RawDeregisterResource(ctx context.Context, scope ScopeInfo
 	}
 
 	return ac.authClient.deregisterResource(ctx, header, &info)
+}
+
+func (ac *AuthCenter) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p []metadata.Permission) (url string, err error) {
+	if !ac.Config.Enable {
+		return "", errors.New("auth center not enabled")
+	}
+
+	// wrapper the resource type name at first.
+	for index := range p {
+		if len(p[index].Resources) != 0 {
+			if len(p[index].Resources[0]) != 0 {
+				p[index].ResourceTypeName = p[index].Resources[0][0].ResourceTypeName
+				p[index].ResourceType = p[index].Resources[0][0].ResourceType
+			}
+		}
+
+		if p[index].ScopeType == ScopeTypeIDSystem {
+			p[index].ScopeID = SystemIDCMDB
+			p[index].ScopeName = SystemNameCMDB
+		}
+	}
+
+	return ac.authClient.GetNoAuthSkipUrl(ctx, header, p)
+}
+
+func (ac *AuthCenter) GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]UserGroupMembers, error) {
+	if !ac.Config.Enable {
+		return nil, errors.New("auth center not enabled")
+	}
+	return ac.authClient.GetUserGroupMembers(ctx, header, bizID, groups)
 }

@@ -15,10 +15,12 @@ package auth
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/metadata"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -33,9 +35,12 @@ type Authorizer interface {
 	// Authorize works to check if a user has the authority to operate resources.
 	Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error)
 	AuthorizeBatch(ctx context.Context, user meta.UserInfo, resources ...meta.ResourceAttribute) (decisions []meta.Decision, err error)
-	GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error)
+	GetAnyAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error)
+	GetExactAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error)
 	AdminEntrance(ctx context.Context, user meta.UserInfo) ([]string, error)
 	GetAuthorizedAuditList(ctx context.Context, user meta.UserInfo, businessID int64) ([]authcenter.AuthorizedResource, error)
+	GetNoAuthSkipUrl(ctx context.Context, header http.Header, permission []metadata.Permission) (skipUrl string, err error)
+	GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]authcenter.UserGroupMembers, error)
 	Enabled() bool
 }
 

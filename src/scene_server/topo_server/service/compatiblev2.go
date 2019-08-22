@@ -30,7 +30,7 @@ func (s *Service) SearchAllApp(params types.ContextParams, pathParams, queryPara
 
 	cond, err := data.MapStr("condition")
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] not set the condition in the search conditons")
+		blog.Errorf("[api-compatiblev2] not set the condition in the search conditons, rid: %s", params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set the search condition")
 	}
 
@@ -38,7 +38,7 @@ func (s *Service) SearchAllApp(params types.ContextParams, pathParams, queryPara
 	if data.Exists("fields") {
 		fields, err := data.String("fields")
 		if nil != err {
-			blog.Errorf("[api-compatiblev2] failed to parse the fields, error  info is %s", err.Error())
+			blog.Errorf("[api-compatiblev2] failed to parse the fields, error  info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 		gfields = fields
@@ -54,19 +54,19 @@ func (s *Service) UpdateMultiSet(params types.ContextParams, pathParams, queryPa
 	paramPath.Set("bizID", pathParams("appid"))
 	bizID, err := paramPath.Int64("bizID")
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse the path params bizid(%s), error info is %s ", pathParams("appid"), err.Error())
+		blog.Errorf("[api-compatiblev2] failed to parse the path params bizid(%s), error info is %s, rid: %s", pathParams("appid"), err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	setIDS, exists := data.Get(common.BKSetIDField)
 	if !exists {
-		blog.Errorf("[api-compatiblev2] failed to get the set ids, the input data is %#v", data)
+		blog.Errorf("[api-compatiblev2] failed to get the set ids, the input data is %#v, rid: %s", data, params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsLostField, common.BKSetIDField)
 	}
 
 	innerData, err := data.MapStr("data")
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to get the new data, the input data is %#v, error info is %s", data, err.Error())
+		blog.Errorf("[api-compatiblev2] failed to get the new data, the input data is %#v, error info is %s, rid: %s", data, err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
@@ -83,20 +83,20 @@ func (s *Service) DeleteMultiSet(params types.ContextParams, pathParams, queryPa
 
 	bizID, err := strconv.ParseInt(pathParams("appid"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
 	setIDSStr, err := data.String(common.BKSetIDField)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to get the set ids, the input data is %#v, error info is %s", data, err.Error())
+		blog.Errorf("[api-compatiblev2] failed to get the set ids, the input data is %#v, error info is %s, rid: %s", data, err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	setIDSArr := strings.Split(setIDSStr, ",")
 	setIDS, err := util.SliceStrToInt64(setIDSArr)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] the set id is invalid, the input set ids is %s, error info is %s", setIDSStr, err.Error())
+		blog.Errorf("[api-compatiblev2] the set id is invalid, the input set ids is %s, error info is %s, rid: %s", setIDSStr, err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
@@ -109,20 +109,19 @@ func (s *Service) DeleteSetHost(params types.ContextParams, pathParams, queryPar
 
 	bizID, err := strconv.ParseInt(pathParams("appid"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	setIDS, exists := data.Get(common.BKSetIDField)
-	if !exists {
-		blog.Errorf("[api-compatiblev2] failed to get the set ids, the input data is %#v", data)
-		return nil, params.Err.Errorf(common.CCErrCommParamsLostField, common.BKSetIDField)
+	requestBody := struct {
+		SetIDs []int64 `json:"bk_set_id" field:"bk_set_id" bson:"bk_set_id"`
+	}{}
+	if err := data.MarshalJSONInto(&requestBody); err != nil {
+		blog.Errorf("[api-compatiblev2] parse request body failed, the input data is %#v, rid: %s", data, params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
 	}
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKSetIDField).In(setIDS)
-	err = s.Core.CompatibleV2Operation().Set(params).DeleteSetHost(bizID, cond)
+	err = s.Core.CompatibleV2Operation().Set(params).DeleteSetHost(bizID, requestBody.SetIDs)
 	return nil, err
 }
 
@@ -131,19 +130,19 @@ func (s *Service) UpdateMultiModule(params types.ContextParams, pathParams, quer
 
 	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
 	innerData, err := data.MapStr("data")
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse the data, error info is %s", err.Error())
+		blog.Errorf("[api-compatiblev2] failed to parse the data, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	moduleIDS, exists := data.Get(common.BKModuleIDField)
 	if !exists {
-		blog.Error("[api-compatiblev2] failed to parse the module ids")
+		blog.Errorf("[api-compatiblev2] failed to parse the module ids, rid: %s", params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsLostField, common.BKModuleIDField)
 	}
 
@@ -156,24 +155,28 @@ func (s *Service) SearchModuleByApp(params types.ContextParams, pathParams, quer
 
 	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	cond := &compatiblev2Condition{}
+	cond := &compatibleV2Condition{}
 	if err := data.MarshalJSONInto(cond); nil != err {
 		return nil, err
 	}
 
 	cond.Condition.Set(common.BKAppIDField, bizID)
-	query := &metadata.QueryInput{}
-	query.Condition = cond.Condition
-	query.Fields = strings.Join(cond.Fields, ",")
-	query.Start = cond.Page.Start
-	query.Limit = cond.Page.Limit
-	query.Sort = cond.Page.Sort
-
-	return s.Core.CompatibleV2Operation().Module(params).SearchModuleByApp(query)
+	sortParser := metadata.NewSearchSortParse()
+	sortArr := sortParser.String(cond.Page.Sort).ToSearchSortArr()
+	inputParam := &metadata.QueryCondition{
+		Fields: cond.Fields,
+		Limit: metadata.SearchLimit{
+			Offset: int64(cond.Page.Start),
+			Limit:  int64(cond.Page.Limit),
+		},
+		SortArr:   sortArr,
+		Condition: cond.Condition,
+	}
+	return s.Core.CompatibleV2Operation().Module(params).SearchModuleByApp(inputParam)
 }
 
 // SearchModuleBySetProperty search module by set property
@@ -181,7 +184,7 @@ func (s *Service) SearchModuleBySetProperty(params types.ContextParams, pathPara
 
 	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-compatible-v2]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 	cond := condition.CreateCondition()
@@ -199,24 +202,24 @@ func (s *Service) AddMultiModule(params types.ContextParams, pathParams, queryPa
 
 	bizID, err := data.Int64(common.BKAppIDField)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse business id, error info is %s", err.Error())
+		blog.Errorf("[api-compatiblev2] failed to parse business id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	setID, err := data.Int64(common.BKSetIDField)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse set id, error info is %s", err.Error())
+		blog.Errorf("[api-compatiblev2] failed to parse set id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	moduleNameStr, err := data.String(common.BKModuleNameField)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse module name, error info is %s", err.Error())
+		blog.Errorf("[api-compatiblev2] failed to parse module name, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	// prepare the data
-	data.ForEach(func(key string, val interface{}) error {
+	_ = data.ForEach(func(key string, val interface{}) error {
 		switch key {
 		case common.BKSetIDField, common.BKOperatorField, common.BKBakOperatorField, common.BKModuleTypeField:
 			return nil
@@ -235,7 +238,7 @@ func (s *Service) DeleteMultiModule(params types.ContextParams, pathParams, quer
 
 	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse business id, error info is %s", err.Error())
+		blog.Errorf("[api-compatiblev2] failed to parse business id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
@@ -245,7 +248,7 @@ func (s *Service) DeleteMultiModule(params types.ContextParams, pathParams, quer
 	}{BizID: bizID}
 
 	if err := data.MarshalJSONInto(inputParams); nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse the data (%#v), error info is %s", data, err.Error())
+		blog.Errorf("[api-compatiblev2] failed to parse the data (%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 

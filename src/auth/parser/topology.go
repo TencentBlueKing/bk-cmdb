@@ -13,8 +13,6 @@
 package parser
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,7 +20,9 @@ import (
 	"strconv"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -46,21 +46,39 @@ func (ps *parseStream) topology() *parseStream {
 		objectUnique().
 		audit().
 		instanceAudit().
-		privilege()
+		privilege().
+		fullTextSearch()
 
 	return ps
 }
 
 var (
-	createBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/?$`)
-	updateBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
-	deleteBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
-	findBusinessRegexp         = regexp.MustCompile(`^/api/v3/biz/search/[^\s/]+/?$`)
-	updateBusinessStatusRegexp = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	createBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/?$`)
+	updateBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
+	deleteBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
+	findBusinessRegexp               = regexp.MustCompile(`^/api/v3/biz/search/[^\s/]+/?$`)
+	findResourcePoolBusinessRegexp   = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/search/?$`)
+	createResourcePoolBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/?$`)
+	updateBusinessStatusRegexp       = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
 )
+
+const findReducedBusinessList = `/api/v3/biz/with_reduced`
 
 func (ps *parseStream) business() *parseStream {
 	if ps.shouldReturn() {
+		return ps
+	}
+
+	// find reduced business list for the user with any business resources
+	if ps.hitPattern(findReducedBusinessList, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -72,6 +90,18 @@ func (ps *parseStream) business() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.Business,
 					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(createResourcePoolBusinessRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -159,6 +189,20 @@ func (ps *parseStream) business() *parseStream {
 	// find business, this is not a normalize api.
 	// TODO: update this api format
 	if ps.hitRegexp(findBusinessRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.FindMany,
+				},
+				// we don't know if one or more business is to find, so we assume it's a find many
+				// business operation.
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findResourcePoolBusinessRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -626,12 +670,18 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 	// create object instance operation.
 	if ps.hitRegexp(createObjectInstanceRegexp, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.Create,
 				},
+				BusinessID: bizID,
 			},
 		}
 		return ps
@@ -643,8 +693,14 @@ func (ps *parseStream) objectInstance() *parseStream {
 			ps.err = errors.New("search object instance, but got invalid url")
 			return ps
 		}
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.Find,
@@ -667,6 +723,12 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object instance, but got invalid instance id %s", ps.RequestCtx.Elements[5])
@@ -675,6 +737,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelInstance,
 					Action:     meta.Update,
@@ -697,9 +760,15 @@ func (ps *parseStream) objectInstance() *parseStream {
 			ps.err = errors.New("update object instance batch, but got invalid url")
 			return ps
 		}
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.UpdateMany,
@@ -722,8 +791,15 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.DeleteMany,
@@ -746,6 +822,12 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("delete object instance, but got invalid instance id %s", ps.RequestCtx.Elements[5])
@@ -754,6 +836,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelInstance,
 					Action:     meta.Delete,
@@ -777,6 +860,12 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[11], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("find object instance topology, but got invalid instance id %s", ps.RequestCtx.Elements[11])
@@ -785,6 +874,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelInstanceTopology,
 					Action:     meta.Find,
@@ -808,6 +898,12 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[11], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("find object instance, but get instance id %s", ps.RequestCtx.Elements[11])
@@ -816,6 +912,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelInstanceTopology,
 					Action:     meta.Find,
@@ -871,8 +968,15 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceTopology,
 					Action: meta.FindMany,
@@ -987,7 +1091,7 @@ func (ps *parseStream) object() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
-					Action: meta.CreateMany,
+					Action: meta.UpdateMany,
 				},
 			},
 		}
@@ -1914,6 +2018,29 @@ func (ps *parseStream) privilege() *parseStream {
 	}
 
 	if ps.hitRegexp(findPrivilege, http.MethodGet) || ps.hitRegexp(findPrivilege, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+var (
+	fullTextSearchPattern = "/api/v3/find/full_text"
+)
+
+func (ps *parseStream) fullTextSearch() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitRegexp(findPrivilege, http.MethodGet) || ps.hitPattern(fullTextSearchPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

@@ -13,11 +13,17 @@
 package authcenter
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
 
+	"configcenter/src/apimachinery"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
+	params "configcenter/src/common/paraparse"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
@@ -28,7 +34,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	info := new(ResourceInfo)
 	info.ResourceName = attribute.Basic.Name
 
-	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
+	resourceTypeID, err := ConvertResourceType(attribute.Type, attribute.BusinessID)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +51,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 // Adaptor is a middleware wrapper which works for converting concepts
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
-func convertResourceType(resourceType meta.ResourceType, businessID int64) (*ResourceTypeID, error) {
+func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*ResourceTypeID, error) {
 	var iamResourceType ResourceTypeID
 	switch resourceType {
 	case meta.Business:
@@ -126,6 +132,10 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizProcessServiceTemplate
 	case meta.ProcessServiceCategory:
 		iamResourceType = BizProcessServiceCategory
+	case meta.ProcessServiceInstance:
+		iamResourceType = BizProcessServiceInstance
+	case meta.BizTopology:
+		iamResourceType = BizTopology
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -152,16 +162,17 @@ const (
 // Business Resource
 const (
 	// the alias name maybe "dynamic classification"
-	BizCustomQuery     ResourceTypeID = "biz_custom_query"
-	BizHostInstance    ResourceTypeID = "biz_host_instance"
-	BizProcessInstance ResourceTypeID = "biz_process_instance"
-	BizTopology        ResourceTypeID = "biz_topology"
-	BizModelGroup      ResourceTypeID = "biz_model_group"
-	BizModel           ResourceTypeID = "biz_model"
-	BizInstance        ResourceTypeID = "biz_instance"
-	BizAuditLog        ResourceTypeID = "biz_audit_log"
+	BizCustomQuery            ResourceTypeID = "biz_custom_query"
+	BizHostInstance           ResourceTypeID = "biz_host_instance"
+	BizProcessInstance        ResourceTypeID = "biz_process_instance"
+	BizTopology               ResourceTypeID = "biz_topology"
+	BizModelGroup             ResourceTypeID = "biz_model_group"
+	BizModel                  ResourceTypeID = "biz_model"
+	BizInstance               ResourceTypeID = "biz_instance"
+	BizAuditLog               ResourceTypeID = "biz_audit_log"
 	BizProcessServiceTemplate ResourceTypeID = "biz_process_service_template"
 	BizProcessServiceCategory ResourceTypeID = "biz_process_service_category"
+	BizProcessServiceInstance ResourceTypeID = "biz_process_service_instance"
 )
 
 const (
@@ -182,12 +193,15 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizHostInstance:     "业务主机",
 	BizProcessInstance:  "进程",
 	// TODO: delete this when upgrade to v3.5.x
-	BizTopology:   "拓扑",
-	BizModelGroup: "模型分组",
-	BizModel:      "模型",
-	BizInstance:   "实例",
-	BizAuditLog:   "操作审计",
-	UserCustom:    "",
+	BizTopology:               "服务拓扑",
+	BizModelGroup:             "模型分组",
+	BizModel:                  "模型",
+	BizInstance:               "实例",
+	BizAuditLog:               "操作审计",
+	UserCustom:                "",
+	BizProcessServiceTemplate: "服务模板",
+	BizProcessServiceCategory: "服务分类",
+	BizProcessServiceInstance: "服务实例",
 }
 
 type ActionID string
@@ -230,7 +244,7 @@ var ActionIDNameMap = map[ActionID]string{
 	BindModule: "绑定到模块",
 }
 
-func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
+func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	if r.Basic.Type == meta.ModelAttributeGroup ||
 		r.Basic.Type == meta.ModelUnique ||
 		r.Basic.Type == meta.ModelAttribute {
@@ -317,7 +331,7 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
 		meta.TransferHost,
-		meta.MoveHostToModule:
+		meta.MoveBizHostToModule:
 		return Edit, nil
 
 	case meta.MoveHostFromModuleToResPool:
@@ -337,9 +351,9 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 }
 
 // TODO: add multiple language support
-func AdoptPermissions(rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
-
+func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
 	ps := make([]metadata.Permission, 0)
+	bizIDMap := make(map[int64]string)
 	for _, r := range rs {
 		var p metadata.Permission
 		p.SystemID = SystemIDCMDB
@@ -348,19 +362,59 @@ func AdoptPermissions(rs []meta.ResourceAttribute) ([]metadata.Permission, error
 		if r.BusinessID > 0 {
 			p.ScopeType = ScopeTypeIDBiz
 			p.ScopeTypeName = ScopeTypeIDBizName
+			p.ScopeID = strconv.FormatInt(r.BusinessID, 10)
+			scopeName, exist := bizIDMap[r.BusinessID]
+			if !exist {
+				param := params.SearchParams{
+					Condition: map[string]interface{}{
+						common.BKAppIDField: r.BusinessID,
+					},
+				}
+
+				result, err := api.TopoServer().Instance().SearchApp(context.Background(), r.SupplierAccount, h, &param)
+				if err != nil {
+					return nil, err
+				}
+				// if no permission to find business, return directly.
+				if result.Code == common.CCNoPermission {
+					return result.Permissions, nil
+				}
+				if !result.Result {
+					return nil, errors.New(result.ErrMsg)
+				}
+
+				if len(result.Data.Info) != 0 {
+					bizStr, yes := result.Data.Info[0]["bk_biz_name"]
+					if !yes {
+						// can not happen normally.
+						bizIDMap[r.BusinessID] = ""
+					}
+
+					name, ok := bizStr.(string)
+					if !ok {
+						// can not happen normal
+						bizIDMap[r.BusinessID] = ""
+					}
+					bizIDMap[r.BusinessID] = name
+					scopeName = name
+				}
+			}
+			p.ScopeName = scopeName
 		} else {
 			p.ScopeType = ScopeTypeIDSystem
 			p.ScopeTypeName = ScopeTypeIDSystemName
+			p.ScopeID = SystemIDCMDB
+			p.ScopeName = SystemNameCMDB
 		}
 
-		actID, err := adaptorAction(&r)
+		actID, err := AdaptorAction(&r)
 		if err != nil {
 			return nil, err
 		}
 		p.ActionID = string(actID)
 		p.ActionName = ActionIDNameMap[actID]
 
-		rscType, err := convertResourceType(r.Basic.Type, r.BusinessID)
+		rscType, err := ConvertResourceType(r.Basic.Type, r.BusinessID)
 		if err != nil {
 			return nil, err
 		}

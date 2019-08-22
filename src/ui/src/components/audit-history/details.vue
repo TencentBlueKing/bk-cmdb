@@ -14,28 +14,33 @@
                     </span>
                 </div>
             </div>
-            <cmdb-table
-                row-cursor="default"
-                row-hover-color="#fff"
-                :loading="$loading(`post_searchObjectAttribute_${objId}`)"
-                :sortable="false"
-                :width="width ? width : 700"
-                :wrapper-minus-height="300"
-                :empty-height="230"
-                :header="tableHeader"
-                :list="tableList"
+            <bk-table
+                v-bkloading="{ isLoading: $loading(`post_searchObjectAttribute_${objId}`) }"
+                :data="displayList"
+                :width="width || 700"
+                :max-height="$APP.height - 300"
+                :height="height"
                 :row-border="true"
                 :col-border="true"
-                v-bind="height ? { height } : {}">
-                <template slot="pre_data" slot-scope="{ item }" v-html="item['pre_data']">
-                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item['pre_data']"></div>
-                </template>
-                <template slot="cur_data" slot-scope="{ item }">
-                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item['cur_data']"></div>
-                </template>
-            </cmdb-table>
-            <p class="field-btn" @click="toggleFields" v-if="details.op_type !== 1 && details.op_type !== 3">
-                {{isShowAllFields ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
+                :cell-style="getCellStyle">
+                <bk-table-column prop="bk_property_name"></bk-table-column>
+                <bk-table-column v-if="details.op_type !== 1"
+                    prop="pre_data"
+                    :label="$t('变更前')">
+                    <template slot-scope="{ row }">
+                        <span v-html="row.pre_data"></span>
+                    </template>
+                </bk-table-column>
+                <bk-table-column v-if="details.op_type !== 3"
+                    prop="cur_data"
+                    :label="$t('变更后')">
+                    <template slot-scope="{ row }" v-html="row.cur_data">
+                        <span v-html="row.cur_data"></span>
+                    </template>
+                </bk-table-column>
+            </bk-table>
+            <p class="field-btn" @click="toggleFields" v-if="isShowToggle && details.op_type !== 1 && details.op_type !== 3">
+                {{isShowAllFields ? $t('收起') : $t('展开')}}
             </p>
         </template>
     </div>
@@ -55,78 +60,52 @@
                 attribute: [],
                 isShowAllFields: false,
                 informations: [{
-                    label: this.$t('OperationAudit[\'操作账号\']'),
+                    label: this.$t('操作账号'),
                     key: 'operator'
                 }, {
-                    label: this.$t('OperationAudit[\'所属业务\']'),
+                    label: this.$t('所属业务'),
                     key: 'bk_biz_id',
                     optionKey: 'biz'
                 }, {
-                    label: this.$t('OperationAudit[\'IP\']'),
+                    label: this.$t('IP'),
                     key: 'ext_key'
                 }, {
-                    label: this.$t('OperationAudit[\'类型\']'),
+                    label: this.$t('类型'),
                     key: 'op_type',
                     optionKey: 'opType'
                 }, {
-                    label: this.$t('OperationAudit[\'对象\']'),
+                    label: this.$t('对象'),
                     key: 'op_target'
                 }, {
-                    label: this.$t('OperationAudit[\'操作时间\']'),
+                    label: this.$t('操作时间'),
                     key: 'op_time'
                 }, {
-                    label: this.$t('OperationAudit[\'描述\']'),
+                    label: this.$t('描述'),
                     key: 'op_desc'
                 }],
                 colWidth: [130, 280, 280]
             }
         },
         computed: {
-            ...mapGetters('objectBiz', [
-                'business'
-            ]),
+            ...mapGetters('objectBiz', ['authorizedBusiness']),
             objId () {
                 return this.details ? this.details['op_target'] : null
             },
             options () {
                 const biz = {}
-                this.business.forEach(({ bk_biz_id: bkBizId, bk_biz_name: bkBizName }) => {
+                this.authorizedBusiness.forEach(({ bk_biz_id: bkBizId, bk_biz_name: bkBizName }) => {
                     biz[bkBizId] = bkBizName
                 })
                 const opType = {
-                    1: this.$t("Common['新增']"),
-                    2: this.$t("Common['修改']"),
-                    3: this.$t("Common['删除']"),
-                    100: this.$t('OperationAudit["关系变更"]')
+                    1: this.$t('新增'),
+                    2: this.$t('修改'),
+                    3: this.$t('删除'),
+                    100: this.$t('关系变更')
                 }
                 return {
                     biz,
                     opType
                 }
-            },
-            tableHeader () {
-                const header = [{
-                    id: 'bk_property_name',
-                    name: '',
-                    width: 130
-                }]
-                const preDataHeader = {
-                    id: 'pre_data',
-                    name: this.$t("OperationAudit['变更前']")
-                }
-                const curDataHeader = {
-                    id: 'cur_data',
-                    name: this.$t("OperationAudit['变更后']")
-                }
-                if (this.details['op_type'] === 1) {
-                    header.push(curDataHeader)
-                } else if (this.details['op_type'] === 2 || this.details['op_type'] === 100) {
-                    header.push(preDataHeader)
-                    header.push(curDataHeader)
-                } else if (this.details['op_type'] === 3) {
-                    header.push(preDataHeader)
-                }
-                return header
             },
             tableList () {
                 const list = []
@@ -135,21 +114,11 @@
                     attribute.forEach(property => {
                         const preData = this.getCellValue(property, 'pre_data')
                         const curData = this.getCellValue(property, 'cur_data')
-                        if (!this.isShowAllFields) {
-                            if (preData !== curData) {
-                                list.push({
-                                    'bk_property_name': property['bk_property_name'],
-                                    'pre_data': preData,
-                                    'cur_data': curData
-                                })
-                            }
-                        } else {
-                            list.push({
-                                'bk_property_name': property['bk_property_name'],
-                                'pre_data': preData,
-                                'cur_data': curData
-                            })
-                        }
+                        list.push({
+                            'bk_property_name': property['bk_property_name'],
+                            'pre_data': preData,
+                            'cur_data': curData
+                        })
                     })
                 } else {
                     const content = this.details.content
@@ -160,30 +129,29 @@
                     const pre = []
                     const cur = []
                     preModule.forEach(module => {
-                        pre.push(`${this.options.biz[preBizId]}→${module.set[0]['ref_name']}→${module['ref_name']}`)
+                        pre.push(this.getTopoPath(preBizId, module))
                     })
                     curModule.forEach(module => {
-                        cur.push(`${this.options.biz[curBizId]}→${module.set[0]['ref_name']}→${module['ref_name']}`)
+                        cur.push(this.getTopoPath(curBizId, module))
                     })
                     const preData = pre.join('<br>')
                     const curData = cur.join('<br>')
-                    if (!this.isShowAllFields) {
-                        if (preData !== curData) {
-                            list.push({
-                                'bk_property_name': this.$t('Hosts["关联关系"]'),
-                                'pre_data': preData,
-                                'cur_data': curData
-                            })
-                        }
-                    } else {
-                        list.push({
-                            'bk_property_name': this.$t('Hosts["关联关系"]'),
-                            'pre_data': preData,
-                            'cur_data': curData
-                        })
-                    }
+                    list.push({
+                        'bk_property_name': this.$t('关联关系'),
+                        'pre_data': preData,
+                        'cur_data': curData
+                    })
                 }
                 return list
+            },
+            changedList () {
+                return this.tableList.filter(item => item.pre_data !== item.cur_data)
+            },
+            displayList () {
+                return this.isShowAllFields ? this.tableList : this.changedList.length ? this.changedList : this.tableList
+            },
+            isShowToggle () {
+                return this.tableList.length !== this.changedList.length && this.changedList.length > 0
             }
         },
         watch: {
@@ -231,18 +199,10 @@
                     if (bkPropertyType === 'enum' && Array.isArray(option)) {
                         const targetOption = option.find(({ id }) => id === value)
                         value = targetOption ? targetOption.name : ''
-                    } else if (bkPropertyType === 'singleasst' || bkPropertyType === 'multiasst') {
-                        const asstVal = [];
-                        (Array.isArray(value) ? value : []).forEach(({ bk_inst_name: bkInstName }) => {
-                            if (bkInstName) {
-                                asstVal.push(bkInstName)
-                            }
-                        })
-                        value = asstVal.join(',')
                     } else if (bkPropertyType === 'date' || bkPropertyType === 'time') {
                         value = this.$tools.formatTime(value, bkPropertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
                     }
-                    return value
+                    return value === '' ? null : value
                 }
                 return null
             },
@@ -251,6 +211,25 @@
                     return item['pre_data'] !== item['cur_data']
                 }
                 return false
+            },
+            getCellStyle ({ row, columnIndex }) {
+                if (columnIndex > 0 && this.hasChanged(row)) {
+                    return {
+                        backgroundColor: '#e9faf0'
+                    }
+                }
+                return {}
+            },
+            getTopoPath (bizId, module) {
+                const path = [this.options.biz[bizId] || `业务ID：${bizId}`]
+                const set = ((module.set || [])[0] || {}).ref_name
+                if (set) {
+                    path.push(set)
+                }
+                if (module.ref_name) {
+                    path.push(module.ref_name)
+                }
+                return path.join('→')
             }
         }
     }
@@ -259,7 +238,7 @@
 <style lang="scss" scoped>
     .history-details-wrapper{
         padding: 32px 50px;
-        height: calc(100% - 60px);
+        height: 100%;
     }
     .info-group{
         width: 50%;
@@ -288,17 +267,8 @@
             width: 220px;
         }
     }
-    .details-data{
-        min-height: 100%;
-        width: calc(100% + 32px);
-        padding: 6px 16px;
-        margin: 0 0 0 -16px;
-        white-space: normal;
-        &.has-changed{
-            background-color: #e9faf0;
-        }
-    }
     .field-btn{
+        font-size: 14px;
         margin: 10px 0;
         text-align: right;
         color: #3c96ff;

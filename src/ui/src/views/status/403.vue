@@ -4,7 +4,7 @@
             <h3>{{i18n.resourceTitle}}</h3>
             <p>{{i18n.resourceContent}}</p>
             <div class="operation-btns">
-                <bk-button type="primary" @click="handleApplyPermission">{{i18n.apply}}</bk-button>
+                <bk-button theme="primary" @click="handleApplyPermission">{{i18n.apply}}</bk-button>
             </div>
         </div>
     </div>
@@ -32,7 +32,8 @@
                 if (isPaasConsole) {
                     topWindow.postMessage(JSON.stringify({
                         action: 'open_other_app',
-                        app_code: authCenter.appCode
+                        app_code: authCenter.appCode,
+                        app_url: 'apply-by-system'
                     }), '*')
                 } else {
                     window.open(authCenter.url)

@@ -1,20 +1,28 @@
 import Vue from 'vue'
 import { language } from '@/i18n'
 import veeValidate, { Validator } from 'vee-validate'
+import cnMessages from 'vee-validate/dist/locale/zh_CN'
+import stringLength from 'utf8-byte-length'
 
 const customRules = {
     singlechar: {
         validate: value => {
-            /* eslint-disable */
             return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。@#\."'\\\/\s]){0,256}$/.test(value)
-            /* eslint-enable */
+        }
+    },
+    singlecharLength: {
+        validate: value => {
+            return stringLength(value) <= 256
         }
     },
     longchar: {
         validate: value => {
-            /* eslint-disable */
             return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。@#\."'\\\/\s]){0,2000}$/.test(value)
-            /* eslint-enable */
+        }
+    },
+    longcharLength: {
+        validate: value => {
+            return stringLength(value) <= 2000
         }
     },
     associationId: {
@@ -98,6 +106,16 @@ const customRules = {
         validate: (value) => {
             return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[-_:]){0,256}$/.test(value)
         }
+    },
+    instanceTag: {
+        validate: value => {
+            return /^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
+        }
+    },
+    repeatTagKey: {
+        validate: (value, otherValue) => {
+            return otherValue.findIndex(item => item === value) === -1
+        }
     }
 }
 
@@ -106,7 +124,9 @@ const dictionary = {
         messages: {
             regex: () => '请输入符合自定义正则的内容',
             longchar: () => '请输入正确的长字符内容',
+            longcharLength: () => '请输入2000个字符以内的内容',
             singlechar: () => '请输入正确的短字符内容',
+            singlecharLength: () => '请输入256个字符以内的内容',
             associationId: () => '格式不正确，只能包含下划线，英文小写',
             classifyName: () => '请输入正确的内容',
             classifyId: () => '请输入正确的内容',
@@ -125,7 +145,9 @@ const dictionary = {
             dayFormat: () => '请输入00:00-23:59之间的时间',
             namedCharacter: () => '格式不正确，特殊符号仅支持(:_-)',
             min_value: () => '该值小于最小值',
-            max_value: () => '该值大于最大值'
+            max_value: () => '该值大于最大值',
+            instanceTag: () => '请输入英文 / 数字',
+            repeatTagKey: () => '标签键不能重复'
         },
         custom: {
             asst: {
@@ -137,7 +159,9 @@ const dictionary = {
         messages: {
             regex: () => 'Please enter the correct content that conform custom regex',
             longchar: () => 'Please enter the correct content',
+            longcharLength: () => 'Content length max than 2000',
             singlechar: () => 'Please enter the correct content',
+            singlecharLength: () => 'Content length max than 256',
             associationId: () => 'The format is incorrect and can only contain underscores and lowercase English',
             classifyName: () => 'Please enter the correct content',
             classifyId: () => 'Please enter the correct content',
@@ -156,7 +180,9 @@ const dictionary = {
             dayFormat: () => 'Please enter the time between 00:00-23:59',
             namedCharacter: () => 'Special symbols only support(:_-)',
             min_value: () => 'This value is less than the minimum',
-            max_value: () => 'This value is greater than the maximum'
+            max_value: () => 'This value is greater than the maximum',
+            instanceTag: () => 'Please enter English / Number',
+            repeatTagKey: () => 'Label key cannot be repeated'
         },
         custom: {
             asst: {
@@ -169,7 +195,11 @@ const dictionary = {
 for (const rule in customRules) {
     Validator.extend(rule, customRules[rule])
 }
-Validator.localize(language)
+if (language === 'en') {
+    Validator.localize(language)
+} else {
+    Validator.localize(language, cnMessages)
+}
 Vue.use(veeValidate, {
     locale: language,
     dictionary

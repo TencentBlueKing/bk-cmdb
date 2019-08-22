@@ -67,6 +67,15 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("configuration item not found")
 	}
+
+	// transaction client
+	txn, err := procSvr.Config.Mongo.GetTransactionClient(engine)
+	if err != nil {
+		blog.Errorf("new transaction client failed, err: %+v", err)
+		return fmt.Errorf("new transaction client failed, err: %+v", err)
+	}
+	procSvr.TransactionClient = txn
+
 	authConf, err := authcenter.ParseConfigFromKV("auth", procSvr.ConfigMap)
 	if err != nil {
 		return err
@@ -83,18 +92,17 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new redis client failed, err: %s", err)
 	}
 
-	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), procSvr.EsbConfigChn, engine.Metric().Registry())
+	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), procSvr.EsbConfigChn, nil, engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
 	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, authorize)
 	procSvr.Engine = engine
-	procSvr.EsbServ = esbSrv
+	procSvr.EsbSrv = esbSrv
 	procSvr.Cache = cacheDB
 	procSvr.Logic = &logics.Logic{
 		Engine: procSvr.Engine,
 	}
-	go procSvr.InitFunc()
 
 	if err := backbone.StartServer(ctx, engine, procSvr.WebService()); err != nil {
 		return err

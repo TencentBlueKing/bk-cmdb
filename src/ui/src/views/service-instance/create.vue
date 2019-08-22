@@ -1,11 +1,11 @@
 <template>
     <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading() }">
-        <label class="create-label fl">{{$t('BusinessTopology["添加主机"]')}}</label>
+        <label class="create-label fl">{{$t('添加主机')}}</label>
         <div class="create-hosts">
-            <bk-button class="select-host-button" type="default"
+            <bk-button class="select-host-button" theme="default"
                 @click="hostSelectorVisible = true">
                 <i class="bk-icon icon-plus"></i>
-                {{$t('BusinessTopology["添加主机"]')}}
+                {{$t('添加主机')}}
             </bk-button>
             <div class="create-tables">
                 <service-instance-table class="service-instance-table"
@@ -19,15 +19,22 @@
                     :name="host.bk_host_innerip"
                     :source-processes="sourceProcesses"
                     :templates="templates"
+                    :show-tips="showTips"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
-                    <bk-button type="primary"
-                        :disabled="!hosts.length"
-                        @click="handleConfirm">
-                        {{$t('Common["确定"]')}}
-                    </bk-button>
-                    <bk-button @click="handleBackToModule">{{$t('Common["取消"]')}}</bk-button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                            auth: [$OPERATION.C_SERVICE_INSTANCE]
+                        }">
+                        <bk-button theme="primary"
+                            :disabled="!hosts.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                            @click="handleConfirm">
+                            {{$t('确定')}}
+                        </bk-button>
+                    </span>
+                    <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </div>
@@ -54,7 +61,8 @@
                 hostSelectorVisible: false,
                 moduleInstance: {},
                 hosts: [],
-                templates: []
+                templates: [],
+                showTips: false
             }
         },
         computed: {
@@ -73,8 +81,13 @@
             sourceProcesses () {
                 return this.templates.map(template => {
                     const value = {}
+                    const ip = ['127.0.0.1', '0.0.0.0']
                     Object.keys(template.property).forEach(key => {
-                        value[key] = template.property[key].value
+                        if (key === 'bind_ip') {
+                            value[key] = ip[template.property[key].value - 1]
+                        } else {
+                            value[key] = template.property[key].value
+                        }
                     })
                     return value
                 })
@@ -88,7 +101,7 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', `${this.$t('BusinessTopology["添加服务实例"]')}【${this.$route.query.title}】`)
+            this.$store.commit('setHeaderTitle', `${this.$t('添加服务实例')}【${this.$route.query.title}】`)
             this.getModuleInstance()
         },
         methods: {
@@ -144,6 +157,10 @@
             async handleConfirm () {
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
+                    if (serviceInstanceTables.some(table => !table.processList.length)) {
+                        this.showTips = true
+                        return
+                    }
                     if (this.withTemplate) {
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
                             params: this.$injectMetadata({
@@ -151,7 +168,12 @@
                                 bk_module_id: this.moduleId,
                                 instances: serviceInstanceTables.map(table => {
                                     return {
-                                        bk_host_id: table.id
+                                        bk_host_id: table.id,
+                                        processes: table.processList.map(item => {
+                                            return {
+                                                process_info: item
+                                            }
+                                        })
                                     }
                                 })
                             })
@@ -174,6 +196,7 @@
                             })
                         })
                     }
+                    this.$success(this.$t('添加成功'))
                     this.handleBackToModule()
                 } catch (e) {
                     console.error(e)

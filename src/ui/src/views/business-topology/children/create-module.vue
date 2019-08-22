@@ -1,7 +1,7 @@
 <template>
     <div class="node-create-layout">
-        <h2 class="node-create-title">{{$t('BusinessTopology["新增模块"]')}}</h2>
-        <div class="node-create-path" :title="topoPath">{{$t('Common["已选择"]')}}：{{topoPath}}</div>
+        <h2 class="node-create-title">{{$t('新增模块')}}</h2>
+        <div class="node-create-path" :title="topoPath">{{$t('添加节点已选择')}}：{{topoPath}}</div>
         <div class="node-create-form">
             <div class="form-item clearfix mt30">
                 <div class="create-type fl">
@@ -11,7 +11,7 @@
                         name="createType"
                         v-model="withTemplate"
                         :value="1">
-                    <label for="formTemplate">{{$t('BusinessTopology["从模板创建"]')}}</label>
+                    <label for="formTemplate">{{$t('从模板创建')}}</label>
                 </div>
                 <div class="create-type fl ml50">
                     <input class="type-radio"
@@ -20,22 +20,39 @@
                         name="createType"
                         v-model="withTemplate"
                         :value="0">
-                    <label for="createDirectly">{{$t('BusinessTopology["直接创建"]')}}</label>
+                    <label for="createDirectly">{{$t('直接创建')}}</label>
                 </div>
             </div>
             <div class="form-item" v-if="withTemplate">
-                <label>{{$t('BusinessTopology["模板名称"]')}}</label>
-                <cmdb-selector
+                <label>{{$t('服务模板')}}</label>
+                <bk-select style="width: 100%;"
+                    :clearable="false"
+                    :searchable="templateList.length > 7"
                     v-model="template"
                     v-validate.disabled="'required'"
                     data-vv-name="template"
-                    key="template"
-                    :list="templateList">
-                </cmdb-selector>
+                    key="template">
+                    <bk-option v-for="(option, index) in templateList"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                    <div class="add-template" slot="extension" @click="jumpServiceTemplate" v-if="!templateList.length">
+                        <i class="bk-icon icon-plus-circle"></i>
+                        <span>{{$t('新建模板')}}</span>
+                    </div>
+                </bk-select>
                 <span class="form-error" v-if="errors.has('template')">{{errors.first('template')}}</span>
             </div>
             <div class="form-item">
-                <label>{{$t('BusinessTopology["模块名称"]')}}<font color="red">*</font></label>
+                <label>
+                    {{$t('模块名称')}}
+                    <font color="red">*</font>
+                    <i class="icon-cc-tips"
+                        v-bk-tooltips.top="$t('模块名称提示')"
+                        v-if="withTemplate === 1">
+                    </i>
+                </label>
                 <cmdb-form-singlechar
                     v-model="moduleName"
                     v-validate="'required|singlechar'"
@@ -46,7 +63,7 @@
                 <span class="form-error" v-if="errors.has('moduleName')">{{errors.first('moduleName')}}</span>
             </div>
             <div class="form-item clearfix" v-if="!withTemplate">
-                <label>{{$t('BusinessTopology["服务实例分类"]')}}<font color="red">*</font></label>
+                <label>{{$t('服务实例分类')}}<font color="red">*</font></label>
                 <cmdb-selector class="service-class fl"
                     v-model="firstClass"
                     v-validate.disabled="'required'"
@@ -66,12 +83,12 @@
             </div>
         </div>
         <div class="node-create-options">
-            <bk-button type="primary"
+            <bk-button theme="primary"
                 :disabled="$loading() || errors.any()"
                 @click="handleSave">
-                {{$t('Common["确定"]')}}
+                {{$t('确定')}}
             </bk-button>
-            <bk-button type="default" @click="handleCancel">{{$t('Common["取消"]')}}</bk-button>
+            <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>
 </template>
@@ -89,10 +106,10 @@
                 withTemplate: 1,
                 createTypeList: [{
                     id: 1,
-                    name: this.$t('BusinessTopology["从模板创建"]')
+                    name: this.$t('从模板创建')
                 }, {
                     id: 0,
-                    name: this.$t('BusinessTopology["直接创建"]')
+                    name: this.$t('直接创建')
                 }],
                 template: '',
                 templateList: [],
@@ -168,6 +185,7 @@
                         this.templateList = []
                     }
                 }
+                this.template = this.templateList[0] ? this.templateList[0].id : ''
             },
             async getServiceCategories () {
                 if (this.categoryMap.hasOwnProperty(this.business)) {
@@ -214,6 +232,9 @@
             },
             handleCancel () {
                 this.$emit('cancel')
+            },
+            jumpServiceTemplate () {
+                this.$router.push({ name: 'serviceTemplate' })
             }
         }
     }
@@ -224,9 +245,7 @@
         position: relative;
     }
     .node-create-title {
-        position: absolute;
-        top: -20px;
-        left: 0;
+        margin-top: -14px;
         padding: 0 26px;
         line-height: 30px;
         font-size: 22px;
@@ -300,5 +319,19 @@
     }
     font {
         padding: 0 2px;
+    }
+</style>
+
+<style lang="scss">
+    .add-template {
+        width: 20%;
+        cursor: pointer;
+        .icon-plus-circle {
+            @include inlineBlock;
+            font-size: 14px;
+        }
+        span {
+            @include inlineBlock;
+        }
     }
 </style>

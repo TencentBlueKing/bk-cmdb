@@ -1,45 +1,55 @@
 <template>
     <div class="service-table-layout">
-        <div class="title">
-            <div class="fl" @click="localExpanded = !localExpanded">
+        <div class="title" @click="localExpanded = !localExpanded">
+            <div class="fl">
                 <i class="bk-icon icon-down-shape" v-if="localExpanded"></i>
                 <i class="bk-icon icon-right-shape" v-else></i>
                 {{name}}
+                <i class="bk-icon icon-exclamation" v-if="showTips && !processList.length" v-bk-tooltips="tooltips"></i>
             </div>
             <div class="fr">
-                <i class="bk-icon icon-close" v-if="deletable" @click="handleDelete"></i>
+                <i class="bk-icon icon-close" v-if="deletable" @click.stop="handleDelete"></i>
             </div>
         </div>
-        <cmdb-table
-            :header="header"
-            :list="processFlattenList"
-            :empty-height="58"
-            :sortable="false"
-            :reference-document-height="false">
-            <template slot="data-empty">
+        <bk-table
+            v-show="localExpanded"
+            :data="processFlattenList">
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('操作')" fixed="right">
+                <template slot-scope="{ row, $index }">
+                    <a href="javascript:void(0)" class="text-primary mr10" @click="handleEditProcess($index)">
+                        {{$t('编辑')}}
+                    </a>
+                    <a href="javascript:void(0)" class="text-primary"
+                        v-if="!sourceProcesses.length"
+                        @click="handleDeleteProcess($index)">
+                        {{$t('删除')}}
+                    </a>
+                </template>
+            </bk-table-column>
+            <template slot="empty">
                 <button class="add-process-button text-primary" @click="handleAddProcess">
                     <i class="bk-icon icon-plus"></i>
-                    <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+                    <span>{{$t('添加进程')}}</span>
                 </button>
             </template>
-            <template slot="__operation__" slot-scope="{ rowIndex }">
-                <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess(rowIndex)">{{$t('Common["编辑"]')}}</a>
-                <a href="javascript:void(0)" class="text-primary" v-if="!sourceProcesses.length"
-                    @click="handleDeleteProcess(rowIndex)">{{$t('Common["删除"]')}}
-                </a>
-            </template>
-        </cmdb-table>
+        </bk-table>
         <div class="add-process-options" v-if="!sourceProcesses.length && processList.length">
             <button class="add-process-button text-primary" @click="handleAddProcess">
                 <i class="bk-icon icon-plus"></i>
-                <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+                <span>{{$t('添加进程')}}</span>
             </button>
         </div>
-        <cmdb-slider
-            :title="`${$t('BusinessTopology[\'添加进程\']')}(${name})`"
+        <bk-sideslider
+            :width="800"
+            :title="`${$t('添加进程')}(${name})`"
             :is-show.sync="processForm.show"
             :before-close="handleBeforeClose">
-            <cmdb-form slot="content"
+            <cmdb-form slot="content" v-if="processForm.show"
                 ref="processForm"
                 :type="processForm.type"
                 :inst="processForm.instance"
@@ -48,8 +58,18 @@
                 :uneditable-properties="immutableProperties"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleBeforeClose">
+                <template slot="bind_ip">
+                    <cmdb-input-select
+                        :disabled="checkDisabled"
+                        :name="'bindIp'"
+                        :placeholder="$t('请选择或输入IP')"
+                        :options="processBindIp"
+                        :validate="validateRules"
+                        v-model="bindIp">
+                    </cmdb-input-select>
+                </template>
             </cmdb-form>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -81,6 +101,10 @@
                 default () {
                     return []
                 }
+            },
+            showTips: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -95,7 +119,13 @@
                     rowIndex: null,
                     instance: {},
                     unwatch: null
-                }
+                },
+                tooltips: {
+                    content: this.$t('请为主机添加进程'),
+                    placement: 'right'
+                },
+                processBindIp: [],
+                bindIp: ''
             }
         },
         computed: {
@@ -109,7 +139,7 @@
                     'work_path'
                 ]
                 const header = []
-                display.map(id => {
+                display.forEach(id => {
                     const property = this.processProperties.find(property => property.bk_property_id === id)
                     if (property) {
                         header.push({
@@ -117,10 +147,6 @@
                             name: property.bk_property_name
                         })
                     }
-                })
-                header.push({
-                    id: '__operation__',
-                    name: this.$t('Common["操作"]')
                 })
                 return header
             },
@@ -138,6 +164,29 @@
                     })
                 }
                 return properties
+            },
+            bindIpProperty () {
+                return this.processProperties.find(property => property['bk_property_id'] === 'bind_ip') || {}
+            },
+            validateRules () {
+                const rules = {}
+                if (this.bindIpProperty.isrequired) {
+                    rules['required'] = true
+                }
+                rules['regex'] = this.bindIpProperty.option
+                return rules
+            },
+            checkDisabled () {
+                const property = this.bindIpProperty
+                if (this.processForm.type === 'create') {
+                    return false
+                }
+                return !property.editable || property.isreadonly
+            }
+        },
+        watch: {
+            bindIp (value) {
+                this.$refs.processForm.values.bind_ip = value
             }
         },
         created () {
@@ -181,10 +230,12 @@
                 this.$emit('delete-instance', this.index)
             },
             handleAddProcess () {
+                this.getInstanceIpByHost(this.id)
                 this.processForm.instance = {}
                 this.processForm.type = 'create'
                 this.processForm.show = true
                 this.$nextTick(() => {
+                    this.bindIp = ''
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -194,6 +245,32 @@
                         }
                     })
                 })
+            },
+            async getInstanceIpByHost (hostId) {
+                try {
+                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    let res = null
+                    if (instanceIpMap.hasOwnProperty(hostId)) {
+                        res = instanceIpMap[hostId]
+                    } else {
+                        res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
+                            hostId,
+                            config: {
+                                requestId: 'getInstanceIpByHost'
+                            }
+                        })
+                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                    }
+                    this.processBindIp = res.options.map(ip => {
+                        return {
+                            id: ip,
+                            name: ip
+                        }
+                    })
+                } catch (e) {
+                    this.processBindIp = []
+                    console.error(e)
+                }
             },
             handleSaveProcess (values) {
                 this.processForm.unwatch && this.processForm.unwatch()
@@ -213,7 +290,9 @@
                 if (Object.keys(changedValues).length) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.handleCancelCreateProcess()
                             },
@@ -226,10 +305,15 @@
                 this.handleCancelCreateProcess()
             },
             handleEditProcess (rowIndex) {
+                this.getInstanceIpByHost(this.id)
                 this.processForm.instance = this.processList[rowIndex]
                 this.processForm.rowIndex = rowIndex
                 this.processForm.type = 'update'
                 this.processForm.show = true
+
+                this.$nextTick(() => {
+                    this.bindIp = this.$tools.getInstFormValues(this.processProperties, this.processForm.instance)['bind_ip']
+                })
             },
             handleDeleteProcess (rowIndex) {
                 this.processList.splice(rowIndex, 1)
@@ -245,6 +329,7 @@
         line-height: 40px;
         border-radius: 2px 2px 0 0;
         background-color: #DCDEE5;
+        cursor: pointer;
         .bk-icon {
             font-size: 12px;
             font-weight: bold;
@@ -254,6 +339,13 @@
             text-align: center;
             cursor: pointer;
             @include inlineBlock;
+        }
+        .icon-exclamation {
+            font-size: 14px;
+            color: #ffffff;
+            background: #f0b659;
+            border-radius: 50%;
+            transform: scale(.6);
         }
     }
     .add-process-options {

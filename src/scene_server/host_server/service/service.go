@@ -57,8 +57,10 @@ type srvComm struct {
 func (s *Service) newSrvComm(header http.Header) *srvComm {
 	rid := util.GetHTTPCCRequestID(header)
 	lang := util.GetLanguage(header)
+	user := util.GetUser(header)
 	ctx, cancel := s.Engine.CCCtx.WithCancel()
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 
 	return &srvComm{
 		header:        header,
@@ -81,11 +83,9 @@ func (s *Service) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	api.Path("/host/{version}").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
-	// restful.DefaultRequestContentType(restful.MIME_JSON)
-	// restful.DefaultResponseContentType(restful.MIME_JSON)
+	api.Path("/host/v3").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
-	api.Route(api.DELETE("/hosts/batch").To(s.DeleteHostBatch))
+	api.Route(api.DELETE("/hosts/batch").To(s.DeleteHostBatchFromResourcePool))
 	api.Route(api.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
 	api.Route(api.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
 	api.Route(api.POST("/hosts/add").To(s.AddHost))
@@ -112,10 +112,15 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/modules/idle/set").To(s.MoveSetHost2IdleModule))
 	// get host module relation in app
 	api.Route(api.POST("/hosts/modules/read").To(s.GetHostModuleRelation))
+	api.Route(api.POST("/host/topo/relation/read").To(s.GetAppHostTopoRelation))
 	// transfer host to other business
 	api.Route(api.POST("/hosts/modules/across/biz").To(s.TransferHostAcrossBusiness))
 	//  delete host from business, used for framework
 	api.Route(api.DELETE("/hosts/module/biz/delete").To(s.DeleteHostFromBusiness))
+
+	// next generation host search api
+	api.Route(api.POST("/hosts/list_hosts_without_app").To(s.ListHostsWithNoBiz))
+	api.Route(api.POST("/hosts/app/{appid}/list_hosts").To(s.ListBizHosts))
 
 	api.Route(api.POST("/userapi").To(s.AddUserCustomQuery))
 	api.Route(api.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))
@@ -128,7 +133,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.DELETE("/host/lock").To(s.UnlockHost))
 	api.Route(api.POST("/host/lock/search").To(s.QueryHostLock))
 
-	api.Route(api.GET("/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}").To(s.getHostListByAppidAndField))
+	api.Route(api.GET("/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}").To(s.getHostListByAppIDAndField))
 	api.Route(api.PUT("/openapi/host/{" + common.BKAppIDField + "}").To(s.UpdateHost))
 	api.Route(api.PUT("/host/updateHostByAppID/{appid}").To(s.UpdateHostByAppID))
 	api.Route(api.POST("/gethostlistbyip").To(s.HostSearchByIP))
@@ -161,6 +166,10 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/cloud/accountSearch").To(s.SearchAccount))
 	api.Route(api.POST("/hosts/cloud/syncHistory").To(s.SearchCloudSyncHistory))
 
+	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
+	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
+	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
+
 	container.Add(api)
 
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
@@ -180,22 +189,6 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		zkItem.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, zkItem)
-
-	// object controller
-	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_OBJECTCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_OBJECTCONTROLLER); err != nil {
-		objCtr.IsHealthy = false
-		objCtr.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, objCtr)
-
-	// host controller
-	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
-		hostCtrl.IsHealthy = false
-		hostCtrl.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, hostCtrl)
 
 	// coreservice
 	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CORESERVICE}
@@ -227,7 +220,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Message: meta.Message,
 	}
 	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteEntity(answer)
+	_ = resp.WriteEntity(answer)
 }
 
 func (s *Service) InitBackground() {

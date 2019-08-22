@@ -42,15 +42,6 @@ type health struct {
 
 func (h *health) HealthCheck(moduleName string) (healthy bool, err error) {
 	switch moduleName {
-	case types.CC_MODULE_HOSTCONTROLLER:
-		h.capability.Discover = h.disc.HostCtrl()
-
-	case types.CC_MODULE_OBJECTCONTROLLER:
-		h.capability.Discover = h.disc.ObjectCtrl()
-
-	case types.CC_MODULE_PROCCONTROLLER:
-		h.capability.Discover = h.disc.ProcCtrl()
-
 	case types.CC_MODULE_DATACOLLECTION:
 		h.capability.Discover = h.disc.DataCollect()
 

@@ -2,36 +2,38 @@
     <div class="slider-content">
         <label class="form-label" v-if="isEdit">
             <span class="label-text">
-                {{$t('ModelManagement["唯一标识"]')}}
+                {{$t('唯一标识')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" v-model.trim="objAsstId" disabled>
+                <bk-input type="text" class="cmdb-form-input" v-model.trim="objAsstId" disabled></bk-input>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["关联描述"]')}}
+                {{$t('关联描述')}}
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
-                <input type="text" class="cmdb-form-input"
+                <bk-input type="text" class="cmdb-form-input"
                     name="asstName"
-                    :placeholder="$t('ModelManagement[\'请输入关联描述\']')"
+                    :placeholder="$t('请输入关联描述')"
                     :disabled="relationInfo.ispre || isReadOnly"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
                     v-validate="'singlechar'">
+                </bk-input>
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <div class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["源模型"]')}}
+                {{$t('源模型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('objId') }">
                 <cmdb-selector
+                    class="bk-select-full-width"
                     :disabled="relationInfo.ispre || isEdit"
                     :has-children="true"
                     :auto-select="false"
@@ -46,11 +48,12 @@
         </div>
         <div class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["目标模型"]')}}
+                {{$t('目标模型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstObjId') }">
                 <cmdb-selector
+                    class="bk-select-full-width"
                     :disabled="relationInfo.ispre || isEdit"
                     :has-children="true"
                     :auto-select="false"
@@ -65,12 +68,13 @@
         </div>
         <div class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["关联类型"]')}}
+                {{$t('关联类型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
                 <cmdb-selector
-                    :disabled="relationInfo.ispre || isReadOnly"
+                    class="bk-select-full-width"
+                    :disabled="relationInfo.ispre || isReadOnly || isEdit"
                     :list="usefulRelationList"
                     v-validate="'required'"
                     name="asstId"
@@ -82,11 +86,12 @@
         </div>
         <div class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["源-目标约束"]')}}
+                {{$t('源-目标约束')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('mapping') }">
                 <cmdb-selector
+                    class="bk-select-full-width"
                     :disabled="relationInfo.ispre || isEdit"
                     :list="mappingList"
                     v-validate="'required'"
@@ -98,11 +103,11 @@
             <i class="bk-icon icon-info-circle"></i>
         </div>
         <div class="btn-group">
-            <bk-button type="primary" :loading="$loading(['createObjectAssociation', 'updateObjectAssociation'])" @click="saveRelation">
-                {{$t('Common["确定"]')}}
+            <bk-button theme="primary" :disabled="isReadOnly" :loading="$loading(['createObjectAssociation', 'updateObjectAssociation'])" @click="saveRelation">
+                {{$t('确定')}}
             </bk-button>
-            <bk-button type="default" @click="cancel">
-                {{$t('Common["取消"]')}}
+            <bk-button theme="default" @click="cancel">
+                {{$t('取消')}}
             </bk-button>
         </div>
     </div>

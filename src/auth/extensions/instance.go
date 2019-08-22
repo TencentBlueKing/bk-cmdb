@@ -317,8 +317,17 @@ func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header 
 		return nil
 	}
 
-	if objectID == common.BKInnerObjIDPlat {
+	switch objectID {
+	case common.BKInnerObjIDPlat:
 		return am.UpdateRegisteredPlatByID(ctx, header, ids...)
+	case common.BKInnerObjIDHost:
+		return am.UpdateRegisteredHostsByID(ctx, header, ids...)
+	case common.BKInnerObjIDModule:
+		return am.UpdateRegisteredModuleByID(ctx, header, ids...)
+	case common.BKInnerObjIDSet:
+		return am.UpdateRegisteredSetByID(ctx, header, ids...)
+	case common.BKInnerObjIDApp:
+		return am.UpdateRegisteredBusinessByID(ctx, header, ids...)
 	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
@@ -333,8 +342,17 @@ func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, head
 		return nil
 	}
 
-	if objectID == common.BKInnerObjIDPlat {
+	switch objectID {
+	case common.BKInnerObjIDPlat:
 		return am.UpdateRegisteredPlatByRawID(ctx, header, ids...)
+	case common.BKInnerObjIDHost:
+		return am.UpdateRegisteredHostsByID(ctx, header, ids...)
+	case common.BKInnerObjIDModule:
+		return am.UpdateRegisteredModuleByID(ctx, header, ids...)
+	case common.BKInnerObjIDSet:
+		return am.UpdateRegisteredSetByID(ctx, header, ids...)
+	case common.BKInnerObjIDApp:
+		return am.UpdateRegisteredBusinessByID(ctx, header, ids...)
 	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
@@ -348,8 +366,17 @@ func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header htt
 	if am.Enabled() == false {
 		return nil
 	}
-	if objectID == common.BKInnerObjIDPlat {
+	switch objectID {
+	case common.BKInnerObjIDPlat:
 		return am.DeregisterPlatByID(ctx, header, ids...)
+	case common.BKInnerObjIDHost:
+		return am.DeregisterHostsByID(ctx, header, ids...)
+	case common.BKInnerObjIDModule:
+		return am.DeregisterModuleByID(ctx, header, ids...)
+	case common.BKInnerObjIDSet:
+		return am.DeregisterSetByID(ctx, header, ids...)
+	case common.BKInnerObjIDApp:
+		return am.DeregisterBusinessByRawID(ctx, header, ids...)
 	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
@@ -363,8 +390,17 @@ func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.He
 	if am.Enabled() == false {
 		return nil
 	}
-	if objectID == common.BKInnerObjIDPlat {
+	switch objectID {
+	case common.BKInnerObjIDPlat:
 		return am.RegisterPlatByID(ctx, header, ids...)
+	case common.BKInnerObjIDHost:
+		return am.RegisterHostsByID(ctx, header, ids...)
+	case common.BKInnerObjIDModule:
+		return am.RegisterModuleByID(ctx, header, ids...)
+	case common.BKInnerObjIDSet:
+		return am.RegisterSetByID(ctx, header, ids...)
+	case common.BKInnerObjIDApp:
+		return am.RegisterBusinessesByID(ctx, header, ids...)
 	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)

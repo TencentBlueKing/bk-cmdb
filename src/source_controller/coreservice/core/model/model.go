@@ -88,11 +88,29 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ", ctx.ReqID, inputParam.Spec.ObjectID, err.Error())
 		return dataResult, err
 	}
-
 	if exists {
 		blog.Warnf("request(%s): it is failed to  create a new model , because of the model (%s) is already exists ", ctx.ReqID, inputParam.Spec.ObjectID)
-		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
+		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectID)
 	}
+
+	// 检查模型名称重复
+	modelNameUniqueFilter := map[string]interface{}{
+		common.BKObjNameField: inputParam.Spec.ObjectName,
+	}
+	bizFilter := metadata.PublicAndBizCondition(inputParam.Spec.Metadata)
+	for key, value := range bizFilter {
+		modelNameUniqueFilter[key] = value
+	}
+	sameNameCount, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(ctx)
+	if err != nil {
+		blog.Errorf("whether same name model exists, name: %s, err: %s, rid: %s", inputParam.Spec.ObjectName, err.Error(), ctx.ReqID)
+		return dataResult, err
+	}
+	if sameNameCount > 0 {
+		blog.Warnf("create model failed, field `%s` duplicated, rid: %s", inputParam.Spec.ObjectName, ctx.ReqID)
+		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectName)
+	}
+
 	inputParam.Spec.OwnerID = ctx.SupplierAccount
 	id, err := m.save(ctx, &inputParam.Spec)
 	if nil != err {

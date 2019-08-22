@@ -28,7 +28,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// ClassificationOperationInterface classification opoeration methods
+// ClassificationOperationInterface classification operation methods
 type ClassificationOperationInterface interface {
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
 
@@ -68,7 +68,7 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 	cls := c.modelFactory.CreateClassification(params)
 	_, err := cls.Parse(data)
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to parse the params, error info is %s", err.Error())
+		blog.Errorf("[operation-cls]failed to parse the params, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -84,13 +84,13 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 	// }
 	//
 	// if err := c.authManager.AuthorizeResourceCreate(params.Context, params.Header, businessID, meta.ModelClassification); err != nil {
-	// 	blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v", class, err)
+	// 	blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v, rid: %s", class, err, params.ReqID)
 	// 	return nil, err
 	// }
 
 	err = cls.Create()
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to save the classification(%#v), error info is %s", cls, err.Error())
+		blog.Errorf("[operation-cls]failed to save the classification(%#v), error info is %s, rid: %s", cls, err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -128,7 +128,7 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		}
 
 		if 0 != len(objs) {
-			blog.Warnf("[operation-cls] the classification(%s) has some obejcts, forbidden to delete", cls.Classify().ClassificationID)
+			blog.Warnf("[operation-cls] the classification(%s) has some objects, forbidden to delete, rid: %s", cls.Classify().ClassificationID, params.ReqID)
 			return params.Err.Error(common.CCErrTopoObjectClassificationHasObject)
 		}
 
@@ -140,12 +140,12 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 
 	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to delete the classification, error info is %s", rsp.ErrMsg)
+		blog.Errorf("failed to delete the classification, error info is %s, rid: %s", rsp.ErrMsg, params.ReqID)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -163,16 +163,16 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", fCond, rsp.ErrMsg)
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", fCond, rsp.ErrMsg, params.ReqID)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	clsIDs := []string{}
+	clsIDs := make([]string, 0)
 	for _, cls := range rsp.Data.Info {
 		clsIDs = append(clsIDs, cls.ClassificationID)
 	}
@@ -180,15 +180,15 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 	queryObjectCond := condition.CreateCondition().Field(common.BKClassificationIDField).In(clsIDs)
 	queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 	if !queryObjectResp.Result {
-		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", fCond, queryObjectResp.ErrMsg)
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", fCond, queryObjectResp.ErrMsg, params.ReqID)
 		return nil, params.Err.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
 	}
 	objMap := make(map[string][]metadata.Object)
-	objIDs := []string{}
+	objIDs := make([]string, 0)
 	for _, info := range queryObjectResp.Data.Info {
 		objIDs = append(objIDs, info.Spec.ObjectID)
 		objMap[info.Spec.ObjCls] = append(objMap[info.Spec.ObjCls], info.Spec)
@@ -198,7 +198,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
 	}
-	asstIDs := []string{}
+	asstIDs := make([]string, 0)
 	for _, asstItem := range asstItems {
 		asstIDs = append(asstIDs, asstItem.AsstObjID)
 	}
@@ -224,22 +224,32 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		asstObjsMap[asstItem.ObjectID] = asstObjMap
 	}
 
-	datas := []metadata.ClassificationWithObject{}
+	asstMap := make(map[string]map[string][]metadata.Object)
+	for _, info := range queryObjectResp.Data.Info {
+		asstObjMap := make(map[string][]metadata.Object)
+		if asstObjs, ok := asstMap[info.Spec.ObjCls]; ok {
+			asstObjMap = asstObjs
+		}
+		if asstObjs, ok := asstObjsMap[info.Spec.ObjectID]; ok {
+			for asstObjKey, asstObj := range asstObjs {
+				asstObjMap[asstObjKey] = asstObj
+			}
+		}
+		asstMap[info.Spec.ObjCls] = asstObjMap
+	}
+
+	datas := make([]metadata.ClassificationWithObject, 0)
 	for _, cls := range rsp.Data.Info {
 		clsItem := metadata.ClassificationWithObject{
 			Classification: cls,
 			Objects:        []metadata.Object{},
 			AsstObjects:    map[string][]metadata.Object{},
 		}
-		if obj, ok := objMap[cls.ClassificationID] ; ok {
+		if obj, ok := objMap[cls.ClassificationID]; ok {
 			clsItem.Objects = obj
 		}
-		for _, objItem := range clsItem.Objects {
-			if asstObjs, ok := asstObjsMap[objItem.ObjectID]; ok {
-				for asstObjKey, asstObj := range asstObjs {
-					clsItem.AsstObjects[asstObjKey] = asstObj
-				}
-			}
+		if asst, ok := asstMap[cls.ClassificationID]; ok {
+			clsItem.AsstObjects = asst
 		}
 		datas = append(datas, clsItem)
 	}
@@ -258,12 +268,12 @@ func (c *classification) FindClassification(params types.ContextParams, cond con
 
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-cls] failed to search the clssificaiton by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, params.ReqID)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -275,7 +285,7 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 	cls := c.modelFactory.CreateClassification(params)
 	data.Set("id", id)
 	if _, err := cls.Parse(data); err != nil {
-		blog.Errorf("update classification, but parse classification failed, err：%v", err)
+		blog.Errorf("update classification, but parse classification failed, err：%v, rid: %s", err, params.ReqID)
 		return err
 	}
 
@@ -284,25 +294,25 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 
 	// auth: check authorization
 	// if err := c.authManager.AuthorizeByClassification(params.Context, params.Header, meta.Update, class); err != nil {
-	// 	blog.V(2).Infof("update classification %s failed, authorization failed, err: %+v", class, err)
+	// 	blog.V(2).Infof("update classification %s failed, authorization failed, err: %+v, rid: %s", class, err, params.ReqID)
 	// 	return err
 	// }
 
 	err := cls.Update(data)
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s", cls, err.Error())
+		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s, rid: %s", cls, err.Error(), params.ReqID)
 		return err
 	}
 
 	// auth: update registered classifications
 	if len(class.ClassificationID) > 0 {
 		if err := c.authManager.UpdateRegisteredClassificationByID(params.Context, params.Header, class.ClassificationID); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v", class.ClassificationName, err)
+			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, params.ReqID)
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 	} else {
 		if err := c.authManager.UpdateRegisteredClassificationByRawID(params.Context, params.Header, class.ID); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v", class.ClassificationName, err)
+			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, params.ReqID)
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 	}

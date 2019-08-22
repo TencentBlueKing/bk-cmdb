@@ -147,7 +147,7 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 
 	businessIDs := make([]int64, 0)
 	if businessID == 0 {
-		ids, err := am.Authorize.GetAuthorizedBusinessList(ctx, commonInfo.User)
+		ids, err := am.Authorize.GetAnyAuthorizedBusinessList(ctx, commonInfo.User)
 		if err != nil {
 			blog.Errorf("make condition from authorization failed, get authorized businesses failed, err: %+v, rid: %s", err, rid)
 			return nil, false, fmt.Errorf("make condition from authorization failed, get authorized businesses failed, err: %+v", err)

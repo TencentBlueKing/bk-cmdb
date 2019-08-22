@@ -16,14 +16,19 @@ export default {
     meta: new Meta({
         menu: {
             id: 'modelTopology',
-            i18n: 'Nav["模型拓扑"]',
+            i18n: '模型拓扑',
             path: path,
             order: 2,
-            parent: NAV_MODEL_MANAGEMENT
+            parent: NAV_MODEL_MANAGEMENT,
+            businessView: false
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'global'
+            }
         },
-        i18nTitle: 'Nav["模型拓扑"]'
+        i18nTitle: '模型拓扑'
+            
     })
 }

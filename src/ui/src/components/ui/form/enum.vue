@@ -1,13 +1,19 @@
 <template>
-    <div class="form-enum">
-        <bk-selector class="form-enum-selector"
-            :searchable="searchable"
-            :list="options"
-            :disabled="disabled"
-            :allow-clear="allowClear"
-            :selected.sync="selected">
-        </bk-selector>
-    </div>
+    <bk-select class="form-enum-selector"
+        v-model="selected"
+        :clearable="allowClear"
+        :searchable="searchable"
+        :disabled="disabled"
+        :popover-options="{
+            boundary: 'window'
+        }">
+        <bk-option
+            v-for="(option, index) in options"
+            :key="index"
+            :id="option.id"
+            :name="option.name">
+        </bk-option>
+    </bk-select>
 </template>
 
 <script>
@@ -52,10 +58,15 @@
             selected (selected) {
                 this.$emit('input', selected)
                 this.$emit('on-selected', selected)
+            },
+            disabled (disabled) {
+                this.setInitData()
             }
         },
         created () {
-            this.setInitData()
+            if (!this.disabled) {
+                this.setInitData()
+            }
         },
         methods: {
             setInitData () {
@@ -75,9 +86,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .form-enum {
-        .form-enum-selector{
-            width: 100%;
-        }
+    .form-enum-selector{
+        width: 100%;
     }
 </style>

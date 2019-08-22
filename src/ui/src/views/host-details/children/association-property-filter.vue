@@ -14,12 +14,12 @@
             v-model="localSelected.operator"
             @on-selected="handleOperatorSelected">
         </cmdb-selector>
-        <div class="property-value fl" style="width: 325px;"
+        <div class="property-value fl" style="width: 315px;"
             v-if="Object.keys(selectedProperty).length">
             <component
                 :is="`cmdb-form-${selectedProperty['bk_property_type']}`"
                 :options="selectedProperty.option || []"
-                :placeholder="$t('Common[\'请输入关键字\']')"
+                :placeholder="$t('请输入关键字')"
                 v-model.trim="localSelected.value">
             </component>
         </div>
@@ -63,11 +63,11 @@
                     'multiasst': ['$regex', '$eq', '$ne']
                 },
                 operatorLabel: {
-                    '$nin': this.$t("Common['不包含']"),
-                    '$in': this.$t("Common['包含']"),
-                    '$regex': this.$t("Common['包含']"),
-                    '$eq': this.$t("Common['等于']"),
-                    '$ne': this.$t("Common['不等于']")
+                    '$nin': this.$t('不包含'),
+                    '$in': this.$t('包含'),
+                    '$regex': this.$t('包含'),
+                    '$eq': this.$t('等于'),
+                    '$ne': this.$t('不等于')
                 }
             }
         },

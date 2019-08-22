@@ -60,7 +60,7 @@ func RespSuccessV2(data interface{}, resp *restful.Response) {
 	s, err := json.Marshal(res_v2)
 	if err != nil {
 		blog.Errorf("ResToV2ForRoleApp error:%v, reply:%v", err, res_v2)
-		RespFailV2(common.Json_Marshal_ERR, common.Json_Marshal_ERR_STR, resp)
+		RespFailV2(common.JsonMarshalErr, common.JsonMarshalErrStr, resp)
 	}
 
 	io.WriteString(resp, string(s))
@@ -555,7 +555,7 @@ func ResToV2ForHostDataList(result bool, message string, data interface{}) (comm
 		return nil, err
 	}
 	convFields := []string{common.BKAppNameField, common.BKModuleNameField, common.BKBakOperatorField, common.BKSetNameField, common.BKOperatorField, common.BKSetIDField, common.BKAppIDField, common.BKModuleIDField}
-	var ret common.KvMap
+	var ret = common.KvMap{}
 
 	if "" != resDataV3 {
 		resDataArrV3, ok := resDataV3.([]interface{})

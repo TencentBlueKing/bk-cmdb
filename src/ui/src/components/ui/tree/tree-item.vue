@@ -153,7 +153,7 @@
                 color: #3a84ff;
             }
             .node-folder-icon {
-                color: #3a84ff;
+                color: #3a84ff !important;
             }
         }
         &.is-leaf {
@@ -168,6 +168,7 @@
                 @include inlineBlock;
                 position: relative;
                 font-size: 14px;
+                color: #c4c6cc;
                 z-index: 2;
             }
             .node-checkbox {

@@ -3,37 +3,37 @@
         <template v-if="noFindData">
             <div class="no-content">
                 <img src="../../assets/images/no-content.png" alt="no-content">
-                <p>{{$t("BusinessSynchronous['找不到更新信息']")}}</p>
-                <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
+                <p>{{$t('找不到更新信息')}}</p>
+                <bk-button theme="primary" @click="handleGoBackModule">{{$t('返回')}}</bk-button>
             </div>
         </template>
         <template v-else-if="isLatsetData">
             <div class="no-content">
                 <img src="../../assets/images/latset-data.png" alt="no-content">
-                <p>{{$t("BusinessSynchronous['最新数据']")}}</p>
-                <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
+                <p>{{$t('最新数据')}}</p>
+                <bk-button theme="primary" @click="handleGoBackModule">{{$t('返回')}}</bk-button>
             </div>
         </template>
         <template v-else-if="list.length">
             <feature-tips
                 :show-tips="showFeatureTips"
-                :desc="$t('BusinessSynchronous[\'功能提示\']')">
+                :desc="$t('同步模版功能提示')">
             </feature-tips>
             <p class="tips" :style="{ 'padding-top': showFeatureTips ? '24px' : '0' }">
-                {{$t("BusinessSynchronous['请确认']")}}
+                {{$t('请确认')}}
                 <span>{{treePath}}</span>
-                {{$t("BusinessSynchronous['模版更新信息']")}}
+                {{$t('模版更新信息')}}
             </p>
             <div class="info-tab">
                 <div class="tab-head">
                     <div class="tab-nav">
-                        <div :class="['nav-item', {
-                                 'delete-item': process['operational_type'] === 'removed',
-                                 'active': showContentId === process['process_template_id']
-                             }]"
-                            v-for="(process, index) in list"
+                        <div v-for="(process, index) in list"
+                            :class="['nav-item', {
+                                'delete-item': process['operational_type'] === 'removed',
+                                'active': showContentId === (process['process_template_name'] + index)
+                            }]"
                             :key="index"
-                            @click="handleContentView(process['process_template_id'], index)">
+                            @click="handleContentView(process['process_template_name'], index)">
                             <span>{{process['process_template_name']}}</span>
                             <i :class="['badge', { 'has-read': process['has_read'] }]">{{process['service_instance_count'] | badge}}</i>
                         </div>
@@ -41,27 +41,27 @@
                 </div>
                 <div class="tab-content">
                     <section class="tab-pane"
-                        v-show="showContentId === process['process_template_id']"
                         v-for="(process, index) in list"
+                        v-show="showContentId === (process['process_template_name'] + index)"
                         :key="index">
                         <div class="change-box">
                             <div class="title">
-                                <h3>{{$t("BusinessSynchronous['变更内容']")}}</h3>
+                                <h3>{{$t('变更内容')}}</h3>
                                 <span v-if="process['operational_type'] === 'changed'">（{{properties[process['process_template_id']].length}}）</span>
                             </div>
                             <div class="process-name"
                                 v-show="process['operational_type'] === 'changed'">
-                                {{$t("ProcessManagement['进程名称']")}}：{{process['process_template_name']}}
+                                {{$t('进程名称')}}：<span style="color: #313238;">{{process['process_template_name']}}</span>
                             </div>
                             <div class="process-name mb50"
                                 v-show="process['operational_type'] === 'added'">
-                                {{$t("BusinessSynchronous['模板中新增进程']")}}
+                                {{$t('模板中新增进程')}}
                                 <span style="font-weight: bold;">{{process['process_template_name']}}</span>
                             </div>
                             <div class="process-name mb50"
                                 v-show="process['operational_type'] === 'removed'">
                                 <span style="font-weight: bold;">{{process['process_template_name']}}</span>
-                                {{$t("BusinessSynchronous['从模版中删除']")}}
+                                {{$t('从模版中删除')}}
                             </div>
                             <div class="process-info clearfix" v-show="process['operational_type'] === 'changed'">
                                 <div class="info-item fl"
@@ -73,14 +73,14 @@
                         </div>
                         <div class="instances-box">
                             <div class="title">
-                                <h3>{{$t("BusinessSynchronous['涉及实例']")}}</h3>
+                                <h3>{{$t('涉及实例')}}</h3>
                                 <span>（{{process['service_instances'].length}}）</span>
                             </div>
                             <div class="service-instances">
                                 <div class="instances-item"
                                     v-for="(instance, instanceIndex) in process['service_instances']"
                                     :key="instanceIndex"
-                                    @click="hanldeInstanceDetails(instance, process['operational_type'], process['process_template_id'])">
+                                    @click="hanldeInstanceDetails(instance, process['operational_type'], process['process_template_id'], process['process_template_name'])">
                                     <h6>{{instance['service_instance']['name']}}</h6>
                                     <span v-if="process['operational_type'] === 'changed'">（{{instance['changed_attributes'].length}}）</span>
                                 </div>
@@ -93,22 +93,22 @@
                 <bk-button
                     class="mr10"
                     :disabled="readNum !== list.length"
-                    type="primary"
+                    theme="primary"
                     @click="handleSubmitSync">
-                    {{$t("BusinessSynchronous['确认并同步']")}}
+                    {{$t('确认并同步')}}
                 </bk-button>
-                <bk-button @click="handleGoBackModule">{{$t("Common['取消']")}}</bk-button>
+                <bk-button @click="handleGoBackModule">{{$t('取消')}}</bk-button>
             </div>
         </template>
 
-        <cmdb-slider
+        <bk-sideslider
             :width="676"
             :is-show.sync="slider.show"
             :title="slider.title">
-            <template slot="content">
+            <template slot="content" v-if="slider.show">
                 <instance-details :attribute-list="slider.details"></instance-details>
             </template>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -187,7 +187,9 @@
                                 } else if (['bool'].includes(property['bk_property_type'])) {
                                     attribute['show_value'] = attribute['template_property_value']['value'] ? '是' : '否'
                                 } else {
-                                    attribute['show_value'] = attribute['template_property_value']['value']
+                                    attribute['show_value'] = attribute['property_id'] === 'bind_ip'
+                                        ? attribute['template_property_value']
+                                        : attribute['template_property_value']['value']
                                 }
                                 attributes.push(attribute)
                             }
@@ -217,7 +219,7 @@
                 await this.getModuleInstance()
                 if (this.list.length) {
                     this.isLatsetData = false
-                    this.showContentId = this.list[0]['process_template_id']
+                    this.showContentId = this.list[0]['process_template_name'] + 0
                     this.$set(this.list[0], 'has_read', true)
                 } else {
                     this.isLatsetData = true
@@ -276,13 +278,20 @@
             },
             async getServiceInstanceDifferences () {
                 try {
-                    this.differenData = await this.searchServiceInstanceDifferences({
+                    await this.searchServiceInstanceDifferences({
                         params: this.$injectMetadata({
                             bk_module_id: Number(this.routerParams.moduleId),
                             service_template_id: this.serviceTemplateId
                         })
+                    }).then(res => {
+                        this.differenData = {
+                            added: res.added,
+                            changed: res.changed,
+                            removed: res.removed,
+                            unchanged: res.unchanged
+                        }
                     })
-                    this.$store.commit('setHeaderTitle', `${this.$t("BusinessSynchronous['同步模板']")}【${this.viewsTitle}】`)
+                    this.$store.commit('setHeaderTitle', `${this.$t('同步模板')}【${this.viewsTitle}】`)
                 } catch (error) {
                     console.error(error)
                     this.noFindData = true
@@ -306,27 +315,35 @@
                             property_id: property['bk_property_id'],
                             property_name: property['bk_property_name'],
                             before_value: this.changedData.type === 'added' ? '--' : propertyValue,
-                            show_value: this.changedData.type === 'removed' ? this.$t("BusinessSynchronous['该进程已删除']") : propertyValue
+                            show_value: this.changedData.type === 'removed' ? this.$t('该进程已删除') : propertyValue
                         }
                     })
             },
             filterShowList () {
-                const list = this.propertiesGroup()
+                const list = this.$tools.clone(this.propertiesGroup())
                 if (this.changedData.type === 'added') {
-                    return list.filter(property => property['show_value'])
+                    return list.filter(property => {
+                        const ip = ['127.0.0.1', '0.0.0.0']
+                        const value = property['show_value']
+                        if (property['property_id'] === 'bind_ip') {
+                            property['show_value'] = ip[value - 1]
+                        }
+                        return property['show_value']
+                    })
                 } else {
                     return list.filter(property => property['before_value'])
                 }
             },
-            handleContentView (id, index) {
-                this.showContentId = id
+            handleContentView (name, index) {
+                this.showContentId = (name + index)
                 if (!this.list[index]['has_read']) {
                     this.$set(this.list[index], 'has_read', true)
                     this.readNum++
                 }
             },
             getTableShowList (list) {
-                return list.map(item => {
+                const resList = this.$tools.clone(list)
+                return resList.map(item => {
                     const result = item
                     const property = this.modelProperties.find(property => property['bk_property_id'] === item['property_id'])
                     if (['enum'].includes(property['bk_property_type'])) {
@@ -337,7 +354,9 @@
                         result['show_value'] = item['template_property_value']['value'] ? '是' : '否'
                     } else {
                         result['before_value'] = item['property_value']
-                        result['show_value'] = item['template_property_value']['value'] ? item['template_property_value']['value'] : '--'
+                        result['show_value'] = item['property_id'] === 'bind_ip'
+                            ? item['template_property_value'] ? item['template_property_value'] : '--'
+                            : item['template_property_value']['value'] ? item['template_property_value']['value'] : '--'
                     }
                     return result
                 })
@@ -345,11 +364,10 @@
             async hanldeInstanceDetails (instance, type, processId) {
                 const instanceId = instance['service_instance']['id']
                 this.slider.title = instance['service_instance']['name']
-                this.changedData.current = instance['changed_attributes']
                 this.changedData.type = type
                 if (type === 'changed') {
                     this.slider.details = this.getTableShowList(instance['changed_attributes'])
-                } else if (type === 'remove') {
+                } else if (type === 'removed') {
                     if (this.instanceMap.hasOwnProperty(instanceId)) {
                         this.changedData.instanceDetails = this.instanceMap[instanceId]
                     } else {
@@ -359,6 +377,8 @@
                                     service_instance_id: instanceId
                                 })
                             })
+                            const targetProcess = result.filter(process => !process.relation.process_template_id)
+                            console.log(targetProcess)
                             this.changedData.instanceDetails = result[0]['property']
                             this.$store.commit('businessSync/setInstance', {
                                 id: instanceId,
@@ -397,7 +417,7 @@
                         service_instances: this.instanceIds
                     })
                 }).then(() => {
-                    this.$success(this.$t('BusinessSynchronous["同步成功"]'))
+                    this.$success(this.$t('同步成功'))
                     this.handleGoBackModule()
                 })
             },
@@ -445,23 +465,32 @@
             max-height: 500px;
             min-height: 300px;
             height: calc(100% - 160px);
-            border: 1px solid #c3cdd7;
+            border: 1px solid #dcdee5;
             .tab-head {
                 height: 100%;
                 .tab-nav {
                     @include scrollbar-y;
+                    position: relative;
                     width: 200px;
                     height: 100%;
                     background-color: #fafbfd;
                     padding-bottom: 20px;
-                    border-right: 1px solid #c3cdd7;
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        right: 0;
+                        width: 1px;
+                        height: 100%;
+                        background-color: #dcdee5;
+                    }
                 }
                 .nav-item {
                     @include space-between;
                     position: relative;
                     height: 60px;
                     padding: 0px 14px;
-                    border-bottom: 1px solid #c3cdd7;
+                    border-bottom: 1px solid #dcdee5;
                     cursor: pointer;
                     &.delete-item span {
                         text-decoration: line-through;
@@ -501,10 +530,11 @@
                             content: '';
                             position: absolute;
                             top: 0;
-                            right: -1px;
+                            right: 0;
                             width: 1px;
-                            height: 100%;
+                            height: 60px;
                             background-color: #ffffff;
+                            z-index: 2;
                         }
                         &.delete-item {
                             color: #ff5656;
@@ -531,7 +561,7 @@
                         }
                     }
                     .change-box {
-                        color: #313238;
+                        color: #63656e;
                         .process-info {
                             padding-top: 20px;
                             padding-bottom: 30px;
@@ -551,11 +581,14 @@
                         .instances-item {
                             @include space-between;
                             width: 240px;
+                            height: 24px;
+                            line-height: 24px;
                             font-size: 14px;
-                            padding: 2px 6px 4px;
+                            padding: 0 6px;
                             margin-bottom: 16px;
                             margin-right: 14px;
                             border: 1px solid #dcdee5;
+                            border-radius: 2px;
                             background-color: #fafbfd;
                             cursor: pointer;
                             h6 {

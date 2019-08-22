@@ -1,11 +1,11 @@
 <template>
     <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading() }">
-        <label class="create-label fl">{{$t('businessTopology["添加主机"]')}}</label>
+        <label class="create-label fl">{{$t('添加主机')}}</label>
         <div class="create-hosts">
-            <bk-button class="select-host-button" type="default"
+            <bk-button class="select-host-button" theme="default"
                 @click="hostSelectorVisible = true">
                 <i class="bk-icon icon-plus"></i>
-                {{$t('businessTopology["添加主机"]')}}
+                {{$t('添加主机')}}
             </bk-button>
             <div class="create-tables">
                 <service-instance-table class="service-instance-table"
@@ -21,12 +21,18 @@
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
-                    <bk-button type="primary"
-                        :disabled="!hosts.length"
-                        @click="handleConfirm">
-                        {{$t('Common["确定"]')}}
-                    </bk-button>
-                    <bk-button @click="handleBackToModule">{{$t('Common["取消"]')}}</bk-button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                            auth: [$OPERATION.C_SERVICE_INSTANCE]
+                        }">
+                        <bk-button theme="primary"
+                            :disabled="!hosts.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                            @click="handleConfirm">
+                            {{$t('确定')}}
+                        </bk-button>
+                    </span>
+                    <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </div>
@@ -109,6 +115,7 @@
                             })
                         })
                     })
+                    this.$success(this.$t('克隆成功'))
                     this.handleBackToModule()
                 } catch (e) {
                     console.error(e)
@@ -135,7 +142,6 @@
     .create-label{
         display: block;
         width: 100px;
-        text-align: right;
         position: relative;
         line-height: 32px;
         &:after {

@@ -27,6 +27,8 @@
     "module_property_bk_module_type": "module type",
     "module_property_operator": "main operator",
     "module_property_bk_bak_operator": "backup operator",
+    "module_property_service_category_id": "service category id",
+    "module_property_service_template_id": "service template id",
 
     "plat_property_bk_cloud_name": "cloud area",
     "plat_property_bk_supplier_account": "supplier",
@@ -81,7 +83,7 @@
     "process_property_pid_file": "PID filepath",
     "process_property_auto_start": "autostart",
     "process_property_auto_time_gap": "autostart period",
-    "process_property_bk_start_param_regex": "Startup parameter REGEX",
+    "process_property_bk_start_param_regex": "Process startup parameter",
     "process_property_service_category_id": "Service Category",
     "process_property_service_template_id": "Service Template",
 

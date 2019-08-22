@@ -40,7 +40,7 @@ type ResourceAttribute struct {
 	Basic
 
 	SupplierAccount string
-	BusinessID      int64
+	BusinessID      int64 `json:"business_id"`
 	// if this object belongs to a topology, like mainline topology,
 	// layers means each object's item before this object.
 	Layers Layers
@@ -49,11 +49,11 @@ type ResourceAttribute struct {
 // Basic defines the basic info for a resource.
 type Basic struct {
 	// the name of the affiliated resource, which could be a model name.
-	Type ResourceType
+	Type ResourceType `json:"type"`
 
 	// the action that user want to do with this resource.
 	// this field should be empty when it's used in resource handle operation.
-	Action Action
+	Action Action `json:"action"'`
 
 	// the name of the resource, which could be a bk-route, etc.
 	// this filed is not necessary for all the resources.
@@ -119,7 +119,7 @@ const (
 	MoveHostToAnotherBizModule     Action = "moveHostToAnotherBizModule"
 	CleanHostInSetOrModule         Action = "cleanHostInSetOrModule"
 	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"
-	MoveHostToModule               Action = "moveHostToModule"
+	MoveBizHostToModule            Action = "moveBizHostToModule"
 	TransferHost                   Action = "transferHost"
 
 	// process actions

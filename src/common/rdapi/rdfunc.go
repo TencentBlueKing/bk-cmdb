@@ -20,13 +20,13 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
@@ -118,10 +118,14 @@ func createAPIRspStr(errcode int, info string) (string, error) {
 func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
 	cid := util.GetHTTPCCRequestID(req.Request.Header)
 	if "" == cid {
-		cid = getHTTPOtherRequestID(req.Request.Header)
+		cid = GetHTTPOtherRequestID(req.Request.Header)
 		if cid == "" {
 			cid = util.GenerateRID()
+		} else {
+			content, _ := util.PeekRequest(req.Request)
+			blog.Infof("ESB Request: uri: %v, header: %v, body: %s", req.Request.RequestURI, req.Request.Header, content)
 		}
+
 		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
 	}
 	resp.Header().Set(common.BKHTTPCCRequestID, cid)
@@ -139,6 +143,6 @@ func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *r
 }
 
 // getHTTPOtherRequestID return other system request id from http header
-func getHTTPOtherRequestID(header http.Header) string {
+func GetHTTPOtherRequestID(header http.Header) string {
 	return header.Get(common.BKHTTPOtherRequestID)
 }

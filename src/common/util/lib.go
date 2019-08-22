@@ -17,17 +17,15 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync/atomic"
-	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 
 	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
 )
 
@@ -78,6 +76,40 @@ func ExtractRequestIDFromContext(ctx context.Context) string {
 	return ""
 }
 
+func ExtractOwnerFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+	owner := ctx.Value(common.ContextRequestOwnerField)
+	ownerValue, ok := owner.(string)
+	if ok == true {
+		return ownerValue
+	}
+	return ""
+}
+
+func NewContextFromGinContext(c *gin.Context) context.Context {
+	return NewContextFromHTTPHeader(c.Request.Header)
+}
+
+func NewContextFromHTTPHeader(header http.Header) context.Context {
+	rid := GetHTTPCCRequestID(header)
+	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+	return ctx
+}
+
+func ExtractRequestUserFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+	user := ctx.Value(common.ContextRequestUserField)
+	userValue, ok := user.(string)
+	if ok == true {
+		return userValue
+	}
+	return ""
+}
+
 // GetSupplierID return supplier_id from http header
 func GetSupplierID(header http.Header) (int64, error) {
 	return GetInt64ByInterface(header.Get(common.BKHTTPSupplierID))
@@ -100,11 +132,16 @@ func GetHTTPCCTransaction(header http.Header) string {
 // GetDBContext returns a new context that contains JoinOption
 func GetDBContext(parent context.Context, header http.Header) context.Context {
 	rid := header.Get(common.BKHTTPCCRequestID)
+	user := GetUser(header)
+	owner := GetOwnerID(header)
 	ctx := context.WithValue(parent, common.CCContextKeyJoinOption, dal.JoinOption{
 		RequestID: rid,
 		TxnID:     header.Get(common.BKHTTPCCTransactionID),
+		TMAddr:    header.Get(common.BKHTTPCCTxnTMServerAddr),
 	})
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
+	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
 	return ctx
 }
 
@@ -157,39 +194,6 @@ func (p Int64Slice) Len() int           { return len(p) }
 func (p Int64Slice) Less(i, j int) bool { return p[i] < p[j] }
 func (p Int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func Ptrue() *bool {
-	tmp := true
-	return &tmp
-}
-func Pfalse() *bool {
-	tmp := false
-	return &tmp
-}
-
-// RunForever will run the function forever and rerun the f function if any panic happened
-func RunForever(name string, f func() error) {
-	for {
-		if err := runNoPanic(f); err != nil {
-			blog.Errorf("[%s] return %v, retry 3s later", name, err)
-			time.Sleep(time.Second * 3)
-		}
-	}
-}
-
-func runNoPanic(f func() error) (err error) {
-	defer func() {
-		if err != nil {
-			return
-		}
-		if syserr := recover(); err != nil {
-			err = fmt.Errorf("panic with error: %v, stack: \n%s", syserr, debug.Stack())
-		}
-	}()
-
-	err = f()
-	return err
-}
-
 func GenerateRID() string {
 	unused := "0000"
 	id := xid.New()
@@ -203,4 +207,14 @@ func Int64Join(data []int64, separator string) string {
 		ret += strconv.FormatInt(item, 10) + separator
 	}
 	return strings.Trim(ret, separator)
+}
+
+// BuildMongoField build mongodb sub item field key
+func BuildMongoField(key ...string) string {
+	return strings.Join(key, ".")
+}
+
+// BuildMongoSyncItemField build mongodb sub item synchronize field key
+func BuildMongoSyncItemField(key string) string {
+	return BuildMongoField(common.MetadataField, common.MetaDataSynchronizeField, key)
 }

@@ -89,9 +89,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Update,
-					Name:   ps.RequestCtx.Elements[4],
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Update,
+					InstanceIDEx: ps.RequestCtx.Elements[4],
 				},
 			},
 		}
@@ -114,9 +114,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Delete,
-					Name:   ps.RequestCtx.Elements[4],
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Delete,
+					InstanceIDEx: ps.RequestCtx.Elements[4],
 				},
 			},
 		}
@@ -164,9 +164,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Find,
-					Name:   ps.RequestCtx.Elements[5],
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Find,
+					InstanceIDEx: ps.RequestCtx.Elements[5],
 				},
 			},
 		}
@@ -265,18 +265,37 @@ const (
 	moveHostsFromModuleToResPoolPattern       = "/api/v3/hosts/modules/resource"
 	moveHostsToBizIdleModulePattern           = "/api/v3/hosts/modules/idle"
 	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
-	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts//host/add/module"
+	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts/host/add/module"
 	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
 	findHostsWithConditionPattern     = "/api/v3/hosts/search"
+	findBizHostsWithoutAppPattern     = "/api/v3/hosts/list_hosts_without_app"
 	findHostsDetailsPattern           = "/api/v3/hosts/search/asstdetail"
 	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
 	findHostsWithModulesPattern       = "/api/v3/hosts/findmany/modulehost"
 )
 
+var (
+	findBizHostsRegex = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts`)
+	// find host instance's object properties info
+	findHostInstanceObjectPropertiesRegexp = regexp.MustCompile(`^/api/v3/hosts/[^\s/]+/[0-9]+/?$`)
+)
+
 func (ps *parseStream) host() *parseStream {
 	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitRegexp(findHostInstanceObjectPropertiesRegexp, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.Find,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -351,6 +370,8 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	// move hosts to business module operation.
+	// TODO: remove this auth operation, it has already been done
+	// in host server.
 	if ps.hitPattern(moveHostToBusinessModulePattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil {
@@ -362,7 +383,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.MoveHostToModule,
+					Action: meta.MoveBizHostToModule,
 				},
 			},
 		}
@@ -519,6 +540,39 @@ func (ps *parseStream) host() *parseStream {
 
 		return ps
 	}
+	// find hosts without app id
+	if ps.hitPattern(findBizHostsWithoutAppPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// find hosts under business specified by path parameter
+	if ps.hitRegexp(findBizHostsRegex, http.MethodPost) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("list business's hosts, but got invalid business id: %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
 
 	if ps.hitPattern(findHostsDetailsPattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
@@ -563,9 +617,9 @@ const (
 )
 
 var (
-	updateHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorite/[^\s/]+/?$`)
-	deleteHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorite/[^\s/]+/?$`)
-	increaseHostFavoriteRegexp = regexp.MustCompile(`^/api/v3/hosts/favorite/[^\s/]+/incr$`)
+	updateHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorites/[^\s/]+/?$`)
+	deleteHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorites/[^\s/]+/?$`)
+	increaseHostFavoriteRegexp = regexp.MustCompile(`^/api/v3/hosts/favorites/[^\s/]+/incr$`)
 )
 
 func (ps *parseStream) hostFavorite() *parseStream {

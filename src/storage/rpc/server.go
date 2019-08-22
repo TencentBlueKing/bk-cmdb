@@ -34,7 +34,7 @@ type Server struct {
 func NewServer() *Server {
 	return &Server{
 		ctx:            context.Background(),
-		codec:          JSONCodec,
+		codec:          BSONCodec,
 		handlers:       map[string]HandlerFunc{},
 		streamHandlers: map[string]HandlerStreamFunc{},
 	}

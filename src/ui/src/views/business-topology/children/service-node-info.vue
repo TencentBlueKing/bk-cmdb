@@ -13,33 +13,63 @@
     >
         <cmdb-details class="topology-details"
             v-if="type === 'details'"
-            :show-delete="false"
             :properties="properties"
             :property-groups="propertyGroups"
             :inst="flattenedInstance"
-            :show-options="modelId !== 'biz'"
-            @on-edit="handleEdit">
+            :show-options="modelId !== 'biz'">
+            <template slot="details-options">
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_TOPO),
+                        auth: [$OPERATION.U_TOPO]
+                    }">
+                    <bk-button class="button-edit"
+                        theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
+                        @click="handleEdit">
+                        {{$t('编辑')}}
+                    </bk-button>
+                </span>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.D_TOPO),
+                        auth: [$OPERATION.D_TOPO]
+                    }">
+                    <bk-button class="btn-delete"
+                        :disabled="!$isAuthorized($OPERATION.D_TOPO)"
+                        @click="handleDelete">
+                        {{$t('删除节点')}}
+                    </bk-button>
+                </span>
+            </template>
             <span class="property-value fl" slot="__template_name__">
-                {{flattenedInstance.__template_name__}}
-                <bk-button class="unbind-button"
+                <span class="link"
                     v-if="withTemplate"
-                    @click="handleRemoveTemplate">
-                    {{$t('BusinessTopology["解除模板"]')}}
-                </bk-button>
+                    @click="goServiceTemplate">{{flattenedInstance.__template_name__}}</span>
+                <span v-else>{{flattenedInstance.__template_name__}}</span>
+                <!-- <span style="display: inline-block;"
+                    v-if="withTemplate"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_TOPO),
+                        auth: [$OPERATION.U_TOPO]
+                    }">
+                    <bk-button class="unbind-button"
+                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
+                        @click="handleRemoveTemplate">
+                        {{$t('解除模板')}}
+                    </bk-button>
+                </span> -->
             </span>
         </cmdb-details>
         <cmdb-form class="topology-form" v-else-if="type === 'update'"
             ref="form"
             :properties="properties"
             :property-groups="propertyGroups"
+            :disabled-properties="disabledProperties"
             :inst="instance"
             :type="type"
             @on-submit="handleSubmit"
             @on-cancel="handleCancel">
-            <template slot="extra-options">
-                <bk-button type="danger" style="margin-left: 4px" @click="handleDelete">{{$t('Common["删除"]')}}
-                </bk-button>
-            </template>
             <template slot="__service_category__" v-if="!withTemplate">
                 <cmdb-selector class="category-selector fl"
                     :list="firstCategories"
@@ -61,6 +91,7 @@
             return {
                 type: 'details',
                 properties: [],
+                disabledProperties: [],
                 propertyGroups: [],
                 instance: {},
                 first: '',
@@ -113,10 +144,11 @@
                     this.init()
                 }
             },
-            selectedNode (node) {
+            async selectedNode (node) {
                 if (node) {
                     this.type = 'details'
-                    this.getInstance()
+                    await this.getInstance()
+                    this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
                 }
             }
         },
@@ -168,7 +200,7 @@
                 const group = this.getModuleServiceTemplateGroup()
                 return [{
                     bk_property_id: '__template_name__',
-                    bk_property_name: this.$t('BusinessTopology["模板名称"]'),
+                    bk_property_name: this.$t('模板名称'),
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 1,
                     bk_isapi: false,
@@ -176,7 +208,7 @@
                     unit: ''
                 }, {
                     bk_property_id: '__service_category__',
-                    bk_property_name: this.$t('BusinessTopology["服务分类"]'),
+                    bk_property_name: this.$t('服务分类'),
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 2,
                     bk_isapi: false,
@@ -215,8 +247,8 @@
             getModuleServiceTemplateGroup () {
                 return {
                     bk_group_id: '__service_template_info__',
-                    bk_group_index: Infinity,
-                    bk_group_name: this.$t('BusinessTopology["服务模板信息"]'),
+                    bk_group_index: -1,
+                    bk_group_name: this.$t('服务模板信息'),
                     bk_obj_id: 'module',
                     ispre: true
                 }
@@ -386,11 +418,11 @@
                     module: 'bk_module_name'
                 }
                 try {
-                    await (promiseMap[this.modelId] || this.updateCustomInstance)(value)
+                    await (promiseMap[this.modelId] || this.updateCustomInstance)(this.$injectMetadata(value))
                     this.selectedNode.data.bk_inst_name = value[nameMap[this.modelId] || 'bk_inst_name']
                     this.instance = Object.assign({}, this.instance, value)
                     this.type = 'details'
-                    this.$success(this.$t('Common["修改成功"]'))
+                    this.$success(this.$t('修改成功'))
                 } catch (e) {
                     console.error(e)
                 }
@@ -420,7 +452,7 @@
                         requestId: 'updateNodeInstance'
                     }
                 }).then(async () => {
-                    const serviceInfo = await this.getServiceInfo({ service_category_id: value.service_category_id })
+                    const serviceInfo = await this.getServiceInfo({ service_category_id: value.service_category_id || this.instance.service_category_id })
                     Object.assign(this.instance, serviceInfo)
                 })
             },
@@ -439,10 +471,11 @@
             },
             handleDelete () {
                 this.$bkInfo({
-                    title: `${this.$t('Common["确定删除"]')} ${this.selectedNode.name}?`,
-                    content: this.modelId === 'module'
-                        ? this.$t('BusinessTopology["删除模块提示"]')
-                        : this.$t('Common[\'下属层级都会被删除，请先转移其下所有的主机\']'),
+                    title: `${this.$t('确定删除')} ${this.selectedNode.name}?`,
+                    subTitle: this.modelId === 'module'
+                        ? this.$t('删除模块提示')
+                        : this.$t('下属层级都会被删除，请先转移其下所有的主机'),
+                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         const promiseMap = {
                             set: this.deleteSetInstance,
@@ -457,7 +490,7 @@
                                 emitEvent: true
                             })
                             tree.removeNode(nodeId)
-                            this.$success(this.$t('Common[\'删除成功\']'))
+                            this.$success(this.$t('删除成功'))
                         } catch (e) {
                             console.error(e)
                         }
@@ -469,7 +502,8 @@
                     bizId: this.business,
                     setId: this.selectedNode.data.bk_inst_id,
                     config: {
-                        requestId: 'deleteNodeInstance'
+                        requestId: 'deleteNodeInstance',
+                        data: this.$injectMetadata({})
                     }
                 })
             },
@@ -479,7 +513,8 @@
                     setId: this.selectedNode.parent.data.bk_inst_id,
                     moduleId: this.selectedNode.data.bk_inst_id,
                     config: {
-                        requestId: 'deleteNodeInstance'
+                        requestId: 'deleteNodeInstance',
+                        data: this.$injectMetadata({})
                     }
                 })
             },
@@ -495,13 +530,16 @@
             },
             handleRemoveTemplate () {
                 const content = this.$createElement('div', {
+                    style: {
+                        'font-size': '14px'
+                    },
                     domProps: {
-                        innerHTML: this.$t('BusinessTopology["解除模板影响"]')
+                        innerHTML: this.$tc('解除模板影响', this.flattenedInstance.__template_name__, { name: this.flattenedInstance.__template_name__ })
                     }
                 })
                 this.$bkInfo({
-                    title: this.$t('BusinessTopology["确认解除模板"]'),
-                    content: content,
+                    title: this.$t('确认解除模板'),
+                    subHeader: content,
                     confirmFn: async () => {
                         await this.$store.dispatch('serviceInstance/removeServiceTemplate', {
                             config: {
@@ -511,8 +549,26 @@
                                 })
                             }
                         })
+                        this.selectedNode.data.service_template_id = 0
                         this.instance.service_template_id = null
                         this.instance.__template_name__ = '--'
+                        this.disabledProperties = []
+                    }
+                })
+            },
+            goServiceTemplate () {
+                this.$router.push({
+                    name: 'operationalTemplate',
+                    params: {
+                        templateId: this.instance.service_template_id
+                    },
+                    query: {
+                        from: {
+                            name: this.$route.name,
+                            query: {
+                                module: this.instance.bk_module_id
+                            }
+                        }
                     }
                 })
             }
@@ -521,10 +577,19 @@
 </script>
 
 <style lang="scss" scoped>
+    .topology-details {
+        /deep/ .details-options {
+            padding: 28px 18px 0 0;
+        }
+    }
     .property-value {
-        height: 16px;
-        line-height: 16px;
+        height: 26px;
+        line-height: 26px;
         overflow: visible;
+        .link {
+            color: #3a84ff;
+            cursor: pointer;
+        }
     }
     .unbind-button {
         height: 26px;
@@ -535,11 +600,21 @@
         color: #63656E;
     }
     .topology-form {
+        /deep/ .property-item {
+            max-width: 554px !important;
+        }
         .category-selector {
             width: calc(50% - 5px);
             & + .category-selector {
                 margin-left: 10px;
             }
+        }
+    }
+    .btn-delete{
+        min-width: 76px;
+        &:hover {
+            color: #ff5656;
+            border-color: #ff5656;
         }
     }
 </style>

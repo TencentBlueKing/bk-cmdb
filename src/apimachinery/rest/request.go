@@ -193,7 +193,7 @@ func (r *Request) WrapURL() *url.URL {
 	}
 
 	if len(r.subPathArgs) > 0 {
-		finalUrl.Path = finalUrl.Path + fmt.Sprintf(r.subPath, r.subPathArgs)
+		finalUrl.Path = finalUrl.Path + fmt.Sprintf(r.subPath, r.subPathArgs...)
 	} else {
 		finalUrl.Path = finalUrl.Path + r.subPath
 	}
@@ -222,7 +222,9 @@ func (r *Request) Do() *Result {
 	}
 	if r.parent.requestDuration != nil {
 		before := time.Now()
-		defer r.parent.requestDuration.WithLabelValues(r.subPath, strconv.Itoa(result.StatusCode)).Observe(commonUtil.ToMillisecond(time.Since(before)))
+		defer func() {
+			r.parent.requestDuration.WithLabelValues(r.subPath, strconv.Itoa(result.StatusCode)).Observe(commonUtil.ToMillisecond(time.Since(before)))
+		}()
 	}
 
 	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)
@@ -360,7 +362,7 @@ func (r *Result) Into(obj interface{}) error {
 			if r.StatusCode >= 300 {
 				return fmt.Errorf("http request err: %s", string(r.Body))
 			}
-			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", string(r.Body), err.Error())
+			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", r.Body, err.Error())
 			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
 		}
 	} else if r.StatusCode >= 300 {

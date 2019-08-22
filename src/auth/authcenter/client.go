@@ -17,9 +17,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
@@ -428,11 +430,12 @@ func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAutho
 	return resp.Data, nil
 }
 
-func (a *authClient) GetAuthorizedScopes(ctx context.Context, scopeID string, body *Principal) ([]string, error) {
+// find resource list that a user got any authorized resources.
+func (a *authClient) GetAnyAuthorizedScopes(ctx context.Context, scopeID string, body *Principal) ([]string, error) {
 	resp := ListAuthorizedScopeResult{}
 
 	err := a.client.Post().
-		SubResourcef("/bkiam/api/v1/perm/systems/%s/scope_type/%s/authorized-scopes", SystemIDCMDB, ScopeTypeIDBiz).
+		SubResourcef("/bkiam/api/v1/perm/systems/%s/scope_type/%s/authorized-scopes", SystemIDCMDB, scopeID).
 		WithContext(ctx).
 		WithHeaders(a.basicHeader).
 		Body(body).
@@ -463,6 +466,74 @@ func (a *authClient) ListResources(ctx context.Context, header http.Header, sear
 	}
 	if !resp.Result || resp.Code != 0 {
 		return nil, fmt.Errorf("search resource with condition: %+v failed, message: %s, code: %v", searchCondition, resp.Message, resp.Code)
+	}
+
+	return resp.Data, nil
+}
+
+func (a *authClient) RegisterUserRole(ctx context.Context, header http.Header, roles RoleWithAuthResources) (int64, error) {
+	util.CopyHeader(a.basicHeader, header)
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/perm-templates", a.Config.SystemID)
+
+	resp := new(RegisterRoleResult)
+
+	err := a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(roles).
+		Do().Into(resp)
+	if err != nil {
+		return 0, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return 0, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data.TemplateID, nil
+}
+
+// returns the url which can helps to launch the bk-auth-center when a user do not
+// have the authorize to access resource(s).
+func (a *authClient) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p []metadata.Permission) (skipUrl string, err error) {
+	util.CopyHeader(a.basicHeader, header)
+	url := "/o/bk_iam_app/api/v1/apply-permission/url/"
+	req := map[string]interface{}{
+		"permission": p,
+	}
+	resp := new(GetSkipUrlResult)
+	err = a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(req).
+		Do().Into(&resp)
+	if err != nil {
+		return "", err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return "", fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data.Url, nil
+}
+
+// get user's group members from auth center
+func (a *authClient) GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]UserGroupMembers, error) {
+	util.CopyHeader(a.basicHeader, header)
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/scope-types/%s/scopes/%d/group-users", SystemIDCMDB, "biz", bizID)
+	resp := new(UserGroupMembersResult)
+	err := a.client.Get().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		WithParam("group_codes", strings.Join(groups, ",")).
+		Do().Into(&resp)
+	if err != nil {
+		return nil, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
 	}
 
 	return resp.Data, nil
