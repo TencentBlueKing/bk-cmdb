@@ -7,6 +7,23 @@ export const NAV_PERMISSION = 'permission'
 export const NAV_COLLECT = 'collect'
 export const NAV_SERVICE_MANAGEMENT = 'serviceManagement'
 
+export const HEADER_NAV = [{
+    id: 'index',
+    i18n: '首页'
+}, {
+    id: 'business',
+    i18n: '业务'
+}, {
+    id: 'resource',
+    i18n: '资源'
+}, {
+    id: 'model',
+    i18n: '模型'
+}, {
+    id: 'analysis',
+    i18n: '运营分析'
+}]
+
 export default [{
     id: NAV_INDEX,
     i18n: '首页',
