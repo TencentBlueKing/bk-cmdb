@@ -48,7 +48,9 @@ type CommonInstTopoV2 struct {
 	Curr interface{}       `json:"curr"`
 }
 
-type SearchAssociationTopoResult struct {
+
+
+type SearchTopoResult struct {
 	BaseResp `json:",inline"`
-	Data     []CommonInstTopoV2 `json:"data"`
+	Data     []*CommonInstTopo `json:"data"`
 }
