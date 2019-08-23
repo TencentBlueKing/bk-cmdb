@@ -20,14 +20,9 @@ import (
 
 func (s *service) Version(req *restful.Request, resp *restful.Response) {
 	answer := map[string]interface{}{
-		"version": version.CCVersion,
+		"version":   version.CCVersion,
+		"time":      version.CCBuildTime,
+		"commit_id": version.CCGitHash,
 	}
 	resp.WriteJson(answer, "application/json")
-}
-
-func (s *service) VersionWebService() *restful.WebService {
-	ws := new(restful.WebService)
-	ws.Produces(restful.MIME_JSON)
-	ws.Route(ws.GET("version").To(s.Version))
-	return ws
 }

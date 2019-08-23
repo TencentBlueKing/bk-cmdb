@@ -80,9 +80,8 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	ws.Route(ws.DELETE("{.*}").Filter(s.URLFilterChan).To(s.Delete))
 
 	allWebServices := make([]*restful.WebService, 0)
-	allWebServices = append(allWebServices, s.VersionWebService())
 	allWebServices = append(allWebServices, ws)
+	allWebServices = append(allWebServices, s.RootWebService())
 	allWebServices = append(allWebServices, s.core.CompatibleV2Operation().WebService())
-	allWebServices = append(allWebServices, s.V3Healthz())
 	return allWebServices
 }
