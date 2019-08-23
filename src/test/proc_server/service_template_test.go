@@ -885,7 +885,8 @@ var _ = Describe("service template test", func() {
 			Expect(data.Changed[0].ServiceInstances[0].ChangedAttributes[0].PropertyID).To(Equal("bk_start_param_regex"))
 			Expect(data.Changed[0].ServiceInstances[0].ChangedAttributes[0].PropertyValue).To(Equal("1234"))
 			j, err = json.Marshal(data.Changed[0].ServiceInstances[0].ChangedAttributes[0].TemplatePropertyValue)
-			Expect(j).To(Equal("{\"as_default_value\":true,\"value\":\"123456\"}"))
+			Expect(j).To(ContainSubstring("\"as_default_value\":true"))
+			Expect(j).To(ContainSubstring("\"value\":\"123456\""))
 		})
 
 		It("sync service instance and template after add and change process template", func() {
@@ -1091,7 +1092,7 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(1199017))
+			Expect(rsp.Code).To(Equal(1199006))
 		})
 
 		It("search module service instances labels", func() {
@@ -1627,7 +1628,7 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.ServiceInstanceRemoveLabels(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(1199017))
+			Expect(rsp.Code).To(Equal(1199006))
 		})
 
 		It("search service instance", func() {
@@ -1706,10 +1707,10 @@ var _ = Describe("service template test", func() {
 			Expect(len(data.Unchanged)).To(Equal(0))
 			Expect(len(data.Added)).To(Equal(0))
 			Expect(len(data.Changed)).To(Equal(0))
-			Expect(data.Removed[0].ProcessTemplateID).To(Equal(processTemplateId))
 			Expect(data.Removed[0].ServiceInstanceCount).To(Equal(2))
-			Expect(data.Removed[0].ServiceInstances[0].ServiceInstance.ID).To(Equal(serviceId))
-			Expect(data.Removed[0].ServiceInstances[1].ServiceInstance.ID).To(Equal(serviceId1))
+			Expect(data.Removed[0].ServiceInstances[0].ServiceInstance.ID).To(Or(Equal(serviceId),Equal(serviceId1)))
+			Expect(data.Removed[0].ServiceInstances[1].ServiceInstance.ID).To(Or(Equal(serviceId),Equal(serviceId1)))
+			Expect(data.Removed[0].ServiceInstances[1].ServiceInstance.ID).NotTo(Equal(data.Removed[0].ServiceInstances[0].ServiceInstance.ID))
 		})
 
 		It("remove service instance with template with process", func() {
