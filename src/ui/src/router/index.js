@@ -29,6 +29,7 @@ import category from '@/views/service-category/router.config'
 
 import serviceInstance from '@/views/service-instance/router.config'
 import synchronous from '@/views/business-synchronous/router.config'
+import customFields from '@/views/custom-fields/router.config'
 
 Vue.use(Router)
 
@@ -52,7 +53,8 @@ export const viewRouters = [
     category,
     synchronous,
     ...serviceInstance,
-    history
+    history,
+    customFields
 ]
 
 const indexName = index[0].name
