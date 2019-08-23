@@ -391,7 +391,7 @@ func (s *Service) SearchInstByAssociation(params types.ContextParams, pathParams
 
 // SearchInstByInstID search the inst by inst ID
 func (s *Service) SearchInstByInstID(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	objID := pathParams("obj_id")
+	objID := pathParams("bk_obj_id")
 
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
