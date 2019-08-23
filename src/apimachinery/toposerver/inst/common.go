@@ -33,6 +33,19 @@ func (t *instanceClient) QueryAudit(ctx context.Context, ownerID string, h http.
 		Into(resp)
 	return
 }
+func (t *instanceClient) QueryAuditLog(ctx context.Context, h http.Header, input *metadata.QueryInput) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/audit/search")
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
 
 func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string, h http.Header) (resp *metadata.SearchInnterAppTopoResult, err error) {
 	resp = new(metadata.SearchInnterAppTopoResult)

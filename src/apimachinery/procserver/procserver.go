@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/apimachinery/procserver/openapi"
 	"configcenter/src/apimachinery/procserver/process"
+	"configcenter/src/apimachinery/procserver/service"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 )
@@ -24,6 +25,7 @@ import (
 type ProcServerClientInterface interface {
 	Process() process.ProcessClientInterface
 	OpenAPI() openapi.OpenAPIClientInterface
+	Service() service.ServiceClientInterface
 }
 
 func NewProcServerClientInterface(c *util.Capability, version string) ProcServerClientInterface {
@@ -41,4 +43,8 @@ func (p *procServer) Process() process.ProcessClientInterface {
 
 func (p *procServer) OpenAPI() openapi.OpenAPIClientInterface {
 	return openapi.NewOpenApiClientInterface(p.client)
+}
+
+func (p *procServer) Service() service.ServiceClientInterface {
+	return service.NewServiceClientInterface(p.client)
 }
