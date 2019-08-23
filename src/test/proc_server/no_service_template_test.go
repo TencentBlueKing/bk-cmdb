@@ -316,7 +316,7 @@ var _ = Describe("no service template test", func() {
 				rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(1199006))
+				Expect(rsp.Code).To(Equal(1199019))
 			})
 
 			It("search module", func() {
