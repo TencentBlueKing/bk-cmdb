@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -137,7 +138,6 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 }
 
 func (c *classification) FindClassificationWithObjects(params types.ContextParams, cond condition.Condition) ([]metadata.ClassificationWithObject, error) {
-
 	rsp, err := c.clientSet.ObjectController().Meta().SelectClassificationWithObject(context.Background(), params.SupplierAccount, params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
@@ -149,31 +149,50 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		return nil, params.Err.Error(rsp.Code)
 	}
 
-	for idx, clsItem := range rsp.Data {
-		rsp.Data[idx].AsstObjects = make(map[string][]metadata.Object)
-		for _, objItem := range clsItem.Objects {
-			asstItems, err := c.asst.SearchObjectAssociation(params, objItem.ObjectID)
-			if nil != err {
-				return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
-			}
+	var objIDs []string
+	for _, clsItem := range rsp.Data {
+		for _, objItem := range clsItem.Objects{
+			objIDs = append(objIDs, objItem.ObjectID)
+		}
+	}
+	objIDs = util.StrArrayUnique(objIDs)
+	asstItems, err := c.asst.SearchObjectsAssociation(params, objIDs)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
+	}
+	var asstIDs []string
+	for _, asstItem := range asstItems {
+		asstIDs = append(asstIDs, asstItem.AsstObjID)
+	}
+	asstIDs = util.StrArrayUnique(asstIDs)
+	searchObjCond := condition.CreateCondition()
+	searchObjCond.Field(common.BKObjIDField).In(asstIDs)
+	searchObjCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	asstObjs, err := c.obj.FindObject(params, searchObjCond)
+	if nil != err {
+		return nil, err
+	}
 
-			for _, asstItem := range asstItems {
-
-				searchObjCond := condition.CreateCondition()
-				searchObjCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-				searchObjCond.Field(common.BKObjIDField).Eq(asstItem.AsstObjID)
-				asstObjs, err := c.obj.FindObject(params, searchObjCond)
-				if nil != err {
-					return nil, err
-				}
-
-				for _, obj := range asstObjs {
-					rsp.Data[idx].AsstObjects[objItem.ObjectID] = append(rsp.Data[idx].AsstObjects[objItem.ObjectID], obj.Origin())
-				}
-
+	asstObjsMap := make(map[string]map[string][]metadata.Object)
+	for _, asstItem := range asstItems {
+		asstObjMap := make(map[string][]metadata.Object)
+		if asstObjs, ok := asstObjsMap[asstItem.ObjectID]; ok {
+			asstObjMap = asstObjs
+		}
+		for _, obj := range asstObjs {
+			if obj.Origin().ObjectID == asstItem.AsstObjID {
+				asstObjMap[asstItem.ObjectID] = append(asstObjMap[asstItem.ObjectID], obj.Origin())
 			}
 		}
+		asstObjsMap[asstItem.ObjectID] = asstObjMap
+	}
 
+	for _, clsItem := range rsp.Data {
+		for _, objItem := range clsItem.Objects {
+			if asstObjs, ok := asstObjsMap[objItem.ObjectID] ; ok {
+				clsItem.AsstObjects = asstObjs
+			}
+		}
 	}
 
 	return rsp.Data, nil
