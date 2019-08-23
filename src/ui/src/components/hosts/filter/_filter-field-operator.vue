@@ -16,7 +16,7 @@
                         name: this.$t('Common[\'不等于\']')
                     }],
                     'char': [{
-                        id: '$regex',
+                        id: '$multilike',
                         name: this.$t('Common[\'包含\']')
                     }, {
                         id: '$eq',

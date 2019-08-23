@@ -52,7 +52,7 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 	}
 
 	if 0 != rowCount {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteCreateFail)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, paras.Name)})
 		return
 	}
 
