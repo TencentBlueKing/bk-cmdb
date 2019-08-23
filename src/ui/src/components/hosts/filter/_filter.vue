@@ -43,10 +43,10 @@
                         v-else-if="property['bk_property_type'] === 'bool'"
                         v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
                     </cmdb-form-bool-input>
-                    <cmdb-form-associate-input class="filter-field-value filter-field-associate fr"
-                        v-else-if="['singleasst', 'multiasst'].includes(property['bk_property_type'])"
-                        v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
-                    </cmdb-form-associate-input>
+                    <cmdb-search-input class="filter-field-value fr"
+                        v-else-if="['singlechar', 'longchar'].includes(property.bk_property_type)"
+                        v-model="condition[property.bk_obj_id][property.bk_property_id].value">
+                    </cmdb-search-input>
                     <component class="filter-field-value fr" :class="`filter-field-${property['bk_property_type']}`"
                         v-else
                         :is="`cmdb-form-${property['bk_property_type']}`"
@@ -313,14 +313,13 @@
                 }
                 // 填充必要模型查询参数
                 const requiredObj = ['biz', 'host', 'set', 'module']
-                const normalProperties = this.customFieldProperties.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
                 requiredObj.forEach(objId => {
                     const objParams = {
                         'bk_obj_id': objId,
                         condition: [],
                         fields: []
                     }
-                    const objProperties = normalProperties.filter(property => property['bk_obj_id'] === objId)
+                    const objProperties = this.customFieldProperties.filter(property => property['bk_obj_id'] === objId)
                     objProperties.forEach(property => {
                         const propertyCondition = this.condition[objId][property['bk_property_id']]
                         // 必要模型参数合法时，填充对应模型的condition
@@ -329,6 +328,8 @@
                             if (propertyCondition.operator === '$in') {
                                 let splitValue = [...(new Set(value.split(',').map(val => val.trim())))]
                                 value = splitValue.length > 1 ? [...splitValue, value] : splitValue
+                            } else if (propertyCondition.operator === '$multilike') {
+                                value = value.split('\n').filter(str => str.trim().length).map(str => str.trim())
                             }
                             objParams.condition.push({
                                 ...propertyCondition,
@@ -377,9 +378,16 @@
             getPropertyCondition (property) {
                 const objId = property['bk_obj_id']
                 const propertyId = property['bk_property_id']
+                const propertyType = property.bk_property_type
+                let operator = '$eq'
+                if (['bk_set_name', 'bk_module_name'].includes(propertyId)) {
+                    operator = '$in'
+                } else if (['singlechar', 'longchar'].includes(propertyType)) {
+                    operator = '$multilike'
+                }
                 const condition = {
                     field: propertyId,
-                    operator: '',
+                    operator: operator,
                     value: ''
                 }
                 const collectionConditon = (this.applyingConditions[objId] || []).find(condition => condition.field === propertyId)
@@ -578,6 +586,7 @@
         &.sticky {
             border-top: 1px solid $cmdbBorderColor;
             padding: 10px 20px 0;
+            z-index: 101;
         }
         .collection-button.collecting {
             color: #ffb400;

@@ -69,7 +69,7 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 	result, err := s.CoreAPI.HostController().Favorite().AddHostFavourite(context.Background(), user, pheader, para)
 	if err != nil || (err == nil && !result.Result) {
 		blog.Errorf("add host favorite failed, para: %v, err: %v, %v", para, err, result.ErrMsg)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrHostEmptyFavName)})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(result.Code, result.ErrMsg)})
 		return
 	}
 

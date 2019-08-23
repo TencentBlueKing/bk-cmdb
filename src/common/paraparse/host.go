@@ -14,8 +14,10 @@ package params
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"fmt"
 )
 
 //type Flag string
@@ -69,6 +71,21 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 			regex := make(map[string]interface{})
 			regex[common.BKDBLIKE] = i.Value
 			output[i.Field] = regex
+		case common.BKDBMULTIPLELike:
+			multi, ok := i.Value.([]interface{})
+			if !ok {
+				return fmt.Errorf("operator %s only support for string array", common.BKDBMULTIPLELike)
+			}
+			fields := make([]interface{}, 0)
+			for _, m := range multi {
+				mstr, ok := m.(string)
+				if !ok {
+					return fmt.Errorf("operator %s only support for string array", common.BKDBMULTIPLELike)
+				}
+				fields = append(fields, mapstr.MapStr{i.Field: mapstr.MapStr{common.BKDBLIKE: mstr}})
+			}
+			output[common.BKDBOR] = fields
+
 		default:
 			queryCondItem, ok := output[i.Field].(map[string]interface{})
 			if !ok {
