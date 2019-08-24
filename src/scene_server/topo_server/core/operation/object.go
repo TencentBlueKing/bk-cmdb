@@ -560,7 +560,6 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 	}
 
 	for _, obj := range objs {
-		object := obj.Object()
 		// check if is can be deleted
 		if needCheckInst {
 			if err := o.CanDelete(params, obj); nil != err {
@@ -568,39 +567,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 			}
 		}
 
-		// delete object
-		unis, err := obj.GetUniques()
-		if err != nil {
-			blog.Errorf("[operation-asst] failed to get the object's uniques, err: %s, rid: %s", err.Error(), params.ReqID)
-			return err
-		}
-		for _, uni := range unis {
-			if err = o.unique.Delete(params, object.ObjectID, uni.GetRecordID()); err != nil {
-				blog.Errorf("[operation-asst] failed to delete the object's uniques, %s, rid: %s", err.Error(), params.ReqID)
-				return err
-			}
-		}
-
-		attrCond := condition.CreateCondition()
-		attrCond.Field(common.BKObjIDField).Eq(object.ObjectID)
-		if err := o.attr.DeleteObjectAttribute(params, attrCond); nil != err {
-			blog.Errorf("[operation-obj] failed to delete the object(%d)'s attribute, err: %s, rid: %s", id, err.Error(), params.ReqID)
-			return err
-		}
-
-		groups, err := obj.GetGroups()
-		if err != nil {
-			blog.Errorf("[operation-asst] failed to get the object's groups, err: %s, rid: %s", err.Error(), params.ReqID)
-			return err
-		}
-		for _, group := range groups {
-			if err = o.grp.DeleteObjectGroup(params, group.Group().ID); err != nil {
-				blog.Errorf("[operation-asst] failed to delete the object's groups, err: %s, rid: %s", err.Error(), params.ReqID)
-				return err
-			}
-		}
-
-		rsp, err := o.clientSet.CoreService().Model().DeleteModel(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+		rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-obj] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
