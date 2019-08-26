@@ -82,14 +82,15 @@ func (s *service) healthz(req *restful.Request, resp *restful.Response) {
 	resp.WriteJson(answer, "application/json")
 }
 
-func (s *service) V3Healthz() *restful.WebService {
+func (s *service) RootWebService() *restful.WebService {
 	ws := new(restful.WebService)
 	getErrFun := func() errors.CCErrorIf {
 		return s.engine.CCErr
 	}
 	ws.Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 
-	ws.Route(ws.GET("healthz").To(s.healthz))
+	ws.Route(ws.GET("/healthz").To(s.healthz))
+	ws.Route(ws.GET("/version").To(s.Version))
 
 	return ws
 }
