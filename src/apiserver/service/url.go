@@ -42,6 +42,8 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 	}
 }
 
+var topoUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/topo/.*$", verbs))
+
 // WithTopo parse topo api's url
 func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	topoRoot := "/topo/v3"
@@ -54,6 +56,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath+"/biz", topoRoot+"/app", true
 
 	case strings.HasPrefix(string(*u), rootPath+"/topo/"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case topoUrlRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/identifier/"):
