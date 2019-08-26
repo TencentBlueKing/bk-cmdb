@@ -25,7 +25,7 @@ var (
 	ModuleResource         = ResourceType("module")
 	ModelResource          = ResourceType("model")
 	InstanceResource       = ResourceType("instance")
-	AuditCategory          = ResourceType("audit")
+	// AuditCategory          = ResourceType("audit")
 	ProcessResource        = ResourceType("process")
 	DynamicGroupResource   = ResourceType("dynamicGroup")
 	ClassificationResource = ResourceType("classification")
