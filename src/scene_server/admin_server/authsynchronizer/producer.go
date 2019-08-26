@@ -99,7 +99,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	}
 	blog.V(4).Infof("list business businessList: %+v", businessList)
 
-	// job of synchronize business scope resources to iam
+	// job: sync business scope resources to iam
 	resourceTypes := []meta.ResourceType{
 		meta.HostResource,
 		meta.SetResource,
@@ -110,7 +110,9 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		meta.AuditCategory,
 		meta.ClassificationResource,
 		// meta.UserGroupSyncResource,
+		meta.ServiceCategoryResource,
 	}
+
 	for _, resourceType := range resourceTypes {
 		for _, businessSimplify := range businessList {
 			jobs = append(jobs, meta.WorkRequest{
@@ -136,6 +138,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		}
 	}
 
+	// job: syn global resource to iam
 	// some resource type need sync global resource
 	globalBusiness := extensions.BusinessSimplify{
 		BKAppIDField:      0,
@@ -147,6 +150,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	resourceTypes = []meta.ResourceType{
 		meta.AuditCategory,
 		meta.ClassificationResource,
+		meta.ServiceCategoryResource,
 	}
 	for _, resourceType := range resourceTypes {
 		jobs = append(jobs, meta.WorkRequest{

@@ -97,11 +97,12 @@ func (w *Worker) doWork(work *meta.WorkRequest) error {
 		err = w.SyncHandler.HandleDynamicGroupSync(work)
 	case meta.ClassificationResource:
 		err = w.SyncHandler.HandleClassificationSync(work)
-	// case meta.UserGroupSyncResource:
-	// 	err = w.SyncHandler.HandleUserGroupSync(work)
+	case meta.ServiceCategoryResource:
+		err = w.SyncHandler.HandleServiceCategorySync(work)
+	case meta.UserGroupSyncResource:
+		err = w.SyncHandler.HandleUserGroupSync(work)
 	default:
 		return fmt.Errorf("unsupported work resource type: %s", work.ResourceType)
-
 	}
 	return err
 }

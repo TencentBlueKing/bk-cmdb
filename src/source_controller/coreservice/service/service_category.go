@@ -79,11 +79,6 @@ func (s *coreService) ListServiceCategories(params core.ContextParams, pathParam
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	if fp.BusinessID == 0 {
-		blog.Errorf("ListServiceCategories failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id")
-	}
-
 	result, err := s.core.ProcessOperation().ListServiceCategories(params, fp.BusinessID, fp.WithStatistics)
 	if err != nil {
 		blog.Errorf("ListServiceCategories failed, err: %+v, rid: %s", err, params.ReqID)

@@ -44,6 +44,15 @@ func (am *AuthManager) CollectServiceCategoryByBusinessIDs(ctx context.Context, 
 
 	categories := make([]metadata.ServiceCategory, 0)
 	for _, item := range result.Info {
+		bizID, err := metadata.BizIDFromMetadata(item.ServiceCategory.Metadata)
+		if err != nil {
+			blog.Errorf("parse biz id from db data failed, service_category: %+v, err: %+v", err, item.ServiceCategory)
+			continue
+		}
+		// only return exactly resource belong to iam
+		if bizID != businessID {
+			continue
+		}
 		categories = append(categories, item.ServiceCategory)
 	}
 	return categories, nil
