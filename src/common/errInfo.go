@@ -725,6 +725,12 @@ const (
 	CCErrCoreServiceNotAllowChangeRequiredFieldErr = 1113027
 	// CCErrCoreServiceNotAllowAddFieldErr 模型[%s]不允许新加字段
 	CCErrCoreServiceNotAllowAddFieldErr = 1113028
+	// CCErrCoreServiceNotAllowDeleteErr 模型【%s】不允许删除
+	CCErrCoreServiceNotAllowDeleteErr = 1113029
+	// CCErrCoreServiceModelHasInstanceErr 模型下有示例数据
+	CCErrCoreServiceModelHasInstanceErr = 1113030
+	// CCErrCoreServiceModelHasAssociationErr 模型与其他模型有关联关系
+	CCErrCoreServiceModelHasAssociationErr = 1113031
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900

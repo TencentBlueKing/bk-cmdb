@@ -89,8 +89,8 @@ func (w *Worker) doWork(work *meta.WorkRequest) error {
 		err = w.SyncHandler.HandleModelSync(work)
 	case meta.InstanceResource:
 		err = w.SyncHandler.HandleInstanceSync(work)
-	case meta.AuditCategory:
-		err = w.SyncHandler.HandleAuditSync(work)
+	// case meta.AuditCategory:
+		// err = w.SyncHandler.HandleAuditSync(work)
 	case meta.ProcessResource:
 		err = w.SyncHandler.HandleProcessSync(work)
 	case meta.DynamicGroupResource:
