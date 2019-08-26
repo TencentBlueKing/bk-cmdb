@@ -16,7 +16,7 @@
             :properties="properties"
             :property-groups="propertyGroups"
             :inst="flattenedInstance"
-            :show-options="modelId !== 'biz'">
+            :show-options="modelId !== 'biz' && !isBlueking">
             <template slot="details-options">
                 <span style="display: inline-block;"
                     v-cursor="{
@@ -123,6 +123,13 @@
             },
             isModuleNode () {
                 return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
+            },
+            isBlueking () {
+                let rootNode = this.selectedNode || {}
+                if (rootNode.parent) {
+                    rootNode = rootNode.parents[0]
+                }
+                return rootNode.name === '蓝鲸'
             },
             modelId () {
                 if (this.selectedNode) {
