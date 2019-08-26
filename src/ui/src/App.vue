@@ -11,7 +11,7 @@
 </template>
 
 <script>
-    import theHeader from '@/components/layout/newheader'
+    import theHeader from '@/components/layout/header'
     import thePermissionModal from '@/components/modal/permission'
     // import { execMainScrollListener, execMainResizeListener } from '@/utils/main-scroller'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
