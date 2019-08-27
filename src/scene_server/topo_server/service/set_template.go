@@ -16,6 +16,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -23,16 +24,20 @@ import (
 
 func (s *Service) CreateSetTemplate(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
 	bizIDStr := pathParams(common.BKAppIDField)
-	bizID, err := strconv.Atoi(bizIDStr)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
 		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
-	setTemplate := metadata.SetTemplate{}
-	if err := data.MarshalJSONInto(&setTemplate); err != nil {
+
+	option := metadata.CreateSetTemplateOption{}
+	if err := data.MarshalJSONInto(&option); err != nil {
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
-	setTemplate.BizID = int64(bizID)
-	_ = setTemplate
 
+	setTemplate, err := s.Engine.CoreAPI.CoreService().SetTemplate().CreateSetTemplate(params.Context, params.Header, bizID, option)
+	if err != nil {
+		blog.Errorf("CreateSetTemplate failed, core service create failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
+		return setTemplate, err
+	}
 	return setTemplate, nil
 }

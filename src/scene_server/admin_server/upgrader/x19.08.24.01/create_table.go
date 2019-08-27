@@ -10,12 +10,32 @@
  * limitations under the License.
  */
 
-package service
+package x19_08_24_01
 
 import (
-	"net/http"
+	"context"
+
+	"configcenter/src/common"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func (s *Service) initSetTemplate() {
-	s.addAction(http.MethodPost, "/create/topo/set_template/bk_biz_id/{bk_biz_id}/", s.CreateSetTemplate, nil)
+func createSetTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	tables := []string{
+		common.BKTableNameSetTemplate,
+		common.BKTableNameSetServiceTemplateRelation,
+	}
+
+	for _, tableName := range tables {
+		exists, err := db.HasTable(tableName)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			if err = db.CreateTable(tableName); err != nil && !db.IsDuplicatedError(err) {
+				return err
+			}
+		}
+	}
+	return nil
 }

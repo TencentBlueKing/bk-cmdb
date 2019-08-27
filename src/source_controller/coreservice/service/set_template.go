@@ -13,6 +13,8 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -21,15 +23,21 @@ import (
 )
 
 func (s *coreService) CreateSetTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	instance := metadata.ServiceInstance{}
-	if err := mapstr.DecodeFromMapStr(&instance, data); err != nil {
-		blog.Errorf("CreateServiceInstance failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.CreateSetTemplateOption{}
+	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+		blog.Errorf("CreateSetTemplate failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	result, err := s.core.ProcessOperation().CreateServiceInstance(params, instance)
+	result, err := s.core.SetTemplateOperation().CreateSetTemplate(params, bizID, option)
 	if err != nil {
-		blog.Errorf("CreateServiceInstance failed, err: %+v, rid: %s", err, params.ReqID)
+		blog.Errorf("CreateSetTemplate failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 	return result, nil

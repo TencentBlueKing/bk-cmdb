@@ -24,6 +24,12 @@ func init() {
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = createSetTemplateTables(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x19.08.24.01] create tables failed, err: %s", err.Error())
+		return err
+	}
+
 	err = addSetProperty(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade x19.08.24.01] addSetProperty failed, err: %s", err.Error())

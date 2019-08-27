@@ -17,5 +17,5 @@ import (
 )
 
 func (s *coreService) initSetTemplate() {
-	s.addAction(http.MethodPost, "/create/topo/bk_biz_id/{bk_biz_id}/set_template/", s.CreateSetTemplate, nil)
+	s.addAction(http.MethodPost, "/create/topo/set_template/bk_biz_id/{bk_biz_id}/", s.CreateSetTemplate, nil)
 }

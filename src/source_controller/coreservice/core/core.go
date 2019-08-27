@@ -239,7 +239,7 @@ type LabelOperation interface {
 }
 
 type SetTemplateOperation interface {
-	CreateSetTemplate(ctx ContextParams, setTemplate metadata.SetTemplate) (metadata.SetTemplate, errors.CCErrorCoder)
+	CreateSetTemplate(ctx ContextParams, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder)
 }
 
 type core struct {
