@@ -468,3 +468,17 @@ func (m *model) ReadModelAttrUnique(ctx context.Context, h http.Header, inputPar
 		Into(&resp)
 	return
 }
+
+// GetModelStatistics 统计各个模型的实例数
+func (m *model) GetModelStatistics(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/read/model/statistics"
+
+	err = m.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
