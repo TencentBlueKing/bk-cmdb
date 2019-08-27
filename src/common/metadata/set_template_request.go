@@ -20,3 +20,8 @@ type UpdateSetTemplateOption struct {
 	Name               string  `field:"name" json:"name" bson:"name"`
 	ServiceTemplateIDs []int64 `field:"service_template_ids" json:"service_template_ids" bson:"service_template_ids"`
 }
+
+type SetTemplateResult struct {
+	BaseResp
+	Data SetTemplate `field:"data" json:"data" bson:"data"`
+}
