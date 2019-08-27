@@ -227,4 +227,5 @@ func (s *Service) initService() {
 	s.initBusinessInst()
 
 	s.initFind()
+	s.initSetTemplate()
 }
