@@ -11,7 +11,13 @@
  */
 package metadata
 
-import "time"
+import (
+	"fmt"
+	"strings"
+	"time"
+
+	"configcenter/src/common"
+)
 
 // SetTemplate 集群模板
 type SetTemplate struct {
@@ -27,8 +33,17 @@ type SetTemplate struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
+func (st SetTemplate) Validate() (key string, err error) {
+	st.Name = strings.TrimSpace(st.Name)
+	nameLen := len(st.Name)
+	if nameLen == 0 || nameLen > common.NameFieldMaxLength {
+		return common.BKFieldName, fmt.Errorf("%s field length is: %d", common.BKFieldName, nameLen)
+	}
+	return "", nil
+}
+
 // 拓扑模板与服务模板多对多关系, 记录拓扑模板的构成
-type SetTemplateServiceTemplateRelation struct {
+type SetServiceTemplateRelation struct {
 	SetTemplateID     int64 `json:"set_template_id"`
 	ServiceTemplateID int64 `json:"service_template_id"`
 }

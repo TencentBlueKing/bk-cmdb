@@ -22,28 +22,28 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (p *setTemplate) CreateSetTemplate(ctx context.Context, header http.Header, setTemplate *metadata.SetTemplate) (*metadata.SetTemplate, errors.CCErrorCoder) {
+func (p *setTemplate) CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.SetTemplate `json:"data"`
 	}{}
-	subPath := fmt.Sprintf("/create/topo/bk_biz_id/%d/set_template/", setTemplate.BizID)
+	subPath := fmt.Sprintf("/create/topo/set_template/bk_biz_id/%d/", bizID)
 
 	err := p.client.Post().
 		WithContext(ctx).
-		Body(setTemplate).
+		Body(option).
 		SubResource(subPath).
 		WithHeaders(header).
 		Do().
-		Into(ret)
+		Into(&ret)
 
 	if err != nil {
 		blog.Errorf("CreateSetTemplate failed, http request failed, err: %+v", err)
-		return nil, errors.CCHttpError
+		return ret.Data, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
-	return &ret.Data, nil
+	return ret.Data, nil
 }

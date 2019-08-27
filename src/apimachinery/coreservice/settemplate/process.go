@@ -22,7 +22,7 @@ import (
 )
 
 type SetTemplateInterface interface {
-	CreateSetTemplate(ctx context.Context, h http.Header, category *metadata.SetTemplate) (*metadata.SetTemplate, errors.CCErrorCoder)
+	CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder)
 }
 
 func NewSetTemplateInterfaceClient(client rest.ClientInterface) SetTemplateInterface {
