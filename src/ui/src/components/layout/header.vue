@@ -1,14 +1,14 @@
 <template>
     <header class="header-layout">
         <div class="logo">
-            <router-link class="logo-link" exact to="/index">
+            <router-link class="logo-link" to="/index">
                 {{$t('蓝鲸配置平台')}}
             </router-link>
         </div>
         <nav class="header-nav">
-            <router-link class="header-link" exact
+            <router-link class="header-link"
                 v-for="nav in headerNav"
-                :to="nav.id"
+                :to="{ name: nav.name }"
                 :key="nav.id">
                 {{$t(nav.i18n)}}
             </router-link>

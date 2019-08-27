@@ -37,6 +37,7 @@ export default {
     path: path,
     component: () => import('./index.vue'),
     meta: new Meta({
+        owner: 'business',
         menu: {
             id: 'topology',
             i18n: '服务拓扑',

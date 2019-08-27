@@ -1,3 +1,4 @@
+import Meta from '@/router/meta'
 import {
     U_HOST,
     U_RESOURCE_HOST,
@@ -17,14 +18,14 @@ export const RESOURCE_HOST = 'resourceHostDetails'
 
 export const BUSINESS_HOST = 'businessHostDetails'
 
-export default [{
+export const RESOURCE_HOST_DETAILS = {
     name: RESOURCE_HOST,
     path: '/host/:id',
     component: component,
-    meta: {
+    meta: new Meta({
+        owner: 'resource',
         auth: {
             view: null,
-
             operation: [U_RESOURCE_HOST],
             setDynamicMeta (to, from, app) {
                 const meta = GET_AUTH_META(U_RESOURCE_HOST)
@@ -38,12 +39,15 @@ export default [{
             }
         },
         i18nTitle: '主机详情'
-    }
-}, {
+    })
+}
+
+export const BUSINESS_HOST_DETAILS = {
     name: BUSINESS_HOST,
     path: '/business/:business/host/:id',
     component: component,
-    meta: {
+    meta: new Meta({
+        owner: 'business',
         auth: {
             view: null,
             operation: [U_HOST, D_SERVICE_INSTANCE],
@@ -66,5 +70,7 @@ export default [{
         },
         i18nTitle: '主机详情',
         requireBusiness: true
-    }
-}]
+    })
+}
+
+export default [RESOURCE_HOST_DETAILS, BUSINESS_HOST_DETAILS]

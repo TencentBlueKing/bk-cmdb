@@ -1,5 +1,6 @@
 export default class Meta {
     constructor (data = {}) {
+        this.owner = ''
         this.title = ''
         this.i18nTitle = ''
         this.resetMenu = true

@@ -21,6 +21,7 @@ export default {
     path: path,
     component: () => import('./index.vue'),
     meta: new Meta({
+        owner: 'business',
         menu: {
             id: 'customQuery',
             i18n: '动态分组',
