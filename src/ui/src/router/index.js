@@ -9,53 +9,19 @@ import { translateAuth } from '@/setup/permission'
 import $http from '@/api'
 
 import index from '@/views/index/router.config'
-import audit from '@/views/audit/router.config'
-import business from '@/views/business/router.config'
-import businessModel from '@/views/business-model/router.config'
-import businessTopology from '@/views/business-topology/router.config'
-import customQuery from '@/views/custom-query/router.config'
-import eventpush from '@/views/eventpush/router.config'
-import history from '@/views/history/router.config'
-import hosts from '@/views/hosts/router.config'
-import hostDetails from '@/views/host-details/router.config'
-import model from '@/views/model-manage/router.config'
-import modelAssociation from '@/views/model-association/router.config'
-import modelTopology from '@/views/model-topology/router.config'
-import resource from '@/views/resource/router.config'
-import generalModel from '@/views/general-model/router.config'
-import permission from '@/views/permission/router.config'
-import template from '@/views/service-template/router.config'
-import category from '@/views/service-category/router.config'
 
-import serviceInstance from '@/views/service-instance/router.config'
-import synchronous from '@/views/business-synchronous/router.config'
+import {
+    businessViews,
+    resourceViews,
+    modelViews,
+    analysisViews
+} from '@/views'
+
+import dynamicRouterView from '@/components/layout/dynamic-router-view'
 
 Vue.use(Router)
 
-export const viewRouters = [
-    ...index,
-    audit,
-    businessModel,
-    businessTopology,
-    customQuery,
-    eventpush,
-    hosts,
-    ...hostDetails,
-    modelAssociation,
-    modelTopology,
-    resource,
-    ...template,
-    ...generalModel,
-    ...business,
-    ...model,
-    ...permission,
-    category,
-    synchronous,
-    ...serviceInstance,
-    history
-]
-
-const indexName = index[0].name
+export const viewRouters = []
 
 const statusRouters = [
     {
@@ -85,7 +51,7 @@ const redirectRouters = [{
 }, {
     path: '/',
     redirect: {
-        name: indexName
+        name: 'index'
     }
 }]
 
@@ -94,7 +60,33 @@ const router = new Router({
     routes: [
         ...redirectRouters,
         ...statusRouters,
-        ...viewRouters
+        ...index,
+        {
+            name: 'business',
+            component: dynamicRouterView,
+            children: businessViews,
+            path: '/business',
+            redirect: '/business/index'
+        }, {
+            name: 'model',
+            component: dynamicRouterView,
+            children: modelViews,
+            path: '/model',
+            redirect: '/model/index'
+        },
+        {
+            name: 'resource',
+            component: dynamicRouterView,
+            children: resourceViews,
+            path: '/resource',
+            redirect: '/resource/index'
+        }, {
+            name: 'analysis',
+            component: dynamicRouterView,
+            children: analysisViews,
+            path: '/analysis',
+            redirect: '/analysis/index'
+        }
     ]
 })
 
@@ -233,7 +225,7 @@ router.beforeEach((to, from, next) => {
                 await preload(router.app)
             }
             if (!isShouldShow(to)) {
-                next({ name: indexName })
+                next({ name: 'index' })
             } else {
                 setMenuState(to)
                 setTitle(to)
@@ -241,7 +233,7 @@ router.beforeEach((to, from, next) => {
                 checkAuthDynamicMeta(to, from)
 
                 if (to.name === 'requireBusiness' && !router.app.$store.getters.permission.length) {
-                    next({ name: indexName })
+                    next({ name: 'index' })
                 }
 
                 const isAvailable = checkAvailable(to, from)

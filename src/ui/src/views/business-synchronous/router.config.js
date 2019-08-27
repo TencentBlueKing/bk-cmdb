@@ -4,5 +4,7 @@ export default {
     name: 'synchronous',
     path: '/synchronous/module/:moduleId/set/:setId',
     component: () => import('./index.vue'),
-    meta: new Meta({})
+    meta: new Meta({
+        owner: 'business'
+    })
 }

@@ -21,6 +21,7 @@ export default [{
     path: path,
     component: () => import('./index.vue'),
     meta: new Meta({
+        owner: 'business',
         menu: {
             id: 'serviceTemplate',
             i18n: '服务模板',
@@ -42,7 +43,8 @@ export default [{
     name: 'operationalTemplate',
     path: '/service/operational/template/:templateId?',
     component: () => import('./children/operational.vue'),
-    meta: {
+    meta: new Meta({
+        owner: 'business',
         auth: {
             operation: Object.values(OPERATION),
             setAuthScope () {
@@ -50,5 +52,5 @@ export default [{
             }
         },
         requireBusiness: true
-    }
+    })
 }]

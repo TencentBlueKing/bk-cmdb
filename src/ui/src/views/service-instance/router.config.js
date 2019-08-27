@@ -18,6 +18,7 @@ export default [{
     path: '/service/instance/create/set/:setId/module/:moduleId',
     component: () => import('./create.vue'),
     meta: new Meta({
+        owner: 'business',
         resetMenu: false,
         auth: {
             operation: Object.values(OPERATION),
@@ -32,6 +33,7 @@ export default [{
     props: true,
     component: () => import('./clone.vue'),
     meta: new Meta({
+        owner: 'business',
         resetMenu: false,
         auth: {
             operation: Object.values(OPERATION),
