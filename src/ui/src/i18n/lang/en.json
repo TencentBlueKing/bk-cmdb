@@ -865,5 +865,8 @@
     "内置模型组不支持添加和修改": "Built-in model groups do not support adding and modifying",
     "全部主机": "All Hosts",
     "已关联": "Associated",
-    "克隆实例": "Clone Instance"
+    "克隆实例": "Clone Instance",
+    "针对查询内容进行条件过滤": "Conditional filtering for query content",
+    "继续添加": "Keep adding",
+    "添加分组条件": "Add grouping conditions"
 }
