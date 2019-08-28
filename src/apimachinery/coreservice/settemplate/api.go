@@ -123,3 +123,26 @@ func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bi
 
 	return &ret.Data, nil
 }
+
+func (p *setTemplate) ListSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
+	ret := metadata.ListSetTemplateResult{}
+	subPath := fmt.Sprintf("/findmany/topo/set_template/bk_biz_id/%d/", bizID)
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("ListSetTemplate failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}

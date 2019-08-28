@@ -38,3 +38,18 @@ type SetTemplateResult struct {
 type DeleteSetTemplateOption struct {
 	SetTemplateIDs []int64 `field:"set_template_ids" json:"set_template_ids" bson:"set_template_ids"`
 }
+
+type ListSetTemplateOption struct {
+	SetTemplateIDs []int64  `field:"set_template_ids" json:"set_template_ids" bson:"set_template_ids"`
+	Page           BasePage `json:"page"`
+}
+
+type ListSetTemplateResult struct {
+	BaseResp
+	Data MultipleSetTemplateResult `json:"data"`
+}
+
+type MultipleSetTemplateResult struct {
+	Count int64         `json:"count"`
+	Info  []SetTemplate `json:"info"`
+}

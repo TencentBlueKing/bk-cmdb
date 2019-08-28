@@ -328,3 +328,47 @@ func (p *setTemplateOperation) GetSetTemplate(ctx core.ContextParams, bizID int6
 	}
 	return setTemplate, nil
 }
+
+func (p *setTemplateOperation) ListSetTemplate(ctx core.ContextParams, bizID int64, option metadata.ListSetTemplateOption) (metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
+	result := metadata.MultipleSetTemplateResult{}
+
+	filter := map[string]interface{}{
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: ctx.SupplierAccount,
+	}
+	if option.SetTemplateIDs != nil {
+		filter[common.BKFieldID] = map[string]interface{}{
+			common.BKDBIN: option.SetTemplateIDs,
+		}
+	}
+	query := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(filter)
+	count, err := query.Count(ctx.Context)
+	if err != nil {
+		blog.Errorf("ListSetTemplate failed, db count failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
+		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	result.Count = int64(count)
+
+	if len(option.Page.Sort) > 0 {
+		query = query.Sort(option.Page.Sort)
+	}
+	if option.Page.Limit > 0 {
+		query = query.Limit(uint64(option.Page.Limit))
+	}
+	if option.Page.Start > 0 {
+		query = query.Start(uint64(option.Page.Start))
+	}
+
+	setTemplates := make([]metadata.SetTemplate, 0)
+	if err := query.All(ctx.Context, &setTemplates); err != nil {
+		if p.dbProxy.IsNotFoundError(err) {
+			blog.Errorf("GetSetTemplate failed, db select failed, not found, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
+			return result, ctx.Error.CCError(common.CCErrCommNotFound)
+		}
+		blog.Errorf("GetSetTemplate failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
+		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	result.Info = setTemplates
+	return result, nil
+}
