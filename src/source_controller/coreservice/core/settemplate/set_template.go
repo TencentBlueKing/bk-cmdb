@@ -37,6 +37,21 @@ func New(dbProxy dal.RDB) core.SetTemplateOperation {
 	return setTplOps
 }
 
+func (p *setTemplateOperation) ValidateBusinessID(ctx core.ContextParams, bizID int64) errors.CCErrorCoder {
+	filter := map[string]interface{}{
+		common.BKAppIDField: bizID,
+	}
+	count, err := p.dbProxy.Table(common.BKTableNameBaseApp).Find(filter).Count(ctx.Context)
+	if err != nil {
+		blog.Errorf("ValidateBusinessID failed, validate business id failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if count == 0 {
+		return ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+	return nil
+}
+
 func (p *setTemplateOperation) CreateSetTemplate(ctx core.ContextParams, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
 	now := time.Now()
 	setTemplate := metadata.SetTemplate{
@@ -51,6 +66,12 @@ func (p *setTemplateOperation) CreateSetTemplate(ctx core.ContextParams, bizID i
 	if key, err := setTemplate.Validate(); err != nil {
 		blog.Errorf("CreateSetTemplate failed, parameter invalid, key: %s, err: %+v, rid: %s", key, err, ctx.ReqID)
 		return setTemplate, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, key)
+	}
+
+	// validate business id
+	if err := p.ValidateBusinessID(ctx, bizID); err != nil {
+		blog.Errorf("CreateSetTemplate failed, validate business id failed, bizID: %d, err: %s, rid: %s", bizID, err.Error(), ctx.ReqID)
+		return setTemplate, err
 	}
 
 	// validate service template id

@@ -37,7 +37,7 @@ func (s *Service) CreateSetTemplate(params types.ContextParams, pathParams, quer
 	setTemplate, err := s.Engine.CoreAPI.CoreService().SetTemplate().CreateSetTemplate(params.Context, params.Header, bizID, option)
 	if err != nil {
 		blog.Errorf("CreateSetTemplate failed, core service create failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
-		return setTemplate, err
+		return nil, err
 	}
 	return setTemplate, nil
 }
