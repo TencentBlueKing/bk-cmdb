@@ -11,6 +11,8 @@
  */
 package metadata
 
+import "configcenter/src/framework/core/errors"
+
 type CreateSetTemplateOption struct {
 	Name               string  `field:"name" json:"name" bson:"name"`
 	ServiceTemplateIDs []int64 `field:"service_template_ids" json:"service_template_ids" bson:"service_template_ids"`
@@ -19,6 +21,13 @@ type CreateSetTemplateOption struct {
 type UpdateSetTemplateOption struct {
 	Name               string  `field:"name" json:"name" bson:"name"`
 	ServiceTemplateIDs []int64 `field:"service_template_ids" json:"service_template_ids" bson:"service_template_ids"`
+}
+
+func (option UpdateSetTemplateOption) Validate() (string, error) {
+	if len(option.Name) == 0 && option.ServiceTemplateIDs == nil {
+		return "", errors.New("at least one update field not empty")
+	}
+	return "", nil
 }
 
 type SetTemplateResult struct {

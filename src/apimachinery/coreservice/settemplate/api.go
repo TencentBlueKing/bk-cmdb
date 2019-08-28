@@ -47,3 +47,29 @@ func (p *setTemplate) CreateSetTemplate(ctx context.Context, header http.Header,
 
 	return ret.Data, nil
 }
+
+func (p *setTemplate) UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp `json:",inline"`
+		Data              metadata.SetTemplate `json:"data"`
+	}{}
+	subPath := fmt.Sprintf("/update/topo/set_template/%d/bk_biz_id/%d/", setTemplateID, bizID)
+
+	err := p.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("UpdateSetTemplate failed, http request failed, err: %+v", err)
+		return ret.Data, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}

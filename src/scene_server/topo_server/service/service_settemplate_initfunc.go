@@ -18,4 +18,5 @@ import (
 
 func (s *Service) initSetTemplate() {
 	s.addAction(http.MethodPost, "/create/topo/set_template/bk_biz_id/{bk_biz_id}/", s.CreateSetTemplate, nil)
+	s.addAction(http.MethodPut, "/update/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/", s.UpdateSetTemplate, nil)
 }
