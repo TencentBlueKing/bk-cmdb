@@ -24,12 +24,14 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/source_controller/validator"
 
-	simplejson "github.com/bitly/go-simplejson"
+	"github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
 
@@ -305,4 +307,206 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	info[idName] = id
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
 
+}
+
+// CreateInstObjects CreateInstObjects
+func (cli *Service) CreateInstObjects(req *restful.Request, resp *restful.Response) {
+	// get the language
+	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
+	// get the error factory by the language
+	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
+
+	pathParams := req.PathParameters()
+	objID := pathParams["obj_id"]
+	obj := meta.Object{
+		ObjectID:objID,
+	}
+	objType := obj.GetObjectType()
+
+	success := make([]string, 0)
+	errors := make([]string, 0)
+	updateErrors := make([]string, 0)
+
+	value, _ := ioutil.ReadAll(req.Request.Body)
+	var input map[int64]map[string]interface{}
+	err := json.Unmarshal([]byte(value), &input)
+	if err != nil {
+		blog.Errorf("create inst objects type:%s,input:%v error:%v", string(objType), value, err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
+		return
+	}
+	instIDField := common.GetInstIDField(objID)
+
+	for idx, inst := range input {
+		if idx == -1 {
+			continue
+		}
+
+		attrs := make([]meta.Attribute, 0)
+		selector := map[string]interface{}{
+			common.BKObjIDField:   objID,
+			common.BKOwnerIDField: ownerID,
+		}
+		if selErr := db.Table(common.BKTableNameObjAttDes).Find(selector).Start(0).Limit(0).Sort("").All(ctx, &attrs); nil != selErr && !db.IsNotFoundError(selErr) {
+			blog.Errorf("find object by selector failed, error information is %s", selErr.Error())
+			errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Errorf(common.CCErrObjectDBOpErrno, selErr.Error()).Error()))
+			continue
+		}
+		// translate language
+		for index := range attrs {
+			attrs[index].PropertyName = cli.TranslatePropertyName(defLang, &attrs[index])
+			attrs[index].Placeholder = cli.TranslatePlaceholder(defLang, &attrs[index])
+			if attrs[index].PropertyType == common.FieldTypeEnum {
+				attrs[index].Option = cli.TranslateEnumName(defLang, &attrs[index], attrs[index].Option)
+			}
+		}
+		validator := validator.NewValidator(ownerID, objID, db, ctx, defLang, defErr)
+		validator.Init(attrs)
+
+		cond := condition.CreateCondition()
+		cond.Field(common.BKOwnerIDField).In([]string{common.BKDefaultOwnerID, ownerID})
+		// if the inst id already exist, query it with id directly,
+		// otherwise, when import a object instance, the other field may be changed.
+		// TODO check isExist now use is_only and inst_name, should change to using unique fields
+		if id, exist := inst[instIDField]; exist {
+			cond.Field(instIDField).Eq(id)
+		} else {
+			if objID, exist := inst[common.BKObjIDField]; exist {
+				cond.Field(common.BKObjIDField).Eq(objID)
+			}
+			val, exists := inst[common.BKInstParentStr]
+			if exists {
+				cond.Field(common.BKInstParentStr).Eq(val)
+			}
+			for _, attrItem := range attrs {
+				if !attrItem.IsSystem && !attrItem.IsAPI && (attrItem.IsOnly || attrItem.PropertyID == obj.GetInstNameFieldName()) {
+					val, exists := inst[attrItem.PropertyID]
+					if !exists {
+						blog.Errorf("create inst objects error: missing only attr %#v, input %#v", attrItem, inst)
+						errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Errorf(common.CCErrCommParamsLostField, attrItem).Error()))
+						continue
+					}
+					cond.Field(attrItem.PropertyID).Eq(val)
+				}
+			}
+		}
+		result := make([]map[string]interface{}, 0)
+		err = cli.GetObjectByCondition(ctx, db, defLang, objType, []string{}, cond.ToMapStr(), &result, "", 0, 0)
+		if err != nil && !db.IsNotFoundError(err) {
+			blog.Errorf("get object type:%s,input:%v error:%v", string(objType), string(value), err)
+			errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrObjectSelectInstFailed).Error()))
+			continue
+		}
+		blog.InfoJSON("instance result %s condition %s", result, cond.ToMapStr())
+
+		if len(result) > 0 {
+			blog.InfoJSON("update", result, cond.ToMapStr(), attrs)
+			if err = validator.ValidateUpdate(inst, result[0]); err != nil {
+				blog.Errorf("update object valid err type:%s,data:%v,condition:%v,error:%v", objType, inst, cond.ToMapStr(), err)
+				errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, err.Error()))
+				updateErrors = append(updateErrors, defLang.Languagef("import_row_int_error_str", idx, err.Error()))
+				continue
+			}
+			inst[common.LastTimeField] = time.Now()
+			err = cli.UpdateObjByCondition(ctx, db, objType, inst, cond.ToMapStr())
+			if err != nil {
+				blog.Errorf("update object type:%s,data:%v,condition:%v,error:%v", objType, inst, cond.ToMapStr(), err)
+				errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrObjectDBOpErrno).Error()))
+				updateErrors = append(updateErrors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrObjectDBOpErrno).Error()))
+				continue
+			}
+			success = append(success, strconv.FormatInt(idx, 10))
+
+			// record event
+			ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
+			idname := common.GetInstIDField(objType)
+			originData := result[0]
+			newData := map[string]interface{}{}
+			id, err := strconv.Atoi(fmt.Sprintf("%v", originData[idname]))
+			if err != nil {
+				blog.Errorf("create event error:%v", err)
+				errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+				updateErrors = append(updateErrors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+				continue
+			}
+			realObjType := objType
+			if objType == common.BKInnerObjIDObject {
+				var ok bool
+				realObjType, ok = originData[common.BKObjIDField].(string)
+				if !ok {
+					blog.Errorf("create event error: there is no bk_obj_type exist,originData: %#v", originData)
+					errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+					updateErrors = append(updateErrors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+					continue
+				}
+			}
+			if err := cli.GetObjectByID(ctx, db, realObjType, nil, id, &newData, ""); err != nil {
+				blog.Errorf("create event error:%v", err)
+				errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+				updateErrors = append(updateErrors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+				continue
+			} else {
+				err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionUpdate, newData, originData)
+				if err != nil {
+					blog.Errorf("create event error:%v", err)
+					errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+					updateErrors = append(updateErrors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+					continue
+				}
+			}
+			continue
+		}
+
+		if err = validator.ValidateCreate(inst); err != nil {
+			blog.Errorf("create object valid err type:%s,data:%v,condition:%v,error:%v", objType, inst, cond.ToMapStr(), err)
+			errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, err.Error()))
+			continue
+		}
+		inst[common.CreateTimeField] = time.Now()
+		inst[common.LastTimeField] = time.Now()
+		if obj.IsCommon() {
+			inst[common.BKObjIDField] = objID
+		}
+		inst = util.SetModOwner(inst, ownerID)
+		blog.Infof("create object type:%s,data:%v", objType, inst)
+		var idName string
+		id, err := cli.CreateObjectIntoDB(ctx, db, objType, inst, &idName)
+		if err != nil {
+			blog.Errorf("create object type:%s,data:%v error:%v", objType, inst, err)
+			errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, err.Error()))
+			continue
+		}
+		success = append(success, strconv.FormatInt(idx, 10))
+
+		// record event
+		origindata := map[string]interface{}{}
+		realObjType := objType
+		if objType == common.BKInnerObjIDObject {
+			var ok bool
+			realObjType, ok = inst[common.BKObjIDField].(string)
+			if !ok {
+				blog.Errorf("create event error: there is no bk_obj_id exist, input %#v", inst)
+				errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+				continue
+			}
+		}
+		if err := cli.GetObjectByID(ctx, db, realObjType, nil, id, &origindata, ""); err != nil {
+			blog.Errorf("create event error, could not retrieve data: %v", err)
+			errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+			continue
+		}
+		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
+		err = ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionCreate, origindata, nil)
+		if err != nil {
+			blog.Errorf("create event error:%v", err)
+			errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+			continue
+		}
+	}
+
+	resp.WriteEntity(meta.CreateInstsResult{BaseResp: meta.SuccessBaseResp, Success: success, Errors: errors, UpdateErrors: updateErrors})
 }
