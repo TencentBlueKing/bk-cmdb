@@ -319,6 +319,10 @@ func (p *setTemplateOperation) GetSetTemplate(ctx core.ContextParams, bizID int6
 		common.BkSupplierAccount: ctx.SupplierAccount,
 	}
 	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(filter).One(ctx.Context, &setTemplate); err != nil {
+		if p.dbProxy.IsNotFoundError(err) {
+			blog.Errorf("GetSetTemplate failed, db select failed, not found, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
+			return setTemplate, ctx.Error.CCError(common.CCErrCommNotFound)
+		}
 		blog.Errorf("GetSetTemplate failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
 		return setTemplate, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
