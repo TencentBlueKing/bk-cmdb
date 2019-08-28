@@ -127,3 +127,48 @@ func (s *Service) ListSetTemplate(params types.ContextParams, pathParams, queryP
 	}
 	return setTemplate, nil
 }
+
+func (s *Service) ListSetTemplateWeb(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	setTemplates, err := s.ListSetTemplate(params, pathParams, queryParams, data)
+	if err != nil {
+		return nil, err
+	}
+	listResult := setTemplates.(*metadata.MultipleSetTemplateResult)
+	if listResult == nil {
+		return nil, nil
+	}
+
+	// count template instances
+	setTemplateIDs := make([]int64, 0)
+	for _, item := range listResult.Info {
+		setTemplateIDs = append(setTemplateIDs, item.ID)
+	}
+	option := metadata.CountSetTplInstOption{
+		SetTemplateIDs: setTemplateIDs,
+	}
+	setTplInstCount, err := s.Engine.CoreAPI.CoreService().SetTemplate().CountSetTplInstances(params.Context, params.Header, bizID, option)
+	if err != nil {
+		blog.Errorf("ListSetTemplateWeb failed, CountSetTplInstances failed, bizID: %d, option: %+v, err: %s, rid: %s", bizID, option, err.Error(), params.ReqID)
+		return nil, err
+	}
+	result := metadata.MultipleSetTemplateWithStatisticsResult{
+		Count: listResult.Count,
+	}
+	for _, setTemplate := range listResult.Info {
+		setInstanceCount, exist := setTplInstCount[setTemplate.ID]
+		if exist == false {
+			setInstanceCount = 0
+		}
+		result.Info = append(result.Info, metadata.SetTemplateWithStatistics{
+			SetInstanceCount: setInstanceCount,
+			SetTemplate:      setTemplate,
+		})
+	}
+	return result, nil
+}
