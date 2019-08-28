@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (st *SetTemplate) CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (*metadata.SetTemplateResult, error) {
+func (st *SetTemplate) CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder) {
 	ret := new(metadata.SetTemplateResult)
 	subPath := fmt.Sprintf("/create/topo/set_template/bk_biz_id/%d/", bizID)
 
@@ -44,7 +44,7 @@ func (st *SetTemplate) CreateSetTemplate(ctx context.Context, header http.Header
 	return ret, nil
 }
 
-func (st *SetTemplate) UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (*metadata.SetTemplateResult, error) {
+func (st *SetTemplate) UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder) {
 	ret := new(metadata.SetTemplateResult)
 	subPath := fmt.Sprintf("/update/topo/set_template/%d/bk_biz_id/%d/", setTemplateID, bizID)
 
@@ -67,7 +67,7 @@ func (st *SetTemplate) UpdateSetTemplate(ctx context.Context, header http.Header
 	return ret, nil
 }
 
-func (st *SetTemplate) DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) error {
+func (st *SetTemplate) DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder {
 	ret := struct {
 		metadata.BaseResp
 	}{}
@@ -89,5 +89,28 @@ func (st *SetTemplate) DeleteSetTemplate(ctx context.Context, header http.Header
 		return errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
-	return err
+	return nil
+}
+
+func (st *SetTemplate) GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (*metadata.SetTemplateResult, errors.CCErrorCoder) {
+	ret := &metadata.SetTemplateResult{}
+	subPath := fmt.Sprintf("/find/topo/set_template/%d/bk_biz_id/%d/", setTemplateID, bizID)
+
+	err := st.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("GetSetTemplate failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret, nil
 }

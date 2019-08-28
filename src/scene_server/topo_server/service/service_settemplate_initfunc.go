@@ -20,4 +20,5 @@ func (s *Service) initSetTemplate() {
 	s.addAction(http.MethodPost, "/create/topo/set_template/bk_biz_id/{bk_biz_id}/", s.CreateSetTemplate, nil)
 	s.addAction(http.MethodPut, "/update/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/", s.UpdateSetTemplate, nil)
 	s.addAction(http.MethodDelete, "/deletemany/topo/set_template/bk_biz_id/{bk_biz_id}/", s.DeleteSetTemplate, nil)
+	s.addAction(http.MethodGet, "/find/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/", s.GetSetTemplate, nil)
 }

@@ -16,11 +16,15 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
 type SetTemplateInterface interface {
-	CreateSetTemplate(ctx context.Context, h http.Header, bizID int64, option metadata.CreateSetTemplateOption) (resp *metadata.SetTemplateResult, err error)
+	CreateSetTemplate(ctx context.Context, h http.Header, bizID int64, option metadata.CreateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder)
+	UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder)
+	DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder
+	GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (*metadata.SetTemplateResult, errors.CCErrorCoder)
 }
 
 func NewSetTemplateInterface(client rest.ClientInterface) SetTemplateInterface {
