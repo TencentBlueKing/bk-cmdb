@@ -200,14 +200,18 @@ func (s *Service) SearchAssociationType(params types.ContextParams, pathParams, 
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	if _, exist := request.Condition["$and"]; exist {
-		return nil, params.Err.New(common.CCErrCommParamsInvalid, "$and")
+	if request.Condition == nil {
+		request.Condition = make(map[string]interface{}, 0)
+	}
+	if _, exist := request.Condition[common.BKDBAND]; exist {
+		return nil, params.Err.New(common.CCErrCommParamsInvalid, common.BKDBAND)
 	}
 
-	request.Condition["$and"] = []interface{}{
+	// 主线模型不能与其他模型关系
+	request.Condition[common.BKDBAND] = []interface{}{
 		map[string]interface{}{
 			common.AssociationKindIDField: map[string]interface{}{
-				"$ne": common.AssociationKindMainline,
+				common.BKDBNE: common.AssociationKindMainline,
 			},
 		},
 	}
