@@ -37,7 +37,28 @@ func (s *coreService) CreateSetTemplate(params core.ContextParams, pathParams, q
 
 	result, err := s.core.SetTemplateOperation().CreateSetTemplate(params, bizID, option)
 	if err != nil {
-		blog.Errorf("CreateSetTemplate failed, err: %+v, rid: %s", err, params.ReqID)
+		blog.Errorf("CreateSetTemplate failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *coreService) UpdateSetTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	setTemplateIDStr := pathParams(common.BKSetTemplateIDField)
+	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
+	option := metadata.UpdateSetTemplateOption{}
+	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+		blog.Errorf("UpdateSetTemplate failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	result, err := s.core.SetTemplateOperation().UpdateSetTemplate(params, setTemplateID, option)
+	if err != nil {
+		blog.Errorf("UpdateSetTemplate failed, setTemplateID: %d, option: %+v, err: %+v, rid: %s", setTemplateID, option, err, params.ReqID)
 		return nil, err
 	}
 	return result, nil
