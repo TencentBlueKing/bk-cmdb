@@ -242,6 +242,7 @@ type SetTemplateOperation interface {
 	CreateSetTemplate(ctx ContextParams, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder)
 	UpdateSetTemplate(ctx ContextParams, setTemplateID int64, option metadata.UpdateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder)
 	DeleteSetTemplate(ctx ContextParams, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder
+	GetSetTemplate(ctx ContextParams, bizID int64, setTemplateID int64) (metadata.SetTemplate, errors.CCErrorCoder)
 }
 
 type core struct {

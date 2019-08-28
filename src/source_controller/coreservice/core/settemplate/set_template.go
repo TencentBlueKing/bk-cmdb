@@ -310,3 +310,17 @@ func (p *setTemplateOperation) DeleteSetTemplate(ctx core.ContextParams, bizID i
 
 	return nil
 }
+
+func (p *setTemplateOperation) GetSetTemplate(ctx core.ContextParams, bizID int64, setTemplateID int64) (metadata.SetTemplate, errors.CCErrorCoder) {
+	setTemplate := metadata.SetTemplate{}
+	filter := map[string]interface{}{
+		common.BKFieldID:         setTemplateID,
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: ctx.SupplierAccount,
+	}
+	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(filter).One(ctx.Context, &setTemplate); err != nil {
+		blog.Errorf("GetSetTemplate failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
+		return setTemplate, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	return setTemplate, nil
+}

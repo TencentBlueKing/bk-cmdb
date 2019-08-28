@@ -98,3 +98,28 @@ func (p *setTemplate) DeleteSetTemplate(ctx context.Context, header http.Header,
 
 	return nil
 }
+
+func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (*metadata.SetTemplate, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp `json:",inline"`
+		Data              metadata.SetTemplate `json:"data"`
+	}{}
+	subPath := fmt.Sprintf("/find/topo/set_template/%d/bk_biz_id/%d/", setTemplateID, bizID)
+
+	err := p.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("GetSetTemplate failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
