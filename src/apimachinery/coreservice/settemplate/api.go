@@ -73,3 +73,28 @@ func (p *setTemplate) UpdateSetTemplate(ctx context.Context, header http.Header,
 
 	return ret.Data, nil
 }
+
+func (p *setTemplate) DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder {
+	ret := struct {
+		metadata.BaseResp `json:",inline"`
+	}{}
+	subPath := fmt.Sprintf("/deletemany/topo/set_template/bk_biz_id/%d/", bizID)
+
+	err := p.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("DeleteSetTemplate failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return nil
+}

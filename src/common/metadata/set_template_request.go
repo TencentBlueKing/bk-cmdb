@@ -34,3 +34,7 @@ type SetTemplateResult struct {
 	BaseResp
 	Data SetTemplate `field:"data" json:"data" bson:"data"`
 }
+
+type DeleteSetTemplateOption struct {
+	SetTemplateIDs []int64 `field:"set_template_ids" json:"set_template_ids" bson:"set_template_ids"`
+}

@@ -262,3 +262,51 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 
 	return setTemplate, nil
 }
+
+func (p *setTemplateOperation) DeleteSetTemplate(ctx core.ContextParams, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder {
+	// check reference
+	setFilter := map[string]interface{}{
+		common.BKAppIDField:   bizID,
+		common.BKOwnerIDField: ctx.SupplierAccount,
+		common.BKSetTemplateIDField: map[string]interface{}{
+			common.BKDBIN: option.SetTemplateIDs,
+		},
+	}
+	referenceCount, err := p.dbProxy.Table(common.BKTableNameBaseSet).Find(setFilter).Count(ctx.Context)
+	if err != nil {
+		blog.Error("DeleteSetTemplate failed, get template reference count failed, db select failed, filter: %+v, err: %+v, rid: %s", setFilter, err, ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if referenceCount > 0 {
+		blog.Error("DeleteSetTemplate failed, set templates referenced by %d sets, setTemplates: %+v, rid: %s", referenceCount, option.SetTemplateIDs, ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
+	}
+
+	// delete set template
+	setTplFilter := map[string]interface{}{
+		common.BKAppIDField:   bizID,
+		common.BKOwnerIDField: ctx.SupplierAccount,
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: option.SetTemplateIDs,
+		},
+	}
+	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Delete(ctx.Context, setTplFilter); err != nil {
+		blog.Errorf("DeleteSetTemplate failed, db remove failed, filter: %+v, err: %+v, rid: %s", setTplFilter, err, ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrCommDBDeleteFailed)
+	}
+
+	// delete relations
+	relationFilter := map[string]interface{}{
+		common.BKAppIDField:   bizID,
+		common.BKOwnerIDField: ctx.SupplierAccount,
+		common.BKSetTemplateIDField: map[string]interface{}{
+			common.BKDBIN: option.SetTemplateIDs,
+		},
+	}
+	if err := p.dbProxy.Table(common.BKTableNameSetServiceTemplateRelation).Delete(ctx.Context, relationFilter); err != nil {
+		blog.Errorf("DeleteSetTemplate failed, db remove relations failed, filter: %+v, err: %+v, rid: %s", relationFilter, err, ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrCommDBDeleteFailed)
+	}
+
+	return nil
+}
