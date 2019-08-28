@@ -14,8 +14,8 @@ export const OPERATION = {
     BUSINESS_ARCHIVE
 }
 
-const businessPath = '/business'
-const historyPath = '/history/biz'
+const businessPath = 'business'
+const historyPath = 'history/biz'
 
 export default [{
     name: 'business',

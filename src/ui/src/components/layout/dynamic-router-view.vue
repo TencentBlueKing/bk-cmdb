@@ -1,7 +1,11 @@
 <template>
     <div class="clearfix">
         <dynamic-navigation class="main-navigation"></dynamic-navigation>
-        <router-view class="main-views"></router-view>
+        <div class="main-layout">
+            <div class="main-scroller">
+                <router-view class="main-views"></router-view>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -18,7 +22,18 @@
     .main-navigation {
         float: left;
     }
-    .main-views {
+    .main-layout {
+        position: relative;
         overflow: hidden;
+        height: 100%;
+    }
+    .main-scroller {
+        height: 100%;
+        overflow: auto;
+    }
+    .main-views {
+        height: 100%;
+        padding: 0 20px;
+        min-width: 1106px;
     }
 </style>

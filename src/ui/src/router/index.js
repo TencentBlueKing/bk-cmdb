@@ -11,6 +11,14 @@ import $http from '@/api'
 import index from '@/views/index/router.config'
 
 import {
+    MENU_INDEX,
+    MENU_BUSINESS,
+    MENU_RESOURCE,
+    MENU_MODEL,
+    MENU_ANALYSIS
+} from '@/dictionary/menu-symbol'
+
+import {
     businessViews,
     resourceViews,
     modelViews,
@@ -51,7 +59,7 @@ const redirectRouters = [{
 }, {
     path: '/',
     redirect: {
-        name: 'index'
+        name: MENU_INDEX
     }
 }]
 
@@ -62,26 +70,26 @@ const router = new Router({
         ...statusRouters,
         ...index,
         {
-            name: 'business',
+            name: MENU_BUSINESS,
             component: dynamicRouterView,
             children: businessViews,
             path: '/business',
             redirect: '/business/index'
         }, {
-            name: 'model',
+            name: MENU_MODEL,
             component: dynamicRouterView,
             children: modelViews,
             path: '/model',
             redirect: '/model/index'
         },
         {
-            name: 'resource',
+            name: MENU_RESOURCE,
             component: dynamicRouterView,
             children: resourceViews,
             path: '/resource',
             redirect: '/resource/index'
         }, {
-            name: 'analysis',
+            name: MENU_ANALYSIS,
             component: dynamicRouterView,
             children: analysisViews,
             path: '/analysis',
@@ -121,36 +129,6 @@ const cancelRequest = () => {
 }
 
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
-
-const setMenuState = to => {
-    if (!to.meta.resetMenu) {
-        return false
-    }
-    const isStatusRoute = statusRouters.some(route => route.name === to.name)
-    if (isStatusRoute) {
-        return false
-    }
-    const menu = to.meta.menu || {}
-    const menuId = menu.id
-    const parentId = menu.parent
-    router.app.$store.commit('menu/setActiveMenu', menuId)
-    if (parentId) {
-        router.app.$store.commit('menu/setOpenMenu', parentId)
-    }
-}
-
-const setTitle = to => {
-    const { i18nTitle, title } = to.meta
-    let headerTitle
-    if (!i18nTitle && !title) {
-        return false
-    } else if (i18nTitle) {
-        headerTitle = router.app.$t(i18nTitle)
-    } else if (title) {
-        headerTitle = title
-    }
-    router.app.$store.commit('setHeaderTitle', headerTitle)
-}
 
 const setAuthScope = (to, from) => {
     const auth = to.meta.auth || {}
@@ -225,15 +203,13 @@ router.beforeEach((to, from, next) => {
                 await preload(router.app)
             }
             if (!isShouldShow(to)) {
-                next({ name: 'index' })
+                next({ name: MENU_INDEX })
             } else {
-                setMenuState(to)
-                setTitle(to)
                 setAuthScope(to, from)
                 checkAuthDynamicMeta(to, from)
 
                 if (to.name === 'requireBusiness' && !router.app.$store.getters.permission.length) {
-                    next({ name: 'index' })
+                    next({ name: MENU_INDEX })
                 }
 
                 const isAvailable = checkAvailable(to, from)

@@ -1,4 +1,5 @@
 import moment from 'moment'
+import GET_VALUE from 'get-value'
 
 /**
  * 拍平列表
@@ -321,6 +322,10 @@ export function getSort (sort) {
     return prop
 }
 
+export function getValue () {
+    return GET_VALUE(...arguments)
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -338,5 +343,6 @@ export default {
     getInstFormValues,
     getMetadataBiz,
     getValidateRules,
-    getSort
+    getSort,
+    getValue
 }

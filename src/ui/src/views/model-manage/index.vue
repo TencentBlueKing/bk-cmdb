@@ -466,7 +466,7 @@
         position: absolute;
         top: 0;
         left: 0;
-        width: calc(100% - 8px);
+        width: calc(100% - 17px);
         padding: 20px;
         font-size: 0;
         background-color: #fff;

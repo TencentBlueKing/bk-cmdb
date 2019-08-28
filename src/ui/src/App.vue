@@ -73,8 +73,6 @@
         }
     }
     .views-layout{
-        min-width: 1366px;
-        overflow: scroll;
         height: calc(100% - 58px);
     }
 </style>

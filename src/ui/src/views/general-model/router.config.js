@@ -7,7 +7,7 @@ import {
     D_INST
 } from '@/dictionary/auth'
 
-const prefix = '/general-model/'
+const prefix = 'general-model/'
 const param = 'objId'
 
 export const GET_MODEL_PATH = modelId => {

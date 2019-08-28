@@ -12,20 +12,14 @@ export const OPERATION = {
     D_RELATION
 }
 
-const path = '/model/association'
-
 export default {
     name: 'modelAssociation',
-    path: path,
+    path: 'association',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            id: 'modelAssociation',
             i18n: '关联类型',
-            path: path,
-            order: 4,
-            parent: NAV_MODEL_MANAGEMENT,
-            businessView: false
+            parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
             operation: Object.values(OPERATION),
