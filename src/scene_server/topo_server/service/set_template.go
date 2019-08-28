@@ -67,3 +67,22 @@ func (s *Service) UpdateSetTemplate(params types.ContextParams, pathParams, quer
 	}
 	return setTemplate, nil
 }
+
+func (s *Service) DeleteSetTemplate(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.DeleteSetTemplateOption{}
+	if err := data.MarshalJSONInto(&option); err != nil {
+		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	if err := s.Engine.CoreAPI.CoreService().SetTemplate().DeleteSetTemplate(params.Context, params.Header, bizID, option); err != nil {
+		blog.Errorf("DeleteSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
+		return nil, err
+	}
+	return nil, nil
+}

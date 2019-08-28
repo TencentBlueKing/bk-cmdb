@@ -16,20 +16,78 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
-func (st *SetTemplate) CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (resp *metadata.SetTemplateResult, err error) {
-	resp = new(metadata.SetTemplateResult)
+func (st *SetTemplate) CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (*metadata.SetTemplateResult, error) {
+	ret := new(metadata.SetTemplateResult)
 	subPath := fmt.Sprintf("/create/topo/set_template/bk_biz_id/%d/", bizID)
 
-	err = st.client.Post().
+	err := st.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
 		WithHeaders(header).
 		Do().
-		Into(resp)
+		Into(ret)
 
-	return
+	if err != nil {
+		blog.Errorf("CreateSetTemplate failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret, nil
+}
+
+func (st *SetTemplate) UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (*metadata.SetTemplateResult, error) {
+	ret := new(metadata.SetTemplateResult)
+	subPath := fmt.Sprintf("/update/topo/set_template/%d/bk_biz_id/%d/", setTemplateID, bizID)
+
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("UpdateSetTemplate failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret, nil
+}
+
+func (st *SetTemplate) DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) error {
+	ret := struct {
+		metadata.BaseResp
+	}{}
+	subPath := fmt.Sprintf("/deletemany/topo/set_template/bk_biz_id/%d/", bizID)
+
+	err := st.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("DeleteSetTemplate failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return err
 }
