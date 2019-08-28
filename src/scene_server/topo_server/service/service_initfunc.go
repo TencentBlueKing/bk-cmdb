@@ -165,6 +165,7 @@ func (s *Service) initObject() {
 	s.addAction(http.MethodPost, "/objects/topo", s.SearchObjectTopo, nil)
 	s.addAction(http.MethodPut, "/object/{id}", s.UpdateObject, nil)
 	s.addAction(http.MethodDelete, "/object/{id}", s.DeleteObject, nil)
+	s.addAction(http.MethodGet, "/object/statistics", s.GetModelStatistics, nil)
 
 }
 func (s *Service) initPrivilegeGroup() {
