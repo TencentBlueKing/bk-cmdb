@@ -1,3 +1,9 @@
+export const MENU_INDEX = 'menu.index'
+export const MENU_BUSINESS = 'menu.business'
+export const MENU_RESOURCE = 'menu.resource'
+export const MENU_MODEL = 'menu.model'
+export const MENU_ANALYSIS = 'menu.analysis'
+
 export const MENU_BUSINESS_HOST = Symbol('menu.business.host')
 export const MENU_BUSINESS_SERVICE = Symbol('menu.business.service')
 export const MENU_BUSINESS_ADVANCED = Symbol('menu.business.advanced')

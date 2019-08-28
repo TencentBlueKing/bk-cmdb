@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { MENU_BUSINESS_HOST } from '@/dictionary/menu-symbol'
+import { MENU_BUSINESS_HOST, MENU_BUSINESS } from '@/dictionary/menu-symbol'
 import {
     R_HOST,
     U_HOST,
@@ -17,7 +17,7 @@ export default {
     path: 'index',
     component: () => import('./index.vue'),
     meta: new Meta({
-        owner: 'business',
+        owner: MENU_BUSINESS,
         menu: {
             i18n: '业务主机',
             parent: MENU_BUSINESS_HOST

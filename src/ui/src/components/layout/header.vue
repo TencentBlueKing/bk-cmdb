@@ -7,8 +7,8 @@
         </div>
         <nav class="header-nav">
             <router-link class="header-link"
-                v-for="nav in headerNav"
-                :to="{ name: nav.name }"
+                v-for="nav in menu"
+                :to="{ name: nav.id }"
                 :key="nav.id">
                 {{$t(nav.i18n)}}
             </router-link>
@@ -55,12 +55,12 @@
 </template>
 
 <script>
-    import { HEADER_NAV } from '@/dictionary/menu'
+    import menu from '@/dictionary/menu'
     import { mapGetters } from 'vuex'
     export default {
         data () {
             return {
-                headerNav: HEADER_NAV
+                menu: menu
             }
         },
         computed: {

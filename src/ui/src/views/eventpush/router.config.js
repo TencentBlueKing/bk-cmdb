@@ -14,20 +14,14 @@ export const OPERATION = {
     D_EVENT
 }
 
-const path = '/eventpush'
-
 export default {
     name: 'eventpush',
-    path: path,
+    path: 'index',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            id: 'eventpush',
             i18n: '事件推送',
-            path: path,
-            order: 5,
-            parent: NAV_MODEL_MANAGEMENT,
-            businessView: false
+            parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
             view: OPERATION.R_EVENT,

@@ -1,6 +1,6 @@
 import Meta from '@/router/meta'
 import { getMetadataBiz } from '@/utils/tools'
-import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
+import { MENU_MODEL } from '@/dictionary/menu-symbol'
 import {
     C_MODEL_GROUP,
     U_MODEL_GROUP,
@@ -20,20 +20,14 @@ export const OPERATION = {
     D_MODEL
 }
 
-const modelPath = '/model'
-
 export default [{
     name: 'model',
-    path: modelPath,
+    path: 'index',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            id: 'model',
             i18n: '模型',
-            path: modelPath,
-            order: 1,
-            parent: NAV_MODEL_MANAGEMENT,
-            businessView: false
+            parent: MENU_MODEL
         },
         auth: {
             operation: Object.values(OPERATION),
@@ -46,7 +40,7 @@ export default [{
     })
 }, {
     name: 'modelDetails',
-    path: '/model/details/:modelId',
+    path: 'index/details/:modelId',
     component: () => import('./children/index.vue'),
     meta: new Meta({
         auth: {
@@ -80,9 +74,6 @@ export default [{
             }
         },
         checkAvailable: (to, from, app) => {
-            if (!app.$store.getters.isAdminView) {
-                return false
-            }
             const modelId = to.params.modelId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
             return !!model

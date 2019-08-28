@@ -5,47 +5,59 @@
         @mouseleave="handleMouseLeave">
         <div class="nav-wrapper"
             :class="{ unfold: unfold, flexible: !navStick }">
+            <div class="business-wrapper" v-if="showBusinessSelector">
+                <cmdb-business-selector class="business-selector"></cmdb-business-selector>
+            </div>
             <ul class="menu-list">
-                <li class="menu-item"
-                    v-for="(menu, index) in currentMenus"
-                    :key="index"
-                    :class="{
-                        active: active === menu.id,
-                        'is-open': unfold && isMenuExpanded(menu),
-                        'is-link': menu.hasOwnProperty('route')
-                    }">
-                    <h3 class="menu-info clearfix"
-                        :class="{ 'menu-link': menu.hasOwnProperty('route') }"
-                        @click="handleMenuClick(menu)">
-                        <i :class="['menu-icon', menu.icon]"></i>
-                        <span class="menu-name">{{$t(menu.i18n)}}</span>
-                        <i class="toggle-icon bk-icon icon-angle-right"
-                            v-if="menu.submenu && menu.submenu.length"
-                            :class="{ open: unfold && isMenuExpanded(menu) }">
-                        </i>
-                    </h3>
-                    <cmdb-collapse-transition>
-                        <div class="menu-submenu"
-                            v-if="menu.submenu && menu.submenu.length"
-                            v-show="unfold && isMenuExpanded(menu)">
-                            <router-link class="submenu-link" exact
-                                v-for="(submenu, submenuIndex) in menu.submenu"
-                                :class="{
-                                    active: active === submenu.id,
-                                    collection: menu.id === NAV_COLLECT
-                                }"
-                                :key="submenuIndex"
-                                :to="submenu.route"
-                                :title="$t(submenu.i18n)">
-                                {{$t(submenu.i18n)}}
-                                <i class="bk-icon icon-close"
-                                    v-if="menu.id === NAV_COLLECT"
-                                    @click.stop.prevent="handleDeleteCollection(submenu)">
-                                </i>
-                            </router-link>
-                        </div>
-                    </cmdb-collapse-transition>
-                </li>
+                <template v-for="(menu, index) in currentMenus">
+                    <router-link class="menu-item is-link" tag="li" active-class="active"
+                        v-if="menu.hasOwnProperty('route')"
+                        :key="index"
+                        :to="menu.route"
+                        :title="$t(menu.i18n)">
+                        <h3 class="menu-info clearfix">
+                            <i :class="['menu-icon', menu.icon]"></i>
+                            <span class="menu-name">{{$t(menu.i18n)}}</span>
+                        </h3>
+                    </router-link>
+                    <li class="menu-item"
+                        v-else
+                        :key="index"
+                        :class="{
+                            'is-open': unfold && isMenuExpanded(menu)
+                        }">
+                        <h3 class="menu-info clearfix" @click="handleMenuClick(menu)">
+                            <i :class="['menu-icon', menu.icon]"></i>
+                            <span class="menu-name">{{$t(menu.i18n)}}</span>
+                            <i class="toggle-icon bk-icon icon-angle-right"
+                                v-if="menu.submenu && menu.submenu.length"
+                                :class="{ open: unfold && isMenuExpanded(menu) }">
+                            </i>
+                        </h3>
+                        <cmdb-collapse-transition>
+                            <div class="menu-submenu"
+                                v-if="menu.submenu && menu.submenu.length"
+                                v-show="unfold && isMenuExpanded(menu)">
+                                <router-link class="submenu-link"
+                                    v-for="(submenu, submenuIndex) in menu.submenu"
+                                    exact
+                                    active-class="active"
+                                    :class="{
+                                        collection: menu.id === NAV_COLLECT
+                                    }"
+                                    :key="submenuIndex"
+                                    :to="submenu.route"
+                                    :title="$t(submenu.i18n)">
+                                    {{$t(submenu.i18n)}}
+                                    <i class="bk-icon icon-close"
+                                        v-if="menu.id === NAV_COLLECT"
+                                        @click.stop.prevent="handleDeleteCollection(submenu)">
+                                    </i>
+                                </router-link>
+                            </div>
+                        </cmdb-collapse-transition>
+                    </li>
+                </template>
             </ul>
             <div class="nav-option">
                 <i class="nav-stick icon icon-cc-nav-toggle"
@@ -61,12 +73,8 @@
 </template>
 <script>
     import { mapGetters } from 'vuex'
-    import {
-        BUSINESS_MENU,
-        RESOURCE_MENU,
-        MODEL_MENU,
-        ANALYSIS_MENU
-    } from '@/dictionary/menu'
+    import MENU_DICTIONARY from '@/dictionary/menu'
+    import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
     export default {
         data () {
             return {
@@ -79,46 +87,31 @@
         },
         computed: {
             ...mapGetters(['navStick', 'navFold', 'admin']),
-            ...mapGetters('menu', ['active', 'open']),
+            ...mapGetters('menu', ['active']),
             ...mapGetters('userCustom', ['usercustom']),
-            currentMenus () {
-                const menuMap = {
-                    business: BUSINESS_MENU,
-                    resource: RESOURCE_MENU,
-                    model: MODEL_MENU,
-                    analysis: ANALYSIS_MENU
-                }
-                const ownerName = this.$route.matched[0].name
-                return menuMap[ownerName] || []
-            },
             unfold () {
                 return this.navStick || !this.navFold
             },
             owner () {
                 return this.$route.matched[0].name
+            },
+            showBusinessSelector () {
+                return this.owner === MENU_BUSINESS
+            },
+            currentMenus () {
+                const target = MENU_DICTIONARY.find(menu => menu.id === this.owner)
+                return (target && target.menu) || []
             }
         },
-        watch: {
-            menus () {
-                this.setMenuState()
-            },
-            open (openMenu) {
-                this.state[openMenu].expanded = true
-            }
+        created () {
+            this.setDefaultExpand()
         },
         methods: {
-            setMenuState () {
-                this.menus.forEach(menu => {
-                    if (this.state.hasOwnProperty(menu.id)) {
-                        this.state[menu.id] = Object.assign({
-                            expanded: false
-                        }, this.state[menu.id])
-                    } else {
-                        this.$set(this.state, menu.id, {
-                            expanded: false
-                        })
-                    }
-                })
+            setDefaultExpand () {
+                const expandedId = this.$tools.getValue(this.$route, 'meta.menu.parent')
+                if (expandedId) {
+                    this.$set(this.state, expandedId, { expanded: true })
+                }
             },
             isMenuExpanded (menu) {
                 if (this.state.hasOwnProperty(menu.id)) {
@@ -156,7 +149,11 @@
             },
             // 切换展开的分类
             toggleMenu (menu) {
-                this.state[menu.id].expanded = !this.state[menu.id].expanded
+                if (this.state.hasOwnProperty(menu.id)) {
+                    this.state[menu.id].expanded = !this.state[menu.id].expanded
+                } else {
+                    this.$set(this.state, menu.id, { expanded: true })
+                }
             },
             // 切换导航展开固定
             toggleNavStick () {
@@ -177,7 +174,7 @@
 <style lang="scss" scoped>
 $cubicBezier: cubic-bezier(0.4, 0, 0.2, 1);
 $duration: 0.2s;
-$color: #979ba5;
+$color: #63656E;
 
 .nav-layout {
     position: relative;
@@ -212,38 +209,15 @@ $color: #979ba5;
     }
 }
 
-.logo {
-    height: 60px;
-    padding: 0 0 0 64px;
-    border-bottom: 1px solid rgba(255, 255, 255, .05);
-    background-color: #182132;
-    line-height: 59px;
-    color: #fff;
-    font-size: 0;
-    font-weight: bold;
-    white-space: nowrap;
+.business-wrapper {
+    padding: 13px 0;
+    height: 59px;
+    border-bottom: 1px solid #DCDEE5;
     overflow: hidden;
-    cursor: pointer;
-    background: url('../../assets/images/logo.svg') no-repeat;
-    background-position: 16px 14px;
-    .logo-text {
-        display: inline-block;
-        vertical-align: middle;
-        font-size: 18px;
-    }
-    .logo-tag {
-        display: inline-block;
-        padding: 0 8px;
-        margin: 0 0 0 4px;
-        vertical-align: middle;
-        border-radius: 2px;
-        color: #282b41;
-        font-size: 20px;
-        font-weight: normal;
-        line-height: 32px;
-        background: #18b48a;
-        transform: scale(0.5);
-        transform-origin: left center;
+    .business-selector {
+        display: block;
+        width: 240px;
+        margin: 0 auto;
     }
 }
 
@@ -269,7 +243,7 @@ $color: #979ba5;
         transition: background-color $duration $cubicBezier;
 
         &.is-open {
-            background-color: #202a3c;
+            background-color: #F0F1F5;
         }
         &.active.is-link {
             background-color: #3a84ff;
@@ -295,7 +269,7 @@ $color: #979ba5;
             vertical-align: top;
             margin: 13px 26px 13px 22px;
             font-size: 16px;
-            color: rgba(255, 255, 255, .8);
+            color: #979BA5;
         }
 
         .menu-name {
@@ -359,8 +333,7 @@ $color: #979ba5;
             }
         }
         &:hover {
-            color: #fff;
-            background-color: #303c4c;
+            background-color: #DCDEE5;
         }
         &.active {
             color: #fff;

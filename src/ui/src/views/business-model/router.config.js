@@ -6,7 +6,7 @@ export const OPERATION = {
     SYSTEM_TOPOLOGY
 }
 
-const path = '/model/business'
+const path = 'model/business'
 
 export default {
     name: 'businessModel',

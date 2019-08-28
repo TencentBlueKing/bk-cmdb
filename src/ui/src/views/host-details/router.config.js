@@ -5,7 +5,7 @@ import {
     GET_AUTH_META,
     D_SERVICE_INSTANCE
 } from '@/dictionary/auth'
-
+import { MENU_BUSINESS, MENU_RESOURCE } from '@/dictionary/menu-symbol'
 const component = () => import(/* webpackChunkName: "hostDetails" */ './index.vue')
 
 export const OPERATION = {
@@ -20,10 +20,10 @@ export const BUSINESS_HOST = 'businessHostDetails'
 
 export const RESOURCE_HOST_DETAILS = {
     name: RESOURCE_HOST,
-    path: '/host/:id',
+    path: 'host/:id',
     component: component,
     meta: new Meta({
-        owner: 'resource',
+        owner: MENU_RESOURCE,
         auth: {
             view: null,
             operation: [U_RESOURCE_HOST],
@@ -44,10 +44,10 @@ export const RESOURCE_HOST_DETAILS = {
 
 export const BUSINESS_HOST_DETAILS = {
     name: BUSINESS_HOST,
-    path: '/business/:business/host/:id',
+    path: 'business/:business/host/:id',
     component: component,
     meta: new Meta({
-        owner: 'business',
+        owner: MENU_BUSINESS,
         auth: {
             view: null,
             operation: [U_HOST, D_SERVICE_INSTANCE],
