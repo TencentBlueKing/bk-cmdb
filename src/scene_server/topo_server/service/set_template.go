@@ -107,3 +107,23 @@ func (s *Service) GetSetTemplate(params types.ContextParams, pathParams, queryPa
 	}
 	return setTemplate, nil
 }
+
+func (s *Service) ListSetTemplate(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.ListSetTemplateOption{}
+	if err := data.MarshalJSONInto(&option); err != nil {
+		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	setTemplate, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTemplate(params.Context, params.Header, bizID, option)
+	if err != nil {
+		blog.Errorf("ListSetTemplate failed, do core service list failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
+		return nil, err
+	}
+	return setTemplate, nil
+}

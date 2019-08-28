@@ -99,8 +99,29 @@ func (s *coreService) GetSetTemplate(params core.ContextParams, pathParams, quer
 
 	setTemplate, err := s.core.SetTemplateOperation().GetSetTemplate(params, bizID, setTemplateID)
 	if err != nil {
-		blog.Errorf("GetSetTemplate failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, setTemplateID, err, params.ReqID)
+		blog.Errorf("GetSetTemplate failed, bizID: %d, setTemplateID: %d, err: %+v, rid: %s", bizID, setTemplateID, err, params.ReqID)
 		return nil, err
 	}
 	return setTemplate, nil
+}
+
+func (s *coreService) ListSetTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.ListSetTemplateOption{}
+	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+		blog.Errorf("ListSetTemplate failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	setTemplateResult, err := s.core.SetTemplateOperation().ListSetTemplate(params, bizID, option)
+	if err != nil {
+		blog.Errorf("ListSetTemplate failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
+		return nil, err
+	}
+	return setTemplateResult, nil
 }

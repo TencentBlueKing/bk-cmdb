@@ -25,6 +25,7 @@ type SetTemplateInterface interface {
 	UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder)
 	DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder
 	GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (*metadata.SetTemplateResult, errors.CCErrorCoder)
+	ListSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder)
 }
 
 func NewSetTemplateInterface(client rest.ClientInterface) SetTemplateInterface {
