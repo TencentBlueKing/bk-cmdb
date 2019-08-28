@@ -146,3 +146,34 @@ func (p *setTemplate) ListSetTemplate(ctx context.Context, header http.Header, b
 
 	return &ret.Data, nil
 }
+
+func (p *setTemplate) CountSetTplInstances(ctx context.Context, header http.Header, bizID int64, option metadata.CountSetTplInstOption) (map[int64]int64, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data []metadata.CountSetTplInstItem `json:"data"`
+	}{}
+	subPath := fmt.Sprintf("/findmany/topo/set_template/count_instances/bk_biz_id/%d/", bizID)
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("CountSetTplInstances failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	data := make(map[int64]int64)
+	for _, item := range ret.Data {
+		data[item.SetTemplateID] = item.SetInstanceCount
+	}
+
+	return data, nil
+}

@@ -53,3 +53,22 @@ type MultipleSetTemplateResult struct {
 	Count int64         `json:"count"`
 	Info  []SetTemplate `json:"info"`
 }
+
+type SetTemplateWithStatistics struct {
+	SetInstanceCount int64       `json:"set_instance_count"`
+	SetTemplate      SetTemplate `json:"set_template"`
+}
+
+type MultipleSetTemplateWithStatisticsResult struct {
+	Count int64                       `json:"count"`
+	Info  []SetTemplateWithStatistics `json:"info"`
+}
+
+type CountSetTplInstOption struct {
+	SetTemplateIDs []int64 `field:"set_template_ids" json:"set_template_ids" bson:"set_template_ids"`
+}
+
+type CountSetTplInstItem struct {
+	SetTemplateID    int64 `json:"set_template_id" bson:"_id"`
+	SetInstanceCount int64 `json:"set_instances_count" bson:"set_instances_count"`
+}

@@ -125,3 +125,38 @@ func (s *coreService) ListSetTemplate(params core.ContextParams, pathParams, que
 	}
 	return setTemplateResult, nil
 }
+
+func (s *coreService) CountSetTplInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.CountSetTplInstOption{}
+	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+		blog.Errorf("CountSetTplInstances failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	filter := map[string]interface{}{
+		common.BKSetTemplateIDField: map[string]interface{}{
+			common.BKDBIN: option.SetTemplateIDs,
+		},
+		common.BKAppIDField: bizID,
+	}
+	pipeline := []map[string]interface{}{
+		{common.BKDBMatch: filter},
+		{common.BKDBGroup: map[string]interface{}{
+			"_id":                 "$" + common.BKSetTemplateIDField,
+			"set_instances_count": map[string]interface{}{common.BKDBSum: 1}},
+		},
+	}
+	result := make([]metadata.CountSetTplInstItem, 0)
+	if err := s.db.Table(common.BKTableNameBaseSet).AggregateAll(params.Context, pipeline, &result); err != nil {
+		blog.Errorf("CountSetTplInstances failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
+		return result, nil
+	}
+
+	return result, nil
+}
