@@ -138,3 +138,29 @@ func (st *SetTemplate) ListSetTemplate(ctx context.Context, header http.Header, 
 
 	return &ret.Data, nil
 }
+
+func (st *SetTemplate) ListSetServiceRelatedServiceTemplates(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data []metadata.ServiceTemplate `json:"data"`
+	}{}
+	subPath := fmt.Sprintf("/findmany/topo/set_template/%d/bk_biz_id/%d/service_templates", setTemplateID, bizID)
+
+	err := st.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("ListSetServiceRelatedServiceTemplates failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}

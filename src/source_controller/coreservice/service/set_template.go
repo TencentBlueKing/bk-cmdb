@@ -160,3 +160,24 @@ func (s *coreService) CountSetTplInstances(params core.ContextParams, pathParams
 
 	return result, nil
 }
+
+func (s *coreService) ListSetServiceTemplateRelations(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	setTemplateIDStr := pathParams(common.BKSetTemplateIDField)
+	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
+	relations, err := s.core.SetTemplateOperation().ListSetServiceTemplateRelations(params, bizID, setTemplateID)
+	if err != nil {
+		blog.Errorf("ListSetServiceTemplateRelations failed, bizID: %d, setTemplateID: %+v, err: %+v, rid: %s", bizID, setTemplateID, err, params.ReqID)
+		return nil, err
+	}
+	return relations, nil
+}
