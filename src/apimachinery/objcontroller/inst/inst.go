@@ -47,6 +47,20 @@ func (t *instance) CreateObject(ctx context.Context, objType string, h http.Head
 	return
 }
 
+func (t *instance) CreateObjects(ctx context.Context, objType string, h http.Header, dat interface{}) (resp *metatype.CreateInstsResult, err error) {
+	resp = new(metatype.CreateInstsResult)
+	subPath := fmt.Sprintf("/insts/%s/batch", objType)
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (t *instance) DelObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
 	resp = new(metatype.DeleteResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
