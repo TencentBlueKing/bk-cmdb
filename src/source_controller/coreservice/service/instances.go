@@ -15,6 +15,7 @@ package service
 import (
 	"fmt"
 
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -42,6 +43,23 @@ func (s *coreService) UpdateModelInstances(params core.ContextParams, pathParams
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
+	cond := metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.AssociationKindIDField:  common.AssociationKindMainline,
+			common.AssociatedObjectIDField: pathParams("bk_obj_id"),
+		},
+	}
+	result, err := s.core.AssociationOperation().SearchModelAssociation(params, cond)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.Info) != 0 {
+		// this is a mainline object, need to delete metadata field.
+		// otherwise, can not find this object, then update failed.
+		inputData.Condition.Remove("metadata")
+	}
+
 	return s.core.InstanceOperation().UpdateModelInstance(params, pathParams("bk_obj_id"), inputData)
 }
 

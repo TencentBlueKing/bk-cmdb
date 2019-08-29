@@ -385,14 +385,14 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 	}
 	return am.batchAuthorize(ctx, header, resources...)
 }
-func (am *AuthManager) GenDeleteHostBatchNoPermissionResp(ctx context.Context, header http.Header, hostIDs []int64) (*metadata.BaseResp, error) {
+func (am *AuthManager) GenDeleteHostBatchNoPermissionResp(ctx context.Context, header http.Header, action authcenter.ActionID, hostIDs []int64) (*metadata.BaseResp, error) {
 	var p metadata.Permission
 	p.SystemID = authcenter.SystemIDCMDB
 	p.SystemName = authcenter.SystemNameCMDB
 	p.ScopeType = authcenter.ScopeTypeIDSystem
 	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
-	p.ActionID = string(authcenter.Delete)
-	p.ActionName = authcenter.ActionIDNameMap[authcenter.Delete]
+	p.ActionID = string(action)
+	p.ActionName = authcenter.ActionIDNameMap[action]
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
 		return nil, err
