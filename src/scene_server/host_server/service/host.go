@@ -13,15 +13,14 @@
 package service
 
 import (
-	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
-
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"

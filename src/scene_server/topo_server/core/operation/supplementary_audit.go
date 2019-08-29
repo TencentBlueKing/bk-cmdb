@@ -124,12 +124,14 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 			})
 		}
 		var bizID int64
-		if _, exist := targetItem.GetValues()[common.BKAppIDField]; exist {
-			if biz, err := targetItem.GetValues().Int64(common.BKAppIDField); nil != err {
-				blog.V(3).Infof("[audit] failed to get the biz id from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.params.ReqID)
-				return
-			} else {
-				bizID = biz
+		if targetItem.GetValues() != nil {
+			if _, exist := targetItem.GetValues()[common.BKAppIDField]; exist {
+				if biz, err := targetItem.GetValues().Int64(common.BKAppIDField); nil != err {
+					blog.V(3).Infof("[audit] failed to get the biz id from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.params.ReqID)
+					return
+				} else {
+					bizID = biz
+				}
 			}
 		}
 
