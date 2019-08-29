@@ -208,9 +208,20 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 		objectIDMap[object.ID] = object
 	}
 
+	mainlineTopo, err := am.clientSet.CoreService().Mainline().SearchMainlineModelTopo(context.Background(), http.Header{}, false)
+	if err != nil {
+		blog.Errorf("list mainline models failed, err: %+v", err)
+	}
+	mainlineModels := mainlineTopo.LeftestObjectIDList()
+
 	resultResources := make([]meta.ResourceAttribute, 0)
 	for objID, instances := range objectIDInstancesMap {
 		object := objectIDMap[objID]
+
+		resourceType := meta.ModelInstance
+		if util.InStrArr(mainlineModels, object.ObjectID) {
+			resourceType = meta.MainlineInstance
+		}
 
 		parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, object)
 		if err != nil {
@@ -235,7 +246,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 			resource := meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Action:     action,
-					Type:       meta.ModelInstance,
+					Type:       resourceType,
 					Name:       instance.Name,
 					InstanceID: instance.InstanceID,
 				},

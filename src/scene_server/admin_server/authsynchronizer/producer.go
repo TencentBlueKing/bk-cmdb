@@ -122,7 +122,6 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	}
 
 	for _, business := range businessList {
-		header := utils.NewListBusinessAPIHeader()
 		objects, err := p.authManager.CollectObjectsByBusinessID(context.Background(), *header, business.BKAppIDField)
 		if err != nil {
 			blog.Errorf("get models by business id: %d failed, err: %+v", business.BKAppIDField, err)
@@ -148,12 +147,17 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	resourceTypes = []meta.ResourceType{
 		// meta.AuditCategory,
 		meta.ClassificationResource,
+		meta.InstanceResource,
 	}
 	for _, resourceType := range resourceTypes {
 		jobs = append(jobs, meta.WorkRequest{
 			ResourceType: resourceType,
 			Data:         globalBusiness,
+			Header:       *header,
 		})
+	}
+	if blog.V(5) {
+		blog.InfoJSON("jobs: %s", jobs)
 	}
 	return &jobs
 }
