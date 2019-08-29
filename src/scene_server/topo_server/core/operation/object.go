@@ -46,7 +46,7 @@ type ObjectOperationInterface interface {
 	FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error)
 	// Deprecated: not allowed to use anymore.
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
-	FindObjectWithID(params types.ContextParams, objectID int64) (model.Object, error)
+	FindObjectWithID(params types.ContextParams, object string, objectID int64) (model.Object, error)
 	UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface, unique UniqueOperationInterface)
@@ -336,7 +336,7 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 	return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Errorf(common.CCErrCommParamsIsInvalid, objectID).Error())
 }
 
-func (o *object) FindObjectWithID(params types.ContextParams, objectID int64) (model.Object, error) {
+func (o *object) FindObjectWithID(params types.ContextParams, object string, objectID int64) (model.Object, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(objectID)
@@ -348,7 +348,7 @@ func (o *object) FindObjectWithID(params types.ContextParams, objectID int64) (m
 	}
 
 	if len(objs) == 0 {
-		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) not found, result: %+v, rid: %s", params.SupplierAccount, objectID, objs, params.ReqID)
+		blog.Errorf("get model failed, get model by supplier account(%s) objects(%d) not found, result: %+v, rid: %s", params.SupplierAccount, objectID, objs, params.ReqID)
 		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Error(common.CCErrCommNotFound).Error())
 	}
 
@@ -708,7 +708,7 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 	}
 	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
+		blog.Errorf("[operation-obj] find object failed, cond: %+v, err: %s, rid: %s", fCond, err.Error(), params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
