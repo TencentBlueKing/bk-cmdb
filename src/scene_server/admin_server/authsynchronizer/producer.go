@@ -107,7 +107,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		meta.ModelResource,
 		meta.ProcessResource,
 		meta.DynamicGroupResource,
-		meta.AuditCategory,
+		// meta.AuditCategory,
 		meta.ClassificationResource,
 		// meta.UserGroupSyncResource,
 	}
@@ -145,7 +145,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		IsDefault:         0,
 	}
 	resourceTypes = []meta.ResourceType{
-		meta.AuditCategory,
+		// meta.AuditCategory,
 		meta.ClassificationResource,
 	}
 	for _, resourceType := range resourceTypes {

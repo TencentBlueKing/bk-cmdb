@@ -903,7 +903,7 @@ const (
 const (
 	// URLFilterWhiteList url filter white list not execute any filter
 	// multiple url separated by commas
-	URLFilterWhiteListSuffix = "/healthz"
+	URLFilterWhiteListSuffix = "/healthz,/version"
 
 	URLFilterWhiteListSepareteChar = ","
 )

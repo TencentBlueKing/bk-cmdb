@@ -34,6 +34,7 @@ func (s *coreService) initModel() {
 	s.addAction(http.MethodDelete, "/delete/model", s.DeleteModel, nil)
 	s.addAction(http.MethodDelete, "/delete/model/cascade", s.CascadeDeleteModel, nil)
 	s.addAction(http.MethodPost, "/read/model", s.SearchModel, nil)
+	s.addAction(http.MethodGet, "/read/model/statistics", s.GetModelStatistics, nil)
 
 	// init model attribute groups methods
 	s.addAction(http.MethodPost, "/create/model/{bk_obj_id}/group", s.CreateModelAttributeGroup, nil)
