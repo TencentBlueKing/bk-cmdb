@@ -99,5 +99,5 @@ func (s *Service) GetModelStatistics(params types.ContextParams, pathParams, que
 		blog.Errorf("GetModelStatistics failed, err: %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
-	return result, err
+	return result.Data, err
 }
