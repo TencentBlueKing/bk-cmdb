@@ -41,10 +41,10 @@ func (s *Service) ImportNetProperty(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 	header := c.Request.Header
-	language := logics.GetLanguageByHTTPRequest(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 
 	// open uploaded file
 	file, err, errMsg := openNetPropertyUploadedFile(c, defErr)
@@ -91,10 +91,10 @@ func (s *Service) ImportNetProperty(c *gin.Context) {
 func (s *Service) ExportNetProperty(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
-	language := logics.GetLanguageByHTTPRequest(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 
 	netPropertyIDStr := c.PostForm(common.BKNetcollectPropertyIDField)
 	netPropertyInfo, err := s.Logics.GetNetPropertyData(c.Request.Header, netPropertyIDStr)
@@ -160,8 +160,8 @@ func (s *Service) ExportNetProperty(c *gin.Context) {
 
 func (s *Service) BuildDownLoadNetPropertyExcelTemplate(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	logics.SetProxyHeader(c)
-	language := logics.GetLanguageByHTTPRequest(c)
+	webCommon.SetProxyHeader(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
