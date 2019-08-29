@@ -74,7 +74,7 @@ func (w *Worker) Stop() {
 }
 
 func (w *Worker) doWork(work *meta.WorkRequest) error {
-	blog.V(4).Infof("start doing work: %+v", work)
+	blog.V(3).Infof("start doing work: %s", work.ResourceType)
 	var err error
 	switch work.ResourceType {
 	case meta.BusinessResource:
