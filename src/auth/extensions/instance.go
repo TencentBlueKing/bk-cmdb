@@ -105,23 +105,15 @@ func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http
 	return instances, nil
 }
 
-func (am *AuthManager) extractBusinessIDFromInstances(ctx context.Context, instances ...InstanceSimplify) (int64, error) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
+func (am *AuthManager) extractBusinessIDFromInstances(ctx context.Context, instances ...InstanceSimplify) (map[int64]int64, error) {
+	businessIDMap := make(map[int64]int64)
 	if len(instances) == 0 {
-		return 0, fmt.Errorf("empty instances")
+		return businessIDMap, fmt.Errorf("empty instances")
 	}
-	businessIDs := make([]int64, 0)
 	for _, instance := range instances {
-		// we should ignore metadata.LabelBusinessID field not found error
-		businessIDs = append(businessIDs, instance.BizID)
+		businessIDMap[instance.InstanceID] = instance.BizID
 	}
-	businessIDs = util.IntArrayUnique(businessIDs)
-	if len(businessIDs) > 1 {
-		blog.V(5).Infof("extractBusinessIDFromInstances failed, get multiple business ID from instances, businessIDs: %+v, rid: %s", businessIDs, rid)
-		return 0, fmt.Errorf("get multiple business ID from objects")
-	}
-	return businessIDs[0], nil
+	return businessIDMap, nil
 }
 
 // collectObjectsByInstances collect all instances's related model, group by map
@@ -184,7 +176,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 		return nil, nil
 	}
 
-	businessID, err := am.extractBusinessIDFromInstances(ctx, instances...)
+	businessIDMap, err := am.extractBusinessIDFromInstances(ctx, instances...)
 	if err != nil {
 		return nil, fmt.Errorf("extract business id from instances failed, err: %+v", err)
 	}
@@ -251,7 +243,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 					InstanceID: instance.InstanceID,
 				},
 				SupplierAccount: util.GetOwnerID(header),
-				BusinessID:      businessID,
+				BusinessID:      businessIDMap[instance.InstanceID],
 				Layers:          layers,
 			}
 
