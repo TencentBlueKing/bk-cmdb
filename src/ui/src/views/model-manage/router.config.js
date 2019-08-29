@@ -29,10 +29,11 @@ export default [{
     meta: new Meta({
         menu: {
             id: 'model',
-            i18n: 'Nav["模型"]',
+            i18n: '模型',
             path: modelPath,
             order: 1,
-            parent: NAV_MODEL_MANAGEMENT
+            parent: NAV_MODEL_MANAGEMENT,
+            businessView: false
         },
         auth: {
             operation: Object.values(OPERATION),
@@ -40,7 +41,8 @@ export default [{
                 const isAdminView = app.$store.getters.isAdminView
                 this.authScope = isAdminView ? 'global' : 'business'
             }
-        }
+        },
+        i18nTitle: '模型'
     })
 }, {
     name: 'modelDetails',
@@ -78,6 +80,9 @@ export default [{
             }
         },
         checkAvailable: (to, from, app) => {
+            if (!app.$store.getters.isAdminView) {
+                return false
+            }
             const modelId = to.params.modelId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
             return !!model

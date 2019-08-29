@@ -23,12 +23,14 @@ import (
 
 // IsInstanceExist used to check if the  instances  asst exist
 func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
+	// to many call. can use $or. but universalsql parse or condtion error.
+
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID}, &mongo.Eq{Key: common.BKInstIDField, Val: instID})
 	queryCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
 	objInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx, queryCond)
 	if nil != err {
-		blog.Errorf("search instance association error %v", err)
+		blog.Errorf("search instance association error %v, rid: %s", err, ctx.ReqID)
 		return false, err
 	}
 	cond = mongo.NewCondition()
@@ -36,10 +38,10 @@ func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, inst
 	queryCond = metadata.QueryCondition{Condition: cond.ToMapStr()}
 	objAsstInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx, queryCond)
 	if nil != err {
-		blog.Errorf("search instance to association error %v", err)
+		blog.Errorf("search instance to association error %v, rid: %s", err, ctx.ReqID)
 		return false, err
 	}
-	if 0 < objInsts.Count && 0 < objAsstInsts.Count {
+	if 0 < objInsts.Count || 0 < objAsstInsts.Count {
 		return true, nil
 	}
 	return false, nil
@@ -53,7 +55,7 @@ func (s *coreService) DeleteInstAsst(ctx core.ContextParams, objID string, instI
 	deleteCond := metadata.DeleteOption{Condition: cond.ToMapStr()}
 	_, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("delete instance association error %v", err)
+		blog.Errorf("delete instance association error %v, rid: %s", err, ctx.ReqID)
 		return err
 	}
 	cond = mongo.NewCondition()
@@ -61,7 +63,7 @@ func (s *coreService) DeleteInstAsst(ctx core.ContextParams, objID string, instI
 	deleteCond = metadata.DeleteOption{Condition: cond.ToMapStr()}
 	_, err = s.core.AssociationOperation().DeleteInstanceAssociation(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("delete instance to association error %v", err)
+		blog.Errorf("delete instance to association error %v, rid: %s", err, ctx.ReqID)
 		return err
 	}
 	return nil

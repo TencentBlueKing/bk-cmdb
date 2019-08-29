@@ -1,14 +1,14 @@
 <template>
-    <div id="app">
+    <div id="app" :bk-language="$i18n.locale">
         <div class="browser-tips" v-if="showBrowserTips">
-            <span class="tips-text">{{$t('Common["您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果"]')}}</span>
+            <span class="tips-text">{{$t('您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果')}}</span>
             <i class="tips-icon bk-icon icon-close-circle-shape" @click="showBrowserTips = false"></i>
         </div>
         <the-header></the-header>
         <the-nav class="nav-layout"></the-nav>
         <main class="main-layout" v-bkloading="{ isLoading: globalLoading }">
             <div class="admin-tips" v-if="false">
-                <span class="tips-text">{{$t('Common["欢迎来到蓝鲸配置平台全局管理中心！您所做的操作将影响公共部分内容，请谨慎操作"]')}}</span>
+                <span class="tips-text">{{$t('欢迎来到蓝鲸配置平台全局管理中心！您所做的操作将影响公共部分内容，请谨慎操作')}}</span>
                 <i class="bk-icon icon-close"></i>
             </div>
             <div ref="mainScroller" class="main-scroller" @scroll="execMainScrollListener($event)">
@@ -47,10 +47,17 @@
         mounted () {
             this.$store.commit('setFeatureTipsParams')
             addResizeListener(this.$refs.mainScroller, execMainResizeListener)
+            addResizeListener(this.$el, this.calculateAppHeight)
             window.permissionModal = this.$refs.permissionModal
         },
         beforeDestroy () {
             removeResizeListener(this.$refs.mainScroller, execMainResizeListener)
+            removeResizeListener(this.$el, this.calculateAppHeight)
+        },
+        methods: {
+            calculateAppHeight () {
+                this.$store.commit('setAppHeight', this.$el.offsetHeight)
+            }
         }
     }
 </script>

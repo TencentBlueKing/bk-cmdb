@@ -7,45 +7,41 @@
                         active: !$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS),
                         auth: [$OPERATION.SYSTEM_MODEL_GRAPHICS]
                     }">
-                    <bk-button class="edit-button" type="primary"
+                    <bk-button class="edit-button" theme="primary"
                         :disabled="!$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS)"
                         @click="editTopo">
-                        {{$t('ModelManagement["编辑拓扑"]')}}
+                        {{$t('编辑拓扑')}}
                     </bk-button>
                 </span>
             </template>
             <template v-else>
-                <bk-button type="primary" @click="exitEdit">
-                    {{$t('Common["返回"]')}}
+                <bk-button theme="primary" @click="exitEdit">
+                    {{$t('返回')}}
                 </bk-button>
-                <p class="edit-cue">{{$t('ModelManagement["所有更改已自动保存"]')}}</p>
+                <p class="edit-cue">{{$t('所有更改已自动保存')}}</p>
             </template>
             <div class="vis-button-group">
-                <i class="bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')"></i>
-                <i class="bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')"></i>
-                <i class="bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')"></i>
+                <i class="bk-icon icon-full-screen" @click="resizeFull" v-bk-tooltips="$t('还原')"></i>
+                <i class="bk-icon icon-plus" @click="zoomIn" v-bk-tooltips="$t('放大')"></i>
+                <i class="bk-icon icon-minus" @click="zoomOut" v-bk-tooltips="$t('缩小')"></i>
                 <i class="icon-cc-setting"
-                    v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"
+                    v-bk-tooltips="$t('拓扑显示设置')"
                     @click="showSlider('theDisplay')">
                 </i>
                 <div class="topo-example" v-if="!isAdminView">
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('ModelManagement["业务私有模型"]')}}</span>
+                        <span>{{$t('业务私有模型')}}</span>
                     </p>
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('ModelManagement["公有模型"]')}}</span>
+                        <span>{{$t('公有模型')}}</span>
                     </p>
                 </div>
                 <div class="topo-example" v-else>
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('ModelManagement["自定义模型"]')}}</span>
-                    </p>
-                    <p class="example-item">
-                        <i></i>
-                        <span>{{$t('ModelManagement["内置模型"]')}}</span>
+                        <span>{{$t('内置模型')}}</span>
                     </p>
                 </div>
             </div>
@@ -88,7 +84,7 @@
             </ul>
         </template>
         
-        <cmdb-slider
+        <bk-sideslider
             :width="slider.width"
             :is-show.sync="slider.isShow"
             :title="slider.title"
@@ -96,12 +92,13 @@
             <component
                 class="slider-content"
                 slot="content"
+                v-if="slider.isShow"
                 :is="slider.content"
                 v-bind="slider.properties"
                 @save="handleSliderSave"
                 @cancel="handleSliderCancel"
             ></component>
-        </cmdb-slider>
+        </bk-sideslider>
         <div class="global-model" ref="topo" v-bkloading="{ isLoading: loading }"
             @dragover.prevent=""
             @drop="handleDrop"
@@ -177,7 +174,7 @@
                     isShow: false,
                     content: '',
                     properties: {},
-                    title: this.$t('ModelManagement["拓扑显示设置"]')
+                    title: this.$t('拓扑显示设置')
                 },
                 displayConfig: {
                     isShowModelName: true,
@@ -310,9 +307,6 @@
                 }
             }
         },
-        created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["模型拓扑"]'))
-        },
         mounted () {
             this.initNetwork()
             this.initMoveFunction()
@@ -414,10 +408,7 @@
                     }
                 })
                 if (asstNum) {
-                    this.$bkInfo({
-                        title: this.$t('ModelManagement["移除失败"]'),
-                        content: this.$tc('ModelManagement["移除失败提示"]', asstNum, { asstNum })
-                    })
+                    this.$error(this.$tc('移除失败提示', asstNum, { asstNum }))
                 }
                 return !!asstNum
             },
@@ -429,8 +420,8 @@
                     return
                 }
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确定移除模型?"]'),
-                    content: this.$t('ModelManagement["移除模型提示"]'),
+                    title: this.$t('确定移除模型?'),
+                    subTitle: this.$t('移除模型提示'),
                     confirmFn: () => {
                         const node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
                         node.position = { x: null, y: null }
@@ -530,7 +521,7 @@
                         toObjId: this.topoEdit.activeEdge.to,
                         topoModelList: this.localTopoModelList
                     }
-                    this.slider.title = this.$t('ModelManagement["新建关联"]')
+                    this.slider.title = this.$t('新建关联')
                     this.showSlider('theRelation')
                 }
             },
@@ -698,7 +689,7 @@
                             isShowModelName: this.displayConfig.isShowModelName,
                             isShowModelAsst: this.displayConfig.isShowModelAsst
                         }
-                        this.slider.title = this.$t('ModelManagement["拓扑显示设置"]')
+                        this.slider.title = this.$t('拓扑显示设置')
                         slider.width = 600
                         break
                     case 'theRelation':
@@ -881,7 +872,7 @@
                 }
             },
             getEdgeArrows (asst) {
-                const asstType = this.associationList.find(({ id }) => id === asst['bk_asst_inst_id'])['direction']
+                const asstType = (this.associationList.find(({ id }) => id === asst['bk_asst_inst_id']) || {}).direction
                 let arrows = ''
                 switch (asstType) {
                     case 'bidirectional':
@@ -1114,7 +1105,7 @@
         }
     }
     .toolbar {
-        padding: 7px 20px;
+        padding: 9px 20px;
         width: 100%;
         height: 50px;
         background: #fff;
@@ -1140,6 +1131,7 @@
                 font-size: 14px;
                 font-weight: bold;
                 cursor: pointer;
+                outline: 0;
                 &:hover {
                     color: $cmdbBorderFocusColor;
                 }

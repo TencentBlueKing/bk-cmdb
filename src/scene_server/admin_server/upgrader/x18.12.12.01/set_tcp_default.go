@@ -34,7 +34,10 @@ func setTCPDefault(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 		return err
 	}
 
-	enumOpts := validator.ParseEnumOption(ostypeProperty.Option)
+	enumOpts, err := validator.ParseEnumOption(ostypeProperty.Option)
+	if err != nil {
+		return err
+	}
 	for index := range enumOpts {
 		if enumOpts[index].Name == "TCP" {
 			enumOpts[index].IsDefault = true

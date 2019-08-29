@@ -13,6 +13,9 @@
 package metadata
 
 import (
+	"configcenter/src/common/querybuilder"
+	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -80,6 +83,12 @@ type HostsModuleRelation struct {
 	IsIncrement   bool    `json:"is_increment"`
 }
 
+type RemoveHostsFromModuleOption struct {
+	ApplicationID int64 `json:"bk_biz_id"`
+	HostID        int64 `json:"bk_host_id"`
+	ModuleID      int64 `json:"bk_module_id"`
+}
+
 type HostToAppModule struct {
 	Ips         []string `json:"ips"`
 	HostName    []string `json:"bk_host_name"`
@@ -106,14 +115,59 @@ type HostModuleFind struct {
 	Page      BasePage `json:"page"`
 }
 
-//ip search info
+type ListHostsParameter struct {
+	SetIDs             []int64                   `json:"bk_set_ids"`
+	ModuleIDs          []int64                   `json:"bk_module_ids"`
+	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Page               BasePage                  `json:"page"`
+}
+
+type ListHostsWithNoBizParameter struct {
+	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Page               BasePage                  `json:"page"`
+}
+
+type TimeRange struct {
+	Start *time.Time
+	End   *time.Time
+}
+
+type ListHosts struct {
+	BizID              int64                     `json:"bk_biz_id,omitempty"`
+	SetIDs             []int64                   `json:"bk_set_ids"`
+	ModuleIDs          []int64                   `json:"bk_module_ids"`
+	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Page               BasePage                  `json:"page"`
+}
+
+func (option ListHosts) Validate() (string, error) {
+	if key, err := option.Page.Validate(); err != nil {
+		return fmt.Sprintf("page.%s", key), err
+	}
+
+	if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		return fmt.Sprintf("host_property_filter.%s", key), err
+	}
+
+	return "", nil
+}
+
+func (option ListHosts) GetHostPropertyFilter(ctx context.Context) (map[string]interface{}, error) {
+	mgoFilter, key, err := option.HostPropertyFilter.ToMgo()
+	if err != nil {
+		return nil, fmt.Errorf("invalid key:host_property_filter.%s, err: %s", key, err)
+	}
+	return mgoFilter, nil
+}
+
+// ip search info
 type IPInfo struct {
 	Data  []string `json:"data"`
 	Exact int64    `json:"exact"`
 	Flag  string   `json:"flag"`
 }
 
-//search condition
+// search condition
 type SearchCondition struct {
 	Fields    []string        `json:"fields"`
 	Condition []ConditionItem `json:"condition"`
@@ -123,6 +177,11 @@ type SearchCondition struct {
 type SearchHost struct {
 	Count int             `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
+}
+
+type ListHostResult struct {
+	Count int                      `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
 }
 
 func (sh SearchHost) ExtractHostIDs() *[]int64 {
@@ -173,20 +232,21 @@ type CloneHostPropertyParams struct {
 }
 
 type CloudTaskList struct {
-	User            string `json:"bk_user"`
-	TaskName        string `json:"bk_task_name"`
-	TaskID          int64  `json:"bk_task_id"`
-	AccountType     string `json:"bk_account_type"`
-	AccountAdmin    string `json:"bk_account_admin"`
-	PeriodType      string `json:"bk_period_type"`
-	Period          string `json:"bk_period"`
-	LastSyncTime    string `json:"bk_last_sync_time"`
-	ObjID           string `json:"bk_obj_id"`
-	Status          bool   `json:"bk_status"`
-	ResourceConfirm bool   `json:"bk_confirm"`
-	AttrConfirm     bool   `json:"bk_attr_confirm"`
-	SecretID        string `json:"bk_secret_id"`
-	SecretKey       string `json:"bk_secret_key"`
+	User            string `json:"bk_user" bson:"bk_user"`
+	TaskName        string `json:"bk_task_name" bson:"bk_task_name"`
+	TaskID          int64  `json:"bk_task_id" bson:"bk_task_id"`
+	AccountType     string `json:"bk_account_type" bson:"bk_account_type"`
+	AccountAdmin    string `json:"bk_account_admin" bson:"bk_account_admin"`
+	PeriodType      string `json:"bk_period_type" bson:"bk_period_type"`
+	Period          string `json:"bk_period" bson:"bk_period"`
+	LastSyncTime    string `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
+	ObjID           string `json:"bk_obj_id" bson:"bk_obj_id"`
+	Status          bool   `json:"bk_status" bson:"bk_status"`
+	ResourceConfirm bool   `json:"bk_confirm" bson:"bk_confirm"`
+	AttrConfirm     bool   `json:"bk_attr_confirm" bson:"bk_attr_confirm"`
+	SecretID        string `json:"bk_secret_id" bson:"bk_secret_id"`
+	SecretKey       string `json:"bk_secret_key" bson:"bk_secret_key"`
+	OwnerID         string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type ResourceConfirm struct {
@@ -194,23 +254,25 @@ type ResourceConfirm struct {
 	ResourceName []mapstr.MapStr `json:"bk_resource_name"`
 	SourceType   string          `json:"bk_source_type"`
 	SourceName   string          `json:"bk_source_name"`
-	CreateTime   string          `json:"bk_create_time"`
+	CreateTime   time.Time       `json:"create_time"`
 	TaskID       string          `json:"bk_task_id"`
 	ResourceID   int64           `json:"bk_resource_id"`
 	ConfirmType  string          `json:"bk_confirm_type"`
-	Incharge     string          `json:"bk_in_charge"`
+	InCharge     string          `json:"bk_in_charge"`
+	OwnerID      string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type CloudHistory struct {
-	ObjID       string `json:"bk_obj_id"`
-	Status      string `json:"bk_status"`
-	TimeConsume string `json:"bk_time_consume"`
-	NewAdd      int    `json:"new_add"`
-	AttrChanged int    `json:"attr_changed"`
-	StartTime   string `json:"bk_start_time"`
-	TaskID      int64  `json:"bk_task_id"`
-	HistoryID   int64  `json:"bk_history_id"`
-	FailReason  string `json:"fail_reason"`
+	ObjID       string `json:"bk_obj_id" bson:"bk_obj_id"`
+	Status      string `json:"bk_status" bson:"bk_status"`
+	TimeConsume string `json:"bk_time_consume" bson:"bk_time_consume"`
+	NewAdd      int    `json:"new_add" bson:"new_add"`
+	AttrChanged int    `json:"attr_changed" bson:"attr_changed"`
+	StartTime   string `json:"bk_start_time" bson:"bk_start_time"`
+	TaskID      int64  `json:"bk_task_id" bson:"bk_task_id"`
+	HistoryID   int64  `json:"bk_history_id" bson:"bk_history_id"`
+	FailReason  string `json:"fail_reason" bson:"fail_reason"`
+	OwnerID     string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type DeleteCloudTask struct {
@@ -254,6 +316,7 @@ type CloudSyncRedisPendingStart struct {
 	TaskID       int64       `json:"bk_task_id"`
 	TaskItemInfo TaskInfo    `json:"task_item_info"`
 	OwnerID      string      `json:"bk_supplier_account"`
+	Update       bool        `json:"update"`
 }
 
 type CloudSyncRedisAlreadyStarted struct {
@@ -262,11 +325,6 @@ type CloudSyncRedisAlreadyStarted struct {
 	TaskID       int64       `json:"bk_task_id"`
 	TaskItemInfo TaskInfo    `json:"task_item_info"`
 	OwnerID      string      `json:"bk_supplier_account"`
-}
-
-type CloudSyncRedisPendingStop struct {
-	TaskID  int64  `json:"bk_task_id"`
-	OwnerID string `json:"bk_supplier_account"`
 }
 
 // TransferHostAcrossBusinessParameter Transfer host across business request parameter
@@ -287,4 +345,9 @@ type HostModuleRelationParameter struct {
 type DeleteHostFromBizParameter struct {
 	AppID     int64   `json:"bk_biz_id"`
 	HostIDArr []int64 `json:"bk_host_ids"`
+}
+
+// CloudAreaParameter search cloud area parameter
+type CloudAreaParameter struct {
+	Page BasePage `json:"page" bson:"page" field:"page"`
 }

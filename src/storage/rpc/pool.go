@@ -127,40 +127,52 @@ func (p *Pool) put(conn Client) {
 	}
 }
 
+// Call rpc call handler
 func (p *Pool) Call(cmd string, input interface{}, result interface{}) (err error) {
+	_, err = p.call(cmd, input, result)
+	return
+}
+
+// CallInfo rpc call handler return client address information
+func (p *Pool) CallInfo(cmd string, input interface{}, result interface{}) (addr string, err error) {
+	return p.call(cmd, input, result)
+}
+
+func (p *Pool) call(cmd string, input interface{}, result interface{}) (addr string, err error) {
+
+	var newConn bool
+
 	conn := p.pop()
-	if conn != nil {
-		err = conn.Call(cmd, input, result)
-		if err != nil {
-			if err != ErrRWTimeout {
-				if pingErr := conn.Ping(); pingErr == nil {
-					p.put(conn)
-					return err
-				}
-			}
+
+	if conn == nil {
+		newConn = true
+	} else {
+		//  链接存在， 如果链接Ping 不同需要重新建立连接
+		if pingErr := conn.Ping(); pingErr != nil {
+			blog.Errorf("conn rpc connection ping err: %s", pingErr.Error())
 			conn.Close()
-		} else {
-			p.put(conn)
-			return
+			newConn = true
+		}
+	}
+	if newConn {
+		blog.V(5).Infof("create new rpc connection")
+		conn, err = p.new()
+		if err != nil {
+			return "", err
 		}
 	}
 
-	blog.V(4).Infof("create new rpc connection")
-	conn, err = p.new()
-	if err != nil {
-		return err
-	}
-
 	err = conn.Call(cmd, input, result)
+	addr = conn.TargetID()
 	if err != nil {
 		if pingErr := conn.Ping(); pingErr == nil {
 			p.put(conn)
-			return err
+			return "", err
 		}
 		conn.Close()
 	}
 	p.put(conn)
-	return nil
+	return addr, nil
 }
 
 func (p *Pool) CallStream(cmd string, input interface{}) (*StreamMessage, error) {

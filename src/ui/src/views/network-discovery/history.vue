@@ -2,24 +2,34 @@
     <div class="history-wrapper">
         <div class="filter-wrapper clearfix">
             <cmdb-form-date-range class="date-range" v-model="filter['last_time']"></cmdb-form-date-range>
-            <bk-selector
-                class="selector"
-                :placeholder="$t('NetworkDiscovery[\'全部变更\']')"
-                :allow-clear="true"
-                :list="changeList"
-                :selected.sync="filter['action']"
-            ></bk-selector>
-            <bk-selector
-                class="selector"
-                :placeholder="$t('NetworkDiscovery[\'全部类型\']')"
-                :allow-clear="true"
-                :list="typeList"
-                :selected.sync="filter['bk_obj_id']"
-            ></bk-selector>
-            <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入云区域名称\']')" v-model.trim="filter['bk_cloud_name']">
-            <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')" v-model.trim="filter['bk_host_innerip']">
-            <bk-button type="primary" @click="getTableData">
-                {{$t("Common['查询']")}}
+            <bk-select class="selector"
+                v-model="filter.action"
+                :placeholder="$t('全部变更')">
+                <bk-option v-for="(option, index) in changeList"
+                    :key="index"
+                    :id="option.id"
+                    :name="option.name">
+                </bk-option>
+            </bk-select>
+            <bk-select class="selector"
+                v-model="filter.bk_obj_id"
+                :placeholder="$t('全部类型')">
+                <bk-option v-for="(option, index) in typeList"
+                    :key="index"
+                    :id="option.id"
+                    :name="option.name">
+                </bk-option>
+            </bk-select>
+            <bk-input type="text" class="cmdb-form-input"
+                :placeholder="$t('请输入云区域名称')"
+                v-model.trim="filter['bk_cloud_name']">
+            </bk-input>
+            <bk-input type="text" class="cmdb-form-input"
+                :placeholder="$t('请输入IP')"
+                v-model.trim="filter['bk_host_innerip']">
+            </bk-input>
+            <bk-button theme="primary" @click="getTableData">
+                {{$t('查询')}}
             </bk-button>
         </div>
         <cmdb-table
@@ -39,7 +49,7 @@
                 {{$tools.formatTime(item['last_time'], 'YYYY-MM-DD')}}
             </template>
             <template slot="success" slot-scope="{ item }">
-                <span :class="item.success ? 'color-success' : 'color-danger'">{{item.success ? $t("Inst['成功']") : $t("EventPush['失败']")}}</span>
+                <span :class="item.success ? 'color-success' : 'color-danger'">{{item.success ? $t('成功') : $t('失败')}}</span>
             </template>
         </cmdb-table>
     </div>
@@ -59,46 +69,46 @@
                 },
                 changeList: [{
                     id: 'create',
-                    name: this.$t("Common['新增']")
+                    name: this.$t('新增')
                 }, {
                     id: 'update',
-                    name: this.$t("NetworkDiscovery['变更']")
+                    name: this.$t('变更update')
                 }, {
                     id: 'delete',
-                    name: this.$t("Common['删除']")
+                    name: this.$t('删除')
                 }],
                 typeList: [{
                     id: 'switch',
-                    name: this.$t("NetworkDiscovery['交换机']")
+                    name: this.$t('交换机')
                 }, {
                     id: 'host',
-                    name: this.$t("Hosts['主机']")
+                    name: this.$t('主机')
                 }],
                 table: {
                     header: [{
                         id: 'action',
-                        name: this.$t('NetworkDiscovery["变更方式"]')
+                        name: this.$t('变更方式')
                     }, {
                         id: 'bk_cloud_name',
-                        name: this.$t('Hosts["云区域"]')
+                        name: this.$t('云区域')
                     }, {
                         id: 'bk_obj_name',
-                        name: this.$t('ModelManagement["类型"]')
+                        name: this.$t('类型')
                     }, {
                         id: 'bk_inst_key',
-                        name: this.$t('NetworkDiscovery["唯一标识"]')
+                        name: this.$t('唯一标识')
                     }, {
                         id: 'bk_host_innerip',
                         name: 'IP'
                     }, {
                         id: 'configuration',
-                        name: this.$t('NetworkDiscovery["配置信息"]')
+                        name: this.$t('配置信息')
                     }, {
                         id: 'last_time',
-                        name: this.$t('NetworkDiscovery["发现时间"]')
+                        name: this.$t('发现时间')
                     }, {
                         id: 'success',
-                        name: this.$t('ProcessManagement["状态"]')
+                        name: this.$t('状态')
                     }],
                     list: [],
                     pagination: {
@@ -110,9 +120,9 @@
                     sort: '-last_time'
                 },
                 actionMap: {
-                    'create': this.$t("Common['新增']"),
-                    'update': this.$t("NetworkDiscovery['变更']"),
-                    'delete': this.$t("Common['删除']")
+                    'create': this.$t('新增'),
+                    'update': this.$t('变更update'),
+                    'delete': this.$t('删除')
                 }
             }
         },
@@ -129,7 +139,7 @@
             }
         },
         created () {
-            this.$route.meta.title = this.$t('NetworkDiscovery["完成历史"]')
+            this.$route.meta.title = this.$t('完成历史')
             this.getTableData()
         },
         methods: {

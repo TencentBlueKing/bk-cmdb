@@ -13,7 +13,10 @@
 package local
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -155,23 +158,30 @@ func (f *Find) Limit(limit uint64) dal.Find {
 
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
+	start := time.Now()
 	f.dbc.Refresh()
 	query := f.dbc.DB(f.dbname).C(f.collName).Find(f.filter)
 	query = query.Select(f.projection)
 	query = query.Skip(int(f.start))
 	query = query.Limit(int(f.limit))
 	query = query.Sort(f.sort...)
-	return query.All(result)
+	err := query.All(result)
+
+	rid := ctx.Value(common.ContextRequestIDField)
+	blog.V(5).InfoDepthf(1, "Find all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	return err
 }
 
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
 	f.dbc.Refresh()
-
+	start := time.Now()
 	err := f.dbc.DB(f.dbname).C(f.collName).Find(f.filter).One(result)
 	if err == mgo.ErrNotFound {
 		err = dal.ErrDocumentNotFound
 	}
+	rid := ctx.Value(common.ContextRequestIDField)
+	blog.V(5).InfoDepthf(1, "Find one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	return err
 }
 
@@ -191,6 +201,29 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
 	c.dbc.Refresh()
 	data := bson.M{"$set": doc}
+	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(filter, data)
+	return err
+}
+
+// upsert 更新数据
+func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interface{}) error {
+	c.dbc.Refresh()
+	data := bson.M{"$set": doc}
+	_, err := c.dbc.DB(c.dbname).C(c.collName).Upsert(filter, data)
+	return err
+}
+
+// UpdateMultiModel 根据不同的操作符去更新数据
+func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
+	c.dbc.Refresh()
+	data := bson.M{}
+	for _, item := range updateModel {
+		if _, ok := data[item.Op]; ok {
+			return errors.New(item.Op + " appear multiple times")
+		}
+		data["$"+item.Op] = item.Doc
+	}
+
 	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(filter, data)
 	return err
 }
@@ -229,8 +262,8 @@ type Idgen struct {
 	SequenceID uint64 `bson:"SequenceID"`
 }
 
-// StartTransaction 开启新事务
-func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
+// Start 开启新事务
+func (c *Mongo) Start(ctx context.Context) (dal.Transcation, error) {
 	return c, nil
 }
 
@@ -275,6 +308,11 @@ func (c *Mongo) DropTable(collName string) error {
 func (c *Mongo) CreateTable(collName string) error {
 	c.dbc.Refresh()
 	return c.dbc.DB(c.dbname).C(collName).Create(&mgo.CollectionInfo{})
+}
+
+// DB get dal interface
+func (c *Mongo) DB(collName string) dal.RDB {
+	return c
 }
 
 // CreateIndex 创建索引

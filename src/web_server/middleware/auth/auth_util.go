@@ -13,6 +13,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"regexp"
@@ -45,13 +46,14 @@ var (
 )
 
 // validModelConfigPrivi valid model inst privilege
-func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) bool {
+func validModelConfigPrivi(ctx context.Context, modelPrivi string, method string, pathArr []string) bool {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	var mPrivi map[string][]string
 	var objName string
 	err := json.Unmarshal([]byte(modelPrivi), &mPrivi)
 	if nil != err {
-		blog.Error("get model privilege json error")
+		blog.Errorf("get model privilege json error, rid: %s", rid)
 		return false
 	}
 
@@ -103,7 +105,7 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 
 	priviArr, ok := mPrivi[objName]
 	if false == ok {
-		blog.Error("get object privilege for %s error", objName)
+		blog.Errorf("get object privilege for %s error, rid: %s", objName, rid)
 		return false
 	}
 
@@ -115,7 +117,6 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 		if util.InArray(types.BK_CC_CREATE, priviArr) && !util.InArray(types.BK_CC_SEARCH, pathArr) {
 			return true
 		}
-
 	}
 
 	// valid delete privilege
@@ -127,33 +128,33 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 	if method == common.HTTPSelectPost && util.InArray(types.BK_CC_SEARCH, priviArr) && util.InArray(types.BK_CC_SEARCH, pathArr) {
 		return true
 	}
-	blog.Error("model privilege valid not pass")
+	blog.Errorf("model privilege valid not pass, rid: %s", rid)
 	return false
 }
 
 // validAppConfigPrivi valid app privilege
 func validAppConfigPrivi(c *gin.Context, method, pathStr string) bool {
 
-	//validate host update privilege
+	// validate host update privilege
 	if strings.Contains(pathStr, types.BK_HOST_UPDATE) && method == common.HTTPUpdate {
 		return validAppAccessPrivi(c, types.BK_CC_HOSTUPDATE)
 	}
 
-	//validate host trans privilege
+	// validate host trans privilege
 	if strings.Contains(pathStr, types.BK_HOST_TRANS) {
 		return validAppAccessPrivi(c, types.BK_CC_HOSTTRANS)
 	}
 
-	//validate topo update privilege
+	// validate topo update privilege
 	if strings.Contains(pathStr, types.BK_SET) || strings.Contains(pathStr, types.BK_MODULE) || strings.Contains(pathStr, types.BK_INSTS) || strings.Contains(pathStr, types.BK_TOPO) {
 		return validAppAccessPrivi(c, types.BK_CC_TOPOUPDATE)
 	}
 
-	//validate user customer api privilege
+	// validate user customer api privilege
 	if strings.Contains(pathStr, types.BK_USER_API_S) {
 		return validAppAccessPrivi(c, types.BK_CC_CUSTOMAPI)
 	}
-	//validate process config privilege
+	// validate process config privilege
 	if strings.Contains(pathStr, types.BK_PROC_S) {
 		return validAppAccessPrivi(c, types.BK_CC_PROCCONFIG)
 	}
@@ -163,44 +164,45 @@ func validAppConfigPrivi(c *gin.Context, method, pathStr string) bool {
 
 // validate app access privilege
 func validAppAccessPrivi(c *gin.Context, appResource string) bool {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
 	appID := c.Request.Header.Get(common.BKAppIDField)
 	if "" == appID {
-		blog.Error("no app id in header")
+		blog.Errorf("no app id in header, rid: %s", rid)
 		return false
 	}
 	userPriviAppStr, ok := session.Get("userPriviApp").(string)
 	if false == ok {
-		blog.Error("get user privilege from session error")
+		blog.Errorf("get user privilege from session error, rid: %s", rid)
 		return false
 	}
 
 	rolePrivilege, ok := session.Get("rolePrivilege").(string)
 	if false == ok {
-		blog.Error("get role privilege from session error")
+		blog.Errorf("get role privilege from session error, rid: %s", rid)
 		return false
 	}
 
-	//valid opearion under biz
+	// valid opearion under biz
 	var userPriviApp, rolePrivi map[string][]string
 	err := json.Unmarshal([]byte(userPriviAppStr), &userPriviApp)
 	if nil != err {
-		blog.Error("user privi app json error")
+		blog.Errorf("user privi app json error, rid: %s", rid)
 		return false
 	}
 	appRole, ok := userPriviApp[appID]
 	if false == ok {
-		blog.Error("no user privi app ")
+		blog.Errorf("no user privi app , rid: %s", rid)
 		return false
 	}
-	//maintainer role pass the valid
+	// maintainer role pass the valid
 	if util.InArray(types.BK_CC_MAINTAINERS, appRole) {
 		return true
 	}
 
 	err = json.Unmarshal([]byte(rolePrivilege), &rolePrivi)
 	if nil != err {
-		blog.Error("role privi json error ")
+		blog.Errorf("role privi json error , rid: %s", rid)
 		return false
 	}
 	priviArr := make([]string, 0)
@@ -213,45 +215,47 @@ func validAppAccessPrivi(c *gin.Context, appResource string) bool {
 	if util.Contains(priviArr, appResource) {
 		return true
 	}
-	blog.Error("valid user app privilege false")
+	blog.Errorf("valid user app privilege false, rid: %s", rid)
 	return false
 }
 
 // validSysConfigPrivi valid system access privilege
-func validSysConfigPrivi(sysPrivi interface{}, config string) bool {
+func validSysConfigPrivi(ctx context.Context, sysPrivi interface{}, config string) bool {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil != sysPrivi {
 		ssysPrivi := sysPrivi.(string)
 		if 0 == len(ssysPrivi) {
-			blog.Error("no system config privilege")
+			blog.Errorf("no system config privilege, rid: %s", rid)
 			return false
 		}
 		var sysPriObj []string
 		err := json.Unmarshal([]byte(ssysPrivi), &sysPriObj)
 		if nil != err {
-			blog.Error("no system config privilege not json")
+			blog.Errorf("no system config privilege not json, rid: %s", rid)
 			return false
 		}
 		if util.InArray(config, sysPriObj) {
 			return true
 		}
 	}
-	blog.Error("system privilege not pass")
+	blog.Errorf("system privilege not pass, rid: %s", rid)
 	return false
 }
 
 // validInstsOpPrivi  valid inst operation privilege
-func validInstsOpPrivi(modelPrivi, method string, pathArr []string) bool {
+func validInstsOpPrivi(ctx context.Context, modelPrivi, method string, pathArr []string) bool {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	var mPrivi map[string][]string
 	var objName string
 	err := json.Unmarshal([]byte(modelPrivi), &mPrivi)
 	if nil != err {
-		blog.Error("get model privilege json error")
+		blog.Errorf("get model privilege json error, rid: %s", rid)
 		return false
 	}
 	objName = pathArr[len(pathArr)-2]
 	priviArr, ok := mPrivi[objName]
 	if false == ok {
-		blog.Error("get object privilege  error")
+		blog.Errorf("get object privilege  error, rid: %s", rid)
 		return false
 	}
 	if util.InArray(types.BK_CC_UPDATE, priviArr) {
@@ -261,6 +265,6 @@ func validInstsOpPrivi(modelPrivi, method string, pathArr []string) bool {
 		return true
 	}
 
-	blog.Error("inst op privilege valid not pass")
+	blog.Errorf("inst op privilege valid not pass, rid: %s", rid)
 	return false
 }

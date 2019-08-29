@@ -32,7 +32,7 @@ func (s *Service) CreateObjectAttribute(params types.ContextParams, pathParams, 
 	// auth: register resource
 	attribute := attr.Attribute()
 	if err := s.AuthManager.RegisterModelAttribute(params.Context, params.Header, *attribute); err != nil {
-		blog.Errorf("create object attribute success, but register model attribute to auth failed, err: %+v", err)
+		blog.Errorf("create object attribute success, but register model attribute to auth failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
@@ -45,7 +45,7 @@ func (s *Service) SearchObjectAttribute(params types.ContextParams, pathParams, 
 	cond := condition.CreateCondition()
 	data.Remove(metadata.PageName)
 	if err := cond.Parse(data); nil != err {
-		blog.Errorf("search object attribute, but failed to parse the data into condition, err: %v", err)
+		blog.Errorf("search object attribute, but failed to parse the data into condition, err: %v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
@@ -59,7 +59,7 @@ func (s *Service) UpdateObjectAttribute(params types.ContextParams, pathParams, 
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-att] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		blog.Errorf("[api-att] failed to parse the path params id(%s), error info is %s, rid: %s", pathParams("id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -69,7 +69,7 @@ func (s *Service) UpdateObjectAttribute(params types.ContextParams, pathParams, 
 
 	// auth: update registered resource
 	if err := s.AuthManager.UpdateRegisteredModelAttributeByID(params.Context, params.Header, id); err != nil {
-		blog.Errorf("update object attribute success , but update registered model attribute to auth failed, err: %+v", err)
+		blog.Errorf("update object attribute success , but update registered model attribute to auth failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
@@ -83,7 +83,7 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-att] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		blog.Errorf("[api-att] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -95,7 +95,7 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 
 	// auth: update registered resource
 	if err := s.AuthManager.DeregisterModelAttributeByID(params.Context, params.Header, id); err != nil {
-		blog.Errorf("delete object attribute failed, deregistered model attribute to auth failed, err: %+v", err)
+		blog.Errorf("delete object attribute failed, deregister model attribute to auth failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 

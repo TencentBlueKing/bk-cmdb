@@ -2,7 +2,7 @@
     <div class="authority-wrapper" v-bkloading="{ isLoading: $loading('searchUserPrivilege') }">
         <div class="authority-box">
             <div class="authority-group clearfix">
-                <h2 class="authority-group-title">{{$t('Permission["系统权限"]')}}</h2>
+                <h2 class="authority-group-title">{{$t('系统权限')}}</h2>
                 <div class="authority-group-content">
                     <div class="authority-type system clearfix"
                         v-for="(config, configId) in sysConfig"
@@ -28,7 +28,7 @@
                 </div>
             </div>
             <div class="authority-group model clearfix">
-                <h2 class="authority-group-title"><span>{{$t('Permission["模型权限"]')}}</span></h2>
+                <h2 class="authority-group-title"><span>{{$t('模型权限')}}</span></h2>
                 <div class="authority-group-content">
                     <div class="authority-type model" v-for="(classify,classifyIndex) in localClassifications"
                         :key="classifyIndex"
@@ -48,7 +48,7 @@
                                                 :id="'model-all-' + model['bk_obj_id']"
                                                 :checked="model.selectedAuthorities.length === 3"
                                                 @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">
-                                            <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
+                                            <span class="cmdb-checkbox-text">{{$t('全选')}}</span>
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -58,7 +58,7 @@
                                                 :id="'model-search-' + model['bk_obj_id']"
                                                 v-model="model.selectedAuthorities"
                                                 @change="checkOtherAuthorities(classifyIndex,modelIndex,$event)">
-                                            <span class="cmdb-checkbox-text">{{$t('Common["查询"]')}}</span>
+                                            <span class="cmdb-checkbox-text">{{$t('查询')}}</span>
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -69,7 +69,7 @@
                                                 :id="'model-update-' + model['bk_obj_id']"
                                                 :disabled="model.selectedAuthorities.indexOf('search') === -1"
                                                 v-model="model.selectedAuthorities">
-                                            <span class="cmdb-checkbox-text">{{$t('Common["编辑"]')}}</span>
+                                            <span class="cmdb-checkbox-text">{{$t('编辑')}}</span>
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -80,7 +80,7 @@
                                                 :id="'model-delete-' + model['bk_obj_id']"
                                                 :disabled="model.selectedAuthorities.indexOf('search') === -1"
                                                 v-model="model.selectedAuthorities">
-                                            <span class="cmdb-checkbox-text">{{$t('Common["删除"]')}}</span>
+                                            <span class="cmdb-checkbox-text">{{$t('删除')}}</span>
                                         </label>
                                     </span>
                                 </li>
@@ -91,11 +91,11 @@
             </div>
         </div>
         <footer class="footer">
-            <bk-button type="primary" :loading="$loading('updateGroupAuthorities')" @click="updateGroupAuthorities">
-                {{$t('Common["保存"]')}}
+            <bk-button theme="primary" :loading="$loading('updateGroupAuthorities')" @click="updateGroupAuthorities">
+                {{$t('保存')}}
             </bk-button>
-            <bk-button type="default" @click="cancel">
-                {{$t('Common["取消"]')}}
+            <bk-button theme="default" @click="cancel">
+                {{$t('取消')}}
             </bk-button>
         </footer>
     </div>
@@ -114,22 +114,22 @@
                 sysConfig: {
                     global_busi: {
                         id: 'global_busi',
-                        name: 'Permission["全局业务"]',
+                        name: '全局业务',
                         authorities: [{
                             id: 'resource',
-                            name: 'Permission["资源池管理"]'
+                            name: '资源池管理'
                         }],
                         selectedAuthorities: []
                     },
                     back_config: {
                         id: 'back_config',
-                        name: 'Permission["后台配置"]',
+                        name: '后台配置',
                         authorities: [{
                             id: 'event',
-                            name: 'Permission["事件推送配置"]'
+                            name: '事件推送配置'
                         }, {
                             id: 'audit',
-                            name: 'OperationAudit["操作审计"]'
+                            name: '操作审计'
                         }],
                         selectedAuthorities: []
                     }
@@ -185,7 +185,7 @@
                         requestId: 'updateGroupAuthorities'
                     }
                 })
-                this.$success(this.$t('Common[\'保存成功\']'))
+                this.$success(this.$t('保存成功'))
                 this.$emit('cancel')
             },
             checkAllModelAuthorities (classifyIndex, modelIndex, event) {

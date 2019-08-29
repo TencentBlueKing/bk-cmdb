@@ -88,3 +88,23 @@ func (s *SynchronizeManager) ClearData(ctx core.ContextParams, input *metadata.S
 	adapter.clearData(ctx)
 	return nil
 }
+
+// SetIdentifierFlag set cmdb synchronize identifier flag
+func (s *SynchronizeManager) SetIdentifierFlag(ctx core.ContextParams, input *metadata.SetIdenifierFlag) ([]metadata.ExceptionResult, error) {
+
+	adapter := NewSetIdentifierFlag(s.dbProxy, input)
+	if input.Flag == "" {
+		blog.Errorf("SetIdentifierFlag parameter flag illegal, input:%#v,r id:%s", input, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, "flag")
+	}
+	if len(input.IdentifierID) == 0 {
+		blog.Errorf("SetIdentifierFlag parameter identifier_id illegal, identifier_id empty. input:%#v,r id:%s", input, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, "identifier_id")
+	}
+	ccErr := adapter.Run(ctx)
+	if ccErr != nil {
+		blog.Errorf("SetIdentifierFlag handle logic error. err:%s, input:%#v, rid:%s", ccErr.Error(), input, ctx.ReqID)
+		return nil, ccErr
+	}
+	return nil, nil
+}

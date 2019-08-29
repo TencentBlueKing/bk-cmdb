@@ -35,7 +35,7 @@ type instanceManager struct {
 	dependent OperationDependences
 	validator validator
 	Cache     *redis.Client
-	EventC    eventclient.Client
+	EventCli  eventclient.Client
 }
 
 // New create a new instance manager instance
@@ -43,7 +43,7 @@ func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client) c
 	return &instanceManager{
 		dbProxy:   dbProxy,
 		dependent: dependent,
-		EventC:    eventclient.NewClientViaRedis(cache, dbProxy),
+		EventCli:  eventclient.NewClientViaRedis(cache, dbProxy),
 	}
 }
 
@@ -70,7 +70,7 @@ func (m *instanceManager) CreateModelInstance(ctx core.ContextParams, objID stri
 
 	instIDFieldName := common.GetInstIDField(objID)
 	// 处理事件数据的
-	eh := m.NewEventHandle(objID)
+	eh := m.NewEventClient(objID)
 	err = eh.SetCurDataAndPush(ctx, objID, metadata.EventActionCreate, mapstr.MapStr{instIDFieldName: id})
 	if err != nil {
 		blog.ErrorJSON("CreateModelInstance  event push instance current data error. err:%s, objID:%s inst id:%s, rid:%s", err, objID, id, ctx.ReqID)
@@ -114,7 +114,7 @@ func (m *instanceManager) CreateManyModelInstance(ctx core.ContextParams, objID 
 	}
 	instIDFieldName := common.GetInstIDField(objID)
 	// 处理事件数据的
-	eh := m.NewEventHandle(objID)
+	eh := m.NewEventClient(objID)
 	err := eh.SetCurDataAndPush(ctx, objID, metadata.EventActionCreate, condition.CreateCondition().Field(instIDFieldName).In(newIDs).ToMapStr())
 	if err != nil {
 		blog.ErrorJSON("CreateManyModelInstance  event push instance current data error. err:%s, objID:%s inst id:%s, rid:%s", err, objID, newIDs, ctx.ReqID)
@@ -138,7 +138,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 	}
 
 	// 处理事件数据的
-	eh := m.NewEventHandle(objID)
+	eh := m.NewEventClient(objID)
 
 	var instMedataData metadata.Metadata
 	instMedataData.Label = make(metadata.Label)
@@ -185,24 +185,24 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("SearchModelInstance failed, parse condition failed, inputParam: %+v, err: %+v", inputParam, err)
+		blog.Errorf("SearchModelInstance failed, parse condition failed, inputParam: %+v, err: %+v, rid: %s", inputParam, err, ctx.ReqID)
 		return &metadata.QueryResult{}, err
 	}
 	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
 	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
 	inputParam.Condition = condition.ToMapStr()
 
-	blog.V(9).Infof("search instance with parameter: %+v", inputParam)
+	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, ctx.ReqID)
 	instItems, err := m.searchInstance(ctx, objID, inputParam)
 	if nil != err {
-		blog.Errorf("search instance error [%v]", err)
+		blog.Errorf("search instance error [%v], rid: %s", err, ctx.ReqID)
 		return &metadata.QueryResult{}, err
 	}
 
 	dataResult := &metadata.QueryResult{}
 	dataResult.Count, err = m.countInstance(ctx, objID, inputParam.Condition)
 	if nil != err {
-		blog.Errorf("count instance error [%v]", err)
+		blog.Errorf("count instance error [%v], rid: %s", err, ctx.ReqID)
 		return &metadata.QueryResult{}, err
 	}
 	dataResult.Info = instItems
@@ -220,7 +220,7 @@ func (m *instanceManager) DeleteModelInstance(ctx core.ContextParams, objID stri
 	}
 
 	// 处理事件数据的
-	eh := m.NewEventHandle(objID)
+	eh := m.NewEventClient(objID)
 
 	for _, origin := range origins {
 		instID, err := util.GetInt64ByInterface(origin[instIDFieldName])
@@ -254,9 +254,9 @@ func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, obj
 	tableName := common.GetInstTableName(objID)
 	instIDFieldName := common.GetInstIDField(objID)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
-	blog.Errorf("cascade delete model instance get inst error:%v", origins)
+	blog.V(5).Infof("cascade delete model instance get inst error:%v, rid: %s", origins, ctx.ReqID)
 	if nil != err {
-		blog.Errorf("cascade delete model instance get inst error:%v", err)
+		blog.Errorf("cascade delete model instance get inst error:%v, rid: %s", err, ctx.ReqID)
 		return &metadata.DeletedCount{}, err
 	}
 

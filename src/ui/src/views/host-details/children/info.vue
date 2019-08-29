@@ -2,10 +2,10 @@
     <div class="info">
         <div class="info-basic">
             <i :class="['info-icon', model.bk_obj_icon]"></i>
-            <span class="info-ip">{{host.bk_host_innerip}}</span>
+            <span class="info-ip">{{hostIp}}</span>
         </div>
         <div class="info-topology clearfix">
-            <div class="topology-label fl">{{$t("BusinessTopology['业务拓扑']")}}：</div>
+            <div class="topology-label fl">{{$t('业务拓扑')}}：</div>
             <div class="topology-details clearfix">
                 <ul class="topology-list fl"
                     v-for="(column, index) in ['left', 'right']"
@@ -26,7 +26,7 @@
                     href="javascript:void(0)"
                     v-if="topology.length > 2"
                     @click="viewAll">
-                    {{$t("Common['更多']")}}
+                    {{$t('更多信息')}}
                     <i class="bk-icon icon-angle-down" :class="{ 'is-all-show': showAll }"></i>
                 </a>
             </div>
@@ -51,6 +51,15 @@
             ...mapState('hostDetails', ['info']),
             host () {
                 return this.info.host || {}
+            },
+            hostIp () {
+                if (Object.keys(this.host).length) {
+                    const hostList = this.host.bk_host_innerip.split(',')
+                    const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
+                    return host
+                } else {
+                    return ''
+                }
             },
             topology () {
                 const topology = []
@@ -81,15 +90,6 @@
             model () {
                 return this.$store.getters['objectModelClassify/getModelById']('host')
             }
-        },
-        watch: {
-            info (info) {
-                this.$store.commit('setHeaderTitle', `${this.$t('HostDetails["主机详情"]')}(${info.host.bk_host_innerip})`)
-            }
-        },
-        created () {
-            this.$store.commit('setHeaderTitle', this.$t('HostDetails["主机详情"]'))
-            this.$store.commit('setHeaderStatus', { back: true })
         },
         methods: {
             viewAll () {

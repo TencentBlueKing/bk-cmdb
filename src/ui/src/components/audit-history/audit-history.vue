@@ -2,32 +2,40 @@
     <div class="audit-history-layout">
         <div class="history-options clearfix">
             <div class="options-group fl">
-                <label class="options-label">{{$t("HostResourcePool['时间范围']")}}</label>
-                <cmdb-form-date-range class="options-filter" v-model="dateRange"></cmdb-form-date-range>
+                <label class="options-label">{{$t('时间范围')}}</label>
+                <cmdb-form-date-range class="options-filter" :clearable="false" v-model="dateRange"></cmdb-form-date-range>
             </div>
             <div class="options-group fl" style="margin: 0">
-                <label class="options-label">{{$t("HostResourcePool['操作账号']")}}</label>
-                <cmdb-form-objuser class="options-filter" v-model="operator" :exclude="false" :multiple="false"></cmdb-form-objuser>
+                <label class="options-label">{{$t('操作账号')}}</label>
+                <cmdb-form-objuser class="options-filter"
+                    v-model="operator"
+                    :exclude="false"
+                    :multiple="false"
+                    :palceholder="$t('操作账号')">
+                </cmdb-form-objuser>
             </div>
-            <bk-button class="fr" type="primary" @click="refresh(true)">{{$t("Common['查询']")}}</bk-button>
+            <bk-button class="fr" theme="primary" @click="refresh(true)">{{$t('查询')}}</bk-button>
         </div>
-        <cmdb-table class="audit-table"
-            :loading="$loading('getOperationLog')"
-            :header="header"
-            :list="list"
-            :pagination.sync="pagination"
-            :wrapper-minus-height="220"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange"
-            @handleRowClick="handleRowClick">
-            <template slot="op_time" slot-scope="{ item }">
-                {{$tools.formatTime(item['op_time'])}}
-            </template>
-        </cmdb-table>
+        <bk-table
+            v-bkloading="{ isLoading: $loading('getUserOperationLog') }"
+            :data="list"
+            :pagination="pagination"
+            :max-height="$APP.height - 220"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange"
+            @row-click="handleRowClick">
+            <bk-table-column :label="$t('变更内容')" prop="op_desc"></bk-table-column>
+            <bk-table-column :label="$t('操作账号')" prop="operator"></bk-table-column>
+            <bk-table-column :label="$t('操作时间')" prop="op_time">
+                <template slot-scope="{ row }">
+                    {{row.op_time | formatter('time')}}
+                </template>
+            </bk-table-column>
+        </bk-table>
         <div class="history-details" v-if="details.isShow" v-click-outside="closeDetails">
             <p class="details-title">
-                <span>{{$t('OperationAudit[\'操作详情\']')}}</span>
+                <span>{{$t('操作详情')}}</span>
                 <i class="bk-icon icon-close" @click="closeDetails"></i>
             </p>
             <v-details class="details-content"
@@ -67,21 +75,12 @@
                 dateRange: [],
                 operator: '',
                 sendOperator: '',
-                header: [{
-                    id: 'op_desc',
-                    name: this.$t("HostResourcePool['变更内容']")
-                }, {
-                    id: 'operator',
-                    name: this.$t("HostResourcePool['操作账号']")
-                }, {
-                    id: 'op_time',
-                    name: this.$t("HostResourcePool['操作时间']")
-                }],
                 list: [],
                 pagination: {
                     count: 0,
                     current: 1,
-                    size: 10
+                    limit: 10,
+                    size: 'small'
                 },
                 defaultSort: '-op_time',
                 sort: '-op_time',
@@ -94,10 +93,11 @@
         },
         computed: {
             filterRange () {
-                return [
+                const range = [
                     this.dateRange[0] ? this.dateRange[0] + ' 00:00:00' : '',
                     this.dateRange[1] ? this.dateRange[1] + ' 23:59:59' : ''
                 ]
+                return range.filter(date => !!date)
             }
         },
         created () {
@@ -153,9 +153,9 @@
                 }
                 return {
                     condition,
-                    limit: this.pagination.size,
+                    limit: this.pagination.limit,
                     sort: this.sort,
-                    start: (this.pagination.current - 1) * this.pagination.size
+                    start: (this.pagination.current - 1) * this.pagination.limit
                 }
             },
             handlePageChange (current) {
@@ -163,11 +163,11 @@
                 this.refresh()
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.sort = sort
+                this.sort = this.$tools.getSort(sort)
                 this.refresh()
             },
             handleRowClick (item) {
@@ -186,10 +186,9 @@
     .audit-history-layout{
         position: relative;
         height: 100%;
-        padding: 0 20px;
     }
     .history-options{
-        padding: 20px 0;
+        padding: 20px 0 14px;
         .options-group{
             white-space: nowrap;
             margin-right: 16px;
@@ -200,7 +199,8 @@
             .options-filter{
                 display: inline-block;
                 vertical-align: middle;
-                width: 240px;
+                width: 240px !important;
+                height: 32px;
             }
         }
     }

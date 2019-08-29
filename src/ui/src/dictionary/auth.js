@@ -30,11 +30,11 @@ export const PROCESS_BIND_MODULE = 'process.boundModuleToProcess'
 export const PROCESS_UNBIND_MODULE = 'process.unboundModelToProcess'
 export const PROCESS_SEARCH_MODULE = 'process.findBoundModuleProcess'
 
-// 业务拓扑
-export const C_TOPO = 'mainlineInstanceTopology.create'
-export const U_TOPO = 'mainlineInstanceTopology.update'
-export const D_TOPO = 'mainlineInstanceTopology.delete'
-export const R_TOPO = 'mainlineInstanceTopology.findMany'
+// 服务拓扑
+export const C_TOPO = 'mainlineInstance.create'
+export const U_TOPO = 'mainlineInstance.update'
+export const D_TOPO = 'mainlineInstance.delete'
+export const R_TOPO = 'mainlineObjectTopology.find'
 export const TOPO_TRANSFER_HOST = 'mainlineInstanceTopology.transferHost'
 
 // 业务主机
@@ -89,6 +89,24 @@ export const R_CLOUD_CONFIRM = 'cloudConfirm.findMany'
 // 确认历史
 export const R_CONFIRM_HISTORY = 'cloudConfirmHistory.findMany'
 
+// 服务分类
+export const C_SERVICE_CATEGORY = 'processServiceCategory.create'
+export const U_SERVICE_CATEGORY = 'processServiceCategory.update'
+export const D_SERVICE_CATEGORY = 'processServiceCategory.delete'
+export const R_SERVICE_CATEGORY = 'processServiceCategory.findMany'
+
+// 服务模板
+export const C_SERVICE_TEMPLATE = 'processServiceTemplate.create'
+export const U_SERVICE_TEMPLATE = 'processServiceTemplate.update'
+export const D_SERVICE_TEMPLATE = 'processServiceTemplate.delete'
+export const R_SERVICE_TEMPLATE = 'processServiceTemplate.findMany'
+
+// 服务实例
+export const C_SERVICE_INSTANCE = 'processServiceInstance.create'
+export const U_SERVICE_INSTANCE = 'processServiceInstance.update'
+export const D_SERVICE_INSTANCE = 'processServiceInstance.delete'
+export const R_SERVICE_INSTANCE = 'processServiceInstance.findMany'
+
 export const STATIC_BUSINESS_MODE = [
     C_MODEL,
     R_MODEL,
@@ -113,7 +131,27 @@ export const STATIC_BUSINESS_MODE = [
     C_HOST,
     U_HOST,
     D_HOST,
-    HOST_TO_RESOURCE
+    HOST_TO_RESOURCE,
+
+    C_SERVICE_CATEGORY,
+    U_SERVICE_CATEGORY,
+    D_SERVICE_CATEGORY,
+    R_SERVICE_CATEGORY,
+
+    C_SERVICE_TEMPLATE,
+    U_SERVICE_TEMPLATE,
+    D_SERVICE_TEMPLATE,
+    R_SERVICE_TEMPLATE,
+
+    C_SERVICE_INSTANCE,
+    U_SERVICE_INSTANCE,
+    D_SERVICE_INSTANCE,
+    R_SERVICE_INSTANCE,
+
+    C_TOPO,
+    U_TOPO,
+    D_TOPO,
+    R_TOPO
 ]
 
 export const DYNAMIC_BUSINESS_MODE = [
@@ -138,7 +176,11 @@ export const RESOURCE_TYPE_NAME = {
     systemBase: '系统基础',
     cloudDiscover: '云资源发现',
     cloudConfirm: '云资源确认',
-    cloudConfirmHistory: '云资源确认历史'
+    cloudConfirmHistory: '云资源确认历史',
+    processServiceCategory: '服务分类',
+    processServiceTemplate: '服务模板',
+    processServiceInstance: '服务实例',
+    mainlineInstance: '服务拓扑'
 }
 
 export const RESOURCE_ACTION_NAME = {
@@ -150,7 +192,7 @@ export const RESOURCE_ACTION_NAME = {
     unboundModelToProcess: '解绑模块',
     findBoundModuleProcess: '查询已绑定模块',
     transferHost: '转移主机',
-    moveHostFromModuleToResPool: '归还主机至资源池',
+    moveHostFromModuleToResPool: '删除/归还',
     moveResPoolHostToBizIdleModule: '分配主机到业务空闲机',
     archive: '归档',
     modelTopologyOperation: '拓扑层级管理',

@@ -1,27 +1,27 @@
 <template>
-    <cmdb-slider
+    <bk-sideslider
         :is-show.sync="isShow"
         :width="600"
-        :title="$t('ModelManagement[\'拓扑显示设置\']')"
+        :title="$t('拓扑显示设置')"
         @close="handleClose">
-        <div class="config-layout" slot="content">
+        <div class="config-layout" slot="content" v-if="isShow">
             <div class="config-section">
-                <h2 class="config-type">模型显示设置</h2>
+                <h2 class="config-type">{{$t('模型显示设置')}}</h2>
                 <div class="config-name">
                     <cmdb-form-bool class="config-name-checkbox"
                         v-model="config.label.node"
                         :size="14">
-                        {{$t('ModelManagement["显示模型名称"]')}}
+                        {{$t('显示模型名称')}}
                     </cmdb-form-bool>
                     <cmdb-form-bool class="config-name-checkbox"
                         v-model="config.label.edge"
                         :size="14">
-                        {{$t('ModelManagement["显示关联名称"]')}}
+                        {{$t('显示关联名称')}}
                     </cmdb-form-bool>
                 </div>
             </div>
             <div class="config-section">
-                <h2 class="config-type">关系显示设置</h2>
+                <h2 class="config-type">{{$t('关系显示设置')}}</h2>
                 <ul class="association-group">
                     <li class="group-item"
                         v-for="(group, index) in associationGroups"
@@ -68,15 +68,15 @@
                 </ul>
             </div>
             <div class="config-section button-section">
-                <bk-button type="primary" @click="handleConfirm">
-                    {{$t('Common["确定"]')}}
+                <bk-button theme="primary" @click="handleConfirm">
+                    {{$t('确定')}}
                 </bk-button>
-                <bk-button type="default" @click="handleReset">
-                    {{$t('ModelManagement["重置"]')}}
+                <bk-button theme="default" @click="handleReset">
+                    {{$t('重置')}}
                 </bk-button>
             </div>
         </div>
-    </cmdb-slider>
+    </bk-sideslider>
 </template>
 
 <script>

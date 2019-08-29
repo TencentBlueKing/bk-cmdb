@@ -369,23 +369,6 @@ func (am *AuthManager) makeHostsResourcesGroupByBusiness(ctx context.Context, he
 	return result
 }
 
-// func (am *AuthManager) AuthorizeHostsCrossMultipleBusiness(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) error {
-// 	if am.Enabled() == false {
-// 		return nil
-// 	}
-//
-// 	// make auth resources
-// 	bizResourcesMap := am.makeHostsResourcesGroupByBusiness(ctx, header, action, hosts...)
-//
-// 	for bizID, resources := range bizResourcesMap {
-// 		err := am.authorize(ctx, header, bizID, resources...)
-// 		if err != nil {
-// 			return fmt.Errorf("authorize resources with businessID %d failed, err: %+v", bizID, err)
-// 		}
-// 	}
-// 	return nil
-// }
-
 func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) error {
 	if am.Enabled() == false {
 		return nil
@@ -402,28 +385,33 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 	}
 	return am.batchAuthorize(ctx, header, resources...)
 }
-func (am *AuthManager) GenDeleteHostBatchNoPermissionResp(hostIDs []int64) *metadata.BaseResp {
+func (am *AuthManager) GenDeleteHostBatchNoPermissionResp(ctx context.Context, header http.Header, action authcenter.ActionID, hostIDs []int64) (*metadata.BaseResp, error) {
 	var p metadata.Permission
 	p.SystemID = authcenter.SystemIDCMDB
 	p.SystemName = authcenter.SystemNameCMDB
 	p.ScopeType = authcenter.ScopeTypeIDSystem
 	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
-	p.ActionID = string(authcenter.Delete)
-	p.ActionName = authcenter.ActionIDNameMap[authcenter.Delete]
+	p.ActionID = string(action)
+	p.ActionName = authcenter.ActionIDNameMap[action]
+	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	if err != nil {
+		return nil, err
+	}
 
-	for _, id := range hostIDs {
+	for _, host := range hosts {
 		p.Resources = append(p.Resources, []metadata.Resource{{
 			ResourceType:     string(authcenter.SysHostInstance),
 			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysHostInstance],
-			ResourceID:       strconv.FormatInt(id, 10),
+			ResourceID:       strconv.FormatInt(host.BKHostIDField, 10),
+			ResourceName:     host.BKHostInnerIPField,
 		}})
 	}
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
-	return &resp
+	return &resp, nil
 }
 
-func (am *AuthManager) GenMoveBizHostToIdleFaultModule(hostIDs []int64) *metadata.BaseResp {
+func (am *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, header http.Header, hostIDs []int64) (*metadata.BaseResp, error) {
 	var p metadata.Permission
 	p.SystemID = authcenter.SystemIDCMDB
 	p.SystemName = authcenter.SystemNameCMDB
@@ -431,41 +419,24 @@ func (am *AuthManager) GenMoveBizHostToIdleFaultModule(hostIDs []int64) *metadat
 	p.ScopeTypeName = authcenter.ScopeTypeIDBizName
 	p.ActionID = string(authcenter.Edit)
 	p.ActionName = authcenter.ActionIDNameMap[authcenter.Edit]
-
-	for _, id := range hostIDs {
-		p.Resources = append(p.Resources, []metadata.Resource{{
-			ResourceType:     string(authcenter.SysHostInstance),
-			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysHostInstance],
-			ResourceID:       strconv.FormatInt(id, 10),
-		}})
+	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	if err != nil {
+		return nil, err
 	}
-
-	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
-	return &resp
-}
-
-func (am *AuthManager) GenEditBizHostNoPermissionResp(hostIDs []int64) *metadata.BaseResp {
-	var p metadata.Permission
-	p.SystemID = authcenter.SystemIDCMDB
-	p.SystemName = authcenter.SystemNameCMDB
-	p.ScopeType = authcenter.ScopeTypeIDBiz
-	p.ScopeTypeName = authcenter.ScopeTypeIDBizName
-	p.ActionID = string(authcenter.Edit)
-	p.ActionName = authcenter.ActionIDNameMap[authcenter.Edit]
-
-	for _, id := range hostIDs {
+	for _, host := range hosts {
 		p.Resources = append(p.Resources, []metadata.Resource{{
 			ResourceType:     string(authcenter.BizHostInstance),
 			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.BizHostInstance],
-			ResourceID:       strconv.FormatInt(id, 10),
+			ResourceID:       strconv.FormatInt(host.BKHostIDField, 10),
+			ResourceName:     host.BKHostInnerIPField,
 		}})
 	}
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
-	return &resp
+	return &resp, nil
 }
 
-func (am *AuthManager) GenMoveBizHostToResourcePoolNoPermissionResp(hostIDs []int64) *metadata.BaseResp {
+func (am *AuthManager) GenMoveBizHostToResourcePoolNoPermissionResp(ctx context.Context, header http.Header, hostIDs []int64) (*metadata.BaseResp, error) {
 	var p metadata.Permission
 	p.SystemID = authcenter.SystemIDCMDB
 	p.SystemName = authcenter.SystemNameCMDB
@@ -473,17 +444,21 @@ func (am *AuthManager) GenMoveBizHostToResourcePoolNoPermissionResp(hostIDs []in
 	p.ScopeTypeName = authcenter.ScopeTypeIDBizName
 	p.ActionID = string(authcenter.Delete)
 	p.ActionName = authcenter.ActionIDNameMap[authcenter.Delete]
-
-	for _, id := range hostIDs {
+	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	if err != nil {
+		return nil, err
+	}
+	for _, host := range hosts {
 		p.Resources = append(p.Resources, []metadata.Resource{{
 			ResourceType:     string(authcenter.BizHostInstance),
 			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.BizHostInstance],
-			ResourceID:       strconv.FormatInt(id, 10),
+			ResourceID:       strconv.FormatInt(host.BKHostIDField, 10),
+			ResourceName:     host.BKHostInnerIPField,
 		}})
 	}
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
-	return &resp
+	return &resp, nil
 }
 
 func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) error {

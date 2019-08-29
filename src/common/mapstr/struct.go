@@ -13,6 +13,7 @@
 package mapstr
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -79,7 +80,7 @@ func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, value
 			innerValue := dealPointer(fieldValue, tags[0], tagName)
 			values.Set(tags[0], innerValue)
 		default:
-			blog.Infof("[mapstr] invalide kind: %v for field %v", structField.Type.Kind(), tags[0])
+			blog.Infof("[mapstr] invalid kind: %v for field %v", structField.Type.Kind(), tags[0])
 		}
 
 	}
@@ -116,7 +117,7 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 
 		fieldValue := targetValue.FieldByName(structField.Name)
 		if !fieldValue.CanSet() {
-			continue
+			return fmt.Errorf("%s can't be set", structField.Name)
 		}
 
 		switch structField.Type.Kind() {
@@ -161,6 +162,12 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 					return err
 				}
 				fieldValue.Set(targetResult)
+			case bool:
+				if structField.Type.Elem().Kind() == reflect.Bool {
+					targetResult = getValueElem(targetResult)
+					targetResult.SetBool(t)
+					fieldValue.Set(targetResult.Addr())
+				}
 			case string:
 				targetResult = getValueElem(targetResult)
 				targetResult.SetString(t)
@@ -257,4 +264,18 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.IsNil()
 	}
 	return false
+}
+
+// Struct2Map is a safer version of NewFromStruct
+// TODO: replace with mitchellh/mapstructure
+func Struct2Map(v interface{}) (map[string]interface{}, error) {
+	bytes, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	data := make(map[string]interface{})
+	if err := json.Unmarshal(bytes, &data); err != nil {
+		return nil, err
+	}
+	return data, nil
 }

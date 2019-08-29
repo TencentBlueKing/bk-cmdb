@@ -70,6 +70,11 @@ type Response struct {
 	Data     interface{} `json:"data"`
 }
 
+type Uint64Response struct {
+	BaseResp `json:",inline"`
+	Count    uint64 `json:"count"`
+}
+
 type MapArrayResponse struct {
 	BaseResp `json:",inline"`
 	Data     []mapstr.MapStr `json:"data"`
@@ -238,4 +243,8 @@ type PropertyGroupCondition struct {
 type UpdateParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Data      map[string]interface{} `json:"data"`
+}
+type ListHostWithoutAppResponse struct {
+	BaseResp `json:",inline"`
+	Data     ListHostResult `json:"data"`
 }

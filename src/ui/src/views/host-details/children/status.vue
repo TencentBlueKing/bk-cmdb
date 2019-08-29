@@ -2,35 +2,31 @@
     <div :class="['status', { 'is-offline': !snapshot }]" v-bkloading="{ isLoading: $loading('getHostSnapshot') }">
         <div class="status-info" v-if="snapshot">
             <h2 class="info-title">
-                <span>{{$t('HostDetails["基本值"]')}}</span>
+                <span>{{$t('基本值')}}</span>
                 <span class="update-time fr">
-                    <span class="time-label">{{$t('HostDetails["最近更新时间"]')}}：</span>
+                    <span class="time-label">{{$t('最近更新时间')}}：</span>
                     <span class="time-value">{{snapshot.upTime}}</span>
                 </span>
             </h2>
             <ul class="info-list clearfix">
                 <li class="info-item fl">
-                    <span class="item-label">{{$t('HostResourcePool["总流入量"]')}}</span>
-                    <span class="itme-value"></span>
-                </li>
-                <li class="info-item fl">
-                    <span class="item-label">{{$t('HostResourcePool["总流入量"]')}}：</span>
+                    <span class="item-label">{{$t('总流入量')}}：</span>
                     <span class="item-value">{{(snapshot.rcvRate / 100).toFixed(2)}}Mb/s</span>
                 </li>
                 <li class="info-item fl">
-                    <span class="item-label">{{$t('HostResourcePool["启动时间"]')}}：</span>
+                    <span class="item-label">{{$t('启动时间')}}：</span>
                     <span class="item-value">{{$tools.formatTime(snapshot.bootTime * 1000)}}</span>
                 </li>
                 <li class="info-item fl">
-                    <span class="item-label">{{$t('HostResourcePool["总流出量"]')}}：</span>
+                    <span class="item-label">{{$t('总流出量')}}：</span>
                     <span class="item-value">{{(snapshot.sendRate / 100).toFixed(2)}}Mb/s</span>
                 </li>
                 <li class="info-item fl">
-                    <span class="item-label">{{$t('HostResourcePool["磁盘总量"]')}}：</span>
+                    <span class="item-label">{{$t('磁盘总量')}}：</span>
                     <span class="item-value">{{snapshot.Disk}}GB</span>
                 </li>
                 <li class="info-item fl">
-                    <span class="item-label">{{$t('HostResourcePool["内存总量"]')}}：</span>
+                    <span class="item-label">{{$t('内存总量')}}：</span>
                     <span class="item-value">{{(snapshot.Mem / 1024).toFixed(2)}}GB</span>
                 </li>
                 <li class="info-item fl" v-if="!isWindows">
@@ -47,10 +43,10 @@
         <div class="status-offline" v-else>
             <div class="offline-image"></div>
             <p class="offline-text">
-                {{$t('HostResourcePool[\'当前主机没有安装 Agent 或者 Agent 已经离线\']')}}
+                {{$t('当前主机没有安装 Agent 或者 Agent 已经离线')}}
                 <a href="javascript:void(0)" @click="openAgentApp">
                     <i class="icon-cc-skip"></i>
-                    {{$t("HostResourcePool['点此进入节点管理']")}}
+                    {{$t('点此进入节点管理')}}
                 </a>
             </p>
         </div>
@@ -114,7 +110,7 @@
                 const cpuChart = this.Echarts.init(this.$refs.cpuChart)
                 cpuChart.setOption({
                     title: {
-                        text: this.$t('Hosts["总CPU使用率"]'),
+                        text: this.$t('总CPU使用率'),
                         textStyle: {
                             color: '#333948'
                         },
@@ -146,7 +142,7 @@
                 const memoryChart = this.Echarts.init(this.$refs.memoryChart)
                 memoryChart.setOption({
                     title: {
-                        text: this.$t('Hosts["总内存使用率"]'),
+                        text: this.$t('总内存使用率'),
                         textStyle: {
                             color: '#333948'
                         },
@@ -178,7 +174,7 @@
                 const diskChart = this.Echarts.init(this.$refs.diskChart)
                 diskChart.setOption({
                     title: {
-                        text: this.$t('Hosts["磁盘使用情况"]'),
+                        text: this.$t('磁盘使用情况'),
                         textStyle: {
                             color: '#333948'
                         },
@@ -219,7 +215,7 @@
                     if (agentAppUrl) {
                         window.open(window.Site.agent)
                     } else {
-                        this.$warn(this.$t("HostResourcePool['未配置Agent安装APP地址']"))
+                        this.$warn(this.$t('未配置Agent安装APP地址'))
                     }
                 }
             }

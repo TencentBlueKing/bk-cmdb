@@ -31,7 +31,6 @@ func (s *Service) CreateObjectBatch(params types.ContextParams, pathParams, quer
 
 // SearchObjectBatch batch to search some objects
 func (s *Service) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	data.Remove(metadata.BKMetadata)
 	return s.Core.ObjectOperation().FindObjectBatch(params, data)
 }
@@ -71,7 +70,7 @@ func (s *Service) SearchObjectTopo(params types.ContextParams, pathParams, query
 func (s *Service) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "object id")
 	}
 	err = s.Core.ObjectOperation().UpdateObject(params, data, id)
@@ -84,11 +83,21 @@ func (s *Service) DeleteObject(params types.ContextParams, pathParams, queryPara
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	cond := condition.CreateCondition()
 	err = s.Core.ObjectOperation().DeleteObject(params, id, cond, true)
 	return nil, err
+}
+
+// GetModelStatistics 用于统计各个模型的实例数(Web页面展示需要)
+func (s *Service) GetModelStatistics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	result, err := s.Engine.CoreAPI.CoreService().Model().GetModelStatistics(params.Context, params.Header)
+	if err != nil {
+		blog.Errorf("GetModelStatistics failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
+	return result.Data, err
 }

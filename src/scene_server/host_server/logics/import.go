@@ -221,7 +221,8 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 	delete(host, "import_from")
 	delete(host, common.CreateTimeField)
 
-	input := &metadata.UpdateOption{} //更新主机数据
+	// 更新主机数据
+	input := &metadata.UpdateOption{}
 	input.Condition = map[string]interface{}{common.BKHostIDField: hostID}
 	input.Data = host
 	uResult, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.pheader, common.BKInnerObjIDHost, input)
@@ -249,7 +250,8 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 		Data: host,
 	}
 
-	result, err := h.CoreAPI.CoreService().Instance().CreateInstance(h.ctx, h.pheader, common.BKInnerObjIDHost, input) //(h.ctx, h.pheader, host)
+	// (h.ctx, h.pheader, host)
+	result, err := h.CoreAPI.CoreService().Instance().CreateInstance(h.ctx, h.pheader, common.BKInnerObjIDHost, input)
 	if err != nil {
 		blog.Errorf("addHostInstance http do error,err:%s, input:%+v,rid:%s", err.Error(), host, h.rid)
 		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
@@ -266,7 +268,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 		ModuleID:      moduleID,
 		HostID:        []int64{hostID},
 	}
-	hResult, err := h.CoreAPI.CoreService().Host().TransferHostModule(h.ctx, h.pheader, opt)
+	hResult, err := h.CoreAPI.CoreService().Host().TransferToNormalModule(h.ctx, h.pheader, opt)
 	if err != nil {
 		blog.Errorf("add host module by ip:%s  err:%s,input:%+v,rid:%s", ip, err.Error(), opt, h.rid)
 		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
@@ -325,7 +327,7 @@ func (h *importInstance) GetHostIDByHostInfoArr(ctx context.Context, hostInfos m
 		if err != nil {
 			blog.Errorf("GetHostIDByHostInfoArr get hostID error. err:%s, hostInfo:%#v, rid:%s", err.Error(), host, h.rid)
 			// convert %s  field %s to %s error %s
-			return hostMap, h.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+			return hostMap, h.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 		}
 		hostMap[key] = hostID
 	}

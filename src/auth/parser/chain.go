@@ -14,6 +14,7 @@ import (
 )
 
 type RequestContext struct {
+	Rid string
 	// http header
 	Header http.Header
 	// http method
@@ -69,6 +70,10 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 
 	if ps.err != nil {
 		return nil, ps.err
+	}
+
+	for index := range ps.Attribute.Resources {
+		ps.Attribute.Resources[index].SupplierAccount = ps.Attribute.User.SupplierAccount
 	}
 
 	return &ps.Attribute, nil

@@ -2,48 +2,52 @@
     <div class="verification-detail-wrapper">
         <div class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["校验规则"]')}}
+                {{$t('校验规则')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="verification-selector">
-                <div class="text-content" @click="toggleSelector(true)" :class="{ 'open': attribute.isShow }">
-                    <span>{{selectedName}}</span>
-                    <i class="bk-icon icon-angle-down"></i>
-                </div>
-                <bk-selector
-                    setting-key="id"
-                    display-key="bk_property_name"
+                <bk-select
                     ref="attrSelector"
-                    :multi-select="true"
-                    :selected.sync="verificationInfo.selected"
-                    :list="attribute.list"
-                    @visible-toggle="toggleSelector"
-                ></bk-selector>
+                    multiple
+                    :disabled="isReadOnly"
+                    :clearable="false"
+                    v-model="verificationInfo.selected"
+                    @toggle="toggleSelector">
+                    <div class="text-content" slot="trigger" @click="toggleSelector(true)" :class="{ 'open': attribute.isShow }">
+                        <span>{{selectedName}}</span>
+                        <!-- <i class="bk-icon icon-angle-down"></i> -->
+                    </div>
+                    <bk-option v-for="(option, index) in attribute.list"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.bk_property_name">
+                    </bk-option>
+                </bk-select>
             </div>
         </div>
-        <div class="verification-selector-mask" v-if="attribute.isShow"></div>
-        <div class="radio-box">
+        <!-- <div class="verification-selector-mask" v-if="attribute.isShow"></div> -->
+        <!-- <div class="radio-box">
             <label class="label-text">
-                {{$t('ModelManagement["是否为必须校验"]')}}
+                {{$t('属性为空值是否校验')}}
             </label>
             <label class="cmdb-form-radio cmdb-radio-small">
                 <input type="radio" name="required" :value="true" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["是"]')}}</span>
+                <span class="cmdb-radio-text">{{$t('是')}}</span>
             </label>
             <label class="cmdb-form-radio cmdb-radio-small">
                 <input type="radio" name="required" :value="false" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["否"]')}}</span>
+                <span class="cmdb-radio-text">{{$t('否')}}</span>
             </label>
-        </div>
+        </div> -->
         <div class="btn-group">
-            <bk-button type="primary"
+            <bk-button theme="primary"
                 :disabled="isReadOnly || !verificationInfo.selected.length"
                 :loading="$loading(['createObjectUniqueConstraints', 'updateObjectUniqueConstraints'])"
                 @click="saveVerification">
-                {{$t('Common["确定"]')}}
+                {{$t('确定')}}
             </bk-button>
-            <bk-button type="default" @click="cancel">
-                {{$t('Common["取消"]')}}
+            <bk-button theme="default" @click="cancel">
+                {{$t('取消')}}
             </bk-button>
         </div>
     </div>
@@ -127,7 +131,7 @@
             },
             toggleSelector (isShow) {
                 if (!this.isReadOnly) {
-                    this.$refs.attrSelector.open = isShow
+                    // isShow ? this.$refs.attrSelector.show() : this.$refs.attrSelector.hide()
                     this.attribute.isShow = isShow
                 }
             },
@@ -176,21 +180,21 @@
                 position: relative;
                 display: inline-block;
                 width: 100%;
-                .bk-selector {
+                .bk-select {
                     width: 100%;
+                    border: none;
                 }
                 .text-content {
                     border-radius: 2px;
                     border: 1px solid $cmdbBorderColor;
                     padding: 0 32px 0 10px;
-                    height: 36px;
-                    line-height: 34px;
-                    font-size: 14px;
+                    height: 32px;
+                    line-height: 30px;
                     overflow: hidden;
                     &.open {
-                        padding: 5px 28px 5px 10px;
+                        padding: 3px 28px 3px 10px;
                         height: auto;
-                        min-height: 36px;
+                        min-height: 32px;
                         line-height: 24px;
                         overflow: visible;
                         border-color: $cmdbBorderFocusColor;

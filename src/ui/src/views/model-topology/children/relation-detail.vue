@@ -2,43 +2,44 @@
     <div>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["源模型"]')}}
+                {{$t('源模型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])">
+                <bk-input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])"></bk-input>
             </div>
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["目标模型"]')}}
+                {{$t('目标模型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])">
+                <bk-input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])"></bk-input>
             </div>
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["关联描述"]')}}
+                {{$t('关联描述')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
-                <input type="text" class="cmdb-form-input"
+                <bk-input type="text" class="cmdb-form-input"
                     name="asstName"
                     :disabled="relationInfo.ispre || !isEdit"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
-                    v-validate="'required|singlechar'">
+                    v-validate="'required|singlechar|length:256'">
+                </bk-input>
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["源-目标约束"]')}}
+                {{$t('源-目标约束')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
-                <cmdb-selector
+                <cmdb-selector style="width: 100%;"
                     :disabled="true"
                     :list="mappingList"
                     v-validate="'required'"
@@ -49,11 +50,11 @@
             </div>
         </label>
         <div class="btn-group" v-if="isEdit && relationInfo.bk_asst_id !== 'bk_mainline'">
-            <bk-button type="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
-                {{$t('Common["确定"]')}}
+            <bk-button theme="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
+                {{$t('确定')}}
             </bk-button>
-            <bk-button type="danger" @click="deleteRelation" :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')">
-                {{$t('ModelManagement["删除关联"]')}}
+            <bk-button theme="danger" @click="deleteRelation" :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')">
+                {{$t('删除关联')}}
             </bk-button>
         </div>
     </div>
@@ -153,7 +154,7 @@
             },
             deleteRelation () {
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确定删除关联关系?"]'),
+                    title: this.$t('确定删除关联关系?'),
                     confirmFn: async () => {
                         await this.deleteObjectAssociation({
                             id: this.relationInfo.id,

@@ -1,35 +1,37 @@
 <template>
-    <cmdb-slider
+    <bk-sideslider
         :width="514"
         :title="title"
         :is-show.sync="isShow"
         @close="handleClose">
-        <div class="association-layout" slot="content">
+        <div class="association-layout" slot="content" v-if="isShow">
             <div class="form-group">
                 <label class="form-label"
                     :class="{
                         required: !isViewMode
                     }">
-                    {{$t('ModelManagement["源模型"]')}}
+                    {{$t('源模型')}}
                 </label>
-                <input type="text"class="cmdb-form-input"
+                <bk-input type="text"class="cmdb-form-input"
                     disabled
                     :value="getModelName(info.source)">
+                </bk-input>
             </div>
             <div class="form-group">
                 <label class="form-label"
                     :class="{
                         required: !isViewMode
                     }">
-                    {{$t('ModelManagement["目标模型"]')}}
+                    {{$t('目标模型')}}
                 </label>
-                <input type="text"class="cmdb-form-input"
+                <bk-input type="text"class="cmdb-form-input"
                     disabled
                     :value="getModelName(info.target)">
+                </bk-input>
             </div>
             <div class="form-group" v-if="!isViewMode">
                 <label class="form-label required">
-                    {{$t('ModelManagement["关联类型"]')}}
+                    {{$t('关联类型')}}
                 </label>
                 <ul class="association-list clearfix">
                     <li class="association-item fl"
@@ -48,13 +50,14 @@
                     :class="{
                         required: !isViewMode
                     }">
-                    {{$t('ModelManagement["关联描述"]')}}
+                    {{$t('关联描述')}}
                 </label>
-                <input type="text"class="cmdb-form-input"
+                <bk-input type="text"class="cmdb-form-input"
                     :disabled="isViewMode"
                     name="description"
-                    v-validate="'required|singlechar'"
+                    v-validate="'required|singlechar|length:256'"
                     v-model="info.description">
+                </bk-input>
                 <p class="form-error" v-if="errors.has('description')">{{errors.first('description')}}</p>
             </div>
             <div class="form-group">
@@ -62,7 +65,7 @@
                     :class="{
                         required: !isViewMode
                     }">
-                    {{$t('ModelManagement["源-目标约束"]')}}
+                    {{$t('源-目标约束')}}
                 </label>
                 <cmdb-selector
                     name="constraint"
@@ -76,27 +79,27 @@
             </div>
             <div class="button-group" v-if="isEditMode && !info.ispre">
                 <bk-button class="form-button"
-                    type="primary"
+                    theme="primary"
                     :loading="$loading()"
                     @click="handleSave">
-                    {{$t('Common["确定"]')}}
+                    {{$t('确定')}}
                 </bk-button>
                 <bk-button class="form-button"
                     v-if="isViewMode"
-                    type="danger"
+                    theme="danger"
                     :loading="$loading()"
                     @click="handleDelete">
-                    {{$t('ModelManagement["删除关联"]')}}
+                    {{$t('删除关联')}}
                 </bk-button>
                 <bk-button class="form-button"
                     v-else
-                    type="default"
+                    theme="default"
                     @click="handleCancel">
-                    {{$t('Common["取消"]')}}
+                    {{$t('取消')}}
                 </bk-button>
             </div>
         </div>
-    </cmdb-slider>
+    </bk-sideslider>
 </template>
 
 <script>
@@ -200,7 +203,7 @@
                 this.info.source = edge.from
                 this.info.target = edge.to
                 this.info.association = this.localAssociationList[0] || {}
-                this.title = this.$t('ModelManagement["新建关联"]')
+                this.title = this.$t('新建关联')
             },
             async createAssociation () {
                 try {
@@ -251,7 +254,7 @@
             },
             handleDelete () {
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确定删除关联关系?"]'),
+                    title: this.$t('确定删除关联关系?'),
                     confirmFn: async () => {
                         try {
                             const edge = this.association.edge

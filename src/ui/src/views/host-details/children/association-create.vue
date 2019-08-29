@@ -1,7 +1,7 @@
 <template>
     <div class="new-association">
         <div class="association-filter clearfix">
-            <label class="filter-label fl">{{$t('Association["关联列表"]')}}</label>
+            <label class="filter-label fl">{{$t('关联列表')}}</label>
             <cmdb-selector class="fl" style="width: 280px;"
                 :list="options"
                 setting-key="bk_obj_asst_id"
@@ -10,7 +10,7 @@
             </cmdb-selector>
         </div>
         <div class="association-filter clearfix">
-            <label class="filter-label fl">{{$t('Association["条件筛选"]')}}</label>
+            <label class="filter-label fl">{{$t('条件筛选')}}</label>
             <div class="filter-group filter-group-property fl">
                 <cmdb-association-property-filter
                     :obj-id="currentAsstObj"
@@ -20,41 +20,47 @@
                     @on-value-change="handleValueChange">
                 </cmdb-association-property-filter>
             </div>
-            <bk-button type="primary" class="btn-search fr" @click="search">{{$t('Association["搜索"]')}}</bk-button>
+            <bk-button theme="primary" class="btn-search fr" @click="search">{{$t('搜索')}}</bk-button>
         </div>
-        <cmdb-table class="new-association-table"
-            :loading="$loading()"
-            :pagination.sync="table.pagination"
-            :sort="table.sort"
-            :header="table.header"
-            :list="table.list"
+        <bk-table class="new-association-table"
+            v-bkloading="{ isLoading: $loading() }"
+            :pagination="table.pagination"
+            :data="table.list"
             :col-border="true"
-            :wrapper-minus-height="308"
-            @handlePageChange="setCurrentPage"
-            @handleSizeChange="search"
-            @handleSortChange="setCurrentSort">
-            <template slot="options" slot-scope="{ item }">
-                <a href="javascript:void(0)" class="option-link"
-                    v-if="tempData.includes(item[instanceIdKey])"
-                    @click="updateAssociation(item[instanceIdKey], 'remove')">
-                    {{$t('Association["取消关联"]')}}
-                </a>
-                <a href="javascript:void(0)" class="option-link is-associated"
-                    v-else-if="isAssociated(item)">
-                    {{$t('Association["已关联"]')}}
-                </a>
-                <a href="javascript:void(0)" class="option-link" v-else
-                    v-click-outside="handleCloseConfirm"
-                    @click.stop="beforeUpdate($event, item[instanceIdKey], 'new')">
-                    {{$t('Association["添加关联"]')}}
-                </a>
-            </template>
-        </cmdb-table>
+            :max-height="$APP.height - 210"
+            @page-change="setCurrentPage"
+            @page-limit-change="setCurrentLimit"
+            @sort-change="setCurrentSort">
+            <bk-table-column v-for="column in table.header"
+                sortable="custom"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('操作')">
+                <template slot-scope="{ row }">
+                    <a href="javascript:void(0)" class="option-link"
+                        v-if="tempData.includes(row[instanceIdKey])"
+                        @click="updateAssociation(row[instanceIdKey], 'remove')">
+                        {{$t('取消关联')}}
+                    </a>
+                    <a href="javascript:void(0)" class="option-link is-associated"
+                        v-else-if="isAssociated(row)">
+                        {{$t('已关联')}}
+                    </a>
+                    <a href="javascript:void(0)" class="option-link" v-else
+                        v-click-outside="handleCloseConfirm"
+                        @click.stop="beforeUpdate($event, row[instanceIdKey], 'new')">
+                        {{$t('添加关联')}}
+                    </a>
+                </template>
+            </bk-table-column>
+        </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.id">
-            <p class="tips-content">{{$t('Association["更新确认"]')}}</p>
+            <p class="tips-content">{{$t('更新确认')}}</p>
             <div class="tips-option">
-                <bk-button class="tips-button" type="primary" @click="confirmUpdate">{{$t('Common["确认"]')}}</bk-button>
-                <bk-button class="tips-button" type="default" @click="cancelUpdate">{{$t('Common["取消"]')}}</bk-button>
+                <bk-button class="tips-button" theme="primary" @click="confirmUpdate">{{$t('确认')}}</bk-button>
+                <bk-button class="tips-button" theme="default" @click="cancelUpdate">{{$t('取消')}}</bk-button>
             </div>
         </div>
     </div>
@@ -84,7 +90,7 @@
                     pagination: {
                         count: 0,
                         current: 1,
-                        size: 10
+                        limit: 10
                     },
                     sort: ''
                 },
@@ -144,12 +150,12 @@
             },
             instanceName () {
                 const name = {
-                    'bk_host_innerip': this.$t('Common["内网IP"]'),
-                    'bk_biz_name': this.$t('Association["业务名"]'),
-                    'bk_cloud_name': this.$t('Hosts["云区域"]'),
-                    'bk_module_name': this.$t('Hosts["模块名"]'),
-                    'bk_set_name': this.$t('Hosts["集群名"]'),
-                    'bk_inst_name': this.$t('Association["实例名"]')
+                    'bk_host_innerip': this.$t('内网IP'),
+                    'bk_biz_name': this.$t('业务名'),
+                    'bk_cloud_name': this.$t('云区域'),
+                    'bk_module_name': this.$t('模块名'),
+                    'bk_set_name': this.$t('集群名'),
+                    'bk_inst_name': this.$t('实例名')
                 }
                 if (name.hasOwnProperty(this.filter.id)) {
                     return this.filter.name
@@ -172,8 +178,8 @@
             page () {
                 const pagination = this.table.pagination
                 return {
-                    start: (pagination.current - 1) * pagination.size,
-                    limit: pagination.size,
+                    start: (pagination.current - 1) * pagination.limit,
+                    limit: pagination.limit,
                     sort: this.table.sort
                 }
             },
@@ -238,8 +244,12 @@
                 this.table.pagination.current = page
                 this.getInstance()
             },
+            setCurrentLimit (limit) {
+                this.table.pagination.limit = limit
+                this.search()
+            },
             setCurrentSort (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.search()
             },
             setTableHeader (propertyId) {
@@ -249,13 +259,9 @@
                 }, {
                     id: this.instanceNameKey,
                     name: this.instanceName
-                }, {
-                    id: 'options',
-                    name: this.$t('Association["操作"]'),
-                    sortable: false
                 }]
                 if (propertyId && propertyId !== this.instanceNameKey) {
-                    header.splice(2, 0, {
+                    header.push({
                         id: propertyId,
                         name: (this.getProperty(propertyId) || {})['bk_property_name']
                     })
@@ -376,18 +382,18 @@
                     if (updateType === 'new') {
                         await this.createAssociation(instId)
                         this.tempData.push(instId)
-                        this.$success(this.$t('Association["添加关联成功"]'))
+                        this.$success(this.$t('添加关联成功'))
                     } else if (updateType === 'remove') {
                         await this.deleteAssociation(instId)
                         this.tempData = this.tempData.filter(tempId => tempId !== instId)
-                        this.$success(this.$t('Association["取消关联成功"]'))
+                        this.$success(this.$t('取消关联成功'))
                     } else if (updateType === 'update') {
                         await this.deleteAssociation(this.isSource ? this.existInstAssociation[0]['bk_asst_inst_id'] : this.existInstAssociation[0]['bk_inst_id'])
                         this.hasChange = true
                         this.tempData = []
                         await this.createAssociation(instId)
                         this.tempData = [instId]
-                        this.$success(this.$t('Association["添加关联成功"]'))
+                        this.$success(this.$t('添加关联成功'))
                     }
                     this.hasChange = true
                 } catch (e) {
@@ -427,15 +433,19 @@
                 } else {
                     this.confirm.id = instId
                     this.confirm.instance && this.confirm.instance.destroy()
-                    this.confirm.instance = this.$tooltips({
-                        duration: -1,
+                    this.confirm.instance = this.$bkPopover(event.target, {
+                        content: this.$refs.confirmTips,
                         theme: 'light',
                         zIndex: 9999,
                         width: 230,
-                        container: document.body,
-                        target: event.target
+                        trigger: 'manual',
+                        boundary: 'window',
+                        arrow: true,
+                        interactive: true
                     })
-                    this.confirm.instance.$el.append(this.$refs.confirmTips)
+                    this.$nextTick(() => {
+                        this.confirm.instance.show()
+                    })
                 }
             },
             confirmUpdate () {
@@ -443,7 +453,7 @@
                 this.cancelUpdate()
             },
             cancelUpdate () {
-                this.confirm.instance && this.confirm.instance.setVisible(false)
+                this.confirm.instance && this.confirm.instance.hide()
             },
             async getInstance () {
                 const objId = this.currentAsstObj
@@ -544,7 +554,7 @@
                 if (asstObjId === this.objId) {
                     data.info = data.info.filter(item => item[this.instanceIdKey] !== this.instId)
                 }
-                this.table.list = data.info.map(item => this.$tools.flatternItem(this.properties, item))
+                this.table.list = data.info.map(item => this.$tools.flattenItem(this.properties, item))
             },
             getProperty (propertyId) {
                 return this.properties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === propertyId)
@@ -603,10 +613,9 @@
     }
     .new-association-table{
         margin: 20px 0 0;
-        border: none;
     }
     .confirm-tips {
-        padding: 9px 22px;
+        padding: 9px;
         .tips-content {
             color: $cmdbTextColor;
             line-height: 20px;

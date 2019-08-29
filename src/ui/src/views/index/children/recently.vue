@@ -36,30 +36,13 @@
             ...mapGetters('index', ['showClassify']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectModelClassify', ['models']),
-            basic () {
-                return [{
-                    id: 'business',
-                    bk_obj_icon: 'icon-cc-business',
-                    bk_obj_name: this.$t('Common["业务"]'),
-                    router: {
-                        name: 'business'
-                    }
-                }, {
-                    id: 'resource',
-                    bk_obj_icon: 'icon-cc-host-free-pool',
-                    bk_obj_name: this.$t('Nav["主机"]'),
-                    router: {
-                        name: 'resource'
-                    }
-                }]
-            },
             recentlyModels () {
                 const usercustomData = this.usercustom.recently_models || []
                 const recentlyModels = []
                 const basicModels = ['resource', 'business']
                 usercustomData.forEach(id => {
                     if (basicModels.includes(id)) {
-                        recentlyModels.push(this.basic.find(model => model.id === id))
+                        console.warn(`${id} model has been ignored in history.`)
                     } else {
                         const model = this.models.find(model => model.id === id)
                         if (model && !model.bk_ispaused) {
@@ -77,7 +60,7 @@
             },
             displayModels () {
                 const displayModels = []
-                const allModels = [...this.recentlyModels, ...this.basic, ...this.avaliableModels]
+                const allModels = [...this.recentlyModels, ...this.avaliableModels]
                 allModels.forEach(model => {
                     if (!displayModels.some(target => target.id === model.id)) {
                         displayModels.push(model)
@@ -98,11 +81,11 @@
                     name: 'generalModel',
                     params: {
                         objId: model.bk_obj_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 }
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.$router.push(router)
             },
             toggleClassify () {

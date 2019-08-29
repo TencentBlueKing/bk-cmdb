@@ -7,7 +7,7 @@
                     <template v-if="isEditable">
                         <div class="icon-box" @click="isIconListShow = true">
                             <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', { ispre: isPublicModel }]"></i>
-                            <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
+                            <p class="hover-text">{{$t('点击切换')}}</p>
                         </div>
                         <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
                             <the-choose-icon
@@ -24,11 +24,11 @@
                     </template>
                 </div>
                 <div class="model-text">
-                    <span>{{$t('ModelManagement["唯一标识"]')}}：</span>
+                    <span>{{$t('唯一标识')}}：</span>
                     <span class="text-content id">{{activeModel ? activeModel['bk_obj_id'] : ''}}</span>
                 </div>
                 <div class="model-text">
-                    <span>{{$t('Hosts["名称"]')}}：</span>
+                    <span>{{$t('名称')}}：</span>
                     <template v-if="!isEditName">
                         <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}
                         </span>
@@ -39,13 +39,14 @@
                     </template>
                     <template v-else>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelName') }">
-                            <input type="text" class="cmdb-form-input"
+                            <bk-input type="text" class="cmdb-form-input"
                                 name="modelName"
-                                v-validate="'required|singlechar'"
+                                v-validate="'required|singlechar|length:256'"
                                 v-model.trim="modelInfo.objName">
+                            </bk-input>
                         </div>
-                        <span class="text-primary" @click="saveModel">{{$t("Common['保存']")}}</span>
-                        <span class="text-primary" @click="isEditName = false">{{$t("Common['取消']")}}</span>
+                        <span class="text-primary" @click="saveModel">{{$t('保存')}}</span>
+                        <span class="text-primary" @click="isEditName = false">{{$t('取消')}}</span>
                     </template>
                 </div>
                 <div class="btn-group">
@@ -58,12 +59,12 @@
                             v-if="tab.active === 'field'"
                             :class="{ 'disabled': isReadOnly }">
                             <i class="icon-cc-import"></i>
-                            <span>{{$t('ModelManagement["导入"]')}}</span>
+                            <span>{{$t('导入')}}</span>
                             <input v-if="!isReadOnly && $isAuthorized($OPERATION.U_MODEL)" ref="fileInput" type="file" @change.prevent="handleFile">
                         </label>
                         <label class="label-btn" @click="exportField">
                             <i class="icon-cc-derivation"></i>
-                            <span>{{$t('ModelManagement["导出"]')}}</span>
+                            <span>{{$t('导出')}}</span>
                         </label>
                     </template>
                     <template v-if="isShowOperationButton">
@@ -73,13 +74,13 @@
                                 auth: [$OPERATION.U_MODEL]
                             }"
                             v-if="!isMainLine"
-                            v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
+                            v-bk-tooltips="$t('保留模型和相应实例，隐藏关联关系')">
                             <i class="bk-icon icon-minus-circle-shape"></i>
                             <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
-                                {{$t('ModelManagement["启用"]')}}
+                                {{$t('启用')}}
                             </span>
                             <span v-else @click="dialogConfirm('stop')">
-                                {{$t('ModelManagement["停用"]')}}
+                                {{$t('停用')}}
                             </span>
                         </label>
                         <label class="label-btn"
@@ -87,28 +88,28 @@
                                 active: !$isAuthorized($OPERATION.D_MODEL),
                                 auth: [$OPERATION.D_MODEL]
                             }"
-                            v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
+                            v-bk-tooltips="$t('删除模型和其下所有实例，此动作不可逆，请谨慎操作')"
                             @click="dialogConfirm('delete')">
                             <i class="icon-cc-del"></i>
-                            <span>{{$t("Common['删除']")}}</span>
+                            <span>{{$t('删除')}}</span>
                         </label>
                     </template>
                 </div>
             </template>
         </div>
-        <bk-tab class="model-details-tab" :active-name.sync="tab.active">
-            <bk-tabpanel name="field" :title="$t('ModelManagement[\'模型字段\']')">
+        <bk-tab class="model-details-tab" type="unborder-card" :active.sync="tab.active">
+            <bk-tab-panel name="field" :label="$t('模型字段')">
                 <the-field ref="field" v-if="tab.active === 'field'"></the-field>
-            </bk-tabpanel>
-            <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')" :show="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
+            </bk-tab-panel>
+            <bk-tab-panel name="relation" :label="$t('模型关联')" :visible="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
-            </bk-tabpanel>
-            <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="verification" :label="$t('唯一校验')">
                 <the-verification v-if="tab.active === 'verification'"></the-verification>
-            </bk-tabpanel>
-            <bk-tabpanel name="propertyGroup" :title="$t('ModelManagement[\'字段分组\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="propertyGroup" :label="$t('字段分组')">
                 <the-property-group v-if="tab.active === 'propertyGroup'"></the-property-group>
-            </bk-tabpanel>
+            </bk-tab-panel>
         </bk-tab>
     </div>
 </template>
@@ -229,12 +230,12 @@
             ]),
             getModelType () {
                 if (this.activeModel.ispre) {
-                    return this.$t('ModelManagement["内置"]')
+                    return this.$t('内置')
                 } else {
                     if (this.$tools.getMetadataBiz(this.activeModel)) {
-                        return this.$t('ModelManagement["自定义"]')
+                        return this.$t('自定义')
                     }
-                    return this.$t('ModelManagement["公共"]')
+                    return this.$t('公共')
                 }
             },
             async handleFile (e) {
@@ -264,7 +265,7 @@
                         } else if (data.hasOwnProperty('update_failed')) {
                             this.$error(data['update_failed'][0])
                         } else {
-                            this.$success(this.$t('ModelManagement["导入成功"]'))
+                            this.$success(this.$t('导入成功'))
                             this.$refs.field.initFieldList()
                         }
                     } else {
@@ -354,7 +355,7 @@
                 switch (type) {
                     case 'restart':
                         this.$bkInfo({
-                            title: this.$t('ModelManagement["确认要启用该模型？"]'),
+                            title: this.$t('确认要启用该模型？'),
                             confirmFn: () => {
                                 this.updateModelObject(false)
                             }
@@ -362,7 +363,7 @@
                         break
                     case 'stop':
                         this.$bkInfo({
-                            title: this.$t('ModelManagement["确认要停用该模型？"]'),
+                            title: this.$t('确认要停用该模型？'),
                             confirmFn: () => {
                                 this.updateModelObject(true)
                             }
@@ -370,7 +371,7 @@
                         break
                     case 'delete':
                         this.$bkInfo({
-                            title: this.$t('ModelManagement["确认要删除该模型？"]'),
+                            title: this.$t('确认要删除该模型？'),
                             confirmFn: () => {
                                 this.deleteModel()
                             }
@@ -574,6 +575,7 @@
             height: 100px;
             line-height: 100px;
             .label-btn {
+                outline: 0;
                 position: relative;
                 &.disabled {
                     cursor: not-allowed;

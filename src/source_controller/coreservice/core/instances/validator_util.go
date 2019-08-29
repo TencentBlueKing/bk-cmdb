@@ -13,6 +13,8 @@
 package instances
 
 import (
+	"configcenter/src/common/util"
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -21,7 +23,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 
-	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/rentiansheng/bk_bson/bson"
 	"github.com/tidwall/gjson"
 	mgobson "gopkg.in/mgo.v2/bson"
 )
@@ -80,7 +82,8 @@ type EnumVal struct {
 }
 
 // ParseEnumOption convert val to []EnumVal
-func ParseEnumOption(val interface{}) (EnumOption, error) {
+func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	enumOptions := []EnumVal{}
 	if nil == val || "" == val {
 		return enumOptions, nil
@@ -91,7 +94,7 @@ func ParseEnumOption(val interface{}) (EnumOption, error) {
 	case string:
 		err := json.Unmarshal([]byte(options), &enumOptions)
 		if nil != err {
-			blog.Errorf("ParseEnumOption error : %s", err.Error())
+			blog.Errorf("ParseEnumOption error : %s, rid: %s", err.Error(), rid)
 			return nil, err
 		}
 	case []interface{}:
@@ -142,7 +145,8 @@ func ParseEnumOption(val interface{}) (EnumOption, error) {
 }
 
 // parseIntOption  parse int data in option
-func parseIntOption(val interface{}) IntOption {
+func parseIntOption(ctx context.Context, val interface{}) IntOption {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	intOption := IntOption{}
 	if nil == val || "" == val {
 		return intOption
@@ -165,13 +169,14 @@ func parseIntOption(val interface{}) IntOption {
 		intOption.Min = getString(opt["min"])
 		intOption.Max = getString(opt["max"])
 	default:
-		blog.Warnf("unknow val type: %#v", val)
+		blog.Warnf("unknow val type: %#v, rid: %s", val, rid)
 	}
 	return intOption
 }
 
 // parseFloatOption  parse float data in option
-func parseFloatOption(val interface{}) FloatOption {
+func parseFloatOption(ctx context.Context, val interface{}) FloatOption {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	floatOption := FloatOption{}
 	if nil == val || "" == val {
 		return floatOption
@@ -194,13 +199,14 @@ func parseFloatOption(val interface{}) FloatOption {
 		floatOption.Min = getString(opt["min"])
 		floatOption.Max = getString(opt["max"])
 	default:
-		blog.Warnf("unknow val type: %#v", val)
+		blog.Warnf("unknow val type: %#v, rid: %s", val, rid)
 	}
 	return floatOption
 }
 
 // FillLostedFieldValue fill the value in inst map data
-func FillLostedFieldValue(valData mapstr.MapStr, propertys []metadata.Attribute, ignorefields []string) {
+func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute, ignorefields []string) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	ignores := map[string]bool{}
 	for _, field := range ignorefields {
 		ignores[field] = true
@@ -222,9 +228,9 @@ func FillLostedFieldValue(valData mapstr.MapStr, propertys []metadata.Attribute,
 			case common.FieldTypeInt:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeEnum:
-				enumOptions, err := ParseEnumOption(field.Option)
+				enumOptions, err := ParseEnumOption(ctx, field.Option)
 				if err != nil {
-					blog.Warnf("ParseEnumOption failed: %v", err)
+					blog.Warnf("ParseEnumOption failed: %v, rid: %s", err, rid)
 					valData[field.PropertyID] = nil
 					continue
 				}

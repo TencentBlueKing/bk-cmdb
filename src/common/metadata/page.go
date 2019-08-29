@@ -31,7 +31,23 @@ const (
 type BasePage struct {
 	Sort  string `json:"sort,omitempty"`
 	Limit int    `json:"limit,omitempty"`
-	Start int    `json:"start,omitempty"`
+	Start int    `json:"start"`
+}
+
+func (page BasePage) Validate() (string, error) {
+	if page.Limit > common.BKMaxPageSize {
+		return "limit", fmt.Errorf("exceed max page size: %d", common.BKMaxPageSize)
+	}
+	return "", nil
+}
+
+// IsIllegal  limit is illegal
+func (page BasePage) IsIllegal() bool {
+	if page.Limit > common.BKMaxPageSize && page.Limit != common.BKNoLimit ||
+		page.Limit == 0 {
+		return true
+	}
+	return false
 }
 
 func ParsePage(origin interface{}) BasePage {

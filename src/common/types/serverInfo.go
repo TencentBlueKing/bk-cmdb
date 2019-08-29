@@ -22,25 +22,23 @@ const (
 	CC_SERVCONF_BASEPATH  = "/cc/services/config"
 	CC_SERVERROR_BASEPATH = "/cc/services/errors"
 	CC_SERVLANG_BASEPATH  = "/cc/services/language"
+
+	CC_DISCOVERY_PREFIX = "cc_"
 )
 
 // cc modules
 const (
-	// CC_MODULE_AUDITCONTROLLER  = "auditcontroller"
-	CC_MODULE_HOSTCONTROLLER   = "hostcontroller"
-	CC_MODULE_OBJECTCONTROLLER = "objectcontroller"
-	CC_MODULE_PROCCONTROLLER   = "proccontroller"
-	CC_MODULE_DATACOLLECTION   = "datacollection"
-	CC_MODULE_HOST             = "host"
-	CC_MODULE_MIGRATE          = "migrate"
-	CC_MODULE_PROC             = "proc"
-	CC_MODULE_TOPO             = "topo"
-	CC_MODULE_APISERVER        = "apiserver"
-	CC_MODULE_WEBSERVER        = "webserver"
-	CC_MODULE_EVENTSERVER      = "eventserver"
-	CC_MODULE_CORESERVICE      = "coreservice"
-	GSE_MODULE_PROCSERVER      = "gseprocserver"
-	CC_MODULE_TXC              = "txc"
+	CC_MODULE_DATACOLLECTION = "datacollection"
+	CC_MODULE_HOST           = "host"
+	CC_MODULE_MIGRATE        = "migrate"
+	CC_MODULE_PROC           = "proc"
+	CC_MODULE_TOPO           = "topo"
+	CC_MODULE_APISERVER      = "apiserver"
+	CC_MODULE_WEBSERVER      = "webserver"
+	CC_MODULE_EVENTSERVER    = "eventserver"
+	CC_MODULE_CORESERVICE    = "coreservice"
+	GSE_MODULE_PROCSERVER    = "gseprocserver"
+	CC_MODULE_TXC            = "txc"
 	// CC_MODULE_SYNCHRONZESERVER multiple cmdb synchronize data server
 	CC_MODULE_SYNCHRONZESERVER = "sync"
 )
@@ -48,9 +46,6 @@ const (
 // AllModule all cc module
 var AllModule = map[string]bool{
 	// CC_MODULE_AUDITCONTROLLER:  true,
-	CC_MODULE_HOSTCONTROLLER:   true,
-	CC_MODULE_OBJECTCONTROLLER: true,
-	CC_MODULE_PROCCONTROLLER:   true,
 	CC_MODULE_DATACOLLECTION:   true,
 	CC_MODULE_HOST:             true,
 	CC_MODULE_MIGRATE:          true,
@@ -61,7 +56,7 @@ var AllModule = map[string]bool{
 	CC_MODULE_EVENTSERVER:      true,
 	CC_MODULE_TXC:              true,
 	CC_MODULE_CORESERVICE:      true,
-	// CC_MODULE_SYNCHRONZESERVER: true,
+	CC_MODULE_SYNCHRONZESERVER: true,
 }
 
 // cc functionality define
@@ -152,4 +147,11 @@ func (s *ServerInfo) Address() string {
 		return ""
 	}
 	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.IP, s.Port)
+}
+
+func (s *ServerInfo) Instance() string {
+	if s == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s:%d", s.IP, s.Port)
 }

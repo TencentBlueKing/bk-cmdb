@@ -22,18 +22,19 @@
                 </span>
             </div>
         </div>
-        <cmdb-collapse-transition>
-            <cmdb-table class="association-table"
-                v-show="expanded"
-                :header="header"
-                :list="flatternList"
-                :show-footer="false"
-                :sortable="false"
-                :max-height="462"
-                :empty-height="40">
-                <template slot="__operation__" slot-scope="{ item }">
-                    <span class="text-primary" @click="showTips($event, item)" v-if="$isAuthorized(updateAuth)">
-                        {{$t('Association["取消关联"]')}}
+        <bk-table class="association-table"
+            v-show="expanded"
+            :data="flattenList"
+            :max-height="462">
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+            </bk-table-column>
+            <bk-table-column :label="$t('操作')">
+                <template slot-scope="{ row }">
+                    <span class="text-primary" @click="showTips($event, row)" v-if="$isAuthorized(updateAuth)">
+                        {{$t('取消关联')}}
                     </span>
                     <span class="text-primary disabled"
                         v-else
@@ -41,16 +42,16 @@
                             active: true,
                             auth: [updateAuth]
                         }">
-                        {{$t('Association["取消关联"]')}}
+                        {{$t('取消关联')}}
                     </span>
                 </template>
-            </cmdb-table>
-        </cmdb-collapse-transition>
-        <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.item">
-            <p class="tips-content">{{$t('Association["确认取消"]')}}</p>
+            </bk-table-column>
+        </bk-table>
+        <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.show">
+            <p class="tips-content">{{$t('确认取消')}}</p>
             <div class="tips-option">
-                <bk-button class="tips-button" type="primary" @click="cancelAssociation">{{$t('Common["确认"]')}}</bk-button>
-                <bk-button class="tips-button" type="default" @click="hideTips">{{$t('Common["取消"]')}}</bk-button>
+                <bk-button class="tips-button" theme="primary" @click.stop="cancelAssociation">{{$t('确认')}}</bk-button>
+                <bk-button class="tips-button" theme="default" @click.stop="hideTips">{{$t('取消')}}</bk-button>
             </div>
         </div>
     </div>
@@ -88,7 +89,9 @@
                 confirm: {
                     instance: null,
                     item: null,
-                    target: null
+                    target: null,
+                    id: null,
+                    show: false
                 }
             }
         },
@@ -104,8 +107,8 @@
                 }
                 return this.$OPERATION.U_HOST
             },
-            flatternList () {
-                return this.$tools.flatternList(this.properties, this.list)
+            flattenList () {
+                return this.$tools.flattenList(this.properties, this.list)
             },
             hostId () {
                 return parseInt(this.$route.params.id)
@@ -150,11 +153,6 @@
                         id: property.bk_property_id,
                         name: property.bk_property_name
                     }
-                })
-                header.push({
-                    id: '__operation__',
-                    name: this.$t('Common["操作"]'),
-                    width: 150
                 })
                 return header
             },
@@ -283,7 +281,7 @@
             getModelInstances (config) {
                 return this.$store.dispatch('objectCommonInst/searchInst', {
                     objId: this.id,
-                    params: {
+                    params: this.$injectMetadata({
                         fields: {},
                         condition: {
                             [this.id]: [{
@@ -296,7 +294,7 @@
                             ...this.page,
                             sort: 'bk_inst_id'
                         }
-                    },
+                    }),
                     config
                 }).then(data => {
                     data = data || {
@@ -332,13 +330,14 @@
                         this.pagination.current = 1
                         this.getInstances()
                     })
-                    this.$success(this.$t('Association["取消关联成功"]'))
+                    this.$success(this.$t('取消关联成功'))
+                    this.hideTips()
                 } catch (e) {
                     console.error(e)
                 }
             },
             getPaginationInfo () {
-                return this.$tc('Common["页码"]', this.pagination.current, {
+                return this.$tc('页码', this.pagination.current, {
                     current: this.pagination.current,
                     count: this.pagination.count,
                     total: this.totalPage
@@ -357,21 +356,26 @@
                 if (event && event.target === this.confirm.target) {
                     return false
                 }
-                this.confirm.instance && this.confirm.instance.setVisible(false)
+                this.confirm.instance && this.confirm.instance.hide()
             },
             showTips (event, item) {
                 this.confirm.item = item
-                this.confirm.target = event.target
+                this.confirm.id = item.bk_inst_id
                 this.confirm.instance && this.confirm.instance.destroy()
-                this.confirm.instance = this.$tooltips({
-                    duration: 100,
+                this.confirm.instance = this.$bkPopover(event.target, {
+                    content: this.$refs.confirmTips,
                     theme: 'light',
                     zIndex: 9999,
                     width: 200,
-                    container: document.body,
-                    target: event.target
+                    trigger: 'manual',
+                    boundary: 'window',
+                    arrow: true,
+                    interactive: true
                 })
-                this.confirm.instance.$el.append(this.$refs.confirmTips)
+                this.confirm.show = true
+                this.$nextTick(() => {
+                    this.confirm.instance.show()
+                })
             }
         }
     }
@@ -422,7 +426,7 @@
         }
     }
     .confirm-tips {
-        padding: 9px;
+        padding: 9px 0;
         text-align: center;
         .tips-content {
             color: $cmdbTextColor;

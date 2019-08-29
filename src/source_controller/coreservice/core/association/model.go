@@ -74,13 +74,13 @@ func (m *associationModel) createModelAssociation(ctx core.ContextParams, inputP
 	if enableMainlineAssociationType == false {
 		// AsstKindID shouldn't be use bk_mainline
 		if asstKindID == common.AssociationKindMainline {
-			blog.Errorf("use inner association type: %v is forbidden", common.AssociationKindMainline)
+			blog.Errorf("use inner association type: %v is forbidden, rid: %s", common.AssociationKindMainline, ctx.ReqID)
 			return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrorTopoAssociationKindMainlineUnavailable, asstKindID)
 		}
 	} else {
 		// AsstKindID could only be bk_mainline
 		if asstKindID != common.AssociationKindMainline {
-			blog.Errorf("use CreateMainlineObjectAssociation method but bk_asst_id is: %s", asstKindID)
+			blog.Errorf("use CreateMainlineObjectAssociation method but bk_asst_id is: %s, rid: %s", asstKindID, ctx.ReqID)
 			return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrorTopoAssociationKindInconsistent, asstKindID)
 		}
 	}
@@ -128,7 +128,7 @@ func (m *associationModel) UpdateModelAssociation(ctx core.ContextParams, inputP
 	}
 
 	if len(filterOutFields) > 0 {
-		blog.Warnf("update object association got invalid fields: %v", filterOutFields)
+		blog.Warnf("update object association got invalid fields: %v, rid: %s", filterOutFields, ctx.ReqID)
 	}
 
 	cnt, err := m.update(ctx, validData, updateCond)

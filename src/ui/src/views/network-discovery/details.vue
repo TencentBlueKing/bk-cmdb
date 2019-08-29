@@ -5,11 +5,11 @@
                 <p class="title clearfix">
                     <label class="label" @click="propertyTable.isShow = !propertyTable.isShow">
                         <i class="bk-icon icon-angle-down" :class="{ 'rotate': !propertyTable.isShow }"></i>
-                        <span>{{$t('Common["属性"]')}}</span>
+                        <span>{{$t('属性')}}</span>
                     </label>
                     <label class="cmdb-form-checkbox cmdb-checkbox-small">
                         <input type="checkbox" :disabled="ignore" v-model="propertyTable.isShowIgnore">
-                        <span class="cmdb-checkbox-text">{{$t('NetworkDiscovery["显示忽略"]')}}</span>
+                        <span class="cmdb-checkbox-text">{{$t('显示忽略')}}</span>
                     </label>
                 </p>
                 <cmdb-collapse-transition>
@@ -26,11 +26,11 @@
                             <template v-for="(header, index) in propertyTable.header" :slot="header.id" slot-scope="{ item }">
                                 <template v-if="header.id === 'isrequired'">
                                     <span :key="index" :class="{ 'disabled': item.method !== 'accept' }">
-                                        {{item.isrequired ? $t('NetworkDiscovery["是"]') : $t('NetworkDiscovery["否"]')}}
+                                        {{item.isrequired ? $t('是') : $t('否')}}
                                     </span>
                                 </template>
                                 <template v-else-if="header.id === 'operation'">
-                                    <span v-if="!item.isrequired" :key="index" class="text-primary" :class="{ 'disabled': ignore }" @click.stop="togglePropertyMethod(item)">{{item.method === 'accept' ? $t('NetworkDiscovery["忽略"]') : $t('NetworkDiscovery["取消忽略"]')}}</span>
+                                    <span v-if="!item.isrequired" :key="index" class="text-primary" :class="{ 'disabled': ignore }" @click.stop="togglePropertyMethod(item)">{{item.method === 'accept' ? $t('忽略') : $t('取消忽略')}}</span>
                                 </template>
                                 <template v-else>
                                     <span :key="index" :class="{ 'disabled': item.method !== 'accept' }">{{item[header.id]}}</span>
@@ -44,11 +44,11 @@
                 <p class="title clearfix">
                     <label class="label" @click="relationTable.isShow = !relationTable.isShow">
                         <i class="bk-icon icon-angle-down" :class="{ 'rotate': !relationTable.isShow }"></i>
-                        <span>{{$t('NetworkDiscovery["关系"]')}}</span>
+                        <span>{{$t('关系')}}</span>
                     </label>
                     <label class="cmdb-form-checkbox cmdb-checkbox-small">
                         <input type="checkbox" :disabled="ignore" v-model="relationTable.isShowIgnore">
-                        <span class="cmdb-checkbox-text">{{$t('NetworkDiscovery["显示忽略"]')}}</span>
+                        <span class="cmdb-checkbox-text">{{$t('显示忽略')}}</span>
                     </label>
                 </p>
                 <cmdb-collapse-transition>
@@ -67,7 +67,7 @@
                                     <span :key="index" :class="{ 'color-danger': item.action === 'delete', 'disabled': item.method !== 'accept' }">{{actionMap[item.action]}}</span>
                                 </template>
                                 <template v-else-if="header.id === 'operation'">
-                                    <span :key="index" class="text-primary" :class="{ 'disabled': ignore }" @click.stop="toggleRelationMethod(item)">{{item.method === 'accept' ? $t('NetworkDiscovery["忽略"]') : $t('NetworkDiscovery["取消忽略"]')}}</span>
+                                    <span :key="index" class="text-primary" :class="{ 'disabled': ignore }" @click.stop="toggleRelationMethod(item)">{{item.method === 'accept' ? $t('忽略') : $t('取消忽略')}}</span>
                                 </template>
                                 <template v-else>
                                     <span :key="index" :class="{ 'disabled': item.method !== 'accept' }">{{item[header.id]}}</span>
@@ -79,7 +79,7 @@
             </div>
         </div>
         <div class="footer">
-            <span>{{$t('NetworkDiscovery["忽略此实例"]')}}</span>
+            <span>{{$t('忽略此实例')}}</span>
             <bk-switcher
                 class="switcher"
                 size="small"
@@ -87,11 +87,11 @@
                 :selected="ignore"
                 @change="toggleSwitcher">
             </bk-switcher>
-            <bk-button type="default" :disabled="detailPage.prev" @click="updateView('prev')">
-                {{$t('NetworkDiscovery["上一个"]')}}
+            <bk-button theme="default" :disabled="detailPage.prev" @click="updateView('prev')">
+                {{$t('上一个')}}
             </bk-button>
-            <bk-button type="default" :disabled="detailPage.next" @click="updateView('next')">
-                {{$t('NetworkDiscovery["下一个"]')}}
+            <bk-button theme="default" :disabled="detailPage.next" @click="updateView('next')">
+                {{$t('下一个')}}
             </bk-button>
         </div>
     </div>
@@ -122,19 +122,19 @@
                     isShow: true,
                     header: [{
                         id: 'bk_property_name',
-                        name: this.$t('NetworkDiscovery["属性名"]')
+                        name: this.$t('属性名')
                     }, {
                         id: 'isrequired',
-                        name: this.$t('NetworkDiscovery["必须"]')
+                        name: this.$t('必须')
                     }, {
                         id: 'pre_value',
-                        name: this.$t('NetworkDiscovery["原值"]')
+                        name: this.$t('原值')
                     }, {
                         id: 'value',
-                        name: this.$t('NetworkDiscovery["新值"]')
+                        name: this.$t('新值')
                     }, {
                         id: 'operation',
-                        name: this.$t('Association["操作"]'),
+                        name: this.$t('操作'),
                         sortable: false
                     }],
                     list: [],
@@ -151,16 +151,16 @@
                     isShow: true,
                     header: [{
                         id: 'action',
-                        name: this.$t('NetworkDiscovery["操作方式"]')
+                        name: this.$t('操作方式')
                     }, {
                         id: 'bk_asst_obj_name',
-                        name: this.$t('OperationAudit["模型"]')
+                        name: this.$t('模型')
                     }, {
                         id: 'configuration',
-                        name: this.$t('NetworkDiscovery["配置信息"]')
+                        name: this.$t('配置信息')
                     }, {
                         id: 'operation',
-                        name: this.$t('Association["操作"]'),
+                        name: this.$t('操作'),
                         sortable: false
                     }],
                     list: [],
@@ -173,8 +173,8 @@
                     sort: '-last_time'
                 },
                 actionMap: {
-                    'create': this.$t("Association['新增关联']"),
-                    'delete': this.$t("Common['删除关联']")
+                    'create': this.$t('新增关联'),
+                    'delete': this.$t('删除关联')
                 }
             }
         },

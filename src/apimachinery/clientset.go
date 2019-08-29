@@ -20,10 +20,7 @@ import (
 	"configcenter/src/apimachinery/eventserver"
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/healthz"
-	"configcenter/src/apimachinery/hostcontroller"
 	"configcenter/src/apimachinery/hostserver"
-	"configcenter/src/apimachinery/objcontroller"
-	"configcenter/src/apimachinery/proccontroller"
 	"configcenter/src/apimachinery/procserver"
 	"configcenter/src/apimachinery/toposerver"
 	"configcenter/src/apimachinery/util"
@@ -37,9 +34,6 @@ type ClientSetInterface interface {
 	ApiServer() apiserver.ApiServerClientInterface
 	EventServer() eventserver.EventServerClientInterface
 
-	ObjectController() objcontroller.ObjControllerClientInterface
-	ProcController() proccontroller.ProcCtrlClientInterface
-	HostController() hostcontroller.HostCtrlClientInterface
 	CoreService() coreservice.CoreServiceClientInterface
 
 	Healthz() healthz.HealthzInterface
@@ -104,16 +98,6 @@ func (cs *ClientSet) TopoServer() toposerver.TopoServerClientInterface {
 	return toposerver.NewTopoServerClient(c, cs.version)
 }
 
-func (cs *ClientSet) ObjectController() objcontroller.ObjControllerClientInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.ObjectCtrl(),
-		Throttle: cs.throttle,
-		Mock:     cs.Mock,
-	}
-	return objcontroller.NewObjectControllerInterface(c, cs.version)
-}
-
 func (cs *ClientSet) ProcServer() procserver.ProcServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -153,27 +137,6 @@ func (cs *ClientSet) EventServer() eventserver.EventServerClientInterface {
 	}
 	cs.Mock.SetMockData = false
 	return eventserver.NewEventServerClientInterface(c, cs.version)
-}
-
-func (cs *ClientSet) ProcController() proccontroller.ProcCtrlClientInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.ProcCtrl(),
-		Throttle: cs.throttle,
-		Mock:     cs.Mock,
-	}
-	cs.Mock.SetMockData = false
-	return proccontroller.NewProcCtrlClientInterface(c, cs.version)
-}
-
-func (cs *ClientSet) HostController() hostcontroller.HostCtrlClientInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.HostCtrl(),
-		Throttle: cs.throttle,
-		Mock:     cs.Mock,
-	}
-	return hostcontroller.NewHostCtrlClientInterface(c, cs.version)
 }
 
 func (cs *ClientSet) Healthz() healthz.HealthzInterface {

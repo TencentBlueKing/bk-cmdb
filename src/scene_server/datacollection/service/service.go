@@ -24,7 +24,7 @@ import (
 	"configcenter/src/storage/dal"
 
 	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
@@ -51,7 +51,7 @@ func (s *Service) WebService() *restful.Container {
 		return s.CCErr
 	}
 
-	api.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/collector/v3").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	api.Route(api.POST("/netcollect/device/action/create").To(s.CreateDevice))
 	api.Route(api.POST("/netcollect/device/{device_id}/action/update").To(s.UpdateDevice))
@@ -130,5 +130,5 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Message: meta.Message,
 	}
 	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteEntity(answer)
+	_ = resp.WriteEntity(answer)
 }

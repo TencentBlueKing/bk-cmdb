@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/auth"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -21,8 +20,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-
+	"configcenter/src/auth"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -38,14 +36,18 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"configcenter/src/storage/dal"
+	"configcenter/src/thirdpartyclient/elasticsearch"
+
+	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
 	Engine      *backbone.Engine
-	Txn         dal.DB
+	Txn         dal.Transcation
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
+	Es          *elasticsearch.EsSrv
 	Error       errors.CCErrorIf
 	Language    language.CCLanguageIf
 	actions     []action
@@ -211,7 +213,7 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				value, err := ioutil.ReadAll(req.Request.Body)
 				if err != nil {
-					blog.Errorf("read http request body failed, error:%s", err.Error())
+					blog.Errorf("read http request body failed, error:%s, rid: %s", err.Error(), rid)
 					errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 					s.sendResponse(resp, common.CCErrCommHTTPReadBodyFailed, errStr)
 					return
@@ -221,7 +223,7 @@ func (s *Service) Actions() []*httpserver.Action {
 				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
 					if err = json.Unmarshal(value, &mData); nil != err && len(value) != 0 {
-						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+						blog.Errorf("failed to unmarshal the data, error %s, rid: %s", err.Error(), rid)
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
@@ -229,7 +231,7 @@ func (s *Service) Actions() []*httpserver.Action {
 				} else {
 					mData, err = act.HandlerParseOriginDataFunc(value)
 					if nil != err {
-						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+						blog.Errorf("failed to unmarshal the data, error %s, rid: %s", err.Error(), rid)
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
@@ -257,7 +259,7 @@ func (s *Service) Actions() []*httpserver.Action {
 					md := new(MetaShell)
 					if len(value) != 0 {
 						if err := json.Unmarshal(value, md); err != nil {
-							blog.Errorf("parse metadata from request failed, err: %v", err)
+							blog.Errorf("parse metadata from request failed, err: %v, rid: %s", err, rid)
 							s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed))
 							return
 						}

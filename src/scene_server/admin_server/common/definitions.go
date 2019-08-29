@@ -35,7 +35,7 @@ const (
 // process group info
 const (
 	ProcPort     = "proc_port"
-	ProcPortName = "监听端口"
+	ProcPortName = "监听信息"
 
 	ProcGsekitBaseInfo     = "gsekit_baseinfo"
 	ProcGsekitBaseInfoName = "GSEkit 基本信息"

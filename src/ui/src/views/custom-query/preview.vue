@@ -1,21 +1,24 @@
 <template>
     <div class="userapi-preview-wrapper">
         <div class="userapi-preview" v-click-outside="closePreview">
-            <h3 class="preview-title">{{$t("CustomQuery['预览查询']")}}</h3>
+            <h3 class="preview-title">{{$t('预览查询')}}</h3>
             <i class="bk-icon icon-close" @click="closePreview"></i>
-            <cmdb-table
-                :loading="$loading('searchHost')"
-                :header="table.header"
-                :list="table.list"
-                :pagination.sync="table.pagination"
-                :wrapper-minus-height="220"
-                @handlePageChange="handlePageChange"
-                @handleSizeChange="handleSizeChange"
-                @handleSortChange="handleSortChange">
-                <template v-for="({ id,name, property }, index) in table.header" :slot="id" slot-scope="{ item }">
-                    <template>{{getHostCellText(property, item)}}</template>
-                </template>
-            </cmdb-table>
+            <bk-table
+                v-bkloading="{ isLoading: $loading('searchHost') }"
+                :data="table.list"
+                :pagination="table.pagination"
+                :max-height="$APP.height - 220"
+                @page-change="handlePageChange"
+                @page-limit-change="handleSizeChange"
+                @sort-change="handleSortChange">
+                <bk-table-column v-for="column in table.header"
+                    sortable="custom"
+                    :key="column.id"
+                    :prop="column.id"
+                    :label="column.name">
+                    <template slot-scope="{ row }">{{getHostCellText(column.property, row)}}</template>
+                </bk-table-column>
+            </bk-table>
         </div>
     </div>
 </template>
@@ -44,7 +47,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        size: 10
+                        limit: 10
                     },
                     sort: ''
                 }
@@ -68,8 +71,8 @@
                     'bk_biz_id': this.apiParams['bk_biz_id'],
                     condition: condition,
                     page: {
-                        start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                        limit: this.table.pagination.size,
+                        start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                        limit: this.table.pagination.limit,
                         sort: this.table.sort
                     }
                 }
@@ -89,8 +92,8 @@
                 const originalValues = item[objId] instanceof Array ? item[objId] : [item[objId]]
                 const text = []
                 originalValues.forEach(value => {
-                    const flatternedText = this.$tools.getPropertyText(property, value)
-                    flatternedText ? text.push(flatternedText) : void (0)
+                    const flattenedText = this.$tools.getPropertyText(property, value)
+                    flattenedText ? text.push(flattenedText) : void (0)
                 })
                 return text.join(',') || '--'
             },
@@ -107,21 +110,21 @@
                         header = {
                             objId: 'set',
                             id: 'bk_set_name',
-                            name: this.$t("Hosts['集群']"),
+                            name: this.$t('集群'),
                             sortable: false
                         }
                     } else if (propertyId === 'bk_module_name') {
                         header = {
                             objId: 'module',
                             id: 'bk_module_name',
-                            name: this.$t("Hosts['模块']"),
+                            name: this.$t('模块'),
                             sortable: false
                         }
                     } else if (propertyId === 'bk_biz_name') {
                         header = {
                             objId: 'biz',
                             id: 'bk_biz_name',
-                            name: this.$t("Common['业务']")
+                            name: this.$t('业务')
                         }
                     } else {
                         const property = this.attribute.host.properties.find(property => propertyId === property['bk_property_id'])
@@ -156,11 +159,11 @@
                 this.getPreviewList()
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.getPreviewList()
             },
             closePreview () {

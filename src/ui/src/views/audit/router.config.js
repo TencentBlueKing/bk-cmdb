@@ -10,7 +10,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'audit',
-            i18n: 'Nav["操作审计"]',
+            i18n: '操作审计',
             path: path,
             parent: NAV_AUDIT_ANALYSE
         },
@@ -19,6 +19,7 @@ export default {
             setAuthScope () {
                 this.authScope = 'global'
             }
-        }
+        },
+        i18nTitle: '操作审计'
     })
 }

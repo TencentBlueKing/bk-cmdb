@@ -12,22 +12,26 @@
     <div class="pop-wrapper">
         <div class="pop-master">
             <div class="pop-box">
-                <div class="title">{{$t('EventPush["推送测试"]')}}</div>
+                <div class="title">{{$t('推送测试')}}</div>
                 <div class="content">
-                    <p class="info">{{$t('EventPush["配置平台以POST方法推送以下示例数据到您配置的URL"]')}}</p>
+                    <p class="info">{{$t('配置平台以POST方法推送以下示例数据到您配置的URL')}}</p>
                     <div class="content-box">
                         <pre>{{example}}</pre>
                     </div>
                     <div class="btn-group">
-                        <bk-button type="primary" class="btn" @click="testTelnet" :loading="$loading(['testPing', 'testTelnet'])">{{$t('EventPush["只测试连通性"]')}}</bk-button>
-                        <bk-button type="primary" class="btn" @click="testPing" :loading="$loading(['testPing', 'testTelnet'])">{{$t('EventPush["推送测试"]')}}</bk-button>
-                        <bk-button type="default" class="btn vice-btn" @click="closePop">{{$t('Common["取消"]')}}</bk-button>
+                        <bk-button theme="primary" class="btn" @click="testTelnet" :loading="$loading(['testPing', 'testTelnet'])">
+                            {{$t('只测试连通性')}}
+                        </bk-button>
+                        <bk-button theme="primary" class="btn" @click="testPing" :loading="$loading(['testPing', 'testTelnet'])">
+                            {{$t('推送测试')}}
+                        </bk-button>
+                        <bk-button theme="default" class="btn vice-btn" @click="closePop">{{$t('取消')}}</bk-button>
                     </div>
                 </div>
             </div>
             <div class="result-info" v-show="isResultShow" v-bkloading="{ isLoading: $loading(['testPing', 'testTelnet']) }">
-                <p class="text-success" v-if="resultInfo.result"><i class="bk-icon icon-check-circle-shape"></i>{{$t('EventPush["推送成功"]')}}</p>
-                <p class="text-danger" v-else><i class="bk-icon icon-close-circle-shape"></i>{{$t('EventPush["推送失败"]')}}</p>
+                <p class="text-success" v-if="resultInfo.result"><i class="bk-icon icon-check-circle-shape"></i>{{$t('推送成功')}}</p>
+                <p class="text-danger" v-else><i class="bk-icon icon-close-circle-shape"></i>{{$t('推送失败')}}</p>
                 <template v-if="resultInfo.result">
                     <ul class="result-data" :class="{ 'close': !isResultOpen }" v-if="typeof (resultInfo.data) === 'string'">
                         <li>{{resultInfo.data}}</li>
@@ -45,7 +49,7 @@
                     :class="{ 'close': !isResultOpen }"
                     v-if="resultInfo.result"
                     @click="isResultOpen = !isResultOpen">
-                    {{isResultOpen ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
+                    {{isResultOpen ? $t('收起') : $t('展开')}}
                 </a>
             </div>
         </div>

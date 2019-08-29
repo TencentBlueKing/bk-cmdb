@@ -34,6 +34,7 @@ func (s *coreService) initModel() {
 	s.addAction(http.MethodDelete, "/delete/model", s.DeleteModel, nil)
 	s.addAction(http.MethodDelete, "/delete/model/cascade", s.CascadeDeleteModel, nil)
 	s.addAction(http.MethodPost, "/read/model", s.SearchModel, nil)
+	s.addAction(http.MethodGet, "/read/model/statistics", s.GetModelStatistics, nil)
 
 	// init model attribute groups methods
 	s.addAction(http.MethodPost, "/create/model/{bk_obj_id}/group", s.CreateModelAttributeGroup, nil)
@@ -111,17 +112,89 @@ func (s *coreService) initMainline() {
 }
 
 func (s *coreService) host() {
-	s.addAction(http.MethodPost, "/set/module/host/relation/inner/module", s.TransferHostToDefaultModule, nil)
-	s.addAction(http.MethodPost, "/set/module/host/relation/module", s.TransferHostModule, nil)
-	s.addAction(http.MethodPost, "/set/module/host/relation/cross/business", s.TransferHostCrossBusiness, nil)
-	s.addAction(http.MethodPost, "/read/module/host/relation", s.GetHostModuleRelation, nil)
-	s.addAction(http.MethodDelete, "/delete/host", s.DeleteHost, nil)
+	s.addAction(http.MethodPost, "/set/module/host/relation/inner/module", s.TransferHostToInnerModule, nil)
+	s.addAction(http.MethodPost, "/set/module/host/relation/module", s.TransferHostToNormalModule, nil)
+	s.addAction(http.MethodPost, "/set/module/host/relation/cross/business", s.TransferHostToAnotherBusiness, nil)
+	s.addAction(http.MethodDelete, "/delete/host", s.DeleteHostFromSystem, nil)
+	s.addAction(http.MethodDelete, "/delete/host/host_module_relations", s.RemoveFromModule, nil)
 
+	s.addAction(http.MethodPost, "/read/module/host/relation", s.GetHostModuleRelation, nil)
+	s.addAction(http.MethodPost, "/read/host/indentifier", s.HostIdentifier, nil)
+
+	s.addAction(http.MethodGet, "/find/host/{bk_host_id}", s.GetHostByID, nil)
+	s.addAction(http.MethodPost, "/findmany/hosts/search", s.GetHosts, nil)
+	s.addAction(http.MethodGet, "/find/host/snapshot/{bk_host_id}", s.GetHostSnap, nil)
+
+	s.addAction(http.MethodPost, "/find/host/lock", s.LockHost, nil)
+	s.addAction(http.MethodDelete, "/delete/host/lock", s.UnlockHost, nil)
+	s.addAction(http.MethodPost, "/findmany/host/lock/search", s.QueryLockHost, nil)
+
+	s.addAction(http.MethodPost, "/create/userapi", s.AddUserConfig, nil)
+	s.addAction(http.MethodPut, "/update/userapi/{bk_biz_id}/{id}", s.UpdateUserConfig, nil)
+	s.addAction(http.MethodDelete, "/delete/userapi/{bk_biz_id}/{id}", s.DeleteUserConfig, nil)
+	s.addAction(http.MethodPost, "/findmany/userapi/search", s.GetUserConfig, nil)
+	s.addAction(http.MethodGet, "/find/userapi/detail/{bk_biz_id}/{id}", s.UserConfigDetail, nil)
+	s.addAction(http.MethodPost, "/create/usercustom/{bk_user}", s.AddUserCustom, nil)
+	s.addAction(http.MethodPut, "/update/usercustom/{bk_user}/{id}", s.UpdateUserCustomByID, nil)
+	s.addAction(http.MethodGet, "/find/usercustom/user/search/{bk_user}", s.GetUserCustomByUser, nil)
+	s.addAction(http.MethodPost, "/find/usercustom/default/search/{bk_user}", s.GetDefaultUserCustom, nil)
+
+	s.addAction(http.MethodPost, "/create/hosts/favorites/{user}", s.AddHostFavourite, nil)
+	s.addAction(http.MethodPut, "/update/hosts/favorites/{user}/{id}", s.UpdateHostFavouriteByID, nil)
+	s.addAction(http.MethodDelete, "/delete/hosts/favorites/{user}/{id}", s.DeleteHostFavouriteByID, nil)
+	s.addAction(http.MethodPost, "/findmany/hosts/favorites/search/{user}", s.GetHostFavourites, nil)
+	s.addAction(http.MethodGet, "/find/hosts/favorites/search/{user}/{id}", s.GetHostFavouriteByID, nil)
+
+	s.addAction(http.MethodPost, "/findmany/meta/hosts/modules/search", s.GetHostModulesIDs, nil)
+
+	s.addAction(http.MethodPost, "/findmany/hosts/list_hosts", s.ListHosts, nil)
+}
+
+func (s *coreService) initCloudSync() {
+	s.addAction(http.MethodPost, "/create/cloud/sync/task", s.CreateCloudSyncTask, nil)
+	s.addAction(http.MethodDelete, "/delete/cloud/sync/task/{taskID}", s.DeleteCloudSyncTask, nil)
+	s.addAction(http.MethodPost, "/update/cloud/sync/task", s.UpdateCloudSyncTask, nil)
+	s.addAction(http.MethodPost, "/search/cloud/sync/task", s.SearchCloudSyncTask, nil)
+	s.addAction(http.MethodPost, "/create/cloud/confirm", s.CreateConfirm, nil)
+	s.addAction(http.MethodPost, "/check/cloud/task/name", s.CheckTaskNameUnique, nil)
+	s.addAction(http.MethodDelete, "/delete/cloud/confirm/{taskID}", s.DeleteConfirm, nil)
+	s.addAction(http.MethodPost, "/search/cloud/confirm", s.SearchConfirm, nil)
+	s.addAction(http.MethodPost, "/create/cloud/sync/history", s.CreateSyncHistory, nil)
+	s.addAction(http.MethodPost, "/search/cloud/sync/history", s.SearchSyncHistory, nil)
+	s.addAction(http.MethodPost, "/create/cloud/confirm/history", s.CreateConfirmHistory, nil)
+	s.addAction(http.MethodPost, "/search/cloud/confirm/history", s.SearchConfirmHistory, nil)
 }
 
 func (s *coreService) audit() {
 	s.addAction(http.MethodPost, "/create/auditlog", s.CreateAuditLog, nil)
 	s.addAction(http.MethodPost, "/read/auditlog", s.SearchAuditLog, nil)
+}
+
+func (s *coreService) label() {
+	s.addAction(http.MethodPost, "/createmany/labels", s.AddLabels, nil)
+	s.addAction(http.MethodDelete, "/deletemany/labels", s.RemoveLabels, nil)
+}
+
+func (s *coreService) privilege() {
+	s.addAction(http.MethodPost, "/privilege/group/{bk_supplier_account}", s.CreateUserGroup, nil)
+	s.addAction(http.MethodPut, "/privilege/group/{bk_supplier_account}/{group_id}", s.UpdateUserGroup, nil)
+	s.addAction(http.MethodDelete, "/privilege/group/{bk_supplier_account}/{group_id}", s.DeleteUserGroup, nil)
+	s.addAction(http.MethodPost, "/privilege/group/{bk_supplier_account}/search", s.SearchUserGroup, nil)
+
+	s.addAction(http.MethodPost, "/privilege/group/detail/{bk_supplier_account}/{group_id}", s.CreateUserGroupPrivi, nil)
+	s.addAction(http.MethodPut, "/privilege/group/detail/{bk_supplier_account}/{group_id}", s.UpdateUserGroupPrivi, nil)
+	s.addAction(http.MethodGet, "/privilege/group/detail/{bk_supplier_account}/{group_id}", s.GetUserGroupPrivi, nil)
+
+	s.addAction(http.MethodPost, "/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.CreateRolePri, nil)
+	s.addAction(http.MethodGet, "/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.GetRolePri, nil)
+	s.addAction(http.MethodPut, "/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.UpdateRolePri, nil)
+
+	s.addAction(http.MethodGet, "/system/{flag}/{bk_supplier_account}", s.GetSystemFlag, nil)
+}
+
+func (s *coreService) topographics() {
+	s.addAction(http.MethodPost, "/topographics/search", s.SearchTopoGraphics, nil)
+	s.addAction(http.MethodPost, "/topographics/update", s.UpdateTopoGraphics, nil)
 }
 
 func (s *coreService) initService() {
@@ -136,4 +209,9 @@ func (s *coreService) initService() {
 	s.initMainline()
 	s.host()
 	s.audit()
+	s.initProcess()
+	s.initCloudSync()
+	s.label()
+	s.privilege()
+	s.topographics()
 }

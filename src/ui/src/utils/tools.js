@@ -21,13 +21,13 @@ export function getFullName (names) {
     return fullNames.join(',')
 }
 
-export function flatternList (properties, list) {
+export function flattenList (properties, list) {
     if (!list.length) return list
-    const flatternedList = clone(list)
-    flatternedList.forEach((item, index) => {
-        flatternedList[index] = flatternItem(properties, item)
+    const flattenedList = clone(list)
+    flattenedList.forEach((item, index) => {
+        flattenedList[index] = flattenItem(properties, item)
     })
-    return flatternedList
+    return flattenedList
 }
 
 /**
@@ -36,12 +36,12 @@ export function flatternList (properties, list) {
  * @param {Object} item - 模型实例
  * @return {Object} 拍平后的模型实例
  */
-export function flatternItem (properties, item) {
-    const flatternedItem = clone(item)
+export function flattenItem (properties, item) {
+    const flattenedItem = clone(item)
     properties.forEach(property => {
-        flatternedItem[property['bk_property_id']] = getPropertyText(property, flatternedItem)
+        flattenedItem[property['bk_property_id']] = getPropertyText(property, flattenedItem)
     })
-    return flatternedItem
+    return flattenedItem
 }
 
 /**
@@ -65,7 +65,7 @@ export function getPropertyText (property, item) {
     if (propertyType === 'enum') {
         const options = Array.isArray(property.option) ? property.option : []
         const enumOption = options.find(option => option.id === propertyValue)
-        propertyValue = enumOption ? enumOption.name : null
+        propertyValue = enumOption ? enumOption.name : '--'
     } else if (['singleasst', 'multiasst'].includes(propertyType)) {
         const values = Array.isArray(propertyValue) ? propertyValue : []
         propertyValue = values.map(inst => inst['bk_inst_name']).join(',')
@@ -80,7 +80,7 @@ export function getPropertyText (property, item) {
             return String(propertyValue).length ? propertyValue : '--'
         }
     }
-    return propertyValue
+    return propertyValue.toString()
 }
 
 /**
@@ -89,13 +89,13 @@ export function getPropertyText (property, item) {
  * @param {Array} list - 模型实例列表
  * @return {Array} 拍平后的模型实例列表
  */
-export function flatternHostList (properties, list) {
+export function flattenHostList (properties, list) {
     if (!list.length) return list
-    const flatternedList = clone(list)
-    flatternedList.forEach((item, index) => {
-        flatternedList[index] = flatternHostItem(properties, item)
+    const flattenedList = clone(list)
+    flattenedList.forEach((item, index) => {
+        flattenedList[index] = flattenHostItem(properties, item)
     })
-    return flatternedList
+    return flattenedList
 }
 
 /**
@@ -104,8 +104,8 @@ export function flatternHostList (properties, list) {
  * @param {Object} item - 模型实例
  * @return {Object} 拍平后的模型实例
  */
-export function flatternHostItem (properties, item) {
-    const flatternedItem = clone(item)
+export function flattenHostItem (properties, item) {
+    const flattenedItem = clone(item)
     for (const objId in properties) {
         properties[objId].forEach(property => {
             const originalValue = item[objId] instanceof Array ? item[objId] : [item[objId]]
@@ -114,7 +114,7 @@ export function flatternHostItem (properties, item) {
             })
         })
     }
-    return flatternedItem
+    return flattenedItem
 }
 
 /**
@@ -309,6 +309,18 @@ export function getValidateRules (property) {
     return rules
 }
 
+export function getSort (sort) {
+    const order = sort.order
+    const prop = sort.prop
+    if (!prop) {
+        return ''
+    }
+    if (order === 'descending') {
+        return `-${prop}`
+    }
+    return prop
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -317,13 +329,14 @@ export default {
     getDefaultHeaderProperties,
     getCustomHeaderProperties,
     getHeaderProperties,
-    flatternList,
-    flatternItem,
-    flatternHostList,
-    flatternHostItem,
+    flattenList,
+    flattenItem,
+    flattenHostList,
+    flattenHostItem,
     formatTime,
     clone,
     getInstFormValues,
     getMetadataBiz,
-    getValidateRules
+    getValidateRules,
+    getSort
 }

@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth/authcenter"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -161,4 +162,77 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(result.Data))
+}
+
+// GetUserNoAuthSkipURL returns the url which can helps to launch the bk-auth-center when a user do not
+// have the authorize to access resource(s).
+func (s *service) GetUserNoAuthSkipURL(req *restful.Request, resp *restful.Response) {
+	reqHeader := req.Request.Header
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(reqHeader))
+	rid := util.GetHTTPCCRequestID(reqHeader)
+
+	p := make([]metadata.Permission, 0)
+	err := json.NewDecoder(req.Request.Body).Decode(&p)
+	if err != nil {
+		blog.Errorf("get user's skip url when no auth, but decode request failed, err: %v, rid: %s", err, rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	url, err := s.authorizer.GetNoAuthSkipUrl(req.Request.Context(), reqHeader, p)
+	if err != nil {
+		blog.Errorf("get user's skip url when no auth, but request to auth center failed, err: %v, rid: %s", err, rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrGetNoAuthSkipURLFailed)})
+		return
+	}
+
+	resp.WriteEntity(metadata.NewSuccessResp(url))
+}
+
+type ConvertedResource struct {
+	Type   string `json:"type"`
+	Action string `json:"action"`
+}
+
+type ConvertData struct {
+	Data []meta.ResourceAttribute `json:"data"`
+}
+
+// used for web to get auth's resource with cmdb's resource. in a word, it's for converting.
+func (s *service) GetCmdbConvertResources(req *restful.Request, resp *restful.Response) {
+	reqHeader := req.Request.Header
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(reqHeader))
+	rid := util.GetHTTPCCRequestID(reqHeader)
+
+	attributes := new(ConvertData)
+	err := json.NewDecoder(req.Request.Body).Decode(attributes)
+	if err != nil {
+		blog.Errorf("convert cmdb resource with iam, but decode request failed, err: %v, rid: %s", err, rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	converts := make([]ConvertedResource, 0)
+	for _, att := range attributes.Data {
+		typ, err := authcenter.ConvertResourceType(att.Type, att.BusinessID)
+		if err != nil {
+			blog.Errorf("convert attribute resource type: %+v failed, err: %v", att, err)
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Type)})
+			return
+		}
+
+		action, err := authcenter.AdaptorAction(&att)
+		if err != nil {
+			blog.Errorf("convert attribute resource action: %+v failed, err: %v", att, err)
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Type)})
+			return
+		}
+
+		converts = append(converts, ConvertedResource{
+			Type:   string(*typ),
+			Action: string(action),
+		})
+	}
+
+	resp.WriteEntity(metadata.NewSuccessResp(converts))
 }

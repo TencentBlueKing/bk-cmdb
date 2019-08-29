@@ -94,6 +94,13 @@ const (
 	BKTableNameCloudSyncHistory       = "cc_CloudSyncHistory"
 	BKTableNameCloudResourceConfirm   = "cc_CloudResourceConfirm"
 	BKTableNameResourceConfirmHistory = "cc_ResourceConfirmHistory"
+
+	// process tables
+	BKTableNameServiceCategory         = "cc_ServiceCategory"
+	BKTableNameServiceTemplate         = "cc_ServiceTemplate"
+	BKTableNameServiceInstance         = "cc_ServiceInstance"
+	BKTableNameProcessTemplate         = "cc_ProcessTemplate"
+	BKTableNameProcessInstanceRelation = "cc_ProcessInstanceRelation"
 )
 
 // AllTables alltables
@@ -142,6 +149,11 @@ var AllTables = []string{
 	BKTableNameResourceConfirmHistory,
 	BKTableNameObjUnique,
 	BKTableNameAsstDes,
+	BKTableNameServiceCategory,
+	BKTableNameServiceTemplate,
+	BKTableNameServiceInstance,
+	BKTableNameProcessTemplate,
+	BKTableNameProcessInstanceRelation,
 }
 
 // GetInstTableName returns inst data table name
@@ -153,8 +165,8 @@ func GetInstTableName(objID string) string {
 		return BKTableNameBaseSet
 	case BKInnerObjIDModule:
 		return BKTableNameBaseModule
-	case BKInnerObjIDObject:
-		return BKTableNameBaseInst
+	// case BKInnerObjIDObject:
+	// 	return BKTableNameBaseInst
 	case BKInnerObjIDHost:
 		return BKTableNameBaseHost
 	case BKInnerObjIDProc:

@@ -34,7 +34,7 @@ func (s *Service) initAssociation() {
 	s.addAction(http.MethodGet, "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", s.SearchMainLineChildInstTopo, nil)
 
 	// association type methods
-	s.addAction(http.MethodPost, "/topo/association/type/action/search/batch", s.SearchObjectAssoWithAssoKindList, nil)
+	s.addAction(http.MethodPost, "/topo/association/type/action/search/batch", s.SearchObjectAssocWithAssocKindList, nil)
 	s.addAction(http.MethodPost, "/topo/association/type/action/search", s.SearchAssociationType, nil)
 	s.addAction(http.MethodPost, "/topo/association/type/action/create", s.CreateAssociationType, nil)
 	s.addAction(http.MethodPut, "/topo/association/type/{id}/action/update", s.UpdateAssociationType, nil)
@@ -67,7 +67,7 @@ func (s *Service) initAuditLog() {
 	s.addAction(http.MethodPost, "/object/{bk_obj_id}/audit/search", s.InstanceAuditQuery, nil)
 }
 
-func (s *Service) initCompatiblev2() {
+func (s *Service) initCompatibleV2() {
 	s.addAction(http.MethodPost, "/app/searchAll", s.SearchAllApp, nil)
 
 	s.addAction(http.MethodPut, "/openapi/set/multi/{appid}", s.UpdateMultiSet, nil)
@@ -165,6 +165,7 @@ func (s *Service) initObject() {
 	s.addAction(http.MethodPost, "/objects/topo", s.SearchObjectTopo, nil)
 	s.addAction(http.MethodPut, "/object/{id}", s.UpdateObject, nil)
 	s.addAction(http.MethodDelete, "/object/{id}", s.DeleteObject, nil)
+	s.addAction(http.MethodGet, "/object/statistics", s.GetModelStatistics, nil)
 
 }
 func (s *Service) initPrivilegeGroup() {
@@ -180,9 +181,9 @@ func (s *Service) initPrivilegeRole() {
 }
 
 func (s *Service) initPrivilege() {
-	s.addAction(http.MethodPost, "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", s.UpdateUserGroupPrivi, nil)
-	s.addAction(http.MethodGet, "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", s.GetUserGroupPrivi, nil)
-	s.addAction(http.MethodGet, "/topo/privilege/user/detail/{bk_supplier_account}/{user_name}", s.GetUserPrivi, nil)
+	s.addAction(http.MethodPost, "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", s.UpdateUserGroupPrivilege, nil)
+	s.addAction(http.MethodGet, "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", s.GetUserGroupPrivilege, nil)
+	s.addAction(http.MethodGet, "/topo/privilege/user/detail/{bk_supplier_account}/{user_name}", s.GetUserPrivilege, nil)
 }
 
 func (s *Service) initGraphics() {
@@ -193,11 +194,15 @@ func (s *Service) initIdentifier() {
 	s.addAction(http.MethodPost, "/identifier/{obj_type}/search", s.SearchIdentifier, s.ParseSearchIdentifierOriginData)
 }
 
+func (s *Service) initFind() {
+	s.addAction(http.MethodPost, "/find/full_text", s.FullTextFind, nil)
+}
+
 func (s *Service) initService() {
 	s.initHealth()
 	s.initAssociation()
 	s.initAuditLog()
-	s.initCompatiblev2()
+	s.initCompatibleV2()
 	s.initBusiness()
 	s.initInst()
 	s.initModule()
@@ -222,4 +227,5 @@ func (s *Service) initService() {
 	s.initBusinessGraphics()
 	s.initBusinessInst()
 
+	s.initFind()
 }
