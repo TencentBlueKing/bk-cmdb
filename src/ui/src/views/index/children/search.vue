@@ -118,24 +118,24 @@
         methods: {
             // 函数节流，500ms发起一次主机查询
             handleSearch () {
+                let params = {}
+                if (this.isAdminView) {
+                    params = this.searchParams
+                } else {
+                    params = Object.assign({}, this.searchParams, { bk_biz_id: this.business })
+                }
                 this.$store.dispatch('hostSearch/searchHost', {
-                    params: this.searchParams,
+                    params,
                     config: {
                         requestId: this.requestId,
                         cancelPrevious: true
                     }
                 }).then(data => {
                     this.addResultList('host', this.initSearchList(data.info))
-                    if (this.isAdminView) {
-                        this.addResultCount('host', data.count)
-                    }
+                    this.addResultCount('host', data.count)
                 })
             },
             addResultList (model, list) {
-                if (!this.isAdminView) {
-                    list = list.filter(item => item['biz'][0]['bk_biz_id'] === this.business)
-                    this.addResultCount('host', list.length)
-                }
                 if (list.length) {
                     this.$set(this.resultTab.list, model, list)
                 } else {
@@ -178,8 +178,9 @@
                 this.handleClickOutside()
             },
             showMoreHost () {
+                const name = this.isAdminView ? 'resource' : 'hosts'
                 this.$router.push({
-                    name: 'resource',
+                    name,
                     params: {
                         text: this.keyword,
                         inner: true,
