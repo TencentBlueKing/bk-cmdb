@@ -174,12 +174,12 @@ var expectBizResourceType = []ResourceType{
 			{
 				ActionID:          Edit,
 				ActionName:        "编辑",
-				IsRelatedResource: false,
+				IsRelatedResource: true,
 			},
 			{
 				ActionID:          Delete,
 				ActionName:        "删除",
-				IsRelatedResource: false,
+				IsRelatedResource: true,
 			},
 		},
 	},
