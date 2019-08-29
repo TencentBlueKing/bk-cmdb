@@ -36,7 +36,7 @@ func (am *AuthManager) CollectInstancesByModelID(ctx context.Context, header htt
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKObjIDField).Eq(objectID).ToMapStr(),
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDObject, &cond)
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, objectID, &cond)
 	if err != nil {
 		blog.V(3).Infof("get instances by model id %s failed, err: %+v, rid: %s", objectID, err, rid)
 		return nil, fmt.Errorf("get instances by model id %s failed, err: %+v", objectID, err)
@@ -208,7 +208,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 		objectIDMap[object.ID] = object
 	}
 
-	mainlineTopo, err := am.clientSet.CoreService().Mainline().SearchMainlineModelTopo(context.Background(), http.Header{}, false)
+	mainlineTopo, err := am.clientSet.CoreService().Mainline().SearchMainlineModelTopo(context.Background(), header, false)
 	if err != nil {
 		blog.Errorf("list mainline models failed, err: %+v", err)
 	}
