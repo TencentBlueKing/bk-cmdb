@@ -110,6 +110,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		// meta.AuditCategory,
 		meta.ClassificationResource,
 		// meta.UserGroupSyncResource,
+		meta.ServiceTemplateResource,
 	}
 	for _, resourceType := range resourceTypes {
 		for _, businessSimplify := range businessList {
