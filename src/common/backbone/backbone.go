@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metrics"
+	"configcenter/src/common/resources"
 	"configcenter/src/common/types"
 )
 
@@ -236,6 +237,7 @@ func (e *Engine) onLanguageUpdate(previous, current map[string]language.Language
 		return
 	}
 	e.Language.Load(current)
+	resources.SetLanguage(e.Language)
 	blog.V(3).Infof("load new language config success.")
 }
 
@@ -248,6 +250,7 @@ func (e *Engine) onErrorUpdate(previous, current map[string]errors.ErrorCode) {
 		return
 	}
 	e.CCErr.Load(current)
+	resources.SetError(e.CCErr)
 	blog.V(3).Infof("load new error config success.")
 }
 
