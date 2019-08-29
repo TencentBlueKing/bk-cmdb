@@ -1,7 +1,7 @@
 <template>
     <div class="search-layout">
         <div class="search-box" v-click-outside="handleClickOutside">
-            <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('开始查询')"
+            <input id="indexSearch" autocomplete="off" class="search-keyword" type="text" maxlength="40" :placeholder="$t('开始查询')"
                 v-model.trim="keyword"
                 @focus="focus = true">
             <label class="bk-icon icon-search" for="indexSearch"></label>
@@ -82,6 +82,7 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView']),
             ...mapGetters('objectModelClassify', ['classifications']),
             allModels () {
                 const allModels = []
@@ -97,6 +98,9 @@
             },
             loading () {
                 return this.$loading(this.requestId)
+            },
+            business () {
+                return this.$store.getters['objectBiz/bizId']
             }
         },
         watch: {
@@ -122,10 +126,16 @@
                     }
                 }).then(data => {
                     this.addResultList('host', this.initSearchList(data.info))
-                    this.addResultCount('host', data.count)
+                    if (this.isAdminView) {
+                        this.addResultCount('host', data.count)
+                    }
                 })
             },
             addResultList (model, list) {
+                if (!this.isAdminView) {
+                    list = list.filter(item => item['biz'][0]['bk_biz_id'] === this.business)
+                    this.addResultCount('host', list.length)
+                }
                 if (list.length) {
                     this.$set(this.resultTab.list, model, list)
                 } else {
@@ -170,12 +180,13 @@
             showMoreHost () {
                 this.$router.push({
                     name: 'resource',
-                    query: {
-                        ip: this.keyword,
-                        exact: 0,
+                    params: {
+                        text: this.keyword,
                         inner: true,
                         outer: true,
-                        assigned: true,
+                        exact: false
+                    },
+                    query: {
                         from: this.$route.fullPath
                     }
                 })
