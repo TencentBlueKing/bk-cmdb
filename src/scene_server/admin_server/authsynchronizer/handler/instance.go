@@ -39,7 +39,7 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 	}
 	objectID := object.ObjectID
 	if util.InStrArr(ignoreObjectIDs, objectID) {
-		blog.Infof("ignore instance sync task: %s", objectID)
+		blog.V(5).Infof("ignore instance sync task: %s", objectID)
 		return nil
 	}
 	// step1 construct instances resource query parameter for iam
