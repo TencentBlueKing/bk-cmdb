@@ -77,7 +77,7 @@ func (t *object) DeleteClassification(ctx context.Context, classID string, h htt
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/object/classification/%s", classID)
 
-	err = t.client.Post().
+	err = t.client.Delete().
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).

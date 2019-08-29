@@ -76,14 +76,13 @@ func (t *privilege) SearchUserGroup(ctx context.Context, supplierAcct string, h 
 	return
 }
 
-// TODO: confirm body
 func (t *privilege) UpdateUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/topo/privilege/group/detail/%s/%s", supplierAcct, groupID)
 
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(nil).
+		Body(dat).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -133,6 +132,19 @@ func (t *privilege) CreatePrivilege(ctx context.Context, supplierAcct string, ob
 	return
 }
 
+func (t *privilege) CreatePrivilegeWithData(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/topo/privilege/%s/%s/%s", supplierAcct, objID, propertyID)
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
 func (t *privilege) GetPrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/topo/privilege/%s/%s/%s", supplierAcct, objID, propertyID)

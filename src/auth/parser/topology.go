@@ -1053,6 +1053,7 @@ const (
 	findObjectsPattern        = "/api/v3/objects"
 	findObjectTopologyPattern = "/api/v3/objects/topo"
 	createObjectBatchPattern  = "/api/v3/object/batch"
+	objectStatistics          = "/api/v3/object/statistics"
 )
 
 var (
@@ -1092,6 +1093,17 @@ func (ps *parseStream) object() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.UpdateMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(objectStatistics, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Action: meta.SkipAction,
 				},
 			},
 		}
