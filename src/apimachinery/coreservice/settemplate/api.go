@@ -177,3 +177,29 @@ func (p *setTemplate) CountSetTplInstances(ctx context.Context, header http.Head
 
 	return data, nil
 }
+
+// ListSetServiceTemplateRelations get relations of SetTemplate <==> ServiceTemplate
+func (p *setTemplate) ListSetServiceTemplateRelations(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.SetServiceTemplateRelation, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data []metadata.SetServiceTemplateRelation `json:"data"`
+	}{}
+	subPath := fmt.Sprintf("/findmany/topo/set_template/%d/bk_biz_id/%d/service_templates", setTemplateID, bizID)
+
+	err := p.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("ListSetServiceTemplateRelations failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}

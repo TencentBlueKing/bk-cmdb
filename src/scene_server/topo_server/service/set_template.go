@@ -172,3 +172,37 @@ func (s *Service) ListSetTemplateWeb(params types.ContextParams, pathParams, que
 	}
 	return result, nil
 }
+
+func (s *Service) ListSetServiceRelatedServiceTemplates(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	setTemplateIDStr := pathParams(common.BKSetTemplateIDField)
+	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
+	relations, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetServiceTemplateRelations(params.Context, params.Header, bizID, setTemplateID)
+	if err != nil {
+		blog.Errorf("ListSetTemplateRelatedServiceTemplate failed, do core service list failed, bizID: %d, setTemplateID: %+v, err: %+v, rid: %s", bizID, setTemplateID, err, params.ReqID)
+		return nil, err
+	}
+	serviceTemplateIDs := make([]int64, 0)
+	for _, relation := range relations {
+		serviceTemplateIDs = append(serviceTemplateIDs, relation.ServiceTemplateID)
+	}
+	option := metadata.ListServiceTemplateOption{
+		BusinessID:         bizID,
+		ServiceTemplateIDs: serviceTemplateIDs,
+	}
+	setTemplates, err := s.Engine.CoreAPI.CoreService().Process().ListServiceTemplates(params.Context, params.Header, &option)
+	if err != nil {
+		blog.Errorf("ListSetTemplateRelatedServiceTemplate failed, option: %+v, err: %s, rid: %s", option, err.Error(), params.ReqID)
+		return nil, err
+	}
+	return setTemplates.Info, nil
+}

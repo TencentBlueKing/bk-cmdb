@@ -372,3 +372,19 @@ func (p *setTemplateOperation) ListSetTemplate(ctx core.ContextParams, bizID int
 	result.Info = setTemplates
 	return result, nil
 }
+
+func (p *setTemplateOperation) ListSetServiceTemplateRelations(ctx core.ContextParams, bizID int64, setTemplateID int64) ([]metadata.SetServiceTemplateRelation, errors.CCErrorCoder) {
+	filter := map[string]interface{}{
+		common.BKAppIDField:      bizID,
+		common.BKFieldID:         setTemplateID,
+		common.BkSupplierAccount: ctx.SupplierAccount,
+	}
+
+	setServiceTemplateRelations := make([]metadata.SetServiceTemplateRelation, 0)
+	if err := p.dbProxy.Table(common.BKTableNameSetServiceTemplateRelation).Find(filter).All(ctx.Context, &setServiceTemplateRelations); err != nil {
+		blog.Errorf("ListSetServiceTemplateRelations failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
+		return setServiceTemplateRelations, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return setServiceTemplateRelations, nil
+}
