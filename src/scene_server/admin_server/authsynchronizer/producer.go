@@ -57,7 +57,6 @@ func (p *Producer) Start() {
 			case <-ticker.C:
 				// get jobs
 				jobs := producer.generateJobs()
-
 				for _, job := range *jobs {
 					p.WorkerQueue <- job
 				}
