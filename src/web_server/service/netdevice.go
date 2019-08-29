@@ -40,10 +40,10 @@ func (s *Service) ImportNetDevice(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 	header := c.Request.Header
-	language := logics.GetLanguageByHTTPRequest(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 
 	// open uploaded file
 	file, err, errMsg := openDeviceUploadedFile(c, defErr)
@@ -90,10 +90,10 @@ func (s *Service) ImportNetDevice(c *gin.Context) {
 func (s *Service) ExportNetDevice(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
-	language := logics.GetLanguageByHTTPRequest(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 
 	deviceIDstr := c.PostForm(common.BKDeviceIDField)
 	deviceInfo, err := s.Logics.GetNetDeviceData(c.Request.Header, deviceIDstr)
@@ -159,8 +159,8 @@ func (s *Service) ExportNetDevice(c *gin.Context) {
 
 func (s *Service) BuildDownLoadNetDeviceExcelTemplate(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	logics.SetProxyHeader(c)
-	language := logics.GetLanguageByHTTPRequest(c)
+	webCommon.SetProxyHeader(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 

@@ -847,8 +847,8 @@ const (
 	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
-	BKSessionLanugageKey    = "language"
-	BKHTTPSupplierID        = "bk_supplier_id"
+	//BKSessionLanugageKey = "language"
+	BKHTTPSupplierID = "bk_supplier_id"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
@@ -944,8 +944,8 @@ const (
 	WEBSessionOwnerUinListeKey = "owner_uin_list"
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
-	WEBSessionLanguageKey      = "language"
-	WEBSessionSupplierID       = "supplier_id"
+	//WEBSessionLanguageKey      = "language"
+	WEBSessionSupplierID = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
