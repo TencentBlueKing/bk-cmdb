@@ -12,7 +12,7 @@
                 @close-tips="showFeatureTips = false">
             </feature-tips>
             <div class="fl">
-                <span style="display: inline-block;"
+                <span v-if="isAdminView" style="display: inline-block;"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.C_MODEL),
                         auth: [$OPERATION.C_MODEL]
@@ -20,7 +20,19 @@
                     <bk-button theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
                         @click="showModelDialog()">
-                        {{$t('新建模型')}}
+                        {{createModelBtn}}
+                    </bk-button>
+                </span>
+                <span v-else style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_MODEL),
+                        auth: [$OPERATION.C_MODEL]
+                    }">
+                    <bk-button theme="primary"
+                        v-bk-tooltips="$t('新增模型提示')"
+                        :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
+                        @click="showModelDialog()">
+                        {{createModelBtn}}
                     </bk-button>
                 </span>
                 <span style="display: inline-block;"
@@ -31,26 +43,38 @@
                     <bk-button theme="default"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
                         @click="showGroupDialog(false)">
-                        {{$t('新建分组')}}
+                        {{createGroupBtn}}
                     </bk-button>
                 </span>
             </div>
             <div class="model-type-options fr">
                 <bk-button class="model-type-button enable"
-                    :class="[{ 'model-type-button-active': modelType === 'enable' }]"
                     size="small"
+                    :theme="modelType === 'enable' ? 'primary' : 'default'"
                     @click="modelType = 'enable'">
-                    {{$t('启用中')}}
+                    {{$t('启用模型')}}
                 </bk-button>
-                <span class="inline-block-middle" style="outline: 0;" v-bk-tooltips="disabledModelBtnText">
+                <bk-popover
+                    :content="$t('停用模型提示')"
+                    placenment="bottom"
+                    v-if="!disabledClassifications.length">
                     <bk-button class="model-type-button disabled"
-                        :class="[{ 'model-type-button-active': modelType === 'disabled' }]"
+                        v-bk-tooltips="$t('停用模型提示')"
                         size="small"
                         :disabled="!disabledClassifications.length"
+                        :theme="modelType === 'disabled' ? 'primary' : 'default'"
                         @click="modelType = 'disabled'">
-                        {{$t('已停用')}}
+                        {{$t('停用模型')}}
                     </bk-button>
-                </span>
+                </bk-popover>
+                <bk-button class="model-type-button disabled"
+                    v-else
+                    size="small"
+                    :disabled="!disabledClassifications.length"
+                    :theme="modelType === 'disabled' ? 'primary' : 'default'"
+                    @click="modelType = 'disabled'">
+                    {{$t('停用模型')}}
+                </bk-button>
             </div>
             <div class="model-search-options fr">
                 <bk-input class="search-model"
@@ -68,9 +92,8 @@
                     <span>{{classification['bk_classification_name']}}</span>
                     <span class="number">({{classification['bk_objects'].length}})</span>
                     <template v-if="isEditable(classification)">
-                        <i class="icon-cc-add-line text-primary"
-                            :class="[{ 'disabled': !$isAuthorized($OPERATION.C_MODEL) }]"
-                            :style="{ 'margin': '0 6px' }"
+                        <i class="icon-cc-plus text-primary"
+                            :style="{ 'margin': '0 6px', color: $isAuthorized($OPERATION.C_MODEL) ? '' : '#e6e6e6 !important' }"
                             v-cursor="{
                                 active: !$isAuthorized($OPERATION.C_MODEL),
                                 auth: [$OPERATION.C_MODEL]
@@ -78,16 +101,15 @@
                             @click="showModelDialog(classification.bk_classification_id)">
                         </i>
                         <i class="icon-cc-edit text-primary"
-                            :class="[{ 'disabled': !$isAuthorized($OPERATION.U_MODEL_GROUP) }]"
-                            :style="{ 'margin-right': '4px' }"
+                            :style="{ 'margin-right': '4px', color: $isAuthorized($OPERATION.U_MODEL_GROUP) ? '' : '#e6e6e6 !important' }"
                             v-cursor="{
                                 active: !$isAuthorized($OPERATION.U_MODEL_GROUP),
                                 auth: [$OPERATION.U_MODEL_GROUP]
                             }"
                             @click="showGroupDialog(true, classification)">
                         </i>
-                        <i class="icon-cc-delete text-primary"
-                            :class="[{ 'disabled': !$isAuthorized($OPERATION.D_MODEL_GROUP) }]"
+                        <i class="icon-cc-del text-primary"
+                            :style="{ color: $isAuthorized($OPERATION.D_MODEL_GROUP) ? '' : '#e6e6e6 !important' }"
                             v-cursor="{
                                 active: !$isAuthorized($OPERATION.D_MODEL_GROUP),
                                 auth: [$OPERATION.D_MODEL_GROUP]
@@ -103,19 +125,14 @@
                             'ispre': isInner(model)
                         }"
                         v-for="(model, modelIndex) in classification['bk_objects']"
-                        :key="modelIndex">
-                        <div class="info-model" @click="modelClick(model)">
-                            <div class="icon-box">
-                                <i class="icon" :class="[model['bk_obj_icon']]"></i>
-                            </div>
-                            <div class="model-details">
-                                <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
-                                <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
-                            </div>
+                        :key="modelIndex"
+                        @click="modelClick(model)">
+                        <div class="icon-box">
+                            <i class="icon" :class="[model['bk_obj_icon']]"></i>
                         </div>
-                        <div v-if="modelType !== 'disabled'" class="info-instance" @click="handleGoInstance(model)">
-                            <i class="icon-cc-share"></i>
-                            <p>100</p>
+                        <div class="model-details">
+                            <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
+                            <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
                         </div>
                     </li>
                 </ul>
@@ -197,14 +214,6 @@
                 showFeatureTips: false,
                 scrollHandler: null,
                 scrollTop: 0,
-                modelType: 'enable',
-                searchModel: '',
-                filterClassifications: [],
-                modelInstancesStatistics: [],
-                groupToolTips: {
-                    content: this.$t('内置模型组不支持添加和修改'),
-                    placement: 'right'
-                },
                 groupDialog: {
                     isShow: false,
                     isEdit: false,
@@ -218,6 +227,13 @@
                 modelDialog: {
                     isShow: false,
                     groupId: ''
+                },
+                modelType: 'enable',
+                searchModel: '',
+                filterClassifications: [],
+                groupToolTips: {
+                    content: this.$t('内置模型组不支持添加和修改'),
+                    placement: 'right'
                 }
             }
         },
@@ -260,8 +276,11 @@
                     return this.filterClassifications
                 }
             },
-            disabledModelBtnText () {
-                return this.disabledClassifications.length ? '' : this.$t('停用模型提示')
+            createGroupBtn () {
+                return this.isAdminView ? this.$t('新建分组') : this.$t('新建业务分组')
+            },
+            createModelBtn () {
+                return this.isAdminView ? this.$t('新建模型') : this.$t('新建业务模型')
             }
         },
         watch: {
@@ -283,7 +302,7 @@
                 this.searchModel = ''
             }
         },
-        async created () {
+        created () {
             this.scrollHandler = event => {
                 this.scrollTop = event.target.scrollTop
             }
@@ -291,13 +310,6 @@
             this.searchClassificationsObjects({
                 params: this.$injectMetadata()
             })
-            // this.getClassificationsObjectStatistics({
-            //     config: {
-            //         requestId: 'getClassificationsObjectStatistics'
-            //     }
-            // }).then(res => {
-            //     console.log(res)
-            // })
             if (this.$route.query.searchModel) {
                 const hash = window.location.hash
                 this.searchModel = this.$route.query.searchModel
@@ -315,7 +327,6 @@
             ]),
             ...mapActions('objectModelClassify', [
                 'searchClassificationsObjects',
-                'getClassificationsObjectStatistics',
                 'createClassification',
                 'updateClassification',
                 'deleteClassification'
@@ -442,17 +453,6 @@
                         from: fullPath
                     }
                 })
-            },
-            handleGoInstance (model) {
-                this.$router.push({
-                    name: 'generalModel',
-                    params: {
-                        objId: model.bk_obj_id
-                    },
-                    query: {
-                        from: this.$route.fullPath
-                    }
-                })
             }
         }
     }
@@ -495,7 +495,6 @@
             line-height: 30px;
             &.enable {
                 border-radius: 2px 0 0 2px;
-                border-right-color: #3a84ff;
                 z-index: 2;
             }
             &.disabled {
@@ -505,10 +504,6 @@
             }
             &:hover {
                 z-index: 2;
-            }
-            &-active {
-                border-color: #3a84ff;
-                color: #3a84ff;
             }
         }
     }
@@ -557,15 +552,15 @@
                 display: none;
                 vertical-align: middle;
                 cursor: pointer;
-                &.disabled {
-                    opacity: 1 !important;
-                    color: #c4c6cc !important;
-                }
             }
             &:hover {
                 >.text-primary {
                     display: inline-block;
                 }
+            }
+            .icon-cc-plus {
+                border: 1px solid #3c96ff;
+                border-radius: 2px;
             }
         }
     }
@@ -574,7 +569,6 @@
         overflow: hidden;
         transition: height .2s;
         .model-item {
-            display: flex;
             position: relative;
             float: left;
             margin: 10px 10px 0 0;
@@ -603,9 +597,7 @@
             }
             &:hover {
                 border-color: $cmdbBorderFocusColor;
-                .info-instance {
-                    display: block;
-                }
+                background: #ebf4ff;
             }
             .icon-box {
                 float: left;
@@ -618,7 +610,7 @@
                 }
             }
             .model-details {
-                padding: 0 4px 0 0;
+                padding: 0 10px 0 0;
                 overflow: hidden;
             }
             .model-name {
@@ -632,37 +624,6 @@
                 font-size: 12px;
                 color: #bfc7d2;
                 @include ellipsis;
-            }
-            .info-model {
-                flex: 1;
-                width: 0;
-                &:hover {
-                    background-color: #f0f5ff;
-                }
-            }
-            .info-instance {
-                display: none;
-                width: 70px;
-                padding: 0 8px 0 6px;
-                text-align: center;
-                color: #c3cdd7;
-                border-radius: 0 4px 4px 0;
-                &:hover {
-                    background-color: #f0f5ff;
-                    p {
-                        color: #3a84ff;
-                    }
-                }
-                .icon-cc-share {
-                    font-size: 14px;
-                    margin-top: 16px;
-                    color: #3a84ff;
-                }
-                p {
-                    font-size: 16px;
-                    padding-top: 2px;
-                    @include ellipsis;
-                }
             }
         }
     }
