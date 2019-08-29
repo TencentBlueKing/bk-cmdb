@@ -179,7 +179,7 @@
             display: none;
         }
         .dialog-content {
-            padding: 14px 15px 20px 28px;
+            padding: 20px 15px 20px 28px;
         }
         .title {
             font-size: 20px;
@@ -233,7 +233,6 @@
             position: relative;
         }
         .content-left {
-            padding-top: 20px;
             text-align: center;
             .icon-wrapper {
                 margin: 0 auto;
@@ -260,6 +259,7 @@
             left: 0;
             top:0;
             width: 100%;
+            height: calc(100% + 60px);
             background: #fff;
             z-index: 99;
             .back {

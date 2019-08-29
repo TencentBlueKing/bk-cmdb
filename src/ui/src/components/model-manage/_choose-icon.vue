@@ -1,167 +1,74 @@
 <template>
-    <div class="model-icon-list">
-        <div class="page clearfix">
-            <bk-input type="text" class="cmdb-form-input"
-                :placeholder="$t('请输入关键词')"
-                v-model.trim="searchText">
-            </bk-input>
-            <div class="page-btn">
-                <bk-button theme="default" :disabled="!page.current" @click="pageTurning(--page.current)">
-                    <i class="bk-icon icon-angle-left"></i>
-                </bk-button>
-                <bk-button theme="default" :disabled="page.current === page.totalPage - 1" @click="pageTurning(++page.current)">
-                    <i class="bk-icon icon-angle-right"></i>
-                </bk-button>
-            </div>
+    <div class="choose-icon">
+        <bk-input type="text" class="system-icon-search" v-show="activeTab === 'system'"
+            right-icon="bk-icon icon-search"
+            :placeholder="$t('请输入关键词')"
+            v-model.trim="searchText">
+        </bk-input>
+        <bk-tab :active.sync="activeTab" type="unborder-card" class="icon-tab">
+            <bk-tab-panel name="system" :label="$t('系统图标')">
+                <icon-set></icon-set>
+            </bk-tab-panel>
+            <bk-tab-panel name="custom" :label="$t('自定义图标')"></bk-tab-panel>
+        </bk-tab>
+        <div class="footer">
+            <bk-button theme="primary">{{$t('确定')}}</bk-button>
+            <bk-button>{{$t('取消')}}</bk-button>
         </div>
-        <ul class="icon-box clearfix" ref="iconBox">
-            <li class="icon"
-                ref="iconItem"
-                :class="{ 'create': type === 'create', 'active': icon.value === localValue }"
-                v-bk-tooltips="{ content: language === 'zh_CN' ? icon.nameZh : icon.nameEn }"
-                v-for="(icon, index) in curIconList"
-                :key="index" @click="chooseIcon(icon.value)">
-                <i :class="icon.value"></i>
-            </li>
-        </ul>
     </div>
 </template>
 
 <script>
-    import iconList from '@/assets/json/model-icon.json'
-    import { mapGetters } from 'vuex'
+    import iconSet from './icon-set'
     export default {
-        props: {
-            value: {
-                type: String,
-                default: 'icon-cc-default'
-            },
-            type: {
-                type: String,
-                default: 'create'
-            }
+        components: {
+            iconSet
         },
         data () {
             return {
-                iconList,
-                localValue: this.value,
-                searchText: '',
-                page: {
-                    current: 0,
-                    size: 28,
-                    totalPage: Math.ceil(iconList.length / 28)
-                }
+                activeTab: 'system',
+                searchText: ''
             }
-        },
-        computed: {
-            ...mapGetters([
-                'language'
-            ]),
-            curIconList () {
-                const {
-                    searchText,
-                    page
-                } = this
-                let curIconList = this.iconList
-                if (searchText.length) {
-                    curIconList = this.iconList.filter(icon => {
-                        return icon.nameZh.toLowerCase().indexOf(searchText.toLowerCase()) > -1 || icon.nameEn.toLowerCase().indexOf(searchText.toLowerCase()) > -1
-                    })
-                }
-                return curIconList.slice(page.size * page.current, page.size * (page.current + 1))
-            }
-        },
-        watch: {
-            searchText () {
-                this.page.current = 0
-            }
-        },
-        mounted () {
-            this.init()
         },
         methods: {
-            async init () {
-                await this.$nextTick()
-                const boxHeight = this.$refs.iconBox.clientHeight
-                const iconHeight = this.$refs.iconItem[0].clientHeight
-                this.page.size = Math.floor(boxHeight / iconHeight) * 7
-                this.page.totalPage = Math.ceil(this.iconList.length / this.page.size)
-            },
-            chooseIcon (value) {
-                this.localValue = value
-                this.$emit('input', value)
-                this.$emit('chooseIcon')
-            },
-            pageTurning (page) {
-                this.page.current = page
-            }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .model-icon-list {
-        display: block;
-        height: 100%;
-    }
-    .page {
-        padding: 15px;
-        .cmdb-form-input {
-            float: left;
-            width: 220px;
-            height: 30px;
-            line-height: 28px;
+    .choose-icon {
+        position: relative;
+        height: 460px;
+        overflow: hidden;
+        .system-icon-search {
+            position: absolute;
+            top: 12px;
+            right: 20px;
+            width: 240px;
+            z-index: 2;
         }
-        .page-btn {
-            float: right;
-            .bk-button {
+        .icon-tab {
+            width: 100%;
+            height: calc(100% - 58px);
+            /deep/ .bk-tab-section {
+                height: calc(100% - 57px);
+                @include scrollbar-y;
+            }
+            /deep/ .bk-tab-header {
                 padding: 0;
-                width: 30px;
-                height: 30px;
-                line-height: 1;
-                vertical-align: middle;
+                margin: 0 20px;
             }
         }
-    }
-    .icon-box {
-        padding: 0 15px 10px;
-        width: 100%;
-        height: calc(100% - 60px);
-        .icon {
-            float: left;
-            width: calc(100% / 7);
-            height: 46px;
-            padding: 5px;
-            font-size: 24px;
-            text-align: center;
-            cursor: pointer;
-            &.create {
-                font-size: 30px;
-                height: 60px;
-            }
-            &:hover,
-            &.active {
-                background: #e2efff;
-                color: #3c96ff;
-            }
-        }
-        .page {
-            height: 52px;
-            padding: 10px 20px;
-            .cmdb-form-input {
-                float: left;
-                width: 200px;
-                height: 30px;
-            }
-            .page-btn {
-                float: right;
-                .bk-button {
-                    padding: 0;
-                    width: 30px;
-                    height: 30px;
-                    line-height: 1;
-                    vertical-align: top;
-                }
+        .footer {
+            height: 57px;
+            line-height: 56px;
+            text-align: right;
+            font-size: 0;
+            padding-right: 24px;
+            background-color: #fafbfd;
+            border-top: 1px solid #dcdee5;
+            .bk-button {
+                margin-left: 10px;
             }
         }
     }
