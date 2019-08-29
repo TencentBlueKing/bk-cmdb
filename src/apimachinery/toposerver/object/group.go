@@ -62,7 +62,7 @@ func (t *object) DeletePropertyGroup(ctx context.Context, groupID string, h http
 	return
 }
 
-func (t *object) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, data metadata.PropertyGroupObjectAtt) (resp *metadata.Response, err error) {
+func (t *object) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/objectatt/group/property"
 

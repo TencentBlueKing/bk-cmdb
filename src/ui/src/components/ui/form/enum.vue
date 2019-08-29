@@ -64,9 +64,7 @@
             }
         },
         created () {
-            if (!this.disabled) {
-                this.setInitData()
-            }
+            this.setInitData()
         },
         methods: {
             setInitData () {

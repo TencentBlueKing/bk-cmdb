@@ -16,8 +16,10 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
 )
@@ -60,6 +62,7 @@ func (f *Find) Limit(limit uint64) dal.Find {
 
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
+	start := time.Now()
 	// set txn
 	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
@@ -79,11 +82,15 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 	if !reply.Success {
 		return errors.New(reply.Message)
 	}
-	return reply.Docs.Decode(result)
+	err = reply.Docs.Decode(result)
+	rid := ctx.Value(common.ContextRequestIDField)
+	blog.V(5).InfoDepthf(1, "Find all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	return err
 }
 
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
+	start := time.Now()
 	// set txn
 	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
@@ -111,7 +118,10 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	if len(reply.Docs) <= 0 {
 		return dal.ErrDocumentNotFound
 	}
-	return reply.Docs[0].Decode(result)
+	err = reply.Docs[0].Decode(result)
+	rid := ctx.Value(common.ContextRequestIDField)
+	blog.V(5).InfoDepthf(1, "Find one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	return err
 }
 
 // Count 统计数量(非事务)

@@ -31,7 +31,6 @@ func (s *Service) CreateObjectBatch(params types.ContextParams, pathParams, quer
 
 // SearchObjectBatch batch to search some objects
 func (s *Service) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	data.Remove(metadata.BKMetadata)
 	return s.Core.ObjectOperation().FindObjectBatch(params, data)
 }
@@ -91,4 +90,14 @@ func (s *Service) DeleteObject(params types.ContextParams, pathParams, queryPara
 	cond := condition.CreateCondition()
 	err = s.Core.ObjectOperation().DeleteObject(params, id, cond, true)
 	return nil, err
+}
+
+// GetModelStatistics 用于统计各个模型的实例数(Web页面展示需要)
+func (s *Service) GetModelStatistics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	result, err := s.Engine.CoreAPI.CoreService().Model().GetModelStatistics(params.Context, params.Header)
+	if err != nil {
+		blog.Errorf("GetModelStatistics failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
+	return result, err
 }
