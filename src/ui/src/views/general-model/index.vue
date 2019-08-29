@@ -31,13 +31,9 @@
                         {{$t('导出')}}
                     </bk-button>
                 </div>
-                <div class="fl mr10"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_INST),
-                        auth: [$OPERATION.U_INST]
-                    }">
+                <div class="fl mr10">
                     <bk-button class="models-button"
-                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_INST)"
+                        :disabled="!table.checked.length"
                         @click="handleMultipleEdit">
                         {{$t('批量更新')}}
                     </bk-button>
@@ -154,7 +150,6 @@
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :object-unique="objectUnique"
-                        :save-auth="$OPERATION.U_INST"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
