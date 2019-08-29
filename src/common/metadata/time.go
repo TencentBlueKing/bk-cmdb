@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/coccyx/timeparser"
-	"github.com/mongodb/mongo-go-driver/bson"
-	"github.com/mongodb/mongo-go-driver/bson/bsontype"
-	"github.com/mongodb/mongo-go-driver/x/bsonx"
+	"github.com/rentiansheng/bk_bson/bson"
+	"github.com/rentiansheng/bk_bson/bson/bsontype"
+	"github.com/rentiansheng/bk_bson/x/bsonx"
 	mgobson "gopkg.in/mgo.v2/bson"
 )
 
@@ -115,11 +115,41 @@ func (t *Time) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
 			return nil
 		}
 		return nil
+	case bsontype.DateTime:
+		rv := bson.RawValue{Type: bsontype.DateTime, Value: raw}
+		t.Time = rv.Time()
+		return nil
+	case bsontype.String:
+		rawStr := bson.RawValue{Type: bsontype.String, Value: raw}
+		strTime := strings.TrimSpace(strings.Trim(rawStr.String(), "\""))
+
+		vTime, err := time.Parse(time.RFC3339Nano, strTime)
+		if err == nil {
+			t.Time = vTime
+			return nil
+		}
+
+		vTime, err = time.Parse(time.RFC3339, strTime)
+		if err == nil {
+			t.Time = vTime
+			return nil
+		}
+
+		vTime, err = timeparser.TimeParser(strTime)
+		if err == nil {
+			t.Time = vTime
+			return nil
+		}
+
+		return fmt.Errorf("cannot decode %v into a metadata.Time, err:%s", bsontype.String, err.Error())
+
 	}
+
 	// for compatibility purpose
 	tt := tmptime{}
 	err := bson.Unmarshal(raw, &tt)
 	t.Time = tt.Time
+
 	return err
 }
 

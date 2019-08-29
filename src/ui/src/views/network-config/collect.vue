@@ -1,14 +1,18 @@
 <template>
     <div class="collect-wrapper">
         <div class="title">
-            <bk-button type="primary"
+            <bk-button theme="primary"
                 :disabled="!table.checked.length"
                 :loading="$loading('collectDataCollection')"
                 @click="executionDiscovery">
-                {{$t('NetworkDiscovery["执行发现"]')}}
+                {{$t('执行发现')}}
             </bk-button>
             <div class="input-box">
-                <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'搜索IP、云区域\']')" v-model.trim="filter.text" @keyup.enter="getTableData">
+                <bk-input type="text" class="cmdb-form-input"
+                    :placeholder="$t('搜索IP、云区域')"
+                    v-model.trim="filter.text"
+                    @enter="getTableData">
+                </bk-input>
                 <i class="bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>
@@ -44,16 +48,16 @@
                             <div class="rotate rotate7"></div>
                             <div class="rotate rotate8"></div>
                         </div>
-                        <span class="text" :id="item['bk_host_innerip']" v-if="item.status['report_status'] !== 'normal'">{{$t('NetworkDiscovery["上报中"]')}}</span>
-                        <span class="text" :id="item['bk_host_innerip']" v-else>{{$t('NetworkDiscovery["下发中"]')}}</span>
+                        <span class="text" :id="item['bk_host_innerip']" v-if="item.status['report_status'] !== 'normal'">{{$t('上报中')}}</span>
+                        <span class="text" :id="item['bk_host_innerip']" v-else>{{$t('下发中')}}</span>
                     </template>
                     <template v-else-if="item.status['collector_status'] === 'abnormal' || item.status['config_status'] !== 'normal'">
                         <i class="bk-icon icon-circle color-danger" :id="item['bk_host_innerip']"></i>
-                        <span class="text">{{$t('NetworkDiscovery["异常"]')}}</span>
+                        <span class="text">{{$t('异常')}}</span>
                     </template>
                     <template v-else>
                         <i class="bk-icon icon-circle color-success" :id="item['bk_host_innerip']"></i>
-                        <span class="text">{{$t('NetworkDiscovery["正常"]')}}</span>
+                        <span class="text">{{$t('正常')}}</span>
                     </template>
                 </div>
             </template>
@@ -61,70 +65,74 @@
                 {{periodMap[item.config.period]}}
             </template>
             <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary" @click="showConfig(item)">{{$t('EventPush["配置"]')}}</span>
+                <span class="text-primary" @click="showConfig(item)">{{$t('配置')}}</span>
             </template>
         </cmdb-table>
         <bk-dialog
-            class="config-dialog"
-            :is-show.sync="configDialog.isShow"
-            :has-header="false"
-            :has-footer="false"
-            :quick-close="false"
+            class="bk-dialog-no-padding config-dialog"
+            v-model="configDialog.isShow"
+            :show-footer="false"
+            :mask-close="false"
             :close-icon="false"
-            padding="0"
             :width="424">
-            <div slot="content" class="dialog-content">
+            <div class="dialog-content">
                 <div class="content-box">
                     <h2 class="title">
-                        {{$t('NetworkDiscovery["配置采集器"]')}}
+                        {{$t('配置采集器')}}
                     </h2>
                     <label>
-                        <span>{{$t('NetworkDiscovery["SNMP扫描范围"]')}}</span>
+                        <span>{{$t('SNMP扫描范围')}}</span>
                         <span class="color-danger">*</span>
-                        <i class="bk-icon icon-exclamation-circle" v-tooltip="{ content: htmlEncode(), classes: 'collect-tooltip' }"></i>
+                        <i class="bk-icon icon-exclamation-circle" v-bk-tooltips="{ content: htmlEncode(), classes: 'collect-tooltip' }"></i>
                     </label>
                     <textarea name="scan_range" id="" cols="30" rows="10" v-validate="'required'" v-model.trim="configDialog.scan_range"></textarea>
                     <div v-show="errors.has('scan_range')" class="color-danger">{{ errors.first('scan_range') }}</div>
                     <label>
-                        <span>{{$t('NetworkDiscovery["采集频率"]')}}</span>
+                        <span>{{$t('采集频率')}}</span>
                         <span class="color-danger">*</span>
                     </label>
-                    <bk-selector
-                        :list="configDialog.periodList"
-                        :selected.sync="configDialog.period"
-                    ></bk-selector>
+                    <bk-select v-model="configDialog.period">
+                        <bk-option v-for="(option, index) in configDialog.periodList"
+                            :key="index"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
                     <label>
-                        <span>{{$t('NetworkDiscovery["团体字"]')}}</span>
+                        <span>{{$t('团体字')}}</span>
                         <span class="color-danger">*</span>
-                        <i class="bk-icon icon-exclamation-circle" v-tooltip="'Community String'"></i>
+                        <i class="bk-icon icon-exclamation-circle" v-bk-tooltips="'Community String'"></i>
                     </label>
-                    <input type="text" name="community" class="cmdb-form-input" v-validate="'required'" v-model.trim="configDialog.community">
+                    <bk-input type="text" name="community" class="cmdb-form-input"
+                        v-validate="'required'"
+                        v-model.trim="configDialog.community">
+                    </bk-input>
                     <div v-show="errors.has('community')" class="color-danger">{{ errors.first('community') }}</div>
                 </div>
                 <div class="footer">
-                    <bk-button type="primary" @click="saveConfig">
-                        {{$t('NetworkDiscovery["保存并下发"]')}}
+                    <bk-button theme="primary" @click="saveConfig">
+                        {{$t('保存并下发')}}
                     </bk-button>
-                    <bk-button type="default" @click="hideConfig">
-                        {{$t('Common["取消"]')}}
+                    <bk-button theme="default" @click="hideConfig">
+                        {{$t('取消')}}
                     </bk-button>
                 </div>
             </div>
         </bk-dialog>
         <div class="status-tips" ref="tooltipContent" v-if="tooltip.id">
-            <p class="tips-content">{{$t('NetworkDiscovery["采集器状态"]')}}：
+            <p class="tips-content">{{$t('采集器状态')}}：
                 <span :class="tooltip.content.status.collector_status === 'normal' ? 'color-success' : 'color-danger'">
-                    {{tooltip.content.status.collector_status === 'normal' ? $t('NetworkDiscovery["正常"]') : $t('NetworkDiscovery["异常"]')}}
+                    {{tooltip.content.status.collector_status === 'normal' ? $t('正常') : $t('异常')}}
                 </span>
             </p>
-            <p class="tips-content">{{$t('NetworkDiscovery["配置状态"]')}}：
+            <p class="tips-content">{{$t('配置状态')}}：
                 <span :class="tooltip.content.status.config_status === 'normal' ? 'color-success' : 'color-danger'">
-                    {{tooltip.content.status.collector_status === 'normal' ? $t('NetworkDiscovery["正常"]') : $t('NetworkDiscovery["更新失败"]')}}
+                    {{tooltip.content.status.collector_status === 'normal' ? $t('正常') : $t('更新失败')}}
                 </span>
             </p>
-            <p class="tips-content">{{$t('NetworkDiscovery["上报状态"]')}}：
+            <p class="tips-content">{{$t('上报状态')}}：
                 <span :class="{ 'color-success': tooltip.content.status.report_status === 'normal' }">
-                    {{tooltip.content.status.collector_status === 'normal' ? $t('NetworkDiscovery["完成"]') : $t('NetworkDiscovery["上报中"]')}}
+                    {{tooltip.content.status.collector_status === 'normal' ? $t('完成') : $t('上报中')}}
                 </span>
             </p>
         </div>
@@ -145,25 +153,25 @@
                         type: 'checkbox'
                     }, {
                         id: 'bk_cloud_name',
-                        name: this.$t('Hosts["云区域"]')
+                        name: this.$t('云区域')
                     }, {
                         id: 'bk_host_innerip',
-                        name: this.$t('Common["内网IP"]')
+                        name: this.$t('内网IP')
                     }, {
                         id: 'status',
-                        name: this.$t('ProcessManagement["状态"]')
+                        name: this.$t('状态')
                     }, {
                         id: 'version',
-                        name: `${this.$t('NetworkDiscovery["版本"]')}`
+                        name: `${this.$t('版本')}`
                     }, {
                         id: 'period',
-                        name: this.$t('NetworkDiscovery["采集频率"]')
+                        name: this.$t('采集频率')
                     }, {
                         id: 'report_total',
-                        name: this.$t('NetworkDiscovery["采集统计"]')
+                        name: this.$t('采集统计')
                     }, {
                         id: 'operation',
-                        name: this.$t('Association["操作"]'),
+                        name: this.$t('操作'),
                         sortable: false
                     }],
                     list: [],
@@ -185,16 +193,16 @@
                     bk_cloud_id: '',
                     periodList: [{
                         id: '∞',
-                        name: this.$t('NetworkDiscovery["手动"]')
+                        name: this.$t('手动')
                     }, {
                         id: '12H',
-                        name: this.$t('NetworkDiscovery["12H"]')
+                        name: this.$t('12H')
                     }, {
                         id: '24H',
-                        name: this.$t('NetworkDiscovery["24H"]')
+                        name: this.$t('24H')
                     }, {
                         id: '7D',
-                        name: this.$t('NetworkDiscovery["7D"]')
+                        name: this.$t('7D')
                     }]
                 },
                 tooltip: {
@@ -203,10 +211,10 @@
                     id: ''
                 },
                 periodMap: {
-                    '∞': this.$t('NetworkDiscovery["手动"]'),
-                    '12H': this.$t('NetworkDiscovery["12H"]'),
-                    '24H': this.$t('NetworkDiscovery["24H"]'),
-                    '7D': this.$t('NetworkDiscovery["7D"]')
+                    '∞': this.$t('手动'),
+                    '12H': this.$t('12H'),
+                    '24H': this.$t('24H'),
+                    '7D': this.$t('7D')
                 }
             }
         },
@@ -283,7 +291,7 @@
             },
             htmlEncode () {
                 let temp = document.createElement('div')
-                temp.innerHTML = `${this.$t('NetworkDiscovery["填写格式"]')}&lt;/br&gt;${this.$t('NetworkDiscovery["指定IP"]')}：192.168.1.1&lt;/br&gt;IP ${this.$t('NetworkDiscovery["范围"]')}：192.168.1.1-192.168.1.200&lt;/br&gt;cidr ip ${this.$t('NetworkDiscovery["范围"]')}：192.168.1.1/32`
+                temp.innerHTML = `${this.$t('填写格式')}&lt;/br&gt;${this.$t('指定IP')}：192.168.1.1&lt;/br&gt;IP ${this.$t('范围')}：192.168.1.1-192.168.1.200&lt;/br&gt;cidr ip ${this.$t('范围')}：192.168.1.1/32`
                 const output = temp.innerText
                 temp = null
                 return output
@@ -305,7 +313,7 @@
                     const index = this.table.header.findIndex(header => header.id === 'version')
                     this.table.header[index] = {
                         id: 'version',
-                        name: `${this.$t('NetworkDiscovery["版本"]')}(${this.$t('NetworkDiscovery["最新"]')}${res.info[0]['latest_ersion']})`
+                        name: `${this.$t('版本')}(${this.$t('最新')}${res.info[0]['latest_ersion']})`
                     }
                     this.table.header.splice()
                 }

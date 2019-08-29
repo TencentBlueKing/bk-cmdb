@@ -14,6 +14,8 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
 	"strings"
 
 	restful "github.com/emicklei/go-restful"
@@ -143,6 +145,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.Contains(string(*u), "/associationtype"):
 		from, to, isHit = rootPath, topoRoot, true
 
+	case strings.Contains(string(*u), "/find/full_text"):
+		from, to, isHit = rootPath, topoRoot, true
+
 	default:
 		isHit = false
 	}
@@ -153,6 +158,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	}
 	return false
 }
+
+// hostCloudAreaURLRegexp host server opeator cloud area api regex
+var hostCloudAreaURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(cloudarea|cloudarea/.*)$", verbs))
 
 // WithHost transform the host's url
 func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
@@ -179,6 +187,9 @@ func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, hostRoot, true
 
 	case string(*u) == (rootPath + "/findmany/modulehost"):
+		from, to, isHit = rootPath, hostRoot, true
+
+	case hostCloudAreaURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, hostRoot, true
 
 	default:
@@ -212,6 +223,10 @@ func (u *URLPath) WithEvent(req *restful.Request) (isHit bool) {
 	return false
 }
 
+const verbs = "create|createmany|update|updatemany|delete|deletemany|find|findmany"
+
+var procUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/proc/.*$", verbs))
+
 // WithProc transform the proc's url
 func (u *URLPath) WithProc(req *restful.Request) (isHit bool) {
 	procRoot := "/process/v3"
@@ -220,7 +235,8 @@ func (u *URLPath) WithProc(req *restful.Request) (isHit bool) {
 	switch {
 	case strings.HasPrefix(string(*u), rootPath+"/proc/"):
 		from, to, isHit = rootPath+"/proc", procRoot, true
-
+	case procUrlRegexp.MatchString(string(*u)):
+		from, to, isHit = rootPath, procRoot, true
 	default:
 		isHit = false
 	}

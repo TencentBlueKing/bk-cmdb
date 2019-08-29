@@ -19,11 +19,14 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
@@ -35,8 +38,9 @@ import (
 // ImportHost import host
 func (s *Service) ImportHost(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromHTTPHeader(c.Request.Header)
 
-	language := logics.GetLanguageByHTTPRequest(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	file, err := c.FormFile("file")
@@ -46,7 +50,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
@@ -80,33 +84,26 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	data, errCode, err := s.Logics.ImportHosts(context.Background(), f, c.Request.Header, defLang, &metadata.Metadata{})
+	result := s.Logics.ImportHosts(ctx, f, c.Request.Header, defLang, &metadata.Metadata{})
 
-	if nil != err {
-		blog.Errorf("ImportHost failed, import logic failed, err: %+v, rid: %s", err, rid)
-		msg := getReturnStr(errCode, err.Error(), data)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-
-	c.String(http.StatusOK, getReturnStr(0, "", data))
-
+	c.JSON(http.StatusOK, result)
 }
 
 // ExportHost export host
 func (s *Service) ExportHost(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromGinContext(c)
 
 	appIDStr := c.PostForm("bk_biz_id")
 	hostIDStr := c.PostForm("bk_host_id")
 
-	logics.SetProxyHeader(c)
-	pheader := c.Request.Header
-	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	webCommon.SetProxyHeader(c)
+	header := c.Request.Header
+	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	customFieldsStr := c.PostForm(common.ExportCustomFields)
 
-	hostInfo, err := s.Logics.GetHostData(appIDStr, hostIDStr, pheader)
+	hostInfo, err := s.Logics.GetHostData(appIDStr, hostIDStr, header)
 	if err != nil {
 		blog.Errorf("ExportHost failed, get hosts by id [%+v] failed, err: %v, rid: %s", hostIDStr, err, rid)
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
@@ -123,14 +120,14 @@ func (s *Service) ExportHost(c *gin.Context) {
 	if nil != err {
 		blog.Errorf("ExportHost failed, get host model fields failed, err: %+v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
-		c.Writer.Write([]byte(reply))
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
-	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, pheader, &metadata.Metadata{})
+	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, &metadata.Metadata{})
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
-		c.Writer.Write([]byte(reply))
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 
@@ -146,12 +143,12 @@ func (s *Service) ExportHost(c *gin.Context) {
 	fileName := fmt.Sprintf("%dhost.xlsx", time.Now().UnixNano())
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
 
-	logics.ProductExcelCommentSheet(file, defLang)
+	logics.ProductExcelCommentSheet(ctx, file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {
 		blog.Errorf("ExportHost failed, save file failed, err: %+v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
-		c.Writer.Write([]byte(reply))
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 	logics.AddDownExcelHttpHeader(c, "bk_cmdb_export_host.xlsx")
@@ -165,8 +162,9 @@ func (s *Service) ExportHost(c *gin.Context) {
 // BuildDownLoadExcelTemplate build download excel template
 func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromGinContext(c)
 
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/template/"
@@ -178,7 +176,7 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 			return
 		}
 	}
-	language := logics.GetLanguageByHTTPRequest(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -190,11 +188,11 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	}
 
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
-	err = s.Logics.BuildExcelTemplate(objID, file, c.Request.Header, defLang, metaInfo)
+	err = s.Logics.BuildExcelTemplate(ctx, objID, file, c.Request.Header, defLang, metaInfo)
 	if nil != err {
-		blog.Errorf("BuildDownLoadExcelTemplate failed, build excel template failed, object:%s error:%s", objID, err.Error())
+		blog.Errorf("BuildDownLoadExcelTemplate failed, build excel template failed, object:%s error:%s, rid: %s", objID, err.Error(), rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
-		c.Writer.Write([]byte(reply))
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 	if objID == common.BKInnerObjIDHost {
@@ -226,4 +224,113 @@ func getReturnStr(code int, message string, data interface{}) string {
 
 	return string(msg)
 
+}
+
+func (s *Service) ListenIPOptions(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromGinContext(c)
+	webCommon.SetProxyHeader(c)
+	header := c.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+
+	hostIDStr := c.Param("bk_host_id")
+	hostID, err := strconv.ParseInt(hostIDStr, 10, 64)
+	if err != nil {
+		blog.Infof("host id invalid, convert to int failed, hostID: %s, err: %+v, rid: %s", hostID, err, rid)
+		result := metadata.ResponseDataMapStr{
+			BaseResp: metadata.BaseResp{
+				Result: false,
+				Code:   common.CCErrCommParamsInvalid,
+				ErrMsg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKHostIDField).Error(),
+			},
+		}
+		c.JSON(http.StatusOK, result)
+		return
+	}
+	option := metadata.ListHostsWithNoBizParameter{
+		HostPropertyFilter: &querybuilder.QueryFilter{
+			Rule: querybuilder.CombinedRule{
+				Condition: querybuilder.ConditionAnd,
+				Rules: []querybuilder.Rule{
+					querybuilder.AtomRule{
+						Field:    common.BKHostIDField,
+						Operator: querybuilder.OperatorEqual,
+						Value:    hostID,
+					},
+				},
+			},
+		},
+	}
+	resp, err := s.CoreAPI.ApiServer().ListHostWithoutApp(ctx, c.Request.Header, option)
+	if err != nil {
+		blog.Errorf("get host by id failed, hostID: %d, err: %+v, rid: %s", hostID, err, rid)
+		result := metadata.ResponseDataMapStr{
+			BaseResp: metadata.BaseResp{
+				Result: false,
+				Code:   common.CCErrHostGetFail,
+				ErrMsg: defErr.Error(common.CCErrHostGetFail).Error(),
+			},
+		}
+		c.JSON(http.StatusOK, result)
+		return
+	}
+	if resp.Code != 0 || resp.Result == false {
+		blog.Errorf("got host by id failed, hostID: %d, response: %+v, rid: %s", hostID, resp, rid)
+		c.JSON(http.StatusOK, resp)
+		return
+	}
+	if len(resp.Data.Info) == 0 {
+		blog.Errorf("host not found, hostID: %d, rid: %s", hostID, rid)
+		result := metadata.ResponseDataMapStr{
+			BaseResp: metadata.BaseResp{
+				Result: false,
+				Code:   common.CCErrCommNotFound,
+				ErrMsg: defErr.Error(common.CCErrCommNotFound).Error(),
+			},
+		}
+		c.JSON(http.StatusOK, result)
+		return
+	}
+	type Host struct {
+		HostID   int64  `json:"bk_host_id" bson:"bk_host_id"`           // 主机ID(host_id)								数字
+		HostName string `json:"bk_host_name" bson:"bk_host_name"`       // 主机名称
+		InnerIP  string `json:"bk_host_innerip" bson:"bk_host_innerip"` // 内网IP
+		OuterIP  string `json:"bk_host_outerip" bson:"bk_host_outerip"` // 外网IP
+	}
+	host := Host{}
+	raw := resp.Data.Info[0]
+	if err := mapstr.DecodeFromMapStr(&host, raw); err != nil {
+		msg := fmt.Sprintf("decode response data into host failed, raw: %+v, err: %+v, rid: %s", raw, err, rid)
+		blog.Error(msg)
+		result := metadata.ResponseDataMapStr{
+			BaseResp: metadata.BaseResp{
+				Result: false,
+				Code:   common.CCErrCommJSONUnmarshalFailed,
+				ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(),
+			},
+		}
+		c.JSON(http.StatusOK, result)
+		return
+	}
+
+	ipOptions := make([]string, 0)
+	ipOptions = append(ipOptions, "127.0.0.1")
+	ipOptions = append(ipOptions, "0.0.0.0")
+	if len(host.InnerIP) > 0 {
+		ipOptions = append(ipOptions, host.InnerIP)
+	}
+	if len(host.OuterIP) > 0 {
+		ipOptions = append(ipOptions, host.OuterIP)
+	}
+	result := metadata.ResponseDataMapStr{
+		BaseResp: metadata.BaseResp{
+			Result: true,
+			Code:   0,
+		},
+		Data: map[string]interface{}{
+			"options": ipOptions,
+		},
+	}
+	c.JSON(http.StatusOK, result)
+	return
 }

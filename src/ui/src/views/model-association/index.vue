@@ -3,7 +3,7 @@
         <feature-tips
             :feature-name="'association'"
             :show-tips="showFeatureTips"
-            :desc="$t('ModelManagement[\'关联关系提示\']')"
+            :desc="$t('关联关系提示')"
             :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94'"
             @close-tips="showFeatureTips = false">
         </feature-tips>
@@ -13,72 +13,96 @@
                     active: !$isAuthorized($OPERATION.C_RELATION),
                     auth: [$OPERATION.C_RELATION]
                 }">
-                <bk-button type="primary"
+                <bk-button theme="primary"
                     class="create-btn"
                     :disabled="!$isAuthorized($OPERATION.C_RELATION)"
                     @click="createRelation">
-                    {{$t('Common["新建"]')}}
+                    {{$t('新建')}}
                 </bk-button>
             </span>
             <label class="search-input">
-                <i class="bk-icon icon-search" @click="searchRelation(true)"></i>
-                <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')" @keyup.enter="searchRelation(true)">
+                <!-- <i class="bk-icon icon-search" @click="searchRelation(true)"></i> -->
+                <bk-input type="text" class="cmdb-form-input"
+                    v-model.trim="searchText"
+                    :right-icon="'bk-icon icon-search'"
+                    :placeholder="$t('请输入关联类型名称')"
+                    @enter="searchRelation(true)">
+                </bk-input>
             </label>
         </p>
-        <cmdb-table
-            :loading="$loading('searchAssociationType')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange">
-            <template slot="bk_asst_name" slot-scope="{ item }">
-                {{item['bk_asst_name'] || '--'}}
-            </template>
-            <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary disabled mr10"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_RELATION),
-                        auth: [$OPERATION.U_RELATION]
-                    }"
-                    v-if="item.ispre || !$isAuthorized($OPERATION.U_RELATION)">
-                    {{$t('Common["编辑"]')}}
-                </span>
-                <span class="text-primary mr10"
-                    v-else
-                    @click.stop="editRelation(item)">
-                    {{$t('Common["编辑"]')}}
-                </span>
-                <span class="text-primary disabled"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.D_RELATION),
-                        auth: [$OPERATION.D_RELATION]
-                    }"
-                    v-if="item.ispre || !$isAuthorized($OPERATION.D_RELATION)">
-                    {{$t('Common["删除"]')}}
-                </span>
-                <span class="text-primary"
-                    v-else
-                    @click.stop="deleteRelation(item)">
-                    {{$t('Common["删除"]')}}
-                </span>
-            </template>
-        </cmdb-table>
-        <cmdb-slider
+        <bk-table
+            v-bkloading="{ isLoading: $loading('searchAssociationType') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange">
+            <bk-table-column prop="bk_asst_id" :label="$t('唯一标识')" sortable="custom" class-name="is-highlight">
+                <template slot-scope="{ row }">
+                    <div style="cursor: pointer; padding: 10px 0;" @click.stop="handleShowDetails(row)">
+                        {{row['bk_asst_id']}}
+                    </div>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_asst_name" :label="$t('名称')" sortable="custom">
+                <template slot-scope="{ row }">
+                    {{row['bk_asst_name'] || '--'}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="src_des" :label="$t('源->目标描述')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="dest_des" :label="$t('目标->源描述')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="count" :label="$t('使用数')"></bk-table-column>
+            <bk-table-column v-if="isAdminView"
+                fixed="right"
+                :label="$t('操作')">
+                <template slot-scope="{ row }">
+                    <span class="text-primary disabled mr10"
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_RELATION),
+                            auth: [$OPERATION.U_RELATION]
+                        }"
+                        v-if="row.ispre || !$isAuthorized($OPERATION.U_RELATION)">
+                        {{$t('编辑')}}
+                    </span>
+                    <span class="text-primary mr10"
+                        v-else
+                        @click.stop="editRelation(row)">
+                        {{$t('编辑')}}
+                    </span>
+                    <span class="text-primary disabled"
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.D_RELATION),
+                            auth: [$OPERATION.D_RELATION]
+                        }"
+                        v-if="row.ispre || !$isAuthorized($OPERATION.D_RELATION)">
+                        {{$t('删除')}}
+                    </span>
+                    <span class="text-primary"
+                        v-else
+                        @click.stop="deleteRelation(row)">
+                        {{$t('删除')}}
+                    </span>
+                </template>
+            </bk-table-column>
+        </bk-table>
+        <bk-sideslider
             class="relation-slider"
             :width="450"
             :title="slider.title"
-            :is-show.sync="slider.isShow">
+            :is-show.sync="slider.isShow"
+            :before-close="handleSliderBeforeClose">
             <the-relation
+                ref="relationForm"
                 slot="content"
                 class="slider-content"
+                v-if="slider.isShow"
                 :is-edit="slider.isEdit"
+                :is-read-only="slider.isReadOnly"
                 :relation="slider.relation"
                 @saved="saveRelation"
-                @cancel="slider.isShow = false">
+                @cancel="handleSliderBeforeClose">
             </the-relation>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -97,37 +121,17 @@
                 slider: {
                     isShow: false,
                     isEdit: false,
-                    title: this.$t('ModelManagement["新建关联类型"]'),
-                    relation: {}
+                    title: this.$t('新建关联类型'),
+                    relation: {},
+                    isReadOnly: false
                 },
                 searchText: '',
                 table: {
-                    header: [{
-                        id: 'bk_asst_id',
-                        name: this.$t('ModelManagement["唯一标识"]')
-                    }, {
-                        id: 'bk_asst_name',
-                        name: this.$t('Hosts["名称"]')
-                    }, {
-                        id: 'src_des',
-                        name: this.$t('ModelManagement["源->目标描述"]')
-                    }, {
-                        id: 'dest_des',
-                        name: this.$t('ModelManagement["目标->源描述"]')
-                    }, {
-                        id: 'count',
-                        name: this.$t('ModelManagement["使用数"]'),
-                        sortable: false
-                    }, {
-                        id: 'operation',
-                        name: this.$t('Common["操作"]'),
-                        sortable: false
-                    }],
                     list: [],
                     pagination: {
                         count: 0,
                         current: 1,
-                        size: 10
+                        limit: 10
                     },
                     defaultSort: '-ispre',
                     sort: '-ispre'
@@ -140,8 +144,8 @@
             searchParams () {
                 const params = {
                     page: {
-                        start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                        limit: this.table.pagination.size,
+                        start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                        limit: this.table.pagination.limit,
                         sort: this.table.sort
                     }
                 }
@@ -158,10 +162,6 @@
             }
         },
         created () {
-            if (!this.isAdminView) {
-                this.table.header.pop()
-            }
-            this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))
             this.searchRelation()
             this.showFeatureTips = this.featureTipsParams['association']
         },
@@ -182,6 +182,10 @@
                         requestId: 'searchAssociationType'
                     }
                 }).then(data => {
+                    if (data.count && !data.info.length) {
+                        this.table.pagination.current -= 1
+                        this.searchRelation()
+                    }
                     this.table.list = data.info
                     this.searchUsageCount()
                     this.table.pagination.count = data.count
@@ -205,19 +209,21 @@
                 this.table.list.splice()
             },
             createRelation () {
-                this.slider.title = this.$t('ModelManagement["新建关联类型"]')
+                this.slider.title = this.$t('新建关联类型')
+                this.slider.isReadOnly = false
                 this.slider.isEdit = false
                 this.slider.isShow = true
             },
             editRelation (relation) {
-                this.slider.title = this.$t('ModelManagement["编辑关联类型"]')
+                this.slider.title = this.$t('编辑关联类型')
+                this.slider.isReadOnly = false
                 this.slider.relation = relation
                 this.slider.isEdit = true
                 this.slider.isShow = true
             },
             deleteRelation (relation) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除关联类型？"]', relation['bk_asst_name'], { name: relation['bk_asst_name'] }),
+                    title: this.$tc('确定删除关联类型？', relation['bk_asst_name'], { name: relation['bk_asst_name'] }),
                     confirmFn: async () => {
                         await this.deleteAssociationType({
                             id: relation.id,
@@ -238,12 +244,40 @@
                 this.searchRelation()
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.searchRelation()
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
+                            confirmFn: () => {
+                                this.slider.isShow = false
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.slider.isShow = false
+                return true
+            },
+            handleShowDetails (relation) {
+                this.slider.title = this.$t('关联类型详情')
+                this.slider.relation = relation
+                this.slider.isReadOnly = true
+                this.slider.isEdit = true
+                this.slider.isShow = true
             }
         }
     }
@@ -251,7 +285,7 @@
 
 <style lang="scss" scoped>
     .operation-box {
-        margin: 0 0 20px 0;
+        margin: 0 0 14px 0;
         font-size: 0;
         .create-btn {
             margin: 0 10px 0 0;
@@ -260,17 +294,6 @@
             position: relative;
             display: inline-block;
             width: 300px;
-            .icon-search {
-                position: absolute;
-                top: 9px;
-                right: 10px;
-                font-size: 18px;
-                color: $cmdbBorderColor;
-            }
-            .cmdb-form-input {
-                vertical-align: middle;
-                padding-right: 36px;
-            }
         }
     }
 </style>

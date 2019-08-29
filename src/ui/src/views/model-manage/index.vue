@@ -1,5 +1,5 @@
 <template>
-    <div class="group-wrapper">
+    <div class="group-wrapper" :style="{ 'padding-top': showFeatureTips ? '114px' : '72px' }">
         <cmdb-main-inject
             :style="{ 'padding-top': showFeatureTips ? '10px' : '' }"
             inject-type="prepend"
@@ -7,7 +7,7 @@
             <feature-tips
                 :feature-name="'model'"
                 :show-tips="showFeatureTips"
-                :desc="$t('ModelManagement[\'模型顶部提示\']')"
+                :desc="$t('模型顶部提示')"
                 :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#ModelManagement'"
                 @close-tips="showFeatureTips = false">
             </feature-tips>
@@ -17,10 +17,10 @@
                         active: !$isAuthorized($OPERATION.C_MODEL),
                         auth: [$OPERATION.C_MODEL]
                     }">
-                    <bk-button type="primary"
+                    <bk-button theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
-                        @click="showModelDialog(false)">
-                        {{$t('ModelManagement["新建模型"]')}}
+                        @click="showModelDialog()">
+                        {{createModelBtn}}
                     </bk-button>
                 </span>
                 <span v-else style="display: inline-block;"
@@ -28,11 +28,11 @@
                         active: !$isAuthorized($OPERATION.C_MODEL),
                         auth: [$OPERATION.C_MODEL]
                     }">
-                    <bk-button type="primary"
-                        v-tooltip="$t('ModelManagement[\'新增模型提示\']')"
+                    <bk-button theme="primary"
+                        v-bk-tooltips="$t('新增模型提示')"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
-                        @click="showModelDialog(false)">
-                        {{$t('ModelManagement["新建模型"]')}}
+                        @click="showModelDialog()">
+                        {{createModelBtn}}
                     </bk-button>
                 </span>
                 <span style="display: inline-block;"
@@ -40,53 +40,68 @@
                         active: !$isAuthorized($OPERATION.C_MODEL_GROUP),
                         auth: [$OPERATION.C_MODEL_GROUP]
                     }">
-                    <bk-button type="default"
+                    <bk-button theme="default"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
                         @click="showGroupDialog(false)">
-                        {{$t('ModelManagement["新建分组"]')}}
+                        {{createGroupBtn}}
                     </bk-button>
                 </span>
             </div>
             <div class="model-type-options fr">
                 <bk-button class="model-type-button enable"
-                    size="mini"
-                    :type="modelType === 'enable' ? 'primary' : 'default'"
+                    size="small"
+                    :theme="modelType === 'enable' ? 'primary' : 'default'"
                     @click="modelType = 'enable'">
-                    {{$t('ModelManagement["启用模型"]')}}
+                    {{$t('启用模型')}}
                 </bk-button>
-                <bk-tooltip
-                    :content="$t('ModelManagement[\'停用模型提示\']')"
+                <bk-popover
+                    :content="$t('停用模型提示')"
                     placenment="bottom"
                     v-if="!disabledClassifications.length">
                     <bk-button class="model-type-button disabled"
-                        v-tooltip="$t('ModelManagement[\'停用模型提示\']')"
-                        size="mini"
+                        v-bk-tooltips="$t('停用模型提示')"
+                        size="small"
                         :disabled="!disabledClassifications.length"
-                        :type="modelType === 'disabled' ? 'primary' : 'default'"
+                        :theme="modelType === 'disabled' ? 'primary' : 'default'"
                         @click="modelType = 'disabled'">
-                        {{$t('ModelManagement["停用模型"]')}}
+                        {{$t('停用模型')}}
                     </bk-button>
-                </bk-tooltip>
+                </bk-popover>
                 <bk-button class="model-type-button disabled"
                     v-else
-                    size="mini"
+                    size="small"
                     :disabled="!disabledClassifications.length"
-                    :type="modelType === 'disabled' ? 'primary' : 'default'"
+                    :theme="modelType === 'disabled' ? 'primary' : 'default'"
                     @click="modelType = 'disabled'">
-                    {{$t('ModelManagement["停用模型"]')}}
+                    {{$t('停用模型')}}
                 </bk-button>
+            </div>
+            <div class="model-search-options fr">
+                <bk-input class="search-model"
+                    :clearable="true"
+                    :right-icon="'bk-icon icon-search'"
+                    v-model.trim="searchModel">
+                </bk-input>
             </div>
         </cmdb-main-inject>
         <ul class="group-list">
             <li class="group-item clearfix"
                 v-for="(classification, classIndex) in currentClassifications"
                 :key="classIndex">
-                <div class="group-title">
+                <div class="group-title" v-bk-tooltips="classification.bk_classification_type === 'inner' ? groupToolTips : ''">
                     <span>{{classification['bk_classification_name']}}</span>
                     <span class="number">({{classification['bk_objects'].length}})</span>
                     <template v-if="isEditable(classification)">
+                        <i class="icon-cc-plus text-primary"
+                            :style="{ 'margin': '0 6px', color: $isAuthorized($OPERATION.C_MODEL) ? '' : '#e6e6e6 !important' }"
+                            v-cursor="{
+                                active: !$isAuthorized($OPERATION.C_MODEL),
+                                auth: [$OPERATION.C_MODEL]
+                            }"
+                            @click="showModelDialog(classification.bk_classification_id)">
+                        </i>
                         <i class="icon-cc-edit text-primary"
-                            :style="{ color: $isAuthorized($OPERATION.U_MODEL_GROUP) ? '' : '#e6e6e6 !important' }"
+                            :style="{ 'margin-right': '4px', color: $isAuthorized($OPERATION.U_MODEL_GROUP) ? '' : '#e6e6e6 !important' }"
                             v-cursor="{
                                 active: !$isAuthorized($OPERATION.U_MODEL_GROUP),
                                 auth: [$OPERATION.U_MODEL_GROUP]
@@ -124,56 +139,57 @@
             </li>
         </ul>
         <bk-dialog
-            class="group-dialog dialog"
+            class="bk-dialog-no-padding bk-dialog-no-tools group-dialog dialog"
             :close-icon="false"
-            :has-header="false"
             :width="600"
-            :padding="0"
-            :quick-close="false"
-            :is-show.sync="groupDialog.isShow">
-            <div slot="content" class="dialog-content">
+            :mask-close="false"
+            v-model="groupDialog.isShow">
+            <div class="dialog-content">
                 <p class="title">{{groupDialog.title}}</p>
                 <div class="content">
                     <label>
                         <div class="label-title">
-                            {{$t('ModelManagement["唯一标识"]')}}<span class="color-danger">*</span>
+                            {{$t('唯一标识')}}<span class="color-danger">*</span>
                         </div>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('classifyId') }">
-                            <input type="text" class="cmdb-form-input"
+                            <bk-input type="text" class="cmdb-form-input"
                                 name="classifyId"
-                                :placeholder="$t('ModelManagement[\'请输入唯一标识\']')"
+                                :placeholder="$t('请输入唯一标识')"
                                 :disabled="groupDialog.isEdit"
                                 v-model.trim="groupDialog.data['bk_classification_id']"
                                 v-validate="'required|classifyId'">
-                            <p class="form-error">{{errors.first('classifyId')}}</p>
+                            </bk-input>
+                            <p class="form-error" :title="errors.first('classifyId')">{{errors.first('classifyId')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
+                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('下划线，数字，英文小写的组合')"></i>
                     </label>
                     <label>
                         <span class="label-title">
-                            {{$t('ModelManagement["名称"]')}}
+                            {{$t('名称')}}
                         </span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('classifyName') }">
-                            <input type="text"
+                            <bk-input type="text"
                                 class="cmdb-form-input"
                                 name="classifyName"
-                                :placeholder="$t('ModelManagement[\'请输入名称\']')"
+                                :placeholder="$t('请输入名称')"
                                 v-model.trim="groupDialog.data['bk_classification_name']"
                                 v-validate="'required|classifyName'">
-                            <p class="form-error">{{errors.first('classifyName')}}</p>
+                            </bk-input>
+                            <p class="form-error" :title="errors.first('classifyName')">{{errors.first('classifyName')}}</p>
                         </div>
                     </label>
                 </div>
             </div>
             <div slot="footer" class="footer">
-                <bk-button type="primary" :loading="$loading(['updateClassification', 'createClassification'])" @click="saveGroup">{{$t("Common['保存']")}}</bk-button>
-                <bk-button type="default" @click="hideGroupDialog">{{$t("Common['取消']")}}</bk-button>
+                <bk-button theme="primary" :loading="$loading(['updateClassification', 'createClassification'])" @click="saveGroup">{{$t('保存')}}</bk-button>
+                <bk-button theme="default" @click="hideGroupDialog">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
         <the-create-model
             :is-show.sync="modelDialog.isShow"
-            :title="$t('ModelManagement[\'新建模型\']')"
+            :group-id.sync="modelDialog.groupId"
+            :title="$t('新建模型')"
             @confirm="saveModel">
         </the-create-model>
     </div>
@@ -201,7 +217,7 @@
                 groupDialog: {
                     isShow: false,
                     isEdit: false,
-                    title: this.$t('ModelManagement["新建分组"]'),
+                    title: this.$t('新建分组'),
                     data: {
                         bk_classification_id: '',
                         bk_classification_name: '',
@@ -209,9 +225,16 @@
                     }
                 },
                 modelDialog: {
-                    isShow: false
+                    isShow: false,
+                    groupId: ''
                 },
-                modelType: 'enable'
+                modelType: 'enable',
+                searchModel: '',
+                filterClassifications: [],
+                groupToolTips: {
+                    content: this.$t('内置模型组不支持添加和修改'),
+                    placement: 'right'
+                }
             }
         },
         computed: {
@@ -247,11 +270,39 @@
                 return disabledClassifications
             },
             currentClassifications () {
-                return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+                if (!this.searchModel) {
+                    return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+                } else {
+                    return this.filterClassifications
+                }
+            },
+            createGroupBtn () {
+                return this.isAdminView ? this.$t('新建分组') : this.$t('新建业务分组')
+            },
+            createModelBtn () {
+                return this.isAdminView ? this.$t('新建模型') : this.$t('新建业务模型')
+            }
+        },
+        watch: {
+            searchModel (value) {
+                if (!value) {
+                    return
+                }
+                const searchResult = []
+                const reg = new RegExp(value, 'gi')
+                const currentClassifications = this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+                const classifications = this.$tools.clone(currentClassifications)
+                for (let i = 0; i < classifications.length; i++) {
+                    classifications[i].bk_objects = classifications[i].bk_objects.filter(model => reg.test(model.bk_obj_name) || reg.test(model.bk_obj_id))
+                    searchResult.push(classifications[i])
+                }
+                this.filterClassifications = searchResult
+            },
+            modelType () {
+                this.searchModel = ''
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["模型"]'))
             this.scrollHandler = event => {
                 this.scrollTop = event.target.scrollTop
             }
@@ -259,6 +310,11 @@
             this.searchClassificationsObjects({
                 params: this.$injectMetadata()
             })
+            if (this.$route.query.searchModel) {
+                const hash = window.location.hash
+                this.searchModel = this.$route.query.searchModel
+                window.location.hash = hash.substring(0, hash.indexOf('?'))
+            }
             this.showFeatureTips = this.featureTipsParams['model']
         },
         beforeDestroy () {
@@ -294,13 +350,13 @@
                 if (isEdit) {
                     if (!this.$isAuthorized(this.$OPERATION.U_MODEL_GROUP)) return
                     this.groupDialog.data.id = group.id
-                    this.groupDialog.title = this.$t('ModelManagement["编辑分组"]')
+                    this.groupDialog.title = this.$t('编辑分组')
                     this.groupDialog.data.bk_classification_id = group['bk_classification_id']
                     this.groupDialog.data.bk_classification_name = group['bk_classification_name']
                     this.groupDialog.data.id = group.id
                 } else {
                     if (!this.$isAuthorized(this.$OPERATION.C_MODEL_GROUP)) return
-                    this.groupDialog.title = this.$t('ModelManagement["新建分组"]')
+                    this.groupDialog.title = this.$t('新建分组')
                     this.groupDialog.data.bk_classification_id = ''
                     this.groupDialog.data.bk_classification_name = ''
                     this.groupDialog.data.id = ''
@@ -343,11 +399,12 @@
                     this.updateClassify({ ...params, ...{ id: res.id } })
                 }
                 this.hideGroupDialog()
+                this.searchModel = ''
             },
             deleteGroup (group) {
                 if (!this.$isAuthorized(this.$OPERATION.D_MODEL_GROUP)) return
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确认要删除此分组"]'),
+                    title: this.$t('确认要删除此分组'),
                     confirmFn: async () => {
                         await this.deleteClassification({
                             id: group.id,
@@ -358,10 +415,12 @@
                             }
                         })
                         this.$store.commit('objectModelClassify/deleteClassify', group['bk_classification_id'])
+                        this.searchModel = ''
                     }
                 })
             },
-            showModelDialog () {
+            showModelDialog (groupId) {
+                this.modelDialog.groupId = groupId || ''
                 this.modelDialog.isShow = true
             },
             async saveModel (data) {
@@ -379,16 +438,19 @@
                     params: this.$injectMetadata()
                 })
                 this.modelDialog.isShow = false
+                this.modelDialog.groupId = ''
+                this.searchModel = ''
             },
             modelClick (model) {
+                const fullPath = this.searchModel ? `${this.$route.fullPath}?searchModel=${this.searchModel}` : this.$route.fullPath
                 this.$store.commit('objectModel/setActiveModel', model)
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.$router.push({
                     name: 'modelDetails',
                     params: {
                         modelId: model['bk_obj_id']
+                    },
+                    query: {
+                        from: fullPath
                     }
                 })
             }
@@ -398,7 +460,7 @@
 
 <style lang="scss" scoped>
     .group-wrapper {
-        padding: 130px 20px 20px 0;
+        padding: 72px 0 20px 0;
     }
     .btn-group {
         position: absolute;
@@ -416,16 +478,21 @@
             box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
         }
     }
+    .model-search-options {
+        .search-model {
+            width: 240px;
+        }
+    }
     .model-type-options {
-        margin: 6px 0;
+        margin: 0 0 0 10px;
         font-size: 0;
         text-align: right;
-        position: relative;
-        z-index: 1;
         .model-type-button {
             position: relative;
             margin: 0;
             font-size: 12px;
+            height: 32px;
+            line-height: 30px;
             &.enable {
                 border-radius: 2px 0 0 2px;
                 z-index: 2;
@@ -461,9 +528,10 @@
         }
         .group-title {
             display: inline-block;
-            padding: 0 40px 0 0;
+            margin: 0 40px 0 0;
             line-height: 21px;
             color: #333948;
+            outline: 0;
             &:before {
                 content: "";
                 display: inline-block;
@@ -489,6 +557,10 @@
                 >.text-primary {
                     display: inline-block;
                 }
+            }
+            .icon-cc-plus {
+                border: 1px solid #3c96ff;
+                border-radius: 2px;
             }
         }
     }

@@ -78,8 +78,8 @@ func (lgc *Logics) UpdateHost(ctx context.Context, input map[string]interface{},
 		common.BKHostInnerIPField: innerIP,
 		common.BKCloudIDField:     dstPlat,
 	}
-	phpapi := lgc.NewPHPAPI()
-	_, hostIDArr, err := phpapi.GetHostMapByCond(ctx, dstHostCondition)
+	phpApi := lgc.NewPHPAPI()
+	_, hostIDArr, err := phpApi.GetHostMapByCond(ctx, dstHostCondition)
 	blog.V(5).Infof("hostIDArr:%+v,rid:%s", hostIDArr, lgc.rid)
 	if nil != err {
 		return nil, http.StatusInternalServerError, err
@@ -96,7 +96,7 @@ func (lgc *Logics) UpdateHost(ctx context.Context, input map[string]interface{},
 	data := input["data"].(map[string]interface{})
 	data[common.BKHostInnerIPField] = input["condition"].(map[string]interface{})[common.BKHostInnerIPField]
 
-	res, err := phpapi.UpdateHostMain(ctx, hostCondition, data, appID)
+	res, err := phpApi.UpdateHostMain(ctx, hostCondition, data, appID)
 	if nil != err {
 		return nil, http.StatusInternalServerError, err
 	}
@@ -110,18 +110,18 @@ func (lgc *Logics) FindHostIDsByAppID(ctx context.Context, input *meta.UpdateHos
 
 	blog.V(5).Infof("updateHostByAppID http body data: %+v, rid:%s", input, lgc.rid)
 
-	phpapi := lgc.NewPHPAPI()
+	phpApi := lgc.NewPHPAPI()
 
-	moduleInfo, err := phpapi.GetDefaultModules(ctx, int(appID))
+	moduleInfo, err := phpApi.GetDefaultModules(ctx, int(appID))
 
 	if nil != err {
-		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
+		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v, rid: %s", input, err, moduleInfo, lgc.rid)
 		return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoModuleSelectFailed)
 	}
 
 	defaultModuleID, err := moduleInfo.Int64(common.BKModuleIDField)
 	if nil != err {
-		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
+		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v, rid: %s", input, err, moduleInfo, lgc.rid)
 		return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoModuleSelectFailed)
 	}
 	hostIDArr := make([]int64, 0)
@@ -129,7 +129,7 @@ func (lgc *Logics) FindHostIDsByAppID(ctx context.Context, input *meta.UpdateHos
 		proMap := pro.(map[string]interface{})
 		var hostID int64
 		innerIP := proMap[common.BKHostInnerIPField]
-		hostData, err := phpapi.GetHostByIPAndSource(ctx, innerIP.(string), input.CloudID)
+		hostData, err := phpApi.GetHostByIPAndSource(ctx, innerIP.(string), input.CloudID)
 		if nil != err {
 			return nil, http.StatusInternalServerError, err
 		}
@@ -147,13 +147,13 @@ func (lgc *Logics) FindHostIDsByAppID(ctx context.Context, input *meta.UpdateHos
 					return nil, http.StatusInternalServerError, err
 				}
 				if !bl {
-					blog.Errorf("is exist plat  not foud platid :%v, input:%+v,rid:%s", platID, input, lgc.rid)
+					blog.Errorf("is exist plat  not found platid :%v, input:%+v,rid:%s", platID, input, lgc.rid)
 					return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoCloudNotFound)
 				}
 			}
 			proMap["import_from"] = common.HostAddMethodAgent
 			blog.V(5).Infof("procMap:%v, input:%+v,rid:%s", proMap, input, lgc.rid)
-			hostIDNew, err := phpapi.AddHost(ctx, proMap)
+			hostIDNew, err := phpApi.AddHost(ctx, proMap)
 			if nil != err {
 				return nil, http.StatusInternalServerError, err
 			}
@@ -161,7 +161,7 @@ func (lgc *Logics) FindHostIDsByAppID(ctx context.Context, input *meta.UpdateHos
 			hostID = hostIDNew
 
 			blog.V(5).Infof("addHost success, hostID: %d, input:%v,rid:%s", hostID, input, lgc.rid)
-			err = phpapi.AddModuleHostConfig(ctx, hostID, int64(appID), []int64{defaultModuleID})
+			err = phpApi.AddModuleHostConfig(ctx, hostID, int64(appID), []int64{defaultModuleID})
 			if nil != err {
 				return nil, http.StatusInternalServerError, err
 			}
@@ -169,9 +169,9 @@ func (lgc *Logics) FindHostIDsByAppID(ctx context.Context, input *meta.UpdateHos
 		} else {
 			hostID, err = hostData[0].Int64(common.BKHostIDField)
 			if nil != err {
-				blog.Errorf("UpdateHostByAppID failed, getHostByIPAndSource result not found, hostinfo: %+v, input:%v, innerip:%v, platID:%v error:%s, rid:%s",
+				blog.Errorf("UpdateHostByAppID failed, getHostByIPAndSource result not found, hostInfo: %+v, input:%v, innerIP:%v, platID:%v error:%s, rid:%s",
 					hostData[0], input, innerIP, input.CloudID, err.Error(), lgc.rid)
-				return nil, http.StatusInternalServerError, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+				return nil, http.StatusInternalServerError, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 			}
 
 		}
@@ -185,18 +185,18 @@ func (lgc *Logics) UpdateHostByAppID(ctx context.Context, input *meta.UpdateHost
 
 	blog.V(5).Infof("updateHostByAppID http body data: %+v, rid:%s", input, lgc.rid)
 
-	phpapi := lgc.NewPHPAPI()
+	phpApi := lgc.NewPHPAPI()
 
-	moduleInfo, err := phpapi.GetDefaultModules(ctx, int(appID))
+	moduleInfo, err := phpApi.GetDefaultModules(ctx, int(appID))
 
 	if nil != err {
-		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
+		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v, rid: %s", input, err, moduleInfo, lgc.rid)
 		return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoModuleSelectFailed)
 	}
 
 	defaultModuleID, err := moduleInfo.Int64(common.BKModuleIDField)
 	if nil != err {
-		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
+		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v, rid: %s", input, err, moduleInfo, lgc.rid)
 		return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoModuleSelectFailed)
 	}
 	for _, pro := range input.ProxyList {
@@ -207,7 +207,7 @@ func (lgc *Logics) UpdateHostByAppID(ctx context.Context, input *meta.UpdateHost
 		if !ok {
 			outerIP = ""
 		}
-		hostData, err := phpapi.GetHostByIPAndSource(ctx, innerIP.(string), input.CloudID)
+		hostData, err := phpApi.GetHostByIPAndSource(ctx, innerIP.(string), input.CloudID)
 		if nil != err {
 			return nil, http.StatusInternalServerError, err
 		}
@@ -225,13 +225,13 @@ func (lgc *Logics) UpdateHostByAppID(ctx context.Context, input *meta.UpdateHost
 					return nil, http.StatusInternalServerError, err
 				}
 				if !bl {
-					blog.Errorf("is exist plat  not foud platid :%v, input:%+v,rid:%s", platID, input, lgc.rid)
+					blog.Errorf("is exist plat  not found platID :%v, input:%+v,rid:%s", platID, input, lgc.rid)
 					return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoCloudNotFound)
 				}
 			}
 			proMap["import_from"] = common.HostAddMethodAgent
 			blog.V(5).Infof("procMap:%v, input:%+v,rid:%s", proMap, input, lgc.rid)
-			hostIDNew, err := phpapi.AddHost(ctx, proMap)
+			hostIDNew, err := phpApi.AddHost(ctx, proMap)
 			if nil != err {
 				return nil, http.StatusInternalServerError, err
 			}
@@ -239,7 +239,7 @@ func (lgc *Logics) UpdateHostByAppID(ctx context.Context, input *meta.UpdateHost
 			hostID = hostIDNew
 
 			blog.V(5).Infof("addHost success, hostID: %d, input:%v,rid:%s", hostID, input, lgc.rid)
-			err = phpapi.AddModuleHostConfig(ctx, hostID, int64(appID), []int64{defaultModuleID})
+			err = phpApi.AddModuleHostConfig(ctx, hostID, int64(appID), []int64{defaultModuleID})
 			if nil != err {
 				return nil, http.StatusInternalServerError, err
 			}
@@ -247,8 +247,8 @@ func (lgc *Logics) UpdateHostByAppID(ctx context.Context, input *meta.UpdateHost
 		} else {
 			hostID, err = hostData[0].Int64(common.BKHostIDField)
 			if nil != err {
-				blog.Errorf("UpdateHostByAppID getHostByIPAndSource not found hostid, hostinfo:%v, input:%v, innerip:%v, platID:%v error:%s, rid:%s", hostData[0], input, innerIP, input.CloudID, err.Error(), lgc.rid)
-				return nil, http.StatusInternalServerError, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+				blog.Errorf("UpdateHostByAppID getHostByIPAndSource not found hostID, hostInfo:%v, input:%v, innerIP:%v, platID:%v error:%s, rid:%s", hostData[0], input, innerIP, input.CloudID, err.Error(), lgc.rid)
+				return nil, http.StatusInternalServerError, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 			}
 
 		}
@@ -259,10 +259,10 @@ func (lgc *Logics) UpdateHostByAppID(ctx context.Context, input *meta.UpdateHost
 			}
 			data := map[string]interface{}{
 				// TODO 没有gse_proxy字段，暂时不修改;2018/03/09
-				//common.BKGseProxyField: 1,
+				// common.BKGseProxyField: 1,
 			}
 
-			_, err := phpapi.UpdateHostMain(ctx, hostCondition, data, appID)
+			_, err := phpApi.UpdateHostMain(ctx, hostCondition, data, appID)
 			if nil != err {
 				return nil, http.StatusInternalServerError, err
 			}
@@ -282,8 +282,8 @@ func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, c
 		},
 		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
 	}
-	phpapi := lgc.NewPHPAPI()
-	hosts, err := phpapi.GetHostByCond(ctx, param)
+	phpApi := lgc.NewPHPAPI()
+	hosts, err := phpApi.GetHostByCond(ctx, param)
 	if nil != err {
 		return nil, err
 	}
@@ -295,21 +295,21 @@ func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, c
 		hostID, err := host.Int64(common.BKHostIDField)
 		if nil != err {
 			blog.Errorf("GetIPAndProxyByCompany hostID not integer, error:%v, ip:%s, cloudID:%d, appID:%d, hostInfo:%+v,rid:%s", err.Error(), ipArr, cloudID, appID, host, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 		}
 		hostIDArr = append(hostIDArr, hostID)
 		hostMap[fmt.Sprintf("%v", hostID)] = host
 	}
 
 	blog.V(5).Infof("hostIDArr:%v,rid:%s", hostIDArr, lgc.rid)
-	muduleHostConfigs, err := lgc.GetConfigByCond(ctx, meta.HostModuleRelationRequest{
+	moduleHostConfigs, err := lgc.GetConfigByCond(ctx, meta.HostModuleRelationRequest{
 		HostIDArr: hostIDArr,
 	})
 	if nil != err {
 		return nil, err
 	}
 
-	blog.V(5).Infof("vaildIPArr:%v,rid:%s", muduleHostConfigs, lgc.rid)
+	blog.V(5).Infof("validIPArr:%v,rid:%s", moduleHostConfigs, lgc.rid)
 
 	validIpArr := make([]interface{}, 0)
 	appMap, err := lgc.GetAppMapByCond(ctx, nil, nil)
@@ -319,18 +319,18 @@ func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, c
 
 	invalidIpMap := make(map[string]map[string]interface{})
 
-	for _, config := range muduleHostConfigs {
+	for _, config := range moduleHostConfigs {
 		appIDTemp := fmt.Sprintf("%v", config.AppID)
 		appIDIntTemp := config.AppID
 		hostID := config.HostID
 		ip, err := hostMap[fmt.Sprintf("%v", hostID)].String(common.BKHostInnerIPField)
 		if nil != err {
-			blog.Warnf("getHostByIPArrAndSource get host error, error:%s, appinfo:%v, ip:%v, cloudID:%d, appID:%d,rid:%s", err.Error(), appMap[appIDIntTemp], ipArr, cloudID, appID, lgc.rid)
+			blog.Warnf("getHostByIPArrAndSource get host error, error:%s, appInfo:%v, ip:%v, cloudID:%d, appID:%d,rid:%s", err.Error(), appMap[appIDIntTemp], ipArr, cloudID, appID, lgc.rid)
 		}
 
 		appName, err := appMap[appIDIntTemp].String(common.BKAppNameField)
 		if nil != err {
-			blog.Warnf("getHostByIPArrAndSource get appName error, error:%s, appinfo:%v, ip:%v, cloudID:%d, appID:%d,rid:%s", err.Error(), appMap[appIDIntTemp], ipArr, cloudID, appID, lgc.rid)
+			blog.Warnf("getHostByIPArrAndSource get appName error, error:%s, appInfo:%v, ip:%v, cloudID:%d, appID:%d,rid:%s", err.Error(), appMap[appIDIntTemp], ipArr, cloudID, appID, lgc.rid)
 		}
 
 		if appIDIntTemp != appID {
@@ -356,7 +356,7 @@ func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, c
 		},
 		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
 	}
-	hostProxys, err := phpapi.GetHostByCond(ctx, paramProxy)
+	hostProxys, err := phpApi.GetHostByCond(ctx, paramProxy)
 	if nil != err {
 		return nil, err
 	}
@@ -377,10 +377,10 @@ func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, c
 	return resData, nil
 }
 
-func (lgc *Logics) UpdateCustomProperty(ctx context.Context, hostID, appID int64, proeprtyJson map[string]interface{}) (interface{}, error) {
+func (lgc *Logics) UpdateCustomProperty(ctx context.Context, hostID, appID int64, propertyJson map[string]interface{}) (interface{}, error) {
 
-	phpapi := lgc.NewPHPAPI()
-	propertys, err := phpapi.GetCustomerPropertyByOwner(ctx, common.BKInnerObjIDHost)
+	phpApi := lgc.NewPHPAPI()
+	propertys, err := phpApi.GetCustomerPropertyByOwner(ctx, common.BKInnerObjIDHost)
 	if nil != err {
 		return nil, err
 	}
@@ -388,16 +388,16 @@ func (lgc *Logics) UpdateCustomProperty(ctx context.Context, hostID, appID int64
 	for _, attrMap := range propertys {
 		PropertyId := attrMap.PropertyID
 
-		blog.V(5).Infof("input[PropertyId]:%v, rid:%s", proeprtyJson[PropertyId], lgc.rid)
-		if _, ok := proeprtyJson[PropertyId]; ok {
-			params[PropertyId] = proeprtyJson[PropertyId]
+		blog.V(5).Infof("input[PropertyId]:%v, rid:%s", propertyJson[PropertyId], lgc.rid)
+		if _, ok := propertyJson[PropertyId]; ok {
+			params[PropertyId] = propertyJson[PropertyId]
 		}
 	}
 	blog.V(5).Infof("params:%v,rid:%s", params, lgc.rid)
 	hostCondition := map[string]interface{}{
 		common.BKHostIDField: hostID,
 	}
-	res, err := phpapi.UpdateHostMain(ctx, hostCondition, params, appID)
+	res, err := phpApi.UpdateHostMain(ctx, hostCondition, params, appID)
 	if nil != err {
 		return nil, err
 	}
@@ -412,11 +412,20 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		common.BKCloudIDField:     cloudID,
 	}
 
-	phpapi := lgc.NewPHPAPI()
-	// 处理源IP
-	hostMap, hostIdArr, err := phpapi.GetHostMapByCond(ctx, condition)
+	appConf := map[string]interface{}{common.BKAppIDField: input.AppID}
+	appInfo, err := lgc.GetAppDetails(ctx, "", appConf)
+	if err != nil {
+		return nil, err
+	}
+	if len(appInfo) == 0 {
+		return nil, lgc.ccErr.Errorf(common.CCErrCoreServiceBusinessNotExist, input.AppID)
+	}
 
-	blog.V(5).Infof("CloneHostPropertyhostMapData:%v,rid:%s", hostMap, lgc.rid)
+	phpApi := lgc.NewPHPAPI()
+	// 处理源IP
+	hostMap, hostIdArr, err := phpApi.GetHostMapByCond(ctx, condition)
+
+	blog.V(5).Infof("CloneHostProperty hostMapData:%v,rid:%s", hostMap, lgc.rid)
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +443,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 	srcHostID, err := util.GetInt64ByInterface(hostMapData[common.BKHostIDField])
 	if nil != err {
 		blog.Errorf("CloneHostProperty clone source host host id  not found hostmap:%+v input:%+v,rid:%s", hostMapData, input, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+		return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 	}
 	configCond := meta.HostModuleRelationRequest{
 		HostIDArr:     []int64{srcHostID},
@@ -461,7 +470,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		common.BKCloudIDField: cloudID,
 	}
 
-	dstHostMap, dstHostIDArr, err := phpapi.GetHostMapByCond(ctx, dstCondition)
+	dstHostMap, dstHostIDArr, err := phpApi.GetHostMapByCond(ctx, dstCondition)
 	blog.V(5).Infof("dstHostMap:%+v, input:%+v,rid:%s", dstHostMap, input, lgc.rid)
 
 	var dstHostIDArrV []int64
@@ -481,15 +490,15 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		if dstHostMapData, ok := dstHostMap[id]; ok {
 			ip, ok := dstHostMapData[common.BKHostInnerIPField].(string)
 			if false == ok {
-				blog.Errorf("CloneHostProperty not found innerip , raw data format hostMap:%+v, input:%+v, rid:%s", dstHostMapData, input, lgc.rid)
-				return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "convert fail")
+				blog.Errorf("CloneHostProperty not found innerIP , raw data format hostMap:%+v, input:%+v, rid:%s", dstHostMapData, input, lgc.rid)
+				return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "convert fail")
 
 			}
 
 			hostID, err := util.GetInt64ByInterface(dstHostMapData[common.BKHostIDField])
 			if nil != err {
 				blog.Errorf("CloneHostProperty not found host id  , raw data format hostMap:%+v, input:%+v, rid:%s", dstHostMapData, input, lgc.rid)
-				return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", "convert fail")
+				return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", "convert fail")
 			}
 			existIPMap[ip] = hostID
 		} else {
@@ -503,7 +512,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		blog.Errorf("CloneHostProperty clone host property error : %v, input:%#v,rid:%s", err, input, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrHostDetailFail, err.Error())
 	}
-	//更新的时候，不修改为nil的数据
+	// 更新的时候，不修改为nil的数据
 	updateHostData := make(map[string]interface{})
 	for key, val := range hostMapData {
 		if nil != val {
@@ -533,7 +542,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		blog.V(5).Infof("hostMapData:%+v,rid:%s", hostMapData, lgc.rid)
 		hostID, oK := existIPMap[dstIPV]
 		if true == oK {
-			blog.V(5).Infof("clone update")
+			blog.V(5).Infof("clone update, rid: %s", lgc.rid)
 			hostCondition := map[string]interface{}{
 				common.BKHostInnerIPField: dstIPV,
 				common.BKHostIDField:      hostID,
@@ -543,18 +552,18 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 			delete(updateHostData, common.BKHostIDField)
 			delete(updateHostData, common.BKAssetIDField)
 			delete(updateHostData, common.CreateTimeField)
-			res, err := phpapi.UpdateHostMain(ctx, hostCondition, updateHostData, appID)
+			res, err := phpApi.UpdateHostMain(ctx, hostCondition, updateHostData, appID)
 			if nil != err {
 				return nil, err
 			}
-			blog.V(5).Infof("CloneHostPropertyclone host updateHostMain res:%v, rid:%s", res, lgc.rid)
+			blog.V(5).Infof("CloneHostProperty clone host updateHostMain res:%v, rid:%s", res, lgc.rid)
 		} else {
 			hostMapData[common.BKHostInnerIPField] = dstIPV
 			addHostMapData := hostMapData
 			delete(addHostMapData, common.BKHostIDField)
 			delete(addHostMapData, common.CreateTimeField)
 			addHostMapData[common.BKAssetIDField] = xid.New().String()
-			cloneHostID, err := phpapi.AddHost(ctx, addHostMapData)
+			cloneHostID, err := phpApi.AddHost(ctx, addHostMapData)
 			if nil != err {
 				return nil, err
 			}
@@ -562,7 +571,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 			hostID = cloneHostID
 
 		}
-		err := phpapi.AddModuleHostConfig(ctx, hostID, appID, moduleIDs)
+		err := phpApi.AddModuleHostConfig(ctx, hostID, appID, moduleIDs)
 		if nil != err {
 			return nil, err
 		}

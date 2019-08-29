@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	gparams "configcenter/src/common/paraparse"
+	parser "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -29,37 +29,37 @@ func (s *Service) CreateModule(params types.ContextParams, pathParams, queryPara
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
-		blog.Errorf("create module failed, failed to search the set, %s", err.Error())
+		blog.Errorf("create module failed, failed to search the set, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module] create module failed, failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-module] create module failed, failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
 	setID, err := strconv.ParseInt(pathParams("set_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module] create module failed, failed to parse the set id, error info is %s", err.Error())
+		blog.Errorf("[api-module] create module failed, failed to parse the set id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
 	module, err := s.Core.ModuleOperation().CreateModule(params, obj, bizID, setID, data)
 	if err != nil {
-		blog.Errorf("[api-module] create module failed, error info is %s", err.Error())
+		blog.Errorf("[api-module] create module failed, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	moduleID, err := module.GetInstID()
 	if err != nil {
-		blog.Errorf("create module failed, unexpected error, create module success, but get id failed, err: %+v", err)
+		blog.Errorf("create module failed, unexpected error, create module success, but get id failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 
 	// auth: register module to iam
 	if err := s.AuthManager.RegisterModuleByID(params.Context, params.Header, moduleID); err != nil {
-		blog.Errorf("create module success, but register module failed, err: %+v", err)
+		blog.Errorf("create module success, but register module failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
@@ -71,37 +71,37 @@ func (s *Service) DeleteModule(params types.ContextParams, pathParams, queryPara
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
-		blog.Errorf("failed to search the module, %s", err.Error())
+		blog.Errorf("failed to search the module, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-module]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
 	setID, err := strconv.ParseInt(pathParams("set_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module]failed to parse the set id, error info is %s", err.Error())
+		blog.Errorf("[api-module]failed to parse the set id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
 	moduleID, err := strconv.ParseInt(pathParams("module_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module]failed to parse the module id, error info is %s", err.Error())
+		blog.Errorf("[api-module]failed to parse the module id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "module id")
 	}
 
 	// auth: deregister module to iam
 	if err := s.AuthManager.DeregisterModuleByID(params.Context, params.Header, moduleID); err != nil {
-		blog.Errorf("delete module failed, deregister module failed, err: %+v", err)
+		blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 
 	err = s.Core.ModuleOperation().DeleteModule(params, obj, bizID, []int64{setID}, []int64{moduleID})
 	if err != nil {
-		blog.Errorf("delete module failed, delete operation failed, err: %+v", err)
+		blog.Errorf("delete module failed, delete operation failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 
@@ -113,37 +113,37 @@ func (s *Service) UpdateModule(params types.ContextParams, pathParams, queryPara
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
-		blog.Errorf("failed to search the module, %s", err.Error())
+		blog.Errorf("failed to search the module, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-module]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
 	setID, err := strconv.ParseInt(pathParams("set_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module]failed to parse the set id, error info is %s", err.Error())
+		blog.Errorf("[api-module]failed to parse the set id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
 	moduleID, err := strconv.ParseInt(pathParams("module_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module]failed to parse the module id, error info is %s", err.Error())
+		blog.Errorf("[api-module]failed to parse the module id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "module id")
 	}
 
 	err = s.Core.ModuleOperation().UpdateModule(params, data, obj, bizID, setID, moduleID)
 	if err != nil {
-		blog.Errorf("update module failed, err: %+v", err)
+		blog.Errorf("update module failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 
 	// auth: update registered module to iam
 	if err := s.AuthManager.UpdateRegisteredModuleByID(params.Context, params.Header, moduleID); err != nil {
-		blog.Errorf("update module success, but update registered module failed, err: %+v", err)
+		blog.Errorf("update module success, but update registered module failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
@@ -155,23 +155,23 @@ func (s *Service) SearchModule(params types.ContextParams, pathParams, queryPara
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
-		blog.Errorf("failed to search the module, %s", err.Error())
+		blog.Errorf("failed to search the module, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-module]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
 	setID, err := strconv.ParseInt(pathParams("set_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module]failed to parse the set id, error info is %s", err.Error())
+		blog.Errorf("[api-module]failed to parse the set id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
-	paramsCond := &gparams.SearchParams{
+	paramsCond := &parser.SearchParams{
 		Condition: mapstr.New(),
 	}
 	if err = data.MarshalJSONInto(paramsCond); nil != err {
@@ -191,7 +191,7 @@ func (s *Service) SearchModule(params types.ContextParams, pathParams, queryPara
 
 	cnt, instItems, err := s.Core.ModuleOperation().FindModule(params, obj, queryCond)
 	if nil != err {
-		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 

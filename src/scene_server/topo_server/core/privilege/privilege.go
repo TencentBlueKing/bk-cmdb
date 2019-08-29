@@ -27,7 +27,7 @@ import (
 
 // PermissionInterface the permission methods
 type PermissionInterface interface {
-	SetUserGroupPermission(supplierAccount, gourpID string, permission *metadata.PrivilegeUserGroup) error
+	SetUserGroupPermission(supplierAccount, groupID string, permission *metadata.PrivilegeUserGroup) error
 	GetUserGroupPermission(supplierAccount, groupID string) (*metadata.GroupPrivilege, error)
 	GetUserPermission(supplierAccount, userName string) (*metadata.Gprivilege, error)
 }
@@ -56,22 +56,22 @@ func (u *userGroupPermission) MarshalJSON() ([]byte, error) {
 
 func (u *userGroupPermission) SetUserGroupPermission(supplierAccount, groupID string, permission *metadata.PrivilegeUserGroup) error {
 
-	rsp, err := u.client.ObjectController().Privilege().GetUserGroupPrivi(context.Background(), supplierAccount, groupID, u.params.Header)
+	rsp, err := u.client.CoreService().Privilege().GetUserGroupPrivi(context.Background(), supplierAccount, groupID, u.params.Header)
 	if nil != err {
-		blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[privilege] failed to request object controller, error info is %s, rid: %s", err.Error(), u.params.ReqID)
 		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	// create a new privilege
 	if !rsp.Result {
-		blog.Errorf("[privilege] failed to get user group privi, error info is %s", rsp.ErrMsg)
+		blog.Errorf("[privilege] failed to get user group privilege, error info is %s, rid: %s", rsp.ErrMsg, u.params.ReqID)
 		return u.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	if nil == rsp.Data.Privilege || (0 == len(rsp.Data.Privilege.ModelConfig) && nil == rsp.Data.Privilege.SysConfig) {
-		rsp, err := u.client.ObjectController().Privilege().CreateUserGroupPrivi(context.Background(), supplierAccount, groupID, u.params.Header, permission)
+		rsp, err := u.client.CoreService().Privilege().CreateUserGroupPrivi(context.Background(), supplierAccount, groupID, u.params.Header, permission)
 		if nil != err {
-			blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
+			blog.Errorf("[privilege] failed to request object controller, error info is %s, rid: %s", err.Error(), u.params.ReqID)
 			return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !rsp.Result {
@@ -81,9 +81,9 @@ func (u *userGroupPermission) SetUserGroupPermission(supplierAccount, groupID st
 	}
 
 	// update privilege
-	rspUpdate, err := u.client.ObjectController().Privilege().UpdateUserGroupPrivi(context.Background(), supplierAccount, groupID, u.params.Header, permission)
+	rspUpdate, err := u.client.CoreService().Privilege().UpdateUserGroupPrivi(context.Background(), supplierAccount, groupID, u.params.Header, permission)
 	if nil != err {
-		blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[privilege] failed to request object controller, error info is %s, rid: %s", err.Error(), u.params.ReqID)
 		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -95,9 +95,9 @@ func (u *userGroupPermission) SetUserGroupPermission(supplierAccount, groupID st
 }
 func (u *userGroupPermission) GetUserGroupPermission(supplierAccount, groupID string) (*metadata.GroupPrivilege, error) {
 
-	rsp, err := u.client.ObjectController().Privilege().GetUserGroupPrivi(context.Background(), supplierAccount, groupID, u.params.Header)
+	rsp, err := u.client.CoreService().Privilege().GetUserGroupPrivi(context.Background(), supplierAccount, groupID, u.params.Header)
 	if nil != err {
-		blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[privilege] failed to request object controller, error info is %s, rid: %s", err.Error(), u.params.ReqID)
 		return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -116,9 +116,9 @@ func (u *userGroupPermission) GetUserPermission(supplierAccount, userName string
 	}
 
 	// get cross biz permission
-	rsp, err := u.client.ObjectController().Privilege().GetSystemFlag(context.Background(), supplierAccount, common.HostCrossBizField, u.params.Header)
+	rsp, err := u.client.CoreService().Privilege().GetSystemFlag(context.Background(), supplierAccount, common.HostCrossBizField, u.params.Header)
 	if nil != err {
-		blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[privilege] failed to request object controller, error info is %s, rid: %s", err.Error(), u.params.ReqID)
 		return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	} else {
 		gPrivilege.IsHostCrossBiz = rsp.Result
@@ -127,14 +127,14 @@ func (u *userGroupPermission) GetUserPermission(supplierAccount, userName string
 	// search user group permission
 	cond := condition.CreateCondition()
 	cond.Field(common.BKUserListField).Like(userName)
-	rspSearchGroup, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header, cond.ToMapStr())
+	rspSearchGroup, err := u.client.CoreService().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[privilege] failed to request object controller, error info is %s, rid: %s", err.Error(), u.params.ReqID)
 		// return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rspSearchGroup.Result {
-		blog.Errorf("[privilege] failed to search group permission, error info is %s", rspSearchGroup.ErrMsg)
+		blog.Errorf("[privilege] failed to search group permission, error info is %s, rid: %s", rspSearchGroup.ErrMsg, u.params.ReqID)
 		return nil, u.params.Err.New(rspSearchGroup.Code, rspSearchGroup.ErrMsg)
 	}
 
@@ -145,16 +145,14 @@ func (u *userGroupPermission) GetUserPermission(supplierAccount, userName string
 	modelClsConfig := make(map[string]string)
 	// construct the result
 	for _, item := range rspSearchGroup.Data {
-		//item.GroupID
-
-		grpPrivilege, err := u.client.ObjectController().Privilege().GetUserGroupPrivi(context.Background(), supplierAccount, item.GroupID, u.params.Header)
+		grpPrivilege, err := u.client.CoreService().Privilege().GetUserGroupPrivi(context.Background(), supplierAccount, item.GroupID, u.params.Header)
 		if nil != err {
-			blog.Errorf("[privilege] failed to get the user group(%s) privilege, error info is %s", item.GroupID, err.Error())
+			blog.Errorf("[privilege] failed to get the user group(%s) privilege, error info is %s, rid: %s", item.GroupID, err.Error(), u.params.ReqID)
 			continue
 		}
 
 		if !grpPrivilege.Result {
-			blog.Errorf("[privige] failed to search the user group, error info is %s", grpPrivilege.ErrMsg)
+			blog.Errorf("[privilege] failed to search the user group, error info is %s, rid: %s", grpPrivilege.ErrMsg, u.params.ReqID)
 			continue
 		}
 

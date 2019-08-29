@@ -22,37 +22,46 @@ import (
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 	"configcenter/src/thirdpartyclient/esbserver/gse"
 	"configcenter/src/thirdpartyclient/esbserver/nodeman"
+	"configcenter/src/thirdpartyclient/esbserver/user"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type EsbClientInterface interface {
 	GseSrv() gse.GseClientInterface
+	User() user.UserClientInterface
 	NodemanSrv() nodeman.NodeManClientInterface
 }
 
 type esbsrv struct {
 	client     rest.ClientInterface
 	gseSrv     gse.GseClientInterface
+	userSrv    user.UserClientInterface
 	nodemanSrv nodeman.NodeManClientInterface
 	sync.RWMutex
-	esbConfig *esbutil.EsbConfigServ
+	esbConfig *esbutil.EsbConfigSrv
 	c         *util.Capability
 }
 
-func NewEsb(apiMachineryConfig *util.APIMachineryConfig, config chan esbutil.EsbConfig) (EsbClientInterface, error) {
+// NewEsb new a esb client
+//
+func NewEsb(apiMachineryConfig *util.APIMachineryConfig, cfgChan chan esbutil.EsbConfig, defaultCfg *esbutil.EsbConfig, reg prometheus.Registerer) (EsbClientInterface, error) {
 	base := fmt.Sprintf("/api/c/compapi")
 
 	client, err := util.NewClient(apiMachineryConfig.TLSConfig)
 	if nil != err {
 		return nil, err
 	}
-	flowcontrol := flowctrl.NewRateLimiter(apiMachineryConfig.QPS, apiMachineryConfig.Burst)
-	esbConfig := esbutil.NewEsbConfigServ(config)
+	flowControl := flowctrl.NewRateLimiter(apiMachineryConfig.QPS, apiMachineryConfig.Burst)
+	esbConfig := esbutil.NewEsbConfigSrv(cfgChan, defaultCfg)
 
 	esbCapability := &util.Capability{
 		Client:   client,
 		Discover: esbConfig,
-		Throttle: flowcontrol,
+		Throttle: flowControl,
+		Reg:      reg,
 	}
+
 	esb := &esbsrv{
 		client:    rest.NewRESTClient(esbCapability, base),
 		esbConfig: esbConfig,
@@ -86,6 +95,19 @@ func (e *esbsrv) NodemanSrv() nodeman.NodeManClientInterface {
 	return srv
 }
 
-func (e *esbsrv) GetEsbConfigSrv() *esbutil.EsbConfigServ {
+func (e *esbsrv) GetEsbConfigSrv() *esbutil.EsbConfigSrv {
 	return e.esbConfig
+}
+
+func (e *esbsrv) User() user.UserClientInterface {
+	e.RLock()
+	srv := e.userSrv
+	e.RUnlock()
+	if nil == srv {
+		e.Lock()
+		e.userSrv = user.NewUserClientInterface(e.client, e.esbConfig)
+		srv = e.userSrv
+		e.Unlock()
+	}
+	return srv
 }

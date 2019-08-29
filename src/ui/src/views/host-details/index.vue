@@ -5,40 +5,46 @@
             @info-toggle="setInfoHeight">
         </cmdb-host-info>
         <bk-tab class="details-tab"
-            :active-name.sync="active"
+            type="unborder-card"
+            :active.sync="active"
             :style="{
                 '--infoHeight': infoHeight
             }">
-            <bk-tabpanel name="property" :title="$t('HostDetails[\'主机属性\']')">
+            <bk-tab-panel name="property" :label="$t('主机属性')">
                 <cmdb-host-property></cmdb-host-property>
-            </bk-tabpanel>
-            <bk-tabpanel name="association" :title="$t('HostDetails[\'关联\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="association" :label="$t('关联')">
                 <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
-            </bk-tabpanel>
-            <bk-tabpanel name="status" :title="$t('HostDetails[\'实时状态\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="status" :label="$t('实时状态')">
                 <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
-            </bk-tabpanel>
-            <bk-tabpanel name="history" :title="$t('HostDetails[\'变更记录\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="!isAdminView">
+                <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
+            </bk-tab-panel>
+            <bk-tab-panel name="history" :label="$t('变更记录')">
                 <cmdb-host-history v-if="active === 'history'"></cmdb-host-history>
-            </bk-tabpanel>
+            </bk-tab-panel>
         </bk-tab>
     </div>
 </template>
 
 <script>
-    import { mapState } from 'vuex'
+    import { mapState, mapGetters } from 'vuex'
     import cmdbHostInfo from './children/info.vue'
     import cmdbHostAssociation from './children/association.vue'
     import cmdbHostProperty from './children/property.vue'
     import cmdbHostStatus from './children/status.vue'
     import cmdbHostHistory from './children/history.vue'
+    import cmdbHostService from './children/service-list.vue'
     export default {
         components: {
             cmdbHostInfo,
             cmdbHostAssociation,
             cmdbHostProperty,
             cmdbHostStatus,
-            cmdbHostHistory
+            cmdbHostHistory,
+            cmdbHostService
         },
         data () {
             return {
@@ -47,6 +53,7 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView']),
             ...mapState('hostDetails', ['info']),
             id () {
                 return parseInt(this.$route.params.id)
@@ -61,7 +68,9 @@
         },
         watch: {
             info (info) {
-                this.$store.commit('setHeaderTitle', `${this.$t('HostDetails["主机详情"]')}(${info.host.bk_host_innerip})`)
+                const hostList = info.host.bk_host_innerip.split(',')
+                const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
+                this.$store.commit('setHeaderTitle', `${this.$t('主机详情')}(${host})`)
             },
             id () {
                 this.getData()
@@ -76,8 +85,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('HostDetails["主机详情"]'))
-            this.$store.commit('setHeaderStatus', { back: true })
             this.getData()
         },
         methods: {
@@ -158,6 +165,10 @@
         .details-tab {
             height: calc(100% - var(--infoHeight)) !important;
             min-height: 400px;
+            /deep/ .bk-tab-header {
+                padding: 0;
+                margin: 0 20px;
+            }
         }
     }
 </style>

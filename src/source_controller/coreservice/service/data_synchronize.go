@@ -26,7 +26,8 @@ func (s *coreService) SynchronizeInstance(params core.ContextParams, pathParams,
 		return nil, err
 	}
 	inputData.OperateDataType = metadata.SynchronizeOperateDataTypeInstance
-	return s.core.DataSynchronizeOperation().SynchronizeInstanceAdapter(params, inputData)
+	exceptionArr, err := s.core.DataSynchronizeOperation().SynchronizeInstanceAdapter(params, inputData)
+	return metadata.SynchronizeDataResult{Exceptions: exceptionArr}, err
 }
 
 func (s *coreService) SynchronizeModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -37,7 +38,8 @@ func (s *coreService) SynchronizeModel(params core.ContextParams, pathParams, qu
 		return nil, err
 	}
 	inputData.OperateDataType = metadata.SynchronizeOperateDataTypeModel
-	return s.core.DataSynchronizeOperation().SynchronizeModelAdapter(params, inputData)
+	exceptionArr, err := s.core.DataSynchronizeOperation().SynchronizeModelAdapter(params, inputData)
+	return metadata.SynchronizeDataResult{Exceptions: exceptionArr}, err
 }
 
 func (s *coreService) SynchronizeAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -48,7 +50,8 @@ func (s *coreService) SynchronizeAssociation(params core.ContextParams, pathPara
 		return nil, err
 	}
 	inputData.OperateDataType = metadata.SynchronizeOperateDataTypeAssociation
-	return s.core.DataSynchronizeOperation().SynchronizeAssociationAdapter(params, inputData)
+	exceptionArr, err := s.core.DataSynchronizeOperation().SynchronizeAssociationAdapter(params, inputData)
+	return metadata.SynchronizeDataResult{Exceptions: exceptionArr}, err
 }
 
 func (s *coreService) SynchronizeFind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -77,6 +80,20 @@ func (s *coreService) SynchronizeClearData(params core.ContextParams, pathParams
 	if err != nil {
 		blog.Errorf("ClearData GetAssociationInfo error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
+	}
+	return nil, nil
+}
+
+func (s *coreService) SetIdentifierFlag(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	inputData := &metadata.SetIdenifierFlag{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		blog.Errorf("ClearData MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		return nil, err
+	}
+	exceptionArr, err := s.core.DataSynchronizeOperation().SetIdentifierFlag(params, inputData)
+	if err != nil {
+		blog.Errorf("ClearData GetAssociationInfo error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		return metadata.SynchronizeDataResult{Exceptions: exceptionArr}, err
 	}
 	return nil, nil
 }

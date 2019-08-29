@@ -13,6 +13,7 @@
 package authcenter
 
 import (
+	"configcenter/src/common/metadata"
 	"context"
 	"errors"
 	"fmt"
@@ -28,6 +29,8 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
 	commonutil "configcenter/src/common/util"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -102,7 +105,7 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 }
 
 // NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
-func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, error) {
+func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer) (*AuthCenter, error) {
 	blog.V(5).Infof("new auth center client with parameters tls: %+v, cfg: %+v", tls, cfg)
 	if !cfg.Enable {
 		return new(AuthCenter), nil
@@ -121,6 +124,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, erro
 		Mock: util.MockInfo{
 			Mocked: false,
 		},
+		Reg: reg,
 	}
 
 	header := http.Header{}
@@ -227,7 +231,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	businessesInputs := make(map[int64]AuthBatch)
 	businessesExactInputs := make(map[int64]AuthBatch)
 	for index, rsc := range resources {
-		action, err := adaptorAction(&rsc)
+		action, err := AdaptorAction(&rsc)
 		if err != nil {
 			blog.Errorf("auth batch, but adaptor action:%s failed, err: %v, rid: %s", rsc.Action, err, rid)
 			return nil, err
@@ -702,7 +706,7 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	if err != nil {
 		return nil, err
 	}
-	resourceType, err := convertResourceType(r.Type, r.BusinessID)
+	resourceType, err := ConvertResourceType(r.Type, r.BusinessID)
 	if err != nil {
 		return nil, err
 	}
@@ -790,4 +794,34 @@ func (ac *AuthCenter) RawDeregisterResource(ctx context.Context, scope ScopeInfo
 	}
 
 	return ac.authClient.deregisterResource(ctx, header, &info)
+}
+
+func (ac *AuthCenter) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p []metadata.Permission) (url string, err error) {
+	if !ac.Config.Enable {
+		return "", errors.New("auth center not enabled")
+	}
+
+	// wrapper the resource type name at first.
+	for index := range p {
+		if len(p[index].Resources) != 0 {
+			if len(p[index].Resources[0]) != 0 {
+				p[index].ResourceTypeName = p[index].Resources[0][0].ResourceTypeName
+				p[index].ResourceType = p[index].Resources[0][0].ResourceType
+			}
+		}
+
+		if p[index].ScopeType == ScopeTypeIDSystem {
+			p[index].ScopeID = SystemIDCMDB
+			p[index].ScopeName = SystemNameCMDB
+		}
+	}
+
+	return ac.authClient.GetNoAuthSkipUrl(ctx, header, p)
+}
+
+func (ac *AuthCenter) GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]UserGroupMembers, error) {
+	if !ac.Config.Enable {
+		return nil, errors.New("auth center not enabled")
+	}
+	return ac.authClient.GetUserGroupMembers(ctx, header, bizID, groups)
 }

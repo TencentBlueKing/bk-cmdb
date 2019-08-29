@@ -30,14 +30,11 @@ const (
 	// HTTPDelete delete method
 	HTTPDelete = "DELETE"
 
-	// BKTrue the true definition
-	BKTrue = 1
-
-	// BKFalse the false definition
-	BKFalse = 2
-
 	// BKNoLimit no limit definition
 	BKNoLimit = 999999999
+	// max limit of a page
+	BKMaxPageLimit = 2000
+	BKMaxPageSize  = 500
 
 	// BKDefaultLimit the default limit definition
 	BKDefaultLimit = 20
@@ -130,6 +127,9 @@ const (
 )
 
 const (
+	// used only for host search
+	BKDBMULTIPLELike = "$multilike"
+
 	// BKDBIN the db operator
 	BKDBIN = "$in"
 
@@ -186,6 +186,12 @@ const (
 
 	// BKDBUNSET the db opeartor
 	BKDBUNSET = "$unset"
+
+	// BKDBAddToSet The $addToSet operator adds a value to an array unless the value is already present, in which case $addToSet does nothing to that array.
+	BKDBAddToSet = "$addToSet"
+
+	// BKDBPull The $pull operator removes from an existing array all instances of a value or values that match a specified condition.
+	BKDBPull = "$pull"
 
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
@@ -364,6 +370,8 @@ const (
 	// BKPropertyNameField the property name field
 	BKPropertyNameField = "bk_property_name"
 
+	BKPropertyIndexField = "bk_property_index"
+
 	// BKPropertyTypeField the property type field
 	BKPropertyTypeField = "bk_property_type"
 
@@ -450,8 +458,19 @@ const (
 	// BKProtocol the protocol
 	BKProtocol = "protocol"
 
+	// the process object name
+	BKProcessObjectName = "process"
+
 	// BKProcessIDField the process id field
 	BKProcessIDField = "bk_process_id"
+
+	BKServiceInstanceIDField = "service_instance_id"
+	BKServiceTemplateIDField = "service_template_id"
+	BKProcessTemplateIDField = "process_template_id"
+	BKServiceCategoryIDField = "service_category_id"
+
+	BKParentIDField = "bk_parent_id"
+	BKRootIDField   = "bk_root_id"
 
 	// BKProcessNameField the process name field
 	BKProcessNameField = "bk_process_name"
@@ -461,6 +480,8 @@ const (
 
 	// BKFuncName the function name
 	BKFuncName = "bk_func_name"
+
+	BKStartParamRegex = "bk_start_param_regex"
 
 	// BKBindIP the bind ip
 	BKBindIP = "bind_ip"
@@ -826,15 +847,16 @@ const (
 	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
-	BKSessionLanugageKey    = "language"
-	BKHTTPSupplierID        = "bk_supplier_id"
+	//BKSessionLanugageKey = "language"
+	BKHTTPSupplierID = "bk_supplier_id"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID  = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime   = "Cc_Request_Time"
-	BKHTTPCCTransactionID = "Cc_Txn_Id"
+	BKHTTPOtherRequestID    = "X-Bkapi-Request-Id"
+	BKHTTPCCRequestTime     = "Cc_Request_Time"
+	BKHTTPCCTransactionID   = "Cc_Txn_Id"
+	BKHTTPCCTxnTMServerAddr = "Cc_Txn_Tm_addr-Ip"
 )
 
 type CCContextKey string
@@ -881,7 +903,7 @@ const (
 const (
 	// URLFilterWhiteList url filter white list not execute any filter
 	// multiple url separated by commas
-	URLFilterWhiteListSuffix = "/healthz"
+	URLFilterWhiteListSuffix = "/healthz,/version"
 
 	URLFilterWhiteListSepareteChar = ","
 )
@@ -922,8 +944,8 @@ const (
 	WEBSessionOwnerUinListeKey = "owner_uin_list"
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
-	WEBSessionLanguageKey      = "language"
-	WEBSessionSupplierID       = "supplier_id"
+	//WEBSessionLanguageKey      = "language"
+	WEBSessionSupplierID = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
@@ -970,7 +992,6 @@ const (
 	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
 	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
 	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
-	RedisCloudSyncStartLockKey                = BKCacheKeyV3Prefix + "lock:cloudsyncstart"
 )
 
 // association fields
@@ -1002,8 +1023,16 @@ const (
 )
 
 const (
-	MetaDataSynchronizeFlagField    = "metadata_sync_flag"
-	MetaDataSynchronizeVersionField = "metadata_sync_version"
+	// MetaDataSynchronizeField Synchronous data aggregation field
+	MetaDataSynchronizeField = "sync"
+	// MetaDataSynchronizeFlagField synchronize flag
+	MetaDataSynchronizeFlagField = "flag"
+	// MetaDataSynchronizeVersionField synchronize version
+	MetaDataSynchronizeVersionField = "version"
+	// MetaDataSynchronizeIdentifierField 数据需要同步cmdb系统的身份标识， 值是数组
+	MetaDataSynchronizeIdentifierField = "identifier"
+	// MetaDataSynchronIdentifierFlagSyncAllValue 数据可以被任何系统同步
+	MetaDataSynchronIdentifierFlagSyncAllValue = "__bk_cmdb__"
 
 	// SynchronizeSignPrefix  synchronize sign , Should appear in the configuration file
 	SynchronizeSignPrefix = "sync_blueking"
@@ -1016,10 +1045,8 @@ const (
 	SynchronizeModelTypeAttribute = "model_attribute"
 	// SynchronizeModelTypeAttributeGroup synchroneize model attribute group
 	SynchronizeModelTypeAttributeGroup = "model_atrribute_group"
-	// SynchronizeModelTypeBase synchroneize model attribute group
+	// SynchronizeModelTypeBase synchroneize model attribute
 	SynchronizeModelTypeBase = "model"
-	// SynchronizeModelTypeModelClassificationRelation synchroneize model classification relation
-	SynchronizeModelTypeModelClassificationRelation = "model_classification_relation"
 
 	/* synchronize instance assoication sign*/
 
@@ -1032,9 +1059,31 @@ const (
 	AttributeOptionMaxLength      = 1000
 	AttributeIDMaxLength          = 20
 	AttributeNameMaxLength        = 20
+	AttributeUnitMaxLength        = 20
 )
 
 const (
-	ContextRequestIDField   = "request_id"
-	ContextRequestUserField = "request_user"
+	NameFieldMaxLength = 256
+
+	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
+	ServiceTemplateIDNotSet = 0
+
+	MetadataLabelBiz = "metadata.label.bk_biz_id"
+
+	DefaultServiceCategoryName = "Default"
+)
+
+const (
+	ContextRequestIDField    = "request_id"
+	ContextRequestUserField  = "request_user"
+	ContextRequestOwnerField = "request_owner"
+)
+
+// 云同步
+const (
+	CloudSyncTaskID            = "bk_task_id"
+	CloudSyncTaskName          = "bk_task_name"
+	CloudSyncResourceConfirmID = "bk_resource_id"
+	CloudSyncConfirmTime       = "confirm_time"
+	CloudSyncConfirmHistoryID  = "confirm_history_id"
 )

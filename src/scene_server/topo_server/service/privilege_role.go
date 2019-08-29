@@ -34,7 +34,7 @@ func (s *Service) ParseCreateRolePrivilegeOriginData(data []byte) (mapstr.MapStr
 	return result, nil
 }
 
-// CreatePrivilege search user goup
+// CreatePrivilege search user group
 func (s *Service) CreatePrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	val, exists := data.Get("origin")
@@ -42,16 +42,16 @@ func (s *Service) CreatePrivilege(params types.ContextParams, pathParams, queryP
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
 	}
 
-	datas, ok := val.([]string)
+	privilegeData, ok := val.([]string)
 	if !ok {
-		blog.Infof("CreatePrivilege param invalide type : %#v", val)
+		blog.Infof("CreatePrivilege param invalidate type : %#v, rid: %s", val, params.ReqID)
 	}
 
-	err := s.Core.PermissionOperation().Role(params).CreatePermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"), datas)
+	err := s.Core.PermissionOperation().Role(params).CreatePermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"), privilegeData)
 	return nil, err
 }
 
-// GetPrivilege search user goup
+// GetPrivilege search user group
 func (s *Service) GetPrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	return s.Core.PermissionOperation().Role(params).GetPermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"))
 }

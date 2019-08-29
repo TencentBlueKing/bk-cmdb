@@ -115,52 +115,6 @@ var expectBizResourceType = []ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       BizProcessInstance,
-		ResourceTypeName:     "进程",
-		ParentResourceTypeID: "",
-		Share:                true,
-		Actions: []Action{
-			{
-				ActionID:          Create,
-				ActionName:        "新建",
-				IsRelatedResource: false,
-			},
-			{
-				ActionID:          Edit,
-				ActionName:        "编辑",
-				IsRelatedResource: false,
-			},
-			{
-				ActionID:          Delete,
-				ActionName:        "删除",
-				IsRelatedResource: false,
-			},
-		},
-	},
-	{
-		ResourceTypeID:       BizTopology,
-		ResourceTypeName:     "拓扑",
-		ParentResourceTypeID: "",
-		Share:                true,
-		Actions: []Action{
-			{
-				ActionID:          Create,
-				ActionName:        "新建",
-				IsRelatedResource: false,
-			},
-			{
-				ActionID:          Edit,
-				ActionName:        "编辑",
-				IsRelatedResource: false,
-			},
-			{
-				ActionID:          Delete,
-				ActionName:        "删除",
-				IsRelatedResource: false,
-			},
-		},
-	},
-	{
 		ResourceTypeID:       BizHostInstance,
 		ResourceTypeName:     "主机",
 		ParentResourceTypeID: "",
@@ -180,6 +134,98 @@ var expectBizResourceType = []ResourceType{
 				ActionID:          Delete,
 				ActionName:        "删除/归还",
 				IsRelatedResource: true,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       BizTopology,
+		ResourceTypeName:     "服务拓扑",
+		ParentResourceTypeID: "",
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: false,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       BizProcessServiceTemplate,
+		ResourceTypeName:     "服务模板",
+		ParentResourceTypeID: "",
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: true,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: true,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       BizProcessServiceCategory,
+		ResourceTypeName:     "服务分类",
+		ParentResourceTypeID: "",
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: false,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       BizProcessServiceInstance,
+		ResourceTypeName:     "服务实例",
+		ParentResourceTypeID: "",
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: false,
 			},
 		},
 	},

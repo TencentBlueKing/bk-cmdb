@@ -186,12 +186,15 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 	for _, appInfo := range appInfoArr {
 		instID, err := appInfo.Int64(common.BKAppIDField)
 		if err != nil {
-			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+			blog.ErrorJSON("appInfo get biz id err:%s, appInfo: %s, rid:%s", err.Error(), appInfo, h.logic.rid)
+			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 		name, err := appInfo.String(common.BKAppNameField)
 		if err != nil {
-			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppNameField, "string", err.Error())
+			blog.ErrorJSON("appInfo get biz name err:%s, appInfo: %s, rid:%s", err.Error(), appInfo, h.logic.rid)
+			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
+
 		appIDNameMap[instID] = name
 	}
 
@@ -214,7 +217,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 
 		appID, err := moduleInfo.Int64(common.BKAppIDField)
 		if err != nil {
-			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 		moduleRef := ModuleRef{}
 		moduleRef.Set = append(moduleRef.Set, setMap[sID])
@@ -279,7 +282,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 	result, err := h.logic.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), h.header, logs...)
 	if err != nil {
 		blog.Errorf("AddHostLogs http do error, err:%s,input:%+v,rid:%s", err.Error(), logs, h.logic.rid)
-		return h.logic.ccErr.Error(common.CCErrAuditSaveLogFaile)
+		return h.logic.ccErr.Error(common.CCErrAuditSaveLogFailed)
 	}
 	if !result.Result {
 		blog.Errorf("AddHostLogs  http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, logs, h.logic.rid)
@@ -302,7 +305,7 @@ func (h *HostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.Mod
 		blog.Errorf("getHostModuleConfig http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, conds, h.logic.rid)
 		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
 	}
-	return result.Data, nil
+	return result.Data.Info, nil
 }
 
 func (h *HostModuleLog) getInnerIP(ctx context.Context) ([]mapstr.MapStr, errors.CCError) {
@@ -314,7 +317,7 @@ func (h *HostModuleLog) getInnerIP(ctx context.Context) ([]mapstr.MapStr, errors
 		Fields:    fmt.Sprintf("%s,%s", common.BKHostIDField, common.BKHostInnerIPField),
 	}
 
-	result, err := h.logic.CoreAPI.HostController().Host().GetHosts(ctx, h.header, query)
+	result, err := h.logic.CoreAPI.CoreService().Host().GetHosts(ctx, h.header, query)
 	if err != nil {
 		blog.Errorf("GetHosts http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
 		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -377,7 +380,7 @@ func (h *HostModuleLog) getApps(ctx context.Context, appIDs []int64) ([]mapstr.M
 	query := &metadata.QueryCondition{
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
 		Condition: mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: appIDs}},
-		Fields:    []string{common.BKAppNameField, common.BKAppNameField, common.BKOwnerIDField},
+		Fields:    []string{common.BKAppIDField, common.BKAppNameField, common.BKOwnerIDField},
 	}
 	result, err := h.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.header, common.BKInnerObjIDApp, query)
 	if err != nil {

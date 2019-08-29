@@ -154,6 +154,48 @@ func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, ownerID, o
 	return
 }
 
+func (a *apiServer) CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/object/attr"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(obj).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (a *apiServer) UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/objectattr/%s", objID)
+
+	err = a.client.Put().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (a *apiServer) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/objectattr/%s", objID)
+
+	err = a.client.Delete().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (a *apiServer) GetObjectAttr(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrResult, err error) {
 
 	resp = new(metadata.ObjectAttrResult)
@@ -290,6 +332,7 @@ func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID 
 
 	return
 }
+
 func (a *apiServer) GetUserAuthorizedBusinessList(ctx context.Context, h http.Header, user string) (*metadata.InstDataInfo, error) {
 	h.Add(common.BKHTTPHeaderUser, user)
 	subPath := "/auth/business-list"
@@ -311,4 +354,84 @@ func (a *apiServer) GetUserAuthorizedBusinessList(ctx context.Context, h http.He
 	}
 
 	return &resp.Data, nil
+}
+
+func (a *apiServer) SearchNetCollectDevice(ctx context.Context, h http.Header, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "/collector/netcollect/device/action/search"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) SearchNetDeviceProperty(ctx context.Context, h http.Header, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "collector/netcollect/property/action/search"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) SearchNetCollectDeviceBatch(ctx context.Context, h http.Header, cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "collector/netcollect/device/action/batch"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) SearchNetDevicePropertyBatch(ctx context.Context, h http.Header, cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "/collector/netcollect/property/action/batch"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) ListHostWithoutApp(ctx context.Context, h http.Header, option metadata.ListHostsWithNoBizParameter) (resp *metadata.ListHostWithoutAppResponse, err error) {
+	resp = new(metadata.ListHostWithoutAppResponse)
+
+	subPath := "/hosts/list_hosts_without_app"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+
+	return
 }

@@ -5,12 +5,14 @@ import StatusError from './StatusError.js'
 
 import preload from '@/setup/preload'
 import afterload from '@/setup/afterload'
+import { translateAuth } from '@/setup/permission'
 import $http from '@/api'
 
 import index from '@/views/index/router.config'
 import audit from '@/views/audit/router.config'
 import business from '@/views/business/router.config'
 import businessModel from '@/views/business-model/router.config'
+import businessTopology from '@/views/business-topology/router.config'
 import customQuery from '@/views/custom-query/router.config'
 import eventpush from '@/views/eventpush/router.config'
 import history from '@/views/history/router.config'
@@ -19,33 +21,41 @@ import hostDetails from '@/views/host-details/router.config'
 import model from '@/views/model-manage/router.config'
 import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
-import process from '@/views/process/router.config'
 import resource from '@/views/resource/router.config'
-import topology from '@/views/topology/router.config'
 import generalModel from '@/views/general-model/router.config'
 import permission from '@/views/permission/router.config'
+import template from '@/views/service-template/router.config'
+import category from '@/views/service-category/router.config'
+
+import serviceInstance from '@/views/service-instance/router.config'
+import synchronous from '@/views/business-synchronous/router.config'
 
 Vue.use(Router)
 
 export const viewRouters = [
-    index,
+    ...index,
     audit,
     businessModel,
+    businessTopology,
     customQuery,
     eventpush,
-    history,
     hosts,
     ...hostDetails,
     modelAssociation,
     modelTopology,
-    process,
     resource,
-    topology,
+    ...template,
     ...generalModel,
     ...business,
     ...model,
-    ...permission
+    ...permission,
+    category,
+    synchronous,
+    ...serviceInstance,
+    history
 ]
+
+const indexName = index[0].name
 
 const statusRouters = [
     {
@@ -75,7 +85,7 @@ const redirectRouters = [{
 }, {
     path: '/',
     redirect: {
-        name: index.name
+        name: indexName
     }
 }]
 
@@ -121,6 +131,9 @@ const cancelRequest = () => {
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
 const setMenuState = to => {
+    if (!to.meta.resetMenu) {
+        return false
+    }
     const isStatusRoute = statusRouters.some(route => route.name === to.name)
     if (isStatusRoute) {
         return false
@@ -132,6 +145,19 @@ const setMenuState = to => {
     if (parentId) {
         router.app.$store.commit('menu/setOpenMenu', parentId)
     }
+}
+
+const setTitle = to => {
+    const { i18nTitle, title } = to.meta
+    let headerTitle
+    if (!i18nTitle && !title) {
+        return false
+    } else if (i18nTitle) {
+        headerTitle = router.app.$t(i18nTitle)
+    } else if (title) {
+        headerTitle = title
+    }
+    router.app.$store.commit('setHeaderTitle', headerTitle)
 }
 
 const setAuthScope = (to, from) => {
@@ -177,6 +203,22 @@ const isShouldShow = to => {
         : true
 }
 
+const setPermission = async to => {
+    const permission = []
+    const authMeta = to.meta.auth
+    if (authMeta) {
+        const { view, operation } = authMeta
+        const auth = [...operation]
+        if (view) {
+            auth.push(view)
+        }
+        const translated = await translateAuth(auth)
+        permission.push(...translated)
+    }
+    router.app.$store.commit('setPermission', permission)
+    return permission
+}
+
 const setupStatus = {
     preload: true,
     afterload: true
@@ -191,11 +233,16 @@ router.beforeEach((to, from, next) => {
                 await preload(router.app)
             }
             if (!isShouldShow(to)) {
-                next({ name: index.name })
+                next({ name: indexName })
             } else {
                 setMenuState(to)
+                setTitle(to)
                 setAuthScope(to, from)
                 checkAuthDynamicMeta(to, from)
+
+                if (to.name === 'requireBusiness' && !router.app.$store.getters.permission.length) {
+                    next({ name: indexName })
+                }
 
                 const isAvailable = checkAvailable(to, from)
                 if (!isAvailable) {
@@ -209,22 +256,22 @@ router.beforeEach((to, from, next) => {
 
                 const isBusinessCheckPass = checkBusiness(to)
                 if (!isBusinessCheckPass) {
-                    throw new StatusError({ name: 'requireBusiness' })
+                    await setPermission(to)
+                    throw new StatusError({ name: 'requireBusiness', query: { _t: Date.now() } })
                 }
-
                 next()
             }
         } catch (e) {
             if (e.__CANCEL__) {
                 next()
             } else if (e instanceof StatusError) {
-                next({ name: e.name })
+                next({ name: e.name, query: e.query })
             } else {
                 console.error(e)
                 next({ name: 'error' })
             }
-            setLoading(false)
         } finally {
+            setLoading(false)
             setupStatus.preload = false
         }
     })
@@ -236,7 +283,7 @@ router.afterEach((to, from) => {
             afterload(router.app, to, from)
         }
     } catch (e) {
-        // ignore
+        console.error(e)
     } finally {
         setLoading(false)
     }

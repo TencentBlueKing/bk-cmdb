@@ -1,37 +1,38 @@
 <template>
     <bk-dialog
         ext-cls="error-content-dialog"
-        :is-show="isModalShow"
-        :title="' '"
-        :width="'600'"
-        padding="0 24px 40px 24px"
-        :has-header="true"
-        :has-footer="true"
-        :quick-close="false"
-        :close-icon="true"
+        v-model="isModalShow"
+        width="600"
+        :z-index="2400"
+        :mask-close="false"
         @cancel="onCloseDialog">
-        <div class="permission-content" slot="content">
+        <div class="permission-content">
             <div class="permission-header">
                 <span class="title-icon">
                     <img src="../../assets/images/lock-closed.svg" class="locked-icon" alt="locked-icon" />
                 </span>
                 <h3>{{i18n.permissionTitle}}</h3>
             </div>
-            <cmdb-table
-                :header="header"
-                :list="list"
+            <bk-table
+                :data="list"
                 :max-height="180"
-                :empty-height="140"
-                :visible="isModalShow"
-                :sortable="false">
-                <template slot="resource" slot-scope="{ item }">
-                    <div class="resouce-list" v-html="item.resource"></div>
-                </template>
-            </cmdb-table>
+                :border="true">
+                <bk-table-column prop="scope" :label="$t('资源所属')"></bk-table-column>
+                <bk-table-column prop="resource" :label="$t('资源')">
+                    <template slot-scope="{ row }">
+                        <div class="resource-list" v-html="row.resource"></div>
+                    </template>
+                </bk-table-column>
+                <bk-table-column prop="action" :label="$t('需要申请的权限')"></bk-table-column>
+            </bk-table>
         </div>
         <div class="permission-footer" slot="footer">
-            <bk-button type="primary" @click="handleApplyPermission">{{ i18n.apply }}</bk-button>
-            <bk-button type="default" @click="onCloseDialog">{{ i18n.cancel }}</bk-button>
+            <bk-button theme="primary"
+                :loading="$loading('getSkipUrl')"
+                @click="handleApplyPermission">
+                {{ i18n.apply }}
+            </bk-button>
+            <bk-button theme="default" @click="onCloseDialog">{{ i18n.cancel }}</bk-button>
         </div>
     </bk-dialog>
 </template>
@@ -42,17 +43,8 @@
         data () {
             return {
                 isModalShow: false,
+                permission: [],
                 list: [],
-                header: [{
-                    id: 'scope',
-                    name: this.$t('资源所属')
-                }, {
-                    id: 'resource',
-                    name: this.$t('资源')
-                }, {
-                    id: 'action',
-                    name: this.$t('需要申请的权限')
-                }],
                 i18n: {
                     permissionTitle: this.$t('没有权限访问或操作此资源'),
                     system: this.$t('系统'),
@@ -65,22 +57,64 @@
             }
         },
         methods: {
-            show (list) {
-                this.list = list
+            show (permission) {
+                this.permission = permission
+                this.setList()
                 this.isModalShow = true
             },
-            handleApplyPermission () {
-                const topWindow = window.top
-                const isPaasConsole = topWindow !== window
-                const authCenter = window.Site.authCenter || {}
-                if (isPaasConsole) {
-                    topWindow.postMessage(JSON.stringify({
-                        action: 'open_other_app',
-                        app_code: authCenter.appCode,
-                        app_url: 'apply-by-system'
-                    }), '*')
-                } else {
-                    window.open(authCenter.url)
+            setList () {
+                const permission = this.permission
+                const list = permission.map(datum => {
+                    const scope = [datum.scope_type_name]
+                    if (datum.scope_id) {
+                        scope.push(datum.scope_name)
+                    }
+                    let resource
+                    if (datum.resource_type_name) {
+                        resource = datum.resource_type_name
+                    } else {
+                        resource = datum.resources.map(resource => {
+                            const resourceInfo = resource.map(info => this.getPermissionText(info, 'resource_type_name', 'resource_name'))
+                            return [...new Set(resourceInfo)].join('\n')
+                        }).join('\n')
+                    }
+                    return {
+                        scope: this.getPermissionText(datum, 'scope_type_name', datum.scope_type === 'system' ? null : 'scope_name'),
+                        resource: resource,
+                        action: datum.action_name
+                    }
+                })
+                const uniqueList = []
+                list.forEach(item => {
+                    const exist = uniqueList.some(unique => {
+                        return item.resource === unique.resource
+                            && item.scope === unique.scope
+                            && item.action === unique.action
+                    })
+                    if (!exist) {
+                        uniqueList.push(item)
+                    }
+                })
+                this.list = uniqueList
+            },
+            getPermissionText (data, necessaryKey, extraKey, split = '：') {
+                const text = [data[necessaryKey]]
+                if (extraKey && data[extraKey]) {
+                    text.push(data[extraKey])
+                }
+                return text.join(split).trim()
+            },
+            async handleApplyPermission () {
+                try {
+                    const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
+                        params: this.permission,
+                        config: {
+                            requestId: 'getSkipUrl'
+                        }
+                    })
+                    window.open(skipUrl)
+                } catch (e) {
+                    console.error(e)
                 }
             },
             onCloseDialog () {
@@ -104,22 +138,9 @@
             }
         }
     }
-    .resouce-list {
+    .resource-list {
         padding: 12px 0;
         word-break: break-all;
         white-space: normal;
     }
-    /deep/ .bk-dialog-footer.bk-d-footer {
-        height: 50px;
-        line-height: 50px;
-        .permission-footer {
-            padding: 0 24px;
-            text-align: right;
-        }
-        .bk-button {
-            height: 32px;
-            line-height: 30px;
-        }
-    }
-    
 </style>

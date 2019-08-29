@@ -29,8 +29,10 @@ import (
 	"configcenter/src/scene_server/event_server/app/options"
 	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/remote"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/rpc"
 )
@@ -65,44 +67,51 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+
 		if err != nil {
-			return fmt.Errorf("connect mongo server failed %s", err.Error())
+			return fmt.Errorf("connect tmserver failed, err: %s", err.Error())
+		}
+
+		var db dal.RDB
+		var rpcCli rpc.Client
+		if process.Config.MongoDB.Enable == "true" {
+			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+		} else {
+			rpcCli, err = rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
+			if err != nil {
+				return fmt.Errorf("connect rpc server failed, err: %s", err.Error())
+			}
+			db, err = remote.NewWithDiscover(process.Core)
+		}
+		if err != nil {
+			return fmt.Errorf("connect mongo server failed, err: %s", err.Error())
 		}
 		process.Service.SetDB(db)
 
-		var rpccli rpc.Client
-		if process.Config.MongoDB.Transaction == "enable" {
-			rpccli, err = rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
-			if err != nil {
-				return fmt.Errorf("connect rpc server failed %s", err.Error())
-			}
-		}
-
 		cache, err := redis.NewFromConfig(process.Config.Redis)
 		if err != nil {
-			return fmt.Errorf("connect redis server failed %s", err.Error())
+			return fmt.Errorf("connect redis server failed, err: %s", err.Error())
 		}
 		process.Service.SetCache(cache)
 
-		subcli, err := redis.NewFromConfig(process.Config.Redis)
+		subCli, err := redis.NewFromConfig(process.Config.Redis)
 		if err != nil {
-			return fmt.Errorf("connect subcli redis server failed %s", err.Error())
+			return fmt.Errorf("connect subcli redis server failed, err: %s", err.Error())
 		}
 
-		authcli, err := authcenter.NewAuthCenter(nil, process.Config.Auth)
+		authCli, err := authcenter.NewAuthCenter(nil, process.Config.Auth, engine.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
 		}
-		process.Service.SetAuth(authcli)
-		blog.Infof("enable authcenter: %v", process.Config.Auth.Enable)
+		process.Service.SetAuth(authCli)
+		blog.Infof("enable auth center: %v", process.Config.Auth.Enable)
 
 		go func() {
-			errCh <- distribution.SubscribeChannel(subcli)
+			errCh <- distribution.SubscribeChannel(subCli)
 		}()
 
 		go func() {
-			errCh <- distribution.Start(ctx, cache, db, rpccli)
+			errCh <- distribution.Start(ctx, cache, db, rpcCli)
 		}()
 
 		break
@@ -113,9 +122,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	select {
 	case <-ctx.Done():
 	case err = <-errCh:
-		blog.V(3).Infof("distribution routine stoped %v", err)
+		blog.V(3).Infof("distribution routine stopped, err: %v", err)
 	}
-	blog.V(3).Infof("process stoped")
+	blog.V(3).Infof("process stopped")
 
 	return nil
 }
@@ -136,7 +145,8 @@ func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		if h.Config == nil {
 			h.Config = new(options.Config)
 		}
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
+		// ignore err, cause ConfigMap is map[string]string
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
 		blog.Infof("config updated: \n%s", out)
 		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 		h.Config.MongoDB = mongoConf
@@ -148,7 +158,7 @@ func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 
 		h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 		if err != nil {
-			blog.Warnf("parse authcenter config failed: %v", err)
+			blog.Errorf("parse auth center config failed: %v", err)
 		}
 	}
 }

@@ -27,7 +27,7 @@ func (s *coreService) IsInstanceExist(ctx core.ContextParams, objID string, inst
 	searchCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
 	result, err := s.core.InstanceOperation().SearchModelInstance(ctx, objID, searchCond)
 	if nil != err {
-		blog.Errorf("search model instance error: %v", err)
+		blog.Errorf("search model instance error: %v, rid: %s", err, ctx.ReqID)
 		return false, err
 	}
 	if 0 == result.Count {

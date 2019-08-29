@@ -4,7 +4,7 @@
             <h3>{{i18n.resourceTitle}}</h3>
             <p>{{i18n.resourceContent}}</p>
             <div class="operation-btns">
-                <bk-button type="primary" @click="handleApplyPermission">{{i18n.apply}}</bk-button>
+                <bk-button theme="primary" @click="handleApplyPermission">{{i18n.apply}}</bk-button>
             </div>
         </div>
     </div>

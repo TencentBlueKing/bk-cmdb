@@ -8,6 +8,18 @@ export default {
             type: Array,
             required: true
         },
+        uneditableProperties: {
+            type: Array,
+            default () {
+                return []
+            }
+        },
+        disabledProperties: {
+            type: Array,
+            default () {
+                return []
+            }
+        },
         objectUnique: {
             type: Array,
             default () {
@@ -34,7 +46,7 @@ export default {
                 ...metadataGroups,
                 {
                     'bk_group_id': 'none',
-                    'bk_group_name': this.$t('Common["更多属性"]')
+                    'bk_group_name': this.$t('更多属性')
                 }
             ]
             allGroups.forEach((group, index) => {

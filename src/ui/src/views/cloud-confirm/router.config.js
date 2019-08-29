@@ -25,7 +25,7 @@ export default [{
     meta: new Meta({
         menu: {
             id: 'resourceConfirm',
-            i18n: 'Nav["资源确认"]',
+            i18n: '资源确认',
             path: path,
             order: 4,
             parent: NAV_BUSINESS_RESOURCE,
@@ -34,7 +34,8 @@ export default [{
         auth: {
             operation: Object.values(OPERATION)
         },
-        requireBusiness: true
+        requireBusiness: true,
+        i18nTitle: '资源确认'
     })
 }, {
     name: 'confirmHistory',
@@ -48,6 +49,7 @@ export default [{
             setAuthScope () {
                 this.authScope = 'global'
             }
-        }
+        },
+        i18nTitle: '确认记录'
     })
 }]

@@ -7,10 +7,10 @@
             :class="{ unfold: unfold, flexible: !navStick }">
             <div class="logo" @click="$router.push({ name: 'index' })">
                 <span class="logo-text">
-                    {{$t('Nav["蓝鲸配置平台"]')}}
+                    {{$t('蓝鲸配置平台')}}
                 </span>
-                <span class="logo-tag" v-if="isAdminView" :title="$t('Nav[\'后台管理标题\']')">
-                    {{$t('Nav["后台管理"]')}}
+                <span class="logo-tag" v-if="isAdminView" :title="$t('后台管理标题')">
+                    {{$t('后台管理')}}
                 </span>
             </div>
             <ul class="menu-list">
@@ -19,7 +19,7 @@
                     :key="index"
                     :class="{
                         active: active === menu.id,
-                        'is-open': open === menu.id,
+                        'is-open': unfold && isMenuExpanded(menu),
                         'is-link': menu.path
                     }">
                     <h3 class="menu-info clearfix"
@@ -29,28 +29,30 @@
                         <span class="menu-name">{{menu.i18n ? $t(menu.i18n) : menu.name}}</span>
                         <i class="toggle-icon bk-icon icon-angle-right"
                             v-if="menu.submenu && menu.submenu.length"
-                            :class="{ open: menu.id === open }">
+                            :class="{ open: unfold && isMenuExpanded(menu) }">
                         </i>
                     </h3>
-                    <div class="menu-submenu"
-                        v-if="menu.submenu && menu.submenu.length"
-                        :style="getMenuModelsStyle(menu)">
-                        <router-link class="submenu-link" exact
-                            v-for="(submenu, submenuIndex) in menu.submenu"
-                            :class="{
-                                active: active === submenu.id,
-                                collection: menu.id === NAV_COLLECT
-                            }"
-                            :key="submenuIndex"
-                            :to="submenu.path"
-                            :title="submenu.i18n ? $t(submenu.i18n) : submenu.name">
-                            {{submenu.i18n ? $t(submenu.i18n) : submenu.name}}
-                            <i class="bk-icon icon-close"
-                                v-if="menu.id === NAV_COLLECT"
-                                @click.stop.prevent="handleDeleteCollection(submenu)">
-                            </i>
-                        </router-link>
-                    </div>
+                    <cmdb-collapse-transition>
+                        <div class="menu-submenu"
+                            v-if="menu.submenu && menu.submenu.length"
+                            v-show="unfold && isMenuExpanded(menu)">
+                            <router-link class="submenu-link" exact
+                                v-for="(submenu, submenuIndex) in menu.submenu"
+                                :class="{
+                                    active: active === submenu.id,
+                                    collection: menu.id === NAV_COLLECT
+                                }"
+                                :key="submenuIndex"
+                                :to="submenu.path"
+                                :title="submenu.i18n ? $t(submenu.i18n) : submenu.name">
+                                {{submenu.i18n ? $t(submenu.i18n) : submenu.name}}
+                                <i class="bk-icon icon-close"
+                                    v-if="menu.id === NAV_COLLECT"
+                                    @click.stop.prevent="handleDeleteCollection(submenu)">
+                                </i>
+                            </router-link>
+                        </div>
+                    </cmdb-collapse-transition>
                 </li>
             </ul>
             <div class="nav-option">
@@ -58,7 +60,7 @@
                     :class="{
                         sticked: navStick
                     }"
-                    :title="navStick ? $t('Index[\'收起导航\']') : $t('Index[\'固定导航\']')"
+                    :title="navStick ? $t('收起导航') : $t('固定导航')"
                     @click="toggleNavStick">
                 </i>
             </div>
@@ -67,16 +69,14 @@
 </template>
 <script>
     import { mapGetters } from 'vuex'
-    // eslint-disable-next-line
-    import MENU, { NAV_COLLECT } from '@/dictionary/menu'
-    // eslint-disable-next-line
-    import MODEL_ROUTER_CONFIG, { GET_MODEL_PATH } from '@/views/general-model/router.config'
+    import { NAV_COLLECT } from '@/dictionary/menu'
     export default {
         data () {
             return {
                 NAV_COLLECT,
                 routerLinkHeight: 42,
-                timer: null
+                timer: null,
+                state: {}
             }
         },
         computed: {
@@ -85,19 +85,36 @@
             ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
             unfold () {
                 return this.navStick || !this.navFold
-            },
-            // 展开的分类子菜单高度
-            /* eslint-disable */
-            openedMenuHeight () {
-                const openedMenu = this.menus.find(menu => menu.id === this.open)
-                if (openedMenu) {
-                    const submenuCount = (openedMenu.submenu || []).length
-                    return submenuCount * this.routerLinkHeight
-                }
             }
-            /* eslint-disable end */
+        },
+        watch: {
+            menus () {
+                this.setMenuState()
+            },
+            open (openMenu) {
+                this.state[openMenu].expanded = true
+            }
         },
         methods: {
+            setMenuState () {
+                this.menus.forEach(menu => {
+                    if (this.state.hasOwnProperty(menu.id)) {
+                        this.state[menu.id] = Object.assign({
+                            expanded: false
+                        }, this.state[menu.id])
+                    } else {
+                        this.$set(this.state, menu.id, {
+                            expanded: false
+                        })
+                    }
+                })
+            },
+            isMenuExpanded (menu) {
+                if (this.state.hasOwnProperty(menu.id)) {
+                    return this.state[menu.id].expanded
+                }
+                return false
+            },
             handleMouseEnter () {
                 if (this.timer) {
                     clearTimeout(this.timer)
@@ -115,8 +132,9 @@
                 this.toggleMenu(menu)
             },
             getMenuModelsStyle (menu) {
+                const submenuCount = (menu.submenu || []).length
                 return {
-                    height: (this.unfold && menu.id === this.open) ? this.openedMenuHeight + 'px' : 0
+                    height: this.isMenuExpanded(menu) ? submenuCount * this.routerLinkHeight + 'px' : 0
                 }
             },
             // 被点击的有对应的路由，则跳转
@@ -127,8 +145,7 @@
             },
             // 切换展开的分类
             toggleMenu (menu) {
-                const openMenu = menu.id === this.open ? null : menu.id
-                this.$store.commit('menu/setOpenMenu', openMenu)
+                this.state[menu.id].expanded = !this.state[menu.id].expanded
             },
             // 切换导航展开固定
             toggleNavStick () {
@@ -292,7 +309,6 @@ $color: #979ba5;
 }
 
 .menu-submenu {
-    height: 0;
     line-height: 42px;
     font-size: 14px;
     overflow: hidden;

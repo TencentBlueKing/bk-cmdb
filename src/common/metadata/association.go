@@ -395,17 +395,29 @@ func (cli *MainlineObjectTopo) ToMapStr() mapstr.MapStr {
 
 // TopoInst 实例拓扑结构
 type TopoInst struct {
-	InstID   int64  `json:"bk_inst_id"`
-	InstName string `json:"bk_inst_name"`
-	ObjID    string `json:"bk_obj_id"`
-	ObjName  string `json:"bk_obj_name"`
-	Default  int    `json:"default"`
+	InstID               int64  `json:"bk_inst_id"`
+	InstName             string `json:"bk_inst_name"`
+	ObjID                string `json:"bk_obj_id"`
+	ObjName              string `json:"bk_obj_name"`
+	Default              int    `json:"default"`
+	HostCount            int64  `json:"host_count"`
+	ServiceInstanceCount int64  `json:"service_instance_count"`
+	ServiceTemplateID    int64  `json:"service_template_id"`
 }
 
 // TopoInstRst 拓扑实例
 type TopoInstRst struct {
 	TopoInst `json:",inline"`
 	Child    []*TopoInstRst `json:"child"`
+}
+
+type TopoInstRstVisitor func(tir *TopoInstRst)
+
+func (tir *TopoInstRst) DeepFirstTraverse(visitor TopoInstRstVisitor) {
+	for _, child := range tir.Child {
+		child.DeepFirstTraverse(visitor)
+	}
+	visitor(tir)
 }
 
 // ConditionItem subcondition

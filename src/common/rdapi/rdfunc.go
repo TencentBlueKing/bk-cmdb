@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 )
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
@@ -56,8 +56,8 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 		}()
 		generateHttpHeaderRID(req, resp)
 
-		whilteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
-		for _, url := range whilteListSuffix {
+		whiteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
+		for _, url := range whiteListSuffix {
 			if strings.HasSuffix(req.Request.URL.Path, url) {
 				fchain.ProcessFilter(req, resp)
 				return
@@ -118,7 +118,7 @@ func createAPIRspStr(errcode int, info string) (string, error) {
 func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
 	cid := util.GetHTTPCCRequestID(req.Request.Header)
 	if "" == cid {
-		cid = getHTTPOtherRequestID(req.Request.Header)
+		cid = GetHTTPOtherRequestID(req.Request.Header)
 		if cid == "" {
 			cid = util.GenerateRID()
 		} else {
@@ -143,6 +143,6 @@ func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *r
 }
 
 // getHTTPOtherRequestID return other system request id from http header
-func getHTTPOtherRequestID(header http.Header) string {
+func GetHTTPOtherRequestID(header http.Header) string {
 	return header.Get(common.BKHTTPOtherRequestID)
 }

@@ -26,12 +26,12 @@ import (
 // CreateObjectAssociation create a new object association
 func (s *Service) CreateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	asso := &metadata.Association{}
-	if err := data.MarshalJSONInto(asso); err != nil {
+	assoc := &metadata.Association{}
+	if err := data.MarshalJSONInto(assoc); err != nil {
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
-	params.MetaData = &asso.Metadata
-	association, err := s.Core.AssociationOperation().CreateCommonAssociation(params, asso)
+	params.MetaData = &assoc.Metadata
+	association, err := s.Core.AssociationOperation().CreateCommonAssociation(params, assoc)
 	if nil != err {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (s *Service) SearchObjectAssociation(params types.ContextParams, pathParams
 
 		cond, err := data.MapStr("condition")
 		if nil != err {
-			blog.Errorf("search object association, failed to get the condition, error info is %s", err.Error())
+			blog.Errorf("search object association, failed to get the condition, error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 
@@ -68,12 +68,12 @@ func (s *Service) SearchObjectAssociation(params types.ContextParams, pathParams
 
 		resp, err := s.Core.AssociationOperation().SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond})
 		if err != nil {
-			blog.Errorf("search object association with cond[%v] failed, err: %v", cond, err)
+			blog.Errorf("search object association with cond[%v] failed, err: %v, rid: %s", cond, err, params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !resp.Result {
-			blog.Errorf("search object association with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+			blog.Errorf("search object association with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, params.ReqID)
 			return nil, params.Err.New(resp.Code, resp.ErrMsg)
 		}
 
@@ -82,7 +82,7 @@ func (s *Service) SearchObjectAssociation(params types.ContextParams, pathParams
 
 	objID, err := data.String(metadata.AssociationFieldObjectID)
 	if err != nil {
-		blog.Errorf("search object association, but get object id failed from: %v, err: %v", data, err)
+		blog.Errorf("search object association, but get object id failed from: %v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
@@ -98,12 +98,12 @@ func (s *Service) DeleteObjectAssociation(params types.ContextParams, pathParams
 
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
-		blog.Errorf("delete object association failed, got a invalid object association id[%v], err: %v", pathParams("id"), err)
+		blog.Errorf("delete object association failed, got a invalid object association id[%v], err: %v, rid: %s", pathParams("id"), err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociationID)
 	}
 
 	if id <= 0 {
-		blog.Errorf("delete object association failed, got a invalid objasst id[%d]", id)
+		blog.Errorf("delete object association failed, got a invalid objAsst id[%d], rid: %s", id, params.ReqID)
 		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociationID)
 	}
 
@@ -115,7 +115,7 @@ func (s *Service) DeleteObjectAssociation(params types.ContextParams, pathParams
 func (s *Service) UpdateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
-		blog.Errorf("update object association, but got invalid id[%v], err: %v", pathParams("id"), err)
+		blog.Errorf("update object association, but got invalid id[%v], err: %v, rid: %s", pathParams("id"), err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 

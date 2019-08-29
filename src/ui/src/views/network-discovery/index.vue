@@ -1,18 +1,19 @@
 <template>
     <div class="network-wrapper">
         <div class="filter-wrapper">
-            <bk-button type="primary" @click="routeToConfig">
-                {{$t('NetworkDiscovery["配置网络发现"]')}}
+            <bk-button theme="primary" @click="routeToConfig">
+                {{$t('配置网络发现')}}
             </bk-button>
             <div class="filter-content fr">
                 <div class="input-box fl">
-                    <input type="text" class="cmdb-form-input"
-                        :placeholder="$t('NetworkDiscovery[\'请输入云区域名称\']')"
+                    <bk-input type="text" class="cmdb-form-input"
+                        :placeholder="$t('请输入云区域名称')"
                         v-model.trim="filter.text"
-                        @keyup.enter="getTableData">
+                        @enter="getTableData">
+                    </bk-input>
                     <i class="filter-search bk-icon icon-search" @click="getTableData"></i>
                 </div>
-                <bk-button type="default" class="fl" v-tooltip="$t('NetworkDiscovery[\'查看完成历史\']')" @click="routeToHistory">
+                <bk-button theme="default" class="fl" v-bk-tooltips="$t('查看完成历史')" @click="routeToHistory">
                     <i class="icon-cc-history"></i>
                 </bk-button>
             </div>
@@ -33,7 +34,7 @@
                 {{$tools.formatTime(item['last_time'], 'YYYY-MM-DD')}}
             </template>
             <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary" @click.stop="routeToConfirm(item)">{{$t('NetworkDiscovery["详情确认"]')}}</span>
+                <span class="text-primary" @click.stop="routeToConfirm(item)">{{$t('详情确认')}}</span>
             </template>
         </cmdb-table>
     </div>
@@ -50,17 +51,17 @@
                 table: {
                     header: [{
                         id: 'bk_cloud_name',
-                        name: this.$t('Hosts["云区域"]')
+                        name: this.$t('云区域')
                     }, {
                         id: 'info',
-                        name: this.$t('NetworkDiscovery["配置信息"]'),
+                        name: this.$t('配置信息'),
                         sortable: false
                     }, {
                         id: 'last_time',
-                        name: this.$t('NetworkDiscovery["发现时间"]')
+                        name: this.$t('发现时间')
                     }, {
                         id: 'operation',
-                        name: this.$t('Association["操作"]'),
+                        name: this.$t('操作'),
                         sortable: false
                     }],
                     list: [],
@@ -95,31 +96,30 @@
                             str.push(`${key}(${item.statistics[key]})`)
                         }
                     })
-                    return `${str.join(' ')} ${this.$t("Hosts['关联关系']")}(${item.statistics.associations})`
+                    return `${str.join(' ')} ${this.$t('关联关系')}(${item.statistics.associations})`
                 }
             },
             routeToConfig () {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
+                this.$router.push({
+                    name: 'networkDiscoveryConfig',
+                    query: {
+                        from: this.$route.fullPath
+                    }
                 })
-                this.$router.push({ name: 'networkDiscoveryConfig' })
             },
             routeToConfirm (item) {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.setCloudName(item['bk_cloud_name'])
                 this.$router.push({
                     name: 'networkDiscoveryConfirm',
                     params: {
                         cloudId: item['bk_cloud_id']
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             },
             routeToHistory () {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.$router.push({
                     name: 'networkDiscoveryHistory'
                 })

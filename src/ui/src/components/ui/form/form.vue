@@ -17,21 +17,26 @@
                                     <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                     <i class="property-name-tooltips icon-cc-tips"
                                         v-if="property['placeholder']"
-                                        v-tooltip="htmlEncode(property['placeholder'])">
+                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
                                     </i>
                                 </div>
-                                <div class="property-value">
-                                    <component class="form-component"
-                                        :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :disabled="checkDisabled(property)"
-                                        :options="property.option || []"
-                                        :data-vv-name="property['bk_property_id']"
-                                        :data-vv-as="property['bk_property_name']"
-                                        v-validate="getValidateRules(property)"
-                                        v-model.trim="values[property['bk_property_id']]">
-                                    </component>
-                                    <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
+                                <div class="property-value clearfix">
+                                    <slot :name="property.bk_property_id">
+                                        <component class="form-component"
+                                            :is="`cmdb-form-${property['bk_property_type']}`"
+                                            :class="{ error: errors.has(property['bk_property_id']) }"
+                                            :disabled="checkDisabled(property)"
+                                            :options="property.option || []"
+                                            :data-vv-name="property['bk_property_id']"
+                                            :data-vv-as="property['bk_property_name']"
+                                            v-validate="getValidateRules(property)"
+                                            v-model.trim="values[property['bk_property_id']]">
+                                        </component>
+                                        <span class="form-error"
+                                            :title="errors.first(property['bk_property_id'])">
+                                            {{errors.first(property['bk_property_id'])}}
+                                        </span>
+                                    </slot>
                                 </div>
                             </li>
                         </ul>
@@ -48,13 +53,13 @@
                         active: !$isAuthorized(saveAuth),
                         auth: [saveAuth]
                     }">
-                    <bk-button class="button-save" type="primary"
+                    <bk-button class="button-save" theme="primary"
                         :disabled="!$isAuthorized(saveAuth) || !hasChange || $loading()"
                         @click="handleSave">
-                        {{$t("Common['保存']")}}
+                        {{$t('保存')}}
                     </bk-button>
                 </span>
-                <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
+                <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>
         </div>
@@ -146,7 +151,10 @@
             },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, this.inst)
-                this.refrenceValues = this.$tools.clone(this.values)
+                const timer = setTimeout(() => {
+                    this.refrenceValues = this.$tools.clone(this.values)
+                    clearTimeout(timer)
+                })
             },
             checkGroupAvailable (properties) {
                 const availabelProperties = properties.filter(property => {
@@ -158,13 +166,13 @@
                 if (this.type === 'create') {
                     return !property['bk_isapi']
                 }
-                return property.editable && !property['bk_isapi']
+                return property.editable && !property['bk_isapi'] && !this.uneditableProperties.includes(property.bk_property_id)
             },
             checkDisabled (property) {
                 if (this.type === 'create') {
                     return false
                 }
-                return !property.editable || property.isreadonly
+                return !property.editable || property.isreadonly || this.disabledProperties.includes(property.bk_property_id)
             },
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')
@@ -197,6 +205,7 @@
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {
                     rules[propertyType] = true
+                    rules.length = propertyType === 'singlechar' ? 256 : 2000
                 }
                 if (propertyType === 'float') {
                     rules['float'] = true
@@ -206,7 +215,7 @@
             handleSave () {
                 this.$validator.validateAll().then(result => {
                     if (result) {
-                        this.$emit('on-submit', this.values, this.changedValues, this.inst, this.type)
+                        this.$emit('on-submit', { ...this.values }, { ...this.changedValues }, this.inst, this.type)
                     } else {
                         this.uncollapseGroup()
                     }
@@ -322,5 +331,7 @@
         line-height: 14px;
         font-size: 12px;
         color: #ff5656;
+        max-width: 100%;
+        @include ellipsis;
     }
 </style>

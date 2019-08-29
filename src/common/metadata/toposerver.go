@@ -35,3 +35,24 @@ type MainlineObjectTopoResult struct {
 	BaseResp `json:",inline"`
 	Data     []MainlineObjectTopo `json:"data"`
 }
+
+type CommonInstTopo struct {
+	InstNameAsst
+	Count    int            `json:"count"`
+	Children []InstNameAsst `json:"children"`
+}
+
+type CommonInstTopoV2 struct {
+	Prev []*CommonInstTopo `json:"prev"`
+	Next []*CommonInstTopo `json:"next"`
+	Curr interface{}       `json:"curr"`
+}
+type SearchAssociationTopoResult struct {
+    BaseResp `json:",inline"`
+    Data     []CommonInstTopoV2 `json:"data"`
+}
+
+type SearchTopoResult struct {
+	BaseResp `json:",inline"`
+	Data     []*CommonInstTopo `json:"data"`
+}

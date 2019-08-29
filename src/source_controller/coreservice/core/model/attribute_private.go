@@ -17,14 +17,15 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelAttribute) isExists(ctx core.ContextParams, propertyID string, meta metadata.Metadata) (oneAttribute *metadata.Attribute, exists bool, err error) {
+func (m *modelAttribute) isExists(ctx core.ContextParams, objID, propertyID string, meta metadata.Metadata) (oneAttribute *metadata.Attribute, exists bool, err error) {
 
 	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: propertyID})
 	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldPropertyID, Val: propertyID})
+	cond.Element(&mongo.Eq{Key: common.BKOIDField, Val: objID})
 
 	// ATTETION: Currently only business dimension isolation is done,
 	//           and there may be isolation requirements for other dimensions in the future.
@@ -35,8 +36,10 @@ func (m *modelAttribute) isExists(ctx core.ContextParams, propertyID string, met
 		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
 
+	condMap := util.SetModOwner(cond.ToMapStr(), ctx.SupplierAccount)
 	oneAttribute = &metadata.Attribute{}
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, oneAttribute)
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).One(ctx, oneAttribute)
+	blog.V(5).Infof("isExists cond:%#v, rid:%s", condMap, ctx.ReqID)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
 		blog.Errorf("request(%s): database findone operation is failed, error info is %s", ctx.ReqID, err.Error())
 		return oneAttribute, false, err

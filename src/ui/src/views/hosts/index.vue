@@ -1,12 +1,38 @@
 <template>
-    <div class="hosts-layout clearfix">
-        <cmdb-hosts-filter class="hosts-filter fr"
-            :filter-config-key="filterConfigKey"
-            :collection-content="{ business: filter.business }"
-            @on-refresh="handleRefresh">
-        </cmdb-hosts-filter>
+    <div class="hosts-layout">
+        <div class="hosts-topology"
+            v-bkloading="{ isLoading: $loading(['getInstTopo', 'getInternalTopo']) }"
+            :class="{ 'is-collapse': layout.topologyCollapse }">
+            <bk-big-tree class="topology-tree"
+                ref="tree"
+                selectable
+                :expand-on-click="false"
+                :options="{
+                    idKey: getNodeId,
+                    nameKey: 'bk_inst_name',
+                    childrenKey: 'child'
+                }"
+                @select-change="handleSelectChange">
+                <template slot-scope="{ node, data }">
+                    <i v-if="[1, 2].includes(data.default)"
+                        :class="{
+                            'internal-node-icon': true,
+                            'icon-cc-host-free-pool': data.default === 1,
+                            'icon-cc-host-breakdown': data.default === 2,
+                            'is-selected': node.selected
+                        }">
+                    </i>
+                    <i :class="['node-icon', { 'is-selected': node.selected }]" v-else>{{data.bk_obj_name[0]}}</i>
+                    {{node.name}}
+                </template>
+            </bk-big-tree>
+            <i class="topology-collapse-icon bk-icon icon-angle-left"
+                @click="layout.topologyCollapse = !layout.topologyCollapse">
+            </i>
+        </div>
         <cmdb-hosts-table class="hosts-main" ref="hostsTable"
             delete-auth=""
+            :show-collection="true"
             :edit-auth="$OPERATION.U_HOST"
             :save-auth="$OPERATION.U_HOST"
             :transfer-resource-auth="$OPERATION.HOST_TO_RESOURCE"
@@ -17,12 +43,10 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
-    import cmdbHostsFilter from '@/components/hosts/filter'
+    import { mapGetters, mapActions, mapState } from 'vuex'
     import cmdbHostsTable from '@/components/hosts/table'
     export default {
         components: {
-            cmdbHostsFilter,
             cmdbHostsTable
         },
         data () {
@@ -34,22 +58,20 @@
                     module: []
                 },
                 filter: {
-                    business: null,
-                    businessResolver: null,
-                    params: null,
-                    paramsResolver: null
-                }
+                    selectedNode: null
+                },
+                layout: {
+                    topologyCollapse: false
+                },
+                ready: false
             }
         },
         computed: {
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
-            ...mapGetters('hostFavorites', ['applyingInfo']),
             ...mapGetters('objectBiz', ['bizId']),
+            ...mapState('hosts', ['filterParams']),
             columnsConfigKey () {
                 return `${this.userName}_host_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
-            },
-            filterConfigKey () {
-                return `${this.userName}_host_${this.isAdminView ? 'adminView' : this.bizId}_filter_fields`
             },
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
@@ -59,56 +81,34 @@
             }
         },
         watch: {
-            bizId () {
-                this.table.checked = []
-                this.getHostList()
-            },
-            applyingInfo (info) {
-                if (info) {
-                    this.filter.business = info['bk_biz_id']
+            filterParams () {
+                if (this.ready) {
+                    this.getHostList()
                 }
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["主机查询"]'))
             try {
-                // eslint-disable-next-line
-                const res = await Promise.all([
-                    this.getBusiness(),
-                    this.getParams(),
+                const [topologyInstance] = await Promise.all([
+                    this.getBusinessTopology(),
                     this.getProperties()
                 ])
-                this.getHostList()
+                const businessNodeId = this.getNodeId(topologyInstance[0])
+                this.$refs.tree.setData(topologyInstance)
+                this.$refs.tree.setExpanded(businessNodeId)
+                this.$refs.tree.setSelected(businessNodeId, {
+                    emitEvent: true
+                })
+                this.ready = true
             } catch (e) {
                 console.log(e)
             }
         },
-        beforeRouteUpdate (to, from, next) {
-            this.$store.commit('hostFavorites/setApplying', null)
-            next()
-        },
-        beforeRouteLeave (to, from, next) {
-            this.$store.commit('hostFavorites/setApplying', null)
-            next()
+        beforeDestroy () {
+            this.ready = true
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
-            getBusiness () {
-                const query = this.$route.query
-                if (query.hasOwnProperty('business')) {
-                    this.$store.commit('objectBiz/setBizId', parseInt(query.business))
-                    return Promise.resolve()
-                }
-                return Promise.resolve()
-            },
-            getParams () {
-                return new Promise((resolve, reject) => {
-                    this.filter.paramsResolver = () => {
-                        this.filter.paramsResolver = null
-                        resolve()
-                    }
-                })
-            },
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
@@ -116,8 +116,7 @@
                         bk_supplier_account: this.supplierAccount
                     }),
                     config: {
-                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
-                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
+                        requestId: 'getHostProperties'
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {
@@ -126,16 +125,79 @@
                     return result
                 })
             },
-            handleRefresh (params) {
-                this.filter.params = params
-                if (this.filter.paramsResolver) {
-                    this.filter.paramsResolver()
-                } else {
-                    this.getHostList()
+            async getBusinessTopology () {
+                const [instance, internal] = await Promise.all([
+                    this.getInstanceTopology(),
+                    this.getInternalModules()
+                ])
+                const root = instance[0] || {}
+                const children = root.child || []
+                children.unshift(...(internal.module || []).map(module => {
+                    return {
+                        'default': ['空闲机', 'idle machine'].includes(module.bk_module_name) ? 1 : 2,
+                        'bk_obj_id': 'module',
+                        'bk_inst_id': module.bk_module_id,
+                        'bk_inst_name': module.bk_module_name
+                    }
+                }))
+                return instance
+            },
+            getInstanceTopology () {
+                return this.$store.dispatch('objectMainLineModule/getInstTopo', {
+                    bizId: this.bizId,
+                    config: {
+                        requestId: 'getInstTopo'
+                    }
+                })
+            },
+            getInternalModules () {
+                return this.$store.dispatch('objectMainLineModule/getInternalTopo', {
+                    bizId: this.bizId,
+                    config: {
+                        requestId: 'getInternalTopo'
+                    }
+                })
+            },
+            getNodeId (data) {
+                return `${data.bk_obj_id}-${data.bk_inst_id}`
+            },
+            handleSelectChange (node) {
+                this.filter.selectedNode = node
+                this.getHostList()
+            },
+            getParams () {
+                const defaultModel = ['biz', 'set', 'module', 'host', 'object']
+                const modelInstKey = {
+                    biz: 'bk_biz_id',
+                    set: 'bk_set_id',
+                    module: 'bk_module_id',
+                    host: 'bk_host_id',
+                    object: 'bk_inst_id'
                 }
+                const params = {
+                    bk_biz_id: this.bizId,
+                    ip: this.filterParams.ip,
+                    condition: defaultModel.map(model => {
+                        return {
+                            bk_obj_id: model,
+                            condition: this.filterParams[model] || [],
+                            fields: []
+                        }
+                    })
+                }
+                const selectedNode = this.filter.selectedNode
+                const selectedModel = defaultModel.includes(selectedNode.data.bk_obj_id) ? selectedNode.data.bk_obj_id : 'object'
+                const selectedModelCondition = params.condition.find(model => model.bk_obj_id === selectedModel)
+                selectedModelCondition.condition.push({
+                    field: modelInstKey[selectedModel],
+                    operator: '$eq',
+                    value: selectedNode.data.bk_inst_id
+                })
+                return params
             },
             getHostList (resetPage = true) {
-                this.$refs.hostsTable.search(this.bizId, this.filter.params, resetPage)
+                const params = this.getParams()
+                this.$refs.hostsTable.search(this.bizId, params, resetPage)
             }
         }
     }
@@ -145,28 +207,68 @@
     .hosts-layout{
         height: 100%;
         padding: 0;
-        overflow: hidden;
+        display: flex;
+        .hosts-topology {
+            position: relative;
+            flex: 280px 0 0;
+            height: 100%;
+            border-right: 1px solid $cmdbLayoutBorderColor;
+            &.is-collapse {
+                width: 0;
+                flex: 0 0 0;
+                .topology-collapse-icon:before {
+                    display: inline-block;
+                    transform: rotate(180deg);
+                }
+            }
+            .topology-collapse-icon {
+                position: absolute;
+                left: 100%;
+                top: 50%;
+                width: 16px;
+                height: 100px;
+                line-height: 100px;
+                background: $cmdbLayoutBorderColor;
+                border-radius: 0px 12px 12px 0px;
+                transform: translateY(-50%);
+                text-align: center;
+                font-size: 12px;
+                color: #fff;
+                cursor: pointer;
+                &:hover {
+                    background: #699DF4;
+                }
+            }
+        }
         .hosts-main{
+            flex: 1;
+            width: 0;
             height: 100%;
             padding: 20px;
-            overflow: hidden;
-        }
-        .hosts-filter{
-            height: 100%;
         }
     }
-    .hosts-options{
-        font-size: 0;
-        .options-button{
-            position: relative;
+    .topology-tree {
+        max-height: 100%;
+        padding: 10px 0;
+        @include scrollbar-y;
+        .node-icon {
             display: inline-block;
+            width: 20px;
+            height: 20px;
             vertical-align: middle;
-            border-radius: 0;
-            font-size: 14px;
-            margin-left: -1px;
-            &:hover{
-                z-index: 1;
+            border-radius: 50%;
+            background-color: #C4C6CC;
+            line-height: 1.666667;
+            text-align: center;
+            font-size: 12px;
+            font-style: normal;
+            color: #FFF;
+            &.is-selected {
+                background-color: #3A84FF;
             }
+        }
+        .internal-node-icon.is-selected {
+            color: #FFB400;
         }
     }
     .hosts-table{

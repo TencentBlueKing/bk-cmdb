@@ -7,38 +7,38 @@
                         active: !$isAuthorized(updateAuth),
                         auth: [updateAuth]
                     }">
-                    <bk-button type="primary" class="options-button"
+                    <bk-button theme="primary" class="options-button"
                         :disabled="!$isAuthorized(updateAuth)"
                         @click="showCreate = true">
-                        {{$t('HostDetails["新增关联"]')}}
+                        {{$t('新增关联')}}
                     </bk-button>
                 </span>
-                <cmdb-form-bool v-if="hasAssociation"
+                <bk-checkbox v-if="hasAssociation"
                     :size="16" class="options-checkbox"
                     @change="handleExpandAll">
-                    <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
-                </cmdb-form-bool>
-                <bk-button type="default" class="options-button" v-show="false">{{$t('HostDetails["批量取消"]')}}</bk-button>
+                    <span class="checkbox-label">{{$t('全部展开')}}</span>
+                </bk-checkbox>
+                <bk-button theme="default" class="options-button" v-show="false">{{$t('批量取消')}}</bk-button>
             </div>
             <div class="fr">
                 <bk-button class="options-button options-button-view"
-                    :type="activeView === viewName.list ? 'primary' : 'default'"
+                    :theme="activeView === viewName.list ? 'primary' : 'default'"
                     @click="toggleView(viewName.list)">
-                    {{$t('HostDetails["列表"]')}}
+                    {{$t('列表')}}
                 </bk-button>
                 <bk-button class="options-button options-button-view"
-                    :type="activeView === viewName.graphics ? 'primary' : 'default'"
+                    :theme="activeView === viewName.graphics ? 'primary' : 'default'"
                     @click="toggleView(viewName.graphics)">
-                    {{$t('HostDetails["拓扑"]')}}
+                    {{$t('拓扑')}}
                 </bk-button>
             </div>
         </div>
         <div class="association-view">
             <component :is="activeView"></component>
         </div>
-        <cmdb-slider :is-show.sync="showCreate">
+        <bk-sideslider :is-show.sync="showCreate" :width="800" :title="$t('新增关联')">
             <cmdb-host-association-create slot="content" v-if="showCreate"></cmdb-host-association-create>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

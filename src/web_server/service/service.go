@@ -42,6 +42,7 @@ type Service struct {
 func (s *Service) WebService() *gin.Engine {
 	ws := gin.Default()
 
+	ws.Use(middleware.RequestIDMiddleware)
 	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))
 	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery()))
 	middleware.Engine = s.Engine
@@ -51,6 +52,7 @@ func (s *Service) WebService() *gin.Engine {
 
 	ws.POST("/hosts/import", s.ImportHost)
 	ws.POST("/hosts/export", s.ExportHost)
+	ws.GET("/hosts/:bk_host_id/listen_ip_options", s.ListenIPOptions)
 	ws.POST("/importtemplate/:bk_obj_id", s.BuildDownLoadExcelTemplate)
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportInst)
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportInst)
@@ -59,11 +61,21 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportObject)
 	ws.GET("/user/list", s.GetUserList)
 	ws.GET("/user/language/:language", s.UpdateUserLanguage)
+	// get current login user info
 	ws.GET("/userinfo", s.UserInfo)
 	ws.PUT("/user/current/supplier/:id", s.UpdateSupplier)
+	ws.GET("/user/detail", s.UserDetail)
 
 	ws.GET("/healthz", s.Healthz)
 	ws.GET("/", s.Index)
+
+	ws.POST("/netdevice/import", s.ImportNetDevice)
+	ws.POST("/netdevice/export", s.ExportNetDevice)
+	ws.GET("/netcollect/importtemplate/netdevice", s.BuildDownLoadNetDeviceExcelTemplate)
+	ws.POST("/netproperty/import", s.ImportNetProperty)
+	ws.POST("/netproperty/export", s.ExportNetProperty)
+	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
+
 	return ws
 }
 

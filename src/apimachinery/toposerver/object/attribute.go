@@ -66,7 +66,7 @@ func (t *object) DeleteObjectAtt(ctx context.Context, objID string, h http.Heade
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/objectattr/%s", objID)
 
-	err = t.client.Post().
+	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).

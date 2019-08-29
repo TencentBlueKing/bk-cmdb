@@ -14,6 +14,7 @@ package discovery
 
 import (
 	"fmt"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
@@ -35,9 +36,6 @@ type DiscoveryInterface interface {
 	ProcServer() Interface
 	TopoServer() Interface
 	DataCollect() Interface
-	HostCtrl() Interface
-	ObjectCtrl() Interface
-	ProcCtrl() Interface
 	GseProcServer() Interface
 	CoreService() Interface
 	ServiceManageInterface
@@ -65,6 +63,22 @@ func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 		}
 
 		d.servers[component] = svr
+	}
+	// 如果要支持第三方服务自动发现，
+	// 需要watch  types.CC_SERV_BASEPATH 节点。发现有新的节点加入，
+	//  对改节点执行newServerDiscover 方法。 这个操作d 对象需要加锁
+
+	//  如果当前服务不是标准服务，发现自己的服务其他节点
+	component := common.GetIdentification()
+	if strings.HasPrefix(common.GetIdentification(), types.CC_DISCOVERY_PREFIX) {
+		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
+		svr, err := newServerDiscover(disc, path, component)
+		if err != nil {
+			return nil, fmt.Errorf("discover %s failed, err: %v", component, err)
+		}
+
+		d.servers[component] = svr
+
 	}
 
 	return d, nil
@@ -102,18 +116,6 @@ func (d *discover) DataCollect() Interface {
 	return d.servers[types.CC_MODULE_DATACOLLECTION]
 }
 
-func (d *discover) HostCtrl() Interface {
-	return d.servers[types.CC_MODULE_HOSTCONTROLLER]
-}
-
-func (d *discover) ObjectCtrl() Interface {
-	return d.servers[types.CC_MODULE_OBJECTCONTROLLER]
-}
-
-func (d *discover) ProcCtrl() Interface {
-	return d.servers[types.CC_MODULE_PROCCONTROLLER]
-}
-
 func (d *discover) GseProcServer() Interface {
 	return d.servers[types.GSE_MODULE_PROCSERVER]
 }
@@ -126,8 +128,7 @@ func (d *discover) TMServer() Interface {
 	return d.servers[types.CC_MODULE_TXC]
 }
 
-// IsMster current is master
+// IsMaster check whether current is master
 func (d *discover) IsMaster() bool {
-
 	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().Address())
 }

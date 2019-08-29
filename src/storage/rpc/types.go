@@ -19,9 +19,9 @@ import (
 	"errors"
 	"sync"
 
-	"configcenter/src/common/util"
+	"github.com/rentiansheng/bk_bson/bson"
 
-	"github.com/mongodb/mongo-go-driver/bson"
+	"configcenter/src/common/util"
 )
 
 // Errors define
@@ -198,6 +198,9 @@ func (bsonCodec) Decode(data []byte, v interface{}) error {
 	return bson.Unmarshal(data, v)
 }
 func (bsonCodec) Encode(v interface{}) ([]byte, error) {
+	if v == nil {
+		return nil, nil
+	}
 	return bson.Marshal(v)
 }
 

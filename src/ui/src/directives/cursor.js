@@ -103,37 +103,58 @@ const updateProxyPosition = event => {
     })
 }
 
+const setChildrenEvents = (target, pointerEvents) => {
+    Array.prototype.forEach.call(target.children, child => {
+        child.style.pointerEvents = pointerEvents
+    })
+}
+
 const cursor = {
     inserted (el, binding, vNode) {
         if (!proxy) {
             createProxy()
         }
-        const data = { ...options, $vnode: vNode }
+        const data = { ...options }
         if (typeof binding.value !== 'object') {
             data.active = binding.value
         } else {
             Object.assign(data, binding.value)
         }
-
-        el.__cursor__ = data
-        addEventListener(el)
+        const target = data.selector ? el.querySelector(data.selector) : el
+        if (target) {
+            el.__cursor_target__ = target
+            target.__cursor__ = data
+            addEventListener(target)
+            const pointerEvents = data.active ? 'none' : ''
+            setChildrenEvents(target, pointerEvents)
+        }
     },
     update (el, binding) {
-        if (!el.__cursor__) {
-            return false
-        }
+        const data = { ...options }
         if (typeof binding.value !== 'object') {
-            el.__cursor__.active = binding.value
+            data.active = binding.value
         } else {
-            Object.assign(el.__cursor__, binding.value)
+            Object.assign(data, binding.value)
         }
-        const pointerEvents = el.__cursor__.active ? 'none' : ''
-        Array.prototype.forEach.call(el.children, child => {
-            child.style.pointerEvents = pointerEvents
-        })
+        let target = el.__cursor_target__
+        if (!target) {
+            target = el.querySelector(data.selector)
+            if (target) {
+                el.__cursor_target__ = target
+                target.__cursor__ = data
+                addEventListener(target)
+                const pointerEvents = data.active ? 'none' : ''
+                setChildrenEvents(target, pointerEvents)
+            }
+        } else {
+            Object.assign(target.__cursor__, data)
+            const pointerEvents = data.active ? 'none' : ''
+            setChildrenEvents(target, pointerEvents)
+        }
     },
     unbind (el) {
-        removeEventListener(el)
+        const target = el.__cursor_target__
+        removeEventListener(target)
     }
 }
 

@@ -3,24 +3,27 @@
         'is-sticky': sticky
     }">
         <div class="sticky-layout" ref="stickyLayout">
-            <the-search></the-search>
+            <the-search v-if="site.fullTextSearch === 'off'"></the-search>
+            <search-input v-else></search-input>
             <the-recently></the-recently>
         </div>
         <div ref="stickyProxy" v-show="sticky"></div>
         <the-classify></the-classify>
         <the-map></the-map>
         <cmdb-main-inject class="copyright" ref="copyright">
-            Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有
+            Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有. {{site.buildVersion}}
         </cmdb-main-inject>
     </div>
 </template>
 
 <script>
     import theSearch from './children/search'
+    import searchInput from './children/search-input'
     import theRecently from './children/recently'
     import theClassify from './children/classify'
     import theMap from './children/map'
     import cmdbMainInject from '@/components/layout/main-inject'
+    import { mapGetters } from 'vuex'
     import {
         addMainResizeListener,
         removeMainResizeListener,
@@ -31,6 +34,7 @@
         name: 'cmdb-index',
         components: {
             theSearch,
+            searchInput,
             theRecently,
             theClassify,
             theMap,
@@ -44,8 +48,8 @@
                 scrollHandler: null
             }
         },
-        created () {
-            this.$store.commit('setHeaderTitle', this.$t('Index["首页"]'))
+        computed: {
+            ...mapGetters(['site'])
         },
         mounted () {
             this.initResizeListener()

@@ -29,7 +29,6 @@ import (
 
 // helpers
 func (phpapi *PHPAPI) UpdateHostMain(ctx context.Context, hostCondition, data map[string]interface{}, appID int64) (string, errors.CCError) {
-	//blog.V(5).Infof("updateHostMain start")
 	blog.V(5).Infof("hostCondition:%+v, rid:%s", hostCondition, phpapi.rid)
 
 	_, hostIDArr, err := phpapi.GetHostMapByCond(ctx, hostCondition)
@@ -63,7 +62,7 @@ func (phpapi *PHPAPI) UpdateHostMain(ctx context.Context, hostCondition, data ma
 
 	lenOfConfigData := len(configData)
 	if lenOfConfigData == 0 {
-		blog.Errorf("not expected config lenth: appid:%d, hostid:%d, rid:%s", appID, hostIDArr[0], phpapi.rid)
+		blog.Errorf("not expected config length: appID:%d, hostID:%d, rid:%s", appID, hostIDArr[0], phpapi.rid)
 		return "", fmt.Errorf("not expected config length: %d", lenOfConfigData)
 	}
 
@@ -79,22 +78,26 @@ func (phpapi *PHPAPI) UpdateHostMain(ctx context.Context, hostCondition, data ma
 
 	strHostID := strconv.FormatInt(hostID, 10)
 	logContent := phpapi.logic.NewHostLog(ctx, util.GetOwnerID(phpapi.header))
-	logContent.WithPrevious(ctx, strHostID, nil)
+	if err := logContent.WithPrevious(ctx, strHostID, nil); err != nil {
+		blog.Warnf("WithPrevious failed, err: %+v, rid: %s", err, phpapi.rid)
+	}
 	res, err := phpapi.logic.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx, phpapi.header, common.BKInnerObjIDHost, param)
 	if nil != err {
 		blog.Errorf("UpdateHostMain UpdateObject http do error, err:%s,param:%+v,rid:%s", err.Error(), param, phpapi.rid)
 		return "", phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if false == res.Result {
-		blog.Errorf("UpdateHostmain UpdateObject http response error, err code:%d,err msg:%s, param:%+v,rid:%s", res.Code, res.ErrMsg, param, phpapi.rid)
+		blog.Errorf("UpdateHostMain UpdateObject http response error, err code:%d,err msg:%s, param:%+v,rid:%s", res.Code, res.ErrMsg, param, phpapi.rid)
 		return "", phpapi.ccErr.New(res.Code, res.ErrMsg)
 	}
 	if nil == err && true == res.Result {
-		//操作成功，新加操作日志日志resJs, err := simplejson.NewJson([]byte(res))
+		// 操作成功，新加操作日志日志resJs, err := simplejson.NewJson([]byte(res))
 		if res.Result {
-			logContent.WithCurrent(ctx, strHostID)
+			if err := logContent.WithCurrent(ctx, strHostID); err != nil {
+				blog.Warnf("WithCurrent failed, err: %+v, rid: %s", err, phpapi.rid)
+			}
 			content := logContent.GetContent(hostID)
-			//(id interface{}, Content interface{}, OpDesc string, InnerIP, ownerID, appID, user string, OpType auditoplog.AuditOpType)
+			// (id interface{}, Content interface{}, OpDesc string, InnerIP, ownerID, appID, user string, OpType auditoplog.AuditOpType)
 
 			log := meta.SaveAuditLogParams{
 				ID:      hostID,
@@ -105,7 +108,9 @@ func (phpapi *PHPAPI) UpdateHostMain(ctx context.Context, hostCondition, data ma
 				BizID:   appID,
 			}
 
-			phpapi.logic.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), phpapi.header, log)
+			if _, err := phpapi.logic.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), phpapi.header, log); err != nil {
+				blog.Warnf("SaveAuditLog failed, err: %+v, rid: %s", err, phpapi.rid)
+			}
 		}
 	}
 
@@ -125,13 +130,13 @@ func (phpapi *PHPAPI) AddModuleHostConfig(ctx context.Context, hostID, appID int
 	}
 	blog.V(5).Infof("addModuleHostConfig start, data: %+v,rid:%s", data, phpapi.rid)
 
-	res, err := phpapi.logic.CoreAPI.CoreService().Host().TransferHostModule(ctx, phpapi.header, data)
+	res, err := phpapi.logic.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, phpapi.header, data)
 	if nil != err {
 		blog.Errorf("AddModuleHostConfig http do error.err:%s,param:%+v,rid:%s", err.Error(), data, phpapi.rid)
 		return phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !res.Result {
-		blog.Errorf("AddModuleHostConfig http reponse error. reply:%#v,param:%+v,rid:%s", res, data, phpapi.rid)
+		blog.Errorf("AddModuleHostConfig http response error. reply:%#v,param:%+v,rid:%s", res, data, phpapi.rid)
 		if len(res.Data) != 0 {
 			return phpapi.ccErr.New(int(res.Data[0].Code), res.Data[0].Message)
 		}
@@ -151,7 +156,7 @@ func (phpapi *PHPAPI) addObj(ctx context.Context, data map[string]interface{}, o
 		return 0, phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !resp.Result {
-		blog.Errorf("addObj http reponse error.err code:%s,err msg:%s,param:%+v,rid:%s", resp.Code, resp.ErrMsg, input, phpapi.rid)
+		blog.Errorf("addObj http response error.err code:%s,err msg:%s,param:%+v,rid:%s", resp.Code, resp.ErrMsg, input, phpapi.rid)
 		return 0, phpapi.ccErr.New(resp.Code, resp.ErrMsg)
 	}
 
@@ -160,11 +165,11 @@ func (phpapi *PHPAPI) addObj(ctx context.Context, data map[string]interface{}, o
 	return int64(resp.Data.Created.ID), nil
 }
 
-//search host helpers
+// search host helpers
 
 func (phpapi *PHPAPI) SetHostData(ctx context.Context, moduleHostConfig []meta.ModuleHost, hostMap map[int64]map[string]interface{}) ([]mapstr.MapStr, errors.CCError) {
 
-	//total data
+	// total data
 	hostData := make([]mapstr.MapStr, 0)
 
 	appIDArr := make([]int64, 0)
@@ -221,9 +226,9 @@ func (phpapi *PHPAPI) SetHostData(ctx context.Context, moduleHostConfig []meta.M
 
 		host[common.BKModuleIDField] = module[common.BKModuleIDField]
 		host[common.BKModuleNameField] = module[common.BKModuleNameField]
-		host[common.BKSetIDField], _ = set.Int64(common.BKSetIDField) //[common.BKSetIDField]
+		host[common.BKSetIDField], _ = set.Int64(common.BKSetIDField) // [common.BKSetIDField]
 		host[common.BKSetNameField] = set[common.BKSetNameField]
-		host[common.BKAppIDField], _ = app.Int64(common.BKAppIDField) //[common.BKAppIDField]
+		host[common.BKAppIDField], _ = app.Int64(common.BKAppIDField) // [common.BKAppIDField]
 		host[common.BKAppNameField] = app[common.BKAppNameField]
 		host[common.BKModuleTypeField] = module[common.BKModuleTypeField]
 		host[common.BKOwnerIDField] = app[common.BKOwnerIDField]

@@ -1,9 +1,11 @@
 <template>
     <div class="feature-tips" v-if="showTips">
-        <i class="icon-cc-exclamation-tips"></i>
-        <span>{{desc}}</span>
-        <a :href="moreHref" target="_blank">{{$t("Common['更多详情']")}} >></a>
-        <span class="icon-cc-tips-close fr" @click="HandleCloseTips"></span>
+        <div class="main-box" :style="{ 'padding-right': featureName ? '30px' : 0 }">
+            <i class="icon-cc-exclamation-tips"></i>
+            <span>{{desc}}</span>
+            <a v-if="moreHref" :href="moreHref" target="_blank">{{$t('更多详情')}} &gt;&gt;</a>
+        </div>
+        <span class="icon-cc-tips-close fr" v-if="featureName" @click="HandleCloseTips"></span>
     </div>
 </template>
 
@@ -12,7 +14,7 @@
         props: {
             featureName: {
                 type: String,
-                required: true
+                default: ''
             },
             showTips: {
                 type: Boolean,
@@ -24,7 +26,7 @@
             },
             moreHref: {
                 type: String,
-                default: 'javascript: (0)'
+                default: ''
             }
         },
         methods: {
@@ -43,6 +45,12 @@
         background-color: rgba(240,248,255,1);
         padding: 6px 16px;
         margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        .main-box {
+            line-height: 1.5;
+            flex: 1;
+        }
         .icon-cc-exclamation-tips {
             color: #3a84ff;
             font-size: 16px;
@@ -50,6 +58,7 @@
             margin-right: 4px;
         }
         a {
+            display: inline-block;
             margin-left: 40px;
             color: #3a84ff;
             &:hover {
@@ -58,7 +67,6 @@
         }
         .icon-cc-tips-close {
             font-size: 14px;
-            margin-top: 1px;
             cursor: pointer;
             color: #979ba5;
             &:hover {

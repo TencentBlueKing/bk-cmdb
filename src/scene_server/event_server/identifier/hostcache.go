@@ -16,12 +16,12 @@ import (
 	"context"
 	"encoding/json"
 	"sort"
-	
-	redis "gopkg.in/redis.v5"
-	
-	"configcenter/src/common/util" 
+
+	"gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 )
 
@@ -43,11 +43,11 @@ type HostIdentifier struct {
 	Process         []Process          `json:"process" bson:"process"`
 }
 
-type PorcessSorter []Process
+type ProcessSorter []Process
 
-func (p PorcessSorter) Len() int      { return len(p) }
-func (p PorcessSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
-func (p PorcessSorter) Less(i, j int) bool {
+func (p ProcessSorter) Len() int      { return len(p) }
+func (p ProcessSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p ProcessSorter) Less(i, j int) bool {
 	sort.Sort(util.Int64Slice(p[i].BindModules))
 	return p[i].ProcessID < p[j].ProcessID
 }
@@ -75,51 +75,51 @@ type Module struct {
 	SetEnv     string `json:"bk_set_env"`
 }
 
-func (iden *HostIdentifier) MarshalBinary() (data []byte, err error) {
-	sort.Sort(PorcessSorter(iden.Process))
-	return json.Marshal(iden)
+func (identifier *HostIdentifier) MarshalBinary() (data []byte, err error) {
+	sort.Sort(ProcessSorter(identifier.Process))
+	return json.Marshal(identifier)
 }
 
-func (iden *HostIdentifier) fillIden(ctx context.Context, cache *redis.Client, db dal.RDB) *HostIdentifier {
+func (identifier *HostIdentifier) fillIdentifier(ctx context.Context, cache *redis.Client, db dal.RDB) *HostIdentifier {
 	// fill cloudName
-	cloud, err := getCache(ctx, cache, db, common.BKInnerObjIDPlat, iden.CloudID, false)
+	cloud, err := getCache(ctx, cache, db, common.BKInnerObjIDPlat, identifier.CloudID, false)
 	if err != nil {
 		blog.Errorf("identifier: getCache error %s", err.Error())
-		return iden
+		return identifier
 	}
-	iden.CloudName = getString(cloud.data[common.BKCloudNameField])
+	identifier.CloudName = getString(cloud.data[common.BKCloudNameField])
 
 	// fill module
-	for moduleID := range iden.Module {
-		biz, err := getCache(ctx, cache, db, common.BKInnerObjIDApp, iden.Module[moduleID].BizID, false)
+	for moduleID := range identifier.Module {
+		biz, err := getCache(ctx, cache, db, common.BKInnerObjIDApp, identifier.Module[moduleID].BizID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
 		}
-		iden.Module[moduleID].BizName = getString(biz.data[common.BKAppNameField])
-		iden.SupplierAccount = getString(biz.data[common.BKOwnerIDField])
-		iden.SupplierID = getInt(biz.data, common.BKSupplierIDField)
+		identifier.Module[moduleID].BizName = getString(biz.data[common.BKAppNameField])
+		identifier.SupplierAccount = getString(biz.data[common.BKOwnerIDField])
+		identifier.SupplierID = getInt(biz.data, common.BKSupplierIDField)
 
-		set, err := getCache(ctx, cache, db, common.BKInnerObjIDSet, iden.Module[moduleID].SetID, false)
+		set, err := getCache(ctx, cache, db, common.BKInnerObjIDSet, identifier.Module[moduleID].SetID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
 		}
-		iden.Module[moduleID].SetName = getString(set.data[common.BKSetNameField])
-		iden.Module[moduleID].SetEnv = getString(set.data[common.BKSetEnvField])
-		iden.Module[moduleID].SetStatus = getString(set.data[common.BKSetStatusField])
+		identifier.Module[moduleID].SetName = getString(set.data[common.BKSetNameField])
+		identifier.Module[moduleID].SetEnv = getString(set.data[common.BKSetEnvField])
+		identifier.Module[moduleID].SetStatus = getString(set.data[common.BKSetStatusField])
 
-		module, err := getCache(ctx, cache, db, common.BKInnerObjIDModule, iden.Module[moduleID].ModuleID, false)
+		module, err := getCache(ctx, cache, db, common.BKInnerObjIDModule, identifier.Module[moduleID].ModuleID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
 		}
-		iden.Module[moduleID].ModuleName = getString(module.data[common.BKModuleNameField])
+		identifier.Module[moduleID].ModuleName = getString(module.data[common.BKModuleNameField])
 	}
 
 	// fill process
-	for procindex := range iden.Process {
-		process := &iden.Process[procindex]
+	for procIndex := range identifier.Process {
+		process := &identifier.Process[procIndex]
 		proc, err := getCache(ctx, cache, db, common.BKInnerObjIDProc, process.ProcessID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDProc, process.ProcessID, err.Error())
@@ -134,5 +134,5 @@ func (iden *HostIdentifier) fillIden(ctx context.Context, cache *redis.Client, d
 		process.StartParamRegex = getString(proc.data["bk_start_param_regex"])
 	}
 
-	return iden
+	return identifier
 }

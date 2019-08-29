@@ -6,11 +6,12 @@
             <div class="group-header clearfix">
                 <div class="header-title fl">
                     <template v-if="group.info['bk_group_id'] !== 'none' && group === groupInEditing">
-                        <input type="text" class="title-input cmdb-form-input"
+                        <bk-input type="text" class="title-input"
                             ref="titleInput"
                             v-model.trim="groupNameInEditing">
-                        <a class="title-input-button" href="javascript:void(0)" @click="handleUpdateGroupName(group)">{{$t('Common["保存"]')}}</a>
-                        <a class="title-input-button" href="javascript:void(0)" @click="handleCancelEditGroupName">{{$t('Common["取消"]')}}</a>
+                        </bk-input>
+                        <a class="title-input-button" href="javascript:void(0)" @click="handleUpdateGroupName(group)">{{$t('保存')}}</a>
+                        <a class="title-input-button" href="javascript:void(0)" @click="handleCancelEditGroupName">{{$t('取消')}}</a>
                     </template>
                     <template v-else>
                         <span class="group-name">{{group.info['bk_group_name']}}</span>
@@ -23,25 +24,25 @@
                 </div>
                 <div class="header-options fr" v-if="updateAuth && isEditable(group.info)">
                     <i class="options-icon bk-icon icon-arrows-up"
-                        v-tooltip="$t('ModelManagement[\'上移\']')"
+                        v-bk-tooltips="$t('上移')"
                         :class="{
                             disabled: !canRiseGroup(index, group)
                         }"
                         @click="handleRiseGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-arrows-down"
-                        v-tooltip="$t('ModelManagement[\'下移\']')"
+                        v-bk-tooltips="$t('下移')"
                         :class="{
                             disabled: !canDropGroup(index, group)
                         }"
                         @click="handleDropGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-plus-circle-shape"
-                        v-tooltip="$t('ModelManagement[\'新建字段\']')"
+                        v-bk-tooltips="$t('添加字段')"
                         @click="handleAddProperty(group)">
                     </i>
                     <i class="options-icon bk-icon icon-delete"
-                        v-tooltip="$t('ModelManagement[\'删除分组\']')"
+                        v-bk-tooltips="$t('删除分组')"
                         :class="{ disabled: ['none', 'default'].includes(group.info['bk_group_id']) }"
                         @click="handleDeleteGroup(group, index)">
                     </i>
@@ -71,9 +72,9 @@
                 <template v-if="!group.properties.length">
                     <li class="property-empty" v-if="updateAuth && isEditable(group.info)"
                         @click="handleAddProperty(group)">
-                        {{$t('ModelManagement["立即添加"]')}}
+                        {{$t('添加字段')}}
                     </li>
-                    <li class="property-empty disabled" v-else>{{$t('ModelManagement["暂无字段"]')}}</li>
+                    <li class="property-empty disabled" v-else>{{$t('暂无字段')}}</li>
                 </template>
             </vue-draggable>
             <template v-if="updateAuth">
@@ -81,31 +82,30 @@
                     <a class="add-group-trigger" href="javascript:void(0)"
                         v-if="!showAddGroup"
                         @click="handleAddGroup">
-                        {{$t('ModelManagement["新建分组"]')}}
+                        {{$t('新建分组')}}
                         <i class="icon icon-cc-edit"></i>
                     </a>
                     <template v-else>
-                        <input type="text" class="add-group-input cmdb-form-input"
+                        <bk-input type="text" class="add-group-input cmdb-form-input"
                             ref="addGroupInput"
                             v-model.trim="newGroupName">
-                        <a class="add-group-button" href="javascript:void(0)" @click="handleCreateGroup">{{$t('Common["保存"]')}}</a>
-                        <a class="add-group-button" href="javascript:void(0)" @click="handleCancelCreateGroup">{{$t('Common["取消"]')}}</a>
+                        </bk-input>
+                        <a class="add-group-button" href="javascript:void(0)" @click="handleCreateGroup">{{$t('保存')}}</a>
+                        <a class="add-group-button" href="javascript:void(0)" @click="handleCancelCreateGroup">{{$t('取消')}}</a>
                     </template>
                 </div>
             </template>
         </div>
-        <bk-dialog
-            :is-show.sync="dialog.isShow"
-            :has-header="false"
-            :quick-close="false"
+        <bk-dialog class="bk-dialog-no-padding"
+            v-model="dialog.isShow"
+            :mask-close="false"
             :width="600"
             @cancel="handleCancelAddProperty"
             @confirm="handleConfirmAddProperty">
-            <div class="dialog-title" slot="tools">{{$t('ModelManagement["新建字段"]')}}</div>
-            <div class="dialog-content" slot="content">
+            <div class="dialog-title" slot="tools">{{$t('新建字段')}}</div>
+            <div class="dialog-content">
                 <div class="dialog-filter">
-                    <input type="text" class="cmdb-form-input" v-model.trim="dialog.filter">
-                    <i class="bk-icon icon-search"></i>
+                    <bk-input type="text" class="cmdb-form-input" v-model.trim="dialog.filter" right-icon="bk-icon icon-search"></bk-input>
                 </div>
                 <ul class="dialog-property clearfix" ref="dialogProperty">
                     <li class="property-item fl"
@@ -233,7 +233,7 @@
                 groups = this.setGroupIndex(groups.concat({
                     'bk_group_index': Infinity,
                     'bk_group_id': 'none',
-                    'bk_group_name': this.$t('Common["更多属性"]')
+                    'bk_group_name': this.$t('更多属性')
                 }))
                 const groupedProperties = groups.map(group => {
                     return {
@@ -311,7 +311,7 @@
             handleUpdateGroupName (group) {
                 const isExist = this.groupedProperties.some(originalGroup => originalGroup !== group && originalGroup.info['bk_group_name'] === this.groupNameInEditing)
                 if (isExist) {
-                    this.$error(this.$t('ModelManagement["该名字已经存在"]'))
+                    this.$error(this.$t('该名字已经存在'))
                     return
                 }
                 this.updateGroup({
@@ -430,7 +430,7 @@
                     return
                 }
                 if (group.properties.length) {
-                    this.$error('请先清空该分组下的字段')
+                    this.$error(this.$t('请先清空该分组下的字段'))
                     return
                 }
                 this.deleteGroup({
@@ -444,7 +444,7 @@
                     }
                 }).then(() => {
                     this.groupedProperties.splice(index, 1)
-                    this.$success(this.$t('Common["删除成功"]'))
+                    this.$success(this.$t('删除成功'))
                 })
             },
             resortGroups () {
@@ -533,7 +533,7 @@
                 const groupedProperties = this.groupedProperties
                 const isExist = groupedProperties.some(group => group.info['bk_group_name'] === this.newGroupName)
                 if (isExist) {
-                    this.$error(this.$t('ModelManagement["该名字已经存在"]'))
+                    this.$error(this.$t('该名字已经存在'))
                     return
                 }
                 const groupId = Date.now().toString()
@@ -595,9 +595,12 @@
             }
             .title-input {
                 width: 180px;
-                height: 29px;
-                line-height: 27px;
-                margin: -4px 0 0 0;
+                display: inline-block;
+                top: -5px;
+                /deep/ .bk-form-input {
+                    height: 28px;
+                    line-height: 28px;
+                }
             }
             .title-input-button {
                 display: inline-block;
@@ -735,12 +738,15 @@
             }
         }
         .add-group-input {
-            font-size: 16px;
+            font-size: 0;
             display: inline-block;
             vertical-align: middle;
             width: 180px;
-            height: 29px;
-            line-height: 27px;
+            /deep/ .bk-form-input {
+                font-size: 14px;
+                height: 30px;
+                line-height: 30px;
+            }
         }
         .add-group-button {
             display: inline-block;
@@ -757,6 +763,7 @@
     }
     .dialog-content {
         width: 470px;
+        padding: 0 0 20px 0;
         margin: 0 auto;
     }
     .dialog-filter {
