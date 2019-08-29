@@ -106,7 +106,7 @@
                 return map
             },
             isBlueKing () {
-                return this.treeData[0].bk_inst_name === '蓝鲸'
+                return (this.treeData[0] || {}).bk_inst_name === '蓝鲸'
             }
         },
         async created () {
@@ -179,7 +179,7 @@
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
-                return node.selected && !isModule
+                return node.selected && !isModule && !this.isBlueKing
             },
             isTemplate (node) {
                 return node.data.service_template_id

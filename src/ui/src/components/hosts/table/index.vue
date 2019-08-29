@@ -4,7 +4,7 @@
             <div class="options-left">
                 <slot name="options-left">
                     <bk-button class="options-button mr10" theme="primary"
-                        :disabled="!table.checked.length || !$isAuthorized(editAuth)"
+                        :disabled="!table.checked.length"
                         @click="handleMultipleEdit">
                         {{$t('编辑')}}
                     </bk-button>
@@ -418,7 +418,10 @@
                         console.error(e.message)
                     }
                 } else {
-                    this.$store.commit('hosts/clearFilter')
+                    this.$refs.hostFilter.handleReset()
+                    const key = this.$route.meta.filterPropertyKey
+                    const customData = this.$store.getters['userCustom/getCustomData'](key, [])
+                    this.$store.commit('hosts/setFilterList', customData)
                 }
             },
             handleCreateCollection () {
