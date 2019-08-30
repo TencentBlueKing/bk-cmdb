@@ -245,6 +245,7 @@ type SetTemplateOperation interface {
 	GetSetTemplate(ctx ContextParams, bizID int64, setTemplateID int64) (metadata.SetTemplate, errors.CCErrorCoder)
 	ListSetTemplate(ctx ContextParams, bizID int64, option metadata.ListSetTemplateOption) (metadata.MultipleSetTemplateResult, errors.CCErrorCoder)
 	ListSetServiceTemplateRelations(ctx ContextParams, bizID int64, setTemplateID int64) ([]metadata.SetServiceTemplateRelation, errors.CCErrorCoder)
+	ListSetTplRelatedSvcTpl(ctx ContextParams, bizID, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder)
 }
 
 type core struct {

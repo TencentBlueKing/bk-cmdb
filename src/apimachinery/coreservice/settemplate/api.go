@@ -99,7 +99,7 @@ func (p *setTemplate) DeleteSetTemplate(ctx context.Context, header http.Header,
 	return nil
 }
 
-func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (*metadata.SetTemplate, errors.CCErrorCoder) {
+func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (metadata.SetTemplate, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.SetTemplate `json:"data"`
@@ -115,13 +115,13 @@ func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bi
 
 	if err != nil {
 		blog.Errorf("GetSetTemplate failed, http request failed, err: %+v", err)
-		return nil, errors.CCHttpError
+		return ret.Data, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
-	return &ret.Data, nil
+	return ret.Data, nil
 }
 
 func (p *setTemplate) ListSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
@@ -183,6 +183,31 @@ func (p *setTemplate) ListSetServiceTemplateRelations(ctx context.Context, heade
 	ret := struct {
 		metadata.BaseResp
 		Data []metadata.SetServiceTemplateRelation `json:"data"`
+	}{}
+	subPath := fmt.Sprintf("/findmany/topo/set_template/%d/bk_biz_id/%d/service_templates", setTemplateID, bizID)
+
+	err := p.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("ListSetServiceTemplateRelations failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}
+
+func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data []metadata.ServiceTemplate `json:"data"`
 	}{}
 	subPath := fmt.Sprintf("/findmany/topo/set_template/%d/bk_biz_id/%d/service_templates", setTemplateID, bizID)
 

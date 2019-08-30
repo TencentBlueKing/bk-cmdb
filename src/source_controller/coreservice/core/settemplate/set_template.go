@@ -388,3 +388,29 @@ func (p *setTemplateOperation) ListSetServiceTemplateRelations(ctx core.ContextP
 
 	return setServiceTemplateRelations, nil
 }
+
+func (p *setTemplateOperation) ListSetTplRelatedSvcTpl(ctx core.ContextParams, bizID, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder) {
+	relations, err := p.ListSetServiceTemplateRelations(ctx, bizID, setTemplateID)
+	if err != nil {
+		blog.Errorf("ListSetTplRelatedSvcTpl failed, do core service list failed, bizID: %d, setTemplateID: %+v, err: %+v, rid: %s", bizID, setTemplateID, err, ctx.ReqID)
+		return nil, err
+	}
+	serviceTemplateIDs := make([]int64, 0)
+	for _, relation := range relations {
+		serviceTemplateIDs = append(serviceTemplateIDs, relation.ServiceTemplateID)
+	}
+	filter := map[string]interface{}{
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: serviceTemplateIDs,
+		},
+	}
+
+	// is it appropriate to visit service template table here?
+	serviceTemplates := make([]metadata.ServiceTemplate, 0)
+	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).All(ctx.Context, &serviceTemplates); err != nil {
+		blog.Errorf("ListSetTplRelatedSvcTpl failed, db select failed, serviceTemplateIDs: %+v, err: %s, rid: %s", serviceTemplateIDs, err.Error(), ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return serviceTemplates, nil
+}

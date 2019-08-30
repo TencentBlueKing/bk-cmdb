@@ -23,4 +23,5 @@ func (s *coreService) initSetTemplate() {
 	s.addAction(http.MethodGet, "/find/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/", s.GetSetTemplate, nil)
 	s.addAction(http.MethodPost, "/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/", s.ListSetTemplate, nil)
 	s.addAction(http.MethodPost, "/findmany/topo/set_template/count_instances/bk_biz_id/{bk_biz_id}/", s.CountSetTplInstances, nil)
+	s.addAction(http.MethodGet, "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates", s.ListSetTplRelatedSvcTpl, nil)
 }

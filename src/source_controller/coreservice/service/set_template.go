@@ -181,3 +181,24 @@ func (s *coreService) ListSetServiceTemplateRelations(params core.ContextParams,
 	}
 	return relations, nil
 }
+
+func (s *coreService) ListSetTplRelatedSvcTpl(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	setTemplateIDStr := pathParams(common.BKSetTemplateIDField)
+	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
+	serviceTemplates, err := s.core.SetTemplateOperation().ListSetTplRelatedSvcTpl(params, bizID, setTemplateID)
+	if err != nil {
+		blog.Errorf("ListSetTplRelatedSvcTpl failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	return serviceTemplates, nil
+}
