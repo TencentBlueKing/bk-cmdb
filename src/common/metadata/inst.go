@@ -26,12 +26,13 @@ type SetInst struct {
 }
 
 type ModuleInst struct {
-	BizID             int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id"`
-	ModuleID          int64  `bson:"bk_module_id" json:"bk_module_id" field:"bk_module_id"`
-	ModuleName        string `bson:"bk_module_name" json:"bk_module_name" field:"bk_module_name"`
-	SupplierAccount   string `bson:"bk_supplier_account" json:"bk_supplier_account" field:"bk_supplier_account"`
-	ServiceCategoryID int64  `bson:"service_category_id" json:"service_category_id" field:"service_category_id"`
-	ServiceTemplateID int64  `bson:"service_template_id" json:"service_template_id" field:"service_template_id"`
+	BizID             int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
+	ModuleID          int64  `bson:"bk_module_id" json:"bk_module_id" field:"bk_module_id" mapstructure:"bk_module_id"`
+	ModuleName        string `bson:"bk_module_name" json:"bk_module_name" field:"bk_module_name" mapstructure:"bk_module_name"`
+	SupplierAccount   string `bson:"bk_supplier_account" json:"bk_supplier_account" field:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	ServiceCategoryID int64  `bson:"service_category_id" json:"service_category_id" field:"service_category_id" mapstructure:"service_category_id"`
+	ServiceTemplateID int64  `bson:"service_template_id" json:"service_template_id" field:"service_template_id" mapstructure:"service_template_id"`
+	ParentID          int64  `bson:"bk_parent_id" json:"bk_parent_id" field:"bk_parent_id" mapstructure:"bk_parent_id"`
 }
 
 type BizInst struct {

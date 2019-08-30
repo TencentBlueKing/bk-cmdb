@@ -76,3 +76,31 @@ type CountSetTplInstItem struct {
 type ListSetByTemplateOption struct {
 	Page BasePage `json:"page"`
 }
+
+type DiffSetTplWithInstOption struct {
+	SetIDs []int64 `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
+}
+
+type SyncSetTplToInstOption struct {
+	SetIDs []int64 `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
+}
+
+type SetModuleDiff struct {
+	BkModuleID          int64  `json:"bk_module_id"`
+	BkModuleName        string `json:"bk_module_name"`
+	ServiceTemplateID   int64  `json:"service_template_id"`
+	ServiceTemplateName string `json:"service_template_name"`
+	DiffType            string `json:"diff_type"`
+}
+
+type SetDiff struct {
+	ModuleDiffs []SetModuleDiff `json:"module_diffs"`
+	SetID       int64           `json:"bk_set_id"`
+	SetDetail   SetInst         `json:"set_detail"`
+}
+
+var (
+	ModuleDiffAdd     = "add"
+	ModuleDiffRemove  = "remove"
+	ModuleDiffChanged = "changed"
+)
