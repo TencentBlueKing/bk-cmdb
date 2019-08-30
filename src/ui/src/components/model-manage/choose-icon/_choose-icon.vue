@@ -7,7 +7,7 @@
         </bk-input>
         <bk-tab :active.sync="activeTab" type="unborder-card" class="icon-tab">
             <bk-tab-panel name="system" :label="$t('系统图标')">
-                <icon-set v-model="curIcon" :filter-icon="searchText"></icon-set>
+                <icon-set v-model="curIcon" :icon-list="iconList" :filter-icon="searchText"></icon-set>
             </bk-tab-panel>
         </bk-tab>
         <div class="footer">
@@ -18,6 +18,7 @@
 </template>
 
 <script>
+    import iconList from '@/assets/json/model-icon.json'
     import iconSet from './icon-set'
     export default {
         components: {
@@ -31,6 +32,7 @@
         },
         data () {
             return {
+                iconList,
                 activeTab: 'system',
                 searchText: '',
                 curIcon: this.value

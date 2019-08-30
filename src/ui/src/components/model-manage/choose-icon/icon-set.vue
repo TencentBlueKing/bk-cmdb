@@ -14,7 +14,6 @@
 </template>
 
 <script>
-    import iconList from '@/assets/json/model-icon.json'
     import { mapGetters } from 'vuex'
     export default {
         props: {
@@ -22,14 +21,13 @@
                 type: String,
                 default: 'icon-cc-default'
             },
+            iconList: {
+                type: Array,
+                default: () => []
+            },
             filterIcon: {
                 type: String,
                 default: ''
-            }
-        },
-        data () {
-            return {
-                iconList
             }
         },
         computed: {
