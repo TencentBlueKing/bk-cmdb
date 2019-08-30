@@ -1,62 +1,90 @@
 <template>
     <div class="model-field-wrapper">
-        <div>
-            <bk-button class="create-btn" type="primary"
-                :disabled="isReadOnly || !authority.includes('update')"
-                @click="createField">
-                {{$t('ModelManagement["新建字段"]')}}
-            </bk-button>
+        <div class="options">
+            <span class="inline-block-middle" v-cursor="{
+                active: !$isAuthorized($OPERATION.U_MODEL),
+                auth: [$OPERATION.U_MODEL]
+            }">
+                <bk-button class="create-btn" theme="primary"
+                    :disabled="createDisabled || isReadOnly || !updateAuth"
+                    @click="createField">
+                    {{$t('新建字段')}}
+                </bk-button>
+            </span>
         </div>
-        <cmdb-table
+        <bk-table
             class="field-table"
-            :loading="$loading(`post_searchObjectAttribute_${objId}`)"
-            :header="table.header"
-            :has-footer="false"
-            :list="table.list"
-            :wrapperMinusHeight="300"
-            @handleSortChange="handleSortChange">
-            <template slot="bk_property_id" slot-scope="{ item }">
-                <span
-                    v-if="item['ispre']"
-                    :class="['field-pre', $i18n.locale]">
-                    {{$t('ModelManagement["内置"]')}}
-                </span>
-                <span class="field-id">{{item['bk_property_id']}}</span>
-            </template>
-            <template slot="isrequired" slot-scope="{ item }">
-                <i class="field-required-icon bk-icon icon-check-1" v-if="item.isrequired"></i>
-                <i class="field-required-icon bk-icon icon-close" v-else></i>
-            </template>
-            <template slot="create_time" slot-scope="{ item }">
-                {{$tools.formatTime(item['create_time'])}}
-            </template>
-            <template slot="operation" slot-scope="{ item }">
-                <button class="text-primary mr10"
-                    :disabled="!isFieldEditable(item)"
-                    @click.stop="editField(item)">
-                    {{$t('Common["编辑"]')}}
-                </button>
-                <button class="text-primary"
-                    :disabled="item.ispre || !isFieldEditable(item)"
-                    @click.stop="deleteField(item)">
-                    {{$t('Common["删除"]')}}
-                </button>
-            </template>
-        </cmdb-table>
-        <cmdb-slider
+            v-bkloading="{ isLoading: $loading(`post_searchObjectAttribute_${objId}`) }"
+            :data="table.list"
+            :max-height="$APP.height - 300"
+            :row-style="{
+                cursor: 'pointer'
+            }"
+            @sort-change="handleSortChange"
+            @cell-click="handleShowDetails">
+            <bk-table-column prop="isrequired" :label="$t('必填')" width="60" sortable="custom">
+                <template slot-scope="{ row }">
+                    <i class="field-required-icon bk-icon icon-check-1" v-if="row.isrequired"></i>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_property_id"
+                min-width="110"
+                sortable="custom"
+                class-name="is-highlight"
+                :label="$t('唯一标识')">
+                <template slot-scope="{ row }">
+                    <span
+                        v-if="row['ispre']"
+                        :class="['field-pre', $i18n.locale]">
+                        {{$t('内置')}}
+                    </span>
+                    <span class="field-id">{{row['bk_property_id']}}</span>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="bk_property_name" :label="$t('名称')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="bk_property_type" :label="$t('字段类型')" sortable="custom">
+                <template slot-scope="{ row }">
+                    <span>{{fieldTypeMap[row['bk_property_type']]}}</span>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="create_time" :label="$t('创建时间')" sortable="custom">
+                <template slot-scope="{ row }">
+                    {{$tools.formatTime(row['create_time'])}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="operation" :label="$t('操作')" v-if="updateAuth">
+                <template slot-scope="{ row }">
+                    <button class="text-primary mr10 operation-btn"
+                        :disabled="!isFieldEditable(row)"
+                        @click.stop="editField(row)">
+                        {{$t('编辑')}}
+                    </button>
+                    <button class="text-primary operation-btn"
+                        :disabled="!isFieldEditable(row)"
+                        @click.stop="deleteField(row)">
+                        {{$t('删除')}}
+                    </button>
+                </template>
+            </bk-table-column>
+        </bk-table>
+        <bk-sideslider
             :width="450"
             :title="slider.title"
-            :isShow.sync="slider.isShow">
+            :is-show.sync="slider.isShow"
+            :before-close="handleSliderBeforeClose">
             <the-field-detail
+                ref="fieldForm"
                 class="slider-content"
                 slot="content"
-                :isReadOnly="isReadOnly"
-                :isEditField="slider.isEditField"
+                v-if="slider.isShow"
+                :is-read-only="isReadOnly"
+                :is-edit-field="slider.isEditField"
                 :field="slider.curField"
+                :only-read-of-type="slider.type"
                 @save="saveField"
-                @cancel="slider.isShow = false">
+                @cancel="handleSliderBeforeClose">
             </the-field-detail>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -72,43 +100,23 @@
                 slider: {
                     isShow: false,
                     isEditField: false,
-                    title: this.$t('ModelManagement["新建字段"]'),
-                    curField: {}
+                    title: this.$t('新建字段'),
+                    curField: {},
+                    type: ''
                 },
                 fieldTypeMap: {
-                    'singlechar': this.$t('ModelManagement["短字符"]'),
-                    'int': this.$t('ModelManagement["数字"]'),
-                    'float': this.$t('ModelManagement["浮点"]'),
-                    'enum': this.$t('ModelManagement["枚举"]'),
-                    'date': this.$t('ModelManagement["日期"]'),
-                    'time': this.$t('ModelManagement["时间"]'),
-                    'longchar': this.$t('ModelManagement["长字符"]'),
-                    'objuser': this.$t('ModelManagement["用户"]'),
-                    'timezone': this.$t('ModelManagement["时区"]'),
+                    'singlechar': this.$t('短字符'),
+                    'int': this.$t('数字'),
+                    'float': this.$t('浮点'),
+                    'enum': this.$t('枚举'),
+                    'date': this.$t('日期'),
+                    'time': this.$t('时间'),
+                    'longchar': this.$t('长字符'),
+                    'objuser': this.$t('用户'),
+                    'timezone': this.$t('时区'),
                     'bool': 'bool'
                 },
                 table: {
-                    header: [{
-                        id: 'bk_property_id',
-                        name: this.$t('ModelManagement["唯一标识"]'),
-                        minWidth: 110
-                    }, {
-                        id: 'bk_property_type',
-                        name: this.$t('ModelManagement["字段类型"]')
-                    }, {
-                        id: 'isrequired',
-                        name: this.$t('ModelManagement["必填"]')
-                    }, {
-                        id: 'bk_property_name',
-                        name: this.$t('ModelManagement["名称"]')
-                    }, {
-                        id: 'create_time',
-                        name: this.$t('ModelManagement["创建时间"]')
-                    }, {
-                        id: 'operation',
-                        name: this.$t('Common["操作"]'),
-                        sortable: false
-                    }],
                     list: [],
                     defaultSort: '-create_time',
                     sort: '-create_time'
@@ -126,21 +134,22 @@
             objId () {
                 return this.$route.params.modelId
             },
+            createDisabled () {
+                return !this.isAdminView && this.isPublicModel
+            },
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
                 }
                 return false
             },
-            authority () {
+            updateAuth () {
                 const cantEdit = ['process', 'plat']
-                if (cantEdit.includes(this.objId)) {
-                    return []
+                if (cantEdit.includes(this.$route.params.modelId)) {
+                    return false
                 }
-                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
-                    return ['search', 'update', 'delete']
-                }
-                return []
+                const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
+                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         watch: {
@@ -150,9 +159,6 @@
         },
         created () {
             this.initFieldList()
-            if (!this.authority.includes('update')) {
-                this.table.header.pop()
-            }
         },
         methods: {
             ...mapActions('objectModelProperty', [
@@ -160,7 +166,7 @@
                 'deleteObjectAttribute'
             ]),
             isFieldEditable (item) {
-                if (this.isReadOnly) {
+                if (item.ispre || this.isReadOnly || !this.updateAuth) {
                     return false
                 }
                 if (!this.isAdminView) {
@@ -171,24 +177,29 @@
             createField () {
                 this.slider.isEditField = false
                 this.slider.isReadOnly = false
-                this.slider.title = this.$t('ModelManagement["新建字段"]')
+                this.slider.title = this.$t('新建字段')
                 this.slider.curField = {}
+                this.slider.type = false
                 this.slider.isShow = true
             },
             editField (item) {
                 this.slider.isEditField = true
                 this.slider.isReadOnly = this.isReadOnly
-                this.slider.title = this.$t('ModelManagement["编辑字段"]')
+                this.slider.title = this.$t('编辑字段')
                 this.slider.curField = item
+                this.slider.type = false
                 this.slider.isShow = true
             },
             deleteField (field) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除字段？"]', field['bk_property_name'], {name: field['bk_property_name']}),
+                    title: this.$tc('确定删除字段？', field['bk_property_name'], { name: field['bk_property_name'] }),
                     confirmFn: async () => {
                         await this.deleteObjectAttribute({
                             id: field.id,
                             config: {
+                                data: this.$injectMetadata({}, {
+                                    inject: this.isInjectable
+                                }),
                                 requestId: 'deleteObjectAttribute'
                             }
                         }).then(() => {
@@ -200,8 +211,8 @@
             },
             async initFieldList () {
                 const res = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({bk_obj_id: this.objId}, {inject: this.isInjectable}),
-                    config: {requestId: `post_searchObjectAttribute_${this.objId}`}
+                    params: this.$injectMetadata({ bk_obj_id: this.objId }, { inject: this.isInjectable }),
+                    config: { requestId: `post_searchObjectAttribute_${this.objId}` }
                 })
                 this.table.list = res
             },
@@ -210,6 +221,7 @@
                 this.initFieldList()
             },
             handleSortChange (sort) {
+                sort = this.$tools.getSort(sort)
                 if (!sort.length) {
                     sort = this.table.defaultSort
                 }
@@ -226,14 +238,44 @@
                 if (sort[0] === '-') {
                     this.table.list.reverse()
                 }
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = Object.keys(this.$refs.fieldForm.changedValues).length
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
+                            confirmFn: () => {
+                                this.slider.isShow = false
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.slider.isShow = false
+                return true
+            },
+            handleShowDetails (row, column, cell) {
+                if (column.property === 'operation') return
+                this.slider.isEditField = true
+                this.slider.isReadOnly = true
+                this.slider.title = this.$t('字段详情')
+                this.slider.curField = row
+                this.slider.type = true
+                this.slider.isShow = true
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .create-btn {
-        margin: 10px 0;
+    .options {
+        padding: 20px 0 14px;
     }
     .field-pre {
         display: inline-block;
@@ -263,5 +305,9 @@
     }
     .text-primary {
         cursor: pointer;
+    }
+    .operation-btn[disabled] {
+        color: #dcdee5 !important;
+        opacity: 1 !important;
     }
 </style>

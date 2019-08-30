@@ -1,26 +1,29 @@
 <template>
-    <header class="header-layout clearfix" 
-        :class="{'nav-sticked': navStick}">
+    <header class="header-layout clearfix"
+        :class="{ 'nav-sticked': navStick }">
         <div class="breadcrumbs fl">
-            <i class="breadcrumbs-back bk-icon icon-arrows-left" href="javascript:void(0)"
-                v-if="showBack || $route.meta.returnPath"
+            <i class="breadcrumbs-back icon-cc-arrow" href="javascript:void(0)"
+                v-if="showBack"
                 @click="back"></i>
             <h2 class="breadcrumbs-current">{{headerTitle}}</h2>
         </div>
         <div class="header-options">
-            <cmdb-business-selector class="business-selector"></cmdb-business-selector>
+            <cmdb-business-selector
+                class="business-selector"
+                v-if="!isAdminView">
+            </cmdb-business-selector>
             <div class="user" v-click-outside="handleCloseUser">
                 <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">
-                    {{userName}}({{userRole}})
+                    {{userName}}
                     <i class="user-name-angle bk-icon icon-angle-down"
-                        :class="{dropped: isShowUserDropdown}">
+                        :class="{ dropped: isShowUserDropdown }">
                     </i>
                 </p>
                 <transition name="toggle-slide">
                     <ul class="user-dropdown" v-show="isShowUserDropdown">
                         <li class="user-dropdown-item" @click="logOut">
                             <i class="icon-cc-logout"></i>
-                            {{$t("Common['注销']")}}
+                            {{$t('注销')}}
                         </li>
                     </ul>
                 </transition>
@@ -30,16 +33,32 @@
                 <div class="helper-list" v-show="isShowHelper">
                     <a href="http://docs.bk.tencent.com/product_white_paper/cmdb/" target="_blank" class="helper-link"
                         @click="isShowHelper = false">
-                        {{$t('Common["帮助文档"]')}}
+                        {{$t('帮助文档')}}
                     </a>
                     <a href="https://github.com/Tencent/bk-cmdb" target="_blank" class="helper-link"
                         @click="isShowHelper = false">
-                        {{$t('Common["开源社区"]')}}
+                        {{$t('开源社区')}}
                     </a>
                 </div>
             </div>
-            <div class="admin" v-if="admin" @click="toggleAdminView">
-                {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
+            <bk-popover
+                class="admin-tooltips"
+                v-if="hasAdminEntrance && !isAdminView && showTips"
+                :always="true"
+                :width="275"
+                theme="custom-color"
+                placement="bottom-end">
+                <div slot="content" class="tooltips-main clearfix">
+                    <h3>{{$t('管理员后台提示')}}</h3>
+                    <p>{{$t('管理员后台描述')}}</p>
+                    <span class="fr" @click="handleCloseTips">{{$t('我知道了')}}</span>
+                </div>
+                <div class="admin" @click="toggleAdminView">
+                    {{isAdminView ? $t('返回业务管理') : $t('管理员后台')}}
+                </div>
+            </bk-popover>
+            <div class="admin" v-else-if="hasAdminEntrance" @click="toggleAdminView">
+                {{isAdminView ? $t('返回业务管理') : $t('管理员后台')}}
             </div>
         </div>
     </header>
@@ -55,16 +74,27 @@
             }
         },
         computed: {
-            ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick', 'headerTitle', 'isAdminView']),
-            userRole () {
-                return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
+            ...mapGetters([
+                'site',
+                'userName',
+                'admin',
+                'navStick',
+                'headerTitle',
+                'isAdminView',
+                'featureTipsParams'
+            ]),
+            ...mapGetters('objectBiz', ['authorizedBusiness']),
+            hasAdminEntrance () {
+                return this.$store.state.auth.adminEntranceAuth.is_pass
             },
-            title () {
-                let {
-                    $classify
-                } = this
-                let title = $classify.i18n ? this.$t($classify.i18n) : $classify.name
-                return this.$route.meta.title ? this.$route.meta.title : title
+            userRole () {
+                return this.admin ? this.$t('管理员') : this.$t('普通用户')
+            },
+            showTips () {
+                return this.featureTipsParams['adminTips']
+            },
+            showBack () {
+                return this.$route.query.from
             }
         },
         methods: {
@@ -73,14 +103,7 @@
             },
             // 回退路由
             back () {
-                if (!this.showBack && this.$route.meta.returnPath) {
-                    this.$router.push({path: this.$route.meta.returnPath})
-                } else {
-                    this.$store.commit('setHeaderStatus', {
-                        back: false
-                    })
-                    this.$router.back()
-                }
+                this.$router.push(this.$route.query.from)
             },
             // 退出登陆
             logOut () {
@@ -95,6 +118,9 @@
             },
             handleCloseHelper () {
                 this.isShowHelper = false
+            },
+            handleCloseTips () {
+                this.$store.commit('setFeatureTipsParams', 'adminTips')
             }
         }
     }
@@ -116,29 +142,31 @@
     .breadcrumbs{
         line-height: 60px;
         position: relative;
-        margin: 0 0 0 25px;
+        margin: 0 0 0 12px;
         font-size: 0;
         .breadcrumbs-back{
             display: inline-block;
             vertical-align: middle;
-            width: 24px;
-            height: 24px;
-            line-height: 24px;
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
             text-align: center;
             font-size: 16px;
-            font-weight: bold;
             cursor: pointer;
+            color: #3c96ff;
+            transition: background-color .1s ease-in;
             &:hover{
-                color: #3c96ff;
+                background-color: #f0f1f5;
             }
         }
         .breadcrumbs-current{
-            margin: 0;
+            margin: 0 0 0 8px;
             padding: 0;
             display: inline-block;
             vertical-align: middle;
             font-size: 16px;
             font-weight: normal;
+            color: #313238;
         }
         .icon-info-circle {
             margin-left: 5px;
@@ -153,7 +181,7 @@
     .business-selector {
         display: inline-block;
         width: 200px;
-        margin: 12px 0 0 20px;
+        margin: 14px 0 0 20px;
         vertical-align: top;
     }
     .user{
@@ -253,38 +281,28 @@
 </style>
 
 <style lang="scss">
-    .tooltip.custom-query-header-tooltip {
-        .tooltip-inner {
-            margin-top: 5px;
-            background: white;
-            color: $cmdbTextColor;
-            padding: 30px;
-            max-width: 300px;
-            box-shadow: 0px 1px 6px 0px rgba(0, 0, 0, 0.3);
+    .custom-color-theme {
+        font-size: 14px !important;
+        background-color: #699df4 !important;
+        padding: 10px 14px !important;
+        .tippy-arrow {
+            border-bottom-color: #699df4 !important;
         }
-        .tooltip-arrow {
-            width: 0;
-            height: 0;
-            margin-top: 5px;
-            border-style: solid;
-            position: absolute;
-            border-color: rgba(0, 0, 0, 0.3);
-            z-index: 2;
-            &:before {
-                content: "";
-                border-width: 0 5px 5px 5px;
-                border-left-color: transparent !important;
-                border-right-color: transparent !important;
-                border-top-color: transparent !important;
-                top: -5px;
-                left: calc(50% - 5px);
-                width: 0;
-                height: 0;
-                margin-top: 5px;
-                border-style: solid;
-                position: absolute;
-                border-color: white;
-                z-index: 1;
+        h3 {
+            font-size: 16px;
+        }
+        p {
+            white-space: pre-wrap;
+            padding: 4px 0 6px;
+        }
+        span {
+            font-size: 12px;
+            padding: 4px 10px;
+            background-color: #5d90e4;
+            border-radius: 20px;
+            cursor: pointer;
+            &:hover {
+                background-color: #477ad0;
             }
         }
     }

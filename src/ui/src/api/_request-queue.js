@@ -41,7 +41,7 @@ export default class RequestQueue {
         }
         try {
             cancelQueue.forEach(request => {
-                request.cancelExcutor(msg)
+                request.cancelExcutor(request)
             })
             return Promise.resolve(requestIds)
         } catch (error) {

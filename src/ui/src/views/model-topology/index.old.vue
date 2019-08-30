@@ -1,36 +1,47 @@
 <template>
-    <div class="topo-wrapper" :class="{'has-nav': topoEdit.isEdit}">
+    <div class="topo-wrapper" :class="{ 'has-nav': topoEdit.isEdit }">
         <div class="toolbar">
             <template v-if="!topoEdit.isEdit">
-                <bk-button class="edit-button" type="primary"
-                    :disabled="!authority.includes('update')"
-                    @click="editTopo">
-                    {{$t('ModelManagement["编辑拓扑"]')}}
-                </bk-button>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS),
+                        auth: [$OPERATION.SYSTEM_MODEL_GRAPHICS]
+                    }">
+                    <bk-button class="edit-button" theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS)"
+                        @click="editTopo">
+                        {{$t('编辑拓扑')}}
+                    </bk-button>
+                </span>
             </template>
             <template v-else>
-                <bk-button type="primary" @click="exitEdit">
-                    {{$t('Common["返回"]')}}
+                <bk-button theme="primary" @click="exitEdit">
+                    {{$t('返回')}}
                 </bk-button>
-                <p class="edit-cue">{{$t('ModelManagement["所有更改已自动保存"]')}}</p>
+                <p class="edit-cue">{{$t('所有更改已自动保存')}}</p>
             </template>
             <div class="vis-button-group">
-                <i class="bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')"></i>
-                <i class="bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')"></i>
-                <i class="bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')"></i>
+                <i class="bk-icon icon-full-screen" @click="resizeFull" v-bk-tooltips="$t('还原')"></i>
+                <i class="bk-icon icon-plus" @click="zoomIn" v-bk-tooltips="$t('放大')"></i>
+                <i class="bk-icon icon-minus" @click="zoomOut" v-bk-tooltips="$t('缩小')"></i>
                 <i class="icon-cc-setting"
-                    v-if="authority.includes('update')"
-                    v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"
+                    v-bk-tooltips="$t('拓扑显示设置')"
                     @click="showSlider('theDisplay')">
                 </i>
-                <div class="topo-example">
+                <div class="topo-example" v-if="!isAdminView">
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('ModelManagement["自定义模型"]')}}</span>
+                        <span>{{$t('业务私有模型')}}</span>
                     </p>
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('ModelManagement["内置模型"]')}}</span>
+                        <span>{{$t('公有模型')}}</span>
+                    </p>
+                </div>
+                <div class="topo-example" v-else>
+                    <p class="example-item">
+                        <i></i>
+                        <span>{{$t('内置模型')}}</span>
                     </p>
                 </div>
             </div>
@@ -39,7 +50,7 @@
             <ul class="topo-nav">
                 <li class="group-item" v-for="(group, groupIndex) in localClassifications" :key="groupIndex">
                     <div class="group-info"
-                        :class="{'active': topoNav.activeGroup === group['bk_classification_id']}"
+                        :class="{ 'active': topoNav.activeGroup === group['bk_classification_id'] }"
                         @click="toggleGroup(group)">
                         <span class="group-name">{{group['bk_classification_name']}}</span>
                         <span class="model-count">{{group['bk_objects'].length}}</span>
@@ -48,11 +59,11 @@
                     <cmdb-collapse-transition name="model-box">
                         <ul class="model-box" v-show="topoNav.activeGroup === group['bk_classification_id']">
                             <li class="model-item"
-                            v-for="(model, modelIndex) in group['bk_objects']"
-                            :key="modelIndex"
-                            :class="{'disabled': isModelInTopo(model)}"
-                            :draggable="!isModelInTopo(model)"
-                            @dragstart="handleDragstart(model, $event)">
+                                v-for="(model, modelIndex) in group['bk_objects']"
+                                :key="modelIndex"
+                                :class="{ 'disabled': isModelInTopo(model) }"
+                                :draggable="!isModelInTopo(model)"
+                                @dragstart="handleDragstart(model, $event)">
                                 <div>
                                     <i :class="[
                                         model['bk_obj_icon'],
@@ -73,21 +84,22 @@
             </ul>
         </template>
         
-        <cmdb-slider
+        <bk-sideslider
             :width="slider.width"
-            :isShow.sync="slider.isShow"
+            :is-show.sync="slider.isShow"
             :title="slider.title"
             @close="handleSliderCancel">
-            <component 
+            <component
                 class="slider-content"
                 slot="content"
+                v-if="slider.isShow"
                 :is="slider.content"
                 v-bind="slider.properties"
                 @save="handleSliderSave"
                 @cancel="handleSliderCancel"
             ></component>
-        </cmdb-slider>
-        <div class="global-model" ref="topo" v-bkloading="{isLoading: loading}"
+        </bk-sideslider>
+        <div class="global-model" ref="topo" v-bkloading="{ isLoading: loading }"
             @dragover.prevent=""
             @drop="handleDrop"
             @mousemove="handleMouseMove"
@@ -96,12 +108,12 @@
         <svg class="topo-line" v-if="topoEdit.line.x1 && topoEdit.line.x2">
             <defs>
                 <marker id="arrow" viewBox="0 0 10 10"
-                    refX="1" refY="5" 
+                    refX="1" refY="5"
                     markerUnits="strokeWidth"
                     markerWidth="5"
                     markerHeight="5"
                     orient="auto">
-                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffb23a"/>
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffb23a" />
                 </marker>
             </defs>
             <line :x1="topoEdit.line.x1" :y1="topoEdit.line.y1" :x2="topoEdit.line.x2" :y2="topoEdit.line.y2" stroke="#ffb23a" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="5,2"></line>
@@ -110,7 +122,7 @@
             @mouseover="handleEdgeTooltipsOver"
             @mouseleave="handleEdgeTooltipsLeave"
             v-if="topoTooltip.hoverEdge && topoTooltip.hoverEdge.labelList.length > 1">
-            <li class="tooltips-option" 
+            <li class="tooltips-option"
                 :key="labelIndex"
                 v-for="(labelInfo, labelIndex) in topoTooltip.hoverEdge.labelList"
                 @click="handleShowDetails(labelInfo)">
@@ -129,6 +141,7 @@
             </span>
             <span class="icon-box is-del"
                 ref="deleteNodeIcon"
+                v-show="topoTooltip.showDelete"
                 @click="deleteNode">
                 <i class="icon-cc-del"></i>
             </span>
@@ -161,7 +174,7 @@
                     isShow: false,
                     content: '',
                     properties: {},
-                    title: this.$t('ModelManagement["拓扑显示设置"]')
+                    title: this.$t('拓扑显示设置')
                 },
                 displayConfig: {
                     isShowModelName: true,
@@ -171,7 +184,8 @@
                     hoverNode: null,
                     hoverNodeTimer: null,
                     hoverEdge: null,
-                    hoverEdgeTimer: null
+                    hoverEdgeTimer: null,
+                    showDelete: true
                 },
                 topoEdit: {
                     isEdit: false,
@@ -265,7 +279,8 @@
         computed: {
             ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModelClassify', [
-                'classifications'
+                'classifications',
+                'getModelById'
             ]),
             noPositionNodes () {
                 return this.network.nodes.filter(node => {
@@ -276,16 +291,12 @@
             localClassifications () {
                 return this.$tools.clone(this.classifications).map(classify => {
                     classify['bk_objects'] = classify['bk_objects'].filter(model => {
-                        return !this.isModelInTopo(model) && !this.specialModel.includes(model['bk_obj_id'])
+                        return !this.isModelInTopo(model)
+                            && !this.specialModel.includes(model['bk_obj_id'])
+                            && !model.bk_ispaused
                     })
                     return classify
                 })
-            },
-            authority () {
-                if (this.isAdminView || this.isBusinessSelected) {
-                    return ['search', 'update', 'delete']
-                }
-                return []
             }
         },
         watch: {
@@ -295,9 +306,6 @@
                     this.topoEdit.line.y1 = 0
                 }
             }
-        },
-        created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["模型拓扑"]'))
         },
         mounted () {
             this.initNetwork()
@@ -330,7 +338,7 @@
             async exitEdit () {
                 this.topoEdit.isEdit = false
                 // this.updateNetwork()
-                this.networkInstance.setOptions({nodes: {fixed: true}})
+                this.networkInstance.setOptions({ nodes: { fixed: true } })
                 await this.$nextTick()
                 this.networkInstance.redraw()
                 this.clearEditData()
@@ -340,11 +348,12 @@
                 this.displayConfig.isShowModelAsst = displayConfig.isShowModelAsst
                 this.localTopoModelList = displayConfig.topoModelList
                 this.updateNetwork()
+                this.networkInstance.setOptions({ nodes: { fixed: !this.topoEdit.isEdit } })
             },
             handleRelationSave (params) {
-                let fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === params['bk_obj_id'])
+                const fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === params['bk_obj_id'])
                 if (!fromNode.hasOwnProperty('assts')) {
-                    Object.assign(fromNode, {assts: []})
+                    Object.assign(fromNode, { assts: [] })
                 }
                 fromNode.assts.push({
                     bk_asst_inst_id: this.associationList.find(asst => asst['bk_asst_id'] === params['bk_asst_id']).id,
@@ -359,7 +368,7 @@
                 if (data.type === 'delete') {
                     this.localTopoModelList.forEach(model => {
                         if (model.hasOwnProperty('assts')) {
-                            let index = model.assts.findIndex(asst => {
+                            const index = model.assts.findIndex(asst => {
                                 if (asst['bk_inst_id'] !== '') {
                                     return asst['bk_inst_id'] === data.params.id
                                 } else {
@@ -376,7 +385,7 @@
             },
             editTopo () {
                 this.networkInstance.setOptions({
-                    nodes: {fixed: false}
+                    nodes: { fixed: false }
                 })
                 this.topoEdit.isEdit = true
                 this.$nextTick(() => {
@@ -399,26 +408,23 @@
                     }
                 })
                 if (asstNum) {
-                    this.$bkInfo({
-                        title: this.$t('ModelManagement["移除失败"]'),
-                        content: this.$tc('ModelManagement["移除失败提示"]', asstNum, {asstNum})
-                    })
+                    this.$error(this.$tc('移除失败提示', asstNum, { asstNum }))
                 }
                 return !!asstNum
             },
             deleteNode () {
-                let {
+                const {
                     hoverNode
                 } = this.topoTooltip
                 if (this.checkNodeAsst(hoverNode)) {
                     return
                 }
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确定移除模型?"]'),
-                    content: this.$t('ModelManagement["移除模型提示"]'),
+                    title: this.$t('确定移除模型?'),
+                    subTitle: this.$t('移除模型提示'),
                     confirmFn: () => {
-                        let node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
-                        node.position = {x: null, y: null}
+                        const node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
+                        node.position = { x: null, y: null }
 
                         this.updateSingleNodePosition({
                             bk_obj_id: node['bk_obj_id'],
@@ -444,11 +450,11 @@
                 event.dataTransfer.setData('objId', model['bk_obj_id'])
             },
             handleDrop (event) {
-                let objId = event.dataTransfer.getData('objId')
-                let node = this.localTopoModelList.find(model => model['bk_obj_id'] === objId)
-                let originPosition = this.networkInstance.getViewPosition()
-                let container = this.$refs.topo.getBoundingClientRect()
-                let scale = this.networkInstance.getScale()
+                const objId = event.dataTransfer.getData('objId')
+                const node = this.localTopoModelList.find(model => model['bk_obj_id'] === objId)
+                const originPosition = this.networkInstance.getViewPosition()
+                const container = this.$refs.topo.getBoundingClientRect()
+                const scale = this.networkInstance.getScale()
                 node.position.x = Math.floor(originPosition.x - ((container.left + container.right) / 2 - event.clientX) / scale)
                 node.position.y = Math.floor(originPosition.y - ((container.top + container.bottom) / 2 - event.clientY) / scale)
                 this.updateNetwork()
@@ -493,7 +499,7 @@
                 this.slider.isShow = false
             },
             handleEdgeClick (edgeId) {
-                let edge = this.network.edges.find(({id}) => id === edgeId)
+                const edge = this.network.edges.find(({ id }) => id === edgeId)
                 if (edge.labelList.length === 1) {
                     this.handleShowDetails(edge.labelList[0])
                 }
@@ -515,7 +521,7 @@
                         toObjId: this.topoEdit.activeEdge.to,
                         topoModelList: this.localTopoModelList
                     }
-                    this.slider.title = this.$t('ModelManagement["新建关联"]')
+                    this.slider.title = this.$t('新建关联')
                     this.showSlider('theRelation')
                 }
             },
@@ -544,6 +550,7 @@
             popupNodeTooltips (data) {
                 const nodeId = data.node
                 this.topoTooltip.hoverNode = this.network.nodes.find(node => node.id === nodeId)
+                this.checkIsShowDelete(nodeId)
                 this.$nextTick(() => {
                     const view = this.networkInstance.getViewPosition()
                     const scale = this.networkInstance.getScale()
@@ -551,7 +558,7 @@
                     const containerBox = this.$refs.topo.getBoundingClientRect()
                     const left = containerBox.width / 2 + (nodeBox.right - view.x) * scale + NAV_WIDTH - 8
                     const top = containerBox.height / 2 + (nodeBox.top - view.y) * scale + TOOLBAR_HEIHGT - 8
-                    const {nodeTooltips, addEdgeIcon, deleteNodeIcon} = this.$refs
+                    const { nodeTooltips, addEdgeIcon, deleteNodeIcon } = this.$refs
                     nodeTooltips.style.left = left + 'px'
                     nodeTooltips.style.top = top + 'px'
                     const ICON_DEFAULT_HEIGHT = 24
@@ -569,6 +576,14 @@
                     deleteNodeIcon.style.top = y2 + 'px'
                     deleteNodeIcon.style.left = -1 * x2 + 'px'
                 })
+            },
+            checkIsShowDelete (id) {
+                if (this.isAdminView) {
+                    this.topoTooltip.showDelete = true
+                } else {
+                    const model = this.getModelById(id)
+                    this.topoTooltip.showDelete = !!this.$tools.getMetadataBiz(model)
+                }
             },
             clearHoverTooltip () {
                 this.topoTooltip.hoverNode = null
@@ -643,7 +658,7 @@
                 }
             },
             getAssociationName (asstId) {
-                let asst = this.associationList.find(asst => asst.id === asstId)
+                const asst = this.associationList.find(asst => asst.id === asstId)
                 if (asst) {
                     if (asst['bk_asst_name'].length) {
                         return asst['bk_asst_name']
@@ -662,7 +677,7 @@
                 })
             },
             showSlider (content) {
-                let {
+                const {
                     slider
                 } = this
                 slider.content = content
@@ -674,7 +689,7 @@
                             isShowModelName: this.displayConfig.isShowModelName,
                             isShowModelAsst: this.displayConfig.isShowModelAsst
                         }
-                        this.slider.title = this.$t('ModelManagement["拓扑显示设置"]')
+                        this.slider.title = this.$t('拓扑显示设置')
                         slider.width = 600
                         break
                     case 'theRelation':
@@ -695,7 +710,7 @@
                 this.isShowExample = !this.isShowExample
             },
             resizeFull () {
-                this.networkInstance.moveTo({scale: 1})
+                this.networkInstance.moveTo({ scale: 1 })
                 this.networkInstance.fit()
                 this.network.scale = parseFloat(this.networkInstance.getScale().toFixed(2))
                 this.networkInstance.setOptions({
@@ -707,7 +722,7 @@
             zoomIn () {
                 let scale = this.networkInstance.getScale()
                 scale += 0.05
-                this.networkInstance.moveTo({scale: scale})
+                this.networkInstance.moveTo({ scale: scale })
                 this.networkInstance.setOptions({
                     interaction: {
                         zoomView: true
@@ -722,13 +737,13 @@
                 if (scale > 0.05) {
                     scale -= 0.05
                 }
-                this.networkInstance.moveTo({scale: scale})
+                this.networkInstance.moveTo({ scale: scale })
             },
             updateNetwork () {
                 this.setNodes(this.localTopoModelList)
                 this.setEdges(this.localTopoModelList)
-                let scale = this.networkInstance.getScale()
-                let origin = this.networkInstance.getViewPosition()
+                const scale = this.networkInstance.getScale()
+                const origin = this.networkInstance.getViewPosition()
                 this.networkInstance = new Vis.Network(this.$refs.topo, {
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
@@ -757,15 +772,15 @@
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
                 }, this.network.options)
-                this.networkInstance.setOptions({nodes: {fixed: true}})
-                if (this.authority.includes('update')) {
+                this.networkInstance.setOptions({ nodes: { fixed: true } })
+                if (this.$isAuthorized(this.$OPERATION.SYSTEM_MODEL_GRAPHICS)) {
                     this.initPosition()
                 }
                 this.addListener()
             },
             // 设置节点数据
             setNodes (data) {
-                let nodes = []
+                const nodes = []
                 let asstList = []
                 data.forEach(nodeData => {
                     if (nodeData.hasOwnProperty('assts')) {
@@ -773,7 +788,7 @@
                     }
                 })
                 data.forEach(nodeData => {
-                    if (((nodeData.hasOwnProperty('assts') && nodeData.assts.length) || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) || (nodeData.position.x !== null && nodeData.position.y !== null)) {
+                    if (((nodeData.hasOwnProperty('assts') && nodeData.assts.length) || asstList.findIndex(({ bk_obj_id: objId }) => objId === nodeData['bk_obj_id']) > -1) || (nodeData.position.x !== null && nodeData.position.y !== null)) {
                         const node = {
                             id: nodeData['bk_obj_id'],
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
@@ -798,14 +813,14 @@
             },
             // 设置连线数据
             setEdges (data) {
-                let edges = []
+                const edges = []
                 data.forEach(node => {
                     if (Array.isArray(node.assts) && node.assts.length) {
                         node.assts.forEach(asst => {
                             if (asst.checked) {
                                 const twoWayAsst = this.getTwoWayAsst(node, asst, edges)
                                 // 存在则不重复添加
-                                let edge = edges.find(edge => edge.to === asst['bk_obj_id'] && edge.from === node['bk_obj_id'])
+                                const edge = edges.find(edge => edge.to === asst['bk_obj_id'] && edge.from === node['bk_obj_id'])
                                 if (edge) { // 已存在主动关联
                                     this.updateEdgeArrows(edge, this.getEdgeArrows(asst))
                                     edge.labelList.push({
@@ -857,7 +872,7 @@
                 }
             },
             getEdgeArrows (asst) {
-                const asstType = this.associationList.find(({id}) => id === asst['bk_asst_inst_id'])['direction']
+                const asstType = (this.associationList.find(({ id }) => id === asst['bk_asst_inst_id']) || {}).direction
                 let arrows = ''
                 switch (asstType) {
                     case 'bidirectional':
@@ -879,14 +894,15 @@
             // 加载节点icon并更新
             loadNodeImage () {
                 this.network.nodes.forEach(node => {
-                    let image = new Image()
+                    const image = new Image()
                     image.onload = () => {
+                        const model = this.getModelById(node.data.bk_obj_id)
                         this.networkDataSet.nodes.update({
                             id: node.id,
                             image: {
                                 unselected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                     name: node.data['node_name'],
-                                    iconColor: this.$tools.getMetadataBiz(node.data) ? '#3c96ff' : '#868b97',
+                                    iconColor: this.$tools.getMetadataBiz(model) ? '#3c96ff' : '#868b97',
                                     backgroundColor: '#fff'
                                 }))}`,
                                 selected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
@@ -912,7 +928,7 @@
                 })
                 nodesId = [...new Set(nodesId)]
                 nodesId = nodesId.filter(id => {
-                    return this.topoModelList.some(({bk_obj_id: objId, position}) => objId === id && position.x === null && position.y === null)
+                    return this.topoModelList.some(({ bk_obj_id: objId, position }) => objId === id && position.x === null && position.y === null)
                 })
                 if (nodesId.length) {
                     this.updateNodePosition(this.networkDataSet.nodes.get(nodesId))
@@ -920,9 +936,9 @@
             },
             updateSingleNodePosition (node) {
                 this.$store.dispatch('globalModels/updateModelAction', {
-                    params: this.$injectMetadata({
+                    params: {
                         origin: [node]
-                    })
+                    }
                 })
             },
             // 批量更新节点位置信息
@@ -960,12 +976,12 @@
                 }
 
                 await this.$store.dispatch('globalModels/updateModelAction', {
-                    params: this.$injectMetadata({
+                    params: {
                         origin: params
-                    })
+                    }
                 })
                 updateNodes.forEach(node => {
-                    let model = this.localTopoModelList.find(({bk_obj_id: objId}) => objId === node.id)
+                    const model = this.localTopoModelList.find(({ bk_obj_id: objId }) => objId === node.id)
                     model.position.x = nodePositions[node.id]['x']
                     model.position.y = nodePositions[node.id]['y']
                 })
@@ -985,7 +1001,7 @@
                     if (this.topoEdit.isEdit && data.nodes.length === 1) {
                         const nodeId = data.nodes[0]
                         const position = this.networkInstance.getPositions([nodeId])
-                        const model = this.localTopoModelList.find(({bk_obj_id: objId}) => objId === nodeId)
+                        const model = this.localTopoModelList.find(({ bk_obj_id: objId }) => objId === nodeId)
                         model.position.x = position[nodeId].x
                         model.position.y = position[nodeId].y
                         this.updateSingleNodePosition({
@@ -1057,11 +1073,11 @@
                 })
                 networkInstance.on('dragging', data => {
                     if (this.topoEdit.activeEdge.from) {
-                        let {
+                        const {
                             line
                         } = this.topoEdit
-                        let offsetX = (line.center.x - data.event.center.x)
-                        let offsetY = (line.center.y - data.event.center.y)
+                        const offsetX = (line.center.x - data.event.center.x)
+                        const offsetY = (line.center.y - data.event.center.y)
                         line.x1 = line.dragStart.x1 - offsetX
                         line.y1 = line.dragStart.y1 - offsetY
                         line.x2 = line.dragStart.x2 - offsetX
@@ -1089,7 +1105,7 @@
         }
     }
     .toolbar {
-        padding: 7px 20px;
+        padding: 9px 20px;
         width: 100%;
         height: 50px;
         background: #fff;
@@ -1115,6 +1131,7 @@
                 font-size: 14px;
                 font-weight: bold;
                 cursor: pointer;
+                outline: 0;
                 &:hover {
                     color: $cmdbBorderFocusColor;
                 }

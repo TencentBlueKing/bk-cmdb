@@ -13,8 +13,11 @@
             url: <%= htmlWebpackPlugin.options.config.API_URL %>,
             version: <%= htmlWebpackPlugin.options.config.API_VERSION %>,
             login: <%= htmlWebpackPlugin.options.config.API_LOGIN %>,
-            agent: <%= htmlWebpackPlugin.options.config.AGENT_URL %>, 
-            buildVersion: '<%= htmlWebpackPlugin.options.config.BUILD_VERSION %>'
+            agent: <%= htmlWebpackPlugin.options.config.AGENT_URL %>,
+            authscheme: <%= htmlWebpackPlugin.options.config.AUTH_SCHEME %> || 'internal',
+            authCenter: <%= htmlWebpackPlugin.options.config.AUTH_CENTER %>,
+            buildVersion: '<%= htmlWebpackPlugin.options.config.BUILD_VERSION %>',
+            fullTextSearch: <%= htmlWebpackPlugin.options.config.FULL_TEXT_SEARCH %> || 'off',
         }
         window.User = {
             admin: <%= htmlWebpackPlugin.options.config.USER_ROLE %>,
@@ -23,6 +26,8 @@
         window.Supplier = {
             account: '0'
         }
+        window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + '/')
+        window.API_PREFIX = API_HOST + 'api/' + Site.version
     </script>
   </body>
 </html>

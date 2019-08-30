@@ -4,6 +4,12 @@
     white-space: nowrap;
 }
 
+@mixin space-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 @mixin scrollbar {
     overflow: auto;
     &::-webkit-scrollbar {
@@ -28,4 +34,9 @@
     @include scrollbar;
     overflow-x: hidden;
     overflow-y: auto;
+}
+
+@mixin inlineBlock ($align: middle) {
+    display: inline-block;
+    vertical-align: $align;
 }

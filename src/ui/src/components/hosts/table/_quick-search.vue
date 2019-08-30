@@ -1,7 +1,7 @@
 <template>
     <div class="quick-search-layout">
         <div class="quick-search-toggle" ref="quickSearchToggle" @click="handleToggle">
-            {{$t('HostResourcePool["筛选"]')}}
+            {{$t('筛选')}}
             <i class="bk-icon icon-angle-up"></i>
         </div>
         <cmdb-selector class="filter-selector"
@@ -37,10 +37,10 @@
                 v-model.trim="value">
             </comonent>
         </div>
-        <bk-button type="primary"
+        <bk-button theme="primary"
             :loading="$loading()"
             @click="handleSearch">
-            {{$t('Common["搜索"]')}}
+            {{$t('搜索')}}
         </bk-button>
     </div>
 </template>

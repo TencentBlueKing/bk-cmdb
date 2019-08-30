@@ -14,9 +14,11 @@ package apiserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -83,7 +85,7 @@ func (a *apiServer) GetAppRole(ctx context.Context, h http.Header, params mapstr
 func (a *apiServer) GetUserPrivilegeApp(ctx context.Context, h http.Header, ownerID, userName string, params mapstr.MapStr) (resp *metadata.AppQueryResult, err error) {
 
 	resp = new(metadata.AppQueryResult)
-	subPath := fmt.Sprintf("biz/search/%s")
+	subPath := fmt.Sprintf("biz/search/%s", ownerID)
 
 	err = a.client.Post().
 		WithContext(ctx).
@@ -145,6 +147,48 @@ func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, ownerID, o
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (a *apiServer) CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/object/attr"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(obj).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (a *apiServer) UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/objectattr/%s", objID)
+
+	err = a.client.Put().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (a *apiServer) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/objectattr/%s", objID)
+
+	err = a.client.Delete().
+		WithContext(ctx).
+		Body(nil).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -285,6 +329,109 @@ func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID 
 		WithHeaders(h).
 		Do().
 		Into(resp)
+
+	return
+}
+
+func (a *apiServer) GetUserAuthorizedBusinessList(ctx context.Context, h http.Header, user string) (*metadata.InstDataInfo, error) {
+	h.Add(common.BKHTTPHeaderUser, user)
+	subPath := "/auth/business-list"
+	resp := new(metadata.ResponseInstData)
+
+	err := a.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Result {
+		return nil, errors.New(resp.ErrMsg)
+	}
+
+	return &resp.Data, nil
+}
+
+func (a *apiServer) SearchNetCollectDevice(ctx context.Context, h http.Header, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "/collector/netcollect/device/action/search"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) SearchNetDeviceProperty(ctx context.Context, h http.Header, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "collector/netcollect/property/action/search"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) SearchNetCollectDeviceBatch(ctx context.Context, h http.Header, cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "collector/netcollect/device/action/batch"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) SearchNetDevicePropertyBatch(ctx context.Context, h http.Header, cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "/collector/netcollect/property/action/batch"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) ListHostWithoutApp(ctx context.Context, h http.Header, option metadata.ListHostsWithNoBizParameter) (resp *metadata.ListHostWithoutAppResponse, err error) {
+	resp = new(metadata.ListHostWithoutAppResponse)
+
+	subPath := "/hosts/list_hosts_without_app"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
 
 	return
 }

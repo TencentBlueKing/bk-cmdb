@@ -126,7 +126,7 @@ type RspNetcollectHistory struct {
 }
 
 type ParamNetcollectComfirm struct {
-	Reports []NetcollectReport `json:reports`
+	Reports []NetcollectReport `json:"reports"`
 }
 
 type NetcollectReport struct {

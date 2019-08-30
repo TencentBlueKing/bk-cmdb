@@ -1,25 +1,30 @@
 <template>
     <div class="business-wrapper">
         <div class="selector-wrapper clearfix">
-            <h2 class="selector-title fl">{{$t('Permission["业务角色"]')}}</h2>
+            <h2 class="selector-title fl">{{$t('业务角色')}}</h2>
             <div class="selector-container fl clearfix">
-                <bk-selector class="role-selector fl"
-                    :list="businessRoles"
-                    :selected.sync="selectedBusinessRole">
-                </bk-selector>
+                <bk-select class="role-selector fl"
+                    v-model="selectedBusinessRole"
+                    :clearable="false">
+                    <bk-option v-for="(option, index) in businessRoles"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
             </div>
         </div>
         <div class="authority-wrapper clearfix">
-            <h2 class="authority-title fl">{{$t('Permission["权限设置"]')}}</h2>
+            <h2 class="authority-title fl">{{$t('权限设置')}}</h2>
             <div class="checkbox-container clearfix">
                 <span v-for="(authority, index) in authorities.list" class="checkbox-span fl" :key="index">
                     <label class="cmdb-form-checkbox cmdb-checkbox-small authority-checkbox"
-                        :class="{'disabled': isMaintainers}"
+                        :class="{ 'disabled': isMaintainers }"
                         :for="'business-authority-' + authority.id"
                         :title="$t(authority.name)">
-                        <input type="checkbox" 
-                            :value="authority.id" 
-                            :id="'business-authority-' + authority.id" 
+                        <input type="checkbox"
+                            :value="authority.id"
+                            :id="'business-authority-' + authority.id"
                             :disabled="isMaintainers"
                             v-model="authorities.selected">
                         <span class="cmdb-checkbox-text">{{$t(authority.name)}}</span>
@@ -28,10 +33,10 @@
             </div>
         </div>
         <footer class="footer" v-if="!isMaintainers">
-            <bk-button type="primary"
+            <bk-button theme="primary"
                 :loading="$loading('updateAuthorities')"
                 @click="updateAuthorities">
-                {{$t("Common['保存']")}}
+                {{$t('保存')}}
             </bk-button>
         </footer>
     </div>
@@ -47,19 +52,19 @@
                 authorities: {
                     list: [{
                         id: 'hostupdate',
-                        name: 'Permission["主机编辑"]'
+                        name: '主机编辑'
                     }, {
                         id: 'hosttrans',
-                        name: 'Permission["主机转移"]'
+                        name: '主机转移'
                     }, {
                         id: 'topoupdate',
-                        name: 'Permission["拓扑编辑"]'
+                        name: '拓扑编辑'
                     }, {
                         id: 'customapi',
-                        name: 'Permission["动态分组"]'
+                        name: '动态分组'
                     }, {
                         id: 'proconfig',
-                        name: 'Permission["进程管理"]'
+                        name: '进程管理'
                     }],
                     selected: []
                 }
@@ -83,7 +88,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务权限管理"]'))
             this.getBusinessRoles()
         },
         methods: {
@@ -96,13 +100,13 @@
             ]),
             async getBusinessRoles () {
                 const res = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({bk_obj_id: 'biz'}),
+                    params: this.$injectMetadata({ bk_obj_id: 'biz' }),
                     config: {
                         requestId: 'post_searchObjectAttribute_biz',
                         fromCache: true
                     }
                 })
-                let roles = []
+                const roles = []
                 res.map(role => {
                     if (role['bk_property_type'] === 'objuser') {
                         roles.push({
@@ -116,14 +120,23 @@
                 this.selectedBusinessRole = roles[0].id
             },
             async getBusinessRoleAuthorities () {
-                const res = await this.getRolePrivilege({bkObjId: 'biz', bkPropertyId: this.selectedBusinessRole})
+                const res = await this.getRolePrivilege({ bkObjId: 'biz', bkPropertyId: this.selectedBusinessRole })
                 if (!this.isMaintainers) {
                     this.authorities.selected = res.length ? res : []
                 }
             },
             async updateAuthorities () {
-                await this.bindRolePrivilege({bkObjId: 'biz', bkPropertyId: this.selectedBusinessRole, params: this.authorities.selected, config: {requestId: 'updateAuthorities'}})
-                this.$success(this.$t('Common[\'保存成功\']'))
+                await this.bindRolePrivilege({
+                    bkObjId: 'biz',
+                    bkPropertyId: this.selectedBusinessRole,
+                    params: {
+                        data: this.authorities.selected
+                    },
+                    config: {
+                        requestId: 'updateAuthorities'
+                    }
+                })
+                this.$success(this.$t('保存成功'))
             }
         }
     }

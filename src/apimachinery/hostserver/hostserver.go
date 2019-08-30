@@ -20,7 +20,7 @@ import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 )
 
 type HostServerClientInterface interface {
@@ -29,10 +29,11 @@ type HostServerClientInterface interface {
 	HostSnapInfo(ctx context.Context, hostID string, h http.Header, dat interface{}) (resp *metadata.HostSnapResult, err error)
 	AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	AddHostFromAgent(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	SyncHost(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 
 	GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.GetHostFavoriteResult, err error)
 	AddHostFavourite(ctx context.Context, h http.Header, dat *metadata.FavouriteParms) (resp *metadata.Response, err error)
-	UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error)
+	UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header, data *metadata.FavouriteParms) (resp *metadata.Response, err error)
 	DeleteHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error)
 	IncrHostFavouritesCount(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error)
 
@@ -67,7 +68,7 @@ type HostServerClientInterface interface {
 	DelHostInApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetGitServerIp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetPlat(ctx context.Context, h http.Header) (resp *metadata.QueryInstResult, err error)
-	CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error)
 	DelPlat(ctx context.Context, cloudID string, h http.Header) (resp *metadata.Response, err error)
 	SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)
 	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)

@@ -29,7 +29,7 @@ var pidfile string
 func init() {
 	cwd, err := os.Getwd()
 	if nil != err {
-		blog.Fatalf("get current path failed. Error:%s", err.Error())
+		blog.Errorf("get current path failed. Error:%s", err.Error())
 	}
 	pidfile = cwd + "/pid/" + filepath.Base(os.Args[0]) + ".pid"
 }

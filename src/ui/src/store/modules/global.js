@@ -15,7 +15,21 @@ const state = {
         back: false
     },
     userList: [],
-    headerTitle: ''
+    headerTitle: '',
+    featureTipsParams: {
+        process: true,
+        customQuery: true,
+        model: true,
+        modelBusiness: true,
+        association: true,
+        eventpush: true,
+        adminTips: true,
+        serviceTemplate: true,
+        category: true,
+        hostServiceInstanceCheckView: true
+    },
+    permission: [],
+    appHeight: window.innerHeight
 }
 
 const getters = {
@@ -24,7 +38,8 @@ const getters = {
     userName: state => state.user.name,
     admin: state => state.user.admin === '1',
     isAdminView: (state, getters, rootState, rootGetters) => {
-        if (!getters.admin) {
+        const adminEntranceAuth = rootState.auth.adminEntranceAuth
+        if (!adminEntranceAuth.is_pass) {
             return false
         }
         if (window.sessionStorage.hasOwnProperty('isAdminView')) {
@@ -45,11 +60,13 @@ const getters = {
     navFold: state => state.nav.fold,
     showBack: state => state.header.back,
     userList: state => state.userList,
-    headerTitle: state => state.headerTitle
+    headerTitle: state => state.headerTitle,
+    featureTipsParams: state => state.featureTipsParams,
+    permission: state => state.permission
 }
 
 const actions = {
-    getUserList ({commit}) {
+    getUserList ({ commit }) {
         return $http.get(`${window.API_HOST}user/list?_t=${(new Date()).getTime()}`, {
             requestId: 'get_user_list',
             fromCache: true,
@@ -79,7 +96,27 @@ const mutations = {
     },
     setAdminView (state, isAdminView) {
         window.sessionStorage.setItem('isAdminView', isAdminView)
-        window.location.reload()
+        window.location = '/'
+    },
+    setFeatureTipsParams (state, tab) {
+        const local = window.localStorage.getItem('featureTipsParams')
+        if (tab) {
+            state.featureTipsParams[tab] = false
+            window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
+        } else if (local) {
+            state.featureTipsParams = {
+                ...state.featureTipsParams,
+                ...JSON.parse(window.localStorage.getItem('featureTipsParams'))
+            }
+        } else {
+            window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
+        }
+    },
+    setPermission (state, permission) {
+        state.permission = permission
+    },
+    setAppHeight (state, height) {
+        state.appHeight = height
     }
 }
 

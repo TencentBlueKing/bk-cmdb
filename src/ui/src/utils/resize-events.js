@@ -3,10 +3,10 @@
  */
 
 const requestFrame = (function () {
-    const raf = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame ||
-        function (fn) {
-            return window.setTimeout(fn, 20)
-        }
+    const raf = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame
+    || function (fn) {
+        return window.setTimeout(fn, 20)
+    }
     return function (fn) {
         return raf(fn)
     }
@@ -68,7 +68,7 @@ if (!attachEvent) {
 
     if (animation === false) {
         let prefix = ''
-        for (var i = 0; i < DOM_PREFIXES.length; i++) {
+        for (let i = 0; i < DOM_PREFIXES.length; i++) {
             if (testElement.style[DOM_PREFIXES[i] + 'AnimationName'] !== undefined) {
                 prefix = DOM_PREFIXES[i]
                 keyFramePrefix = '-' + prefix.toLowerCase() + '-'

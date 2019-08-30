@@ -16,6 +16,7 @@
 
 在技术构建上，架构的核心聚焦于资源，我们把CMDB管理的原子资源分为主机、进程和通用对象三种类型，并构建了对这些资源的原子操作层。在这些原子操作之上，我们构建了更贴近用户操作的场景层，场景层通过对不同资源的组合操作来完成用户的请求。
 
+![front-page](docs/resource/img/frontpage.jpg)
 
 ## Overview
 * [架构设计](docs/overview/architecture.md)
@@ -35,13 +36,13 @@
 如果想了解以上功能的详细说明，请参考[功能说明](http://bk.tencent.com/document/bkprod/000120.html)
 
 ## Experience
-
-[极速体验容器化部署蓝鲸CMDB](docs/wiki/container-support.md)
+* [在线体验蓝鲸CMDB](http://bkcmdb.tencent.com/login) 🔥
+* [极速体验容器化部署蓝鲸CMDB](docs/wiki/container-support.md)
 
 ## Getting started
 * [下载与编译](docs/overview/source_compile.md)
 * [安装部署](docs/overview/installation.md)
-* [API使用说明](docs/apidoc/readme.md)
+* API使用说明：[v3.2](docs/apidoc/v3.2/readme.md)或[v3.1](docs/apidoc/v3.1/readme.md)
 * [使用CMDB开源版替换社区版](docs/overview/upgrade-from-ce.md)
 
 ## Version plan
@@ -52,6 +53,13 @@
 2. 常见 [FAQ](https://github.com/Tencent/bk-cmdb/wiki/FAQ)
 3. 了解蓝鲸社区相关信息：[蓝鲸社区版交流1群](https://jq.qq.com/?_wv=1027&k=5zk8F7G)
 4. 联系我们，bk-cmdb技术交流QQ群(305496802), 扫码入群戳[这里](docs/resource/img/qq.png)。
+
+
+## BlueKing Community
+- [BK-CI](https://github.com/Tencent/bk-ci)：蓝鲸持续集成平台是一个开源的持续集成和持续交付系统，可以轻松将你的研发流程呈现到你面前。
+- [BCS](https://github.com/Tencent/bk-bcs)：蓝鲸容器管理平台是以容器技术为基础，为微服务业务提供编排管理的基础服务平台。
+- [PaaS](https://github.com/Tencent/bk-PaaS)：蓝鲸PaaS平台是一个开放式的开发平台，让开发者可以方便快捷地创建、开发、部署和管理SaaS应用。
+- [SOPS](https://github.com/Tencent/bk-sops)：标准运维（SOPS）是通过可视化的图形界面进行任务流程编排和执行的系统，是蓝鲸体系中一款轻量级的调度编排类SaaS产品。
 
 
 ## Contributing

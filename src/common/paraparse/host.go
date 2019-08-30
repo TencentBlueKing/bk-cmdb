@@ -13,7 +13,10 @@
 package params
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -66,18 +69,23 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 			queryCondItem[i.Operator] = i.Value
 			output[i.Field] = queryCondItem
 		case common.BKDBLIKE:
-			//d := make(map[string]interface{})
-			queryCondItem, ok := output[i.Field].(map[string]interface{})
+			regex := make(map[string]interface{})
+			regex[common.BKDBLIKE] = i.Value
+			output[i.Field] = regex
+		case common.BKDBMULTIPLELike:
+			multi, ok := i.Value.([]interface{})
 			if !ok {
-				queryCondItem = make(map[string]interface{})
+				return fmt.Errorf("operator %s only support for string array", common.BKDBMULTIPLELike)
 			}
-			valStr, ok := i.Value.(string)
-			if ok {
-				queryCondItem[i.Operator] = SpeceialCharChange(valStr)
-			} else {
-				queryCondItem[i.Operator] = i.Value
+			fields := make([]interface{}, 0)
+			for _, m := range multi {
+				mstr, ok := m.(string)
+				if !ok {
+					return fmt.Errorf("operator %s only support for string array", common.BKDBMULTIPLELike)
+				}
+				fields = append(fields, mapstr.MapStr{i.Field: mapstr.MapStr{common.BKDBLIKE: mstr}})
 			}
-			output[i.Field] = queryCondItem
+			output[common.BKDBOR] = fields
 		default:
 			queryCondItem, ok := output[i.Field].(map[string]interface{})
 			if !ok {
@@ -131,7 +139,7 @@ func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) er
 		orCond := make([]map[string]map[string]interface{}, 0)
 		for _, ip := range ipArr {
 			c := make(map[string]interface{})
-			c[common.BKDBLIKE] = SpeceialCharChange(ip)
+			c[common.BKDBLIKE] = SpecialCharChange(ip)
 			if INNERONLY == flag {
 				ipCon := make(map[string]map[string]interface{})
 				ipCon[common.BKHostInnerIPField] = c

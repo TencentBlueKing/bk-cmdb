@@ -16,6 +16,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -73,7 +74,7 @@ func (s *coreService) DeleteModelClassification(params core.ContextParams, pathP
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.ModelOperation().DeleteModelClassificaiton(params, inputData)
+	return s.core.ModelOperation().DeleteModelClassification(params, inputData)
 }
 
 func (s *coreService) CascadeDeleteModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -168,14 +169,76 @@ func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryPa
 
 		for attributeIdx := range dataResult.Info[modelIdx].Attributes {
 			dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
-			dataResult.Info[modelIdx].Attributes[attributeIdx].Description = s.TranslateDescription(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+			dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 			if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
-				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx])
+				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(params.Context, params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
 			}
 		}
 	}
 
 	return dataResult, err
+}
+
+// GetModelStatistics 用于统计各个模型的实例数(Web页面展示需要)
+func (s *coreService) GetModelStatistics(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	filter := map[string]interface{}{}
+	setCount, err := s.db.Table(common.BKTableNameBaseSet).Find(filter).Count(params.Context)
+	if err != nil {
+		blog.Errorf("GetModelStatistics failed, count set model instances failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+
+	moduleCount, err := s.db.Table(common.BKTableNameBaseModule).Find(filter).Count(params.Context)
+	if err != nil {
+		blog.Errorf("GetModelStatistics failed, count module model instances failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+
+	hostCount, err := s.db.Table(common.BKTableNameBaseHost).Find(filter).Count(params.Context)
+	if err != nil {
+		blog.Errorf("GetModelStatistics failed, count host model instances failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+
+	bizCount, err := s.db.Table(common.BKTableNameBaseApp).Find(filter).Count(params.Context)
+	if err != nil {
+		blog.Errorf("GetModelStatistics failed, count application model instances failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+	// db.getCollection('cc_ObjectBase').aggregate([{$group: {_id: "$bk_obj_id", count: {$sum : 1}}}])
+	pipeline := []map[string]interface{}{
+		{
+			common.BKDBGroup: map[string]interface{}{
+				"_id": "$bk_obj_id",
+				"count": map[string]interface{}{
+					common.BKDBSum: 1,
+				},
+			},
+		},
+	}
+	type AggregationItem struct {
+		ObjID string `bson:"_id" json:"bk_obj_id"`
+		Count int64  `bson:"count" json:"instance_count"`
+	}
+	aggregationItems := make([]AggregationItem, 0)
+	if err := s.db.Table(common.BKTableNameBaseInst).AggregateAll(params.Context, pipeline, &aggregationItems); err != nil {
+		return nil, err
+	}
+	aggregationItems = append(aggregationItems, AggregationItem{
+		ObjID: common.BKInnerObjIDHost,
+		Count: int64(hostCount),
+	}, AggregationItem{
+		ObjID: common.BKInnerObjIDSet,
+		Count: int64(setCount),
+	}, AggregationItem{
+		ObjID: common.BKInnerObjIDModule,
+		Count: int64(moduleCount),
+	}, AggregationItem{
+		ObjID: common.BKInnerObjIDApp,
+		Count: int64(bizCount),
+	})
+
+	return aggregationItems, nil
 }
 
 func (s *coreService) CreateModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -224,7 +287,14 @@ func (s *coreService) SearchModelAttributeGroup(params core.ContextParams, pathP
 		return nil, err
 	}
 
-	return s.core.ModelOperation().SearchModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+	dataResult, err := s.core.ModelOperation().SearchModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+	if nil != err {
+		return dataResult, err
+	}
+	for index := range dataResult.Info {
+		dataResult.Info[index].GroupName = s.TranslatePropertyGroupName(params.Lang, &dataResult.Info[index])
+	}
+	return dataResult, err
 }
 
 func (s *coreService) SearchModelAttributeGroupByCondition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -234,7 +304,14 @@ func (s *coreService) SearchModelAttributeGroupByCondition(params core.ContextPa
 		return nil, err
 	}
 
-	return s.core.ModelOperation().SearchModelAttributeGroupByCondition(params, inputData)
+	dataResult, err := s.core.ModelOperation().SearchModelAttributeGroupByCondition(params, inputData)
+	if nil != err {
+		return dataResult, err
+	}
+	for index := range dataResult.Info {
+		dataResult.Info[index].GroupName = s.TranslatePropertyGroupName(params.Lang, &dataResult.Info[index])
+	}
+	return dataResult, err
 }
 
 func (s *coreService) DeleteModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -319,9 +396,9 @@ func (s *coreService) SearchModelAttributesByCondition(params core.ContextParams
 	// translate
 	for index := range dataResult.Info {
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
-		dataResult.Info[index].Description = s.TranslateDescription(params.Lang, &dataResult.Info[index])
+		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[index])
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
-			dataResult.Info[index].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
+			dataResult.Info[index].Option = s.TranslateEnumName(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
 	}
 
@@ -343,9 +420,9 @@ func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParam
 	// translate
 	for index := range dataResult.Info {
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
-		dataResult.Info[index].Description = s.TranslateDescription(params.Lang, &dataResult.Info[index])
+		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[index])
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
-			dataResult.Info[index].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
+			dataResult.Info[index].Option = s.TranslateEnumName(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
 	}
 
@@ -383,8 +460,7 @@ func (s *coreService) UpdateModelAttrUnique(params core.ContextParams, pathParam
 }
 
 func (s *coreService) DeleteModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	inputDatas := metadata.CreateManyModelClassifiaction{}
+	inputDatas := metadata.DeleteModelAttrUnique{}
 	if err := data.MarshalJSONInto(&inputDatas); nil != err {
 		return nil, err
 	}
@@ -394,5 +470,5 @@ func (s *coreService) DeleteModelAttrUnique(params core.ContextParams, pathParam
 		return nil, params.Error.Errorf(common.CCErrCommParamsNeedInt, "id")
 	}
 
-	return s.core.ModelOperation().DeleteModelAttrUnique(params, pathParams("bk_obj_id"), id)
+	return s.core.ModelOperation().DeleteModelAttrUnique(params, pathParams("bk_obj_id"), id, metadata.DeleteModelAttrUnique{Metadata: inputDatas.Metadata})
 }

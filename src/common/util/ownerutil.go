@@ -40,12 +40,12 @@ func SetQueryOwner(condition interface{}, ownerID string) map[string]interface{}
 	default:
 		out, err := bson.Marshal(condition)
 		if err != nil {
-			blog.Errorf("SetModOwner faile condition %#v, error %s", condition, err.Error())
+			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
 		}
 		ret = map[string]interface{}{}
 		err = bson.Unmarshal(out, &ret)
 		if err != nil {
-			blog.Errorf("SetModOwner faile condition %#v, error %s", condition, err.Error())
+			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
 		}
 	}
 
@@ -84,12 +84,12 @@ func SetModOwner(condition interface{}, ownerID string) map[string]interface{} {
 	default:
 		out, err := bson.Marshal(condition)
 		if err != nil {
-			blog.Errorf("SetModOwner faile condition %#v, error %s", condition, err.Error())
+			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
 		}
 		ret = map[string]interface{}{}
 		err = bson.Unmarshal(out, &ret)
 		if err != nil {
-			blog.Errorf("SetModOwner faile condition %#v, error %s", condition, err.Error())
+			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
 		}
 	}
 

@@ -1,29 +1,30 @@
 <template>
-    <bk-dialog 
-    :is-show.sync="isShow" 
-    :has-header="false" 
-    :has-footer="false" 
-    :quick-close="false" 
-    :width="565" 
-    :padding="0"
-    @cancel="closeRoleForm">
-    >
-        <form class="role-form" slot="content">
+    <bk-dialog class="bk-dialog-no-padding"
+        v-model="isShow"
+        :show-footer="false"
+        :mask-close="false"
+        :width="565"
+        @cancel="closeRoleForm">
+        <form class="role-form">
             <h2 class="role-form-title">{{title}}</h2>
             <div class="role-form-content">
                 <div class="content-group clearfix">
-                    <label for="groupName" class="fl">{{$t('Permission["角色名"]')}}</label>
-                    <input type="text" class="cmdb-form-input fl" id="groupName" v-model.trim="data['group_name']">
+                    <label for="groupName" class="fl">{{$t('角色名')}}</label>
+                    <bk-input type="text" class="fl" style="width: 350px;"
+                        id="groupName"
+                        maxlength="50"
+                        v-model.trim="data['group_name']">
+                    </bk-input>
                 </div>
                 <div class="content-group clearfix">
-                    <label for="userList" class="fl">{{$t('Permission["角色成员"]')}}</label>
+                    <label for="userList" class="fl">{{$t('角色成员')}}</label>
                     <cmdb-form-objuser class="fl member-selector" v-model="data['user_list']" :multiple="true"></cmdb-form-objuser>
                 </div>
             </div>
             <div class="role-form-btn">
                 <div class="fr">
-                    <bk-button :loading="$loading('saveRole')" type="primary" class="form-btn" :disabled="!data['group_name'] || !data['user_list']" @click.prevent="submitRoleForm">{{$t('Common["确定"]')}}</bk-button>
-                    <bk-button type="default" class="form-btn vice-btn" @click.prevent="closeRoleForm">{{$t('Common["取消"]')}}</bk-button>
+                    <bk-button :loading="$loading('saveRole')" theme="primary" class="form-btn" :disabled="!data['group_name'] || !data['user_list']" @click.prevent="submitRoleForm">{{$t('确定')}}</bk-button>
+                    <bk-button theme="default" class="form-btn vice-btn" @click.prevent="closeRoleForm">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </form>
@@ -59,10 +60,10 @@
         },
         computed: {
             title () {
-                return this.type === 'create' ? this.$t('Permission["新建角色"]') : this.$t('Permission["编辑角色"]')
+                return this.type === 'create' ? this.$t('新建角色') : this.$t('编辑角色')
             },
             params () {
-                let params = {
+                const params = {
                     group_name: this.data['group_name'],
                     user_list: this.data['user_list'].split(',').join(';')
                 }
@@ -82,13 +83,24 @@
                 }
             },
             async createRole () {
-                const res = await this.createUserGroup({params: this.params, config: {requestId: 'saveRole'}})
-                this.$success(this.$t('Permission["新建角色成功"]'))
+                const res = await this.createUserGroup({
+                    params: this.params,
+                    config: {
+                        requestId: 'saveRole'
+                    }
+                })
+                this.$success(this.$t('新建角色成功'))
                 this.$emit('on-success', res)
             },
             async updateRole () {
-                const res = await this.updateUserGroup({bkGroupId: this.data['group_id'], params: this.params, config: {requestId: 'saveRole'}})
-                this.$success(this.$t('Permission["更新角色成功"]'))
+                const res = await this.updateUserGroup({
+                    bkGroupId: this.data['group_id'],
+                    params: this.params,
+                    config: {
+                        requestId: 'saveRole'
+                    }
+                })
+                this.$success(this.$t('更新角色成功'))
                 this.$emit('on-success', res)
             },
             closeRoleForm () {

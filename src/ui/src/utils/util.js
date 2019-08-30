@@ -1,5 +1,5 @@
 const HEX_TO_RGB = (hex) => {
-    let rgb = []
+    const rgb = []
     hex = hex.substr(1)
     if (hex.length === 3) {
         hex = hex.replace(/(.)/g, '$1$1')

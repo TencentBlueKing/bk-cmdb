@@ -18,8 +18,8 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/metadata"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/metadata"
 )
 
 type AdminServerClientInterface interface {

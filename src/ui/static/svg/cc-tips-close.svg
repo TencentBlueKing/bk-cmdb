@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="12px" height="12px" viewBox="0 0 12 12" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 54 (76480) - https://sketchapp.com -->
+    <title>路径 5</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <polygon id="path-1" points="15.5873106 5.17525253 16.8253139 6.41325585 12.2376634 11.0009063 16.8244076 15.5876505 15.5873106 16.8247475 11.0005665 12.2380033 6.41325585 16.8253139 5.17525253 15.5873106 9.76256313 11 5.17525253 6.4126894 6.41234953 5.1755924 10.9996601 9.76290301"></polygon>
+    </defs>
+    <g id="服务目录" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="服务分类" transform="translate(-1320.000000, -79.000000)">
+            <g id="Prompt-contro/基础提示/页面中提示样式" transform="translate(82.000000, 70.000000)">
+                <g id="s-icon/叉号" transform="translate(1233.000000, 4.000000)">
+                    <mask id="mask-2" fill="white">
+                        <use xlink:href="#path-1"></use>
+                    </mask>
+                    <use id="路径-5" fill="#979BA5" fill-rule="nonzero" xlink:href="#path-1"></use>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

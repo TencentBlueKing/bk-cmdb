@@ -12,12 +12,11 @@
 package datasynchronize
 
 import (
-	"strings"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -39,24 +38,21 @@ func NewClearData(dbProxy dal.RDB, input *metadata.SynchronizeClearDataParameter
 }
 
 func (c *clearData) clearData(ctx core.ContextParams) {
-	versionKey := getSynchronize(common.MetadataField, common.MetaDataSynchronizeVersionField)
-	flagKey := getSynchronize(common.MetadataField, common.MetaDataSynchronizeFlagField)
+
+	versionKey := util.BuildMongoSyncItemField(common.MetaDataSynchronizeVersionField)
+	flagKey := util.BuildMongoSyncItemField(common.MetaDataSynchronizeFlagField)
 
 	delConditionParse := condition.CreateCondition()
 	delConditionParse.Field(versionKey).Lt(c.input.Version)
 	delConditionParse.Field(flagKey).Eq(c.input.SynchronizeFlag)
 	deleteConditon := delConditionParse.ToMapStr()
 
-	conditionParse := condition.CreateCondition()
-	conditionParse.Field(versionKey).Eq(c.input.Version)
-	conditionParse.Field(flagKey).Eq(c.input.SynchronizeFlag)
-	queryCondition := conditionParse.ToMapStr()
-
+	blog.V(5).Infof(" clearData condition:%#v, rid:%s", deleteConditon, ctx.ReqID)
 	tableNameArr := common.AllTables
 	for _, tableName := range tableNameArr {
-		cnt, err := c.dbProxy.Table(tableName).Find(queryCondition).Count(ctx)
+		cnt, err := c.dbProxy.Table(tableName).Find(deleteConditon).Count(ctx)
 		if err != nil {
-			blog.Errorf("clearData  find %s table row error, err:%s,rid:%s", tableName, err.Error(), ctx.ReqID)
+			blog.Warnf("clearData  find %s table row error, err:%s, condition:%#v, rid:%s", tableName, err.Error(), deleteConditon, ctx.ReqID)
 			continue
 		}
 		if cnt <= 0 {
@@ -66,11 +62,7 @@ func (c *clearData) clearData(ctx core.ContextParams) {
 
 		err = c.dbProxy.Table(tableName).Delete(ctx, deleteConditon)
 		if err != nil {
-			blog.Errorf("clearData  delete %s table row error, err:%s,rid:%s", tableName, err.Error(), ctx.ReqID)
+			blog.Errorf("clearData  delete %s table row error, err:%s, condition:%#v, rid:%s", tableName, err.Error(), deleteConditon, ctx.ReqID)
 		}
 	}
-}
-
-func getSynchronize(key ...string) string {
-	return strings.Join(key, ".")
 }

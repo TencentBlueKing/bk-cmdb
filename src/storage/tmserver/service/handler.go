@@ -22,14 +22,16 @@ import (
 
 func (s *coreService) DBOperation(input rpc.Request) (interface{}, error) {
 
-	ctx := core.ContextParams{Context: context.Background(), ListenIP: s.listenIP}
+	var ctx core.ContextParams
 
 	reply := types.OPReply{}
-	err := input.Decode(&ctx.Header)
+	err := input.Decode(&ctx)
 	if nil != err {
 		reply.Message = err.Error()
 		return &reply, nil
 	}
+	ctx.Context = context.Background()
+	ctx.ListenIP = s.listenIP
 
 	return s.core.ExecuteCommand(ctx, input)
 

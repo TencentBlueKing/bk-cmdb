@@ -27,10 +27,3 @@ func TestMapBuilder(t *testing.T) {
 	builder.Delete("a")
 	assert.Equal(t, map[string]interface{}{"b": 2, "c": []interface{}{3}}, builder.Build())
 }
-
-func TestMapFromJSON(t *testing.T) {
-	info := `{
-		"InnerIP" : "127.0.0.1"
-	}`
-	assert.Equal(t, map[string]interface{}{"InnerIP": "127.0.0.1"}, NewMapFromJSON(info))
-}

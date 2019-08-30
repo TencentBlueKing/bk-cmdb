@@ -7,8 +7,8 @@ export default {
         }),
         $classify () {
             let $classify = {}
-            let relativePath = this.$route.meta.relative || this.$route.query.relative || null
-            let path = relativePath || this.$route.path
+            const relativePath = this.$route.meta.relative || this.$route.query.relative || null
+            const path = relativePath || this.$route.path
             for (let i = 0; i < this.$authorizedNavigation.length; i++) {
                 const classify = this.$authorizedNavigation[i]
                 if (classify.hasOwnProperty('path') && classify.path === path) {

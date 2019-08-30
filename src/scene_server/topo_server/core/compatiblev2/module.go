@@ -27,7 +27,7 @@ import (
 // ModuleInterface module interface
 type ModuleInterface interface {
 	UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData mapstr.MapStr) error
-	SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstResult, error)
+	SearchModuleByApp(query *metadata.QueryCondition) (*metadata.InstResult, error)
 	SearchModuleBySetProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error)
 	AddMultiModule(bizID, setID int64, moduleNames []string, data mapstr.MapStr) error
 	DeleteMultiModule(bizID int64, moduleIDS []int64) error
@@ -47,64 +47,72 @@ type module struct {
 }
 
 func (m *module) hasHost(bizID int64, moduleIDS []int64) (bool, error) {
-	cond := map[string][]int64{
-		"ApplicationID": []int64{bizID},
-		"ModuleID":      moduleIDS,
+	option := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		ModuleIDArr:   moduleIDS,
 	}
-
-	rsp, err := m.client.HostController().Module().GetModulesHostConfig(context.Background(), m.params.Header, cond)
+	rsp, err := m.client.CoreService().Host().GetHostModuleRelation(context.Background(), m.params.Header, option)
 	if nil != err {
-		blog.Errorf("[compatiblev2-module] failed to request the object controller, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-module] failed to request the object controller, err: %s, rid: %s", err.Error(), m.params.ReqID)
 		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-module]  failed to search the host module configures, err: %s", rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-module]  failed to search the host module configures, err: %s, rid: %s", rsp.ErrMsg, m.params.ReqID)
 		return false, m.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return 0 != len(rsp.Data), nil
+	return 0 != len(rsp.Data.Info), nil
 }
-func (m *module) isValidSet(bizID, setID int64) (bool, error) {
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKSetIDField).Eq(setID)
-
-	query := &metadata.QueryInput{}
-	query.Condition = cond.ToMapStr()
-
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, m.params.Header, query)
+func (m *module) isValidSet(bizID int64, setID int64) (bool, error) {
+	inputParam := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		SortArr: nil,
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKSetIDField: setID,
+		},
+	}
+	rsp, err := m.client.CoreService().Instance().ReadInstance(m.params.Context, m.params.Header, common.BKInnerObjIDSet, inputParam)
 	if nil != err {
-		blog.Errorf("[compatiblev2-module]failed to request object controller, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-module]failed to request object controller, err: %s, rid: %s", err.Error(), m.params.ReqID)
 		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-module] failed to search the sets, err: %s", rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-module] failed to search the sets, err: %s, rid: %s", rsp.ErrMsg, m.params.ReqID)
 		return false, m.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+	if rsp.Data.Count == 0 {
+		blog.Errorf("[compatiblev2-module] failed to search the sets, err: not found, rid: %s, rid: %s", m.params.ReqID, m.params.ReqID)
 	}
 
 	return true, nil
 }
 
 func (m *module) isRepeated(moduleName string, excludeModuleIDS interface{}) (bool, error) {
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKModuleNameField).Eq(moduleName)
-	cond.Field(common.BKModuleIDField).NotIn(excludeModuleIDS)
-
-	query := &metadata.QueryInput{}
-	query.Condition = cond.ToMapStr()
-
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header, query)
+	inputParam := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKModuleNameField: moduleName,
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBNIN: excludeModuleIDS,
+			},
+		},
+	}
+	rsp, err := m.client.CoreService().Instance().ReadInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, inputParam)
 	if nil != err {
-		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s, rid: %s", err.Error(), m.params.ReqID)
 		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-module] failed to search the module, err: %s", rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-module] failed to search the module, err: %s, rid: %s", rsp.ErrMsg, m.params.ReqID)
 		return false, m.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -116,7 +124,7 @@ func (m *module) UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData
 	// check the module name
 	moduleName, err := innerData.String(common.BKModuleNameField)
 	if nil != err {
-		blog.Errorf("[compatiblev2-module] failed to parse the module name , err: %s", err.Error())
+		blog.Errorf("[compatiblev2-module] failed to parse the module name , err: %s, rid: %s", err.Error(), m.params.ReqID)
 		return m.params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
@@ -125,7 +133,7 @@ func (m *module) UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData
 		return err
 	}
 	if repeated {
-		blog.Error("[compatiblev2-module] the module name is repeated")
+		blog.Error("[compatiblev2-module] the module name is repeated, rid: %s", m.params.ReqID)
 		return m.params.Err.Errorf(common.CCErrCommDuplicateItem, moduleName)
 	}
 
@@ -135,52 +143,58 @@ func (m *module) UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	cond.Field(common.BKModuleIDField).In(moduleIDS)
 
-	updateData := mapstr.New()
-	updateData.Set("condition", cond.ToMapStr())
-	updateData.Set("data", innerData)
-	rsp, err := m.client.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, updateData)
+	updateParam := &metadata.UpdateOption{
+		Data:      innerData,
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := m.client.CoreService().Instance().UpdateInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, updateParam)
 	if nil != err {
-		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s, rid: %s", err.Error(), m.params.ReqID)
 		return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-module] failed to search the module, err: %s", rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-module] failed to search the module, err: %s, rid: %s", rsp.ErrMsg, m.params.ReqID)
 		return m.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
 }
-func (m *module) SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstResult, error) {
 
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header, query)
+func (m *module) SearchModuleByApp(query *metadata.QueryCondition) (*metadata.InstResult, error) {
+	rsp, err := m.client.CoreService().Instance().ReadInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, query)
 	if nil != err {
-		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s, rid: %s", err.Error(), m.params.ReqID)
 		return nil, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-module] failed to search the module, err: %s", rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-module] failed to search the module, err: %s, rid: %s", rsp.ErrMsg, m.params.ReqID)
 		return nil, m.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return &rsp.Data, nil
+	result := &metadata.InstResult{
+		Count: rsp.Data.Count,
+		Info:  rsp.Data.Info,
+	}
+	return result, nil
 }
-func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error) {
 
-	query := &metadata.QueryInput{}
-	query.Condition = cond.ToMapStr()
-	query.Limit = common.BKNoLimit
-	//fmt.Println("cond:", cond.ToMapStr())
-	// search sets
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, m.params.Header, query)
+func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error) {
+	inputParam := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := m.client.CoreService().Instance().ReadInstance(m.params.Context, m.params.Header, common.BKInnerObjIDSet, inputParam)
 	if nil != err {
-		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s, rid: %s", err.Error(), m.params.ReqID)
 		return nil, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-module] failed to search the sets, err: %s", rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-module] failed to search the sets, err: %s, rid: %s", rsp.ErrMsg, m.params.ReqID)
 		return nil, m.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -190,31 +204,42 @@ func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition
 
 		id, err := set.Int64(common.BKSetIDField)
 		if nil != err {
-			blog.Errorf("[compatiblev2-module] failed to search sets, err: %s", err.Error())
+			blog.Errorf("[compatiblev2-module] failed to search sets, err: %s, rid: %s", err.Error(), m.params.ReqID)
 			return nil, m.params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 		setIDS = append(setIDS, id)
 	}
 
 	// search modules
-	cond = condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKSetIDField).In(setIDS)
-	query.Condition = cond.ToMapStr()
-
-	rspModule, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header, query)
+	inputParam = &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKSetIDField: map[string]interface{}{
+				common.BKDBIN: setIDS,
+			},
+		},
+	}
+	rspModule, err := m.client.CoreService().Instance().ReadInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, inputParam)
 	if nil != err {
-		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s, rid: %s", err.Error(), m.params.ReqID)
 		return nil, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rspModule.Result {
-		blog.Errorf("[compatiblev2-module] failed to search the sets, err: %s", rspModule.ErrMsg)
+		blog.Errorf("[compatiblev2-module] failed to search the sets, err: %s, rid: %s", rspModule.ErrMsg, m.params.ReqID)
 		return nil, m.params.Err.New(rspModule.Code, rspModule.ErrMsg)
 	}
 
-	return &rspModule.Data, nil
+	result := &metadata.InstResult{
+		Count: rspModule.Data.Count,
+		Info:  rspModule.Data.Info,
+	}
+	return result, nil
 }
+
 func (m *module) AddMultiModule(bizID, setID int64, moduleNames []string, data mapstr.MapStr) error {
 
 	ok, err := m.isValidSet(bizID, setID)
@@ -223,25 +248,25 @@ func (m *module) AddMultiModule(bizID, setID int64, moduleNames []string, data m
 	}
 
 	if !ok {
-		blog.Errorf("[compatiblev2-module] the set id (%d) is invalid", setID)
+		blog.Errorf("[compatiblev2-module] the set id (%d) is invalid, rid: %s", setID, m.params.ReqID)
 		return m.params.Err.New(common.CCErrCommParamsIsInvalid, "the set id is invalid")
 	}
 
 	for _, moduleName := range moduleNames {
 
 		if len(moduleName) > 24 { // the module name lengh limit max
-			blog.Errorf("[compatiblev2-module] the module name is over the max length limit")
+			blog.Errorf("[compatiblev2-module] the module name is over the max length limit, rid: %s", m.params.ReqID)
 			return m.params.Err.New(common.CCErrCommParamsIsInvalid, "the module name is over max limit")
 		}
 
 		exists, err := m.isRepeated(moduleName, []int64{})
 		if nil != err {
-			blog.Errorf("[compatiblev2-module] failed to check the module name(%s), err: %s ", moduleNames, err.Error())
+			blog.Errorf("[compatiblev2-module] failed to check the module name(%s), err: %s , rid: %s", moduleNames, err.Error(), m.params.ReqID)
 			return err
 		}
 
 		if exists {
-			blog.Errorf("[compatiblev2-module] the module name (%s) is duplicated ", moduleName)
+			blog.Errorf("[compatiblev2-module] the module name (%s) is duplicated , rid: %s", moduleName, m.params.ReqID)
 			return m.params.Err.Errorf(common.CCErrCommDuplicateItem, moduleName)
 		}
 
@@ -250,14 +275,17 @@ func (m *module) AddMultiModule(bizID, setID int64, moduleNames []string, data m
 		data.Set(common.BKDefaultField, 0)
 		data.Set(common.BKInstParentStr, setID)
 
-		rsp, err := m.client.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, data)
+		createParam := &metadata.CreateModelInstance{
+			Data: data,
+		}
+		rsp, err := m.client.CoreService().Instance().CreateInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, createParam)
 		if nil != err {
-			blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
+			blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s, rid: %s", err.Error(), m.params.ReqID)
 			return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-			blog.Errorf("[compatiblev2-module] failed to add the module name, err: %s", rsp.ErrMsg)
+			blog.Errorf("[compatiblev2-module] failed to add the module name, err: %s, rid: %s", rsp.ErrMsg, m.params.ReqID)
 			return m.params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 	}
@@ -273,7 +301,7 @@ func (m *module) DeleteMultiModule(bizID int64, moduleIDS []int64) error {
 	}
 
 	if exists {
-		blog.Errorf("[compatiblev2-module] failed to delete  the modues(%#v) for the business(%d), which has some hosts ", moduleIDS, bizID)
+		blog.Errorf("[compatiblev2-module] failed to delete  the modues(%#v) for the business(%d), which has some hosts , rid: %s", moduleIDS, bizID, m.params.ReqID)
 		return m.params.Err.Error(common.CCErrTopoHasHost)
 	}
 
@@ -281,14 +309,17 @@ func (m *module) DeleteMultiModule(bizID int64, moduleIDS []int64) error {
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	cond.Field(common.BKModuleIDField).In(moduleIDS)
 
-	rsp, err := m.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, cond.ToMapStr())
+	deleteParam := &metadata.DeleteOption{
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := m.client.CoreService().Instance().DeleteInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, deleteParam)
 	if nil != err {
-		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
+		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s, rid: %s", err.Error(), m.params.ReqID)
 		return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-module] failed to delete the modules(%#v), err: %s", moduleIDS, rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-module] failed to delete the modules(%#v), err: %s, rid: %s", moduleIDS, rsp.ErrMsg, m.params.ReqID)
 		return m.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

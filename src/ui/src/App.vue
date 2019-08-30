@@ -1,26 +1,28 @@
 <template>
-    <div id="app">
+    <div id="app" :bk-language="$i18n.locale">
         <div class="browser-tips" v-if="showBrowserTips">
-            <span class="tips-text">{{$t('Common["您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果"]')}}</span>
+            <span class="tips-text">{{$t('您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果')}}</span>
             <i class="tips-icon bk-icon icon-close-circle-shape" @click="showBrowserTips = false"></i>
         </div>
         <the-header></the-header>
         <the-nav class="nav-layout"></the-nav>
-        <main class="main-layout" v-bkloading="{isLoading: globalLoading}">
+        <main class="main-layout" v-bkloading="{ isLoading: globalLoading }">
             <div class="admin-tips" v-if="false">
-                <span class="tips-text">{{$t('Common["欢迎来到蓝鲸配置平台全局管理中心！您所做的操作将影响公共部分内容，请谨慎操作"]')}}</span>
+                <span class="tips-text">{{$t('欢迎来到蓝鲸配置平台全局管理中心！您所做的操作将影响公共部分内容，请谨慎操作')}}</span>
                 <i class="bk-icon icon-close"></i>
             </div>
             <div ref="mainScroller" class="main-scroller" @scroll="execMainScrollListener($event)">
                 <router-view class="views-layout"></router-view>
             </div>
         </main>
+        <the-permission-modal ref="permissionModal"></the-permission-modal>
     </div>
 </template>
 
 <script>
     import theHeader from '@/components/layout/header'
     import theNav from '@/components/layout/nav'
+    import thePermissionModal from '@/components/modal/permission'
     import { execMainScrollListener, execMainResizeListener } from '@/utils/main-scroller'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { mapGetters } from 'vuex'
@@ -28,7 +30,8 @@
         name: 'app',
         components: {
             theHeader,
-            theNav
+            theNav,
+            thePermissionModal
         },
         data () {
             const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
@@ -42,44 +45,18 @@
             ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey'])
         },
         mounted () {
+            this.$store.commit('setFeatureTipsParams')
             addResizeListener(this.$refs.mainScroller, execMainResizeListener)
-            this.setDefaultCollection()
+            addResizeListener(this.$el, this.calculateAppHeight)
+            window.permissionModal = this.$refs.permissionModal
         },
         beforeDestroy () {
             removeResizeListener(this.$refs.mainScroller, execMainResizeListener)
+            removeResizeListener(this.$el, this.calculateAppHeight)
         },
         methods: {
-            async setDefaultCollection () {
-                await Promise.all([
-                    this.searchUsercustom(),
-                    this.searchBiz()
-                ])
-                const firstEntryKey = this.firstEntryKey
-                if (this.usercustom[firstEntryKey] === void 0) {
-                    const classifyNavigationKey = this.classifyNavigationKey
-                    this.$store.dispatch('userCustom/saveUsercustom', {
-                        [firstEntryKey]: false,
-                        [classifyNavigationKey]: ['biz', '$resource']
-                    })
-                }
-            },
-            searchUsercustom () {
-                return this.$store.dispatch('userCustom/searchUsercustom', {
-                    config: {
-                        requestId: 'post_searchUsercustom'
-                    }
-                })
-            },
-            searchBiz () {
-                return this.$store.dispatch('objectBiz/searchBusiness', {
-                    config: {
-                        requestId: 'post_searchBusiness_$ne_disabled',
-                        fromCache: true
-                    }
-                }).then(business => {
-                    this.$store.commit('objectBiz/setBusiness', business.info)
-                    return business
-                })
+            calculateAppHeight () {
+                this.$store.commit('setAppHeight', this.$el.offsetHeight)
             }
         }
     }

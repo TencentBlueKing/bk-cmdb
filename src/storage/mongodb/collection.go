@@ -39,7 +39,7 @@ type CollectionInterface interface {
 	FindOne(ctx context.Context, filter interface{}, opts *findopt.One, output interface{}) error
 	FindOneAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.FindAndModify, output interface{}) error
 
-	AggregateOne(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error
+	Aggregate(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error
 
 	InsertOne(ctx context.Context, document interface{}, opts *insertopt.One) error
 	InsertMany(ctx context.Context, document []interface{}, opts *insertopt.Many) error
@@ -48,4 +48,6 @@ type CollectionInterface interface {
 	UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.One) (*UpdateResult, error)
 
 	ReplaceOne(ctx context.Context, filter interface{}, replacement interface{}, opts *replaceopt.One) (*ReplaceOneResult, error)
+
+	Update(ctx context.Context, filter interface{}, update map[string]interface{}, opts *updateopt.Many) (*UpdateResult, error)
 }

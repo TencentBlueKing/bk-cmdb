@@ -13,6 +13,7 @@
 package discovery
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -20,8 +21,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	"context"
 
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
@@ -46,13 +47,16 @@ type RegDiscover struct {
 }
 
 // NewRegDiscover create a RegDiscover object
-func NewRegDiscover(moduleName string, zkserv string, ip string, port uint, isSSL bool) *RegDiscover {
+func NewRegDiscover(moduleName string, client *zk.ZkClient, ip string, port uint, isSSL bool) *RegDiscover {
+	rtx, cancel := client.WithCancel()
 	return &RegDiscover{
 		moduleName: moduleName,
 		ip:         ip,
 		port:       port,
 		isSSL:      isSSL,
-		rd:         registerdiscover.NewRegDiscoverEx(zkserv, 10*time.Second),
+		rd:         registerdiscover.NewRegDiscoverEx(client),
+		rootCtx:    rtx,
+		cancel:     cancel,
 	}
 }
 
@@ -63,14 +67,6 @@ func (cc *RegDiscover) Ping() error {
 
 // Start the register and discover
 func (r *RegDiscover) Start() error {
-
-	//create root context
-	r.rootCtx, r.cancel = context.WithCancel(context.Background())
-	//start regdiscover
-	if err := r.rd.Start(); err != nil {
-		blog.Errorf("fail to start register and discover serv. err:%s", err.Error())
-		return err
-	}
 
 	// register migrate server
 	if err := r.registerItself(); err != nil {
@@ -96,15 +92,6 @@ func (r *RegDiscover) Start() error {
 			return nil
 		}
 	}
-}
-
-// Stop the register and discover
-func (r *RegDiscover) Stop() error {
-	r.cancel()
-
-	r.rd.Stop()
-
-	return nil
 }
 
 func (r *RegDiscover) GetServer(servType string) (string, error) {

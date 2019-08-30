@@ -3,8 +3,8 @@
         .nav-wrapper {
             background: #333437 !important;
         }
-        .classify-list {
-            .classify-item {
+        .menu-list {
+            .menu-item {
                 &.active.is-link {
                     background-color: #18b48a;
                 }
@@ -12,7 +12,11 @@
                     background-color: #28292c;
                 }
             }
-            .model-link {
+            .submenu-link {
+                &:hover {
+                    color: #fff;
+                    background-color: #323336;
+                }
                 &.active {
                     background: #18b48a;
                 }

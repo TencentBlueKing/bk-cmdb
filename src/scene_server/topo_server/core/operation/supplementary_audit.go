@@ -57,7 +57,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 		isPreItem = true
 		targetData = preData
 	} else {
-		blog.Errorf("[audit] the curr data is empty")
+		blog.Errorf("[audit] the curr data is empty, rid: %s", a.params.ReqID)
 		return
 	}
 
@@ -65,7 +65,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 
 		id, err := targetItem.GetInstID()
 		if nil != err {
-			blog.Errorf("[audit]failed to get the inst id, error info is %s", err.Error())
+			blog.Errorf("[audit]failed to get the inst id, error info is %s, rid: %s", err.Error(), a.params.ReqID)
 			return
 		}
 
@@ -80,7 +80,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 			for _, preItem := range preData.datas {
 				preID, err := preItem.GetInstID()
 				if nil != err {
-					blog.Errorf("[audit]failed to get the inst id, error info is %s", err.Error())
+					blog.Errorf("[audit]failed to get the inst id, error info is %s, rid: %s", err.Error(), a.params.ReqID)
 					continue
 				}
 				if id == preID {
@@ -98,9 +98,9 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 		case auditoplog.AuditOpTypeModify:
 			if currDataTmp[common.BKDataStatusField] != preDataTmp[common.BKDataStatusField] {
 				switch currDataTmp[common.BKDataStatusField] {
-				case common.DataStatusDisabled, string(common.DataStatusDisabled):
+				case common.DataStatusDisabled:
 					desc = "disabled " + a.obj.GetObjectType()
-				case common.DataStatusEnable, string(common.DataStatusEnable):
+				case common.DataStatusEnable:
 					desc = "enable " + a.obj.GetObjectType()
 				default:
 					desc = "update " + a.obj.GetObjectType()
@@ -114,7 +114,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 		headers := []Header{}
 		attrs, err := a.obj.GetAttributesExceptInnerFields()
 		if nil != err {
-			blog.Errorf("[audit]failed to get the object(%s)' attribute, error info is %s", a.obj.Object().ObjectID, err.Error())
+			blog.Errorf("[audit]failed to get the object(%s)' attribute, error info is %s, rid: %s", a.obj.Object().ObjectID, err.Error(), a.params.ReqID)
 			return
 		}
 		for _, attr := range attrs {
@@ -123,70 +123,39 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 				PropertyName: attr.Attribute().PropertyName,
 			})
 		}
+		var bizID int64
+		if targetItem.GetValues() != nil {
+			if _, exist := targetItem.GetValues()[common.BKAppIDField]; exist {
+				if biz, err := targetItem.GetValues().Int64(common.BKAppIDField); nil != err {
+					blog.V(3).Infof("[audit] failed to get the biz id from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.params.ReqID)
+					return
+				} else {
+					bizID = biz
+				}
+			}
+		}
 
-		data := common.KvMap{
-			common.BKContentField: Content{
+		auditlog := metadata.SaveAuditLogParams{
+			ID:    id,
+			Model: a.obj.GetObjectID(),
+			Content: Content{
 				CurData: currDataTmp,
 				PreData: preDataTmp,
 				Headers: headers,
 			},
-			common.BKOpDescField:   desc,
-			common.BKOpTypeField:   action,
-			common.BKOpTargetField: a.obj.Object().ObjectID,
-			"inst_id":              id,
+			OpDesc: desc,
+			OpType: action,
+			BizID:  bizID,
 		}
 
-		bizID, err := targetItem.GetValues().String(common.BKAppIDField)
-		if nil != err {
-			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), error info is %s", targetItem.GetValues(), err.Error())
+		auditresp, err := a.client.CoreService().Audit().SaveAuditLog(context.Background(), a.params.Header, auditlog)
+		if err != nil {
+			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.params.ReqID)
+			return
 		}
-		if 0 == len(bizID) {
-			bizID = "0"
-		}
-		//fmt.Println("the data pre:", preDataTmp)
-		//fmt.Println("the data curr:", currDataTmp)
-		switch a.obj.GetObjectType() {
-		default:
-
-			rsp, err := a.client.AuditController().AddObjectLog(context.Background(), a.params.SupplierAccount, bizID, a.params.User, a.params.Header, data)
-			if nil != err {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", err.Error())
-				return
-			}
-			if !rsp.Result {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", rsp.ErrMsg)
-				return
-			}
-		case common.BKInnerObjIDApp, common.BKInnerObjIDObject:
-			rsp, err := a.client.AuditController().AddObjectLog(context.Background(), a.params.SupplierAccount, bizID, a.params.User, a.params.Header, data)
-			if nil != err {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", err.Error())
-				return
-			}
-			if !rsp.Result {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", rsp.ErrMsg)
-				return
-			}
-		case common.BKInnerObjIDModule:
-			rsp, err := a.client.AuditController().AddModuleLog(context.Background(), a.params.SupplierAccount, bizID, a.params.User, a.params.Header, data)
-			if nil != err {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", err.Error())
-				return
-			}
-			if !rsp.Result {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", rsp.ErrMsg)
-				return
-			}
-		case common.BKInnerObjIDSet:
-			rsp, err := a.client.AuditController().AddSetLog(context.Background(), a.params.SupplierAccount, bizID, a.params.User, a.params.Header, data)
-			if nil != err {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", err.Error())
-				return
-			}
-			if !rsp.Result {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", rsp.ErrMsg)
-				return
-			}
+		if !auditresp.Result {
+			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), resp info is %v, rid: %s", targetItem.GetValues(), auditresp, a.params.ReqID)
+			return
 		}
 	}
 }
@@ -204,7 +173,7 @@ func (a *auditLog) CreateSnapshot(instID int64, cond mapstr.MapStr) *WrapperResu
 	query.Condition = cond
 	_, insts, err := a.inst.FindInst(a.params, a.obj, query, false)
 	if nil != err {
-		blog.Errorf("[audit] failed to create the snapshot, error info is %s", err.Error())
+		blog.Errorf("[audit] failed to create the snapshot, error info is %s, rid: %s", err.Error(), a.params.ReqID)
 	}
 
 	result := &WrapperResult{}

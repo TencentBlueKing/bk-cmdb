@@ -117,7 +117,7 @@ func (o *operation) WithAttrComm() *operation {
 	attrMeta := metadata.Metadata{
 		Label: make(metadata.Label, 0),
 	}
-	attrMeta.Label.SetModelKind(metadata.PublicModelKindValue)
+	// attrMeta.Label.SetModelKind(metadata.PublicModelKindValue)
 	conds := mapstr.New()
 	for key, val := range attrMeta.Label {
 		conds.Set(key, val)
@@ -144,8 +144,8 @@ func (o *operation) WithAttrBizID(bizID int64) *operation {
 func (o *operation) WithAttrCommBizID(bizID int64) *operation {
 	conds := mapstr.New()
 	conds[common.BKDBOR] = []mapstr.MapStr{
-		mapstr.MapStr{metadata.LabelModelKind: metadata.PublicModelKindValue},
-		mapstr.MapStr{metadata.LabelModelKind: metadata.BusinessModelKindValue, metadata.LabelBusinessID: strconv.FormatInt(bizID, 10)},
+		{metadata.LabelModelKind: metadata.PublicModelKindValue},
+		{metadata.LabelModelKind: metadata.BusinessModelKindValue, metadata.LabelBusinessID: strconv.FormatInt(bizID, 10)},
 	}
 	o.op[common.MetadataField] = conds
 

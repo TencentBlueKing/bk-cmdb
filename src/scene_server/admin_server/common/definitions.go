@@ -12,7 +12,7 @@
 
 package models
 
-//common group
+// common group
 const (
 	BaseInfo     = "default"
 	BaseInfoName = "基础信息"
@@ -20,23 +20,22 @@ const (
 	GroupNone = "none"
 )
 
-//app group info
+// app group info
 const (
 	AppRole     = "role"
 	AppRoleName = "角色"
 )
 
-//host group info
-
+// host group info
 const (
 	HostAutoFields     = "auto"
 	HostAutoFieldsName = "自动发现信息（需要安装agent）"
 )
 
-//process group info
+// process group info
 const (
 	ProcPort     = "proc_port"
-	ProcPortName = "监听端口"
+	ProcPortName = "监听信息"
 
 	ProcGsekitBaseInfo     = "gsekit_baseinfo"
 	ProcGsekitBaseInfoName = "GSEkit 基本信息"

@@ -1,12 +1,15 @@
 <template>
     <div class="model-icon-list">
         <div class="page clearfix">
-            <input type="text" class="cmdb-form-input" :placeholder="$t('ModelManagement[\'请输入关键词\']')" v-model.trim="searchText">
+            <bk-input type="text" class="cmdb-form-input"
+                :placeholder="$t('请输入关键词')"
+                v-model.trim="searchText">
+            </bk-input>
             <div class="page-btn">
-                <bk-button type="default" :disabled="!page.current" @click="pageTurning(--page.current)">
+                <bk-button theme="default" :disabled="!page.current" @click="pageTurning(--page.current)">
                     <i class="bk-icon icon-angle-left"></i>
                 </bk-button>
-                <bk-button type="default" :disabled="page.current === page.totalPage - 1" @click="pageTurning(++page.current)">
+                <bk-button theme="default" :disabled="page.current === page.totalPage - 1" @click="pageTurning(++page.current)">
                     <i class="bk-icon icon-angle-right"></i>
                 </bk-button>
             </div>
@@ -14,9 +17,9 @@
         <ul class="icon-box clearfix" ref="iconBox">
             <li class="icon"
                 ref="iconItem"
-                :class="{'create': type === 'create', 'active': icon.value === localValue}"
-                v-tooltip="{content: language === 'zh_CN' ? icon.nameZh : icon.nameEn}"
-                v-for="(icon, index) in curIconList" 
+                :class="{ 'create': type === 'create', 'active': icon.value === localValue }"
+                v-bk-tooltips="{ content: language === 'zh_CN' ? icon.nameZh : icon.nameEn }"
+                v-for="(icon, index) in curIconList"
                 :key="index" @click="chooseIcon(icon.value)">
                 <i :class="icon.value"></i>
             </li>
@@ -30,9 +33,11 @@
     export default {
         props: {
             value: {
+                type: String,
                 default: 'icon-cc-default'
             },
             type: {
+                type: String,
                 default: 'create'
             }
         },
@@ -53,7 +58,7 @@
                 'language'
             ]),
             curIconList () {
-                let {
+                const {
                     searchText,
                     page
                 } = this
@@ -132,7 +137,6 @@
             cursor: pointer;
             &.create {
                 font-size: 30px;
-                padding-top: 10px;
                 height: 60px;
             }
             &:hover,

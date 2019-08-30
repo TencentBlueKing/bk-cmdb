@@ -15,25 +15,25 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['privilegeBusiness'])
+            ...mapGetters('objectBiz', ['authorizedBusiness']),
+            ...mapGetters(['isAdminView'])
         },
         methods: {
             handleHostClick () {
-                const bizId = this.host['biz'][0]['bk_biz_id']
+                const name = this.isAdminView ? 'resourceHostDetails' : 'businessHostDetails'
                 this.$router.push({
-                    name: 'resource',
+                    name,
+                    params: {
+                        business: this.isAdminView ? '' : this.host['biz'][0]['bk_biz_id'],
+                        id: this.host['host']['bk_host_id']
+                    },
                     query: {
-                        business: bizId,
-                        ip: this.host['host']['bk_host_innerip'],
-                        outer: false,
-                        inner: true,
-                        exact: 1,
-                        assigned: true
+                        from: this.$route.fullPath
                     }
                 })
             },
             checkoutBizAuth (bizId) {
-                return this.privilegeBusiness.some(biz => biz['bk_biz_id'] === bizId)
+                return this.authorizedBusiness.some(biz => biz['bk_biz_id'] === bizId)
             },
             getHostTitle (host) {
                 return `${host['host']['bk_host_innerip']}—${host['biz'][0]['bk_biz_name']}`

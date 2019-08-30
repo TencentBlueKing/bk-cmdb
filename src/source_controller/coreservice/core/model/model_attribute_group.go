@@ -123,7 +123,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 
 	cnt, err := g.update(ctx, mapstr.NewFromStruct(inputParam.Data, "field"), cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update the model attribute group (%#v) by the condition (%#v), error info is %s")
+		blog.Errorf("request(%s): it is failed to update the model attribute group (%#v) by the condition (%#v), err: %s", ctx.ReqID, g, cond, err)
 		return dataResult, err
 	}
 	dataResult.UpdatedCount.Count = cnt

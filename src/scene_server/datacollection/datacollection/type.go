@@ -13,7 +13,9 @@
 package datacollection
 
 import (
-    "configcenter/src/common"
+	"time"
+
+	"configcenter/src/common"
 )
 
 const (
@@ -30,6 +32,8 @@ const (
 	MaxNetcollectSize = 1000
 	MaxDiscoverSize   = 1000
 )
+
+var masterProcLockLiveTime = time.Second * 10
 
 const (
 	DiscoverChan = "discover"

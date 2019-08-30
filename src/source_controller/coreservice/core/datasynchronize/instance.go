@@ -75,7 +75,6 @@ func (inst *instance) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 	default:
 		return inst.saveSynchronizeObjectInstance(ctx)
 	}
-	return nil
 }
 
 func (inst *instance) saveSynchronizeAppInstance(ctx core.ContextParams) errors.CCError {

@@ -16,6 +16,12 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
+
+	"configcenter/src/common/backbone"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/remote"
 )
 
 // Config config
@@ -29,7 +35,7 @@ type Config struct {
 	Mechanism    string
 	MaxOpenConns string
 	MaxIdleConns string
-	Transaction  string
+	Enable       string
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -43,6 +49,10 @@ func (c Config) BuildURI() string {
 		c.Address = c.Address + ":" + c.Port
 	}
 
+	c.User = strings.Replace(c.User, "@", "%40", -1)
+	c.Password = strings.Replace(c.Password, "@", "%40", -1)
+	c.User = strings.Replace(c.User, ":", "%3a", -1)
+	c.Password = strings.Replace(c.Password, ":", "%3a", -1)
 	uri := fmt.Sprintf("mongodb://%s:%s@%s/%s", c.User, c.Password, c.Address, c.Database)
 	if c.Mechanism != "" {
 		uri += "?authMechanism=" + c.Mechanism
@@ -77,6 +87,30 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
 		MaxOpenConns: conifgmap[prefix+".maxOpenConns"],
 		MaxIdleConns: conifgmap[prefix+".maxIDleConns"],
 		Mechanism:    conifgmap[prefix+".mechanism"],
-		Transaction:  conifgmap[prefix+".transaction"],
+		Enable:       conifgmap[prefix+".enable"],
 	}
+}
+
+func (c Config) GetMongoClient(engine *backbone.Engine) (db dal.RDB, err error) {
+	if c.Enable == "true" {
+		db, err = local.NewMgo(c.BuildURI(), time.Minute)
+	} else {
+		db, err = remote.NewWithDiscover(engine)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
+	}
+	return
+}
+
+func (c Config) GetTransactionClient(engine *backbone.Engine) (client dal.Transcation, err error) {
+	if c.Enable == "true" {
+		client, err = local.NewMgo(c.BuildURI(), time.Minute)
+	} else {
+		client, err = remote.NewWithDiscover(engine)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
+	}
+	return
 }

@@ -16,36 +16,42 @@ import (
 	"encoding/json"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (s *topoService) ParseCreateRolePrivilegeOriginData(data []byte) (mapstr.MapStr, error) {
-	rst := []string{}
-	err := json.Unmarshal(data, &rst)
+func (s *Service) ParseCreateRolePrivilegeOriginData(data []byte) (mapstr.MapStr, error) {
+	requestBody := struct {
+		Data []string `json:"data" field:"data"`
+	}{}
+	err := json.Unmarshal(data, &requestBody)
 	if nil != err {
 		return nil, err
 	}
 	result := mapstr.MapStr{}
-	result.Set("origin", rst)
+	result.Set("origin", requestBody.Data)
 	return result, nil
 }
 
-// CreatePrivilege search user goup
-func (s *topoService) CreatePrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// CreatePrivilege search user group
+func (s *Service) CreatePrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	datas := make([]string, 0)
 	val, exists := data.Get("origin")
 	if !exists {
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
 	}
 
-	datas, _ = val.([]string)
-	err := s.core.PermissionOperation().Role(params).CreatePermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"), datas)
+	privilegeData, ok := val.([]string)
+	if !ok {
+		blog.Infof("CreatePrivilege param invalidate type : %#v, rid: %s", val, params.ReqID)
+	}
+
+	err := s.Core.PermissionOperation().Role(params).CreatePermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"), privilegeData)
 	return nil, err
 }
 
-// GetPrivilege search user goup
-func (s *topoService) GetPrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	return s.core.PermissionOperation().Role(params).GetPermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"))
+// GetPrivilege search user group
+func (s *Service) GetPrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	return s.Core.PermissionOperation().Role(params).GetPermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"))
 }

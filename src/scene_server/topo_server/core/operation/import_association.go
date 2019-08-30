@@ -27,9 +27,9 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (a *association) ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error) {
+func (assoc *association) ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error) {
 
-	ia := NewImportAssociation(ctx, a, params, objID, importData)
+	ia := NewImportAssociation(ctx, assoc, params, objID, importData)
 	err = ia.ParsePrimaryKey()
 	if err != nil {
 		return resp, err
@@ -219,7 +219,6 @@ func (ia *importAssociation) getAssociationObjProperty() error {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).In(objIDArr)
-	cond.Field(common.BKIsOnlyField).Eq(true)
 
 	rsp, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), ia.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
@@ -452,7 +451,7 @@ func (ia *importAssociation) isExistInstAsst(idx int, cond condition.Condition, 
 	}
 	if rsp.Data.Info[0].AsstInstID != dstInstID &&
 		asstMapping == metadata.OneToOneMapping {
-		return false, ia.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
+		return false, ia.params.Err.Errorf(common.CCErrCommDuplicateItem, "association")
 	}
 
 	return true, nil

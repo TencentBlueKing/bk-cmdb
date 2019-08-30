@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"sort"
 	"strconv"
 
 	"configcenter/src/common"
@@ -24,106 +25,155 @@ import (
 )
 
 // CreateMainLineObject create a new object in the main line topo
-func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	tx, err := s.tx.StartTransaction(context.Background())
+func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	tx, err := s.Txn.Start(context.Background())
 	if err != nil {
+		blog.Errorf("create mainline object failed, start transaction failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 	}
 	params.Header = tx.TxnInfo().IntoHeader(params.Header)
-	mainLineAssociation := &metadata.Association{}
 
+	mainLineAssociation := &metadata.Association{}
 	_, err = mainLineAssociation.Parse(data)
 	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s", data, err.Error())
+		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "mainline object")
 	}
 	params.MetaData = &mainLineAssociation.Metadata
-	ret, err := s.core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
-
+	ret, err := s.Core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
 	if err != nil {
-		if txerr := tx.Abort(context.Background()); txerr != nil {
-			blog.Errorf("[api-asst] abort transaction failed; %v", err)
-			return ret, params.Err.Error(common.CCErrObjectDBOpErrno)
+		blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err, params.ReqID)
+		if txnErr := tx.Abort(context.Background()); txnErr != nil {
+			blog.Errorf("create mainline object, but abort transaction[id: %s] failed; %v, rid: %s", tx.TxnInfo().TxnID, txnErr, params.ReqID)
 		}
-	} else {
-		if txerr := tx.Commit(context.Background()); txerr != nil {
-			return ret, params.Err.Error(common.CCErrObjectDBOpErrno)
-		}
+		return nil, err
+	}
+	if txnErr := tx.Commit(context.Background()); txnErr != nil {
+		blog.Errorf("create mainline object, but commit transaction[id: %s] failed, err: %v, rid: %s", tx.TxnInfo().TxnID, txnErr, params.ReqID)
+		return nil, params.Err.Error(common.CCErrTopoMainlineCreatFailed)
 	}
 
-	return ret, err
+	// auth: register mainline object
+	if err := s.AuthManager.RegisterMainlineObject(params.Context, params.Header, ret.Object()); err != nil {
+		blog.Errorf("create mainline object success, but register mainline model to iam failed, err: %+v, rid: %s", err, params.ReqID)
+		return ret, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
+	}
+
+	return ret, nil
 }
 
 // DeleteMainLineObject delete a object int the main line topo
-func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	tx, err := s.tx.StartTransaction(context.Background())
+func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	tx, err := s.Txn.Start(context.Background())
 	if err != nil {
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 	}
 	params.Header = tx.TxnInfo().IntoHeader(params.Header)
-
 	objID := pathParams("bk_obj_id")
-	err = s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
+
+	// auth: deregister mainline object
+	var bizID int64
+	if params.MetaData != nil {
+		bizID, err = metadata.BizIDFromMetadata(*params.MetaData)
+		if err != nil {
+			blog.Errorf("parse business id from request failed, err: %+v, rid: %s", err, params.ReqID)
+			return nil, params.Err.Error(common.CCErrCommParamsInvalid)
+		}
+	}
+	if err := s.AuthManager.DeregisterMainlineModelByObjectID(params.Context, params.Header, bizID, objID); err != nil {
+		blog.Errorf("delete mainline association failed, deregister mainline model failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
+
+	err = s.Core.AssociationOperation().DeleteMainlineAssociation(params, objID)
 
 	if err != nil {
-		if txerr := tx.Abort(context.Background()); txerr != nil {
-			blog.Errorf("[api-asst] abort transaction failed; %v", err)
+		if txErr := tx.Abort(context.Background()); txErr != nil {
+			blog.Errorf("[api-asst] abort transaction failed; %v, rid: %s", err, params.ReqID)
 			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 		}
 	} else {
-		if txerr := tx.Commit(context.Background()); txerr != nil {
+		if txErr := tx.Commit(context.Background()); txErr != nil {
 			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 		}
 	}
 	return nil, err
 }
 
-// SearchMainLineOBjectTopo search the main line topo
-func (s *topoService) SearchMainLineObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// SearchMainLineObjectTopo search the main line topo
+func (s *Service) SearchMainLineObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	bizObj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("[api-asst] failed to find the biz object, error info is %s", err.Error())
+		blog.Errorf("[api-asst] failed to find the biz object, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
-	return s.core.AssociationOperation().SearchMainlineAssociationTopo(params, bizObj)
+	// get biz model related mainline models (mainline relationship model)
+	return s.Core.AssociationOperation().SearchMainlineAssociationTopo(params, bizObj)
 }
 
 // SearchObjectByClassificationID search the object by classification ID
-func (s *topoService) SearchObjectByClassificationID(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchObjectByClassificationID(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, pathParams("bk_obj_id"))
+	bizObj, err := s.Core.ObjectOperation().FindSingleObject(params, pathParams("bk_obj_id"))
 	if nil != err {
-		blog.Errorf("[api-asst] failed to find the biz object, error info is %s", err.Error())
+		blog.Errorf("[api-asst] failed to find the biz object, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
-	return s.core.AssociationOperation().SearchMainlineAssociationTopo(params, bizObj)
+	return s.Core.AssociationOperation().SearchMainlineAssociationTopo(params, bizObj)
+}
+
+// SearchBusinessTopoWithStatistics calculate how many service instances on each topo instance node
+func (s *Service) SearchBusinessTopoWithStatistics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	return s.searchBusinessTopo(params, pathParams, queryParams, data, true)
+}
+
+func (s *Service) SearchBusinessTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	return s.searchBusinessTopo(params, pathParams, queryParams, data, false)
 }
 
 // SearchBusinessTopo search the business topo
-func (s *topoService) SearchBusinessTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) searchBusinessTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr, withStatistics bool) ([]*metadata.TopoInstRst, error) {
 
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", pathParams("bk_biz_id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the path params id(%s), error info is %s ", pathParams("app_id"), err.Error())
+		blog.Errorf("[api-asst] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("app_id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 
-	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	bizObj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		return nil, err
 	}
 
-	return s.core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id)
+	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id, withStatistics)
+	if err != nil {
+		return nil, err
+	}
+
+	// sort before response
+	SortTopoInst(topoInstRst)
+
+	return topoInstRst, nil
+}
+
+func SortTopoInst(instData []*metadata.TopoInstRst) {
+	sort.Slice(instData, func(i, j int) bool {
+		return instData[i].InstName < instData[j].InstName
+	})
+	for idx := range instData {
+		SortTopoInst(instData[idx].Child)
+	}
 }
 
 // SearchMainLineChildInstTopo search the child inst topo by a inst
-func (s *topoService) SearchMainLineChildInstTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchMainLineChildInstTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	//{obj_id}/{app_id}/{inst_id}
+	// {obj_id}/{app_id}/{inst_id}
 	objID := pathParams("obj_id")
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
@@ -137,20 +187,24 @@ func (s *topoService) SearchMainLineChildInstTopo(params types.ContextParams, pa
 	}
 	_ = bizID
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		return nil, err
 	}
 
-	return s.core.AssociationOperation().SearchMainlineAssociationInstTopo(params, obj, instID)
+	return s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, obj, instID, false)
 }
 
-func (s *topoService) SearchAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	request := &metadata.SearchAssociationTypeRequest{}
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	ret, err := s.core.AssociationOperation().SearchType(params, request)
+	if request.Condition == nil {
+		request.Condition = make(map[string]interface{}, 0)
+	}
+
+	ret, err := s.Core.AssociationOperation().SearchType(params, request)
 	if err != nil {
 		return nil, err
 	}
@@ -162,22 +216,22 @@ func (s *topoService) SearchAssociationType(params types.ContextParams, pathPara
 	return ret.Data, nil
 }
 
-func (s *topoService) SearchObjectAssoWithAssoKindList(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchObjectAssocWithAssocKindList(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	ids := new(metadata.AssociationKindIDs)
 	if err := data.MarshalJSONInto(ids); err != nil {
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
 
-	return s.core.AssociationOperation().SearchObjectAssoWithAssoKindList(params, ids.AsstIDs)
+	return s.Core.AssociationOperation().SearchObjectAssocWithAssocKindList(params, ids.AsstIDs)
 }
 
-func (s *topoService) CreateAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	request := &metadata.AssociationKind{}
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	ret, err := s.core.AssociationOperation().CreateType(params, request)
+	ret, err := s.Core.AssociationOperation().CreateType(params, request)
 	if err != nil {
 		return nil, err
 	}
@@ -189,16 +243,18 @@ func (s *topoService) CreateAssociationType(params types.ContextParams, pathPara
 	return ret.Data, nil
 }
 
-func (s *topoService) UpdateAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	request := &metadata.UpdateAssociationTypeRequest{}
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	asstTypeID, err := strconv.Atoi(pathParams("id"))
+
+	asstTypeID, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	ret, err := s.core.AssociationOperation().UpdateType(params, asstTypeID, request)
+
+	ret, err := s.Core.AssociationOperation().UpdateType(params, asstTypeID, request)
 	if err != nil {
 		return nil, err
 	}
@@ -210,13 +266,13 @@ func (s *topoService) UpdateAssociationType(params types.ContextParams, pathPara
 	return ret.Data, nil
 }
 
-func (s *topoService) DeleteAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	asstTypeID, err := strconv.Atoi(pathParams("id"))
+func (s *Service) DeleteAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	asstTypeID, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	ret, err := s.core.AssociationOperation().DeleteType(params, asstTypeID)
+	ret, err := s.Core.AssociationOperation().DeleteType(params, asstTypeID)
 	if err != nil {
 		return nil, err
 	}
@@ -228,13 +284,13 @@ func (s *topoService) DeleteAssociationType(params types.ContextParams, pathPara
 	return ret.Data, nil
 }
 
-func (s *topoService) SearchAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	request := &metadata.SearchAssociationInstRequest{}
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	ret, err := s.core.AssociationOperation().SearchInst(params, request)
+	ret, err := s.Core.AssociationOperation().SearchInst(params, request)
 	if err != nil {
 		return nil, err
 	} else if ret.Code != 0 {
@@ -245,13 +301,13 @@ func (s *topoService) SearchAssociationInst(params types.ContextParams, pathPara
 	}
 }
 
-func (s *topoService) CreateAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	request := &metadata.CreateAssociationInstRequest{}
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	ret, err := s.core.AssociationOperation().CreateInst(params, request)
+	ret, err := s.Core.AssociationOperation().CreateInst(params, request)
 	if err != nil {
 		return nil, err
 	} else if ret.Code != 0 {
@@ -261,14 +317,14 @@ func (s *topoService) CreateAssociationInst(params types.ContextParams, pathPara
 	}
 }
 
-func (s *topoService) DeleteAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	id, err := strconv.ParseInt(pathParams("association_id"), 10, 64)
 	if err != nil {
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	ret, err := s.core.AssociationOperation().DeleteInst(params, id)
+	ret, err := s.Core.AssociationOperation().DeleteInst(params, id)
 	if err != nil {
 		return nil, err
 	} else if ret.Code != 0 {

@@ -13,31 +13,34 @@
                                 v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
                                 :key="propertyIndex">
                                 <div class="property-name">
-                                    <cmdb-form-bool class="property-name-checkbox"
+                                    <bk-checkbox class="property-name-checkbox"
                                         :id="`property-name-${property['bk_property_id']}`"
                                         v-model="editable[property['bk_property_id']]">
-                                    </cmdb-form-bool>
+                                    </bk-checkbox>
                                     <label class="property-name-text"
                                         :for="`property-name-${property['bk_property_id']}`"
-                                        :class="{required: property['isrequired']}">
+                                        :class="{ required: property['isrequired'] }">
                                         {{property['bk_property_name']}}
                                     </label>
                                     <i class="property-name-tooltips icon icon-cc-tips"
                                         v-if="property['placeholder']"
-                                        v-tooltip="htmlEncode(property['placeholder'])">
+                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
                                     </i>
                                 </div>
                                 <div class="property-value">
                                     <component class="form-component"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :class="{error: errors.has(property['bk_property_id'])}"
+                                        :class="{ error: errors.has(property['bk_property_id']) }"
                                         :disabled="!editable[property['bk_property_id']]"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]">
                                     </component>
-                                    <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
+                                    <span class="form-error"
+                                        :title="errors.first(property['bk_property_id'])">
+                                        {{errors.first(property['bk_property_id'])}}
+                                    </span>
                                 </div>
                             </li>
                         </ul>
@@ -46,16 +49,22 @@
             </template>
         </div>
         <div class="form-empty" v-else>
-            {{$t("Inst['暂无可批量更新的属性']")}}
+            {{$t('暂无可批量更新的属性')}}
         </div>
-        <div class="form-options" :class="{sticky: scrollbar}">
+        <div class="form-options" :class="{ sticky: scrollbar }">
             <slot name="details-options">
-                <bk-button class="button-save" type="primary"
-                    :disabled="!authority.includes('update') || !hasChange || $loading()"
-                    @click="handleSave">
-                    {{$t("Common['保存']")}}
-                </bk-button>
-                <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
+                <span class="inline-block-middle"
+                    v-cursor="{
+                        active: !$isAuthorized(saveAuth),
+                        auth: [saveAuth]
+                    }">
+                    <bk-button class="button-save" theme="primary"
+                        :disabled="!$isAuthorized(saveAuth) || !hasChange || $loading()"
+                        @click="handleSave">
+                        {{$t('保存')}}
+                    </bk-button>
+                </span>
+                <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
         </div>
     </div>
@@ -68,11 +77,9 @@
         name: 'cmdb-form-multiple',
         mixins: [formMixins],
         props: {
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
+            saveAuth: {
+                type: [String, Array],
+                default: ''
             }
         },
         data () {
@@ -89,11 +96,11 @@
         computed: {
             changedValues () {
                 const changedValues = {}
-                for (let propertyId in this.values) {
+                for (const propertyId in this.values) {
                     const property = this.getProperty(propertyId)
                     if (
-                        ['bool'].includes(property['bk_property_type']) ||
-                        this.values[propertyId] !== this.refrenceValues[propertyId]
+                        ['bool'].includes(property['bk_property_type'])
+                        || this.values[propertyId] !== this.refrenceValues[propertyId]
                     ) {
                         changedValues[propertyId] = this.values[propertyId]
                     }
@@ -102,7 +109,7 @@
             },
             hasChange () {
                 let hasChange = false
-                for (let propertyId in this.editable) {
+                for (const propertyId in this.editable) {
                     if (this.editable[propertyId] && this.changedValues.hasOwnProperty(propertyId)) {
                         hasChange = true
                         break
@@ -150,7 +157,10 @@
             },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, {})
-                this.refrenceValues = this.$tools.clone(this.values)
+                const timer = setTimeout(() => {
+                    this.refrenceValues = this.$tools.clone(this.values)
+                    clearTimeout(timer)
+                })
             },
             initEditableStatus () {
                 const editable = {}
@@ -164,7 +174,7 @@
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')
                 temp.innerHTML = placeholder
-                let output = temp.innerText
+                const output = temp.innerText
                 temp = null
                 return output
             },
@@ -195,6 +205,7 @@
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {
                     rules[propertyType] = true
+                    rules.length = propertyType === 'singlechar' ? 256 : 2000
                 }
                 if (propertyType === 'int') {
                     rules['numeric'] = true
@@ -203,7 +214,7 @@
             },
             getMultipleValues () {
                 const multipleValues = {}
-                for (let propertyId in this.editable) {
+                for (const propertyId in this.editable) {
                     if (this.editable[propertyId]) {
                         multipleValues[propertyId] = this.values[propertyId]
                     }
@@ -268,8 +279,6 @@
                 line-height: 18px;
             }
             .property-name-checkbox{
-                transform: scale(0.667);
-                vertical-align: top;
                 margin: 0 6px 0 0;
             }
             .property-name-text{
@@ -332,6 +341,8 @@
         line-height: 14px;
         font-size: 12px;
         color: #ff5656;
+        max-width: 100%;
+        @include ellipsis;
     }
     .form-empty{
         height: 100%;

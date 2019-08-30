@@ -38,6 +38,7 @@ const commanLimit = 40
 
 type Client interface {
 	Call(cmd string, input interface{}, result interface{}) error
+	CallInfo(cmd string, input interface{}, result interface{}) (addr string, err error)
 	CallStream(cmd string, input interface{}) (*StreamMessage, error)
 	Ping() error
 	TargetID() string
@@ -75,7 +76,7 @@ func NewClient(conn net.Conn, compress string) (*client, error) {
 		done:      util.NewBool(false),
 		send:      make(chan *Message, 1024),
 		messages:  map[uint32]*Message{},
-		codec:     JSONCodec,
+		codec:     BSONCodec,
 		stream:    newStreamStore(),
 	}
 	blog.V(3).Infof("connected to rpc server %s", c.TargetID())
@@ -99,7 +100,6 @@ func Dial(connect string) (*client, error) {
 // DialHTTPPath connects to an HTTP RPC server
 // at the specified network address and path.
 func DialHTTPPath(network, address, path string) (*client, error) {
-	blog.V(3).Infof("connecting to rpc server %s", address)
 	var err error
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
@@ -147,6 +147,15 @@ func (c *client) Call(cmd string, input interface{}, result interface{}) error {
 		return err
 	}
 	return msg.Decode(result)
+}
+
+// Call replica client and return rpc server address
+func (c *client) CallInfo(cmd string, input interface{}, result interface{}) (addr string, err error) {
+	msg, err := c.operation(TypeRequest, cmd, input)
+	if err != nil {
+		return "", err
+	}
+	return c.TargetID(), msg.Decode(result)
 }
 
 // CallStream replica client
@@ -257,11 +266,11 @@ func (c *client) handleRequest(req *Message) {
 	c.messageMutex.Unlock()
 
 	c.send <- req
-	blog.V(5).Infof("[rpc client]sent message data: %s", req.Data)
+	blog.V(7).Infof("[rpc client]sent message data: %s", req.Data)
 }
 
 func (c *client) handleResponse(resp *Message) {
-	blog.V(5).Infof("[rpc client]receive message data: %s", resp.Data)
+	blog.V(7).Infof("[rpc client]receive message data: %s", resp.Data)
 	resp.codec = c.codec
 	if resp.transportErr != nil {
 		// Terminate all in flight

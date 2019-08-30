@@ -45,7 +45,7 @@ type Attribute struct {
 	Option            interface{} `json:"option" bson:"option"`
 	Description       string      `json:"description" bson:"description"`
 	Creator           string      `json:"creator" bson:"creator"`
-	CreateTime        *time.Time  `json:"create_time" bson:"creaet_time"`
+	CreateTime        *time.Time  `json:"create_time" bson:"create_time"`
 	LastTime          *time.Time  `json:"last_time" bson:"last_time"`
 }
 
@@ -62,7 +62,10 @@ func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		return err
 	}
 
-	enumOpts := validator.ParseEnumOption(ostypeProperty.Option)
+	enumOpts, err := validator.ParseEnumOption(ostypeProperty.Option)
+	if err != nil {
+		return err
+	}
 	for _, enum := range enumOpts {
 		if enum.ID == "3" {
 			return nil

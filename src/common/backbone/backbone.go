@@ -28,8 +28,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/metrics"
 	"configcenter/src/common/types"
 )
+
+// connect svcManager retry connect time
+const maxRetry = 200
 
 // BackboneParameter Used to constrain different services to ensure
 // consistency of service startup capabilities
@@ -37,29 +41,39 @@ type BackboneParameter struct {
 	// ConfigUpdate handle process config change
 	ConfigUpdate cc.ProcHandlerFunc
 
-	// servvice component addr
+	// service component addr
 	Regdiscv string
 	// config path
 	ConfigPath string
-	// http server paramster
+	// http server parameter
 	SrvInfo *types.ServerInfo
 }
 
-func newManageSrvClient(ctx context.Context, manageSrvAddr string) (*zk.ZkClient, error) {
-	client := zk.NewZkClient(manageSrvAddr, 5*time.Second)
-	if err := client.Start(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", manageSrvAddr, err)
-	}
-	if err := client.Ping(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", manageSrvAddr, err)
+func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
+	var err error
+	for retry := 0; retry < maxRetry; retry++ {
+		client := zk.NewZkClient(svcManagerAddr, 5*time.Second)
+		if err = client.Start(); err != nil {
+			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
+			time.Sleep(time.Second * 2)
+			continue
+		}
+
+		if err = client.Ping(); err != nil {
+			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
+			time.Sleep(time.Second * 2)
+			continue
+		}
+
+		return client, nil
 	}
 
-	return client, nil
+	return nil, err
 }
 
-func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discovery.DiscoveryInterface, apiMachinerConfig *util.APIMachineryConfig) (*Config, error) {
+func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discovery.DiscoveryInterface, apiMachineryConfig *util.APIMachineryConfig) (*Config, error) {
 
-	machinery, err := apimachinery.NewApiMachinery(apiMachinerConfig, discovery)
+	machinery, err := apimachinery.NewApiMachinery(apiMachineryConfig, discovery)
 	if err != nil {
 		return nil, fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -74,7 +88,7 @@ func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discove
 	return bonC, nil
 }
 
-func parameterValid(input *BackboneParameter) error {
+func validateParameter(input *BackboneParameter) error {
 	if input.Regdiscv == "" {
 		return fmt.Errorf("regdiscv can not be emtpy")
 	}
@@ -93,19 +107,22 @@ func parameterValid(input *BackboneParameter) error {
 }
 
 func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error) {
-	if err := parameterValid(input); err != nil {
+	if err := validateParameter(input); err != nil {
 		return nil, err
 	}
+
+	metricService := metrics.NewService(metrics.Config{ProcessName: common.GetIdentification(), ProcessInstance: input.SrvInfo.Instance()})
+
 	common.SetServerInfo(input.SrvInfo)
-	client, err := newManageSrvClient(ctx, input.Regdiscv)
+	client, err := newSvcManagerClient(ctx, input.Regdiscv)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 	}
-	discoveryInterface, err := discovery.NewDiscoveryInterface(client)
+	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 	}
-	disc, err := NewServcieDiscovery(client)
+	disc, err := NewServiceRegister(client)
 	if err != nil {
 		return nil, fmt.Errorf("new service discover failed, err:%v", err)
 	}
@@ -115,7 +132,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		Burst:     2000,
 		TLSConfig: nil,
 	}
-	c, err := newConfig(ctx, input.SrvInfo, discoveryInterface, apiMachineryConfig)
+	c, err := newConfig(ctx, input.SrvInfo, serviceDiscovery, apiMachineryConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -124,10 +141,11 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("new engine failed, err: %v", err)
 	}
 	engine.client = client
-	engine.apiMachinerConfig = apiMachineryConfig
-	engine.discovery = discoveryInterface
-	engine.ServiceManageInterface = discoveryInterface
+	engine.apiMachineryConfig = apiMachineryConfig
+	engine.discovery = serviceDiscovery
+	engine.ServiceManageInterface = serviceDiscovery
 	engine.srvInfo = input.SrvInfo
+	engine.metric = metricService
 
 	handler := &cc.CCHandler{
 		OnProcessUpdate:  input.ConfigUpdate,
@@ -147,17 +165,17 @@ func StartServer(ctx context.Context, e *Engine, HTTPHandler http.Handler) error
 	e.server = Server{
 		ListenAddr: e.srvInfo.IP,
 		ListenPort: e.srvInfo.Port,
-		Handler:    HTTPHandler,
+		Handler:    e.Metric().HTTPMiddleware(HTTPHandler),
 		TLS:        TLSConfig{},
 	}
 
-	if err := ListenServer(e.server); err != nil {
+	if err := ListenAndServe(e.server); err != nil {
 		return err
 	}
 	return nil
 }
 
-func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
+func New(c *Config, disc ServiceRegisterInterface) (*Engine, error) {
 	if err := disc.Register(c.RegisterPath, c.RegisterInfo); err != nil {
 		return nil, err
 	}
@@ -173,19 +191,24 @@ func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
 }
 
 type Engine struct {
-	client *zk.ZkClient
-	sync.Mutex
-	ServerInfo             types.ServerInfo
-	CoreAPI                apimachinery.ClientSetInterface
-	SvcDisc                ServiceDiscoverInterface
-	Language               language.CCLanguageIf
-	CCErr                  errors.CCErrorIf
-	CCCtx                  CCContextInterface
+	CoreAPI            apimachinery.ClientSetInterface
+	apiMachineryConfig *util.APIMachineryConfig
+
+	client                 *zk.ZkClient
 	ServiceManageInterface discovery.ServiceManageInterface
-	apiMachinerConfig      *util.APIMachineryConfig
+	SvcDisc                ServiceRegisterInterface
 	discovery              discovery.DiscoveryInterface
-	server                 Server
-	srvInfo                *types.ServerInfo
+	metric                 *metrics.Service
+
+	sync.Mutex
+
+	ServerInfo types.ServerInfo
+	server     Server
+	srvInfo    *types.ServerInfo
+
+	Language language.CCLanguageIf
+	CCErr    errors.CCErrorIf
+	CCCtx    CCContextInterface
 }
 
 func (e *Engine) Discovery() discovery.DiscoveryInterface {
@@ -193,11 +216,15 @@ func (e *Engine) Discovery() discovery.DiscoveryInterface {
 }
 
 func (e *Engine) ApiMachineryConfig() *util.APIMachineryConfig {
-	return e.apiMachinerConfig
+	return e.apiMachineryConfig
 }
 
 func (e *Engine) ServiceManageClient() *zk.ZkClient {
 	return e.client
+}
+
+func (e *Engine) Metric() *metrics.Service {
+	return e.metric
 }
 
 func (e *Engine) onLanguageUpdate(previous, current map[string]language.LanguageMap) {

@@ -19,6 +19,7 @@ import (
 	"os"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 )
@@ -36,7 +37,7 @@ func export(ctx context.Context, db dal.RDB, opt *option) error {
 		return err
 	}
 
-	topo.BizTopo.walk(func(node *Node) error {
+	err = topo.BizTopo.walk(func(node *Node) error {
 		node.Data = util.CopyMap(node.Data, nil,
 			[]string{
 				common.BKInstParentStr,
@@ -54,6 +55,9 @@ func export(ctx context.Context, db dal.RDB, opt *option) error {
 		)
 		return nil
 	})
+	if err != nil {
+		blog.Errorf("walk biz topo failed, err: %+v", err)
+	}
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "    ")
 	err = encoder.Encode(topo)

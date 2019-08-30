@@ -42,7 +42,7 @@ type attribute struct {
 	Option        interface{} `json:"option" bson:"option"`
 	Description   string      `json:"description" bson:"description"`
 	Creator       string      `json:"creator" bson:"creator"`
-	CreateTime    *time.Time  `bson:"creaet_time"`
+	CreateTime    *time.Time  `bson:"create_time"`
 	LastTime      *time.Time  `bson:"last_time"`
 }
 

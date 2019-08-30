@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/framework/core/errors"
 )
 
 // Property object fields
@@ -56,20 +57,38 @@ type PropertyPrimaryVal struct {
 }
 
 // GetObjFieldIDs get object fields
-func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, meta metadata.Metadata) (map[string]Property, error) {
+func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, meta *metadata.Metadata) (map[string]Property, error) {
 
 	fields, err := lgc.getObjFieldIDs(objID, header, meta)
 	if nil != err {
-		return nil, err
+		return nil, fmt.Errorf("get object fields failed, err: %+v", err)
 	}
 	groups, err := lgc.getObjectGroup(objID, header, meta)
 	if nil != err {
-		return nil, err
+		return nil, fmt.Errorf("get attribute group failed, err: %+v", err)
+	}
+	if len(groups) == 0 {
+		return nil, errors.New("get attribute group by object not found")
 	}
 
 	ret := make(map[string]Property)
-	indexCustom := 0
-	indexOthers := len(customFields)
+
+	// user specified export model field sort start index
+	var ustomFieldStartIndex int
+	//  sort the start of normal of the model
+	var normalFieldStartIndex int
+	// calculate the length of the user-psecified field
+	for _, field := range fields {
+		// filter fields cannot exported
+		if util.InStrArr(filterFields, field.ID) {
+			continue
+		}
+		// filter fields than do not exist
+		if !util.InStrArr(customFields, field.ID) {
+			continue
+		}
+		normalFieldStartIndex++
+	}
 
 	for _, group := range groups {
 		for _, field := range fields {
@@ -77,11 +96,11 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFie
 				if util.InStrArr(filterFields, field.ID) {
 					field.NotExport = true
 				} else if util.InStrArr(customFields, field.ID) {
-					field.ExcelColIndex = indexCustom
-					indexCustom++
+					field.ExcelColIndex = ustomFieldStartIndex
+					ustomFieldStartIndex++
 				} else {
-					field.ExcelColIndex = indexOthers
-					indexOthers++
+					field.ExcelColIndex = normalFieldStartIndex
+					normalFieldStartIndex++
 				}
 				ret[field.ID] = field
 
@@ -91,8 +110,9 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFie
 	return ret, nil
 }
 
-func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta metadata.Metadata) ([]PropertyGroup, error) {
-	ownerID := util.GetActionOnwerIDByHTTPHeader(header)
+func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metadata.Metadata) ([]PropertyGroup, error) {
+	rid := util.GetHTTPCCRequestID(header)
+	ownerID := util.GetOwnerID(header)
 	condition := mapstr.MapStr{
 		common.BKObjIDField:   objID,
 		common.BKOwnerIDField: common.BKDefaultOwnerID,
@@ -105,15 +125,15 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta metadat
 	}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectGroup(context.Background(), header, ownerID, objID, condition)
 	if nil != err {
-		blog.Errorf("get %s fields group http do error, err:%s, rid:%s", objID, err.Error(), util.GetHTTPCCRequestID(header))
-		return nil, err
+		blog.Errorf("get %s fields group failed, err:%+v, rid: %s", objID, err, rid)
+		return nil, fmt.Errorf("get attribute group failed, err: %+v", err)
 	}
 	if !result.Result {
-		blog.Errorf("get %s fields group  http reply error. error code:%d, error message:%s, rid:%s", objID, result.Code, result.ErrMsg, util.GetHTTPCCRequestID(header))
-		return nil, err
+		blog.Errorf("get %s fields group result failed. error code:%d, error message:%s, rid:%s", objID, result.Code, result.ErrMsg, rid)
+		return nil, fmt.Errorf("get attribute group result false, result: %+v", result)
 	}
 	fields := result.Data
-	ret := []PropertyGroup{}
+	ret := make([]PropertyGroup, 0)
 	for _, mapField := range fields {
 		propertyGroup := PropertyGroup{}
 		propertyGroup.Index = mapField.GroupIndex
@@ -121,14 +141,13 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta metadat
 		propertyGroup.ID = mapField.GroupID
 		ret = append(ret, propertyGroup)
 	}
-	blog.V(5).Infof("getObjectGroup count:%d", len(ret))
+	blog.V(5).Infof("getObjectGroup count:%d, rid: %s", len(ret), rid)
 	return ret, nil
 
 }
 
-func (lgc *Logics) getAsstObjectPrimaryFieldByObjID(objID string, header http.Header, conds mapstr.MapStr, meta metadata.Metadata) ([]Property, error) {
-
-	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, conds, meta)
+func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header, meta *metadata.Metadata) ([]Property, error) {
+	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, nil, meta)
 	if nil != err {
 		return nil, err
 	}
@@ -142,13 +161,14 @@ func (lgc *Logics) getAsstObjectPrimaryFieldByObjID(objID string, header http.He
 
 }
 
-func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta metadata.Metadata) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metadata.Metadata) ([]Property, error) {
 	sort := fmt.Sprintf("-%s,bk_property_index", common.BKIsRequiredField)
 	return lgc.getObjFieldIDsBySort(objID, sort, header, nil, meta)
 
 }
 
-func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, meta metadata.Metadata) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, meta *metadata.Metadata) ([]Property, error) {
+	rid := util.GetHTTPCCRequestID(header)
 
 	condition := mapstr.MapStr{
 		common.BKObjIDField:   objID,
@@ -164,20 +184,50 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), header, condition)
 	if nil != err {
-		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s, error:%s ,rid:%s", objID, conds, err.Error(), util.GetHTTPCCRequestID(header))
+		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s, error:%s ,rid:%s", objID, conds, err.Error(), rid)
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
-		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s,  http reply info,error code:%d, error msg:%s ,rid:%s", objID, conds, result.Code, result.ErrMsg, util.GetHTTPCCRequestID(header))
+		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s,  http reply info,error code:%d, error msg:%s ,rid:%s", objID, conds, result.Code, result.ErrMsg, rid)
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 
+	inputParam := metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Offset: 0,
+			Limit:  common.BKNoLimit,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKObjIDField: objID,
+		}),
+	}
+	uniques, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrUnique(context.Background(), header, inputParam)
+	if nil != err {
+		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, err, rid)
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !uniques.Result {
+		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, uniques, rid)
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(uniques.Code, uniques.ErrMsg)
+	}
+
+	keyIDs := map[uint64]bool{}
+	for _, unique := range uniques.Data.Info {
+		if unique.MustCheck {
+			for _, key := range unique.Keys {
+				keyIDs[key.ID] = true
+			}
+			break
+		}
+	}
+	if len(keyIDs) <= 0 {
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrTopoObjectUniqueSearchFailed)
+	}
+
 	ret := []Property{}
-
 	for _, mapField := range result.Data {
-
-		fieldIsOnly := mapField.IsOnly
+		fieldIsOnly := keyIDs[uint64(mapField.ID)]
 		fieldName := mapField.PropertyName
 		fieldID := mapField.PropertyID
 		fieldType := mapField.PropertyType
@@ -199,7 +249,7 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 			IsOnly:       fieldIsOnly,
 		})
 	}
-	blog.V(5).Infof("getObjFieldIDsBySort ret count:%d", len(ret))
+	blog.V(5).Infof("getObjFieldIDsBySort ret count:%d, rid: %s", len(ret), rid)
 	return ret, nil
 }
 
