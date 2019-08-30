@@ -876,27 +876,27 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 }
 
 type ProcessProperty struct {
-	ProcNum            PropertyInt64       `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty" validate:"max=10000,min=1"`
-	StopCmd            PropertyString      `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd,omitempty"`
-	RestartCmd         PropertyString      `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd,omitempty"`
-	ForceStopCmd       PropertyString      `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd,omitempty"`
-	FuncName           PropertyString      `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty" validate:"required"`
-	WorkPath           PropertyString      `field:"work_path" json:"work_path,omitempty" bson:"work_path,omitempty"`
-	BindIP             PropertyBindIP      `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip,omitempty"`
-	Priority           PropertyInt64       `field:"priority" json:"priority,omitempty" bson:"priority,omitempty" validate:"max=10000,min=1"`
-	ReloadCmd          PropertyString      `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd,omitempty"`
-	ProcessName        PropertyString      `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name,omitempty" validate:"required"`
-	Port               PropertyPort        `field:"port" json:"port,omitempty" bson:"port,omitempty"`
-	PidFile            PropertyString      `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file,omitempty"`
-	AutoStart          PropertyBool        `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start,omitempty"`
-	AutoTimeGapSeconds PropertyInt64       `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty" validate:"max=10000,min=1"`
-	StartCmd           PropertyString      `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd,omitempty"`
-	FuncID             PropertyInt64String `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
-	User               PropertyString      `field:"user" json:"user,omitempty" bson:"user,omitempty"`
-	TimeoutSeconds     PropertyInt64       `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty" validate:"max=10000,min=1"`
-	Protocol           PropertyProtocol    `field:"protocol" json:"protocol,omitempty" bson:"protocol,omitempty"`
-	Description        PropertyString      `field:"description" json:"description,omitempty" bson:"description,omitempty"`
-	StartParamRegex    PropertyString      `field:"bk_start_param_regex" json:"bk_start_param_regex,omitempty" bson:"bk_start_param_regex,omitempty"`
+	ProcNum            PropertyInt64    `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty" validate:"max=10000,min=1"`
+	StopCmd            PropertyString   `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd,omitempty"`
+	RestartCmd         PropertyString   `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd,omitempty"`
+	ForceStopCmd       PropertyString   `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd,omitempty"`
+	FuncName           PropertyString   `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty" validate:"required"`
+	WorkPath           PropertyString   `field:"work_path" json:"work_path,omitempty" bson:"work_path,omitempty"`
+	BindIP             PropertyBindIP   `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip,omitempty"`
+	Priority           PropertyInt64    `field:"priority" json:"priority,omitempty" bson:"priority,omitempty" validate:"max=10000,min=1"`
+	ReloadCmd          PropertyString   `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd,omitempty"`
+	ProcessName        PropertyString   `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name,omitempty" validate:"required"`
+	Port               PropertyPort     `field:"port" json:"port,omitempty" bson:"port,omitempty"`
+	PidFile            PropertyString   `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file,omitempty"`
+	AutoStart          PropertyBool     `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start,omitempty"`
+	AutoTimeGapSeconds PropertyInt64    `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty" validate:"max=10000,min=1"`
+	StartCmd           PropertyString   `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd,omitempty"`
+	FuncID             PropertyString   `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
+	User               PropertyString   `field:"user" json:"user,omitempty" bson:"user,omitempty"`
+	TimeoutSeconds     PropertyInt64    `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty" validate:"max=10000,min=1"`
+	Protocol           PropertyProtocol `field:"protocol" json:"protocol,omitempty" bson:"protocol,omitempty"`
+	Description        PropertyString   `field:"description" json:"description,omitempty" bson:"description,omitempty"`
+	StartParamRegex    PropertyString   `field:"bk_start_param_regex" json:"bk_start_param_regex,omitempty" bson:"bk_start_param_regex,omitempty"`
 }
 
 func (pt *ProcessProperty) Validate() (field string, err error) {
