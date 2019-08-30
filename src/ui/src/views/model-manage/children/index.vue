@@ -121,7 +121,7 @@
         </div>
         <bk-tab class="model-details-tab" type="unborder-card" :active.sync="tab.active">
             <bk-tab-panel name="field" :label="$t('模型字段')">
-                <the-field ref="field" v-if="tab.active === 'field'"></the-field>
+                <the-field-group ref="field" v-if="tab.active === 'field'"></the-field-group>
             </bk-tab-panel>
             <bk-tab-panel name="relation" :label="$t('模型关联')" :visible="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
@@ -129,24 +129,19 @@
             <bk-tab-panel name="verification" :label="$t('唯一校验')">
                 <the-verification v-if="tab.active === 'verification'"></the-verification>
             </bk-tab-panel>
-            <bk-tab-panel name="propertyGroup" :label="$t('字段分组')">
-                <the-property-group v-if="tab.active === 'propertyGroup'"></the-property-group>
-            </bk-tab-panel>
         </bk-tab>
     </div>
 </template>
 
 <script>
-    import thePropertyGroup from './group.vue'
-    import theField from './field'
     import theRelation from './relation'
-    import theChooseIcon from '@/components/model-manage/_choose-icon'
     import theVerification from './verification'
+    import theFieldGroup from '@/components/model-manage/field-group'
+    import theChooseIcon from '@/components/model-manage/choose-icon/_choose-icon'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
     export default {
         components: {
-            thePropertyGroup,
-            theField,
+            theFieldGroup,
             theRelation,
             theVerification,
             theChooseIcon
@@ -482,7 +477,6 @@
         height: 70px;
         background: #ebf4ff;
         font-size: 14px;
-        overflow: hidden;
         .choose-icon-wrapper {
             position: relative;
             float: left;
@@ -516,8 +510,8 @@
             }
             .choose-icon-box {
                 position: absolute;
-                left: 0;
-                top: 80px;
+                left: -12px;
+                top: 62px;
                 width: 600px;
                 height: 460px;
                 background: #fff;
