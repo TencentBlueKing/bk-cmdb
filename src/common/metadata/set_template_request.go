@@ -72,3 +72,7 @@ type CountSetTplInstItem struct {
 	SetTemplateID    int64 `json:"set_template_id" bson:"_id"`
 	SetInstanceCount int64 `json:"set_instances_count" bson:"set_instances_count"`
 }
+
+type ListSetByTemplateOption struct {
+	Page BasePage `json:"page"`
+}

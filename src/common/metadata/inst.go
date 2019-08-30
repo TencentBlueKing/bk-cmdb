@@ -19,10 +19,10 @@ import (
 )
 
 type SetInst struct {
-	SetID     int64  `bson:"bk_set_id"`
-	SetName   string `bson:"bk_set_name"`
-	SetStatus string `bson:"bk_service_status"`
-	SetEnv    string `bson:"bk_set_env"`
+	SetID     int64  `bson:"bk_set_id" json:"bk_set_id"`
+	SetName   string `bson:"bk_set_name" json:"bk_set_name"`
+	SetStatus string `bson:"bk_service_status" json:"bk_service_status"`
+	SetEnv    string `bson:"bk_set_env" json:"bk_set_env"`
 }
 
 type ModuleInst struct {
