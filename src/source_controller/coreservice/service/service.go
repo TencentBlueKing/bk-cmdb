@@ -255,6 +255,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 
 				// get the error info by the language
 				defErr := s.err.CreateDefaultCCErrorIf(language)
+				errors.SetGlobalCCError(s.err)
 
 				value, err := ioutil.ReadAll(req.Request.Body)
 				if err != nil {

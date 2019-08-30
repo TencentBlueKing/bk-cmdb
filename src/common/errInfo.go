@@ -200,6 +200,8 @@ const (
 	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
 	CCErrCommValExceedMaxFailed = 1199073
 
+	CCErrCommGlobalCCErrorNotInitialized = 1199074
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
