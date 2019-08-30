@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/eventclient"
@@ -323,7 +324,7 @@ func (cli *Service) CreateInstObjects(req *restful.Request, resp *restful.Respon
 	pathParams := req.PathParameters()
 	objID := pathParams["obj_id"]
 	obj := meta.Object{
-		ObjectID:objID,
+		ObjectID: objID,
 	}
 	objType := obj.GetObjectType()
 
@@ -449,14 +450,44 @@ func (cli *Service) CreateInstObjects(req *restful.Request, resp *restful.Respon
 				errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
 				updateErrors = append(updateErrors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
 				continue
-			} else {
-				err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionUpdate, newData, originData)
-				if err != nil {
-					blog.Errorf("create event error:%v", err)
-					errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
-					updateErrors = append(updateErrors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
-					continue
-				}
+			}
+			err = ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionUpdate, newData, originData)
+			if err != nil {
+				blog.Errorf("create event error:%v", err)
+				errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+				updateErrors = append(updateErrors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
+				continue
+			}
+
+			// add audit log
+			headers := make([]map[string]interface{}, 0)
+			for _, attr := range attrs {
+				headers = append(headers, map[string]interface{}{
+					"bk_property_id":   attr.PropertyID,
+					"bk_property_name": attr.PropertyName,
+				})
+			}
+			logRow := &metadata.OperationLog{
+				OwnerID:       ownerID,
+				ApplicationID: 0,
+				OpType:        int(auditoplog.AuditOpTypeModify),
+				OpTarget:      objID,
+				User:          util.GetUser(req.Request.Header),
+				ExtKey:        "",
+				OpDesc:        "update " + objType,
+				Content: map[string]interface{}{
+					"pre_data": originData,
+					"cur_data": newData,
+					"header":   headers,
+				},
+				CreateTime: time.Now(),
+				InstID:    originData["bk_inst_id"].(int64),
+			}
+			err = db.Table(common.BKTableNameOperationLog).Insert(ctx, logRow)
+			if err != nil {
+				blog.Errorf("create audit log error:%v", err)
+				errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrAuditSaveLogFaile).Error()))
+				updateErrors = append(updateErrors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrAuditSaveLogFaile).Error()))
 			}
 			continue
 		}
@@ -505,6 +536,37 @@ func (cli *Service) CreateInstObjects(req *restful.Request, resp *restful.Respon
 			blog.Errorf("create event error:%v", err)
 			errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrEventPushEventFailed).Error()))
 			continue
+		}
+
+		// add audit log
+		headers := make([]map[string]interface{}, 0)
+		for _, attr := range attrs {
+			headers = append(headers, map[string]interface{}{
+				"bk_property_id":   attr.PropertyID,
+				"bk_property_name": attr.PropertyName,
+			})
+		}
+		logRow := &metadata.OperationLog{
+			OwnerID:       ownerID,
+			ApplicationID: 0,
+			OpType:        int(auditoplog.AuditOpTypeAdd),
+			OpTarget:      objID,
+			User:          util.GetUser(req.Request.Header),
+			ExtKey:        "",
+			OpDesc:        "create " + objType,
+			Content: map[string]interface{}{
+				"pre_data": nil,
+				"cur_data": origindata,
+				"header":   headers,
+			},
+			CreateTime: time.Now(),
+			InstID:     origindata["bk_inst_id"].(int64),
+		}
+		err = db.Table(common.BKTableNameOperationLog).Insert(ctx, logRow)
+		if err != nil {
+			blog.Errorf("create audit log error:%v", err)
+			errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrAuditSaveLogFaile).Error()))
+			updateErrors = append(updateErrors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrAuditSaveLogFaile).Error()))
 		}
 	}
 
