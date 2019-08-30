@@ -869,5 +869,15 @@
     "继续添加": "Keep adding",
     "添加分组条件": "Add grouping conditions",
     "自定义图标": "Custom Icon",
-    "系统图标": "System Icon"
+    "系统图标": "System Icon",
+    "添加实例": "Add Instance",
+    "配置字段": "Setting Field",
+    "模型创建成功": "Created successfully",
+    "实例数量": "Instance count",
+    "立即启用": "Enable",
+    "字段预览": "Preview Field",
+    "分组名称": "Group Name",
+    "是否默认折叠": "Default Folding",
+    "添加分组": "Add Group",
+    "请先清空该分组下的字段": "Please clear the fields under this group first"
 }
