@@ -29,8 +29,11 @@ import (
 
 type Service struct {
 	*backbone.Engine
-	db    dal.RDB
-	cache *redis.Client
+	db      dal.RDB
+	cache   *redis.Client
+	snapcli *redis.Client
+	disCli  *redis.Client
+	netCli  *redis.Client
 	*logics.Logics
 }
 
@@ -40,6 +43,18 @@ func (s *Service) SetDB(db dal.RDB) {
 
 func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
+}
+
+func (s *Service) SetSnapcli(db *redis.Client) {
+	s.snapcli = db
+}
+
+func (s *Service) SetDisCli(db *redis.Client) {
+	s.disCli = db
+}
+
+func (s *Service) SetNetCli(db *redis.Client) {
+	s.netCli = db
 }
 
 func (s *Service) WebService() *restful.Container {
@@ -107,6 +122,15 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// redis
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err()))
+	if s.snapcli != nil {
+		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis + " - snapcli", s.snapcli.Ping().Err()))
+	}
+	if s.disCli != nil {
+		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis + " - disCli", s.disCli.Ping().Err()))
+	}
+	if s.netCli != nil {
+		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis + " - netCli", s.netCli.Ping().Err()))
+	}
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
