@@ -73,8 +73,7 @@ const router = new Router({
             name: MENU_BUSINESS,
             component: dynamicRouterView,
             children: businessViews,
-            path: '/business',
-            redirect: '/business/index'
+            path: '/business'
         }, {
             name: MENU_MODEL,
             component: dynamicRouterView,

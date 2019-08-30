@@ -16,7 +16,7 @@ export const OPERATION = {
 
 export default {
     name: 'customQuery',
-    path: 'custom-query',
+    path: '/business/:business/custom-query',
     component: () => import('./index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,

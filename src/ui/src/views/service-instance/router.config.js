@@ -16,7 +16,7 @@ export const OPERATION = {
 
 export default [{
     name: 'createServiceInstance',
-    path: '/service/instance/create/set/:setId/module/:moduleId',
+    path: '/business/:business/service/instance/create/set/:setId/module/:moduleId',
     component: () => import('./create.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
@@ -30,7 +30,7 @@ export default [{
     })
 }, {
     name: 'cloneServiceInstance',
-    path: '/service/instance/clone/set/:setId/module/:moduleId/instance/:instanceId/host/:hostId',
+    path: '/business/:business/service/instance/clone/set/:setId/module/:moduleId/instance/:instanceId/host/:hostId',
     props: true,
     component: () => import('./clone.vue'),
     meta: new Meta({

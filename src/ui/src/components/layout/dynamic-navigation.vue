@@ -6,7 +6,7 @@
         <div class="nav-wrapper"
             :class="{ unfold: unfold, flexible: !navStick }">
             <div class="business-wrapper" v-if="showBusinessSelector">
-                <cmdb-business-selector class="business-selector"></cmdb-business-selector>
+                <cmdb-business-selector class="business-selector" @on-select="handleToggleBusiness"></cmdb-business-selector>
             </div>
             <ul class="menu-list">
                 <template v-for="(menu, index) in currentMenus">
@@ -167,6 +167,25 @@
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     collected_models: collectedModels.filter(id => id !== model.id)
                 })
+            },
+            handleToggleBusiness (id) {
+                const routerName = this.$route.name
+                if (routerName === MENU_BUSINESS) {
+                    this.$router.replace({
+                        name: 'hosts',
+                        params: Object.assign({
+                            business: id
+                        }, this.$route.params),
+                        query: this.$route.query
+                    })
+                } else if (this.$route.params.business !== id) {
+                    this.$router.replace({
+                        name: routerName,
+                        params: Object.assign({}, this.$route.params, { business: id }),
+                        query: this.$route.query
+                    })
+                }
+                this.$emit('business-change', id)
             }
         }
     }

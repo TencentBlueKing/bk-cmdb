@@ -1,9 +1,9 @@
 <template>
     <div class="clearfix">
-        <dynamic-navigation class="main-navigation"></dynamic-navigation>
+        <dynamic-navigation class="main-navigation" @business-change="handleBusinessChange"></dynamic-navigation>
         <div class="main-layout">
             <div class="main-scroller">
-                <router-view class="main-views"></router-view>
+                <router-view class="main-views" :key="refreshKey"></router-view>
             </div>
         </div>
     </div>
@@ -14,6 +14,16 @@
     export default {
         components: {
             dynamicNavigation
+        },
+        data () {
+            return {
+                refreshKey: Date.now()
+            }
+        },
+        methods: {
+            handleBusinessChange () {
+                this.refreshKey = Date.now()
+            }
         }
     }
 </script>
