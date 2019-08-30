@@ -39,70 +39,71 @@ func Parse(args []string) error {
 	}
 
 	var (
-		exportflag     bool
-		importflag     bool
-		miniflag       bool
-		dryrunflag     bool
-		filepath       string
-		configposition string
+		exportFlag     bool
+		importFlag     bool
+		miniFlag       bool
+		dryRunFlag     bool
+		filePath       string
+		configPosition string
 		bizName        string
 		scope          string
 	)
 
 	// set flags
-	bkbizfs := pflag.NewFlagSet(bkbizCmdName, pflag.ExitOnError)
-	bkbizfs.BoolVar(&dryrunflag, "dryrun", false, "dryrun flag, if this flag seted, we will just print what we will do but not execute to db")
-	bkbizfs.BoolVar(&exportflag, "export", false, "export flag")
-	bkbizfs.BoolVar(&miniflag, "mini", false, "mini flag, only export required fields")
-	bkbizfs.BoolVar(&importflag, "import", false, "import flag")
-	bkbizfs.StringVar(&scope, "scope", scopeAll, "export scope, could be [biz] or [process], default all")
-	bkbizfs.StringVar(&filepath, "file", "", "export/import filepath")
-	bkbizfs.StringVar(&configposition, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
-	bkbizfs.StringVar(&bizName, "biz_name", "蓝鲸", "export/import the specified business topo")
-	err := bkbizfs.Parse(args[1:])
+	cmdFlags := pflag.NewFlagSet(bkbizCmdName, pflag.ExitOnError)
+	cmdFlags.BoolVar(&dryRunFlag, "dryrun", false, "dryrun flag, if this flag seted, we will just print what we will do but not execute to db")
+	cmdFlags.BoolVar(&exportFlag, "export", false, "export flag")
+	cmdFlags.BoolVar(&miniFlag, "mini", false, "mini flag, only export required fields")
+	cmdFlags.BoolVar(&importFlag, "import", false, "import flag")
+	cmdFlags.StringVar(&scope, "scope", "all", "export scope, could be [biz] or [process], default all")
+	cmdFlags.StringVar(&filePath, "file", "", "export/import filepath")
+	cmdFlags.StringVar(&configPosition, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
+	cmdFlags.StringVar(&bizName, "biz_name", "蓝鲸", "export/import the specified business topo")
+	err := cmdFlags.Parse(args[1:])
 	if err != nil {
 		return err
 	}
 
-	// init config
-	pconfig, err := configcenter.ParseConfigWithFile(configposition)
+	// read config
+	config, err := configcenter.ParseConfigWithFile(configPosition)
 	if nil != err {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
-	config := mongo.ParseConfigFromKV("mongodb", pconfig.ConfigMap)
+	mongoConfig := mongo.ParseConfigFromKV("mongodb", config.ConfigMap)
+
 	// connect to mongo db
-	db, err := local.NewMgo(config.BuildURI(), 0)
+	db, err := local.NewMgo(mongoConfig.BuildURI(), 0)
 	if err != nil {
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
 	opt := &option{
-		position: filepath,
+		position: filePath,
 		OwnerID:  common.BKDefaultOwnerID,
-		dryrun:   dryrunflag,
-		mini:     miniflag,
+		dryrun:   dryRunFlag,
+		mini:     miniFlag,
 		scope:    scope,
 		bizName:  bizName,
 	}
 
-	if exportflag {
+	if exportFlag {
 		var mode string
-		if miniflag {
+		if miniFlag {
 			mode = "mini"
 		} else {
 			mode = "verbose"
 
 		}
-		fmt.Printf("exporting %s business to %s in \033[34m%s\033[0m mode\n", bizName, filepath, mode)
+		fmt.Printf("exporting %s business to %s in \033[34m%s\033[0m mode\n", bizName, filePath, mode)
 		if err := export(ctx, db, opt); err != nil {
 			fmt.Printf("export error: %s", err.Error())
 			os.Exit(2)
 		}
-		fmt.Printf("blueking %s has been export to %s\n", bizName, filepath)
-	} else if importflag {
-		if dryrunflag {
-			fmt.Printf("dryrun import %s business from %s\n", bizName, filepath)
+		fmt.Printf("blueking %s has been export to %s\n", bizName, filePath)
+	} else if importFlag {
+		if dryRunFlag {
+			fmt.Printf("dryrun import %s business from %s\n", bizName, filePath)
 		} else {
-			fmt.Printf("importing %s business from %s\n", bizName, filepath)
+			fmt.Printf("importing %s business from %s\n", bizName, filePath)
 		}
 		opt.mini = false
 		opt.scope = scopeAll
@@ -110,8 +111,8 @@ func Parse(args []string) error {
 			fmt.Printf("import error: %s", err.Error())
 			os.Exit(2)
 		}
-		if !dryrunflag {
-			fmt.Printf("%s business has been import from %s\n", bizName, filepath)
+		if !dryRunFlag {
+			fmt.Printf("%s business has been import from %s\n", bizName, filePath)
 		}
 	} else {
 		fmt.Printf("invalide argument")

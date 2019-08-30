@@ -60,7 +60,7 @@ func (r *RespError) Error() string {
 // data is the data you want to return to client.
 func NewSuccessResp(data interface{}) *Response {
 	return &Response{
-		BaseResp: BaseResp{true, common.CCSuccess, common.CCSuccessStr},
+		BaseResp: BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr},
 		Data:     data,
 	}
 }
@@ -68,6 +68,11 @@ func NewSuccessResp(data interface{}) *Response {
 type Response struct {
 	BaseResp `json:",inline"`
 	Data     interface{} `json:"data"`
+}
+
+type Uint64Response struct {
+	BaseResp `json:",inline"`
+	Count    uint64 `json:"count"`
 }
 
 type MapArrayResponse struct {
@@ -79,10 +84,6 @@ type MapArrayResponse struct {
 type ResponseInstData struct {
 	BaseResp `json:",inline"`
 	Data     InstDataInfo `json:"data"`
-	/*struct {
-		Count int             `json:"count"`
-		Info  []mapstr.MapStr `json:"info"`
-	} `json:"data"`*/
 }
 
 // InstDataInfo response instance data result Data field
@@ -104,7 +105,7 @@ type QueryInput struct {
 	Sort      string      `json:"sort,omitempty"`
 }
 
-//ConvTime cc_type key
+// ConvTime cc_type key
 func (o *QueryInput) ConvTime() error {
 	conds, ok := o.Condition.(map[string]interface{})
 	if true != ok && nil != conds {
@@ -121,7 +122,7 @@ func (o *QueryInput) ConvTime() error {
 	return nil
 }
 
-//convTimeItem cc_time_type
+// convTimeItem cc_time_type
 func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 
 	switch item.(type) {
@@ -170,7 +171,6 @@ func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 			item = arrItem
 		}
 	case []interface{}:
-		//??????????????
 		arrItem, ok := item.([]interface{})
 		if true == ok {
 			for index, value := range arrItem {
@@ -193,7 +193,7 @@ func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 func (o *QueryInput) convInterfaceToTime(val interface{}) (interface{}, error) {
 	switch val.(type) {
 	case string:
-		ts, err := timeparser.TimeParser(val.(string))
+		ts, err := timeparser.TimeParserInLocation(val.(string), time.UTC)
 		if nil != err {
 			return nil, err
 		}
@@ -243,4 +243,8 @@ type PropertyGroupCondition struct {
 type UpdateParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Data      map[string]interface{} `json:"data"`
+}
+type ListHostWithoutAppResponse struct {
+	BaseResp `json:",inline"`
+	Data     ListHostResult `json:"data"`
 }

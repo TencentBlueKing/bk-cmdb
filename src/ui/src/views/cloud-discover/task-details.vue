@@ -1,10 +1,10 @@
 <template>
     <div class="task-detail-wrapper">
         <div class="task-detail-box">
-            <ul class="cloud-form clearfix" v-model="curPush">
+            <ul class="cloud-form clearfix">
                 <li class="detail-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["任务名称"]')}} ：
+                        {{ $t('任务名称')}} ：
                     </label>
                     <div class="detail-item-content">
                         <span>{{curPush.bk_task_name}}</span>
@@ -12,17 +12,17 @@
                 </li>
                 <li class="detail-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["账号类型"]')}} ：
+                        {{ $t('账号类型')}} ：
                     </label>
                     <div class="detail-item-content">
                         <span v-if="curPush.bk_account_type === 'tencent_cloud'">
-                            {{$t('Cloud["腾讯云"]')}}
+                            {{$t('腾讯云')}}
                         </span>
                     </div>
                 </li>
                 <li class="detail-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["ID"]')}} ：
+                        {{ $t('ID')}} ：
                     </label>
                     <div class="detail-item-content">
                         <span>{{curPush.bk_secret_id}}</span>
@@ -30,59 +30,59 @@
                 </li>
                 <li class="detail-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["Key"]')}} ：
+                        {{ $t('Key')}} ：
                     </label>
                     <div class="detail-item-content">
                         *************
                     </div>
                 </li>
                 <li class="detail-form-item">
-                    <label for="" class="label-name">{{ $t('Cloud["同步资源"]')}} ：</label>
+                    <label for="" class="label-name">{{ $t('同步资源')}} ：</label>
                     <div class="detail-item-content">
                         <span>{{curPush.bk_obj_id}}</span>
                     </div>
                 </li>
                 <li class="detail-form-item">
-                    <label for="" class="label-name">{{ $t('Cloud["自动同步"]')}} ：</label>
+                    <label for="" class="label-name">{{ $t('自动同步')}} ：</label>
                     <div class="detail-item-content">
                         <span v-if="curPush.bk_period_type === 'minute'">
-                            {{$t('Cloud["每五分钟"]')}}
+                            {{$t('每五分钟')}}
                         </span>
                         <span v-else-if="curPush.bk_period_type === 'hour'">
-                            {{this.$t('Cloud["每小时"]')}} {{curPush.bk_period}}
+                            {{this.$t('每小时')}} {{curPush.bk_period}}
                         </span>
                         <span v-else>
-                            {{this.$t('Cloud["每天"]')}} {{curPush.bk_period}}
+                            {{this.$t('每天')}} {{curPush.bk_period}}
                         </span>
                     </div>
                 </li>
                 <li class="detail-form-item">
-                    <label for="" class="label-name">{{ $t('Cloud["任务维护人"]')}} ：</label>
+                    <label for="" class="label-name">{{ $t('任务维护人')}} ：</label>
                     <div class="detail-item-content">
                         <span>{{curPush.bk_account_admin}}</span>
                     </div>
                 </li>
                 <li class="detail-form-item">
-                    <label for="" class="label-name">{{ $t('Cloud["资源确认"]')}} ：</label>
+                    <label for="" class="label-name">{{ $t('资源确认')}} ：</label>
                     <div class="detail-item-content">
                         <span v-if="curPush.bk_attr_confirm && curPush.bk_confirm">
-                            {{ $t('Cloud["新增需要确认、属性变化需要确认"]')}}
+                            {{ $t('新增需要确认、属性变化需要确认')}}
                         </span>
                         <span v-else-if="curPush.bk_confirm">
-                            {{ $t('Cloud["新增需要确认"]')}}
+                            {{ $t('新增需要确认')}}
                         </span>
                         <span v-else-if="curPush.bk_attr_confirm">
-                            {{ $t('Cloud["属性变化需要确认"]')}}
+                            {{ $t('属性变化需要确认')}}
                         </span>
                         <span class="text-opacity" v-else>
-                            {{ $t('Cloud["直接入库，不需要确认"]')}}
+                            {{ $t('直接入库，不需要确认')}}
                         </span>
                     </div>
                 </li>
             </ul>
         </div>
         <div class="task-detail-btn">
-            <bk-button type="primary" :loading="$loading('savePush')" class="btn" @click="edit">{{$t('Common["编辑"]')}}</bk-button>
+            <bk-button theme="primary" :loading="$loading('savePush')" class="btn" @click="edit">{{$t('编辑')}}</bk-button>
         </div>
     </div>
 </template>

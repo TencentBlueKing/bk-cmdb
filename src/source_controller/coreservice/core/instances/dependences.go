@@ -29,7 +29,7 @@ type OperationDependences interface {
 	DeleteInstAsst(ctx core.ContextParams, objID string, instID uint64) error
 
 	// SelectObjectAttWithParams select object att with params
-	SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attribute []metadata.Attribute, err error)
+	SelectObjectAttWithParams(ctx core.ContextParams, objID string, bizID int64) (attribute []metadata.Attribute, err error)
 
 	// SearchUnique search unique attribute
 	SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error)

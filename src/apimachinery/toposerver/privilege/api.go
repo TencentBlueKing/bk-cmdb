@@ -17,6 +17,7 @@ type PrivilegeInterface interface {
 	GetUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h http.Header) (resp *metadata.Response, err error)
 	GetUserPrivi(ctx context.Context, supplierAcct string, userName string, h http.Header) (resp *metadata.Response, err error)
 	CreatePrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header) (resp *metadata.Response, err error)
+	CreatePrivilegeWithData(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	GetPrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header) (resp *metadata.Response, err error)
 }
 

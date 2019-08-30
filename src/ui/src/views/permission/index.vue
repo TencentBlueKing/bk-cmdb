@@ -1,16 +1,16 @@
 <template>
     <div class="permission-wrapper">
-        <bk-tab class="permission-tab" :active-name.sync="activeTabName">
-            <bk-tabpanel name="role" :title="$t('Permission[\'角色\']')">
+        <bk-tab class="permission-tab" type="unborder-card" :active.sync="activeTabName">
+            <bk-tab-panel name="role" :label="$t('角色')">
                 <v-role
                     ref="role"
                     @skipToUser="skipToUser"
                     v-if="activeTabName === 'role'"
                 ></v-role>
-            </bk-tabpanel>
-            <bk-tabpanel name="business" :title="$t('Permission[\'业务权限\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="business" :label="$t('业务权限')">
                 <v-business v-if="activeTabName === 'business'"></v-business>
-            </bk-tabpanel>
+            </bk-tab-panel>
         </bk-tab>
     </div>
 </template>

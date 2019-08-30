@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"configcenter/src/common/mapstr"
 )
 
 type ObjectUnique struct {
@@ -27,6 +29,17 @@ type ObjectUnique struct {
 	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	Metadata  `field:"metadata" json:"metadata" bson:"metadata"`
 	LastTime  Time `json:"last_time" bson:"last_time"`
+}
+
+// Parse load the data from mapstr attribute into ObjectUnique instance
+func (cli *ObjectUnique) Parse(data mapstr.MapStr) (*ObjectUnique, error) {
+
+	err := mapstr.SetValueToStructByTags(cli, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return cli, err
 }
 
 func (u ObjectUnique) KeysHash() string {
@@ -64,6 +77,7 @@ type UpdateUniqueRequest struct {
 	MustCheck bool        `json:"must_check" bson:"must_check"`
 	Keys      []UniqueKey `json:"keys" bson:"keys"`
 	LastTime  Time        `json:"last_time" bson:"last_time"`
+	Metadata  `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 type UpdateUniqueResult struct {

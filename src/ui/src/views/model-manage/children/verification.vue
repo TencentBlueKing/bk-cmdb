@@ -1,56 +1,73 @@
 <template>
-    <div>
-        <bk-button class="create-btn" type="primary"
-            :disabled="isReadOnly || !authority.includes('update')"
-            @click="createVerification">
-            {{$t('ModelManagement["新建校验"]')}}
-        </bk-button>
-        <cmdb-table
-            class="relation-table"
-            :loading="$loading(['searchObjectUniqueConstraints', 'deleteObjectUniqueConstraints'])"
-            :sortable="false"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :wrapperMinusHeight="220">
-            <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                <div :key="index" :class="{'disabled': isReadOnly}">
-                    <template v-if="header.id==='keys'">
-                        {{getRuleName(item.keys)}}
-                    </template>
-                    <template v-else-if="header.id==='must_check'">
-                        {{item['must_check'] ? $t('ModelManagement["是"]') : $t('ModelManagement["否"]')}}
-                    </template>
-                    <template v-else-if="header.id==='operation'">
-                        <button class="text-primary mr10"
-                            :disabled="!isEditable(item)"
-                            @click.stop="editVerification(item)">
-                            {{$t('Common["编辑"]')}}
-                        </button>
-                        <button class="text-primary"
-                            :disabled="!isEditable(item)"
-                            @click.stop="deleteVerification(item)">
-                            {{$t('Common["删除"]')}}
-                        </button>
-                    </template>
-                </div>
-            </template>
-        </cmdb-table>
-        <cmdb-slider
+    <div class="verification-layout">
+        <div class="options">
+            <span class="inline-block-middle"
+                v-if="!isTopoModel"
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.U_MODEL),
+                    auth: [$OPERATION.U_MODEL]
+                }">
+                <bk-button class="create-btn" theme="primary"
+                    :disabled="isReadOnly || !updateAuth"
+                    @click="createVerification">
+                    {{$t('新建校验')}}
+                </bk-button>
+            </span>
+        </div>
+        <bk-table
+            class="verification-table"
+            v-bkloading="{
+                isLoading: $loading(['searchObjectUniqueConstraints', 'deleteObjectUniqueConstraints'])
+            }"
+            :data="table.list"
+            :max-height="$APP.height - 220"
+            :row-style="{
+                cursor: 'pointer'
+            }"
+            @cell-click="handleShowDetails">
+            <bk-table-column :label="$t('校验规则')" class-name="is-highlight">
+                <template slot-scope="{ row }">
+                    {{getRuleName(row.keys)}}
+                </template>
+            </bk-table-column>
+            <bk-table-column :label="$t('属性为空值是否校验')">
+                <template slot-scope="{ row }">
+                    {{row.must_check ? $t('是') : $t('否')}}
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="operation"
+                v-if="updateAuth && !isTopoModel"
+                :label="$t('操作')">
+                <template slot-scope="{ row }">
+                    <button class="text-primary mr10 operation-btn"
+                        :disabled="!isEditable(row)"
+                        @click.stop="editVerification(row)">
+                        {{$t('编辑')}}
+                    </button>
+                    <button class="text-primary operation-btn"
+                        :disabled="!isEditable(row) || row.must_check"
+                        @click.stop="deleteVerification(row)">
+                        {{$t('删除')}}
+                    </button>
+                </template>
+            </bk-table-column>
+        </bk-table>
+        <bk-sideslider
             :width="450"
             :title="slider.title"
-            :isShow.sync="slider.isShow">
+            :is-show.sync="slider.isShow">
             <the-verification-detail
                 class="slider-content"
                 slot="content"
-                :isReadOnly="isReadOnly"
-                :isEdit="slider.isEdit"
+                v-if="slider.isShow"
+                :is-read-only="isReadOnly || slider.isReadOnly"
+                :is-edit="slider.isEdit"
                 :verification="slider.verification"
-                :attributeList="attributeList"
+                :attribute-list="attributeList"
                 @save="saveVerification"
                 @cancel="slider.isShow = false">
             </the-verification-detail>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -69,16 +86,6 @@
                     verification: {}
                 },
                 table: {
-                    header: [{
-                        id: 'keys',
-                        name: this.$t('ModelManagement["校验规则"]')
-                    }, {
-                        id: 'must_check',
-                        name: this.$t('ModelManagement["是否为必须校验"]')
-                    }, {
-                        id: 'operation',
-                        name: this.$t('Common["操作"]')
-                    }],
                     list: []
                 },
                 attributeList: []
@@ -90,27 +97,25 @@
                 'activeModel',
                 'isInjectable'
             ]),
+            isTopoModel () {
+                return this.activeModel.bk_classification_id === 'bk_biz_topo'
+            },
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
                 }
                 return false
             },
-            authority () {
+            updateAuth () {
                 const cantEdit = ['process', 'plat']
                 if (cantEdit.includes(this.$route.params.modelId)) {
-                    return []
+                    return false
                 }
-                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
-                    return ['search', 'update', 'delete']
-                }
-                return []
+                const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
+                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         async created () {
-            if (!this.authority.includes('update')) {
-                this.table.header.pop()
-            }
             this.initAttrList()
             this.searchVerification()
         },
@@ -123,10 +128,7 @@
                 'deleteObjectUniqueConstraints'
             ]),
             isEditable (item) {
-                if (item.ispre) {
-                    return false
-                }
-                if (this.isReadOnly) {
+                if (item.ispre || this.isReadOnly) {
                     return false
                 }
                 if (!this.isAdminView) {
@@ -135,10 +137,10 @@
                 return true
             },
             getRuleName (keys) {
-                let name = []
+                const name = []
                 keys.forEach(key => {
                     if (key['key_kind'] === 'property') {
-                        let attr = this.attributeList.find(({id}) => id === key['key_id'])
+                        const attr = this.attributeList.find(({ id }) => id === key['key_id'])
                         if (attr) {
                             name.push(attr['bk_property_name'])
                         }
@@ -150,6 +152,8 @@
                 this.attributeList = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: this.activeModel['bk_obj_id']
+                    }, {
+                        inject: this.isInjectable
                     }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`
@@ -157,14 +161,16 @@
                 })
             },
             createVerification () {
-                this.slider.title = this.$t('ModelManagement["新建校验"]')
+                this.slider.title = this.$t('新建校验')
                 this.slider.isEdit = false
+                this.slider.isReadOnly = false
                 this.slider.isShow = true
             },
             editVerification (verification) {
-                this.slider.title = this.$t('ModelManagement["编辑校验"]')
+                this.slider.title = this.$t('编辑校验')
                 this.slider.verification = verification
                 this.slider.isEdit = true
+                this.slider.isReadOnly = false
                 this.slider.isShow = true
             },
             saveVerification () {
@@ -173,11 +179,14 @@
             },
             deleteVerification (verification) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除唯一校验？"]', this.getRuleName(verification.keys), {name: this.getRuleName(verification.keys)}),
+                    title: this.$tc('确定删除唯一校验', this.getRuleName(verification.keys), { name: this.getRuleName(verification.keys) }),
                     confirmFn: async () => {
                         await this.deleteObjectUniqueConstraints({
                             objId: verification['bk_obj_id'],
                             id: verification.id,
+                            params: this.$injectMetadata({}, {
+                                inject: !!this.$tools.getMetadataBiz(verification)
+                            }),
                             config: {
                                 requestId: 'deleteObjectUniqueConstraints'
                             }
@@ -189,20 +198,34 @@
             async searchVerification () {
                 const res = await this.searchObjectUniqueConstraints({
                     objId: this.activeModel['bk_obj_id'],
-                    params: this.$injectMetadata(),
+                    params: this.$injectMetadata({}, { inject: this.isInjectable }),
                     config: {
                         requestId: 'searchObjectUniqueConstraints'
                     }
                 })
                 this.table.list = res
+            },
+            handleShowDetails (row, column, cell) {
+                if (column.property === 'operation') return
+                this.slider.title = this.$t('查看校验')
+                this.slider.verification = row
+                this.slider.isEdit = true
+                this.slider.isReadOnly = true
+                this.slider.isShow = true
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .create-btn {
-        margin: 10px 0;
+    .verification-layout {
+        padding: 20px 0;
+    }
+    .verification-table {
+        margin: 14px 0 0 0;
+    }
+    .operation-btn[disabled] {
+        color: #dcdee5 !important;
+        opacity: 1 !important;
     }
 </style>
-

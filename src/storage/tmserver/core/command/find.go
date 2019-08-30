@@ -13,6 +13,8 @@
 package command
 
 import (
+	"strings"
+
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/mongodb/options/findopt"
@@ -44,12 +46,43 @@ func (d *find) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRe
 		reply.Message = err.Error()
 		return reply, err
 	}
-	blog.V(4).Infof("[MONGO OPERATION] %+v", &msg)
+	blog.V(4).Infof("[MONGO OPERATION] db find operate. info: %#v", &msg)
 
 	opt := findopt.Many{}
 	opt.Skip = int64(msg.Start)
 	opt.Limit = int64(msg.Limit)
-	//opt.Sort = msg.Sort
+	if len(msg.Fields) != 0 {
+		for _, field := range msg.Fields {
+			opt.Fields = append(opt.Fields, findopt.FieldItem{Name: field, Hide: false})
+		}
+	}
+
+	opt.Fields = append(opt.Fields, findopt.FieldItem{Name: "_id", Hide: true})
+
+	if msg.Sort != "" {
+		itemArr := strings.Split(msg.Sort, ",")
+		for _, item := range itemArr {
+			sortKV := strings.Split(item, ":")
+			if len(sortKV) >= 2 {
+				sortVal := strings.TrimSpace(sortKV[1])
+				sortName := strings.TrimSpace(sortKV[0])
+				if sortVal == "true" || sortVal == "-1" {
+					opt.Sort = append(opt.Sort, findopt.SortItem{Name: sortName, Descending: true})
+				} else {
+					opt.Sort = append(opt.Sort, findopt.SortItem{Name: sortName, Descending: false})
+				}
+
+			} else {
+				sortItemName := strings.TrimPrefix(strings.TrimPrefix(item, "+"), "-")
+				sortItem := findopt.SortItem{Name: sortItemName, Descending: false}
+				if strings.HasPrefix(item, "-") {
+					sortItem.Descending = true
+				}
+				opt.Sort = append(opt.Sort, sortItem)
+			}
+		}
+		blog.V(5).Infof("[MONGO OPERATION] db find operate. sort: %#v, rid:%s", opt.Sort, msg.RequestID)
+	}
 
 	var targetCol mongodb.CollectionInterface
 	if nil != ctx.Session {
@@ -62,6 +95,7 @@ func (d *find) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRe
 	if nil == err {
 		reply.Success = true
 	} else {
+		blog.ErrorJSON("find execute error.  errr: %s, raw data: %s, rid:%s", err.Error(), msg, msg.RequestID)
 		reply.Message = err.Error()
 	}
 

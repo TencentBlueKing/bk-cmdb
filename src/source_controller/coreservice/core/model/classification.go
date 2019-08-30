@@ -42,8 +42,8 @@ func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParam
 		return nil, err
 	}
 	if exists {
-		blog.Errorf("classification (%#v)is duplicated", inputParam.Data)
-		return nil, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
+		blog.Errorf("classification (%#v)is duplicated, rid: %s", inputParam.Data, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.ClassificationID)
 	}
 
 	inputParam.Data.OwnerID = ctx.SupplierAccount
@@ -249,7 +249,7 @@ func (m *modelClassification) UpdateModelClassification(ctx core.ContextParams, 
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
-func (m *modelClassification) DeleteModelClassificaiton(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+func (m *modelClassification) DeleteModelClassification(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {

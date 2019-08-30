@@ -13,14 +13,15 @@
 package middleware
 
 import (
-    "configcenter/src/apimachinery/discovery"
-    "plugin"
+	"plugin"
 	"strings"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
+	"configcenter/src/common/util"
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/auth"
@@ -28,10 +29,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
-
-var sLoginURL string
 
 var Engine *backbone.Engine
 var CacheCli *redis.Client
@@ -41,6 +40,7 @@ var LoginPlg *plugin.Plugin
 func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
+		rid := util.GetHTTPCCRequestID(c.Request.Header)
 		pathArr := strings.Split(c.Request.URL.Path, "/")
 		path1 := pathArr[1]
 
@@ -52,21 +52,24 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 
 		if isAuthed(c, config) {
 			// valid resource access privilege
-			auth := auth.NewAuth()
-			ok := auth.ValidResAccess(pathArr, c)
-			if false == ok {
-				c.JSON(403, gin.H{
-					"status": "access forbidden",
-				})
-				c.Abort()
-				return
+			if config.Site.AuthScheme == "internal" {
+				author := auth.NewAuth()
+				ok := author.ValidResAccess(pathArr, c)
+				if false == ok {
+					c.JSON(403, gin.H{
+						"status": "access forbidden",
+					})
+					c.Abort()
+					return
+				}
 			}
+
 			// http request header add user
 			session := sessions.Default(c)
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
-			language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 			ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
 			supplierID, _ := session.Get(common.WEBSessionSupplierID).(string)
+			language := webCommon.GetLanguageByHTTPRequest(c)
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
@@ -75,7 +78,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			if path1 == "api" {
 				servers, err := disc.ApiServer().GetServers()
 				if nil != err || 0 == len(servers) {
-					blog.Errorf("no api server can be used. err: %v", err)
+					blog.Errorf("no api server can be used. err: %v, rid: %s", err, rid)
 					c.JSON(503, gin.H{
 						"status": "no api server can be used.",
 					})
@@ -109,15 +112,9 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 
 // IsAuthed check user is authed
 func isAuthed(c *gin.Context, config options.Config) bool {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	if "1" == config.Session.Skip {
 		session := sessions.Default(c)
-		cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
-		if "" == cookieLanuage || nil != err {
-			c.SetCookie(common.BKHTTPCookieLanugageKey, config.Session.DefaultLanguage, 0, "/", "", false, false)
-			session.Set(common.WEBSessionLanguageKey, config.Session.DefaultLanguage)
-		} else if cookieLanuage != session.Get(common.WEBSessionLanguageKey) {
-			session.Set(common.WEBSessionLanguageKey, cookieLanuage)
-		}
 
 		cookieOwnerID, err := c.Cookie(common.BKHTTPOwnerID)
 		if "" == cookieOwnerID || nil != err {
@@ -128,28 +125,39 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		}
 		session.Set(common.WEBSessionSupplierID, "0")
 
-		blog.V(5).Infof("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
+		blog.V(5).Infof("skip login, cookie language: %s, cookieOwnerID: %s, rid: %s", webCommon.GetLanguageByHTTPRequest(c), cookieOwnerID, rid)
 		session.Set(common.WEBSessionUinKey, "admin")
+
 		session.Set(common.WEBSessionRoleKey, "1")
 		session.Set(webCommon.IsSkipLogin, "1")
-		session.Save()
+		if err := session.Save(); err != nil {
+			blog.Warnf("save session failed, err: %s, rid: %s", err.Error(), rid)
+		}
 		return true
 	}
-	session := sessions.Default(c)
-	cc_token := session.Get(common.HTTPCookieBKToken)
 	user := user.NewUser(config, Engine, CacheCli, LoginPlg)
-	if nil == cc_token {
+	session := sessions.Default(c)
+
+	// check bk_token
+	ccToken := session.Get(common.HTTPCookieBKToken)
+	if ccToken == nil {
+		blog.Errorf("session key %s not found, rid: %s", common.HTTPCookieBKToken, rid)
 		return user.LoginUser(c)
 	}
-	userName, ok := session.Get(common.WEBSessionUinKey).(string)
 
+	// check username
+	userName, ok := session.Get(common.WEBSessionUinKey).(string)
 	if !ok || "" == userName {
 		return user.LoginUser(c)
 	}
+
+	// check owner_uin
 	ownerID, ok := session.Get(common.WEBSessionOwnerUinKey).(string)
 	if !ok || "" == ownerID {
 		return user.LoginUser(c)
 	}
+
+	// check supplier_id
 	supplierID, ok := session.Get(common.WEBSessionSupplierID).(string)
 	if !ok || "" == supplierID {
 		return user.LoginUser(c)
@@ -162,9 +170,9 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 			bkTokenName = *bkPluginTokenName.(*string)
 		}
 	}
-	bk_token, err := c.Cookie(bkTokenName)
-	blog.Infof("valid user login session token %s, cookie token %s", cc_token, bk_token)
-	if nil != err || bk_token != cc_token {
+	bkToken, err := c.Cookie(bkTokenName)
+	blog.V(5).Infof("valid user login session token %s, cookie token %s, rid: %s", ccToken, bkToken, rid)
+	if nil != err || bkToken != ccToken {
 		return user.LoginUser(c)
 	}
 	return true

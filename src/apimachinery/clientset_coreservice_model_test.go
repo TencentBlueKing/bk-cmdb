@@ -558,7 +558,7 @@ func getReadModelAttrResult() string {
 				"isreadonly" : false,
 				"isonly" : true,
 				"bk_issystem" : false,
-				"creaet_time" : "2018-11-19T08:10:20.554Z"
+				"create_time" : "2018-11-19T08:10:20.554Z"
 			}]
 		}
 	}`
@@ -610,7 +610,7 @@ func getReadModelResult() string {
 						"isreadonly" : false,
 						"isonly" : true,
 						"bk_issystem" : false,
-						"creaet_time" : "2018-11-19T08:10:20.554Z"
+						"create_time" : "2018-11-19T08:10:20.554Z"
 					}]
 				}
 			 ]

@@ -7,6 +7,24 @@ export default {
         propertyGroups: {
             type: Array,
             required: true
+        },
+        uneditableProperties: {
+            type: Array,
+            default () {
+                return []
+            }
+        },
+        disabledProperties: {
+            type: Array,
+            default () {
+                return []
+            }
+        },
+        objectUnique: {
+            type: Array,
+            default () {
+                return []
+            }
         }
     },
     computed: {
@@ -28,7 +46,7 @@ export default {
                 ...metadataGroups,
                 {
                     'bk_group_id': 'none',
-                    'bk_group_name': this.$t('Common["更多属性"]')
+                    'bk_group_name': this.$t('更多属性')
                 }
             ]
             allGroups.forEach((group, index) => {
@@ -37,8 +55,13 @@ export default {
             return allGroups
         },
         $sortedProperties () {
+            const unique = this.objectUnique.find(unique => unique.must_check) || {}
+            const uniqueKeys = unique.keys || []
             const sortKey = 'bk_property_index'
-            const properties = this.properties.filter(property => !property['bk_isapi'])
+            const properties = this.properties.filter(property => {
+                return !property['bk_isapi']
+                    && !uniqueKeys.some(key => key.key_id === property.id)
+            })
             return properties.sort((propertyA, propertyB) => propertyA[sortKey] - propertyB[sortKey])
         },
         $groupedProperties () {

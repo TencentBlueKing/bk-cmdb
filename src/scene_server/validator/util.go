@@ -14,9 +14,9 @@ package validator
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/tidwall/gjson"
-	"gopkg.in/mgo.v2/bson"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -65,7 +65,8 @@ func FillLostedFieldValue(valData map[string]interface{}, propertys []metadata.A
 			case common.FieldTypeInt:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeEnum:
-				enumOptions := ParseEnumOption(field.Option)
+				// parse enum error. not set default value
+				enumOptions, _ := ParseEnumOption(field.Option)
 				if len(enumOptions) > 0 {
 					var defaultOption *EnumVal
 					for _, k := range enumOptions {
@@ -102,39 +103,34 @@ func FillLostedFieldValue(valData map[string]interface{}, propertys []metadata.A
 }
 
 // ParseEnumOption convert val to []EnumVal
-func ParseEnumOption(val interface{}) EnumOption {
+func ParseEnumOption(val interface{}) (EnumOption, error) {
 	enumOptions := []EnumVal{}
 	if nil == val || "" == val {
-		return enumOptions
+		return enumOptions, nil
 	}
 	switch options := val.(type) {
 	case []EnumVal:
-		return options
+		return options, nil
 	case string:
 		err := json.Unmarshal([]byte(options), &enumOptions)
 		if nil != err {
 			blog.Errorf("ParseEnumOption error : %s", err.Error())
+			return nil, errors.New("format error. " + err.Error())
 		}
-	case []interface{}:
-		for _, optionVal := range options {
-			if option, ok := optionVal.(map[string]interface{}); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-				enumOptions = append(enumOptions, enumOption)
-			} else if option, ok := optionVal.(bson.M); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-				enumOptions = append(enumOptions, enumOption)
-			}
+	default:
+		byteArr, err := json.Marshal(options)
+		if nil != err {
+			blog.Errorf("ParseEnumOption Marshal error : %s", err.Error())
+			return nil, errors.New("marshal options error. " + err.Error())
 		}
+		err = json.Unmarshal(byteArr, &enumOptions)
+		if nil != err {
+			blog.Errorf("ParseEnumOption Unmarshal error : %s", err.Error())
+			return nil, errors.New("unmarshal options error. " + err.Error())
+		}
+
 	}
-	return enumOptions
+	return enumOptions, nil
 }
 
 //parseMinMaxOption  parse int data in option

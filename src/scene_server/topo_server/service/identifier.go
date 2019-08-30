@@ -21,7 +21,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (s *topoService) ParseSearchIdentifierOriginData(data []byte) (mapstr.MapStr, error) {
+func (s *Service) ParseSearchIdentifierOriginData(data []byte) (mapstr.MapStr, error) {
 	rst := new(metadata.SearchIdentifierParam)
 	err := json.Unmarshal(data, &rst)
 	if nil != err {
@@ -32,15 +32,14 @@ func (s *topoService) ParseSearchIdentifierOriginData(data []byte) (mapstr.MapSt
 	return result, nil
 }
 
-// CreateInst create a new inst
-func (s *topoService) SearchIdentifier(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchIdentifier(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	param, ok := data["origin"].(*metadata.SearchIdentifierParam)
 	if !ok {
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "param not set")
 	}
-	retval, err := s.core.IdentifierOperation().SearchIdentifier(params, pathParams("obj_type"), param)
+	retVal, err := s.Core.IdentifierOperation().SearchIdentifier(params, pathParams("obj_type"), param)
 	if err != nil {
 		return nil, err
 	}
-	return retval.Data, nil
+	return retVal.Data, nil
 }

@@ -14,6 +14,7 @@ import (
 
 	"github.com/mongodb/mongo-go-driver/bson/bsonrw"
 	"github.com/mongodb/mongo-go-driver/bson/bsontype"
+	"github.com/mongodb/mongo-go-driver/bson/util"
 )
 
 var defaultStructCodec = &StructCodec{
@@ -176,6 +177,7 @@ func (sc *StructCodec) DecodeValue(r DecodeContext, vr bsonrw.ValueReader, val r
 			if err != nil {
 				return err
 			}
+
 			inlineMap.SetMapIndex(reflect.ValueOf(name), elem)
 			continue
 		}
@@ -185,6 +187,20 @@ func (sc *StructCodec) DecodeValue(r DecodeContext, vr bsonrw.ValueReader, val r
 			field = val.Field(fd.idx)
 		} else {
 			field = val.FieldByIndex(fd.inline)
+		}
+		if util.ExtendEmbeddedDocumentDecoder(vr.Type(), field) {
+			decoder, err := r.LookupDecoder(util.MapType)
+			if err == nil {
+				fd.decoder = decoder
+			}
+		}
+
+		// compatible with null value
+		if vr.Type() == bsontype.Null {
+			if err := vr.ReadNull(); err != nil {
+				return err
+			}
+			continue
 		}
 
 		if !field.CanSet() { // Being settable is a super set of being addressable.

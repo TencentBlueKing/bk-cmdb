@@ -18,13 +18,23 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
 // validCreateUnique  valid create unique
 func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
-	uniqueresp, err := valid.CoreAPI.ObjectController().Unique().Search(valid.ctx, valid.pheader, valid.objID)
+	inputParam := metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Offset: 0,
+			Limit:  common.BKNoLimit,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKObjIDField: valid.objID,
+		}),
+	}
+	uniqueresp, err := valid.CoreAPI.CoreService().Model().ReadModelAttrUnique(valid.ctx, valid.pheader, inputParam)
 	if nil != err {
 		blog.Errorf("[validCreateUnique] search [%s] unique error %v", valid.objID, err)
 		return err
@@ -34,12 +44,12 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		return valid.errif.New(uniqueresp.Code, uniqueresp.ErrMsg)
 	}
 
-	if 0 >= len(uniqueresp.Data) {
+	if 0 >= len(uniqueresp.Data.Info) {
 		blog.Warnf("[validCreateUnique] there're not unique constraint for %s, return", valid.objID)
 		return nil
 	}
 
-	for _, unique := range uniqueresp.Data {
+	for _, unique := range uniqueresp.Data.Info {
 		// retrieve unique value
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
@@ -78,7 +88,14 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 			cond.Field(common.BKObjIDField).Eq(valid.objID)
 		}
 
-		result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: cond.ToMapStr()})
+		inputParam := &metadata.QueryCondition{
+			Limit: metadata.SearchLimit{
+				Limit: common.BKNoLimit,
+			},
+			Condition: cond.ToMapStr(),
+		}
+		objectType := common.GetObjByType(valid.objID)
+		result, err := valid.CoreAPI.CoreService().Instance().ReadInstance(valid.ctx, valid.pheader, objectType, inputParam)
 		if nil != err {
 			blog.Errorf("[validCreateUnique] search [%s] inst error %v", valid.objID, err)
 			return err
@@ -99,7 +116,6 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 
 			return valid.errif.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
 		}
-
 	}
 
 	return nil
@@ -124,7 +140,16 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		mapData[key] = val
 	}
 
-	uniqueresp, err := valid.CoreAPI.ObjectController().Unique().Search(valid.ctx, valid.pheader, valid.objID)
+	inputParam := metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Offset: 0,
+			Limit:  common.BKNoLimit,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKObjIDField: valid.objID,
+		}),
+	}
+	uniqueresp, err := valid.CoreAPI.CoreService().Model().ReadModelAttrUnique(valid.ctx, valid.pheader, inputParam)
 	if nil != err {
 		blog.Errorf("[validUpdateUnique] search [%s] unique error %v", valid.objID, err)
 		return err
@@ -134,12 +159,12 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		return valid.errif.New(uniqueresp.Code, uniqueresp.ErrMsg)
 	}
 
-	if 0 >= len(uniqueresp.Data) {
+	if 0 >= len(uniqueresp.Data.Info) {
 		blog.Warnf("[validUpdateUnique] there're not unique constraint for %s, return", valid.objID)
 		return nil
 	}
 
-	for _, unique := range uniqueresp.Data {
+	for _, unique := range uniqueresp.Data.Info {
 		// retrive unique value
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
@@ -178,7 +203,14 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		}
 		cond.Field(common.GetInstIDField(objID)).NotEq(instID)
 
-		result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: cond.ToMapStr()})
+		inputParam := &metadata.QueryCondition{
+			Limit: metadata.SearchLimit{
+				Limit: common.BKNoLimit,
+			},
+			Condition: cond.ToMapStr(),
+		}
+		objType := common.GetObjByType(valid.objID)
+		result, err := valid.CoreAPI.CoreService().Instance().ReadInstance(valid.ctx, valid.pheader, objType, inputParam)
 		if nil != err {
 			blog.Errorf("[validUpdateUnique] search [%s] inst error %v", valid.objID, err)
 			return err
@@ -206,15 +238,19 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, error) {
 	objID := valid.objID
 	searchCond := make(map[string]interface{})
-
 	searchCond[common.GetInstIDField(objID)] = instID
 	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
-		objID = common.BKInnerObjIDObject
 		searchCond[common.BKObjIDField] = valid.objID
 	}
 
-	blog.V(4).Infof("[getInstDataByID] condition: %#v, objID %s ", searchCond, objID)
-	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond, Limit: common.BKNoLimit})
+	inputParam := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: searchCond,
+	}
+	blog.V(4).Infof("[getInstDataByID] condition: %#v, objID %s ", inputParam, objID)
+	result, err := valid.CoreAPI.CoreService().Instance().ReadInstance(valid.ctx, valid.pheader, objID, inputParam)
 	if nil != err {
 		return nil, err
 	}

@@ -19,7 +19,6 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -36,14 +35,12 @@ func (lgc *Logics) GetObjectData(ownerID, objID string, header http.Header, meta
 	}
 
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectData(context.Background(), header, condition)
-
 	if nil != err {
-		blog.Errorf("failed to parse the code, error info is %s ", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("get object data failed, err: %v", err)
 	}
 
-	if false == result.Result {
-		return nil, fmt.Errorf(result.ErrMsg)
+	if !result.Result {
+		return nil, fmt.Errorf("get object data failed, but got err: %s", result.ErrMsg)
 	}
 
 	return result.Data[objID].Attr, nil
@@ -52,18 +49,17 @@ func (lgc *Logics) GetObjectData(ownerID, objID string, header http.Header, meta
 
 func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 	var fieldType = map[string]string{
-		"bk_property_id":         lang.Language("val_type_text"), //"文本",
-		"bk_property_name":       lang.Language("val_type_text"), //"文本",
-		"bk_property_type":       lang.Language("val_type_text"), //"文本",
-		"bk_property_group_name": lang.Language("val_type_text"), // 文本
-		"option":                 lang.Language("val_type_text"), //"文本",
-		"unit":                   lang.Language("val_type_text"), //"文本",
-		"description":            lang.Language("val_type_text"), //"文本",
-		"placeholder":            lang.Language("val_type_text"), //"文本",
-		"editable":               lang.Language("val_type_bool"), //"布尔",
-		"isrequired":             lang.Language("val_type_bool"), //"布尔",
-		"isreadonly":             lang.Language("val_type_bool"), //"布尔",
-		"isonly":                 lang.Language("val_type_bool"), //"布尔",
+		"bk_property_id":         lang.Language("val_type_text"), // "文本",
+		"bk_property_name":       lang.Language("val_type_text"), // "文本",
+		"bk_property_type":       lang.Language("val_type_text"), // "文本",
+		"bk_property_group_name": lang.Language("val_type_text"), //  文本
+		"option":                 lang.Language("val_type_text"), // "文本",
+		"unit":                   lang.Language("val_type_text"), // "文本",
+		"description":            lang.Language("val_type_text"), // "文本",
+		"placeholder":            lang.Language("val_type_text"), // "文本",
+		"editable":               lang.Language("val_type_bool"), // "布尔",
+		"isrequired":             lang.Language("val_type_bool"), // "布尔",
+		"isreadonly":             lang.Language("val_type_bool"), // "布尔",
 	}
 	return fieldType
 }
@@ -71,18 +67,17 @@ func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 
 	var fields = map[string]string{
-		"bk_property_id":         lang.Language("web_en_name_required"),       //"英文名(必填)",
-		"bk_property_name":       lang.Language("web_bk_alias_name_required"), //"中文名(必填)",
-		"bk_property_type":       lang.Language("web_bk_data_type_required"),  //"数据类型(必填)",
-		"bk_property_group_name": lang.Language("property_group"),             // 字段分组
-		"option":                 lang.Language("property_option"),            //"数据配置",
-		"unit":                   lang.Language("unit"),                       //"单位",
-		"description":            lang.Language("desc"),                       //"描述",
-		"placeholder":            lang.Language("placeholder"),                //"提示",
-		"editable":               lang.Language("is_editable"),                //"是否可编辑",
-		"isrequired":             lang.Language("property_is_required"),       //"是否必填",
-		"isreadonly":             lang.Language("property_is_readonly"),       //"是否只读",
-		"isonly":                 lang.Language("property_is_only"),           //"是否唯一",
+		"bk_property_id":         lang.Language("web_en_name_required"),       // "英文名(必填)",
+		"bk_property_name":       lang.Language("web_bk_alias_name_required"), // "中文名(必填)",
+		"bk_property_type":       lang.Language("web_bk_data_type_required"),  // "数据类型(必填)",
+		"bk_property_group_name": lang.Language("property_group"),             //  字段分组
+		"option":                 lang.Language("property_option"),            // "数据配置",
+		"unit":                   lang.Language("unit"),                       // "单位",
+		"description":            lang.Language("desc"),                       // "描述",
+		"placeholder":            lang.Language("placeholder"),                // "提示",
+		"editable":               lang.Language("is_editable"),                // "是否可编辑",
+		"isrequired":             lang.Language("property_is_required"),       // "是否必填",
+		"isreadonly":             lang.Language("property_is_readonly"),       // "是否只读",
 	}
 
 	return fields

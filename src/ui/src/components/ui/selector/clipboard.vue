@@ -1,8 +1,8 @@
 <template>
     <bk-dropdown-menu trigger="click" :disabled="disabled">
-        <bk-button class="clipboard-trigger" type="default" slot="dropdown-trigger"
+        <bk-button class="clipboard-trigger" theme="default" slot="dropdown-trigger"
             :disabled="disabled">
-            {{$t('Common["复制"]')}}
+            {{$t('复制')}}
             <i class="bk-icon icon-angle-down"></i>
         </bk-button>
         <ul class="clipboard-list" slot="dropdown-content">

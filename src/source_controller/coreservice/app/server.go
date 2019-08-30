@@ -18,13 +18,10 @@ import (
 	"os"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/coreservice/app/options"
@@ -60,9 +57,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	coreService := coresvr.New()
 	coreSvr.Service = coreService
 
-	webhandler := restful.NewContainer().Add(coreService.WebService())
-	webhandler.ServiceErrorHandler(rdapi.ServiceErrorHandler)
-
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: coreSvr.onCoreServiceConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
@@ -77,16 +71,19 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	var configReady bool
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if "" == coreSvr.Config.Mongo.Address {
+		// redis not found
+		if "" == coreSvr.Config.Redis.Address {
 			time.Sleep(time.Second)
-		} else {
-			configReady = true
-			break
+			continue
 		}
+
+		configReady = true
+		break
+
 	}
 
 	if false == configReady {
-		return fmt.Errorf("Configuration item not found")
+		return fmt.Errorf("configuration item not found")
 	}
 
 	coreSvr.Core = engine
@@ -94,7 +91,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return err
 	}
-	if err := backbone.StartServer(ctx, engine, webhandler); err != nil {
+	if err := backbone.StartServer(ctx, engine, coreService.WebService()); err != nil {
 		return err
 	}
 	select {

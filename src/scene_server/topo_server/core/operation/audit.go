@@ -18,15 +18,12 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-const CCTimeTypeParseFlag = "cc_time_type"
-
 type AuditOperationInterface interface {
-	Query(params types.ContextParams, data mapstr.MapStr) (interface{}, error)
+	Query(params types.ContextParams, query metadata.QueryInput) (interface{}, error)
 }
 
 // NewAuditOperation create a new inst operation instance
@@ -40,74 +37,23 @@ type audit struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (a *audit) TranslateOpLanguage(params types.ContextParams, input interface{}) mapstr.MapStr {
-
-	data, err := mapstr.NewFromInterface(input)
+func (a *audit) Query(params types.ContextParams, query metadata.QueryInput) (interface{}, error) {
+	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), params.Header, query)
 	if nil != err {
-		blog.Errorf("failed to transate, error info is %s", err.Error())
-		return data
-	}
-
-	info, err := data.MapStrArray("info")
-	if nil != err {
-		return data
-	}
-
-	for _, row := range info {
-
-		opDesc, err := row.String(common.BKOpDescField)
-		if nil != err {
-			continue
-		}
-		newDesc := params.Lang.Language("auditlog_" + opDesc)
-		if "" == newDesc {
-			continue
-		}
-		row.Set(common.BKOpDescField, newDesc)
-	}
-	return data
-}
-
-func (a *audit) Query(params types.ContextParams, data mapstr.MapStr) (interface{}, error) {
-
-	query := &metadata.QueryInput{}
-	if err := data.MarshalJSONInto(query); nil != err {
-		blog.Errorf("[audit] failed to parse the input (%#v), error info is %s", data, err.Error())
-		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
-	}
-
-	iConds := query.Condition
-	if nil == iConds {
-		query.Condition = common.KvMap{common.BKOwnerIDField: params.SupplierAccount}
-	} else {
-		conds := iConds.(map[string]interface{})
-		times, ok := conds[common.BKOpTimeField].([]interface{})
-		if ok {
-			if 2 != len(times) {
-				blog.Errorf("search operation log input params times error, info: %v", times)
-				return nil, params.Err.Error(common.CCErrCommParamsInvalid)
-			}
-
-			conds[common.BKOpTimeField] = common.KvMap{"$gte": times[0], "$lte": times[1], CCTimeTypeParseFlag: "1"}
-			//delete(conds, "Time")
-		}
-		conds[common.BKOwnerIDField] = params.SupplierAccount
-		query.Condition = conds
-	}
-	if 0 == query.Limit {
-		query.Limit = common.BKDefaultLimit
-	}
-
-	rsp, err := a.clientSet.AuditController().GetAuditLog(context.Background(), params.Header, query)
-	if nil != err {
-		blog.Errorf("[audit] failed request audit conroller, error info is %s", err.Error())
+		blog.Errorf("[audit] failed request audit controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[audit] failed request audit controller, error info is %s", rsp.ErrMsg)
-		return nil, params.Err.New(common.CCErrAuditTakeSnapshotFaile, rsp.ErrMsg)
+		blog.Errorf("[audit] failed request audit controller, error info is %s, rid: %s", rsp.ErrMsg, params.ReqID)
+		return nil, params.Err.New(common.CCErrAuditTakeSnapshotFailed, rsp.ErrMsg)
 	}
 
-	return a.TranslateOpLanguage(params, rsp.Data), nil
+	for index := range rsp.Data.Info {
+		if desc := params.Lang.Language("auditlog_" + rsp.Data.Info[index].OpDesc); len(desc) > 0 {
+			rsp.Data.Info[index].OpDesc = desc
+		}
+	}
+
+	return rsp.Data, nil
 }

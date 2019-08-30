@@ -135,5 +135,24 @@ func (s *SynchronizeClearDataParameter) Legality(key string) bool {
 
 // GenerateSign generate sign
 func (s *SynchronizeClearDataParameter) signContext(key string) string {
-	return fmt.Sprintf("key-%s-%d-%d", key, s.SynchronizeFlag, s.Tamestamp, s.Version)
+	return fmt.Sprintf("key-%s-%s-%d-%d", key, s.SynchronizeFlag, s.Tamestamp, s.Version)
+}
+
+// SetIdenifierFlag update idenifier flag data
+type SetIdenifierFlag struct {
+	DataType SynchronizeOperateDataType `json:"data_type"`
+	// DataType = SynchronizeOperateDataTypeInstance,
+	// DataType = object_id,  eg:host,plat,module,proc etc.
+	// DataType = SynchronizeOperateDataTypeModel,
+	// DataClassify = common.SynchronizeModelDescTypeGroupInfo,common.SynchronizeModelDescTypeModuleAttribute etc
+	DataClassify string `json:"data_classify"`
+
+	IdentifierID []int64 `json:"identifier_id"`
+
+	// 需要同步到第三方系统的身份标志
+	Flag string `json:"flag"`
+	// 1:新增,在原有的基础新加同步标志。
+	// 2:覆盖，删除 原有的同步标志
+	// 3:删除, 删除同步标志
+	OperateType SynchronizeOperateType `json:"op_type"`
 }

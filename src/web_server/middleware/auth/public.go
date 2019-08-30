@@ -31,6 +31,8 @@ type publicAuth struct {
 
 // ValidResAccess valid resource access privilege
 func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromGinContext(c)
 	var userName string
 	session := sessions.Default(c)
 	role := session.Get("role")
@@ -46,7 +48,7 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 	}
 	iuserName := session.Get(common.WEBSessionUinKey)
 	if nil == iuserName {
-		blog.Error("user name error")
+		blog.Errorf("user name error, rid: %s", rid)
 		return false
 	}
 
@@ -62,7 +64,7 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		if pathArr[len(pathArr)-1] == userName {
 			return true
 		}
-		blog.Error("privilege user name error")
+		blog.Errorf("privilege user name error, rid: %s", rid)
 		return false
 	}
 	// search classfication return true
@@ -193,9 +195,9 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 
 	// valid resource config
 	if strings.HasSuffix(pathStr, types.ResPattern) || pathStr == types.ImportHosts {
-		blog.Debug("valid resource config: %v", pathStr)
+		blog.Debug("valid resource config: %v, rid: %s", pathStr, rid)
 		sysPrivi := session.Get("sysPrivi")
-		return validSysConfigPrivi(sysPrivi, types.BK_CC_RESOURCE)
+		return validSysConfigPrivi(ctx, sysPrivi, types.BK_CC_RESOURCE)
 
 	}
 
@@ -204,12 +206,12 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		est := c.GetHeader(common.BKAppIDField)
 		if "" == est {
 			// common inst op valid
-			modelPrivi := session.Get("modelPrivi").(string)
+			modelPrivi := util.GetStrByInterface(session.Get("modelPrivi"))
 			if 0 == len(modelPrivi) {
-				blog.Error("get model privilege json error")
+				blog.Errorf("get model privilege json error, rid: %s", rid)
 				return false
 			}
-			return validModelConfigPrivi(modelPrivi, method, pathArr)
+			return validModelConfigPrivi(ctx, modelPrivi, method, pathArr)
 		} else {
 			// mainline inst op valid
 			var objName string
@@ -219,45 +221,46 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 			} else {
 				objName = pathArr[len(pathArr)-2]
 			}
-			mainLineObjIDStr := session.Get("mainLineObjID").(string)
+
+			mainLineObjIDStr := util.GetStrByInterface(session.Get("mainLineObjID"))
 			err := json.Unmarshal([]byte(mainLineObjIDStr), &mainLineObjIDArr)
 			if nil != err {
-				blog.Error("get main line object id array false")
+				blog.Errorf("get main line object id array false, rid: %s", rid)
 				return false
 			}
 			if util.InStrArr(mainLineObjIDArr, objName) {
-				//goo main line common object valid
+				// goo main line common object valid
 				goto appvalid
 			}
 
 		}
 
-		blog.Error("valid inst error")
+		blog.Errorf("valid inst error, rid: %s", rid)
 		return false
 
 	}
 
-	//valid inst import privilege
+	// valid inst import privilege
 	if strings.Contains(pathStr, types.BK_INSTSI) && !strings.Contains(pathStr, types.BK_IMPORT) {
 		est := c.GetHeader(common.BKAppIDField)
 		if "" == est {
-			modelPrivi := session.Get("modelPrivi").(string)
+			modelPrivi := util.GetStrByInterface(session.Get("modelPrivi"))
 			if 0 == len(modelPrivi) {
-				blog.Error("get model privilege json error")
+				blog.Errorf("get model privilege json error, rid: %s", rid)
 				return false
 			}
-			return validInstsOpPrivi(modelPrivi, method, pathArr)
+			return validInstsOpPrivi(ctx, modelPrivi, method, pathArr)
 		}
-		blog.Error("valid inst error")
+		blog.Errorf("valid inst error, rid: %s", rid)
 		return false
 
 	}
 
 	if len(pathArr) > 3 {
-		//valid system config exclude resource
+		// valid system config exclude resource
 		path3 := pathArr[3]
 		if util.InArray(path3, types.BK_CC_MODEL_PRE) {
-			//only admin config model privilege
+			// only admin config model privilege
 			if "1" == role {
 				return true
 			} else {
@@ -265,12 +268,12 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 			}
 		}
 		if util.InArray(path3, types.BK_CC_EVENT_PRE) {
-			//valid event config privilege
+			// valid event config privilege
 			sysPrivi := session.Get("sysPrivi")
-			return validSysConfigPrivi(sysPrivi, types.BK_CC_EVENT)
+			return validSysConfigPrivi(ctx, sysPrivi, types.BK_CC_EVENT)
 		}
 		if util.InArray(path3, types.BK_CC_AUDIT_PRE) {
-			//valid event config privilege
+			// valid event config privilege
 			return true
 			//			sysPrivi := session.Get("sysPrivi")
 			//			return validSysConfigPrivi(sysPrivi, BK_CC_AUDIT)
@@ -278,7 +281,7 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 
 	}
 
-	//valid biz operation privilege
+	// valid biz operation privilege
 appvalid:
 	return validAppConfigPrivi(c, method, pathStr)
 

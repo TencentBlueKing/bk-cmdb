@@ -187,7 +187,7 @@ func (r *Request) Do() *Result {
 	}
 
 	maxRetryCycle := 3
-	retries := 0
+	var retries int
 
 	hosts, err := r.capability.Discover.GetServers()
 	if err != nil {

@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/mapstr"
 
 	"configcenter/src/common"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 
@@ -143,4 +144,20 @@ func TestIssue1738(t *testing.T) {
 	result, err = outCond.ToSQL()
 	require.NoError(t, err)
 	t.Logf("sql_1738:%s", result)
+}
+
+func TestNewConditionFromMapStrFromCommonCondition(t *testing.T) {
+	type tmpStruct struct {
+		A int
+	}
+
+	target := condition.CreateCondition()
+	target.Field("eq").Eq(1)
+	target.Field("int_arr").Eq([]int{1, 2, 4})
+	target.Field("str_arr").Eq([]string{"1", "2", "4"})
+	target.Field("struct").Eq(tmpStruct{A: 1})
+	target.Field("struct_arr").Eq([]tmpStruct{tmpStruct{A: 1}})
+
+	_, err := mongo.NewConditionFromMapStr(target.ToMapStr())
+	require.NoError(t, err)
 }

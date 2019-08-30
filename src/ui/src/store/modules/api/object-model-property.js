@@ -40,7 +40,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteObjectAttribute ({ commit, state, dispatch }, { id, config }) {
-        return $http.delete(`delete/objectattr/${id}`)
+        return $http.delete(`delete/objectattr/${id}`, config)
     },
 
     /**

@@ -1,23 +1,24 @@
 <template>
     <div class="update-wrapper">
         <div class="update-box">
-            <ul class="update-event-form" v-model="curPush">
+            <ul class="update-event-form">
                 <li class="update-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["任务名称"]')}}<span class="color-danger">*</span>
+                        {{ $t('任务名称')}}<span class="color-danger">*</span>
                     </label>
                     <div class="update-item-content">
-                        <input type="text"
+                        <bk-input type="text"
                             v-model="curPush.bk_task_name"
                             name="taskName"
-                            v-validate="'required|singlechar'"
+                            v-validate="'required|singlechar|length:256'"
                             class="cmdb-form-input">
+                        </bk-input>
                     </div>
                     <span v-show="errors.has('taskName')" class="color-danger">{{ errors.first('taskName') }}</span>
                 </li>
                 <li class="update-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["账号类型"]')}}<span class="color-danger">*</span>
+                        {{ $t('账号类型')}}<span class="color-danger">*</span>
                     </label>
                     <div class="update-item-content">
                         <cmdb-selector
@@ -25,103 +26,111 @@
                             v-model="curPush.bk_account_type"
                             name="accountType"
                             v-validate="'required'"
-                            :placeholder="$t('Cloud[\'请选择账号类型\']')"
+                            :placeholder="$t('请选择账号类型')"
                         ></cmdb-selector>
                     </div>
                     <span v-show="errors.has('accountType')" class="error-info color-danger">{{ errors.first('accountType') }}</span>
                 </li>
                 <li class="update-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["ID"]')}}<span class="color-danger">*</span>
+                        {{ $t('ID')}}<span class="color-danger">*</span>
                     </label>
                     <div class="update-item-content">
-                        <input type="text"
+                        <bk-input type="text"
                             v-model="curPush.bk_secret_id"
                             name="ID"
-                            v-validate="'required|singlechar'"
-                            class="cmdb-form-input"/>
+                            v-validate="'required|singlechar|length:256'"
+                            class="cmdb-form-input">
+                        </bk-input>
                     </div>
                     <span v-show="errors.has('ID')" class="color-danger">{{ errors.first('ID') }}</span>
                 </li>
                 <li class="update-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["Key"]')}}<span class="color-danger">*</span>
+                        {{ $t('Key')}}<span class="color-danger">*</span>
                         <a class="set"
-                           href="https://cloud.tencent.com/document/api/213/15692"
-                           target="_blank">{{ $t('Cloud["如何获取ID和Key?"]')}}
+                            href="https://cloud.tencent.com/document/api/213/15692"
+                            target="_blank">{{$t('如何获取ID和Key?')}}
                         </a>
                     </label>
                     <div class="update-item-content">
-                        <input v-model="curPush.bk_secret_key"
-                               class="cmdb-form-input"
-                               type="password"/>
+                        <bk-input v-model="curPush.bk_secret_key"
+                            class="cmdb-form-input"
+                            type="password">
+                        </bk-input>
                     </div>
                 </li>
                 <li class="form-item-two">
-                    <label for="" class="label-name-two">{{ $t('Cloud["同步周期"]')}}</label>
+                    <label for="" class="label-name-two">{{ $t('同步周期')}}</label>
                     <div class="item-content-two length-short">
-                        <bk-selector class="selector"
-                            :list="periodList"
-                            :selected.sync="curPush.bk_period_type"
-                        ></bk-selector>
-                        <input type="text"
+                        <bk-select class="selector"
+                            v-model="curPush.bk_period_type">
+                            <bk-option v-for="(option, index) in periodList"
+                                :key="index"
+                                :id="option.id"
+                                :name="option.name">
+                            </bk-option>
+                        </bk-select>
+                        <bk-input type="text"
                             class="cmdb-form-input"
                             v-model="curPush.bk_period"
                             v-if="curPush.bk_period_type === 'day'"
                             name="day"
                             v-validate="'required|dayFormat'"
-                            :placeholder="$t('Cloud[\'例如: 19:30\']')"/>
-                        <input type="text"
+                            :placeholder="$t('例如: 19:30')">
+                        </bk-input>
+                        <bk-input type="text"
                             class="cmdb-form-input"
                             v-model="curPush.bk_period"
                             v-if="curPush.bk_period_type === 'hour'"
                             name="hour"
                             v-validate="'required|hourFormat'"
-                            :placeholder="$t('Cloud[\'例如: 30\']')">
+                            :placeholder="$t('例如: 30')">
+                        </bk-input>
                         <div v-show="errors.has('day')" class="update-error-info color-danger">{{ errors.first('day') }}</div>
                         <div v-show="errors.has('hour')" class="update-error-info color-danger">{{ errors.first('hour') }}</div>
                     </div>
                 </li>
                 <li class="update-form-item">
-                    <label for="" class="label-name">{{ $t('Cloud["任务维护人"]')}}</label>
+                    <label for="" class="label-name">{{ $t('任务维护人')}}</label>
                     <cmdb-form-objuser
                         class="fl maintain-selector"
                         v-model="curPush.bk_account_admin"
                         :multiple="true"
                         name="maintain"
-                        v-validate="'required|singlechar'">
+                        v-validate="'required|singlechar|length:256'">
                     </cmdb-form-objuser>
                     <span v-show="errors.has('maintain')" class="color-danger">{{ errors.first('maintain') }}</span>
                 </li>
                 <li>
-                    <label>{{ $t('Cloud["同步资源"]')}}</label>
+                    <label>{{ $t('同步资源')}}</label>
                     <div>
                         <label class="cmdb-form-checkbox">
                             <input type="checkbox" value="host" v-model="curPush.bk_obj_id" disabled>
-                            <span class="cmdb-checkbox-text">{{ $t('Hosts["主机"]')}}</span>
+                            <span class="cmdb-checkbox-text">{{ $t('主机')}}</span>
                         </label>
                     </div>
                 </li>
                 <li>
-                    <div class="u-resource-confirm">{{ $t('Cloud["资源自动确认"]')}}
-                        <span class="span-text">{{ $t('Cloud["(不勾选，发现实例将不需要确认直接录入主机资源池)"]')}}</span>
+                    <div class="u-resource-confirm">{{ $t('资源自动确认')}}
+                        <span class="span-text">{{ $t('(不勾选，发现实例将不需要确认直接录入主机资源池)')}}</span>
                     </div>
                     <div>
                         <label class="cmdb-form-checkbox">
                             <input type="checkbox" v-model="curPush.bk_confirm">
-                            <span class="cmdb-checkbox-text">{{ $t('Cloud["新增需要确认"]')}}</span>
+                            <span class="cmdb-checkbox-text">{{ $t('新增需要确认')}}</span>
                         </label>
                         <label class="cmdb-form-checkbox">
                             <input type="checkbox" v-model="curPush.bk_attr_confirm">
-                            <span class="cmdb-checkbox-text">{{ $t('Cloud["属性变化需要确认"]')}}</span>
+                            <span class="cmdb-checkbox-text">{{ $t('属性变化需要确认')}}</span>
                         </label>
                     </div>
                 </li>
             </ul>
         </div>
         <footer class="footer">
-            <bk-button type="primary" :loading="$loading('savePush')" class="btn" @click="update">{{$t('Common["保存"]')}}</bk-button>
-            <bk-button type="default" class="btn vice-btn" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
+            <bk-button theme="primary" :loading="$loading('savePush')" class="btn" @click="update">{{$t('保存')}}</bk-button>
+            <bk-button theme="default" class="btn vice-btn" @click="cancel">{{$t('取消')}}</bk-button>
         </footer>
     </div>
 </template>
@@ -144,18 +153,33 @@
                 placeholder: '',
                 cloudList: [{
                     id: 'tencent_cloud',
-                    name: this.$t('Cloud["腾讯云"]')
+                    name: this.$t('腾讯云')
                 }],
                 periodList: [{
                     id: 'minute',
-                    name: this.$t('Cloud["每五分钟"]')
+                    name: this.$t('每五分钟')
                 }, {
                     id: 'hour',
-                    name: this.$t('Cloud["每小时"]')
+                    name: this.$t('每小时')
                 }, {
                     id: 'day',
-                    name: this.$t('Cloud["每天"]')
+                    name: this.$t('每天')
                 }]
+            }
+        },
+        watch: {
+            'curPush.bk_period_type' () {
+                if (this.curPush.bk_period_type === 'hour') {
+                    this.placeholder = this.$t('例如: 30')
+                } else {
+                    this.placeholder = this.$t('例如: 19:30')
+                }
+            },
+            'curPush': {
+                handler () {
+                    this.tips = true
+                },
+                deep: true
             }
         },
         methods: {
@@ -165,11 +189,10 @@
                 if (!isValidate) {
                     return
                 }
-                let params = this.curPush
-                let res = null
-                res = await this.updateCloudTask({params: params, config: {requestId: 'savePush'}})
+                const params = this.curPush
+                await this.updateCloudTask({ params: params, config: { requestId: 'savePush' } })
                 this.$emit('saveSuccess')
-                this.$success(this.$t('EventPush["修改成功"]'))
+                this.$success(this.$t('修改成功'))
             },
             cancel () {
                 this.$emit('cancel')
@@ -179,21 +202,6 @@
                     return true
                 }
                 return false
-            }
-        },
-        watch: {
-            'curPush.bk_period_type' () {
-                if (this.curPush.bk_period_type === 'hour') {
-                    this.placeholder = this.$t('Cloud["例如: 30"]')
-                } else {
-                    this.placeholder = this.$t('Cloud["例如: 19:30"]')
-                }
-            },
-            'curPush': {
-                handler () {
-                    this.tips = true
-                },
-                deep: true
             }
         }
     }

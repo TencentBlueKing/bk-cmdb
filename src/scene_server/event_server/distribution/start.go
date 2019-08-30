@@ -19,11 +19,10 @@ import (
 	"sync"
 	"time"
 
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
@@ -39,7 +38,7 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) 
 
 	eh := &EventHandler{cache: cache}
 	go func() {
-		chErr <- eh.StartHandleInsts()
+		chErr <- eh.Run()
 	}()
 
 	dh := &DistHandler{cache: cache, db: db, ctx: ctx}
@@ -49,17 +48,17 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) 
 
 	ih := identifier.NewIdentifierHandler(ctx, cache, db)
 	go func() {
-		chErr <- ih.StartHandleInsts()
+		chErr <- ih.Run()
 	}()
 
-	go cleanOutdateEvents(cache)
+	go cleanExpiredEvents(cache)
 
 	if rc != nil {
 		th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, committed: make(chan string, 100), shouldClose: util.NewBool(false)}
 		go func() {
 			for {
 				if err := th.Run(); err != nil {
-					blog.Errorf("TxnHandler stoped with error: %v, we will try 1s later", err)
+					blog.Errorf("TxnHandler stopped with error: %v, we will try 1s later", err)
 				}
 				time.Sleep(time.Second)
 			}
@@ -86,7 +85,7 @@ func migrateIDToMongo(ctx context.Context, cache *redis.Client, db dal.RDB) erro
 		return err
 	}
 
-	docs := mapstr.MapStr{
+	docs := map[string]interface{}{
 		"_id":        common.EventCacheEventIDKey,
 		"SequenceID": id,
 	}

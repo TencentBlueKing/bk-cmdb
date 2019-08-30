@@ -13,9 +13,11 @@
 package types
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/rentiansheng/bk_bson/bson"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,5 +70,97 @@ func TestDecodeArray(t *testing.T) {
 		require.Equal(t, v.Name, expect[index].Name)
 		require.Equal(t, v.Time.Format("2006-01-02 15:04:05"), expect[index].Time.Format("2006-01-02 15:04:05"))
 	}
+
+}
+
+func TestDecodeSubStruct(t *testing.T) {
+	type SubStruct struct {
+		AA map[string]interface{}
+	}
+	type MainStruct struct {
+		S    SubStruct
+		Name string
+		Time time.Time
+	}
+
+	ss := SubStruct{
+		AA: map[string]interface{}{"1": 1, "2": "bbb"},
+	}
+	ms := MainStruct{
+		S:    ss,
+		Name: "test",
+		Time: time.Now(),
+	}
+
+	msbytes, err := bson.Marshal(ms)
+	if err != nil {
+		panic(err)
+	}
+
+	tmpMap := make(map[string]interface{}, 0)
+	err = bson.Unmarshal(msbytes, &tmpMap)
+	if err != nil {
+		panic(err)
+	}
+
+	msbytes, err = bson.Marshal(tmpMap)
+	if err != nil {
+		panic(err)
+	}
+
+	out := MainStruct{}
+	err = bson.Unmarshal(msbytes, &out)
+	if err != nil {
+		panic(err)
+	}
+
+	outArr := []MainStruct{}
+	elemt := reflect.ValueOf(outArr).Type().Elem()
+
+	elem := reflect.New(elemt)
+	err = bson.Unmarshal(msbytes, elem.Interface())
+	if err != nil {
+		panic(err)
+	}
+
+	resultv := reflect.ValueOf(&outArr)
+	slicev := resultv.Elem()
+	slicev = slicev.Slice(0, slicev.Cap())
+	elemt2 := slicev.Type().Elem()
+
+	elem2 := reflect.New(elemt2)
+	err = bson.Unmarshal(msbytes, elem2.Interface())
+	if err != nil {
+		panic(err)
+	}
+
+	t.Logf("%#v   %#v  %#v", out, elem, elem2)
+}
+
+// Classification the classification metadata definition
+type Classification struct {
+	//Name int64     `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
+	Time time.Time `field:"last_time"  json:"last_time" bson:"last_time"`
+}
+
+type Time time.Time
+
+func TestStruct(t *testing.T) {
+	docItem := map[string]interface{}{
+
+		"last_time": "2018-11-16T08:18:13.946Z",
+	}
+
+	out, err := bson.Marshal(docItem)
+	if nil != err {
+		t.Errorf("Decode array error when marshal: %v, source is %s", err, docItem)
+	}
+
+	newData := &Classification{}
+	err = bson.Unmarshal(out, newData)
+	if nil != err {
+		t.Errorf("Decode array error when unmarshal: %v, source is %v", err, newData)
+	}
+	t.Log(newData)
 
 }

@@ -15,9 +15,9 @@ package errors
 // EmptyErrorsSetting empty errors setting
 var EmptyErrorsSetting = map[string]ErrorCode{}
 
-// New create new CCErrorIf instance,
+// NewFactory create new CCErrorIf instance,
 // dir is directory of errors description resource
-func New(dir string) (CCErrorIf, error) {
+func NewFactory(dir string) (CCErrorIf, error) {
 
 	tmp := &ccErrorHelper{errCode: make(map[string]ErrorCode)}
 

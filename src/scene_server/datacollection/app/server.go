@@ -20,8 +20,6 @@ import (
 	"sync"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -31,8 +29,10 @@ import (
 	"configcenter/src/scene_server/datacollection/datacollection"
 	"configcenter/src/scene_server/datacollection/logics"
 	svc "configcenter/src/scene_server/datacollection/service"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/remote"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
@@ -68,21 +68,26 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			continue
 		}
 
-		instance, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+		var mgoCli dal.RDB
+		if process.Config.MongoDB.Enable == "true" {
+			mgoCli, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+		} else {
+			mgoCli, err = remote.NewWithDiscover(process.Core)
+		}
 		if err != nil {
 			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 		}
 
 		esbChan := make(chan esbutil.EsbConfig, 1)
 		esbChan <- process.Config.Esb
-		esb, err := esbserver.NewEsb(engine.ApiMachineryConfig(), esbChan)
+		esb, err := esbserver.NewEsb(engine.ApiMachineryConfig(), esbChan, nil, engine.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new esb client failed, err: %s", err.Error())
 		}
 
-		process.Service.Logics = logics.NewLogics(ctx, service.Engine, instance, esb)
+		process.Service.Logics = logics.NewLogics(ctx, service.Engine, mgoCli, esb)
 
-		err = datacollection.NewDataCollection(ctx, process.Config, process.Core).Run()
+		err = datacollection.NewDataCollection(ctx, process.Config, process.Core, engine.Metric().Registry()).Run()
 		if err != nil {
 			return fmt.Errorf("run datacollection routine failed %s", err.Error())
 		}
@@ -90,11 +95,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	blog.InfoJSON("process started with info %s", svrInfo)
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
 		return err
 	}
 	<-ctx.Done()
-	blog.V(0).Info("process stoped")
+	blog.V(0).Info("process stopped")
 	return nil
 }
 
@@ -113,21 +118,21 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		if h.Config == nil {
 			h.Config = new(options.Config)
 		}
-
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
+		// ignore err, cause ConfigMap is map[string]string
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
 		blog.V(3).Infof("config updated: \n%s", out)
 
-		dbprefix := "mongodb"
-		mongoConf := mongo.ParseConfigFromKV(dbprefix, current.ConfigMap)
+		dbPrefix := "mongodb"
+		mongoConf := mongo.ParseConfigFromKV(dbPrefix, current.ConfigMap)
 		h.Config.MongoDB = mongoConf
 
-		ccredisPrefix := "redis"
-		redisConf := redis.ParseConfigFromKV(ccredisPrefix, current.ConfigMap)
+		ccRedisPrefix := "redis"
+		redisConf := redis.ParseConfigFromKV(ccRedisPrefix, current.ConfigMap)
 		h.Config.CCRedis = redisConf
 
 		snapPrefix := "snap-redis"
-		snapredisConf := redis.ParseConfigFromKV(snapPrefix, current.ConfigMap)
-		h.Config.SnapRedis.Config = snapredisConf
+		snapRedisConf := redis.ParseConfigFromKV(snapPrefix, current.ConfigMap)
+		h.Config.SnapRedis.Config = snapRedisConf
 		h.Config.SnapRedis.Enable = current.ConfigMap[snapPrefix+".enable"]
 
 		discoverPrefix := "discover-redis"
@@ -135,10 +140,10 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.DiscoverRedis.Config = discoverRedisConf
 		h.Config.SnapRedis.Enable = current.ConfigMap[discoverPrefix+".enable"]
 
-		netcollectPrefix := "netcollect-redis"
-		netcollectRedisConf := redis.ParseConfigFromKV(netcollectPrefix, current.ConfigMap)
-		h.Config.NetcollectRedis.Config = netcollectRedisConf
-		h.Config.SnapRedis.Enable = current.ConfigMap[netcollectPrefix+".enable"]
+		netCollectPrefix := "netcollect-redis"
+		netCollectRedisConf := redis.ParseConfigFromKV(netCollectPrefix, current.ConfigMap)
+		h.Config.NetCollectRedis.Config = netCollectRedisConf
+		h.Config.SnapRedis.Enable = current.ConfigMap[netCollectPrefix+".enable"]
 
 		esbPrefix := "esb"
 		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]

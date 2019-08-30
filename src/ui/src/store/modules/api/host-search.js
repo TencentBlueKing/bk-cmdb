@@ -27,7 +27,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchHost ({ commit, state, dispatch }, {params, config}) {
+    searchHost ({ commit, state, dispatch }, { params, config }) {
         return $http.post(`hosts/search`, params, config)
     },
 
@@ -75,8 +75,8 @@ const actions = {
      * @param {Number} bkHostId 主机id
      * @return {Promise} promise 对象
      */
-    getHostSnapshot ({ commit, state, dispatch }, { hostId }) {
-        return $http.get(`hosts/snapshot/${hostId}`)
+    getHostSnapshot ({ commit, state, dispatch }, { hostId, config }) {
+        return $http.get(`hosts/snapshot/${hostId}`, config)
     },
 
     /**

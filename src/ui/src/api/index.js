@@ -2,12 +2,11 @@ import Axios from 'axios'
 import md5 from 'md5'
 import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
+// eslint-disable-next-line
 import { $error, $warn } from '@/magicbox'
 import { language } from '@/i18n'
 
-const Site = window.Site
-window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + '/')
-window.API_PREFIX = window.API_HOST + 'api/' + Site.version
+import middlewares from './middleware'
 // axios实例
 const axiosInstance = Axios.create({
     baseURL: window.API_PREFIX,
@@ -17,8 +16,35 @@ const axiosInstance = Axios.create({
 })
 
 // axios实例拦截器
+axiosInstance.interceptors.request.use(
+    config => {
+        try {
+            middlewares.forEach(middleware => {
+                if (typeof middleware.request === 'function') {
+                    config = middleware.request(config)
+                }
+            })
+        } catch (e) {
+            console.error(e)
+        }
+        return config
+    },
+    error => {
+        return Promise.reject(error)
+    }
+)
+
 axiosInstance.interceptors.response.use(
     response => {
+        try {
+            middlewares.forEach(middleware => {
+                if (typeof middleware.response === 'function') {
+                    response = middleware.response(response)
+                }
+            })
+        } catch (e) {
+            console.error(e)
+        }
         return response
     },
     error => {
@@ -43,7 +69,8 @@ const $http = {
     },
     deleteHeader: key => {
         delete axiosInstance.defaults.headers[key]
-    }
+    },
+    download: download
 }
 
 const methodsWithoutData = ['delete', 'get', 'head', 'options']
@@ -101,7 +128,7 @@ async function getPromise (method, url, data, userConfig = {}) {
         const axiosRequest = methodsWithData.includes(method) ? axiosInstance[method](url, data, config) : axiosInstance[method](url, config)
         axiosRequest.then(response => {
             Object.assign(config, response.config)
-            handleResponse({config, response, resolve, reject})
+            handleResponse({ config, response, resolve, reject })
         }).catch(error => {
             Object.assign(config, error.config)
             reject(error)
@@ -126,10 +153,16 @@ async function getPromise (method, url, data, userConfig = {}) {
  * @param {reject} promise拒绝函数
  * @return
  */
-function handleResponse ({config, response, resolve, reject}) {
+
+const PermissionCode = 9900403
+function handleResponse ({ config, response, resolve, reject }) {
     const transformedResponse = response.data
+    if (transformedResponse.bk_error_code === PermissionCode) {
+        popupPermissionModal(transformedResponse.permission)
+        return reject({ message: transformedResponse['bk_error_msg'], code: PermissionCode })
+    }
     if (!transformedResponse.result && config.globalError) {
-        reject({message: transformedResponse['bk_error_msg']})
+        reject({ message: transformedResponse['bk_error_msg'] })
     } else {
         resolve(config.originalResponse ? response : config.transformData ? transformedResponse.data : transformedResponse)
     }
@@ -142,14 +175,17 @@ function handleResponse ({config, response, resolve, reject}) {
  * @return Promise.reject
  */
 function handleReject (error, config) {
+    if (error.code && error.code === PermissionCode) {
+        return Promise.reject(error)
+    }
     if (Axios.isCancel(error)) {
         return Promise.reject(error)
     }
     if (config.globalError && error.response) {
-        const {status, data} = error.response
-        const nextError = {message: error.message}
+        const { status, data } = error.response
+        const nextError = { message: error.message }
         if (status === 401) {
-            window.location.href = Site.login
+            window.Site.login && (window.location.href = window.Site.login)
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
         } else if (status === 403) {
@@ -162,6 +198,10 @@ function handleReject (error, config) {
     }
     $error(error.message)
     return Promise.reject(error)
+}
+
+function popupPermissionModal (permission = []) {
+    window.permissionModal && window.permissionModal.show(permission)
 }
 
 /**
@@ -213,6 +253,44 @@ function getCancelToken () {
         cancelToken,
         cancelExcutor
     }
+}
+
+function download (options = {}) {
+    const { url, method = 'post', data } = options
+    const config = Object.assign({
+        globalError: false,
+        originalResponse: true,
+        responseType: 'blob'
+    }, options.config)
+    if (!url) {
+        $error('Empty download url')
+        return false
+    }
+    let promise
+    if (methodsWithData.includes(method)) {
+        promise = $http[method](url, data, config)
+    } else {
+        promise = $http[method](url, config)
+    }
+    promise.then(response => {
+        try {
+            const disposition = response.headers['content-disposition']
+            const fileName = disposition.substring(disposition.indexOf('filename') + 9)
+            const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
+                type: response.headers['content-type']
+            }))
+            const link = document.createElement('a')
+            link.style.display = 'none'
+            link.href = downloadUrl
+            link.setAttribute('download', fileName)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        } catch (e) {
+            $error('Download failure')
+        }
+        return response
+    })
 }
 
 export default $http

@@ -28,7 +28,29 @@ const actions = {
      * @return {promises} promises 对象
      */
     getOperationLog ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`audit/search`, params, config)
+        return $http.post(`audit/search`, params, config).then(data => {
+            return data || {
+                count: 0,
+                info: []
+            }
+        })
+    },
+    /**
+     * 根据条件获取变更记录
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {String} objId bk_obj_id
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    getUserOperationLog ({ commit, state, dispatch }, { objId, params, config }) {
+        return $http.post(`object/${objId}/audit/search`, params, config).then(data => {
+            return data || {
+                count: 0,
+                info: []
+            }
+        })
     }
 }
 

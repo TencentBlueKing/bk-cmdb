@@ -183,8 +183,8 @@
                 const edgeCount = edges.length
                 if (edgeCount) {
                     this.$bkInfo({
-                        title: this.$t('ModelManagement["移除失败"]'),
-                        content: this.$tc('ModelManagement["移除失败提示"]', edgeCount, {asstNum: edgeCount})
+                        title: this.$t('移除失败'),
+                        subTitle: this.$tc('移除失败提示', edgeCount, { asstNum: edgeCount })
                     })
                     return false
                 } else {
@@ -193,15 +193,15 @@
                         resolver = resolve
                     })
                     this.$bkInfo({
-                        title: this.$t('ModelManagement["确定移除模型?"]'),
-                        content: this.$t('ModelManagement["移除模型提示"]'),
+                        title: this.$t('确定移除模型?'),
+                        subTitle: this.$t('移除模型提示'),
                         confirmFn: () => {
                             const data = this.topologyMap[nodeId]
                             this.updateSavedPosition([{
                                 'bk_inst_id': data['bk_inst_id'],
                                 'bk_obj_id': data['bk_obj_id'],
                                 'node_type': data['node_type'],
-                                'position': {x: null, y: null}
+                                'position': { x: null, y: null }
                             }])
                             resolver(true)
                         },
@@ -236,10 +236,10 @@
                                 data: data,
                                 arrows: this.getEdgeArrows(data)
                             })
-                            this.$store.commit(commitMethod, {resolve: null, reject: null})
+                            this.$store.commit(commitMethod, { resolve: null, reject: null })
                         },
                         reject: result => {
-                            this.$store.commit(commitMethod, {resolve: null, reject: null})
+                            this.$store.commit(commitMethod, { resolve: null, reject: null })
                             reject(result)
                         }
                     })
@@ -301,7 +301,9 @@
                 })
             },
             updateSavedPosition (updateQueue) {
-                if (!updateQueue.length) { return false }
+                if (!updateQueue.length) {
+                    return false
+                }
                 this.convertPosition(updateQueue)
                 this.$store.commit('globalModels/updateTopologyData', updateQueue)
                 this.$store.dispatch('globalModels/updateModelAction', {

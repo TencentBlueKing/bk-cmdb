@@ -1,12 +1,16 @@
 <template>
-    <div class="cmdb-form form-timezone">
-        <bk-selector class="form-timezone-selector"
-            :searchable="true"
-            :list="timezoneList"
-            :disabled="disabled"
-            :selected.sync="selected">
-        </bk-selector>
-    </div>
+    <bk-select class="form-timezone-selector"
+        searchable
+        v-model="selected"
+        :clearable="false"
+        :disabled="disabled">
+        <bk-option
+            v-for="(option, index) in timezoneList"
+            :key="index"
+            :id="option.id"
+            :name="option.name">
+        </bk-option>
+    </bk-select>
 </template>
 
 <script>
@@ -15,6 +19,7 @@
         name: 'cmdb-form-timezone',
         props: {
             value: {
+                type: [String, Number],
                 default: ''
             },
             disabled: {
@@ -43,6 +48,11 @@
             selected (selected) {
                 this.$emit('input', selected)
                 this.$emit('on-selected', selected)
+            },
+            disabled (disabled) {
+                if (!disabled) {
+                    this.selected = this.value ? this.value : 'Asia/Shanghai'
+                }
             }
         },
         created () {
@@ -52,9 +62,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .form-timezone{
-        .form-timezone-selector{
-            width: 100%;
-        }
+    .form-timezone-selector{
+        width: 100%;
     }
 </style>

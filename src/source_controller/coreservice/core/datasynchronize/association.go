@@ -50,7 +50,7 @@ func (a *association) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 	default:
 		return ctx.Error.Errorf(common.CCErrCoreServiceSyncDataClassifyNotExistError, a.dataType, a.DataClassify)
 	}
-	return nil
+
 }
 
 func (a *association) PreSynchronizeFilter(ctx core.ContextParams) errors.CCError {

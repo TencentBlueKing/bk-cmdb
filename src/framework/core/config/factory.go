@@ -19,7 +19,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
 
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/option"
@@ -34,40 +33,6 @@ func Init(opt *option.Options) error {
 	}
 	if "" != opt.Config {
 		return ParseFromFile(opt.Config)
-	}
-	if "" != opt.Regdiscv {
-		cc := NewConfCenter(opt.Regdiscv)
-		dataCh := make(chan []byte)
-		errCh := make(chan error, 1)
-		go func() {
-			defer cc.Stop()
-			err := cc.Start()
-			if err != nil {
-				log.Errorf("configure center module start failed!. err:%s", err.Error())
-				errCh <- err
-			}
-		}()
-
-		go func() {
-			var data []byte
-			for {
-				data = cc.GetConfigureCxt()
-				if len(data) <= 0 {
-					log.Warningf("faile to get config from center, we will retry after 2 seconds")
-					time.Sleep(time.Second * 2)
-					continue
-				}
-				dataCh <- data
-			}
-		}()
-		select {
-		case data := <-dataCh:
-			if err := ParseFromBytes(data); err != nil {
-				return err
-			}
-		case err := <-errCh:
-			return err
-		}
 	}
 	return errors.New("not config source specified")
 }

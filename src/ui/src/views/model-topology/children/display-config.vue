@@ -4,18 +4,18 @@
             <div class="display-setting">
                 <label class="cmdb-form-checkbox cmdb-checkbox-small">
                     <input type="checkbox" v-model="isShowName">
-                    <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示模型名称"]')}}</span>
+                    <span class="cmdb-checkbox-text">{{$t('显示模型名称')}}</span>
                 </label>
                 <label class="cmdb-form-checkbox cmdb-checkbox-small">
                     <input type="checkbox" v-model="isShowAsst">
-                    <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示关联名称"]')}}</span>
+                    <span class="cmdb-checkbox-text">{{$t('显示关联名称')}}</span>
                 </label>
             </div>
             <ul class="display-list">
                 <li class="group-item" v-for="(group, groupIndex) in topoList" :key="groupIndex">
                     <p class="group-name">{{group['bk_classification_name']}}</p>
                     <ul class="clearfix">
-                        <li class="model-item" :class="{'active': model['bk_obj_id'] === activePop}" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
+                        <li class="model-item" :class="{ 'active': model['bk_obj_id'] === activePop }" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
                             <label class="cmdb-form-checkbox checkbox cmdb-checkbox-small">
                                 <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
                             </label>
@@ -27,12 +27,12 @@
                                     <div class="relation-detail" v-click-outside="hidePop" @click.stop v-if="activePop === model['bk_obj_id']">
                                         <div class="detail-title clearfix">
                                             <div class="fl">
-                                                <span class="title">{{$t('ModelManagement["模型关联"]')}}</span>
-                                                <span class="info">({{$t('ModelManagement["即视图中的连线"]')}})</span>
+                                                <span class="title">{{$t('模型关联')}}</span>
+                                                <span class="info">({{$t('即视图中的连线')}})</span>
                                             </div>
                                             <label class="fr cmdb-form-checkbox cmdb-checkbox-small">
                                                 <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
-                                                <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
+                                                <span class="cmdb-checkbox-text">{{$t('全选')}}</span>
                                             </label>
                                         </div>
                                         <ul class="relation-list clearfix">
@@ -52,11 +52,11 @@
             </ul>
         </div>
         <div class="button-group">
-            <bk-button type="primary" @click="saveDisplay">
-                {{$t('Common["确定"]')}}
+            <bk-button theme="primary" @click="saveDisplay">
+                {{$t('确定')}}
             </bk-button>
-            <bk-button type="default" @click="reset">
-                {{$t('ModelManagement["重置"]')}}
+            <bk-button theme="default" @click="reset">
+                {{$t('重置')}}
             </bk-button>
         </div>
     </div>
@@ -90,7 +90,8 @@
         },
         computed: {
             ...mapGetters('objectModelClassify', [
-                'classifications'
+                'classifications',
+                'models'
             ])
         },
         created () {
@@ -111,27 +112,27 @@
                 return this.localTopoModelList.find(obj => obj['bk_obj_id'] === model['bk_obj_id'] && obj.hasOwnProperty('assts') && obj.assts.length).assts
             },
             isChecked (model) {
-                let modelAsst = this.findCurrentModelAsst(model)
+                const modelAsst = this.findCurrentModelAsst(model)
                 return !modelAsst.some(asst => !asst.checked)
             },
             checkAll (model) {
-                let modelAsst = this.findCurrentModelAsst(model)
+                const modelAsst = this.findCurrentModelAsst(model)
                 modelAsst.forEach(asst => {
                     asst.checked = event.target.checked
                 })
                 this.$forceUpdate()
             },
             initTopoList () {
-                let topoList = []
+                const topoList = []
                 this.classifications.forEach(group => {
-                    let objects = []
-                    let asstObjects = {}
+                    const objects = []
+                    // const asstObjects = {}
                     group['bk_objects'].forEach(model => {
-                        let asstInfo = this.localTopoModelList.find(obj => obj['bk_obj_id'] === model['bk_obj_id'] && obj.hasOwnProperty('assts') && obj.assts.length)
+                        const asstInfo = this.localTopoModelList.find(obj => obj['bk_obj_id'] === model['bk_obj_id'] && obj.hasOwnProperty('assts') && obj.assts.length)
                         if (asstInfo) {
                             objects.push({
                                 ...model,
-                                ...{asstInfo}
+                                ...{ asstInfo }
                             })
                         }
                     })
@@ -147,11 +148,11 @@
                 this.topoList = topoList
             },
             asstLabel (model, asst) {
-                let asstModel = this.$allModels.find(model => {
+                const asstModel = this.models.find(model => {
                     return model['bk_obj_id'] === asst['bk_obj_id']
                 })
                 if (asstModel) {
-                    let association = this.associationList.find(({id}) => id === asst['bk_asst_inst_id'])
+                    const association = this.associationList.find(({ id }) => id === asst['bk_asst_inst_id'])
                     if (association) {
                         if (association['bk_asst_name'].length) {
                             return `${association['bk_asst_name']}->${asstModel['bk_obj_name']}`

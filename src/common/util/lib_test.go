@@ -157,12 +157,14 @@ func TestStrArrDiff(t *testing.T) {
 func TestGetActionLanguage(t *testing.T) {
 	req := httptest.NewRequest("POST", "http://127.0.0.1/call", nil)
 
+	language := GetLanguage(restful.NewRequest(req).Request.Header)
+
 	req.Header.Set(common.BKHTTPLanguage, "cn")
-	language := GetActionLanguage(restful.NewRequest(req))
+	language = GetLanguage(restful.NewRequest(req).Request.Header)
 	require.Equal(t, "cn", language)
 
 	req.Header.Set(common.BKHTTPLanguage, "cnn")
-	language = GetActionLanguage(restful.NewRequest(req))
+	language = GetLanguage(restful.NewRequest(req).Request.Header)
 	require.NotEqual(t, "cn", language)
 }
 
@@ -199,31 +201,15 @@ func TestHeader(t *testing.T) {
 	if GetLanguage(header) != "zh" {
 		t.Fail()
 	}
-	if GetActionLanguage(r) != "zh" {
+	if GetLanguage(r.Request.Header) != "zh" {
 		t.Fail()
 	}
 
-	if GetActionUser(r) != "user" {
-		t.Fail()
-	}
 	if GetUser(header) != "user" {
 		t.Fail()
 	}
 
-	if GetActionOnwerID(r) != "owner" {
-		t.Fail()
-	}
 	if GetOwnerID(header) != "owner" {
-		t.Fail()
-	}
-	if GetActionOnwerIDByHTTPHeader(header) != "owner" {
-		t.Fail()
-	}
-
-	if o, u := GetOwnerIDAndUser(header); o != "owner" || u != "user" {
-		t.Fail()
-	}
-	if o, u := GetActionOnwerIDAndUser(r); o != "owner" || u != "user" {
 		t.Fail()
 	}
 

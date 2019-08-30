@@ -13,6 +13,7 @@
 package user
 
 import (
+	"configcenter/src/common/util"
 	"context"
 	"fmt"
 	"net/http"
@@ -24,7 +25,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/validator"
 
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type OwnerManager struct {
@@ -53,30 +54,31 @@ func (m *OwnerManager) SetHttpHeader(key, val string) {
 }
 
 func (m *OwnerManager) InitOwner() error {
-	blog.V(5).Infof("init owner %s", m.OwnerID)
+	rid := util.GetHTTPCCRequestID(m.header)
+	blog.V(5).Infof("init owner %s, rid: %s", m.OwnerID, rid)
 
 	exist, err := m.defaultAppIsExist()
 	if err != nil {
 		return err
 	}
 	if !exist {
-		rediscli := m.CacheCli
+		redisCli := m.CacheCli
 		for {
-			ok, err := rediscli.SetNX(common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID, m.OwnerID, 60*time.Second).Result()
+			ok, err := redisCli.SetNX(common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID, m.OwnerID, 60*time.Second).Result()
 			if nil != err {
-				blog.Errorf("owner_init_lock error %s", err.Error())
+				blog.Errorf("owner_init_lock error %s, rid: %s", err.Error(), rid)
 				return err
 			}
 			if ok {
-				defer func() {
-					if err := rediscli.Del(common.BKCacheKeyV3Prefix + "owner_init_lock:" + m.OwnerID).Err(); err != nil {
-						blog.Errorf("owner_init_lock error %s", err.Error())
-					}
-				}()
 				break
 			}
 			time.Sleep(time.Second)
 		}
+		defer func() {
+			if err := redisCli.Del(common.BKCacheKeyV3Prefix + "owner_init_lock:" + m.OwnerID).Err(); err != nil {
+				blog.Errorf("owner_init_lock error %s, rid: %s", err.Error(), rid)
+			}
+		}()
 		exist, err = m.defaultAppIsExist()
 		if err != nil {
 			return err
@@ -92,7 +94,8 @@ func (m *OwnerManager) InitOwner() error {
 }
 
 func (m *OwnerManager) addDefaultApp() error {
-	blog.V(5).Infof("addDefaultApp %s", m.OwnerID)
+	rid := util.GetHTTPCCRequestID(m.header)
+	blog.V(5).Infof("addDefaultApp %s, rid: %s", m.OwnerID, rid)
 	params, err := m.getObjectFields(common.BKInnerObjIDApp)
 	if err != nil {
 		return err
@@ -101,7 +104,7 @@ func (m *OwnerManager) addDefaultApp() error {
 	params[common.BKMaintainersField] = "admin"
 	params[common.BKProductPMField] = "admin"
 	params[common.BKTimeZoneField] = "Asia/Shanghai"
-	params[common.BKLanguageField] = "1" //中文
+	params[common.BKLanguageField] = "1" // 中文
 	params[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
 	result, err := m.Engine.CoreAPI.ApiServer().AddDefaultApp(context.Background(), m.header, m.OwnerID, params)
@@ -136,8 +139,15 @@ func (m *OwnerManager) defaultAppIsExist() (bool, error) {
 
 func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, error) {
 
-	conds := mapstr.MapStr{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": common.KvMap{"skip": 0, "limit": common.BKNoLimit}}
-	result, err := m.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), m.header, conds)
+	filter := mapstr.MapStr{
+		common.BKObjIDField:   objID,
+		common.BKOwnerIDField: common.BKDefaultOwnerID,
+		"page": common.KvMap{
+			"skip":  0,
+			"limit": common.BKNoLimit,
+		},
+	}
+	result, err := m.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), m.header, filter)
 	if err != nil {
 		return nil, err
 	}

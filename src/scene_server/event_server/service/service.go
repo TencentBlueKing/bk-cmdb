@@ -15,9 +15,7 @@ package service
 import (
 	"context"
 
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
-
+	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -26,12 +24,16 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*backbone.Engine
 	db    dal.RDB
 	cache *redis.Client
+	auth  auth.Authorize
 	ctx   context.Context
 }
 
@@ -49,23 +51,38 @@ func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
 }
 
-func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
+func (s *Service) SetAuth(auth auth.Authorize) {
+	s.auth = auth
+}
+
+func (s *Service) WebService() *restful.Container {
+
+	container := restful.NewContainer()
+
+	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/event/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/event/v3")
+	api.Filter(s.Engine.Metric().RestfulMiddleWare)
+	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
+	api.Produces(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/subscribe/search/{ownerID}/{appID}").To(s.Query))
-	ws.Route(ws.POST("/subscribe/ping").To(s.Ping))
-	ws.Route(ws.POST("/subscribe/telnet").To(s.Telnet))
-	ws.Route(ws.POST("/subscribe/{ownerID}/{appID}").To(s.Subscribe))
-	ws.Route(ws.DELETE("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UnSubscribe))
-	ws.Route(ws.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.Rebook))
+	api.Route(api.POST("/subscribe/search/{ownerID}/{appID}").To(s.ListSubscriptions))
+	api.Route(api.POST("/subscribe/{ownerID}/{appID}").To(s.Subscribe))
+	api.Route(api.DELETE("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UnSubscribe))
+	api.Route(api.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UpdateSubscription))
 
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
+	api.Route(api.POST("/subscribe/ping").To(s.Ping))
+	api.Route(api.POST("/subscribe/telnet").To(s.Telnet))
 
-	return ws
+	container.Add(api)
+
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
@@ -80,10 +97,12 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, zkItem)
 
 	// mongodb
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.db.Ping()))
+	healthItem := metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping())
+	meta.Items = append(meta.Items, healthItem)
 
 	// redis
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.cache.Ping().Err()))
+	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err())
+	meta.Items = append(meta.Items, redisItem)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

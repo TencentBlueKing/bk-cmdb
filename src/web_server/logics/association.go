@@ -19,12 +19,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, objID string, instAsstArr []*metadata.InstAsst, meta metadata.Metadata) (map[string]map[int64][]PropertyPrimaryVal, error) {
+func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, objID string, instAsstArr []*metadata.InstAsst, meta *metadata.Metadata) (map[string]map[int64][]PropertyPrimaryVal, error) {
 
 	// map[objID][]instID
 	asstObjIDIDArr := make(map[string][]int64)
@@ -49,7 +48,8 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 	return retAsstObjIDInstInfoMap, nil
 }
 
-func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64) ([]*metadata.InstAsst, error) {
+func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, metadataParams *metadata.Metadata) ([]*metadata.InstAsst, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	input := &metadata.SearchAssociationInstRequest{}
@@ -57,27 +57,29 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKInstIDField).In(instIDArr)
 	input.Condition = cond.ToMapStr()
+	if metadataParams != nil {
+		input.Condition.Set(common.MetadataField, metadataParams)
+	}
 
 	result, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
 	if err != nil {
-		blog.Errorf("GetAssocationData fetch %s association  error:%s, input;%+v, rid:%s", objID, err.Error(), input, util.GetHTTPCCRequestID(header))
+		blog.Errorf("GetAssocationData fetch %s association  error:%s, input;%+v, rid: %s", objID, err.Error(), input, rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
-		blog.Errorf("GetAssocationData fetch %s association  error code:%s, error msg:%s, input;%+v, rid:%s", objID, result.Code, result.ErrMsg, input, util.GetHTTPCCRequestID(header))
+		blog.Errorf("GetAssocationData fetch %s association  error code:%s, error msg:%s, input;%+v, rid:%s", objID, result.Code, result.ErrMsg, input, rid)
 		return nil, ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	return result.Data, nil
 }
 
-func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, meta metadata.Metadata) (map[int64][]PropertyPrimaryVal, error) {
+func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, meta *metadata.Metadata) (map[int64][]PropertyPrimaryVal, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	conds := mapstr.New()
-	conds.Set(common.BKIsOnlyField, true)
-	propertyArr, err := lgc.getAsstObjectPrimaryFieldByObjID(objID, header, conds, meta)
+	propertyArr, err := lgc.getObjectPrimaryFieldByObjID(objID, header, meta)
 	if err != nil {
 		return nil, err
 	}
@@ -95,12 +97,12 @@ func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Head
 
 	instResult, err := lgc.CoreAPI.ApiServer().SearchInsts(ctx, header, objID, instAsstCond)
 	if err != nil {
-		blog.Errorf("GetAssocationData fetch %s association instance error:%s, input;%+v, rid:%s", objID, err.Error(), instAsstCond, util.GetHTTPCCRequestID(header))
+		blog.ErrorJSON("GetAssocationData fetch %s association instance error:%s, input:%s, rid:%s", objID, err.Error(), instAsstCond.ToMapStr(), rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !instResult.Result {
-		blog.Errorf("FetchInstAssocationData fetch %s association instance error code:%s, error msg:%s, input;%+v, rid:%s", objID, instResult.Code, instResult.ErrMsg, instAsstCond, util.GetHTTPCCRequestID(header))
+		blog.Errorf("FetchInstAssocationData fetch %s association instance error code:%s, error msg:%s, input;%+v, rid:%s", objID, instResult.Code, instResult.ErrMsg, instAsstCond, rid)
 		return nil, ccErr.New(instResult.Code, instResult.ErrMsg)
 	}
 
@@ -108,7 +110,7 @@ func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Head
 	for _, inst := range instResult.Data.Info {
 		instID, err := inst.Int64(instIDKey)
 		if err != nil {
-			blog.Warnf("FetchInstAssocationData get %s instance %s field error, err:%s, inst:%+v, rid:%s", objID, instIDKey, err.Error(), inst, util.GetHTTPCCRequestID(header))
+			blog.Warnf("FetchInstAssocationData get %s instance %s field error, err:%s, inst:%+v, rid:%s", objID, instIDKey, err.Error(), inst, rid)
 			continue
 		}
 		isSkip := false
@@ -117,7 +119,7 @@ func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Head
 			// use display , use string
 			val, err := inst.String(key.ID)
 			if err != nil {
-				blog.Warnf("FetchInstAssocationData get %s instance %s field error, err:%s, inst:%+v, rid:%s", objID, key, err.Error(), inst, util.GetHTTPCCRequestID(header))
+				blog.Warnf("FetchInstAssocationData get %s instance %s field error, err:%s, inst:%+v, rid:%s", objID, key, err.Error(), inst, rid)
 				isSkip = true
 				break
 			}

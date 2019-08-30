@@ -19,13 +19,62 @@ import (
 
 // BaseResp common result struct
 type BaseResp struct {
-	Result bool   `json:"result"`
-	Code   int    `json:"bk_error_code"`
-	ErrMsg string `json:"bk_error_msg"`
+	Result      bool         `json:"result"`
+	Code        int          `json:"bk_error_code"`
+	ErrMsg      string       `json:"bk_error_msg"`
+	Permissions []Permission `json:"permission"`
+}
+
+// Permission  describes all the authorities that a user
+// is need, when he attempts to operate a resource.
+// Permission is used only when a user do not have the authority to
+// access a resources with a action.
+type Permission struct {
+	SystemID      string `json:"system_id"`
+	SystemName    string `json:"system_name"`
+	ScopeType     string `json:"scope_type"`
+	ScopeTypeName string `json:"scope_type_name"`
+	ScopeID       string `json:"scope_id"`
+	ScopeName     string `json:"scope_name"`
+	ActionID      string `json:"action_id"`
+	ActionName    string `json:"action_name"`
+	// newly added two field.
+	ResourceTypeName string `json:"resource_type_name"`
+	ResourceType     string `json:"resource_type"`
+
+	Resources [][]Resource `json:"resources"`
+}
+
+type Resource struct {
+	ResourceTypeName string `json:"resource_type_name"`
+	ResourceType     string `json:"resource_type"`
+	ResourceName     string `json:"resource_name"`
+	ResourceID       string `json:"resource_id"`
+}
+
+func NewNoPermissionResp(permission []Permission) BaseResp {
+	return BaseResp{
+		Result:      false,
+		Code:        common.CCNoPermission,
+		ErrMsg:      "no permissions",
+		Permissions: permission,
+	}
 }
 
 // SuccessBaseResp default result
 var SuccessBaseResp = BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr}
+
+type SuccessResponse struct {
+	BaseResp `json:",inline"`
+	Data     interface{} `json:"data"`
+}
+
+func NewSuccessResponse(data interface{}) SuccessResponse {
+	return SuccessResponse{
+		BaseResp: SuccessBaseResp,
+		Data:     data,
+	}
+}
 
 // CreatedCount created count struct
 type CreatedCount struct {
@@ -136,13 +185,13 @@ type ReadModelAttrResult struct {
 	Data     QueryModelAttributeDataResult `json:"data"`
 }
 
-//ReadModelClassifitionResult  read model classifition api http response return result struct
+// ReadModelClassifitionResult  read model classifition api http response return result struct
 type ReadModelClassifitionResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelClassificationDataResult `json:"data"`
 }
 
-//ReadModelResult  read model classifition api http response return result struct
+// ReadModelResult  read model classifition api http response return result struct
 type ReadModelResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelWithAttributeDataResult `json:"data"`
@@ -172,4 +221,15 @@ type ReadInstAssociationResult struct {
 		Count uint64     `json:"count"`
 		Info  []InstAsst `json:"info"`
 	}
+}
+
+// OperaterException  result
+type OperaterException struct {
+	BaseResp `json:",inline"`
+	Data     []ExceptionResult `json:"data"`
+}
+
+type Uint64DataResponse struct {
+	BaseResp `json:",inline"`
+	Data     uint64 `json:"data"`
 }

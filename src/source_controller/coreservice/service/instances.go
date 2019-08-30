@@ -15,6 +15,7 @@ package service
 import (
 	"fmt"
 
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -22,7 +23,6 @@ import (
 )
 
 func (s *coreService) CreateOneModelInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.CreateModelInstance{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
@@ -31,7 +31,6 @@ func (s *coreService) CreateOneModelInstance(params core.ContextParams, pathPara
 }
 
 func (s *coreService) CreateManyModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.CreateManyModelInstance{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
@@ -40,20 +39,36 @@ func (s *coreService) CreateManyModelInstances(params core.ContextParams, pathPa
 }
 
 func (s *coreService) UpdateModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.UpdateOption{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
+	cond := metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.AssociationKindIDField:  common.AssociationKindMainline,
+			common.AssociatedObjectIDField: pathParams("bk_obj_id"),
+		},
+	}
+	result, err := s.core.AssociationOperation().SearchModelAssociation(params, cond)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.Info) != 0 {
+		// this is a mainline object, need to delete metadata field.
+		// otherwise, can not find this object, then update failed.
+		inputData.Condition.Remove("metadata")
+	}
+
 	return s.core.InstanceOperation().UpdateModelInstance(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.QueryCondition{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
+
 	dataResult, err := s.core.InstanceOperation().SearchModelInstance(params, pathParams("bk_obj_id"), inputData)
 	if nil != err {
 		return dataResult, err
@@ -73,7 +88,6 @@ func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams
 }
 
 func (s *coreService) DeleteModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.DeleteOption{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
@@ -82,7 +96,6 @@ func (s *coreService) DeleteModelInstances(params core.ContextParams, pathParams
 }
 
 func (s *coreService) CascadeDeleteModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.DeleteOption{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err

@@ -1,6 +1,6 @@
 import Vis from 'vis'
 import uuid from 'uuid/v4'
-import {svgToImageUrl} from '@/utils/util'
+import { svgToImageUrl } from '@/utils/util'
 export const color = {
     node: {
         label: '#868b97'
@@ -101,9 +101,9 @@ const Utils = {
     }
 }
 export default class Graphics {
-    constructor (container, {nodes, edges}) {
+    constructor (container, { nodes, edges }) {
         this.editMode = false
-        this.state = {...DEFAULT_STATE}
+        this.state = { ...DEFAULT_STATE }
         this.listeners = {}
         this.nodes = new Vis.DataSet()
         this.edges = new Vis.DataSet()
@@ -255,7 +255,9 @@ export default class Graphics {
     }
 
     handleDragStart (data) {
-        if (!data.nodes.length) { return false }
+        if (!data.nodes.length) {
+            return false
+        }
         if (this.triggerIds.includes(data.nodes[0])) {
             return false
         }
@@ -272,9 +274,13 @@ export default class Graphics {
     }
 
     handleDragEnd (data) {
-        if (!data.nodes.length) { return false }
+        if (!data.nodes.length) {
+            return false
+        }
         const [nodeId] = data.nodes
-        if (this.triggerIds.includes(nodeId)) { return false }
+        if (this.triggerIds.includes(nodeId)) {
+            return false
+        }
         this.bounceOverlapNodes(nodeId)
         this.fire('dragNode', nodeId, this.network.getPositions([nodeId])[nodeId])
         if (this.editMode) {
@@ -291,7 +297,7 @@ export default class Graphics {
             }
         })
         this.nodes.update(this.overlapNodes.map(id => {
-            return {id, fixed: true}
+            return { id, fixed: true }
         }))
         this.fire('stabilized', this.network.getPositions())
     }
@@ -308,23 +314,25 @@ export default class Graphics {
         const referenceBox = this.network.getBoundingBox(referenceId)
         const overlapNodes = [referenceId]
         this.normalNodeIds.forEach(id => {
-            if (id === referenceId) { return false }
+            if (id === referenceId) {
+                return false
+            }
             const targetBox = this.network.getBoundingBox(id)
-            const isNotOverlap =
-                targetBox.top > referenceBox.bottom ||
-                targetBox.right < referenceBox.left ||
-                targetBox.bottom < referenceBox.top ||
-                targetBox.left > referenceBox.right
+            const isNotOverlap
+                = targetBox.top > referenceBox.bottom
+                || targetBox.right < referenceBox.left
+                || targetBox.bottom < referenceBox.top
+                || targetBox.left > referenceBox.right
             if (!isNotOverlap) {
                 overlapNodes.push(id)
             }
         })
         if (overlapNodes.length > 1) {
             this.nodes.update(overlapNodes.map(id => {
-                return {id, fixed: false}
+                return { id, fixed: false }
             }))
             this.overlapNodes = overlapNodes
-            this.network.setOptions({physics: true})
+            this.network.setOptions({ physics: true })
         } else {
             this.nodes.update({
                 id: referenceId,
@@ -334,10 +342,12 @@ export default class Graphics {
     }
 
     updateToolNodePosition (refNodeId) {
-        if (this.state.stabilizing) { return false }
+        if (this.state.stabilizing) {
+            return false
+        }
         const nodeR = OPTIONS.nodes.widthConstraint / 2
         const toolR = TOOL_NODE_OPTION.widthConstraint / 2
-        const {x, y} = this.network.getPositions([refNodeId])[refNodeId]
+        const { x, y } = this.network.getPositions([refNodeId])[refNodeId]
         const deltaXY = Math.sqrt(2) / 2 * (nodeR + toolR)
         const addEdgeTriggerX = x + deltaXY
         const addEdgeTriggerY = y - deltaXY
@@ -358,7 +368,7 @@ export default class Graphics {
         }
     }
 
-    schedulerUpdateToolNodes ({hidden, immediate}) {
+    schedulerUpdateToolNodes ({ hidden, immediate }) {
         if (this.state.timer) {
             clearTimeout(this.state.timer)
             this.state.timer = null
@@ -385,7 +395,9 @@ export default class Graphics {
     }
 
     shadowNodeFollowMouse (event) {
-        if (!this.shadowNode) { return false }
+        if (!this.shadowNode) {
+            return false
+        }
         this.nodes.update({
             id: this.shadowNode.id,
             ...this.convertNodePosition(event)
@@ -427,7 +439,9 @@ export default class Graphics {
 
     // 重新分配连续的起点终点，箭头方向
     reassignEdges (edges) {
-        if (!edges.length) { return edges }
+        if (!edges.length) {
+            return edges
+        }
         const fromId = edges[0]['from']
         const forwardEdges = edges.filter(edge => edge.from === fromId)
         const reverseEdges = edges.filter(edge => edge.to === fromId)
@@ -440,7 +454,7 @@ export default class Graphics {
             const countToAssign = Math.floor(lessCount / 2)
             const edgesToAssign = MoreEdges.splice(MoreEdges.length - countToAssign)
             Array.prototype.push.apply(lessEdges, edgesToAssign.map(edge => {
-                const arrows = edge.arrows || {from: false, to: true}
+                const arrows = edge.arrows || { from: false, to: true }
                 return {
                     ...edge,
                     from: edge.to,
@@ -585,7 +599,7 @@ export default class Graphics {
         }
     }
 
-    getExisitEdges ({from, to}) {
+    getExisitEdges ({ from, to }) {
         const existEdges = []
         const edgeData = this.edges['_data']
         Object.keys(edgeData).find(key => {
@@ -593,7 +607,7 @@ export default class Graphics {
             const isSame = edge.from === from && edge.to === to
             const isReverse = edge.to === from && edge.from === to
             if (isSame || isReverse) {
-                existEdges.push({...edge})
+                existEdges.push({ ...edge })
             }
         })
         return existEdges
@@ -631,7 +645,7 @@ export default class Graphics {
     }
 
     resetState () {
-        this.state = {...DEFAULT_STATE}
+        this.state = { ...DEFAULT_STATE }
     }
 
     updateOptions (options) {

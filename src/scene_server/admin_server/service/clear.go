@@ -25,19 +25,28 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// clear drop tables common.AllTables from db
 func (s *Service) clear(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rHeader := req.Request.Header
+	rid := util.GetHTTPCCRequestID(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 
 	if version.CCRunMode == version.CCRunModeProduct {
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommMigrateFailed)})
+		blog.Errorf("clear production data forbidden, rid: %s", rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrCommMigrateFailed),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 
 	err := clearDatabase(s.db)
 	if nil != err {
-		blog.Errorf("clear error: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommMigrateFailed)})
+		blog.Errorf("clear database failed, err: %+v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrCommMigrateFailed),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 
@@ -46,11 +55,11 @@ func (s *Service) clear(req *restful.Request, resp *restful.Response) {
 
 func clearDatabase(db dal.RDB) error {
 	// clear mongodb
-	for _, tablename := range common.AllTables {
-		db.DropTable(tablename)
+	for _, tableName := range common.AllTables {
+		db.DropTable(tableName)
 	}
 
-	// clear redis
+	// TODO clear redis
 
 	return nil
 }
