@@ -68,7 +68,7 @@
 
 **合作伙伴：**
 
-![jiawei](docs/resource/img/jiawei-logo.png)　　![youole](docs/resource/img/youole-logo.png)　　![yuanding](docs/resource/img/yuanding-logo.png)
+![jiawei](docs/resource/img/jiawei-logo.png)　　![youole](docs/resource/img/youole-logo.png)　　![honops](docs/resource/img/honops-logo.png)
 
 ## License
 bk-cmdb 是基于 MIT 协议， 详细请参考 [LICENSE](LICENSE) 。
