@@ -60,6 +60,7 @@
                 </bk-input>
             </div>
         </cmdb-main-inject>
+
         <ul class="group-list">
             <li class="group-item clearfix"
                 v-for="(classification, classIndex) in currentClassifications"
@@ -104,7 +105,9 @@
                         }"
                         v-for="(model, modelIndex) in classification['bk_objects']"
                         :key="modelIndex">
-                        <div class="info-model" @click="modelClick(model)">
+                        <div class="info-model"
+                            :class="{ 'radius': modelType === 'disabled' }"
+                            @click="modelClick(model)">
                             <div class="icon-box">
                                 <i class="icon" :class="[model['bk_obj_icon']]"></i>
                             </div>
@@ -115,12 +118,13 @@
                         </div>
                         <div v-if="modelType !== 'disabled'" class="info-instance" @click="handleGoInstance(model)">
                             <i class="icon-cc-share"></i>
-                            <p>100</p>
+                            <p>{{modelStatisticsSet[model.bk_obj_id] || 0}}</p>
                         </div>
                     </li>
                 </ul>
             </li>
         </ul>
+
         <bk-dialog
             class="bk-dialog-no-padding bk-dialog-no-tools group-dialog dialog"
             :close-icon="false"
@@ -169,12 +173,30 @@
                 <bk-button theme="default" @click="hideGroupDialog">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
+
         <the-create-model
             :is-show.sync="modelDialog.isShow"
             :group-id.sync="modelDialog.groupId"
             :title="$t('新建模型')"
             @confirm="saveModel">
         </the-create-model>
+        
+        <bk-dialog
+            class="bk-dialog-no-padding"
+            :width="400"
+            :show-footer="false"
+            :mask-close="false"
+            v-model="sucessDialog.isShow">
+            <div class="success-content">
+                <i class="bk-icon icon-check-1"></i>
+                <p>{{$t('模型创建成功')}}</p>
+                <div class="btn-box">
+                    <bk-button theme="primary" @click="handleGoInstance(curCreateModel)">{{$t('添加实例')}}</bk-button>
+                    <bk-button>{{$t('配置字段')}}</bk-button>
+                    <bk-button @click="sucessDialog.isShow = false">{{$t('返回列表')}}</bk-button>
+                </div>
+            </div>
+        </bk-dialog>
     </div>
 </template>
 
@@ -200,7 +222,11 @@
                 modelType: 'enable',
                 searchModel: '',
                 filterClassifications: [],
-                modelInstancesStatistics: [],
+                modelStatisticsSet: {},
+                curCreateModel: {},
+                sucessDialog: {
+                    isShow: false
+                },
                 groupToolTips: {
                     content: this.$t('内置模型组不支持添加和修改'),
                     placement: 'right'
@@ -288,16 +314,10 @@
                 this.scrollTop = event.target.scrollTop
             }
             addMainScrollListener(this.scrollHandler)
+            this.getModelStatistics()
             this.searchClassificationsObjects({
                 params: this.$injectMetadata()
             })
-            // this.getClassificationsObjectStatistics({
-            //     config: {
-            //         requestId: 'getClassificationsObjectStatistics'
-            //     }
-            // }).then(res => {
-            //     console.log(res)
-            // })
             if (this.$route.query.searchModel) {
                 const hash = window.location.hash
                 this.searchModel = this.$route.query.searchModel
@@ -356,6 +376,18 @@
             hideGroupDialog () {
                 this.groupDialog.isShow = false
                 this.$validator.reset()
+            },
+            async getModelStatistics () {
+                const modelStatisticsSet = {}
+                const res = await this.getClassificationsObjectStatistics({
+                    config: {
+                        requestId: 'getClassificationsObjectStatistics'
+                    }
+                })
+                res.forEach(item => {
+                    modelStatisticsSet[item.bk_obj_id] = item.instance_count
+                })
+                this.modelStatisticsSet = modelStatisticsSet
             },
             async saveGroup () {
                 const res = await Promise.all([
@@ -421,8 +453,11 @@
                     bk_obj_id: data['bk_obj_id'],
                     userName: this.userName
                 })
-                await this.createObject({ params, config: { requestId: 'createModel' } })
+                const createModel = await this.createObject({ params, config: { requestId: 'createModel' } })
+                this.curCreateModel = createModel
+                this.sucessDialog.isShow = true
                 this.$http.cancel('post_searchClassificationsObjects')
+                this.getModelStatistics()
                 this.searchClassificationsObjects({
                     params: this.$injectMetadata()
                 })
@@ -444,6 +479,7 @@
                 })
             },
             handleGoInstance (model) {
+                this.sucessDialog.isShow = false
                 this.$router.push({
                     name: 'generalModel',
                     params: {
@@ -513,7 +549,7 @@
         }
     }
     .group-list {
-        padding: 0 20px 20px;
+        padding: 0 20px;
         .group-item {
             position: relative;
             padding: 10px 0 20px;
@@ -636,8 +672,12 @@
             .info-model {
                 flex: 1;
                 width: 0;
+                border-radius: 4px 0 0 4px;
                 &:hover {
                     background-color: #f0f5ff;
+                }
+                &.radius {
+                    border-radius: 4px;
                 }
             }
             .info-instance {
@@ -713,6 +753,32 @@
             text-align: right;
             .bk-primary {
                 margin-right: 10px;
+            }
+        }
+    }
+    .success-content {
+        text-align: center;
+        padding-bottom: 46px;
+        p {
+            color: #444444;
+            font-size: 24px;
+            padding: 10px 0 20px;
+        }
+        .icon-check-1 {
+            width: 58px;
+            height: 58px;
+            line-height: 58px;
+            font-size: 30px;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 50%;
+            background-color: #2dcb56;
+            text-align: center;
+        }
+        .btn-box {
+            font-size: 0;
+            .bk-button {
+                margin: 0 5px;
             }
         }
     }
