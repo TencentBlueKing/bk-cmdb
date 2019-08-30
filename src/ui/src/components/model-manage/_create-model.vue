@@ -80,7 +80,7 @@
 </template>
 
 <script>
-    import theChooseIcon from './_choose-icon'
+    import theChooseIcon from './choose-icon/_choose-icon'
     import { mapGetters } from 'vuex'
     export default {
         components: {
