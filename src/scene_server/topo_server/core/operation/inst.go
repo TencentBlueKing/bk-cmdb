@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
@@ -158,54 +157,35 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 				continue
 			}
 			updatedInstanceIDs = append(updatedInstanceIDs, targetInstID)
-			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
-				blog.Errorf("[operation-inst] CreateInstBatch failed, update instance failed, validation failed, err: %+v, rid: %s", err, params.ReqID)
+			preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(targetInstID, condition.CreateCondition().ToMapStr())
+			err = item.Update(colInput)
+			if nil != err {
+				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
-
+			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(targetInstID, condition.CreateCondition().ToMapStr())
+			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
 		} else {
-			// check this instance with object unique field.
-			// otherwise, this instance is really a new one, need to be created.
-			// TODO: add a logic to handle if this instance is already exist or not with unique api.
-			// if already exist, then update, otherwise create.
-
-			if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
-				switch tmpErr := err.(type) {
-				case errors.CCErrorCoder:
-					if tmpErr.GetCode() != common.CCErrCommDuplicateItem {
-						blog.Errorf("[operation-inst] failed to valid, input value(%#v) the instname is %s, err: %s, rid: %s", item.GetValues(), obj.GetInstNameFieldName(), err.Error(), params.ReqID)
-						results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-						continue
-					}
-				default:
-
-				}
-
-			}
-
 			// create with metadata
 			if bizID != 0 {
 				colInput[metadata.BKMetadata] = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 			}
-		}
+			// set data
+			err := item.Create()
+			if nil != err {
+				blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
+				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+				continue
+			}
+			results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
+			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
 
-		// set data
-		err := item.Save(colInput)
-		if nil != err {
-			blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
-			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-			continue
-		}
-		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
-		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
-
-		instanceID, err := item.GetInstID()
-		if err != nil {
-			blog.Errorf("unexpected error, instances created success, but get id failed, err: %+v, rid: %s", err, params.ReqID)
-			continue
-		}
-		if exist == false {
+			instanceID, err := item.GetInstID()
+			if err != nil {
+				blog.Errorf("unexpected error, instances created success, but get id failed, err: %+v, rid: %s", err, params.ReqID)
+				continue
+			}
 			createdInstanceIDs = append(createdInstanceIDs, instanceID)
 		}
 	}
