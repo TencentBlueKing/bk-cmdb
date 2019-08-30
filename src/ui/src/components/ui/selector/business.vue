@@ -43,10 +43,6 @@
         watch: {
             localSelected (localSelected, prevSelected) {
                 window.localStorage.setItem('selectedBusiness', localSelected)
-                if (prevSelected !== '') {
-                    window.location.reload()
-                    return
-                }
                 this.setHeader()
                 this.$emit('input', localSelected)
                 this.$emit('on-select', localSelected)

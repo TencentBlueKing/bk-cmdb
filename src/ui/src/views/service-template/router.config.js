@@ -14,21 +14,15 @@ export const OPERATION = {
     R_SERVICE_TEMPLATE
 }
 
-const path = '/service/template'
-
 export default [{
     name: 'serviceTemplate',
-    path: path,
+    path: '/business/:business/service/template',
     component: () => import('./index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            id: 'serviceTemplate',
             i18n: '服务模板',
-            path: path,
-            order: 2,
-            parent: MENU_BUSINESS_SERVICE,
-            adminView: false
+            parent: MENU_BUSINESS_SERVICE
         },
         auth: {
             operation: Object.values(OPERATION),
@@ -41,7 +35,7 @@ export default [{
     })
 }, {
     name: 'operationalTemplate',
-    path: '/service/operational/template/:templateId?',
+    path: '/business/:business/service/operational/template/:templateId?',
     component: () => import('./children/operational.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,

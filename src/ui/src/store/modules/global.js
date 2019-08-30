@@ -37,18 +37,7 @@ const getters = {
     user: state => state.user,
     userName: state => state.user.name,
     admin: state => state.user.admin === '1',
-    isAdminView: (state, getters, rootState, rootGetters) => {
-        const adminEntranceAuth = rootState.auth.adminEntranceAuth
-        if (!adminEntranceAuth.is_pass) {
-            return false
-        }
-        if (window.sessionStorage.hasOwnProperty('isAdminView')) {
-            return window.sessionStorage.getItem('isAdminView') === 'true'
-        } else {
-            window.sessionStorage.setItem('isAdminView', false)
-            return false
-        }
-    },
+    isAdminView: () => false,
     isBusinessSelected: (state, getters, rootState, rootGetters) => {
         return rootGetters['objectBiz/bizId'] !== null
     },

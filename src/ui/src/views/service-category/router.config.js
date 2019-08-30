@@ -14,21 +14,15 @@ export const OPERATION = {
     R_SERVICE_CATEGORY
 }
 
-const path = '/service/cagetory'
-
 export default {
     name: 'serviceCagetory',
-    path: path,
+    path: '/business/:business/service/cagetory',
     component: () => import('./index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            id: 'serviceCagetory',
             i18n: '服务分类',
-            path: path,
-            order: 3,
-            parent: MENU_BUSINESS_SERVICE,
-            adminView: false
+            parent: MENU_BUSINESS_SERVICE
         },
         auth: {
             operation: Object.values(OPERATION),
