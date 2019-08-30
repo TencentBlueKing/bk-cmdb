@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	"configcenter/src/common/errors"
 	frtypes "configcenter/src/common/mapstr"
 	metatype "configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
@@ -85,7 +84,6 @@ func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Facto
 
 func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error) {
 
-	var rowErr map[int64]error
 	results := &BatchResult{}
 	if batchInfo.InputType != common.InputTypeExcel {
 		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
@@ -94,14 +92,21 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		return results, fmt.Errorf("BatchInfo empty")
 	}
 
-	for errIdx, err := range rowErr {
-		results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", errIdx, err.Error()))
+	data := *batchInfo.BatchInfo
+	if obj.GetIsPaused() {
+		return results, fmt.Errorf("model id = %s have been stopped to use", obj.GetID())
 	}
-
+	count := 0
 	// all the instances's name should not be same,
 	// so we need to check first.
 	instNameMap := make(map[string]struct{})
 	for line, inst := range *batchInfo.BatchInfo {
+		if inst == nil {
+			// this is a empty excel line.
+			continue
+		}
+		delete(inst, "import_from")
+
 		iName, exist := inst[common.BKInstNameField]
 		if !exist {
 			blog.Errorf("create object[%s] instance batch failed, because missing bk_inst_name field.", obj.GetID())
@@ -121,63 +126,34 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 
 		instNameMap[name] = struct{}{}
-	}
+		count++
 
-	for colIdx, colInput := range *batchInfo.BatchInfo {
-		if colInput == nil {
-			// this is a empty excel line.
-			continue
-		}
-
-		delete(colInput, "import_from")
 		item := c.instFactory.CreateInst(params, obj)
-		item.SetValues(colInput)
+		item.SetValues(inst)
 
 		if item.GetValues().Exists(obj.GetInstIDFieldName()) {
 			// check update
 			targetInstID, err := item.GetInstID()
 			if nil != err {
 				blog.Errorf("[operation-inst] failed to get inst id, err: %s", err.Error())
-				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", line, err.Error()))
 				continue
 			}
-			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
-				blog.Errorf("[operation-inst] failed to valid, err: %s", err.Error())
-				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-				continue
-			}
-
-		} else {
-			// check this instance with object unique field.
-			// otherwise, this instance is really a new one, need to be created.
-			// TODO: add a logic to handle if this instance is already exist or not with unique api.
-			// if already exist, then update, otherwise create.
-
-			if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
-				switch tmpErr := err.(type) {
-				case errors.CCErrorCoder:
-					if tmpErr.GetCode() != common.CCErrCommDuplicateItem {
-						blog.Errorf("[operation-inst] failed to valid, input value(%#v) the instname is %s, err: %s", item.GetValues(), obj.GetInstNameFieldName(), err.Error())
-						results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-						continue
-					}
-				default:
-
-				}
-
-			}
+			inst[obj.GetInstIDFieldName()] = targetInstID
 		}
-
-		// set data
-		err := item.Save(colInput)
-		if nil != err {
-			blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s", obj.GetID(), colInput, err.Error())
-			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-			continue
-		}
-		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
-		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
 	}
+	if count > 200 {
+		return results, fmt.Errorf("BatchInfo len exceeds 200")
+	}
+
+	rsp, err := c.clientSet.ObjectController().Instance().CreateObjects(context.Background(), obj.GetID(), params.Header, data)
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to request the object controller , error info is %s", err.Error())
+		return results, params.Err.Errorf(common.CCErrCommHTTPDoRequestFailed, err)
+	}
+	results.Success = append(results.Success, rsp.Success...)
+	results.Errors = append(results.Errors, rsp.Errors...)
+	results.UpdateErrors = append(results.UpdateErrors, rsp.UpdateErrors...)
 
 	return results, nil
 }

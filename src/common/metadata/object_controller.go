@@ -24,7 +24,7 @@ type RspID struct {
 // CreateResult create result
 type CreateResult struct {
 	BaseResp `json:",inline"`
-	Data []Association `json:"data"`
+	Data     []Association `json:"data"`
 }
 
 // UpdateResult update result
@@ -149,6 +149,14 @@ type QueryInstResult struct {
 type CreateInstResult struct {
 	BaseResp `json:",inline"`
 	Data     types.MapStr `json:"data"`
+}
+
+// CreateInstsResult create insts result
+type CreateInstsResult struct {
+	BaseResp     `json:",inline"`
+	Errors       []string `json:"error"`
+	Success      []string `json:"success"`
+	UpdateErrors []string `json:"update_error"`
 }
 
 // ObjClassificationObject define the class object class

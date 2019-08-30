@@ -48,6 +48,7 @@ func (s *Service) WebService() *restful.Container {
 
 	api.Route(api.POST("/insts/{obj_type}/search").To(s.SearchInstObjects))
 	api.Route(api.POST("/insts/{obj_type}").To(s.CreateInstObject))
+	api.Route(api.POST("/insts/{obj_id}/batch").To(s.CreateInstObjects))
 	api.Route(api.DELETE("/insts/{obj_type}").To(s.DeleteInstObject))
 	api.Route(api.PUT("/insts/{obj_type}").To(s.UpdateInstObject))
 
