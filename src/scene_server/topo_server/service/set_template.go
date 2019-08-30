@@ -173,7 +173,7 @@ func (s *Service) ListSetTemplateWeb(params types.ContextParams, pathParams, que
 	return result, nil
 }
 
-func (s *Service) ListSetServiceRelatedServiceTemplates(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+func (s *Service) ListSetTplRelatedSvcTpl(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
 	bizIDStr := pathParams(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
@@ -205,4 +205,85 @@ func (s *Service) ListSetServiceRelatedServiceTemplates(params types.ContextPara
 		return nil, err
 	}
 	return setTemplates.Info, nil
+}
+
+// ListSetTplRelatedSets get SetTemplate related sets
+func (s *Service) ListSetTplRelatedSets(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	setTemplateIDStr := pathParams(common.BKSetTemplateIDField)
+	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
+	option := metadata.ListSetByTemplateOption{}
+	if err := data.MarshalJSONInto(&option); err != nil {
+		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	filter := &metadata.QueryCondition{
+		Fields: nil,
+		Limit: metadata.SearchLimit{
+			Offset: int64(option.Page.Start),
+			Limit:  int64(option.Page.Limit),
+		},
+		SortArr: nil,
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKAppIDField:         bizID,
+			common.BKSetTemplateIDField: setTemplateID,
+		}),
+	}
+	setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, filter)
+	if err != nil {
+		blog.Errorf("ListSetTplRelatedSetsWeb failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+	return setInstanceResult.Data, nil
+}
+
+// ListSetTplRelatedSetsWeb get SetTemplate related sets, just for web
+func (s *Service) ListSetTplRelatedSetsWeb(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	response, err := s.ListSetTplRelatedSets(params, pathParams, queryParams, data)
+	if err != nil {
+		return nil, err
+	}
+	setInstanceResult := response.(metadata.InstDataInfo)
+
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	topoTree, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(params.Context, params.Header, bizID, false)
+	if err != nil {
+		blog.Errorf("ListSetTplRelatedSetsWeb failed, bizID: %d, err: %s, rid: %s", bizID, err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	for index := range setInstanceResult.Info {
+		set := metadata.SetInst{}
+		if err := mapstr.DecodeFromMapStr(&set, setInstanceResult.Info[index]); err != nil {
+			return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		setPath := topoTree.TraversalFindNode(common.BKInnerObjIDSet, set.SetID)
+		topoPath := make([]metadata.TopoInstanceNodeSimplify, 0)
+		for _, pathNode := range setPath {
+			nodeSimplify := metadata.TopoInstanceNodeSimplify{
+				ObjectID:     pathNode.ObjectID,
+				InstanceID:   pathNode.InstanceID,
+				InstanceName: pathNode.InstanceName,
+			}
+			topoPath = append(topoPath, nodeSimplify)
+		}
+		setInstanceResult.Info[index]["topo_path"] = topoPath
+	}
+
+	return setInstanceResult, nil
 }
