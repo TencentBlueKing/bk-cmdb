@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -83,8 +84,70 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 		data.Set(common.BKDefaultField, 0)
 	}
 
+	setTemplate := metadata.SetTemplate{}
+	// validate foreign key
+	if setTemplateIDIf, ok := data[common.BKSetTemplateIDField]; ok == false {
+		setTemplateID, err := util.GetInt64ByInterface(setTemplateIDIf)
+		if err != nil {
+			blog.Errorf("parse set_template_id field into int failed, id: %+v, rid: %s", setTemplateIDIf, params.ReqID)
+			err := params.Err.CCErrorf(common.CCErrCommParamsInvalid, params.Lang.Language("set_property_set_template_id"))
+			return nil, err
+		}
+		st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(params.Context, params.Header, bizID, setTemplateID)
+		if err != nil {
+			err := params.Err.CCErrorf(common.CCErrCommParamsInvalid, params.Lang.Language("set_property_set_template_id"))
+			return nil, err
+		}
+		setTemplate = st
+	}
+
+	// TODO: run in transaction
 	// data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
-	return s.inst.CreateInst(params, obj, data)
+	setInstance, err := s.inst.CreateInst(params, obj, data)
+	if err != nil {
+		blog.Errorf("create set instance failed, object: %+v, data: %+v, err: %s, rid: %s", obj, data, err.Error(), params.ReqID)
+		return setInstance, err
+	}
+	if setTemplate.ID == 0 {
+		return setInstance, nil
+	}
+
+	setID, err := setInstance.GetInstID()
+	if err != nil {
+		blog.Errorf("create set instance success, but read instance id field failed, bizID: %d, setInstance: %+v, err: %s, rid: %s", bizID, setInstance, err.Error(), params.ReqID)
+		return setInstance, err
+	}
+
+	// set create by template should create module at the same time
+	// TODO: create module
+	serviceTemplates, err := s.clientSet.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(params.Context, params.Header, bizID, setTemplate.ID)
+	if err != nil {
+		blog.Errorf("create set failed, ListSetTplRelatedSvcTpl failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplate.ID, err.Error(), params.ReqID)
+		return setInstance, err
+	}
+
+	moduleObj, err := s.obj.FindSingleObject(params, common.BKInnerObjIDModule)
+	if nil != err {
+		blog.Errorf("[operation-set] failed to find module object, error info is %s, rid: %s", err.Error(), params.ReqID)
+		return setInstance, err
+	}
+	for _, serviceTemplate := range serviceTemplates {
+		createModuleParam := map[string]interface{}{
+			common.BKModuleNameField:        serviceTemplate.Name,
+			common.BKServiceTemplateIDField: serviceTemplate.ID,
+			common.BKSetTemplateIDField:     setTemplate.ID,
+			common.BKParentIDField:          setID,
+			common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
+			common.BKAppIDField:             bizID,
+		}
+		_, err := s.module.CreateModule(params, moduleObj, bizID, setID, createModuleParam)
+		if err != nil {
+			blog.Errorf("create set instance failed, create module instance failed, bizID: %d, setID: %d, param: %+v, err: %s, rid: %s", bizID, setID, createModuleParam, err.Error(), params.ReqID)
+			return setInstance, err
+		}
+	}
+
+	return setInstance, nil
 }
 
 func (s *set) DeleteSet(params types.ContextParams, obj model.Object, bizID int64, setIDS []int64) error {
