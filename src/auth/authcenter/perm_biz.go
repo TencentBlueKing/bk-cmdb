@@ -13,51 +13,51 @@
 package authcenter
 
 var expectBizResourceType = []ResourceType{
-	{
-		ResourceTypeID:       BizModelGroup,
-		ResourceTypeName:     "模型分组",
-		ParentResourceTypeID: "",
-		Share:                true,
-		Actions: []Action{
-			{
-				ActionID:          Create,
-				ActionName:        "新建",
-				IsRelatedResource: false,
-			},
-			{
-				ActionID:          Edit,
-				ActionName:        "编辑",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          Delete,
-				ActionName:        "删除",
-				IsRelatedResource: true,
-			},
-		},
-	},
-	{
-		ResourceTypeID:   BizModel,
-		ResourceTypeName: "模型",
-		Share:            true,
-		Actions: []Action{
-			{
-				ActionID:          Create,
-				ActionName:        "新建",
-				IsRelatedResource: false,
-			},
-			{
-				ActionID:          Edit,
-				ActionName:        "编辑",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          Delete,
-				ActionName:        "删除",
-				IsRelatedResource: true,
-			},
-		},
-	},
+	// {
+	// 	ResourceTypeID:       BizModelGroup,
+	// 	ResourceTypeName:     "模型分组",
+	// 	ParentResourceTypeID: "",
+	// 	Share:                true,
+	// 	Actions: []Action{
+	// 		{
+	// 			ActionID:          Create,
+	// 			ActionName:        "新建",
+	// 			IsRelatedResource: false,
+	// 		},
+	// 		{
+	// 			ActionID:          Edit,
+	// 			ActionName:        "编辑",
+	// 			IsRelatedResource: true,
+	// 		},
+	// 		{
+	// 			ActionID:          Delete,
+	// 			ActionName:        "删除",
+	// 			IsRelatedResource: true,
+	// 		},
+	// 	},
+	// },
+	// {
+	// 	ResourceTypeID:   BizModel,
+	// 	ResourceTypeName: "模型",
+	// 	Share:            true,
+	// 	Actions: []Action{
+	// 		{
+	// 			ActionID:          Create,
+	// 			ActionName:        "新建",
+	// 			IsRelatedResource: false,
+	// 		},
+	// 		{
+	// 			ActionID:          Edit,
+	// 			ActionName:        "编辑",
+	// 			IsRelatedResource: true,
+	// 		},
+	// 		{
+	// 			ActionID:          Delete,
+	// 			ActionName:        "删除",
+	// 			IsRelatedResource: true,
+	// 		},
+	// 	},
+	// },
 	{
 		ResourceTypeID:       BizInstance,
 		ResourceTypeName:     "实例",
