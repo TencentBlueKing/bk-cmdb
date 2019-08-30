@@ -74,7 +74,7 @@ func (w *Worker) Stop() {
 }
 
 func (w *Worker) doWork(work *meta.WorkRequest) error {
-	blog.V(4).Infof("start doing work: %+v", work)
+	blog.V(3).Infof("start doing work: %s", work.ResourceType)
 	var err error
 	switch work.ResourceType {
 	case meta.BusinessResource:
@@ -90,7 +90,7 @@ func (w *Worker) doWork(work *meta.WorkRequest) error {
 	case meta.InstanceResource:
 		err = w.SyncHandler.HandleInstanceSync(work)
 	// case meta.AuditCategory:
-		// err = w.SyncHandler.HandleAuditSync(work)
+	// err = w.SyncHandler.HandleAuditSync(work)
 	case meta.ProcessResource:
 		err = w.SyncHandler.HandleProcessSync(work)
 	case meta.DynamicGroupResource:
@@ -99,6 +99,8 @@ func (w *Worker) doWork(work *meta.WorkRequest) error {
 		err = w.SyncHandler.HandleClassificationSync(work)
 	// case meta.UserGroupSyncResource:
 	// 	err = w.SyncHandler.HandleUserGroupSync(work)
+	case meta.ServiceTemplateResource:
+		err = w.SyncHandler.HandleServiceTemplateSync(work)
 	default:
 		return fmt.Errorf("unsupported work resource type: %s", work.ResourceType)
 

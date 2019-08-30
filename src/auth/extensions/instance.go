@@ -36,7 +36,7 @@ func (am *AuthManager) CollectInstancesByModelID(ctx context.Context, header htt
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKObjIDField).Eq(objectID).ToMapStr(),
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDObject, &cond)
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, objectID, &cond)
 	if err != nil {
 		blog.V(3).Infof("get instances by model id %s failed, err: %+v, rid: %s", objectID, err, rid)
 		return nil, fmt.Errorf("get instances by model id %s failed, err: %+v", objectID, err)
@@ -105,23 +105,15 @@ func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http
 	return instances, nil
 }
 
-func (am *AuthManager) extractBusinessIDFromInstances(ctx context.Context, instances ...InstanceSimplify) (int64, error) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
+func (am *AuthManager) extractBusinessIDFromInstances(ctx context.Context, instances ...InstanceSimplify) (map[int64]int64, error) {
+	businessIDMap := make(map[int64]int64)
 	if len(instances) == 0 {
-		return 0, fmt.Errorf("empty instances")
+		return businessIDMap, fmt.Errorf("empty instances")
 	}
-	businessIDs := make([]int64, 0)
 	for _, instance := range instances {
-		// we should ignore metadata.LabelBusinessID field not found error
-		businessIDs = append(businessIDs, instance.BizID)
+		businessIDMap[instance.InstanceID] = instance.BizID
 	}
-	businessIDs = util.IntArrayUnique(businessIDs)
-	if len(businessIDs) > 1 {
-		blog.V(5).Infof("extractBusinessIDFromInstances failed, get multiple business ID from instances, businessIDs: %+v, rid: %s", businessIDs, rid)
-		return 0, fmt.Errorf("get multiple business ID from objects")
-	}
-	return businessIDs[0], nil
+	return businessIDMap, nil
 }
 
 // collectObjectsByInstances collect all instances's related model, group by map
@@ -184,7 +176,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 		return nil, nil
 	}
 
-	businessID, err := am.extractBusinessIDFromInstances(ctx, instances...)
+	businessIDMap, err := am.extractBusinessIDFromInstances(ctx, instances...)
 	if err != nil {
 		return nil, fmt.Errorf("extract business id from instances failed, err: %+v", err)
 	}
@@ -208,9 +200,20 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 		objectIDMap[object.ID] = object
 	}
 
+	mainlineTopo, err := am.clientSet.CoreService().Mainline().SearchMainlineModelTopo(context.Background(), header, false)
+	if err != nil {
+		blog.Errorf("list mainline models failed, err: %+v", err)
+	}
+	mainlineModels := mainlineTopo.LeftestObjectIDList()
+
 	resultResources := make([]meta.ResourceAttribute, 0)
 	for objID, instances := range objectIDInstancesMap {
 		object := objectIDMap[objID]
+
+		resourceType := meta.ModelInstance
+		if util.InStrArr(mainlineModels, object.ObjectID) {
+			resourceType = meta.MainlineInstance
+		}
 
 		parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, object)
 		if err != nil {
@@ -235,12 +238,12 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 			resource := meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Action:     action,
-					Type:       meta.ModelInstance,
+					Type:       resourceType,
 					Name:       instance.Name,
 					InstanceID: instance.InstanceID,
 				},
 				SupplierAccount: util.GetOwnerID(header),
-				BusinessID:      businessID,
+				BusinessID:      businessIDMap[instance.InstanceID],
 				Layers:          layers,
 			}
 
