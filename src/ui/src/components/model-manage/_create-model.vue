@@ -65,12 +65,10 @@
                 </div>
             </div>
             <div class="model-icon-wrapper" v-if="modelDialog.isIconListShow">
-                <span class="back" @click="modelDialog.isIconListShow = false">
-                    <i class="bk-icon icon-back2"></i>
-                </span>
                 <the-choose-icon
                     v-model="modelDialog.data['bk_obj_icon']"
                     @chooseIcon="modelDialog.isIconListShow = false"
+                    @close="modelDialog.isIconListShow = false"
                 ></the-choose-icon>
             </div>
         </div>
@@ -262,19 +260,6 @@
             width: 100%;
             background: #fff;
             z-index: 99;
-            .back {
-                position: absolute;
-                right: -47px;
-                top: 0;
-                width: 44px;
-                height: 44px;
-                padding: 7px;
-                cursor: pointer;
-                font-size: 18px;
-                text-align: center;
-                background: #2f2f2f;
-                color: #fff;
-            }
         }
     }
 </style>

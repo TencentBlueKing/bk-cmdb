@@ -2,9 +2,11 @@
     <ul class="icon-set">
         <li class="icon"
             ref="iconItem"
+            :class="{ 'active': icon.value === value }"
             v-bk-tooltips="{ content: language === 'zh_CN' ? icon.nameZh : icon.nameEn }"
             v-for="(icon, index) in curIconList"
-            :key="index">
+            :key="index"
+            @click="handleChooseIcon(icon.value)">
             <i :class="icon.value"></i>
             <span class="checked-status"></span>
         </li>
@@ -16,6 +18,10 @@
     import { mapGetters } from 'vuex'
     export default {
         props: {
+            value: {
+                type: String,
+                default: 'icon-cc-default'
+            },
             filterIcon: {
                 type: String,
                 default: ''
@@ -36,6 +42,11 @@
                 }
                 return this.iconList
             }
+        },
+        methods: {
+            handleChooseIcon (value) {
+                this.$emit('input', value)
+            }
         }
     }
 </script>
@@ -45,7 +56,7 @@
         width: 560px;
         display: flex;
         flex-wrap: wrap;
-        padding: 10px 0;
+        padding-bottom: 10px;
         .icon {
             position: relative;
             display: flex;
@@ -54,6 +65,8 @@
             flex: 0 0 10%;
             height: 50px;
             font-size: 24px;
+            outline: 0;
+            cursor: pointer;
             &:hover {
                 color: #3a84ff;
                 background-color: #ebf4ff;

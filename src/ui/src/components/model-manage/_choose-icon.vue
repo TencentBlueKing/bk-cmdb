@@ -7,13 +7,12 @@
         </bk-input>
         <bk-tab :active.sync="activeTab" type="unborder-card" class="icon-tab">
             <bk-tab-panel name="system" :label="$t('系统图标')">
-                <icon-set></icon-set>
+                <icon-set v-model="curIcon" :filter-icon="searchText"></icon-set>
             </bk-tab-panel>
-            <bk-tab-panel name="custom" :label="$t('自定义图标')"></bk-tab-panel>
         </bk-tab>
         <div class="footer">
-            <bk-button theme="primary">{{$t('确定')}}</bk-button>
-            <bk-button>{{$t('取消')}}</bk-button>
+            <bk-button theme="primary" @click="handleConfirm">{{$t('确定')}}</bk-button>
+            <bk-button @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>
 </template>
@@ -24,13 +23,27 @@
         components: {
             iconSet
         },
+        props: {
+            value: {
+                type: String,
+                default: 'icon-cc-default'
+            }
+        },
         data () {
             return {
                 activeTab: 'system',
-                searchText: ''
+                searchText: '',
+                curIcon: this.value
             }
         },
         methods: {
+            handleConfirm () {
+                this.$emit('input', this.curIcon)
+                this.$emit('chooseIcon')
+            },
+            handleCancel () {
+                this.$emit('close')
+            }
         }
     }
 </script>
@@ -51,7 +64,8 @@
             width: 100%;
             height: calc(100% - 58px);
             /deep/ .bk-tab-section {
-                height: calc(100% - 57px);
+                margin: 10px 0;
+                height: calc(100% - 77px);
                 @include scrollbar-y;
             }
             /deep/ .bk-tab-header {
