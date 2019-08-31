@@ -47,9 +47,25 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
+	if len(sub.SubscriptionName) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionName")})
+		return
+	}
+	if len(sub.CallbackURL) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "CallbackURL")})
+		return
+	}
+	if len(sub.SubscriptionForm) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionForm")})
+		return
+	}
 	sub.Operator = util.GetUser(req.Request.Header)
 	if sub.TimeOutSeconds <= 0 {
 		sub.TimeOutSeconds = 10
+	}
+	if sub.ConfirmMode != metadata.ConfirmModeHTTPStatus && sub.ConfirmMode != metadata.ConfirmModeRegular {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "ConfirmMode")})
+		return
 	}
 	if sub.ConfirmMode == metadata.ConfirmModeHTTPStatus && sub.ConfirmPattern == "" {
 		sub.ConfirmPattern = strconv.FormatInt(http.StatusOK, 10)
@@ -73,21 +89,15 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommDuplicateItem, common.BKSubscriptionNameField),
 		}
-		resp.WriteError(http.StatusInternalServerError, result)
+		resp.WriteError(http.StatusOK, result)
 		return
 	}
-	// TODO: is it necessary to do update operation?
+
 	if len(existSubscriptions) > 0 {
-		subscriptionID := existSubscriptions[0].SubscriptionID
-		if err = s.updateSubscription(header, subscriptionID, ownerID, sub); err != nil {
-			result := &metadata.RespError{
-				Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed),
-			}
-			resp.WriteError(http.StatusBadRequest, result)
-			return
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommDuplicateItem, common.BKSubscriptionNameField),
 		}
-		result := NewCreateSubscriptionResult(sub.SubscriptionID)
-		resp.WriteEntity(result)
+		resp.WriteError(http.StatusOK, result)
 		return
 	}
 
@@ -137,7 +147,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	if err = s.auth.RegisterResource(s.ctx, iamResource); err != nil {
 		blog.Errorf("register subscribe to iam failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
-		resp.WriteError(http.StatusInternalServerError, result)
+		resp.WriteError(http.StatusOK, result)
 		return
 	}
 
@@ -212,6 +222,21 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	msg, _ := json.Marshal(&sub)
 	s.cache.Publish(types.EventCacheProcessChannel, "delete"+string(msg))
 
+	// deregister subscription from iam
+	iamResource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Name:       sub.SubscriptionName,
+			Type:       meta.EventPushing,
+			InstanceID: sub.SubscriptionID,
+		},
+	}
+	if err = s.auth.DeregisterResource(s.ctx, iamResource); err != nil {
+		blog.Errorf("deregister subscribe to iam failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
+		resp.WriteError(http.StatusOK, result)
+		return
+	}
+
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
@@ -238,6 +263,25 @@ func (s *Service) UpdateSubscription(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
+	if len(sub.SubscriptionName) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionName")})
+		return
+	}
+	if len(sub.CallbackURL) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "CallbackURL")})
+		return
+	}
+	if len(sub.SubscriptionForm) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionForm")})
+		return
+	}
+	if sub.ConfirmMode != metadata.ConfirmModeHTTPStatus && sub.ConfirmMode != metadata.ConfirmModeRegular {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "ConfirmMode")})
+		return
+	}
+	if sub.ConfirmMode == metadata.ConfirmModeHTTPStatus && sub.ConfirmPattern == "" {
+		sub.ConfirmPattern = strconv.FormatInt(http.StatusOK, 10)
+	}
 	sub.Operator = util.GetUser(req.Request.Header)
 	if err = s.updateSubscription(header, id, ownerID, sub); err != nil {
 		result := &metadata.RespError{
@@ -246,6 +290,22 @@ func (s *Service) UpdateSubscription(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
+
+	// deregister subscription from iam
+	iamResource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Name:       sub.SubscriptionName,
+			Type:       meta.EventPushing,
+			InstanceID: sub.SubscriptionID,
+		},
+	}
+	if err := s.auth.UpdateResource(s.ctx, &iamResource); err != nil {
+		blog.Errorf("deregister subscribe to iam failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
+		resp.WriteError(http.StatusOK, result)
+		return
+	}
+
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
@@ -362,7 +422,6 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 	}
 
 	results := make([]metadata.Subscription, 0)
-	blog.Debug("selector:%+v, rid: %s", condition, rid)
 
 	if selErr := s.db.Table(common.BKTableNameSubscription).Find(condition).Fields(fields...).Sort(sortOption).Start(uint64(skip)).Limit(uint64(limit)).All(s.ctx, &results); nil != selErr {
 		blog.Errorf("select data failed, error information is %s, input:%v, rid: %s", selErr, data, rid)

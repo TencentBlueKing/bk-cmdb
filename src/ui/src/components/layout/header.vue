@@ -282,9 +282,9 @@
 
 <style lang="scss">
     .custom-color-theme {
-        font-size: 14px;
-        background-color: #699df4;
-        padding: 10px 14px;
+        font-size: 14px !important;
+        background-color: #699df4 !important;
+        padding: 10px 14px !important;
         .tippy-arrow {
             border-bottom-color: #699df4 !important;
         }

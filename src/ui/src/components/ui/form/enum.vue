@@ -58,6 +58,9 @@
             selected (selected) {
                 this.$emit('input', selected)
                 this.$emit('on-selected', selected)
+            },
+            disabled (disabled) {
+                this.setInitData()
             }
         },
         created () {

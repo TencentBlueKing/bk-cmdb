@@ -200,6 +200,10 @@ func (s *Service) SearchAssociationType(params types.ContextParams, pathParams, 
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
+	if request.Condition == nil {
+		request.Condition = make(map[string]interface{}, 0)
+	}
+
 	ret, err := s.Core.AssociationOperation().SearchType(params, request)
 	if err != nil {
 		return nil, err

@@ -18,8 +18,10 @@ import (
 	"net/http"
 
 	authmeta "configcenter/src/auth/meta"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
 )
 
@@ -28,6 +30,18 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 	object := task.Data.(metadata.Object)
 	header := task.Header.(http.Header)
 
+	ignoreObjectIDs := []string{
+		common.BKInnerObjIDHost,
+		common.BKInnerObjIDSet,
+		common.BKInnerObjIDModule,
+		common.BKInnerObjIDApp,
+		common.BKInnerObjIDProc,
+	}
+	objectID := object.ObjectID
+	if util.InStrArr(ignoreObjectIDs, objectID) {
+		blog.V(5).Infof("ignore instance sync task: %s", objectID)
+		return nil
+	}
 	// step1 construct instances resource query parameter for iam
 	bizIDMap, err := ih.authManager.ExtractBusinessIDFromObjects(object)
 	if err != nil {

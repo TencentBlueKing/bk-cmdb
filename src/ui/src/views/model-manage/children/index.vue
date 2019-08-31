@@ -41,7 +41,7 @@
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelName') }">
                             <bk-input type="text" class="cmdb-form-input"
                                 name="modelName"
-                                v-validate="'required|singlechar'"
+                                v-validate="'required|singlechar|length:256'"
                                 v-model.trim="modelInfo.objName">
                             </bk-input>
                         </div>
@@ -575,6 +575,7 @@
             height: 100px;
             line-height: 100px;
             .label-btn {
+                outline: 0;
                 position: relative;
                 &.disabled {
                     cursor: not-allowed;

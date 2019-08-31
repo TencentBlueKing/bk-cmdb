@@ -391,7 +391,7 @@ func (s *Service) SearchInstByAssociation(params types.ContextParams, pathParams
 
 // SearchInstByInstID search the inst by inst ID
 func (s *Service) SearchInstByInstID(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	objID := pathParams("obj_id")
+	objID := pathParams("bk_obj_id")
 
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
@@ -455,7 +455,7 @@ func (s *Service) SearchInstTopo(params types.ContextParams, pathParams, queryPa
 	objID := pathParams("bk_obj_id")
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("search inst topo failed, path parameter inst_id invalid, inst_id: %s, err: %+v, rid: %s", pathParams("inst_id"), err, params.ReqID)
+		blog.Errorf("search inst topo failed, path parameter inst_id invalid, object: %s inst_id: %s, err: %+v, rid: %s", objID, pathParams("inst_id"), err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 

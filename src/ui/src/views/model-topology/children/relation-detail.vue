@@ -28,7 +28,7 @@
                     name="asstName"
                     :disabled="relationInfo.ispre || !isEdit"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
-                    v-validate="'required|singlechar'">
+                    v-validate="'required|singlechar|length:256'">
                 </bk-input>
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>

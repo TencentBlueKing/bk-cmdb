@@ -1,23 +1,33 @@
 <template>
     <div class="node-create-layout">
-        <h2 class="node-create-title">{{$t('新建节点')}}</h2>
+        <h2 class="node-create-title">{{title}}</h2>
         <div class="node-create-path">{{$t('添加节点已选择')}}：{{topoPath}}</div>
         <div class="node-create-form">
-            <div class="form-group"
-                v-for="(property, index) in sortedProperties"
+            <div v-for="(property, index) in sortedProperties"
+                :class="['form-group', { 'form-group-flex': sortedProperties.length === 1 || property['bk_property_type'] === 'longchar' }]"
                 :key="index">
-                <label :class="['form-label', {
+                <label :class="['form-label', 'inline-block-middle', {
                     required: property['isrequired']
                 }]">
                     {{property['bk_property_name']}}
                 </label>
-                <component :is="`cmdb-form-${property['bk_property_type']}`"
+                <component v-if="!['longchar'].includes(property['bk_property_type'])" :is="`cmdb-form-${property['bk_property_type']}`"
+                    style="display: block;"
                     :data-vv-name="property['bk_property_id']"
                     :data-vv-as="property['bk_property_name']"
                     :options="property.option || []"
                     v-validate="getValidateRules(property)"
                     v-model.trim="values[property['bk_property_id']]">
                 </component>
+                <div v-else>
+                    <bk-input type="textarea" class="longchar-textarea"
+                        :data-vv-name="property['bk_property_id']"
+                        :data-vv-as="property['bk_property_name']"
+                        :options="property.option || []"
+                        v-validate="getValidateRules(property)"
+                        v-model.trim="values[property['bk_property_id']]">
+                    </bk-input>
+                </div>
                 <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
             </div>
         </div>
@@ -42,7 +52,8 @@
             properties: {
                 type: Array,
                 required: true
-            }
+            },
+            nextModelId: String
         },
         data () {
             return {
@@ -60,6 +71,9 @@
                     return this.$tools.getPropertyPriority(propertyA) - this.$tools.getPropertyPriority(propertyB)
                 })
                 return sortedProperties
+            },
+            title () {
+                return this.nextModelId === 'set' ? this.$t('新建集群') : this.$t('新建节点')
             }
         },
         watch: {
@@ -123,21 +137,27 @@
         position: relative;
     }
     .node-create-title {
-        padding: 20px 26px 0;
+        margin-top: -14px;
+        padding: 0 26px;
         line-height: 30px;
         font-size: 22px;
         color: #333948;
     }
     .node-create-path {
-        padding: 12px 26px 20px;
-        font-size: 14px;
+        padding: 12px 26px 18px;
+        font-size: 12px;
     }
     .node-create-form {
         max-height: 400px;
+        padding: 0 26px 52px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
         @include scrollbar-y;
         .form-group {
+            flex: 0 0 48%;
             position: relative;
-            padding: 0 26px 16px;
+            padding: 0 0 16px;
             .form-label {
                 position: relative;
                 display: inline-block;
@@ -152,12 +172,21 @@
                     color: #ff5656;
                 }
             }
+            .longchar-textarea {
+                /deep/ .bk-form-textarea {
+                    min-height: 60px !important;
+                    height: 60px !important;
+                }
+            }
             .form-error {
                 position: absolute;
                 bottom: -2px;
-                left: 20px;
+                left: 0;
                 font-size: 12px;
                 color: #ff5656;
+            }
+            &.form-group-flex {
+                flex: 0 0 100%;
             }
         }
     }

@@ -103,11 +103,19 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
+	assoKinds := make([]metadata.AssociationKind, 0)
+	for ak := range associationKinds {
+		// filter bk_mainline kind, do not register to auth center.
+		if associationKinds[ak].AssociationKindID != common.AssociationKindMainline {
+			assoKinds = append(assoKinds, associationKinds[ak])
+		}
+	}
+
 	initCfg := meta.InitConfig{
 		Bizs:             noRscPoolBiz,
 		Models:           models,
 		Classifications:  cls,
-		AssociationKinds: associationKinds,
+		AssociationKinds: assoKinds,
 	}
 	if err := s.authCenter.Init(s.ctx, initCfg); nil != err {
 		blog.Errorf("init auth center failed, err: %+v, rid: %s", err, rid)

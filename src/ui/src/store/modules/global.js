@@ -28,6 +28,7 @@ const state = {
         category: true,
         hostServiceInstanceCheckView: true
     },
+    permission: [],
     appHeight: window.innerHeight
 }
 
@@ -60,7 +61,8 @@ const getters = {
     showBack: state => state.header.back,
     userList: state => state.userList,
     headerTitle: state => state.headerTitle,
-    featureTipsParams: state => state.featureTipsParams
+    featureTipsParams: state => state.featureTipsParams,
+    permission: state => state.permission
 }
 
 const actions = {
@@ -109,6 +111,9 @@ const mutations = {
         } else {
             window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
         }
+    },
+    setPermission (state, permission) {
+        state.permission = permission
     },
     setAppHeight (state, height) {
         state.appHeight = height

@@ -62,8 +62,6 @@ const mutations = {
         state.selectedHost = []
     },
     setInstanceIp (state, { hostId, res }) {
-        console.log(hostId)
-        console.log(res)
         Vue.set(state.instanceIpMap, hostId, res)
     }
 }

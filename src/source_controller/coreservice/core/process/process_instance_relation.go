@@ -13,12 +13,13 @@
 package process
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"strconv"
 )
 
 func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
@@ -54,6 +55,7 @@ func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams,
 	}
 	// TODO: asset bizID == category.Metadata.Label.bk_biz_id
 
+	relation.SupplierAccount = ctx.SupplierAccount
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Insert(ctx.Context, &relation); nil != err {
 		blog.Errorf("CreateProcessInstanceRelation failed, mongodb failed, table: %s, relation: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, relation, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBInsertFailed)

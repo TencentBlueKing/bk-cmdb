@@ -23,6 +23,8 @@ import (
 
 // IsInstanceExist used to check if the  instances  asst exist
 func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
+	// to many call. can use $or. but universalsql parse or condtion error.
+
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID}, &mongo.Eq{Key: common.BKInstIDField, Val: instID})
 	queryCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
@@ -39,7 +41,7 @@ func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, inst
 		blog.Errorf("search instance to association error %v, rid: %s", err, ctx.ReqID)
 		return false, err
 	}
-	if 0 < objInsts.Count && 0 < objAsstInsts.Count {
+	if 0 < objInsts.Count || 0 < objAsstInsts.Count {
 		return true, nil
 	}
 	return false, nil

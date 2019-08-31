@@ -178,7 +178,7 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 
 		hostID = int64(result.Data.Created.ID)
 	} else if false == isIncrement {
-		//Not an additional relationship model
+		// Not an additional relationship model
 		return nil
 	} else {
 
@@ -204,7 +204,7 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		ApplicationID: appID,
 		HostID:        []int64{hostID},
 		ModuleID:      []int64{moduleID},
-		IsIncrement:   false,
+		IsIncrement:   isIncrement,
 	}
 	hmResult, ccErr := lgc.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, lgc.header, params)
 	if ccErr != nil {
@@ -212,7 +212,7 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hmResult.Result {
-		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, result:%#v, rid:%s", appID, hostID, hmResult, lgc.rid)
+		blog.Errorf("transfer host to normal module failed, error params:{appID:%d, hostID:%d}, result:%#v, rid:%s", appID, hostID, hmResult, lgc.rid)
 		if len(hmResult.Data) > 0 {
 			return lgc.ccErr.New(int(hmResult.Data[0].Code), hmResult.Data[0].Message)
 		}

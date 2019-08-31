@@ -5,6 +5,7 @@ import StatusError from './StatusError.js'
 
 import preload from '@/setup/preload'
 import afterload from '@/setup/afterload'
+import { translateAuth } from '@/setup/permission'
 import $http from '@/api'
 
 import index from '@/views/index/router.config'
@@ -39,7 +40,6 @@ export const viewRouters = [
     businessTopology,
     customQuery,
     eventpush,
-    history,
     hosts,
     ...hostDetails,
     modelAssociation,
@@ -53,7 +53,8 @@ export const viewRouters = [
     category,
     synchronous,
     ...serviceInstance,
-    operation
+    operation,
+    history
 ]
 
 const indexName = index[0].name
@@ -204,6 +205,22 @@ const isShouldShow = to => {
         : true
 }
 
+const setPermission = async to => {
+    const permission = []
+    const authMeta = to.meta.auth
+    if (authMeta) {
+        const { view, operation } = authMeta
+        const auth = [...operation]
+        if (view) {
+            auth.push(view)
+        }
+        const translated = await translateAuth(auth)
+        permission.push(...translated)
+    }
+    router.app.$store.commit('setPermission', permission)
+    return permission
+}
+
 const setupStatus = {
     preload: true,
     afterload: true
@@ -225,6 +242,10 @@ router.beforeEach((to, from, next) => {
                 setAuthScope(to, from)
                 checkAuthDynamicMeta(to, from)
 
+                if (to.name === 'requireBusiness' && !router.app.$store.getters.permission.length) {
+                    next({ name: indexName })
+                }
+
                 const isAvailable = checkAvailable(to, from)
                 if (!isAvailable) {
                     throw new StatusError({ name: '404' })
@@ -237,22 +258,22 @@ router.beforeEach((to, from, next) => {
 
                 const isBusinessCheckPass = checkBusiness(to)
                 if (!isBusinessCheckPass) {
-                    throw new StatusError({ name: 'requireBusiness' })
+                    await setPermission(to)
+                    throw new StatusError({ name: 'requireBusiness', query: { _t: Date.now() } })
                 }
-
                 next()
             }
         } catch (e) {
             if (e.__CANCEL__) {
                 next()
             } else if (e instanceof StatusError) {
-                next({ name: e.name })
+                next({ name: e.name, query: e.query })
             } else {
                 console.error(e)
                 next({ name: 'error' })
             }
-            setLoading(false)
         } finally {
+            setLoading(false)
             setupStatus.preload = false
         }
     })
@@ -264,7 +285,7 @@ router.afterEach((to, from) => {
             afterload(router.app, to, from)
         }
     } catch (e) {
-        // ignore
+        console.error(e)
     } finally {
         setLoading(false)
     }
