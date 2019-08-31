@@ -22,6 +22,8 @@ const (
 	CC_SERVCONF_BASEPATH  = "/cc/services/config"
 	CC_SERVERROR_BASEPATH = "/cc/services/errors"
 	CC_SERVLANG_BASEPATH  = "/cc/services/language"
+
+	CC_DISCOVERY_PREFIX = "cc_"
 )
 
 // cc modules

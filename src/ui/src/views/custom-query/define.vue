@@ -29,7 +29,7 @@
                         v-model.trim="name"
                         :name="$t('查询名称')"
                         :disabled="!editable"
-                        v-validate="'required|max:15'">
+                        v-validate="'required|length:256'">
                     </bk-input>
                 </div>
                 <span v-show="errors.has($t('查询名称'))" class="color-danger">{{ errors.first($t('查询名称')) }}</span>
@@ -100,6 +100,11 @@
                             v-model="property.value"
                             :disabled="!editable">
                         </cmdb-form-bool-input>
+                        <cmdb-search-input class="filter-field-value filter-field-char fl"
+                            v-else-if="['singlechar', 'longchar'].includes(property.propertyType)"
+                            v-model="property.value"
+                            :disabled="!editable">
+                        </cmdb-search-input>
                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
                             v-else
                             :is="`cmdb-form-${property.propertyType}`"
@@ -165,7 +170,7 @@
                 <span class="inline-block-middle"
                     v-cursor="{
                         active: !editable,
-                        auth: [$OPERATION.U_CUSTOM_QUERY]
+                        auth: [$OPERATION.D_CUSTOM_QUERY]
                     }">
                     <bk-button theme="danger" class="userapi-btn button-delete"
                         v-if="type === 'update'"
@@ -284,7 +289,7 @@
             ]),
             editable () {
                 if (this.type === 'update') {
-                    return this.$isAuthorized(this.$OPERATION.U_CUSTOM_QUERY)
+                    return this.$isAuthorized(this.$OPERATION.D_CUSTOM_QUERY)
                 }
                 return true
             },
@@ -367,6 +372,12 @@
                             field: property.propertyId,
                             operator: property.operator,
                             value: property.value === 'true'
+                        })
+                    } else if (property.operator === '$multilike') {
+                        param.condition.push({
+                            field: property.propertyId,
+                            operator: property.operator,
+                            value: property.value.split('\n').filter(str => str.trim().length).map(str => str.trim())
                         })
                     } else {
                         let operator = property.operator
@@ -513,6 +524,8 @@
                     && ['bk_module_name', 'bk_set_name'].includes(originalProperty['bk_property_id'])
                 ) {
                     return property.value[property.value.length - 1]
+                } else if (property.operator === '$multilike' && Array.isArray(property.value)) {
+                    return property.value.join('\n')
                 }
                 return property.value
             },
@@ -931,6 +944,9 @@
             .button-delete {
                 background-color: #fff;
                 color: #ff5656;
+                &:disabled {
+                    color: #dcdee5;
+                }
             }
         }
     }

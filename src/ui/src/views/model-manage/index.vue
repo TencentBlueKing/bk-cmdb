@@ -1,5 +1,5 @@
 <template>
-    <div class="group-wrapper">
+    <div class="group-wrapper" :style="{ 'padding-top': showFeatureTips ? '114px' : '72px' }">
         <cmdb-main-inject
             :style="{ 'padding-top': showFeatureTips ? '10px' : '' }"
             inject-type="prepend"
@@ -19,7 +19,7 @@
                     }">
                     <bk-button theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
-                        @click="showModelDialog(false)">
+                        @click="showModelDialog()">
                         {{createModelBtn}}
                     </bk-button>
                 </span>
@@ -31,7 +31,7 @@
                     <bk-button theme="primary"
                         v-bk-tooltips="$t('新增模型提示')"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
-                        @click="showModelDialog(false)">
+                        @click="showModelDialog()">
                         {{createModelBtn}}
                     </bk-button>
                 </span>
@@ -88,12 +88,20 @@
             <li class="group-item clearfix"
                 v-for="(classification, classIndex) in currentClassifications"
                 :key="classIndex">
-                <div class="group-title">
+                <div class="group-title" v-bk-tooltips="classification.bk_classification_type === 'inner' ? groupToolTips : ''">
                     <span>{{classification['bk_classification_name']}}</span>
                     <span class="number">({{classification['bk_objects'].length}})</span>
                     <template v-if="isEditable(classification)">
+                        <i class="icon-cc-plus text-primary"
+                            :style="{ 'margin': '0 6px', color: $isAuthorized($OPERATION.C_MODEL) ? '' : '#e6e6e6 !important' }"
+                            v-cursor="{
+                                active: !$isAuthorized($OPERATION.C_MODEL),
+                                auth: [$OPERATION.C_MODEL]
+                            }"
+                            @click="showModelDialog(classification.bk_classification_id)">
+                        </i>
                         <i class="icon-cc-edit text-primary"
-                            :style="{ color: $isAuthorized($OPERATION.U_MODEL_GROUP) ? '' : '#e6e6e6 !important' }"
+                            :style="{ 'margin-right': '4px', color: $isAuthorized($OPERATION.U_MODEL_GROUP) ? '' : '#e6e6e6 !important' }"
                             v-cursor="{
                                 active: !$isAuthorized($OPERATION.U_MODEL_GROUP),
                                 auth: [$OPERATION.U_MODEL_GROUP]
@@ -180,6 +188,7 @@
         </bk-dialog>
         <the-create-model
             :is-show.sync="modelDialog.isShow"
+            :group-id.sync="modelDialog.groupId"
             :title="$t('新建模型')"
             @confirm="saveModel">
         </the-create-model>
@@ -216,11 +225,16 @@
                     }
                 },
                 modelDialog: {
-                    isShow: false
+                    isShow: false,
+                    groupId: ''
                 },
                 modelType: 'enable',
                 searchModel: '',
-                filterClassifications: []
+                filterClassifications: [],
+                groupToolTips: {
+                    content: this.$t('内置模型组不支持添加和修改'),
+                    placement: 'right'
+                }
             }
         },
         computed: {
@@ -405,7 +419,8 @@
                     }
                 })
             },
-            showModelDialog () {
+            showModelDialog (groupId) {
+                this.modelDialog.groupId = groupId || ''
                 this.modelDialog.isShow = true
             },
             async saveModel (data) {
@@ -423,6 +438,7 @@
                     params: this.$injectMetadata()
                 })
                 this.modelDialog.isShow = false
+                this.modelDialog.groupId = ''
                 this.searchModel = ''
             },
             modelClick (model) {
@@ -444,7 +460,7 @@
 
 <style lang="scss" scoped>
     .group-wrapper {
-        padding: 122px 0 20px 0;
+        padding: 72px 0 20px 0;
     }
     .btn-group {
         position: absolute;
@@ -512,9 +528,10 @@
         }
         .group-title {
             display: inline-block;
-            padding: 0 40px 0 0;
+            margin: 0 40px 0 0;
             line-height: 21px;
             color: #333948;
+            outline: 0;
             &:before {
                 content: "";
                 display: inline-block;
@@ -540,6 +557,10 @@
                 >.text-primary {
                     display: inline-block;
                 }
+            }
+            .icon-cc-plus {
+                border: 1px solid #3c96ff;
+                border-radius: 2px;
             }
         }
     }

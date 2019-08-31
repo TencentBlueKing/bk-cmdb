@@ -26,6 +26,7 @@ import (
 	types "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	parse "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
@@ -177,7 +178,7 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 	if len(errHostID) > 0 {
 		errHostIP := lgc.convertHostIDToHostIP(ctx, errHostID)
 		blog.Errorf("move host to resource pool, notExistAppModuleHost error, has host not belong to idle module , owneAppID: %d, input:%#v, err host inner ip:%#v, rid:%s", ownerAppID, conf, errHostIP, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrHostNotBelongIDLEModuleErr, strings.Join(errHostIP, ","))
+		return nil, lgc.ccErr.Errorf(common.CCErrHostNotBelongIDLEModuleErr, util.PrettyIPStr(errHostIP))
 	}
 
 	param := &metadata.TransferHostsCrossBusinessRequest{

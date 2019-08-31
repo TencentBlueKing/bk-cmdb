@@ -169,7 +169,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 
 func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID string, id uint64, meta metadata.DeleteModelAttrUnique) error {
 	cond := condition.CreateCondition()
-	cond.Field("id").Eq(id)
+	cond.Field(common.BKFieldID).Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKOwnerIDField).Eq(ctx.SupplierAccount)
 
@@ -183,6 +183,16 @@ func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID st
 	if unique.Ispre {
 		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain: %+v, %v, rid: %s", unique, err, ctx.ReqID)
 		return ctx.Error.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
+	}
+
+	exist, err := m.checkUniqueRequireExist(ctx, objID, []uint64{id})
+	if err != nil {
+		blog.ErrorJSON("deleteModelAttrUnique check unique require err:%s, cond:%s, rid:%s", err.Error(), cond.ToMapStr(), ctx.ReqID)
+		return err
+	}
+	if !exist {
+		blog.ErrorJSON("deleteModelAttrUnique check unique require result. not found other require unique, cond:%s, rid:%s", cond.ToMapStr(), ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne)
 	}
 
 	fCond := cond.ToMapStr()
@@ -294,4 +304,26 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 	}
 
 	return nil
+}
+
+// checkUniqueRequireExist  check if ehter is arequired qnique check
+// ignoreUnqiqueIDS 除ignoreUnqiqueIDS之外是否有唯一校验项目
+func (m *modelAttrUnique) checkUniqueRequireExist(ctx core.ContextParams, objID string, ignoreUnqiqueIDS []uint64) (bool, error) {
+	cond := condition.CreateCondition()
+	if len(ignoreUnqiqueIDS) > 0 {
+		cond.Field(common.BKFieldID).NotIn(ignoreUnqiqueIDS)
+	}
+	cond.Field(common.BKObjIDField).Eq(objID)
+	cond.Field("must_check").Eq(true)
+
+	cnt, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(ctx)
+	if nil != err {
+		blog.ErrorJSON("[checkUniqueRequireExist] find error: %s, raw: %s, rid: %s", err, cond.ToMapStr(), ctx.ReqID)
+		return false, ctx.Error.Error(common.CCErrObjectDBOpErrno)
+	}
+	if cnt > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }

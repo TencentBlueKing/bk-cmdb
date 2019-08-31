@@ -41,10 +41,6 @@
                 <div class="topo-example" v-else>
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('自定义模型')}}</span>
-                    </p>
-                    <p class="example-item">
-                        <i></i>
                         <span>{{$t('内置模型')}}</span>
                     </p>
                 </div>
@@ -876,7 +872,7 @@
                 }
             },
             getEdgeArrows (asst) {
-                const asstType = this.associationList.find(({ id }) => id === asst['bk_asst_inst_id'])['direction']
+                const asstType = (this.associationList.find(({ id }) => id === asst['bk_asst_inst_id']) || {}).direction
                 let arrows = ''
                 switch (asstType) {
                     case 'bidirectional':

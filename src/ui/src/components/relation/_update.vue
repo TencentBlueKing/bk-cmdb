@@ -37,7 +37,7 @@
                 :prop="filter.id"
                 :label="(getProperty(filter.id) || {}).bk_property_name">
             </bk-table-column>
-            <bk-table-column fixed="right" :label="$t('操作')">
+            <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <a href="javascript:void(0)" class="option-link"
                         v-if="isAssociated(row)"
@@ -52,7 +52,7 @@
                 </template>
             </bk-table-column>
         </bk-table>
-        <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.id">
+        <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.show">
             <p class="tips-content">{{$t('更新确认')}}</p>
             <div class="tips-option">
                 <bk-button class="tips-button" theme="primary" @click="confirmUpdate">{{$t('确认')}}</bk-button>
@@ -96,6 +96,7 @@
                     'set': 'bk_set_name'
                 },
                 confirm: {
+                    show: false,
                     instance: null,
                     id: null
                 },
@@ -348,6 +349,7 @@
                         this.$success(this.$t('取消关联成功'))
                     } else if (updateType === 'update') {
                         await this.deleteAssociation(this.isSource ? this.existInstAssociation[0]['bk_asst_inst_id'] : this.existInstAssociation[0]['bk_inst_id'])
+                        this.existInstAssociation = []
                         await this.createAssociation(instId)
                         this.$success(this.$t('添加关联成功'))
                     }
@@ -387,15 +389,20 @@
                 } else {
                     this.confirm.id = instId
                     this.confirm.instance && this.confirm.instance.destroy()
-                    this.confirm.instance = this.$tooltips({
-                        duration: -1,
+                    this.confirm.instance = this.$bkPopover(event.target, {
+                        content: this.$refs.confirmTips,
                         theme: 'light',
                         zIndex: 9999,
                         width: 230,
-                        container: document.body,
-                        target: event.target
+                        trigger: 'manual',
+                        boundary: 'window',
+                        arrow: true,
+                        interactive: true
                     })
-                    this.confirm.instance.$el.append(this.$refs.confirmTips)
+                    this.confirm.show = true
+                    this.$nextTick(() => {
+                        this.confirm.instance.show()
+                    })
                 }
             },
             confirmUpdate () {
@@ -403,7 +410,7 @@
                 this.cancelUpdate()
             },
             cancelUpdate () {
-                this.confirm.instance && this.confirm.instance.setVisible(false)
+                this.confirm.instance && this.confirm.instance.hide()
             },
             async getInstance () {
                 const objId = this.currentAsstObj
@@ -559,10 +566,12 @@
     }
     .new-association-table{
         margin: 20px 0 0;
-        border: none;
+        border-left: none;
+        border-bottom: none;
+        border-right: none;
     }
     .confirm-tips {
-        padding: 9px 22px;
+        padding: 9px;
         .tips-content {
             color: $cmdbTextColor;
             line-height: 20px;

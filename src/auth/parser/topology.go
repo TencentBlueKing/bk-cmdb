@@ -670,12 +670,18 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 	// create object instance operation.
 	if ps.hitRegexp(createObjectInstanceRegexp, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.Create,
 				},
+				BusinessID: bizID,
 			},
 		}
 		return ps
@@ -687,8 +693,14 @@ func (ps *parseStream) objectInstance() *parseStream {
 			ps.err = errors.New("search object instance, but got invalid url")
 			return ps
 		}
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.Find,
@@ -711,6 +723,12 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object instance, but got invalid instance id %s", ps.RequestCtx.Elements[5])
@@ -719,6 +737,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelInstance,
 					Action:     meta.Update,
@@ -741,9 +760,15 @@ func (ps *parseStream) objectInstance() *parseStream {
 			ps.err = errors.New("update object instance batch, but got invalid url")
 			return ps
 		}
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.UpdateMany,
@@ -766,8 +791,15 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.DeleteMany,
@@ -790,6 +822,12 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("delete object instance, but got invalid instance id %s", ps.RequestCtx.Elements[5])
@@ -798,6 +836,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelInstance,
 					Action:     meta.Delete,
@@ -821,6 +860,12 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[11], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("find object instance topology, but got invalid instance id %s", ps.RequestCtx.Elements[11])
@@ -829,6 +874,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelInstanceTopology,
 					Action:     meta.Find,
@@ -852,6 +898,12 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[11], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("find object instance, but get instance id %s", ps.RequestCtx.Elements[11])
@@ -860,6 +912,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelInstanceTopology,
 					Action:     meta.Find,
@@ -915,8 +968,15 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceTopology,
 					Action: meta.FindMany,
@@ -993,6 +1053,7 @@ const (
 	findObjectsPattern        = "/api/v3/objects"
 	findObjectTopologyPattern = "/api/v3/objects/topo"
 	createObjectBatchPattern  = "/api/v3/object/batch"
+	objectStatistics          = "/api/v3/object/statistics"
 )
 
 var (
@@ -1032,6 +1093,17 @@ func (ps *parseStream) object() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.UpdateMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(objectStatistics, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Action: meta.SkipAction,
 				},
 			},
 		}

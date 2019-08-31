@@ -77,6 +77,7 @@ func (es *EsSrv) Search(ctx context.Context, query elastic.Query, types []string
 	highlight.RequireFieldMatch(false)
 	highlight.Field(common.BKInstIDField)
 	highlight.Field(common.BKHostIDField)
+	highlight.Field(common.BKAppIDField)
 
 	// search for paging
 	searchSource := elastic.NewSearchSource()

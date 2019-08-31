@@ -25,12 +25,12 @@
                 cursor: 'pointer'
             }"
             @cell-click="handleShowDetails">
-            <bk-table-column :label="$t('校验规则')">
+            <bk-table-column :label="$t('校验规则')" class-name="is-highlight">
                 <template slot-scope="{ row }">
                     {{getRuleName(row.keys)}}
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('是否为必须校验')">
+            <bk-table-column :label="$t('属性为空值是否校验')">
                 <template slot-scope="{ row }">
                     {{row.must_check ? $t('是') : $t('否')}}
                 </template>
@@ -39,13 +39,13 @@
                 v-if="updateAuth && !isTopoModel"
                 :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <button class="text-primary mr10"
+                    <button class="text-primary mr10 operation-btn"
                         :disabled="!isEditable(row)"
                         @click.stop="editVerification(row)">
                         {{$t('编辑')}}
                     </button>
-                    <button class="text-primary"
-                        :disabled="!isEditable(row)"
+                    <button class="text-primary operation-btn"
+                        :disabled="!isEditable(row) || row.must_check"
                         @click.stop="deleteVerification(row)">
                         {{$t('删除')}}
                     </button>
@@ -179,7 +179,7 @@
             },
             deleteVerification (verification) {
                 this.$bkInfo({
-                    title: this.$tc('确定删除唯一校验？', this.getRuleName(verification.keys), { name: this.getRuleName(verification.keys) }),
+                    title: this.$tc('确定删除唯一校验', this.getRuleName(verification.keys), { name: this.getRuleName(verification.keys) }),
                     confirmFn: async () => {
                         await this.deleteObjectUniqueConstraints({
                             objId: verification['bk_obj_id'],
@@ -223,5 +223,9 @@
     }
     .verification-table {
         margin: 14px 0 0 0;
+    }
+    .operation-btn[disabled] {
+        color: #dcdee5 !important;
+        opacity: 1 !important;
     }
 </style>

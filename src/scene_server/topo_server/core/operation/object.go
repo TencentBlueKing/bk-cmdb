@@ -15,7 +15,6 @@ package operation
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
@@ -29,6 +28,13 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
+type rowInfo struct {
+	Row  int64  `json:"row"`
+	Info string `json:"info"`
+	// value can empty, eg:parse error
+	PropertyID string `json:"bk_property_id"`
+}
+
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
 	CreateObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error)
@@ -38,7 +44,9 @@ type ObjectOperationInterface interface {
 	DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
 	FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error)
+	// Deprecated: not allowed to use anymore.
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
+	FindObjectWithID(params types.ContextParams, object string, objectID int64) (model.Object, error)
 	UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface, unique UniqueOperationInterface)
@@ -112,11 +120,20 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 		subResult := mapstr.New()
 		if err := o.IsValidObject(params, objID); nil != err {
 			blog.Errorf("create model patch, but not a valid model id, model id: %s, rid: %s", objID, params.ReqID)
-			subResult["errors"] = fmt.Sprintf("the model(%s) is invalid", objID)
+			subResult["error"] = fmt.Sprintf("the model(%s) is invalid", objID)
 			result[objID] = subResult
 			hasError = true
 			continue
 		}
+
+		// 异常错误，比如接卸该行数据失败， 查询数据失败
+		var itemErr []rowInfo
+		// 新加属性失败
+		var addErr []rowInfo
+		// 更新属性失败
+		var setErr []rowInfo
+		// 成功数据的信息
+		var succInfo []rowInfo
 
 		// update the object's attribute
 		for idx, attr := range inputData.Attr {
@@ -125,8 +142,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 			targetAttr, err := metaAttr.Parse(attr)
 			if nil != err {
 				blog.Errorf("create object batch, but got invalid object attribute, object id: %s, rid: %s", objID, params.ReqID)
-				subResult["errors"] = err.Error()
-				result[objID] = subResult
+				itemErr = append(itemErr, rowInfo{Row: idx, Info: err.Error()})
 				hasError = true
 				continue
 			}
@@ -155,9 +171,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 			grps, err := o.grp.FindObjectGroup(params, grpCond)
 			if nil != err {
 				blog.Errorf("create object patch, but find object group failed, object id: %s, group: %s, rid: %s", objID, targetAttr.PropertyGroupName, params.ReqID)
-				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err)
-				subResult["errors"] = errStr
-				result[objID] = subResult
+				itemErr = append(itemErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 				hasError = true
 				continue
 			}
@@ -179,17 +193,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 				newGrp.SetGroup(g)
 				err := newGrp.Save(nil)
 				if nil != err {
-					errStr := params.Lang.Languagef("import_row_int_error_str", idx, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed))
-					if failed, ok := subResult["insert_failed"]; ok {
-						failedArr := failed.([]string)
-						failedArr = append(failedArr, errStr)
-						subResult["insert_failed"] = failedArr
-					} else {
-						subResult["insert_failed"] = []string{
-							errStr,
-						}
-					}
-					result[objID] = subResult
+					setErr = append(setErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 					hasError = true
 					continue
 				}
@@ -200,17 +204,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 			// create or update the attribute
 			attrID, err := attr.String(metadata.AttributeFieldPropertyID)
 			if nil != err {
-				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
-				if failed, ok := subResult["insert_failed"]; ok {
-					failedArr := failed.([]string)
-					failedArr = append(failedArr, errStr)
-					subResult["insert_failed"] = failedArr
-				} else {
-					subResult["insert_failed"] = []string{
-						errStr,
-					}
-				}
-				result[objID] = subResult
+				addErr = append(addErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 				hasError = true
 				continue
 			}
@@ -220,17 +214,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 			attrCond.Field(metadata.AttributeFieldPropertyID).Eq(attrID)
 			attrs, err := o.attr.FindObjectAttribute(params, attrCond)
 			if nil != err {
-				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
-				if failed, ok := subResult["insert_failed"]; ok {
-					failedArr := failed.([]string)
-					failedArr = append(failedArr, errStr)
-					subResult["insert_failed"] = failedArr
-				} else {
-					subResult["insert_failed"] = []string{
-						errStr,
-					}
-				}
-				result[objID] = subResult
+				addErr = append(addErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 				hasError = true
 				continue
 			}
@@ -239,17 +223,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 
 				newAttr := o.modelFactory.CreateAttribute(params)
 				if err = newAttr.Save(targetAttr.ToMapStr()); nil != err {
-					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
-					if failed, ok := subResult["insert_failed"]; ok {
-						failedArr := failed.([]string)
-						failedArr = append(failedArr, errStr)
-						subResult["insert_failed"] = failedArr
-					} else {
-						subResult["insert_failed"] = []string{
-							errStr,
-						}
-					}
-					result[objID] = subResult
+					addErr = append(addErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 					hasError = true
 					continue
 				}
@@ -258,41 +232,44 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 
 			for _, newAttr := range attrs {
 				if err := newAttr.Update(targetAttr.ToMapStr()); nil != err {
-					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
-					if failed, ok := subResult["update_failed"]; ok {
-						failedArr := failed.([]string)
-						failedArr = append(failedArr, errStr)
-						subResult["update_failed"] = failedArr
-					} else {
-						subResult["update_failed"] = []string{
-							errStr,
-						}
-					}
-					result[objID] = subResult
+					setErr = append(setErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 					hasError = true
 					continue
 				}
 
 			}
 
-			if failed, ok := subResult["success"]; ok {
-				failedArr := failed.([]string)
-				failedArr = append(failedArr, strconv.FormatInt(idx, 10))
-				subResult["success"] = failedArr
-			} else {
-				subResult["success"] = []string{
-					strconv.FormatInt(idx, 10),
-				}
-			}
-			result[objID] = subResult
+			succInfo = append(succInfo, rowInfo{Row: idx, Info: "", PropertyID: targetAttr.PropertyID})
 		}
 
+		// 将需要返回的信息更新到result中。 这个函数会修改result参数的值
+		o.setCreateObjectBatchObjResult(params, objID, result, itemErr, addErr, setErr, succInfo)
 	}
 
 	if hasError {
 		return result, params.Err.Error(common.CCErrCommNotAllSuccess)
 	}
 	return result, nil
+}
+
+// setCreateObjectBatchObjResult
+func (o *object) setCreateObjectBatchObjResult(params types.ContextParams, objID string, result mapstr.MapStr, itemErr, addErr, setErr, succInfo []rowInfo) {
+	subResult := mapstr.New()
+	if len(itemErr) > 0 {
+		subResult["errors"] = itemErr
+	}
+	if len(addErr) > 0 {
+		subResult["insert_failed"] = addErr
+	}
+	if len(setErr) > 0 {
+		subResult["update_failed"] = setErr
+	}
+	if len(succInfo) > 0 {
+		subResult["success"] = succInfo
+	}
+	if len(subResult) > 0 {
+		result[objID] = subResult
+	}
 }
 
 func (o *object) FindObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error) {
@@ -323,6 +300,10 @@ func (o *object) FindObjectBatch(params types.ContextParams, data mapstr.MapStr)
 	return result, nil
 }
 
+// Deprecated:
+// It's not allowed to find a object with only bk_obj_id field, because it
+// may find the wrong object, as the public object id is unique, but the private business
+// object id can be same across the different business.
 func (o *object) FindSingleObject(params types.ContextParams, objectID string) (model.Object, error) {
 
 	cond := condition.CreateCondition()
@@ -336,6 +317,38 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 
 	if len(objs) == 0 {
 		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) not found, result: %+v, rid: %s", params.SupplierAccount, objectID, objs, params.ReqID)
+		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Error(common.CCErrCommNotFound).Error())
+	}
+
+	if len(objs) > 1 {
+		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) get multiple, result: %+v, rid: %s", params.SupplierAccount, objectID, objs, params.ReqID)
+		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Error(common.CCErrCommGetMultipleObject).Error())
+	}
+
+	objects := make([]metadata.Object, 0)
+	for _, obj := range objs {
+		objects = append(objects, obj.Object())
+	}
+
+	for _, item := range objs {
+		return item, nil
+	}
+	return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Errorf(common.CCErrCommParamsIsInvalid, objectID).Error())
+}
+
+func (o *object) FindObjectWithID(params types.ContextParams, object string, objectID int64) (model.Object, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field("id").Eq(objectID)
+
+	objs, err := o.FindObject(params, cond)
+	if nil != err {
+		blog.Errorf("get model failed, failed to get model by supplier account(%s) objects(%s), err: %s, rid: %s", params.SupplierAccount, objectID, err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	if len(objs) == 0 {
+		blog.Errorf("get model failed, get model by supplier account(%s) objects(%d) not found, result: %+v, rid: %s", params.SupplierAccount, objectID, objs, params.ReqID)
 		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Error(common.CCErrCommNotFound).Error())
 	}
 
@@ -547,7 +560,6 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 	}
 
 	for _, obj := range objs {
-		object := obj.Object()
 		// check if is can be deleted
 		if needCheckInst {
 			if err := o.CanDelete(params, obj); nil != err {
@@ -555,39 +567,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 			}
 		}
 
-		// delete object
-		unis, err := obj.GetUniques()
-		if err != nil {
-			blog.Errorf("[operation-asst] failed to get the object's uniques, err: %s, rid: %s", err.Error(), params.ReqID)
-			return err
-		}
-		for _, uni := range unis {
-			if err = o.unique.Delete(params, object.ObjectID, uni.GetRecordID()); err != nil {
-				blog.Errorf("[operation-asst] failed to delete the object's uniques, %s, rid: %s", err.Error(), params.ReqID)
-				return err
-			}
-		}
-
-		attrCond := condition.CreateCondition()
-		attrCond.Field(common.BKObjIDField).Eq(object.ObjectID)
-		if err := o.attr.DeleteObjectAttribute(params, attrCond); nil != err {
-			blog.Errorf("[operation-obj] failed to delete the object(%d)'s attribute, err: %s, rid: %s", id, err.Error(), params.ReqID)
-			return err
-		}
-
-		groups, err := obj.GetGroups()
-		if err != nil {
-			blog.Errorf("[operation-asst] failed to get the object's groups, err: %s, rid: %s", err.Error(), params.ReqID)
-			return err
-		}
-		for _, group := range groups {
-			if err = o.grp.DeleteObjectGroup(params, group.Group().ID); err != nil {
-				blog.Errorf("[operation-asst] failed to delete the object's groups, err: %s, rid: %s", err.Error(), params.ReqID)
-				return err
-			}
-		}
-
-		rsp, err := o.clientSet.CoreService().Model().DeleteModel(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+		rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-obj] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -728,7 +708,7 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 	}
 	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
+		blog.Errorf("[operation-obj] find object failed, cond: %+v, err: %s, rid: %s", fCond, err.Error(), params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 

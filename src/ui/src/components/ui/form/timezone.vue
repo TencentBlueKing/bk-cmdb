@@ -48,6 +48,11 @@
             selected (selected) {
                 this.$emit('input', selected)
                 this.$emit('on-selected', selected)
+            },
+            disabled (disabled) {
+                if (!disabled) {
+                    this.selected = this.value ? this.value : 'Asia/Shanghai'
+                }
             }
         },
         created () {

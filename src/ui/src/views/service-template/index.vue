@@ -171,6 +171,10 @@
             ...mapActions('serviceClassification', ['searchServiceCategory']),
             async getTableData () {
                 const templateData = await this.getTemplateData()
+                if (templateData.count && !templateData.info.length) {
+                    this.table.pagination.current -= 1
+                    this.getTableData()
+                }
                 this.table.pagination.count = templateData.count
                 this.table.allList = templateData.info.map(template => {
                     const result = {

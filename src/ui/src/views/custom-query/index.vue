@@ -165,6 +165,10 @@
                         requestId: 'searchCustomQuery'
                     }
                 })
+                if (res.count && !res.info.length) {
+                    this.table.pagination.current -= 1
+                    this.getUserAPIList()
+                }
                 if (res.count) {
                     this.table.list = res.info
                 } else {
