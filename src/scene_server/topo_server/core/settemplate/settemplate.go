@@ -17,7 +17,6 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery"
-	"configcenter/src/apiserver/core"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -29,7 +28,7 @@ import (
 
 type SetTemplate interface {
 	DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder)
-	SyncSetTplToInst(params core.ContextParams, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
+	SyncSetTplToInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
 }
 
 func NewSetTemplate(client apimachinery.ClientSetInterface) SetTemplate {
@@ -141,8 +140,26 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	return setDiffs, nil
 }
 
-func (st *setTemplate) SyncSetTplToInst(params core.ContextParams, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
-	// TODO implemented me, better to use run with DiffSetTplWithInst's result
+func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
+	diffOption := metadata.DiffSetTplWithInstOption{
+		SetIDs: option.SetIDs,
+	}
+	setDiffs, err := st.DiffSetTplWithInst(ctx, header, bizID, setTemplateID, diffOption)
+	if err != nil {
+		return err
+	}
+
+	// run sync
+	for _, setDiff := range setDiffs {
+		blog.V(3).Infof("begin to run sync task on set [%s](%d)", setDiff.SetDetail.SetName, setDiff.SetID)
+		// TODO: deal with result
+		AsyncRunSetSyncTask(header, setDiff.SetDetail, setDiff.ModuleDiffs)
+	}
+	return nil
+}
+
+func AsyncRunSetSyncTask(header http.Header, set metadata.SetInst, moduleDiffs []metadata.SetModuleDiff) errors.CCErrorCoder {
+	// TODO: implement me
 	return nil
 }
 
