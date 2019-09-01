@@ -22,7 +22,9 @@
         },
         methods: {
             handleBusinessChange () {
-                this.refreshKey = Date.now()
+                // this.$nextTick(() => {
+                //     this.refreshKey = Date.now()
+                // })
             }
         }
     }

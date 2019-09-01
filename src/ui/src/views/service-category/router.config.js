@@ -16,7 +16,7 @@ export const OPERATION = {
 
 export default {
     name: 'serviceCagetory',
-    path: '/business/:business/service/cagetory',
+    path: 'service/cagetory',
     component: () => import('./index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
