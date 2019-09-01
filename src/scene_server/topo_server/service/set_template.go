@@ -305,3 +305,31 @@ func (s *Service) DiffSetTplWithInst(params types.ContextParams, pathParams, que
 
 	return setDiffs, nil
 }
+
+func (s *Service) SyncSetTplToInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	setTemplateIDStr := pathParams(common.BKSetTemplateIDField)
+	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
+	option := metadata.SyncSetTplToInstOption{}
+	if err := mapstructure.Decode(data, &option); err != nil {
+		blog.Errorf("DiffSetTemplateWithInstances failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	err = s.Core.SetTemplateOperation().SyncSetTplToInst(params.Context, params.Header, bizID, setTemplateID, option)
+	if err != nil {
+		blog.Errorf("SyncSetTplToInst failed, operation failed, bizID: %d, setTemplateID: %d, option: %+v err: %s, rid: %s", bizID, setTemplateID, option, err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	return nil, nil
+}
