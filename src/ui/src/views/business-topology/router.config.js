@@ -32,7 +32,7 @@ export const OPERATION = {
 
 export default {
     name: 'topology',
-    path: '/business/:business/topology',
+    path: 'topology',
     component: () => import('./index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,

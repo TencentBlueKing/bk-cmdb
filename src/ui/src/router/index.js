@@ -129,13 +129,14 @@ const cancelRequest = () => {
 
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
+/* eslint-disable-next-line */
 const setAuthScope = (to, from) => {
     const auth = to.meta.auth || {}
     if (typeof auth.setAuthScope === 'function') {
         auth.setAuthScope(to, from, router.app)
     }
 }
-
+/* eslint-disable-next-line */
 const checkAuthDynamicMeta = (to, from) => {
     router.app.$store.commit('auth/clearDynamicMeta')
     const auth = to.meta.auth || {}
@@ -204,8 +205,8 @@ router.beforeEach((to, from, next) => {
             if (!isShouldShow(to)) {
                 next({ name: MENU_INDEX })
             } else {
-                setAuthScope(to, from)
-                checkAuthDynamicMeta(to, from)
+                // setAuthScope(to, from)
+                // checkAuthDynamicMeta(to, from)
 
                 if (to.name === 'requireBusiness' && !router.app.$store.getters.permission.length) {
                     next({ name: MENU_INDEX })

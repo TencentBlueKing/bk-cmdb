@@ -14,7 +14,7 @@ export const OPERATION = {
 
 export default {
     name: 'hosts',
-    path: '/business/:business/host',
+    path: 'host',
     component: () => import('./index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,

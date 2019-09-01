@@ -16,7 +16,7 @@ export const OPERATION = {
 
 export default [{
     name: 'serviceTemplate',
-    path: '/business/:business/service/template',
+    path: 'service/template',
     component: () => import('./index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
@@ -35,7 +35,7 @@ export default [{
     })
 }, {
     name: 'operationalTemplate',
-    path: '/business/:business/service/operational/template/:templateId?',
+    path: 'service/operational/template/:templateId?',
     component: () => import('./children/operational.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,

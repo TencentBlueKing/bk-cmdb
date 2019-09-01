@@ -75,6 +75,7 @@
     import { mapGetters } from 'vuex'
     import MENU_DICTIONARY from '@/dictionary/menu'
     import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+    console.log(MENU_DICTIONARY)
     export default {
         data () {
             return {
@@ -169,23 +170,25 @@
                 })
             },
             handleToggleBusiness (id) {
-                const routerName = this.$route.name
-                if (routerName === MENU_BUSINESS) {
-                    this.$router.replace({
-                        name: 'hosts',
-                        params: Object.assign({
-                            business: id
-                        }, this.$route.params),
-                        query: this.$route.query
-                    })
-                } else if (this.$route.params.business !== id) {
-                    this.$router.replace({
-                        name: routerName,
-                        params: Object.assign({}, this.$route.params, { business: id }),
-                        query: this.$route.query
-                    })
-                }
-                this.$emit('business-change', id)
+                this.$nextTick(() => {
+                    const routerName = this.$route.name
+                    if (routerName === MENU_BUSINESS) {
+                        this.$router.replace({
+                            name: 'hosts',
+                            params: Object.assign({
+                                business: id
+                            }, this.$route.params),
+                            query: this.$route.query
+                        })
+                    } else if (this.$route.params.business !== id) {
+                        this.$router.replace({
+                            name: routerName,
+                            params: Object.assign({}, this.$route.params, { business: id }),
+                            query: this.$route.query
+                        })
+                    }
+                    this.$emit('business-change', id)
+                })
             }
         }
     }

@@ -44,7 +44,7 @@ export const RESOURCE_HOST_DETAILS = {
 
 export const BUSINESS_HOST_DETAILS = {
     name: BUSINESS_HOST,
-    path: 'business/:business/host/:id',
+    path: 'host/:id',
     component: component,
     meta: new Meta({
         owner: MENU_BUSINESS,
