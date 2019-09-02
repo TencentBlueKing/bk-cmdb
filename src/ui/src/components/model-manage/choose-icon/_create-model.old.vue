@@ -46,7 +46,7 @@
                             </bk-input>
                             <p class="form-error" :title="errors.first('modelId')">{{errors.first('modelId')}}</p>
                         </div>
-                        <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('下划线，数字，英文小写的组合')"></i>
+                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('下划线，数字，英文小写的组合')"></i>
                     </label>
                     <label>
                         <span class="label-title">{{$t('名称')}}</span>
@@ -60,15 +60,17 @@
                             </bk-input>
                             <p class="form-error" :title="errors.first('modelName')">{{errors.first('modelName')}}</p>
                         </div>
-                        <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('请填写模型名')"></i>
+                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('请填写模型名')"></i>
                     </label>
                 </div>
             </div>
             <div class="model-icon-wrapper" v-if="modelDialog.isIconListShow">
+                <span class="back" @click="modelDialog.isIconListShow = false">
+                    <i class="bk-icon icon-back2"></i>
+                </span>
                 <the-choose-icon
                     v-model="modelDialog.data['bk_obj_icon']"
                     @chooseIcon="modelDialog.isIconListShow = false"
-                    @close="modelDialog.isIconListShow = false"
                 ></the-choose-icon>
             </div>
         </div>
@@ -80,7 +82,7 @@
 </template>
 
 <script>
-    import theChooseIcon from './choose-icon/_choose-icon'
+    import theChooseIcon from './_choose-icon'
     import { mapGetters } from 'vuex'
     export default {
         components: {
@@ -177,7 +179,7 @@
             display: none;
         }
         .dialog-content {
-            padding: 14px 15px 20px 28px;
+            padding: 20px 15px 20px 28px;
         }
         .title {
             font-size: 20px;
@@ -199,7 +201,7 @@
                 text-align: center;
                 vertical-align: middle;
             }
-            .icon-cc-exclamation-tips {
+            .icon-info-circle {
                 font-size: 18px;
                 color: $cmdbBorderColor;
             }
@@ -231,7 +233,6 @@
             position: relative;
         }
         .content-left {
-            padding-top: 20px;
             text-align: center;
             .icon-wrapper {
                 margin: 0 auto;
@@ -258,8 +259,22 @@
             left: 0;
             top:0;
             width: 100%;
+            height: calc(100% + 60px);
             background: #fff;
             z-index: 99;
+            .back {
+                position: absolute;
+                right: -47px;
+                top: 0;
+                width: 44px;
+                height: 44px;
+                padding: 7px;
+                cursor: pointer;
+                font-size: 18px;
+                text-align: center;
+                background: #2f2f2f;
+                color: #fff;
+            }
         }
     }
 </style>

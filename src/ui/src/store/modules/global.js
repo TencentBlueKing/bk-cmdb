@@ -26,7 +26,8 @@ const state = {
         adminTips: true,
         serviceTemplate: true,
         category: true,
-        hostServiceInstanceCheckView: true
+        hostServiceInstanceCheckView: true,
+        customFields: true
     },
     permission: [],
     appHeight: window.innerHeight,
