@@ -28,6 +28,7 @@ export default {
                 this.authScope = 'business'
             }
         },
+        showBreadcumbs: true,
         filterPropertyKey: 'business_host_filter_properties'
     })
 }

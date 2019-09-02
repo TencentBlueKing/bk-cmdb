@@ -8,11 +8,12 @@ import {
     MENU_BUSINESS_SERVICE,
     MENU_BUSINESS_ADVANCED,
     MENU_RESOURCE_EVENTPUSH,
+    MENU_RESOURCE_MANAGEMENT,
     MENU_MODEL_MANAGEMENT,
     MENU_MODEL_TOPOLOGY,
+    MENU_MODEL_BUSINESS_TOPOLOGY,
     MENU_MODEL_ASSOCIATION,
-    MENU_ANALYSIS_AUDIT,
-    MENU_ANALYSIS_STATISTICS
+    MENU_ANALYSIS_AUDIT
 } from './menu-symbol'
 import {
     businessViews,
@@ -21,24 +22,24 @@ import {
     analysisViews
 } from '@/views'
 
-const getSubmenu = (views, parentSymbol, pathPrefix = '') => {
+const getSubmenu = (views, symbol, pathPrefix = '') => {
     const submenuViews = views.filter(view => {
-        return view.meta && view.meta.menu && view.meta.menu.parent === parentSymbol
+        return view.meta && view.meta.menu && view.meta.menu.parent === symbol
     })
     const submenu = submenuViews.map(view => {
         const menu = view.meta.menu
         return {
             id: Symbol(menu.i18n),
             i18n: menu.i18n,
-            route: getMenuRoute(view, parentSymbol, pathPrefix)
+            route: getMenuRoute(view, symbol, pathPrefix)
         }
     })
     return submenu
 }
 
-const getMenuRoute = (views, parentSymbol, pathPrefix = '') => {
+const getMenuRoute = (views, symbol, pathPrefix = '') => {
     const menuView = Array.isArray(views)
-        ? views.find(view => view.meta && view.meta.menu && view.meta.menu.parent === parentSymbol)
+        ? views.find(view => view.name === symbol)
         : views
     if (menuView) {
         return {
@@ -75,6 +76,11 @@ export default [{
     id: MENU_RESOURCE,
     i18n: '资源',
     menu: [{
+        id: MENU_RESOURCE_MANAGEMENT,
+        i18n: '资源目录',
+        icon: 'icon-cc-square',
+        route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGEMENT, 'resource')
+    }, {
         id: MENU_RESOURCE_EVENTPUSH,
         i18n: '事件推送',
         icon: 'icon-cc-square',
@@ -90,14 +96,19 @@ export default [{
         route: getMenuRoute(modelViews, MENU_MODEL_MANAGEMENT, 'model')
     }, {
         id: MENU_MODEL_TOPOLOGY,
-        i18n: '模型关系',
+        i18n: '模型拓扑',
         icon: 'icon-cc-resources',
-        submenu: getSubmenu(modelViews, MENU_MODEL_TOPOLOGY, 'model')
+        route: getMenuRoute(modelViews, MENU_MODEL_TOPOLOGY, 'model')
+    }, {
+        id: MENU_MODEL_BUSINESS_TOPOLOGY,
+        i18n: '业务层级',
+        icon: 'icon-cc-network-manage',
+        route: getMenuRoute(modelViews, MENU_MODEL_BUSINESS_TOPOLOGY, 'model')
     }, {
         id: MENU_MODEL_ASSOCIATION,
         i18n: '关联分类',
         icon: 'icon-cc-network-manage',
-        submenu: getSubmenu(modelViews, MENU_MODEL_ASSOCIATION, 'model')
+        route: getMenuRoute(modelViews, MENU_MODEL_ASSOCIATION, 'model')
     }]
 }, {
     id: MENU_ANALYSIS,
@@ -107,10 +118,5 @@ export default [{
         i18n: '操作审计',
         icon: 'icon-cc-statement',
         route: getMenuRoute(analysisViews, MENU_ANALYSIS_AUDIT, 'analysis')
-    }, {
-        id: MENU_ANALYSIS_STATISTICS,
-        i18n: '运营统计',
-        icon: 'icon-cc-statement',
-        route: getMenuRoute(analysisViews, MENU_ANALYSIS_STATISTICS, 'analysis')
     }]
 }]

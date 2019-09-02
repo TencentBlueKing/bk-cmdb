@@ -1,3 +1,4 @@
+/* eslint-disable */
 import Vue from 'vue'
 import Router from 'vue-router'
 
@@ -92,7 +93,7 @@ const router = new Router({
             component: dynamicRouterView,
             children: analysisViews,
             path: '/analysis',
-            redirect: '/analysis/index'
+            redirect: '/analysis/audit'
         }
     ]
 })
@@ -155,8 +156,7 @@ const checkAvailable = (to, from) => {
 
 const checkBusiness = to => {
     const getters = router.app.$store.getters
-    const isAdminView = getters.isAdminView
-    if (isAdminView || !to.meta.requireBusiness) {
+    if (!to.meta.requireBusiness) {
         return true
     }
     const authorizedBusiness = getters['objectBiz/authorizedBusiness']
@@ -189,6 +189,18 @@ const setPermission = async to => {
     return permission
 }
 
+const checkBusinessMenuRedirect = (to) => {
+    const isBusinessMenu = to.matched.length > 1 && to.matched[0].name === MENU_BUSINESS
+    if (!isBusinessMenu) {
+        return false
+    }
+    return router.app.$store.state.objectBiz.bizId === null
+}
+
+const setAdminView = to => {
+    router.app.$store.commit('setAdminView', to.matched[0].name !== MENU_BUSINESS)
+}
+
 const setupStatus = {
     preload: true,
     afterload: true
@@ -198,18 +210,15 @@ router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
             setLoading(true)
-            await cancelRequest()
             if (setupStatus.preload) {
                 await preload(router.app)
             }
             if (!isShouldShow(to)) {
                 next({ name: MENU_INDEX })
             } else {
-                // setAuthScope(to, from)
-                // checkAuthDynamicMeta(to, from)
-
+                // 防止直接进去申请业务的提示界面导致无法正确跳转权限中心
                 if (to.name === 'requireBusiness' && !router.app.$store.getters.permission.length) {
-                    next({ name: MENU_INDEX })
+                    return next({ name: MENU_INDEX })
                 }
 
                 const isAvailable = checkAvailable(to, from)
@@ -222,12 +231,21 @@ router.beforeEach((to, from, next) => {
                     throw new StatusError({ name: '403' })
                 }
 
+
+                // 在业务菜单下刷新页面时，先重定向到一级路由，一级路由视图中的业务选择器设定成功后再跳转到二级视图
+                const shouldRedirectToBusinessMenu = checkBusinessMenuRedirect(to)
+                if (shouldRedirectToBusinessMenu) {
+                    return next({ name: MENU_BUSINESS })
+                }
                 const isBusinessCheckPass = checkBusiness(to)
                 if (!isBusinessCheckPass) {
                     await setPermission(to)
                     throw new StatusError({ name: 'requireBusiness', query: { _t: Date.now() } })
                 }
-                next()
+
+                setAdminView(to)
+
+                return next()
             }
         } catch (e) {
             if (e.__CANCEL__) {

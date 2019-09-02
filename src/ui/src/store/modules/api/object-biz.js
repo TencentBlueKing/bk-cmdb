@@ -25,11 +25,7 @@ const getters = {
 
 const actions = {
     getAuthorizedBusiness ({ commit }) {
-        return $http.get('biz/with_reduced', {
-            requestId: 'getAuthorizedBusiness',
-            fromCache: true,
-            cancelWhenRouteChange: false
-        }).then(data => {
+        return $http.get('biz/with_reduced').then(data => {
             commit('setAuthorizedBusiness', data.info)
             return data.info
         })
