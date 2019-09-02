@@ -192,7 +192,7 @@
                 <p>{{$t('模型创建成功')}}</p>
                 <div class="btn-box">
                     <bk-button theme="primary" @click="handleGoInstance(curCreateModel)">{{$t('添加实例')}}</bk-button>
-                    <bk-button>{{$t('配置字段')}}</bk-button>
+                    <bk-button @click="modelClick(curCreateModel)">{{$t('配置字段')}}</bk-button>
                     <bk-button @click="sucessDialog.isShow = false">{{$t('返回列表')}}</bk-button>
                 </div>
             </div>
