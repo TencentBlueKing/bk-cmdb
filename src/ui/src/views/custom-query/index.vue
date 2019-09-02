@@ -36,6 +36,7 @@
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="showUserAPIDetails">
+            <!-- <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column> -->
             <bk-table-column prop="id" label="ID" class-name="is-highlight" fixed></bk-table-column>
             <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed></bk-table-column>
             <bk-table-column prop="create_user" :label="$t('创建用户')" sortable="custom"></bk-table-column>
@@ -50,11 +51,38 @@
                     {{$tools.formatTime(row['last_time'])}}
                 </template>
             </bk-table-column>
+            <bk-table-column prop="operation" :label="$t('操作')" fixed="right">
+                <template slot-scope="{ row }">
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_CUSTOM_QUERY),
+                            auth: [$OPERATION.U_CUSTOM_QUERY]
+                        }">
+                        <bk-button class="mr10"
+                            :disabled="!$isAuthorized($OPERATION.U_CUSTOM_QUERY)"
+                            :text="true"
+                            @click.stop="showUserAPIDetails(row)">
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </span>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.D_CUSTOM_QUERY),
+                            auth: [$OPERATION.D_CUSTOM_QUERY]
+                        }">
+                        <bk-button
+                            :disabled="!$isAuthorized($OPERATION.D_CUSTOM_QUERY)"
+                            :text="true"
+                            @click.stop="deleteUserAPI(row)">
+                            {{$t('删除')}}
+                        </bk-button>
+                    </span>
+                </template>
+            </bk-table-column>
         </bk-table>
         <bk-sideslider
             :is-show.sync="slider.isShow"
-            :has-quick-close="true"
-            :width="430"
+            :width="515"
             :title="slider.title"
             :before-close="handleSliderBeforeClose">
             <v-define slot="content"
@@ -63,7 +91,6 @@
                 :id="slider.id"
                 :biz-id="bizId"
                 :type="slider.type"
-                @delete="getUserAPIList"
                 @create="handleCreate"
                 @update="getUserAPIList"
                 @cancel="handleSliderBeforeClose">
@@ -117,6 +144,12 @@
                 }
                 this.filter.name ? params['condition'] = { 'name': this.filter.name } : void (0)
                 return params
+            },
+            editable () {
+                if (this.type === 'update') {
+                    return this.$isAuthorized(this.$OPERATION.D_CUSTOM_QUERY)
+                }
+                return true
             }
         },
         created () {
@@ -139,8 +172,8 @@
                             subTitle: this.$t('退出会导致未保存信息丢失'),
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
-                                resolve(true)
                                 this.hideUserAPISlider()
+                                resolve(true)
                             },
                             cancelFn: () => {
                                 resolve(false)
@@ -182,11 +215,31 @@
                 this.slider.title = this.$t('新建查询')
             },
             /* 显示自定义API详情 */
-            showUserAPIDetails (userAPI) {
+            showUserAPIDetails (userAPI, event, column = {}) {
+                if (column.property === 'operation') return
                 this.slider.isShow = true
                 this.slider.type = 'update'
                 this.slider.id = userAPI['id']
                 this.slider.title = this.$t('编辑查询')
+            },
+            deleteUserAPI (row) {
+                this.$bkInfo({
+                    title: this.$t('确定删除'),
+                    subTitle: this.$t('确认要删除分组', { name: row.name }),
+                    extCls: 'bk-dialog-sub-header-center',
+                    confirmFn: async () => {
+                        await this.$store.dispatch('hostCustomApi/deleteCustomQuery', {
+                            bizId: this.bizId,
+                            id: row.id,
+                            config: {
+                                requestId: 'deleteCustomQuery'
+                            }
+                        })
+                        this.$success(this.$t('删除成功'))
+                        this.getUserAPIList()
+                        this.hideUserAPISlider()
+                    }
+                })
             },
             handlePageChange (current) {
                 this.table.pagination.current = current

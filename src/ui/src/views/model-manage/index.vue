@@ -12,7 +12,7 @@
                 @close-tips="showFeatureTips = false">
             </feature-tips>
             <div class="fl">
-                <span v-if="isAdminView" style="display: inline-block;"
+                <span style="display: inline-block;"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.C_MODEL),
                         auth: [$OPERATION.C_MODEL]
@@ -20,19 +20,7 @@
                     <bk-button theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
                         @click="showModelDialog()">
-                        {{createModelBtn}}
-                    </bk-button>
-                </span>
-                <span v-else style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_MODEL),
-                        auth: [$OPERATION.C_MODEL]
-                    }">
-                    <bk-button theme="primary"
-                        v-bk-tooltips="$t('新增模型提示')"
-                        :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
-                        @click="showModelDialog()">
-                        {{createModelBtn}}
+                        {{$t('新建模型')}}
                     </bk-button>
                 </span>
                 <span style="display: inline-block;"
@@ -43,38 +31,26 @@
                     <bk-button theme="default"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
                         @click="showGroupDialog(false)">
-                        {{createGroupBtn}}
+                        {{$t('新建分组')}}
                     </bk-button>
                 </span>
             </div>
             <div class="model-type-options fr">
                 <bk-button class="model-type-button enable"
+                    :class="[{ 'model-type-button-active': modelType === 'enable' }]"
                     size="small"
-                    :theme="modelType === 'enable' ? 'primary' : 'default'"
                     @click="modelType = 'enable'">
-                    {{$t('启用模型')}}
+                    {{$t('启用中')}}
                 </bk-button>
-                <bk-popover
-                    :content="$t('停用模型提示')"
-                    placenment="bottom"
-                    v-if="!disabledClassifications.length">
+                <span class="inline-block-middle" style="outline: 0;" v-bk-tooltips="disabledModelBtnText">
                     <bk-button class="model-type-button disabled"
-                        v-bk-tooltips="$t('停用模型提示')"
+                        :class="[{ 'model-type-button-active': modelType === 'disabled' }]"
                         size="small"
                         :disabled="!disabledClassifications.length"
-                        :theme="modelType === 'disabled' ? 'primary' : 'default'"
                         @click="modelType = 'disabled'">
-                        {{$t('停用模型')}}
+                        {{$t('已停用')}}
                     </bk-button>
-                </bk-popover>
-                <bk-button class="model-type-button disabled"
-                    v-else
-                    size="small"
-                    :disabled="!disabledClassifications.length"
-                    :theme="modelType === 'disabled' ? 'primary' : 'default'"
-                    @click="modelType = 'disabled'">
-                    {{$t('停用模型')}}
-                </bk-button>
+                </span>
             </div>
             <div class="model-search-options fr">
                 <bk-input class="search-model"
@@ -84,6 +60,7 @@
                 </bk-input>
             </div>
         </cmdb-main-inject>
+
         <ul class="group-list">
             <li class="group-item clearfix"
                 v-for="(classification, classIndex) in currentClassifications"
@@ -92,8 +69,9 @@
                     <span>{{classification['bk_classification_name']}}</span>
                     <span class="number">({{classification['bk_objects'].length}})</span>
                     <template v-if="isEditable(classification)">
-                        <i class="icon-cc-plus text-primary"
-                            :style="{ 'margin': '0 6px', color: $isAuthorized($OPERATION.C_MODEL) ? '' : '#e6e6e6 !important' }"
+                        <i class="icon-cc-add-line text-primary"
+                            :class="[{ 'disabled': !$isAuthorized($OPERATION.C_MODEL) }]"
+                            :style="{ 'margin': '0 6px' }"
                             v-cursor="{
                                 active: !$isAuthorized($OPERATION.C_MODEL),
                                 auth: [$OPERATION.C_MODEL]
@@ -101,15 +79,16 @@
                             @click="showModelDialog(classification.bk_classification_id)">
                         </i>
                         <i class="icon-cc-edit text-primary"
-                            :style="{ 'margin-right': '4px', color: $isAuthorized($OPERATION.U_MODEL_GROUP) ? '' : '#e6e6e6 !important' }"
+                            :class="[{ 'disabled': !$isAuthorized($OPERATION.U_MODEL_GROUP) }]"
+                            :style="{ 'margin-right': '4px' }"
                             v-cursor="{
                                 active: !$isAuthorized($OPERATION.U_MODEL_GROUP),
                                 auth: [$OPERATION.U_MODEL_GROUP]
                             }"
                             @click="showGroupDialog(true, classification)">
                         </i>
-                        <i class="icon-cc-del text-primary"
-                            :style="{ color: $isAuthorized($OPERATION.D_MODEL_GROUP) ? '' : '#e6e6e6 !important' }"
+                        <i class="icon-cc-delete text-primary"
+                            :class="[{ 'disabled': !$isAuthorized($OPERATION.D_MODEL_GROUP) }]"
                             v-cursor="{
                                 active: !$isAuthorized($OPERATION.D_MODEL_GROUP),
                                 auth: [$OPERATION.D_MODEL_GROUP]
@@ -125,19 +104,27 @@
                             'ispre': isInner(model)
                         }"
                         v-for="(model, modelIndex) in classification['bk_objects']"
-                        :key="modelIndex"
-                        @click="modelClick(model)">
-                        <div class="icon-box">
-                            <i class="icon" :class="[model['bk_obj_icon']]"></i>
+                        :key="modelIndex">
+                        <div class="info-model"
+                            :class="{ 'radius': modelType === 'disabled' }"
+                            @click="modelClick(model)">
+                            <div class="icon-box">
+                                <i class="icon" :class="[model['bk_obj_icon']]"></i>
+                            </div>
+                            <div class="model-details">
+                                <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
+                                <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
+                            </div>
                         </div>
-                        <div class="model-details">
-                            <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
-                            <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
+                        <div v-if="modelType !== 'disabled'" class="info-instance" @click="handleGoInstance(model)">
+                            <i class="icon-cc-share"></i>
+                            <p>{{modelStatisticsSet[model.bk_obj_id] || 0}}</p>
                         </div>
                     </li>
                 </ul>
             </li>
         </ul>
+
         <bk-dialog
             class="bk-dialog-no-padding bk-dialog-no-tools group-dialog dialog"
             :close-icon="false"
@@ -186,12 +173,30 @@
                 <bk-button theme="default" @click="hideGroupDialog">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
+
         <the-create-model
             :is-show.sync="modelDialog.isShow"
             :group-id.sync="modelDialog.groupId"
             :title="$t('新建模型')"
             @confirm="saveModel">
         </the-create-model>
+        
+        <bk-dialog
+            class="bk-dialog-no-padding"
+            :width="400"
+            :show-footer="false"
+            :mask-close="false"
+            v-model="sucessDialog.isShow">
+            <div class="success-content">
+                <i class="bk-icon icon-check-1"></i>
+                <p>{{$t('模型创建成功')}}</p>
+                <div class="btn-box">
+                    <bk-button theme="primary" @click="handleGoInstance(curCreateModel)">{{$t('添加实例')}}</bk-button>
+                    <bk-button @click="modelClick(curCreateModel)">{{$t('配置字段')}}</bk-button>
+                    <bk-button @click="sucessDialog.isShow = false">{{$t('返回列表')}}</bk-button>
+                </div>
+            </div>
+        </bk-dialog>
     </div>
 </template>
 
@@ -214,6 +219,18 @@
                 showFeatureTips: false,
                 scrollHandler: null,
                 scrollTop: 0,
+                modelType: 'enable',
+                searchModel: '',
+                filterClassifications: [],
+                modelStatisticsSet: {},
+                curCreateModel: {},
+                sucessDialog: {
+                    isShow: false
+                },
+                groupToolTips: {
+                    content: this.$t('内置模型组不支持添加和修改'),
+                    placement: 'right'
+                },
                 groupDialog: {
                     isShow: false,
                     isEdit: false,
@@ -227,13 +244,6 @@
                 modelDialog: {
                     isShow: false,
                     groupId: ''
-                },
-                modelType: 'enable',
-                searchModel: '',
-                filterClassifications: [],
-                groupToolTips: {
-                    content: this.$t('内置模型组不支持添加和修改'),
-                    placement: 'right'
                 }
             }
         },
@@ -276,11 +286,8 @@
                     return this.filterClassifications
                 }
             },
-            createGroupBtn () {
-                return this.isAdminView ? this.$t('新建分组') : this.$t('新建业务分组')
-            },
-            createModelBtn () {
-                return this.isAdminView ? this.$t('新建模型') : this.$t('新建业务模型')
+            disabledModelBtnText () {
+                return this.disabledClassifications.length ? '' : this.$t('停用模型提示')
             }
         },
         watch: {
@@ -302,11 +309,12 @@
                 this.searchModel = ''
             }
         },
-        created () {
+        async created () {
             this.scrollHandler = event => {
                 this.scrollTop = event.target.scrollTop
             }
             addMainScrollListener(this.scrollHandler)
+            this.getModelStatistics()
             this.searchClassificationsObjects({
                 params: this.$injectMetadata()
             })
@@ -327,6 +335,7 @@
             ]),
             ...mapActions('objectModelClassify', [
                 'searchClassificationsObjects',
+                'getClassificationsObjectStatistics',
                 'createClassification',
                 'updateClassification',
                 'deleteClassification'
@@ -367,6 +376,18 @@
             hideGroupDialog () {
                 this.groupDialog.isShow = false
                 this.$validator.reset()
+            },
+            async getModelStatistics () {
+                const modelStatisticsSet = {}
+                const res = await this.getClassificationsObjectStatistics({
+                    config: {
+                        requestId: 'getClassificationsObjectStatistics'
+                    }
+                })
+                res.forEach(item => {
+                    modelStatisticsSet[item.bk_obj_id] = item.instance_count
+                })
+                this.modelStatisticsSet = modelStatisticsSet
             },
             async saveGroup () {
                 const res = await Promise.all([
@@ -432,8 +453,11 @@
                     bk_obj_id: data['bk_obj_id'],
                     userName: this.userName
                 })
-                await this.createObject({ params, config: { requestId: 'createModel' } })
+                const createModel = await this.createObject({ params, config: { requestId: 'createModel' } })
+                this.curCreateModel = createModel
+                this.sucessDialog.isShow = true
                 this.$http.cancel('post_searchClassificationsObjects')
+                this.getModelStatistics()
                 this.searchClassificationsObjects({
                     params: this.$injectMetadata()
                 })
@@ -451,6 +475,18 @@
                     },
                     query: {
                         from: fullPath
+                    }
+                })
+            },
+            handleGoInstance (model) {
+                this.sucessDialog.isShow = false
+                this.$router.push({
+                    name: 'generalModel',
+                    params: {
+                        objId: model.bk_obj_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             }
@@ -495,6 +531,7 @@
             line-height: 30px;
             &.enable {
                 border-radius: 2px 0 0 2px;
+                border-right-color: #3a84ff;
                 z-index: 2;
             }
             &.disabled {
@@ -505,10 +542,14 @@
             &:hover {
                 z-index: 2;
             }
+            &-active {
+                border-color: #3a84ff;
+                color: #3a84ff;
+            }
         }
     }
     .group-list {
-        padding: 0 20px 20px;
+        padding: 0 20px;
         .group-item {
             position: relative;
             padding: 10px 0 20px;
@@ -552,15 +593,15 @@
                 display: none;
                 vertical-align: middle;
                 cursor: pointer;
+                &.disabled {
+                    opacity: 1 !important;
+                    color: #c4c6cc !important;
+                }
             }
             &:hover {
                 >.text-primary {
                     display: inline-block;
                 }
-            }
-            .icon-cc-plus {
-                border: 1px solid #3c96ff;
-                border-radius: 2px;
             }
         }
     }
@@ -569,6 +610,7 @@
         overflow: hidden;
         transition: height .2s;
         .model-item {
+            display: flex;
             position: relative;
             float: left;
             margin: 10px 10px 0 0;
@@ -597,7 +639,9 @@
             }
             &:hover {
                 border-color: $cmdbBorderFocusColor;
-                background: #ebf4ff;
+                .info-instance {
+                    display: block;
+                }
             }
             .icon-box {
                 float: left;
@@ -610,7 +654,7 @@
                 }
             }
             .model-details {
-                padding: 0 10px 0 0;
+                padding: 0 4px 0 0;
                 overflow: hidden;
             }
             .model-name {
@@ -624,6 +668,41 @@
                 font-size: 12px;
                 color: #bfc7d2;
                 @include ellipsis;
+            }
+            .info-model {
+                flex: 1;
+                width: 0;
+                border-radius: 4px 0 0 4px;
+                &:hover {
+                    background-color: #f0f5ff;
+                }
+                &.radius {
+                    border-radius: 4px;
+                }
+            }
+            .info-instance {
+                display: none;
+                width: 70px;
+                padding: 0 8px 0 6px;
+                text-align: center;
+                color: #c3cdd7;
+                border-radius: 0 4px 4px 0;
+                &:hover {
+                    background-color: #f0f5ff;
+                    p {
+                        color: #3a84ff;
+                    }
+                }
+                .icon-cc-share {
+                    font-size: 14px;
+                    margin-top: 16px;
+                    color: #3a84ff;
+                }
+                p {
+                    font-size: 16px;
+                    padding-top: 2px;
+                    @include ellipsis;
+                }
             }
         }
     }
@@ -674,6 +753,32 @@
             text-align: right;
             .bk-primary {
                 margin-right: 10px;
+            }
+        }
+    }
+    .success-content {
+        text-align: center;
+        padding-bottom: 46px;
+        p {
+            color: #444444;
+            font-size: 24px;
+            padding: 10px 0 20px;
+        }
+        .icon-check-1 {
+            width: 58px;
+            height: 58px;
+            line-height: 58px;
+            font-size: 30px;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 50%;
+            background-color: #2dcb56;
+            text-align: center;
+        }
+        .btn-box {
+            font-size: 0;
+            .bk-button {
+                margin: 0 5px;
             }
         }
     }
