@@ -38,7 +38,7 @@ export const RESOURCE_HOST_DETAILS = {
                 this.authScope = 'global'
             }
         },
-        i18nTitle: '主机详情'
+        showBreadcumbs: false
     })
 }
 
@@ -68,7 +68,7 @@ export const BUSINESS_HOST_DETAILS = {
                 this.authScope = 'business'
             }
         },
-        i18nTitle: '主机详情',
+        showBreadcumbs: true,
         requireBusiness: true
     })
 }

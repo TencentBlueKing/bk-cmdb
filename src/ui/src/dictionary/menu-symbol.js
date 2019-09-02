@@ -1,15 +1,29 @@
-export const MENU_INDEX = 'menu.index'
-export const MENU_BUSINESS = 'menu.business'
-export const MENU_RESOURCE = 'menu.resource'
-export const MENU_MODEL = 'menu.model'
-export const MENU_ANALYSIS = 'menu.analysis'
+export const MENU_INDEX = 'menu_index'
+export const MENU_BUSINESS = 'menu_business'
+export const MENU_RESOURCE = 'menu_resource'
+export const MENU_MODEL = 'menu_model'
+export const MENU_ANALYSIS = 'menu_analysis'
 
-export const MENU_BUSINESS_HOST = Symbol('menu.business.host')
-export const MENU_BUSINESS_SERVICE = Symbol('menu.business.service')
-export const MENU_BUSINESS_ADVANCED = Symbol('menu.business.advanced')
-export const MENU_RESOURCE_EVENTPUSH = Symbol('menu.resource.eventpush')
-export const MENU_MODEL_MANAGEMENT = Symbol('menu.model.management')
-export const MENU_MODEL_TOPOLOGY = Symbol('menu.model.topology')
-export const MENU_MODEL_ASSOCIATION = Symbol('menu.model.association')
-export const MENU_ANALYSIS_AUDIT = Symbol('menu.analysis.audit')
-export const MENU_ANALYSIS_STATISTICS = Symbol('menu.analysis.statistics')
+export const MENU_BUSINESS_HOST = 'menu_business_host'
+export const MENU_BUSINESS_SERVICE = 'menu_business_service'
+export const MENU_BUSINESS_ADVANCED = 'menu_business_advanced'
+
+export const MENU_RESOURCE_EVENTPUSH = 'menu_resource_eventpush'
+export const MENU_RESOURCE_MANAGEMENT = 'menu_resource_management'
+export const MENU_RESOURCE_BUSINESS = 'menu_resource_business'
+export const MENU_RESOURCE_BUSINESS_HISTORY = 'menu_resource_business_history'
+export const MENU_RESOURCE_HOST = 'menu_resource_host'
+export const MENU_RESOURCE_INSTANCE = 'menu_resource_instance'
+
+export const MENU_MODEL_MANAGEMENT = 'menu_model_management'
+export const MENU_MODEL_TOPOLOGY = 'menu_model_topology'
+export const MENU_MODEL_BUSINESS_TOPOLOGY = 'menu_model_business_topology'
+export const MENU_MODEL_ASSOCIATION = 'menu_model_association'
+
+export const MENU_ANALYSIS_AUDIT = 'menu_analysis_audit'
+export const MENU_ANALYSIS_STATISTICS = 'menu_analysis_statistics'
+
+// 判断收藏的目录id
+export const MENU_RESOURCE_COLLECTION = 'menu_resource_collection'
+export const MENU_RESOURCE_HOST_COLLECTION = 'menu_resource_host_collection'
+export const MENU_RESOURCE_BUSINESS_COLLECTION = 'menu_resource_business_collection'

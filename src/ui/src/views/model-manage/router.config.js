@@ -1,6 +1,6 @@
 import Meta from '@/router/meta'
 import { getMetadataBiz } from '@/utils/tools'
-import { MENU_MODEL } from '@/dictionary/menu-symbol'
+import { MENU_MODEL_MANAGEMENT } from '@/dictionary/menu-symbol'
 import {
     C_MODEL_GROUP,
     U_MODEL_GROUP,
@@ -21,13 +21,12 @@ export const OPERATION = {
 }
 
 export default [{
-    name: 'model',
+    name: MENU_MODEL_MANAGEMENT,
     path: 'index',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            i18n: '模型',
-            parent: MENU_MODEL
+            i18n: '模型'
         },
         auth: {
             operation: Object.values(OPERATION),

@@ -3,7 +3,7 @@ import Meta from '@/router/meta'
 
 export default {
     name: 'audit',
-    path: 'index',
+    path: 'audit',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {

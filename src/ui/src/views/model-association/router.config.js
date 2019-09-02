@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
+import { MENU_MODEL_ASSOCIATION } from '@/dictionary/menu-symbol'
 import {
     C_RELATION,
     U_RELATION,
@@ -13,20 +13,18 @@ export const OPERATION = {
 }
 
 export default {
-    name: 'modelAssociation',
+    name: MENU_MODEL_ASSOCIATION,
     path: 'association',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            i18n: '关联类型',
-            parent: NAV_MODEL_MANAGEMENT
+            i18n: '关联类型'
         },
         auth: {
             operation: Object.values(OPERATION),
             setAuthScope () {
                 this.authScope = 'global'
             }
-        },
-        i18nTitle: '关联类型'
+        }
     })
 }

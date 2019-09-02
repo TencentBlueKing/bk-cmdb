@@ -3,6 +3,7 @@
         <dynamic-navigation class="main-navigation" @business-change="handleBusinessChange"></dynamic-navigation>
         <div class="main-layout">
             <div class="main-scroller">
+                <dynamic-breadcumbs v-show="$route.meta.showBreadcumbs"></dynamic-breadcumbs>
                 <router-view class="main-views" :key="refreshKey"></router-view>
             </div>
         </div>
@@ -11,9 +12,11 @@
 
 <script>
     import dynamicNavigation from './dynamic-navigation'
+    import dynamicBreadcumbs from './dynamic-breadcumbs'
     export default {
         components: {
-            dynamicNavigation
+            dynamicNavigation,
+            dynamicBreadcumbs
         },
         data () {
             return {
@@ -22,9 +25,9 @@
         },
         methods: {
             handleBusinessChange () {
-                // this.$nextTick(() => {
-                //     this.refreshKey = Date.now()
-                // })
+                this.$nextTick(() => {
+                    this.refreshKey = Date.now()
+                })
             }
         }
     }
@@ -44,8 +47,9 @@
         overflow: auto;
     }
     .main-views {
-        height: 100%;
-        padding: 0 20px;
+        height: calc(100% - 58px);
+        padding: 20px;
         min-width: 1106px;
+        background-color: #FAFBFD;
     }
 </style>

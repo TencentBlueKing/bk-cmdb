@@ -18,6 +18,10 @@
                         <h3 class="menu-info clearfix">
                             <i :class="['menu-icon', menu.icon]"></i>
                             <span class="menu-name">{{$t(menu.i18n)}}</span>
+                            <i class="bk-icon icon-close"
+                                v-if="isCollection(menu)"
+                                @click.stop.prevent="handleDeleteCollection(menu)">
+                            </i>
                         </h3>
                     </router-link>
                     <li class="menu-item"
@@ -42,17 +46,10 @@
                                     v-for="(submenu, submenuIndex) in menu.submenu"
                                     exact
                                     active-class="active"
-                                    :class="{
-                                        collection: menu.id === NAV_COLLECT
-                                    }"
                                     :key="submenuIndex"
                                     :to="submenu.route"
                                     :title="$t(submenu.i18n)">
                                     {{$t(submenu.i18n)}}
-                                    <i class="bk-icon icon-close"
-                                        v-if="menu.id === NAV_COLLECT"
-                                        @click.stop.prevent="handleDeleteCollection(submenu)">
-                                    </i>
                                 </router-link>
                             </div>
                         </cmdb-collapse-transition>
@@ -74,8 +71,16 @@
 <script>
     import { mapGetters } from 'vuex'
     import MENU_DICTIONARY from '@/dictionary/menu'
-    import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
-    console.log(MENU_DICTIONARY)
+    import {
+        MENU_BUSINESS,
+        MENU_RESOURCE,
+        MENU_RESOURCE_BUSINESS,
+        MENU_RESOURCE_HOST,
+        MENU_RESOURCE_INSTANCE,
+        MENU_RESOURCE_COLLECTION,
+        MENU_RESOURCE_HOST_COLLECTION,
+        MENU_RESOURCE_BUSINESS_COLLECTION
+    } from '@/dictionary/menu-symbol'
     export default {
         data () {
             return {
@@ -87,9 +92,10 @@
             }
         },
         computed: {
-            ...mapGetters(['navStick', 'navFold', 'admin']),
+            ...mapGetters(['navStick', 'navFold', 'admin', 'businessMenuRedirectRoute']),
             ...mapGetters('menu', ['active']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectModelClassify', ['classifications', 'models']),
             unfold () {
                 return this.navStick || !this.navFold
             },
@@ -99,13 +105,54 @@
             showBusinessSelector () {
                 return this.owner === MENU_BUSINESS
             },
+            collection () {
+                if (this.owner === MENU_RESOURCE) {
+                    const isHostCollected = this.usercustom[MENU_RESOURCE_HOST_COLLECTION] === undefined
+                        ? true
+                        : this.usercustom[MENU_RESOURCE_HOST_COLLECTION]
+                    const isBusinessCollected = this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION] === undefined
+                        ? true
+                        : this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION]
+                    const collection = [...(this.usercustom[MENU_RESOURCE_COLLECTION] || [])]
+                    if (isHostCollected) {
+                        collection.unshift('host')
+                    }
+                    if (isBusinessCollected) {
+                        collection.unshift('biz')
+                    }
+                    return collection.filter(modelId => {
+                        return this.models.some(model => model.bk_obj_id === modelId)
+                    })
+                }
+                return []
+            },
+            collectionMenus () {
+                return this.collection.map(id => {
+                    const model = this.models.find(model => model.bk_obj_id === id)
+                    return {
+                        i18n: model.bk_obj_name,
+                        icon: model.bk_obj_icon,
+                        id: `collection_${id}`,
+                        route: this.getCollectionRoute(model)
+                    }
+                })
+            },
             currentMenus () {
                 const target = MENU_DICTIONARY.find(menu => menu.id === this.owner)
-                return (target && target.menu) || []
+                const menus = [...((target && target.menu) || [])]
+                if (this.owner === MENU_RESOURCE) {
+                    menus.splice(1, 0, ...this.collectionMenus)
+                }
+                return menus
             }
         },
-        created () {
-            this.setDefaultExpand()
+        watch: {
+            $route: {
+                immediate: true,
+                handler () {
+                    this.setDefaultExpand()
+                }
+            }
         },
         methods: {
             setDefaultExpand () {
@@ -119,6 +166,26 @@
                     return this.state[menu.id].expanded
                 }
                 return false
+            },
+            getCollectionRoute (model) {
+                const map = {
+                    host: MENU_RESOURCE_HOST,
+                    biz: MENU_RESOURCE_BUSINESS
+                }
+                if (map.hasOwnProperty(model.bk_obj_id)) {
+                    return {
+                        name: map[model.bk_obj_id]
+                    }
+                }
+                return {
+                    name: MENU_RESOURCE_INSTANCE,
+                    params: {
+                        objId: model.bk_obj_id
+                    }
+                }
+            },
+            isCollection (menu) {
+                return menu.id.startsWith('collection')
             },
             handleMouseEnter () {
                 if (this.timer) {
@@ -163,16 +230,33 @@
                     stick: !this.navStick
                 })
             },
-            handleDeleteCollection (model) {
-                const collectedModels = this.usercustom.collected_models
-                this.$store.dispatch('userCustom/saveUsercustom', {
-                    collected_models: collectedModels.filter(id => id !== model.id)
-                })
+            async handleDeleteCollection (menu) {
+                try {
+                    const modelId = menu.id.split('collection_')[1]
+                    const map = {
+                        host: MENU_RESOURCE_HOST_COLLECTION,
+                        biz: MENU_RESOURCE_BUSINESS_COLLECTION
+                    }
+                    if (Object.keys(map).includes(modelId)) {
+                        await this.$store.dispatch('userCustom/saveUsercustom', {
+                            [map[modelId]]: false
+                        })
+                    } else {
+                        await this.$store.dispatch('userCustom/saveUsercustom', {
+                            [MENU_RESOURCE_COLLECTION]: this.usercustom[MENU_RESOURCE_COLLECTION].filter(id => id !== modelId)
+                        })
+                    }
+                    this.$success(this.$t('取消导航成功'))
+                } catch (e) {
+                    console.log(e)
+                }
             },
             handleToggleBusiness (id) {
-                this.$nextTick(() => {
-                    const routerName = this.$route.name
-                    if (routerName === MENU_BUSINESS) {
+                const routerName = this.$route.name
+                if (routerName === MENU_BUSINESS) {
+                    if (this.businessMenuRedirectRoute) {
+                        this.$router.replace(this.businessMenuRedirectRoute)
+                    } else {
                         this.$router.replace({
                             name: 'hosts',
                             params: Object.assign({
@@ -180,15 +264,9 @@
                             }, this.$route.params),
                             query: this.$route.query
                         })
-                    } else if (this.$route.params.business !== id) {
-                        this.$router.replace({
-                            name: routerName,
-                            params: Object.assign({}, this.$route.params, { business: id }),
-                            query: this.$route.query
-                        })
                     }
-                    this.$emit('business-change', id)
-                })
+                }
+                this.$emit('business-change', id)
             }
         }
     }
@@ -263,14 +341,40 @@ $color: #63656E;
     .menu-item {
         position: relative;
         transition: background-color $duration $cubicBezier;
-
+        &.is-link {
+            .icon-close {
+                display: none;
+                position: absolute;
+                right: 20px;
+                top: 10px;
+                width: 25px;
+                height: 25px;
+                line-height: 25px;
+                font-size: 16px;
+                text-align: center;
+                color: $color;
+                &:hover {
+                    opacity: .8;
+                }
+                &:before {
+                    display: block;
+                    transform: scale(.65);
+                }
+            }
+            &:hover {
+                .icon-close {
+                    display: block;
+                }
+            }
+        }
         &.is-open {
             background-color: #F0F1F5;
         }
         &.active.is-link {
             background-color: #3a84ff;
             .menu-icon,
-            .menu-name {
+            .menu-name,
+            .icon-close {
                 color: #fff;
             }
         }
@@ -327,33 +431,6 @@ $color: #63656E;
         padding: 0 0 0 64px;
         color: $color;
         @include ellipsis;
-        &.collection {
-            padding-right: 50px;
-            .icon-close {
-                display: none;
-                position: absolute;
-                right: 20px;
-                top: 10px;
-                width: 25px;
-                height: 25px;
-                line-height: 25px;
-                font-size: 16px;
-                text-align: center;
-                color: $color;
-                &:hover {
-                    color: #fff;
-                }
-                &:before {
-                    display: block;
-                    transform: scale(.5);
-                }
-            }
-            &:hover {
-                .icon-close {
-                    display: block;
-                }
-            }
-        }
         &:hover {
             background-color: #DCDEE5;
         }

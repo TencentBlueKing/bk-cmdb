@@ -54,6 +54,8 @@
             this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness')
             if (this.authorizedBusiness.length) {
                 this.init()
+            } else {
+                // todo 无权限时应该如何跳转
             }
         },
         methods: {

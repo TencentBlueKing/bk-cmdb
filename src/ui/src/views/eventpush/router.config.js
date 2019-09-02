@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
+import { MENU_RESOURCE_EVENTPUSH } from '@/dictionary/menu-symbol'
 import {
     C_EVENT,
     U_EVENT,
@@ -15,13 +15,12 @@ export const OPERATION = {
 }
 
 export default {
-    name: 'eventpush',
-    path: 'index',
+    name: MENU_RESOURCE_EVENTPUSH,
+    path: 'eventpush',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            i18n: '事件推送',
-            parent: NAV_MODEL_MANAGEMENT
+            i18n: '事件推送'
         },
         auth: {
             view: OPERATION.R_EVENT,
@@ -29,7 +28,6 @@ export default {
             setAuthScope () {
                 this.authScope = 'global'
             }
-        },
-        i18nTitle: '事件推送'
+        }
     })
 }

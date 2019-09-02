@@ -16,6 +16,7 @@ import serviceTemplate from '@/views/service-template/router.config'
 import serviceCategory from '@/views/service-category/router.config'
 import serviceInstance from '@/views/service-instance/router.config'
 import serviceSynchronous from '@/views/business-synchronous/router.config'
+import resourceManagement from '@/views/resource-manage/router.config'
 
 const flatternViews = views => {
     const flatterned = []
@@ -45,7 +46,8 @@ export const resourceViews = flatternViews([
     resource,
     hostDetails,
     generalModel,
-    eventpush
+    eventpush,
+    resourceManagement
 ])
 
 export const modelViews = flatternViews([
