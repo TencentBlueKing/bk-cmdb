@@ -27,7 +27,8 @@ export default {
             i18n: '自定义字段',
             path: '/custom-fields',
             order: 4,
-            businessView: true
+            businessView: true,
+            isAdminView: false
         },
         auth: {
             operation: Object.values(OPERATION),
@@ -35,6 +36,9 @@ export default {
                 this.authScope = 'business'
             }
         },
-        i18nTitle: '自定义字段'
+        i18nTitle: '自定义字段',
+        checkAvailable: (to, from, app) => {
+            return !app.$store.getters.isAdminView
+        }
     })
 }
