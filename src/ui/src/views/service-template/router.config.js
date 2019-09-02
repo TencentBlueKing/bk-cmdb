@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { NAV_SERVICE_MANAGEMENT } from '@/dictionary/menu'
+import { MENU_BUSINESS_SERVICE, MENU_BUSINESS } from '@/dictionary/menu-symbol'
 import {
     C_SERVICE_TEMPLATE,
     U_SERVICE_TEMPLATE,
@@ -14,20 +14,15 @@ export const OPERATION = {
     R_SERVICE_TEMPLATE
 }
 
-const path = '/service/template'
-
 export default [{
     name: 'serviceTemplate',
-    path: path,
+    path: 'service/template',
     component: () => import('./index.vue'),
     meta: new Meta({
+        owner: MENU_BUSINESS,
         menu: {
-            id: 'serviceTemplate',
             i18n: '服务模板',
-            path: path,
-            order: 2,
-            parent: NAV_SERVICE_MANAGEMENT,
-            adminView: false
+            parent: MENU_BUSINESS_SERVICE
         },
         auth: {
             operation: Object.values(OPERATION),
@@ -40,9 +35,10 @@ export default [{
     })
 }, {
     name: 'operationalTemplate',
-    path: '/service/operational/template/:templateId?',
+    path: 'service/operational/template/:templateId?',
     component: () => import('./children/operational.vue'),
-    meta: {
+    meta: new Meta({
+        owner: MENU_BUSINESS,
         auth: {
             operation: Object.values(OPERATION),
             setAuthScope () {
@@ -50,5 +46,5 @@ export default [{
             }
         },
         requireBusiness: true
-    }
+    })
 }]

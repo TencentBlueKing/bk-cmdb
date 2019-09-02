@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { NAV_SERVICE_MANAGEMENT } from '@/dictionary/menu'
+import { MENU_BUSINESS_SERVICE, MENU_BUSINESS } from '@/dictionary/menu-symbol'
 import {
     C_SERVICE_CATEGORY,
     U_SERVICE_CATEGORY,
@@ -14,20 +14,15 @@ export const OPERATION = {
     R_SERVICE_CATEGORY
 }
 
-const path = '/service/cagetory'
-
 export default {
     name: 'serviceCagetory',
-    path: path,
+    path: 'service/cagetory',
     component: () => import('./index.vue'),
     meta: new Meta({
+        owner: MENU_BUSINESS,
         menu: {
-            id: 'serviceCagetory',
             i18n: '服务分类',
-            path: path,
-            order: 3,
-            parent: NAV_SERVICE_MANAGEMENT,
-            adminView: false
+            parent: MENU_BUSINESS_SERVICE
         },
         auth: {
             operation: Object.values(OPERATION),

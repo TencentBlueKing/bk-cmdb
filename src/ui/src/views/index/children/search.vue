@@ -189,6 +189,7 @@
 <style lang="scss" scoped>
     .search-layout {
         width: 50%;
+        max-width: 700px;
         margin: 0 auto;
     }
     .search-box{

@@ -215,15 +215,15 @@
                     resolve()
                 }
             })
-            const formFullTextSearch = Object.keys(this.$route.params).length
-            if (formFullTextSearch) {
-                this.defaultIpConfig = Object.assign(this.defaultIpConfig, this.$route.params)
-            }
+            // const formFullTextSearch = Object.keys(this.$route.params).length
+            // if (formFullTextSearch) {
+            //     this.defaultIpConfig = Object.assign(this.defaultIpConfig, this.$route.params)
+            // }
             await this.initCustomFilterIP()
             await this.initCustomFilterList()
-            if (formFullTextSearch) {
-                this.handleSearch()
-            }
+            // if (formFullTextSearch) {
+            //     this.handleSearch()
+            // }
         },
         beforeDestroy () {
             this.$store.commit('hosts/clearFilter')

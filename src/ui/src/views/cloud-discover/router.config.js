@@ -14,7 +14,7 @@ export const OPERATION = {
     D_CLOUD_DISCOVER
 }
 
-const path = '/cloud-discover'
+const path = 'cloud-discover'
 
 export default {
     name: 'cloudDiscover',

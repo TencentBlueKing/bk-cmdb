@@ -1,3 +1,4 @@
+/* eslint-disable */
 import Vue from 'vue'
 import Router from 'vue-router'
 
@@ -9,53 +10,28 @@ import { translateAuth } from '@/setup/permission'
 import $http from '@/api'
 
 import index from '@/views/index/router.config'
-import audit from '@/views/audit/router.config'
-import business from '@/views/business/router.config'
-import businessModel from '@/views/business-model/router.config'
-import businessTopology from '@/views/business-topology/router.config'
-import customQuery from '@/views/custom-query/router.config'
-import eventpush from '@/views/eventpush/router.config'
-import history from '@/views/history/router.config'
-import hosts from '@/views/hosts/router.config'
-import hostDetails from '@/views/host-details/router.config'
-import model from '@/views/model-manage/router.config'
-import modelAssociation from '@/views/model-association/router.config'
-import modelTopology from '@/views/model-topology/router.config'
-import resource from '@/views/resource/router.config'
-import generalModel from '@/views/general-model/router.config'
-import permission from '@/views/permission/router.config'
-import template from '@/views/service-template/router.config'
-import category from '@/views/service-category/router.config'
 
-import serviceInstance from '@/views/service-instance/router.config'
-import synchronous from '@/views/business-synchronous/router.config'
+import {
+    MENU_INDEX,
+    MENU_BUSINESS,
+    MENU_RESOURCE,
+    MENU_MODEL,
+    MENU_ANALYSIS
+} from '@/dictionary/menu-symbol'
+
+
+import {
+    businessViews,
+    resourceViews,
+    modelViews,
+    analysisViews
+} from '@/views'
+
+import dynamicRouterView from '@/components/layout/dynamic-router-view'
 
 Vue.use(Router)
 
-export const viewRouters = [
-    ...index,
-    audit,
-    businessModel,
-    businessTopology,
-    customQuery,
-    eventpush,
-    hosts,
-    ...hostDetails,
-    modelAssociation,
-    modelTopology,
-    resource,
-    ...template,
-    ...generalModel,
-    ...business,
-    ...model,
-    ...permission,
-    category,
-    synchronous,
-    ...serviceInstance,
-    history
-]
-
-const indexName = index[0].name
+export const viewRouters = []
 
 const statusRouters = [
     {
@@ -85,7 +61,7 @@ const redirectRouters = [{
 }, {
     path: '/',
     redirect: {
-        name: indexName
+        name: MENU_INDEX
     }
 }]
 
@@ -94,7 +70,32 @@ const router = new Router({
     routes: [
         ...redirectRouters,
         ...statusRouters,
-        ...viewRouters
+        ...index,
+        {
+            name: MENU_BUSINESS,
+            component: dynamicRouterView,
+            children: businessViews,
+            path: '/business'
+        }, {
+            name: MENU_MODEL,
+            component: dynamicRouterView,
+            children: modelViews,
+            path: '/model',
+            redirect: '/model/index'
+        },
+        {
+            name: MENU_RESOURCE,
+            component: dynamicRouterView,
+            children: resourceViews,
+            path: '/resource',
+            redirect: '/resource/index'
+        }, {
+            name: MENU_ANALYSIS,
+            component: dynamicRouterView,
+            children: analysisViews,
+            path: '/analysis',
+            redirect: '/analysis/audit'
+        }
     ]
 })
 
@@ -130,43 +131,14 @@ const cancelRequest = () => {
 
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
-const setMenuState = to => {
-    if (!to.meta.resetMenu) {
-        return false
-    }
-    const isStatusRoute = statusRouters.some(route => route.name === to.name)
-    if (isStatusRoute) {
-        return false
-    }
-    const menu = to.meta.menu || {}
-    const menuId = menu.id
-    const parentId = menu.parent
-    router.app.$store.commit('menu/setActiveMenu', menuId)
-    if (parentId) {
-        router.app.$store.commit('menu/setOpenMenu', parentId)
-    }
-}
-
-const setTitle = to => {
-    const { i18nTitle, title } = to.meta
-    let headerTitle
-    if (!i18nTitle && !title) {
-        return false
-    } else if (i18nTitle) {
-        headerTitle = router.app.$t(i18nTitle)
-    } else if (title) {
-        headerTitle = title
-    }
-    router.app.$store.commit('setHeaderTitle', headerTitle)
-}
-
+/* eslint-disable-next-line */
 const setAuthScope = (to, from) => {
     const auth = to.meta.auth || {}
     if (typeof auth.setAuthScope === 'function') {
         auth.setAuthScope(to, from, router.app)
     }
 }
-
+/* eslint-disable-next-line */
 const checkAuthDynamicMeta = (to, from) => {
     router.app.$store.commit('auth/clearDynamicMeta')
     const auth = to.meta.auth || {}
@@ -185,8 +157,7 @@ const checkAvailable = (to, from) => {
 
 const checkBusiness = to => {
     const getters = router.app.$store.getters
-    const isAdminView = getters.isAdminView
-    if (isAdminView || !to.meta.requireBusiness) {
+    if (!to.meta.requireBusiness) {
         return true
     }
     const authorizedBusiness = getters['objectBiz/authorizedBusiness']
@@ -219,6 +190,18 @@ const setPermission = async to => {
     return permission
 }
 
+const checkBusinessMenuRedirect = (to) => {
+    const isBusinessMenu = to.matched.length > 1 && to.matched[0].name === MENU_BUSINESS
+    if (!isBusinessMenu) {
+        return false
+    }
+    return router.app.$store.state.objectBiz.bizId === null
+}
+
+const setAdminView = to => {
+    router.app.$store.commit('setAdminView', to.matched[0].name !== MENU_BUSINESS)
+}
+
 const setupStatus = {
     preload: true,
     afterload: true
@@ -228,20 +211,15 @@ router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
             setLoading(true)
-            await cancelRequest()
             if (setupStatus.preload) {
                 await preload(router.app)
             }
             if (!isShouldShow(to)) {
-                next({ name: indexName })
+                next({ name: MENU_INDEX })
             } else {
-                setMenuState(to)
-                setTitle(to)
-                setAuthScope(to, from)
-                checkAuthDynamicMeta(to, from)
-
+                // 防止直接进去申请业务的提示界面导致无法正确跳转权限中心
                 if (to.name === 'requireBusiness' && !router.app.$store.getters.permission.length) {
-                    next({ name: indexName })
+                    return next({ name: MENU_INDEX })
                 }
 
                 const isAvailable = checkAvailable(to, from)
@@ -254,12 +232,21 @@ router.beforeEach((to, from, next) => {
                     throw new StatusError({ name: '403' })
                 }
 
+
+                // 在业务菜单下刷新页面时，先重定向到一级路由，一级路由视图中的业务选择器设定成功后再跳转到二级视图
+                const shouldRedirectToBusinessMenu = checkBusinessMenuRedirect(to)
+                if (shouldRedirectToBusinessMenu) {
+                    return next({ name: MENU_BUSINESS })
+                }
                 const isBusinessCheckPass = checkBusiness(to)
                 if (!isBusinessCheckPass) {
                     await setPermission(to)
                     throw new StatusError({ name: 'requireBusiness', query: { _t: Date.now() } })
                 }
-                next()
+
+                setAdminView(to)
+
+                return next()
             }
         } catch (e) {
             if (e.__CANCEL__) {

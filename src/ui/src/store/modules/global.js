@@ -26,10 +26,13 @@ const state = {
         adminTips: true,
         serviceTemplate: true,
         category: true,
-        hostServiceInstanceCheckView: true
+        hostServiceInstanceCheckView: true,
+        customFields: true
     },
     permission: [],
-    appHeight: window.innerHeight
+    appHeight: window.innerHeight,
+    isAdminView: true,
+    businessMenuRedirectRoute: null
 }
 
 const getters = {
@@ -37,18 +40,7 @@ const getters = {
     user: state => state.user,
     userName: state => state.user.name,
     admin: state => state.user.admin === '1',
-    isAdminView: (state, getters, rootState, rootGetters) => {
-        const adminEntranceAuth = rootState.auth.adminEntranceAuth
-        if (!adminEntranceAuth.is_pass) {
-            return false
-        }
-        if (window.sessionStorage.hasOwnProperty('isAdminView')) {
-            return window.sessionStorage.getItem('isAdminView') === 'true'
-        } else {
-            window.sessionStorage.setItem('isAdminView', false)
-            return false
-        }
-    },
+    isAdminView: state => state.isAdminView,
     isBusinessSelected: (state, getters, rootState, rootGetters) => {
         return rootGetters['objectBiz/bizId'] !== null
     },
@@ -62,7 +54,8 @@ const getters = {
     userList: state => state.userList,
     headerTitle: state => state.headerTitle,
     featureTipsParams: state => state.featureTipsParams,
-    permission: state => state.permission
+    permission: state => state.permission,
+    businessMenuRedirectRoute: state => state.businessMenuRedirectRoute
 }
 
 const actions = {
@@ -95,8 +88,7 @@ const mutations = {
         state.headerTitle = headerTitle
     },
     setAdminView (state, isAdminView) {
-        window.sessionStorage.setItem('isAdminView', isAdminView)
-        window.location = '/'
+        state.isAdminView = isAdminView
     },
     setFeatureTipsParams (state, tab) {
         const local = window.localStorage.getItem('featureTipsParams')
@@ -117,6 +109,9 @@ const mutations = {
     },
     setAppHeight (state, height) {
         state.appHeight = height
+    },
+    setBusinessMenuRedirectRoute (state, businessMenuRedirectRoute) {
+        state.businessMenuRedirectRoute = businessMenuRedirectRoute
     }
 }
 
