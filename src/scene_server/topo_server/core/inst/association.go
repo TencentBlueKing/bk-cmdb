@@ -303,7 +303,9 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 				return result, err
 			}
 
+			// 两个模型可以存在多个关联关系的时候。这里会存在问题. A,B 两个实例都在两个关联关系上都有关系
 			item.SetAssoID(relations[id])
+
 		}
 
 		rstObj.Insts = rspItems

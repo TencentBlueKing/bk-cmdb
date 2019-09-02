@@ -626,6 +626,11 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 		return 0, nil, err
 	}
 
+	objIDAsstIDMap, err := c.getTopoObjectAssociationMap(params, obj.GetObjectID())
+	if nil != err {
+		return 0, nil, err
+	}
+
 	tmpResults := map[string]*CommonInstTopo{}
 	for _, inst := range insts {
 
@@ -642,6 +647,7 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 				commonInst.ObjectName = object.ObjectName
 				commonInst.ObjIcon = object.ObjIcon
 				commonInst.ObjID = object.ObjectID
+				commonInst.ObjAsstID = objIDAsstIDMap[commonInst.ObjID]
 				commonInst.Children = []metadata.InstNameAsst{}
 				tmpResults[object.ObjectID] = commonInst
 			}
@@ -696,6 +702,12 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 		return 0, nil, err
 	}
 
+	objIDAsstIDMap, err := c.getTopoObjectAssociationMap(params, obj.GetObjectID())
+	if nil != err {
+		return 0, nil, err
+	}
+
+	// todo 这里可以不用递归的。可以一次获取到所有的数据。
 	tmpResults := map[string]*CommonInstTopo{}
 	for _, inst := range insts {
 
@@ -712,6 +724,7 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 				commonInst.ObjectName = object.ObjectName
 				commonInst.ObjIcon = object.ObjIcon
 				commonInst.ObjID = object.ObjectID
+				commonInst.ObjAsstID = objIDAsstIDMap[commonInst.ObjID]
 				commonInst.Children = []metadata.InstNameAsst{}
 				tmpResults[object.ObjectID] = commonInst
 			}
@@ -1014,4 +1027,47 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 	currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
 	NewSupplementary().Audit(params, c.clientSet, obj, c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
 	return nil
+}
+
+func (c *commonInst) getObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error) {
+	cond := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKDBOR: []interface{}{
+				map[string]interface{}{common.BKObjIDField: objID},
+				map[string]interface{}{common.AssociatedObjectIDField: objID},
+			},
+		},
+	}
+	result, err := c.clientSet.CoreService().Association().ReadModelAssociation(params.Context, params.Header, cond)
+	if err != nil {
+		blog.ErrorJSON("getObjectAssociation http do error. cond:%s, err:%s, rid:%s", cond, err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.ErrorJSON("getObjectAssociation http reply error. cond:%s, result:%s, rid:%s", cond, result, params.ReqID)
+		return nil, params.Err.New(result.Code, result.ErrMsg)
+	}
+
+	return result.Data.Info, nil
+}
+
+func (c *commonInst) getTopoObjectAssociationMap(params types.ContextParams, objID string) (map[string]string, error) {
+	asstArr, err := c.getObjectAssociation(params, objID)
+	if err != nil {
+		return nil, err
+	}
+	objIDAsstIDMap := make(map[string]string, 0)
+	for _, item := range asstArr {
+		if item.ObjectID != objID {
+			objIDAsstIDMap[item.ObjectID] = item.AssociationName
+		}
+		if item.AsstObjID != objID {
+			objIDAsstIDMap[item.AsstObjID] = item.AssociationName
+		}
+
+		if item.ObjectID == objID && item.AsstObjID == objID {
+			objIDAsstIDMap[item.AsstObjID] = item.AssociationName
+		}
+	}
+	return objIDAsstIDMap, nil
 }
