@@ -879,5 +879,14 @@
     "分组名称": "Group Name",
     "是否默认折叠": "Default Folding",
     "添加分组": "Add Group",
-    "请先清空该分组下的字段": "Please clear the fields under this group first"
+    "请先清空该分组下的字段": "Please clear the fields under this group first",
+    "内置组不支持修改，排序": "Built-in groups do not support modification, sorting",
+    "字段名称": "Field Name",
+    "是否可编辑": "Editable",
+    "不可编辑": "Not editable",
+    "是否必填": "Required or not",
+    "非必填": "Not required",
+    "自定义字段": "Custom Field",
+    "默认值": "Defaults",
+    "枚举值": "Enum value"
 }
