@@ -25,6 +25,7 @@ import (
 	frtypes "configcenter/src/common/mapstr"
 	metatype "configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -549,6 +550,10 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 		return 0, nil, err
 	}
 
+	objIDAsstIDMap, err := c.getTopoObjectAssociationMap(params, obj.GetID())
+	if nil != err {
+		return 0, nil, err
+	}
 	tmpResults := map[string]*CommonInstTopo{}
 	for _, inst := range insts {
 
@@ -564,6 +569,7 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 				commonInst.ObjectName = child.Object.GetName()
 				commonInst.ObjIcon = child.Object.GetIcon()
 				commonInst.ObjID = child.Object.GetID()
+				commonInst.ObjAsstID = objIDAsstIDMap[commonInst.ObjID]
 				commonInst.Children = []metatype.InstNameAsst{}
 				tmpResults[child.Object.GetID()] = commonInst
 			}
@@ -619,6 +625,11 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 		return 0, nil, err
 	}
 
+	objIDAsstIDMap, err := c.getTopoObjectAssociationMap(params, obj.GetID())
+	if nil != err {
+		return 0, nil, err
+	}
+
 	tmpResults := map[string]*CommonInstTopo{}
 	for _, inst := range insts {
 
@@ -634,6 +645,7 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 				commonInst.ObjectName = parent.Object.GetName()
 				commonInst.ObjIcon = parent.Object.GetIcon()
 				commonInst.ObjID = parent.Object.GetID()
+				commonInst.ObjAsstID = objIDAsstIDMap[commonInst.ObjID]
 				commonInst.Children = []metatype.InstNameAsst{}
 				tmpResults[parent.Object.GetID()] = commonInst
 			}
@@ -930,4 +942,45 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 	currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
 	NewSupplementary().Audit(params, c.clientSet, obj, c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
 	return nil
+}
+
+func (c *commonInst) getObjectAssociation(params types.ContextParams, objID string) ([]metatype.Association, error) {
+	cond := map[string]interface{}{
+		common.BKDBOR: []interface{}{
+			map[string]interface{}{common.BKObjIDField: objID},
+			map[string]interface{}{common.AssociatedObjectIDField: objID},
+		},
+	}
+	result, err := c.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond)
+	if err != nil {
+		blog.ErrorJSON("getObjectAssociation http do error. cond:%s, err:%s, rid:%s", cond, err.Error(), util.GetHTTPCCRequestID(params.Header))
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.ErrorJSON("getObjectAssociation http reply error. cond:%s, result:%s, rid:%s", cond, result, util.GetHTTPCCRequestID(params.Header))
+		return nil, params.Err.New(result.Code, result.ErrMsg)
+	}
+
+	return result.Data, nil
+}
+
+func (c *commonInst) getTopoObjectAssociationMap(params types.ContextParams, objID string) (map[string]string, error) {
+	asstArr, err := c.getObjectAssociation(params, objID)
+	if err != nil {
+		return nil, err
+	}
+	objIDAsstIDMap := make(map[string]string, 0)
+	for _, item := range asstArr {
+		if item.ObjectID != objID {
+			objIDAsstIDMap[item.ObjectID] = item.AssociationName
+		}
+		if item.AsstObjID != objID {
+			objIDAsstIDMap[item.AsstObjID] = item.AssociationName
+		}
+
+		if item.ObjectID == objID && item.AsstObjID == objID {
+			objIDAsstIDMap[item.AsstObjID] = item.AssociationName
+		}
+	}
+	return objIDAsstIDMap, nil
 }
