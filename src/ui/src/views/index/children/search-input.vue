@@ -39,7 +39,7 @@
     .search-box {
         position: relative;
         width: 50%;
-        max-width: 640px;
+        max-width: 700px;
         line-height: 40px;
         margin: 50px auto 38px;
         .search-keywords {

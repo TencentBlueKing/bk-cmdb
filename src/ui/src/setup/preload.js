@@ -70,18 +70,9 @@ export function getUserList (app) {
 }
 
 export default async function (app) {
-    try {
-        await Promise.all([
-            getAdminEntranceAuth(app),
-            getAuthorizedBusiness(app)
-        ])
-    } catch (e) {
-        console.error(e)
-    }
     return Promise.all([
         getViewAuth(app),
         getClassifications(app),
-        getUserCustom(app),
-        getUserList(app)
+        getUserCustom(app)
     ])
 }

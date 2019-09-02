@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { NAV_BASIC_RESOURCE } from '@/dictionary/menu'
+import { MENU_RESOURCE_BUSINESS, MENU_RESOURCE_BUSINESS_HISTORY } from '@/dictionary/menu-symbol'
 import {
     C_BUSINESS,
     U_BUSINESS,
@@ -14,32 +14,24 @@ export const OPERATION = {
     BUSINESS_ARCHIVE
 }
 
-const businessPath = '/business'
-const historyPath = '/history/biz'
-
 export default [{
-    name: 'business',
-    path: businessPath,
+    name: MENU_RESOURCE_BUSINESS,
+    path: 'business',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            id: 'business',
-            i18n: '业务',
-            path: businessPath,
-            parent: NAV_BASIC_RESOURCE,
-            businessView: false
+            i18n: '业务'
         },
         auth: {
             operation: Object.values(OPERATION),
             setAuthScope () {
                 this.authScope = 'global'
             }
-        },
-        i18nTitle: '业务'
+        }
     })
 }, {
-    name: 'businessHistory',
-    path: historyPath,
+    name: MENU_RESOURCE_BUSINESS_HISTORY,
+    path: 'history/biz',
     component: () => import('./archived.vue'),
     meta: new Meta({
         auth: {
@@ -49,7 +41,6 @@ export default [{
                 this.authScope = 'global'
             }
         },
-        i18nTitle: '业务',
         checkAvailable: (to, from, app) => {
             return app.$store.getters.isAdminView
         }

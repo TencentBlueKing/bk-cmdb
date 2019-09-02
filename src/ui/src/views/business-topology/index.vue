@@ -62,7 +62,6 @@
 
 <style lang="scss" scoped>
     .info-layout {
-        min-width: 1200px;
         height: 100%;
         padding: 0;
     }
