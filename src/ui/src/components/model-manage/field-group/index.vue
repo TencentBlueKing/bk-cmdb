@@ -1,7 +1,7 @@
 <template>
     <div class="group-layout" v-bkloading="{ isLoading: $loading() }">
         <div class="layout-header">
-            <bk-button @click="previewShow = true">{{$t('字段预览')}}</bk-button>
+            <bk-button @click="previewShow = true" :disabled="!preview.properties.length">{{$t('字段预览')}}</bk-button>
         </div>
         <div class="layout-content">
             <div class="group"
@@ -9,7 +9,10 @@
                 :key="index">
                 <div class="group-header clearfix">
                     <div class="header-title fl">
-                        <span class="group-name">{{group.info['bk_group_name']}}</span>
+                        <div class="group-name">
+                            {{group.info['bk_group_name']}}
+                            <span v-if="!isAdminView && group.info['bk_isdefault']">（{{$t('内置组不支持修改，排序')}}）</span>
+                        </div>
                         <div class="title-icon-btn" v-if="updateAuth && isEditable(group.info) && group.info['bk_group_id'] !== 'none'">
                             <i class="title-icon icon icon-cc-edit"
                                 @click="handleEditGroup(group)">
@@ -38,8 +41,10 @@
                     @end="handleDragEnd">
                     <li class="property-item fl"
                         v-for="(property, _index) in group.properties"
+                        :class="{ 'only-ready': !isFieldEditable(property) }"
                         :key="_index"
-                        :title="property['bk_property_name']">
+                        :title="property['bk_property_name']"
+                        @click="handleFieldDetailsView(!isFieldEditable(property), property)">
                         <span class="drag-logo"></span>
                         <div class="drag-content">
                             <div class="field-name">
@@ -48,11 +53,21 @@
                             </div>
                             <p>{{fieldTypeMap[property['bk_property_type']]}}</p>
                         </div>
-                        <i class="property-icon icon icon-cc-edit mr10" @click="handleEditField(group, property)"></i>
-                        <i class="property-icon bk-icon icon-cc-delete" @click="handleDeleteField({ property, index, _index })"></i>
+                        <template v-if="isFieldEditable(property)">
+                            <i class="property-icon icon icon-cc-edit mr10"
+                                @click="handleEditField(group, property)">
+                            </i>
+                            <i class="property-icon bk-icon icon-cc-delete"
+                                @click="handleDeleteField({ property, index, _index })">
+                            </i>
+                        </template>
                     </li>
                     <li class="property-add no-drag fl"
-                        v-if="updateAuth && isEditable(group.info)"
+                        v-cursor="{
+                            active: !updateAuth,
+                            auth: [$OPERATION.U_MODEL]
+                        }"
+                        v-if="isEditable(group.info) && group.info['bk_group_id'] !== 'none'"
                         @click="handleAddField(group)">
                         <i class="bk-icon icon-plus"></i>
                         {{$t('添加')}}
@@ -61,7 +76,7 @@
                         <li class="property-empty no-drag disabled" v-if="!(updateAuth && isEditable(group.info))">{{$t('暂无字段')}}</li>
                     </template>
                 </vue-draggable>
-                <template v-if="updateAuth">
+                <template v-if="updateAuth && !activeModel['bk_ispaused']">
                     <div class="add-group" v-if="index === (groupedProperties.length - 2)">
                         <a class="add-group-trigger" href="javascript:void(0)"
                             @click="handleAddGroup">
@@ -143,9 +158,11 @@
                 class="slider-content"
                 slot="content"
                 v-if="slider.isShow"
+                :is-read-only="isReadOnly"
                 :is-edit-field="slider.isEditField"
                 :field="slider.curField"
                 :group="slider.curGroup"
+                :property-index="slider.propertyIndex"
                 @save="handleFieldSave"
                 @cancel="handleSliderBeforeClose">
             </the-field-detail>
@@ -161,6 +178,17 @@
                 :property-groups="preview.groups">
             </preview-field>
         </bk-sideslider>
+
+        <bk-sideslider
+            :width="540"
+            :title="$t('字段详情')"
+            :is-show.sync="fieldDetailsDialog.isShow"
+            @hidden="handleHideFieldDetailsView">
+            <field-details-view v-if="fieldDetailsDialog.isShow"
+                slot="content"
+                :field="fieldDetailsDialog.field">
+            </field-details-view>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -168,12 +196,17 @@
     import vueDraggable from 'vuedraggable'
     import theFieldDetail from './field-detail'
     import previewField from './preview-field'
+    import fieldDetailsView from './field-view'
     import { mapGetters, mapActions } from 'vuex'
     export default {
         components: {
             vueDraggable,
             theFieldDetail,
-            previewField
+            previewField,
+            fieldDetailsView
+        },
+        props: {
+            customObjId: String
         },
         data () {
             return {
@@ -214,11 +247,16 @@
                     title: this.$t('新建字段'),
                     isEditField: false,
                     curField: {},
-                    curGroup: {}
+                    curGroup: {},
+                    propertyIndex: 0
                 },
                 preview: {
                     properties: [],
                     groups: []
+                },
+                fieldDetailsDialog: {
+                    isShow: false,
+                    field: {}
                 }
             }
         },
@@ -226,7 +264,7 @@
             ...mapGetters(['supplierAccount', 'isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', ['isInjectable', 'activeModel']),
             objId () {
-                return this.$route.params.modelId
+                return this.$route.params.modelId || this.customObjId
             },
             isReadOnly () {
                 return this.activeModel && this.activeModel['bk_ispaused']
@@ -276,6 +314,15 @@
             ...mapActions('objectModelProperty', [
                 'searchObjectAttribute'
             ]),
+            isFieldEditable (item) {
+                if (item.ispre || this.isReadOnly || !this.updateAuth) {
+                    return false
+                }
+                if (!this.isAdminView) {
+                    return !!this.$tools.getMetadataBiz(item)
+                }
+                return true
+            },
             isEditable (group) {
                 if (this.isReadOnly) {
                     return false
@@ -612,9 +659,11 @@
                 })
             },
             handleAddField (group) {
+                if (!this.updateAuth) return
                 this.slider.isEditField = false
                 this.slider.curField = {}
                 this.slider.curGroup = group.info
+                this.slider.propertyIndex = group.properties.length
                 this.slider.title = this.$t('新建字段')
                 this.slider.isShow = true
             },
@@ -673,6 +722,15 @@
                 }
                 this.slider.isShow = false
                 return true
+            },
+            handleFieldDetailsView (show, field) {
+                if (!show) return
+                this.fieldDetailsDialog.isShow = true
+                this.fieldDetailsDialog.field = field
+            },
+            handleHideFieldDetailsView () {
+                this.fieldDetailsDialog.isShow = false
+                this.fieldDetailsDialog.field = {}
             }
         }
     }
@@ -727,6 +785,11 @@
                 font-size: 16px;
                 display: inline-block;
                 vertical-align: middle;
+                span {
+                    @include inlineBlock;
+                    font-size: 12px;
+                    color: #c4c6cc;
+                }
             }
             .group-count {
                 font-size: 16px;
@@ -770,7 +833,7 @@
         }
         &.disabled {
             .property-item {
-                cursor: not-allowed;
+                cursor: pointer;
             }
         }
         .property-item {
@@ -779,6 +842,7 @@
             flex-wrap: wrap;
             position: relative;
             width: calc(20% - 10px);
+            height: 59px;
             padding: 10px 10px 10px 14px;
             margin: 10px 5px;
             border: 1px solid #dcdee5;
@@ -786,6 +850,9 @@
             background-color: #ffffff;
             user-select: none;
             cursor: move;
+            &.only-ready {
+                background-color: #f4f6f9;
+            }
             &:hover {
                 .drag-logo {
                     display: block;

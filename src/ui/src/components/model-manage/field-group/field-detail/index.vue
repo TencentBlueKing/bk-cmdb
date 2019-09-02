@@ -8,13 +8,13 @@
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
                 <bk-input type="text" class="cmdb-form-input"
                     name="fieldId"
-                    :placeholder="$t('下划线/数字/字母')"
                     v-model.trim="fieldInfo['bk_property_id']"
                     :disabled="isEditField"
                     v-validate="'required|fieldId'">
                 </bk-input>
                 <p class="form-error">{{errors.first('fieldId')}}</p>
             </div>
+            <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('下划线/数字/字母')"></i>
         </label>
         <label class="form-label">
             <span class="label-text">
@@ -80,7 +80,7 @@
         </label>
         <div class="form-label">
             <span class="label-text">{{$t('用户提示')}}</span>
-            <textarea v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
+            <textarea style="width: 94%;" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
         </div>
         <div class="btn-group">
             <bk-button theme="primary"
@@ -124,6 +124,10 @@
             isEditField: {
                 type: Boolean,
                 default: false
+            },
+            propertyIndex: {
+                type: Number,
+                default: 0
             }
         },
         data () {
@@ -268,6 +272,7 @@
                     const otherParams = {
                         creator: this.userName,
                         bk_property_group: this.group.bk_group_id || groupId,
+                        bk_property_index: this.propertyIndex || 0,
                         bk_obj_id: this.group.bk_obj_id,
                         bk_supplier_account: this.supplierAccount
                     }
@@ -307,6 +312,7 @@
         padding-left: 5px;
     }
     .field-detail {
+        width: 94%;
         margin-bottom: 20px;
         padding: 20px;
         background: #f3f8ff;
@@ -321,5 +327,13 @@
             line-height: 22px;
             vertical-align: middle;
         }
+    }
+    .cmdb-form-item {
+        width: 94% !important;
+    }
+    .icon-cc-exclamation-tips {
+        font-size: 18px;
+        color: #979ba5;
+        margin-left: 10px;
     }
 </style>
