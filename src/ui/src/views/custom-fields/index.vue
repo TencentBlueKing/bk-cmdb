@@ -8,19 +8,19 @@
                 :key="model.bk_obj_id"
                 :name="model.bk_obj_id"
                 :label="model.bk_obj_name">
-                <field-main class="model-detail-wrapper"
-                    :obj-id="model.bk_obj_id">
-                </field-main>
+                <field-group class="model-detail-wrapper"
+                    :custom-obj-id="model.bk_obj_id">
+                </field-group>
             </bk-tab-panel>
         </bk-tab>
     </div>
 </template>
 
 <script>
-    import fieldMain from './children/field-main'
+    import fieldGroup from '@/components/model-manage/field-group'
     export default {
         components: {
-            fieldMain
+            fieldGroup
         },
         data () {
             return {
