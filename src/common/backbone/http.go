@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"strconv"
 
 	"configcenter/src/common/blog"
@@ -26,9 +27,13 @@ import (
 )
 
 func ListenAndServe(c Server) error {
+	rootMux := http.NewServeMux()
+	rootMux.HandleFunc("/", c.Handler.ServeHTTP)
+	rootMux.Handle("/debug/", http.DefaultServeMux)
+
 	server := &http.Server{
 		Addr:    net.JoinHostPort(c.ListenAddr, strconv.FormatUint(uint64(c.ListenPort), 10)),
-		Handler: c.Handler,
+		Handler: rootMux,
 	}
 
 	if len(c.TLS.CertFile) == 0 && len(c.TLS.KeyFile) == 0 {
