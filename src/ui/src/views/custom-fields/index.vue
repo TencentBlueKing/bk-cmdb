@@ -8,26 +8,42 @@
                 :key="model.bk_obj_id"
                 :name="model.bk_obj_id"
                 :label="model.bk_obj_name">
-                <field-group class="model-detail-wrapper"
-                    :custom-obj-id="model.bk_obj_id">
-                </field-group>
+                <template>
+                    <feature-tips class="mt10"
+                        :feature-name="'customFields'"
+                        :show-tips="showFeatureTips"
+                        :desc="$t('自定义字段功能提示')"
+                        @close-tips="showFeatureTips = false">
+                    </feature-tips>
+                    <field-group class="model-detail-wrapper"
+                        :custom-obj-id="model.bk_obj_id">
+                    </field-group>
+                </template>
             </bk-tab-panel>
         </bk-tab>
     </div>
 </template>
 
 <script>
+    import featureTips from '@/components/feature-tips/index'
     import fieldGroup from '@/components/model-manage/field-group'
+    import { mapGetters } from 'vuex'
     export default {
         components: {
-            fieldGroup
+            fieldGroup,
+            featureTips
         },
         data () {
             return {
-                mainLine: []
+                mainLine: [],
+                showFeatureTips: false
             }
         },
+        computed: {
+            ...mapGetters(['featureTipsParams'])
+        },
         async created () {
+            this.showFeatureTips = this.featureTipsParams['customFields']
             this.mainLine = await this.getMainLine()
         },
         methods: {
@@ -56,6 +72,9 @@
             padding: 0;
             margin: 0 20px;
         }
+    }
+    .model-detail-wrapper {
+        padding: 0 !important;
     }
 </style>
 
