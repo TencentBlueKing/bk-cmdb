@@ -1,9 +1,9 @@
 <template>
     <div class="clearfix">
         <dynamic-navigation class="main-navigation" @business-change="handleBusinessChange"></dynamic-navigation>
+        <dynamic-breadcumbs class="main-breadcumbs"></dynamic-breadcumbs>
         <div class="main-layout">
             <div class="main-scroller">
-                <dynamic-breadcumbs v-show="$route.meta.showBreadcumbs"></dynamic-breadcumbs>
                 <router-view class="main-views" :key="refreshKey"></router-view>
             </div>
         </div>
@@ -40,7 +40,10 @@
     .main-layout {
         position: relative;
         overflow: hidden;
-        height: 100%;
+        height: calc(100% - 58px);
+    }
+    .main-breadcumbs {
+        overflow: hidden;
     }
     .main-scroller {
         height: 100%;
@@ -50,6 +53,5 @@
         height: calc(100% - 58px);
         padding: 20px;
         min-width: 1106px;
-        background-color: #FAFBFD;
     }
 </style>

@@ -1,5 +1,5 @@
 <template>
-    <div class="breadcumbs-layout" v-show="current.length">
+    <div class="breadcumbs-layout">
         <h1 class="current">{{current}}</h1>
     </div>
 </template>
@@ -23,6 +23,7 @@
 <style lang="scss" scoped>
     .breadcumbs-layout {
         padding: 19px 20px;
+        height: 58px;
         .current {
             font-size: 16px;
             line-height: 20px;

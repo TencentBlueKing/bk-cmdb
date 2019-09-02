@@ -199,7 +199,8 @@ const checkBusinessMenuRedirect = (to) => {
 }
 
 const setAdminView = to => {
-    router.app.$store.commit('setAdminView', to.matched[0].name !== MENU_BUSINESS)
+    const isAdminView = to.matched.length && to.matched[0].name !== MENU_BUSINESS
+    router.app.$store.commit('setAdminView', isAdminView)
 }
 
 const setupStatus = {
