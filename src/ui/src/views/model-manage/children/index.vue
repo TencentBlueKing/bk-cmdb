@@ -52,7 +52,7 @@
                         <span class="text-primary" @click="isEditName = false">{{$t('取消')}}</span>
                     </template>
                 </div>
-                <div class="model-text ml10" v-if="!activeModel['bk_ispaused']">
+                <div class="model-text ml10" v-if="!activeModel['bk_ispaused'] && activeModel['bk_classification_id'] !== 'bk_biz_topo'">
                     <span>{{$t('实例数量')}}：</span>
                     <div class="text-content-count"
                         :title="modelStatisticsSet[activeModel['bk_obj_id']] || 0"
