@@ -112,7 +112,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 		}
 
 		headers := []Header{}
-		attrs, err := a.obj.GetAttributesExceptInnerFields()
+		attrs, err := a.obj.GetNonInnerAttributes()
 		if nil != err {
 			blog.Errorf("[audit]failed to get the object(%s)' attribute, error info is %s, rid: %s", a.obj.Object().ObjectID, err.Error(), a.params.ReqID)
 			return

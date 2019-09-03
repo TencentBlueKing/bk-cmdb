@@ -165,7 +165,7 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 	} else {
 		// construct the update condition by the only key
 
-		attrs, err := cli.target.GetAttributesExceptInnerFields()
+		attrs, err := cli.target.GetNonInnerAttributes()
 		if nil != err {
 			blog.Errorf("failed to get attributes for the object(%s), error info is is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
 			return err
@@ -217,7 +217,7 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 func (cli *inst) IsExists() (bool, error) {
 
 	tObj := cli.target.Object()
-	attrs, err := cli.target.GetAttributesExceptInnerFields()
+	attrs, err := cli.target.GetNonInnerAttributes()
 	if nil != err {
 		blog.Errorf("failed to get attributes for the object(%s), error info is is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
 		return false, err
