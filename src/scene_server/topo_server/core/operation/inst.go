@@ -145,6 +145,10 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	createdInstanceIDs := make([]int64, 0)
 
 	nonInnerAttributes, err := obj.GetNonInnerAttributes()
+	if err != nil {
+		blog.Errorf("[audit]failed to get the object(%s)' attribute, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+		return nil, err
+	}
 	for colIdx, colInput := range *batchInfo.BatchInfo {
 		if colInput == nil {
 			// this is a empty excel line.
@@ -173,7 +177,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 				continue
 			}
 			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(targetInstID, condition.CreateCondition().ToMapStr())
-			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
+			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
 		} else if exists, err := item.IsInstanceExists(nonInnerAttributes); nil != err {
 			blog.Errorf("[operation-inst] failed to get inst is exist, err: %s, rid: %s", err.Error(), params.ReqID)
 			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
@@ -195,14 +199,14 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 				}
 			}
 			preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
-			err = item.Update(colInput)
+			err = item.UpdateInstance(colInput, nonInnerAttributes)
 			if nil != err {
 				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
 			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
-			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
+			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
 		} else {
 			// create with metadata
 			if bizID != 0 {
@@ -216,7 +220,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 				continue
 			}
 			results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
-			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item, nonInnerAttributes)
 
 			instanceID, err := item.GetInstID()
 			if err != nil {
@@ -283,7 +287,7 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 		return nil, err
 	}
 
-	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item, nil)
 
 	instID, err := item.GetInstID()
 	if err != nil {
@@ -948,7 +952,7 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 
 		if !rsp.Result {
 
-			blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, params.ReqID)
+			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, params.ReqID)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
@@ -1019,6 +1023,6 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 	currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
-	NewSupplementary().Audit(params, c.clientSet, obj, c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
+	NewSupplementary().Audit(params, c.clientSet, obj, c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nil)
 	return nil
 }

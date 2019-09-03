@@ -61,6 +61,7 @@ type Inst interface {
 	GetBizID() (int64, error)
 
 	IsInstanceExists(nonInnerAttributes []model.AttributeInterface) (bool, error)
+	UpdateInstance(data mapstr.MapStr, nonInnerAttributes []model.AttributeInterface) error
 }
 
 var _ Inst = (*inst)(nil)
@@ -149,6 +150,10 @@ func (cli *inst) Create() error {
 }
 
 func (cli *inst) Update(data mapstr.MapStr) error {
+	return cli.UpdateInstance(data, nil)
+}
+
+func (cli *inst) UpdateInstance(data mapstr.MapStr, nonInnerAttributes []model.AttributeInterface) error {
 	if cli.target.Object().IsPaused {
 		return cli.params.Err.Error(common.CCErrorTopoModelStopped)
 	}
@@ -167,13 +172,16 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 	} else {
 		// construct the update condition by the only key
 
-		attrs, err := cli.target.GetNonInnerAttributes()
-		if nil != err {
-			blog.Errorf("failed to get attributes for the object(%s), error info is is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
-			return err
+		if nonInnerAttributes == nil {
+			var err error
+			nonInnerAttributes, err = cli.target.GetNonInnerAttributes()
+			if nil != err {
+				blog.Errorf("failed to get attributes for the object(%s), error info is is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
+				return err
+			}
 		}
 
-		for _, attrItem := range attrs {
+		for _, attrItem := range nonInnerAttributes {
 			// check the inst
 			att := attrItem.Attribute()
 			if att.IsOnly || att.PropertyID == cli.target.GetInstNameFieldName() {
