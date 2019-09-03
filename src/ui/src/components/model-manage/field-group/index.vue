@@ -77,7 +77,7 @@
                     </template>
                 </vue-draggable>
                 <template v-if="updateAuth && !activeModel['bk_ispaused']">
-                    <div class="add-group" v-if="index === (groupedProperties.length - 2)">
+                    <div class="add-group" v-if="index === (groupedProperties.length - 1)">
                         <a class="add-group-trigger" href="javascript:void(0)"
                             @click="handleAddGroup">
                             {{$t('添加分组')}}
@@ -355,15 +355,16 @@
             init (properties, groups) {
                 properties = this.setPropertIndex(properties)
                 groups = this.separateMetadataGroups(groups)
-                groups = this.setGroupIndex(groups.concat({
-                    'bk_group_index': Infinity,
-                    'bk_group_id': 'none',
-                    'bk_group_name': this.$t('更多属性')
-                }))
+                groups = this.setGroupIndex(groups)
                 const groupedProperties = groups.map(group => {
                     return {
                         info: group,
-                        properties: properties.filter(property => property['bk_property_group'] === group['bk_group_id'])
+                        properties: properties.filter(property => {
+                            if (['default', 'none'].includes(property['bk_property_group']) && group['bk_group_id'] === 'default') {
+                                return true
+                            }
+                            return property['bk_property_group'] === group['bk_group_id']
+                        })
                     }
                 })
                 this.groupedProperties = groupedProperties

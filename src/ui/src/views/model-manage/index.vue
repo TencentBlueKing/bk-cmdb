@@ -106,7 +106,7 @@
                         v-for="(model, modelIndex) in classification['bk_objects']"
                         :key="modelIndex">
                         <div class="info-model"
-                            :class="{ 'radius': modelType === 'disabled' }"
+                            :class="{ 'radius': modelType === 'disabled' || classification['bk_classification_id'] === 'bk_biz_topo' }"
                             @click="modelClick(model)">
                             <div class="icon-box">
                                 <i class="icon" :class="[model['bk_obj_icon']]"></i>
@@ -116,9 +116,11 @@
                                 <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
                             </div>
                         </div>
-                        <div v-if="modelType !== 'disabled'" class="info-instance" @click="handleGoInstance(model)">
+                        <div v-if="modelType !== 'disabled' && classification['bk_classification_id'] !== 'bk_biz_topo'"
+                            class="info-instance"
+                            @click="handleGoInstance(model)">
                             <i class="icon-cc-share"></i>
-                            <p>{{modelStatisticsSet[model.bk_obj_id] || 0}}</p>
+                            <p>{{modelStatisticsSet[model.bk_obj_id] | instanceCount}}</p>
                         </div>
                     </li>
                 </ul>
@@ -208,6 +210,14 @@
     import { mapGetters, mapMutations, mapActions } from 'vuex'
     import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
     export default {
+        filters: {
+            instanceCount (value) {
+                if ([null, undefined].includes(value)) {
+                    return '--'
+                }
+                return value > 999 ? '999+' : value
+            }
+        },
         components: {
             // theModel,
             theCreateModel,
@@ -618,6 +628,7 @@
             height: 70px;
             border: 1px solid $cmdbTableBorderColor;
             border-radius: 4px;
+            background-color: #ffffff;
             cursor: pointer;
             &:nth-child(5n) {
                 margin-right: 0;
