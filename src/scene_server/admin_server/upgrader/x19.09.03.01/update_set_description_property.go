@@ -13,26 +13,24 @@
 package x19_09_03_01
 
 import (
-	"configcenter/src/common/blog"
 	"context"
+	"fmt"
 
+	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func init() {
-	upgrader.RegistUpgrader("x19_09_03_01", upgrade)
-}
-
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	if err := setModelAttrGroupCollapseFlag(ctx, db, conf); err != nil {
-		blog.Errorf("upgrade x19_09_03_01 failed, setModelAttrGroupCollapseFlag failed, err: %+v", err)
-		return err
+func updateSetDescriptionProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	filter := map[string]interface{}{
+		common.BKObjIDField:      common.BKInnerObjIDSet,
+		common.BKPropertyIDField: common.BKSetDescField,
 	}
-
-	if err := updateSetDescriptionProperty(ctx, db, conf); err != nil {
-		blog.Errorf("upgrade x19_09_03_01 failed, updateSetDescriptionProperty failed, err: %+v", err)
-		return err
+	doc := map[string]interface{}{
+		common.BKPropertyTypeField: common.FieldTypeLongChar,
+	}
+	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, doc); err != nil {
+		return fmt.Errorf("updateSetDescriptionProperty failed, filter: %+v, doc: %+v, err: %+v", filter, doc, err)
 	}
 
 	return nil
