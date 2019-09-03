@@ -54,7 +54,7 @@ type Object interface {
 
 	GetGroups() ([]GroupInterface, error)
 	GetAttributes() ([]AttributeInterface, error)
-	GetAttributesExceptInnerFields() ([]AttributeInterface, error)
+	GetNonInnerAttributes() ([]AttributeInterface, error)
 
 	CreateUnique() Unique
 	GetUniques() ([]Unique, error)
@@ -618,7 +618,7 @@ func (o *object) CreateAttribute() AttributeInterface {
 	}
 }
 
-func (o *object) GetAttributesExceptInnerFields() ([]AttributeInterface, error) {
+func (o *object) GetNonInnerAttributes() ([]AttributeInterface, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(meta.AttributeFieldObjectID).Eq(o.obj.ObjectID)

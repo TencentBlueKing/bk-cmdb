@@ -147,8 +147,8 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
 
-		exist := item.GetValues().Exists(obj.GetInstIDFieldName())
-		if exist {
+		idFieldExist := item.GetValues().Exists(obj.GetInstIDFieldName())
+		if idFieldExist {
 			// check update
 			targetInstID, err := item.GetInstID()
 			if nil != err {
@@ -179,7 +179,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			if exists {
 				cond.Field(common.BKInstParentStr).Eq(val)
 			}
-			attrs, err := item.GetObject().GetAttributesExceptInnerFields()
+			attrs, err := item.GetObject().GetNonInnerAttributes()
 			for _, attrItem := range attrs {
 				// check the inst
 				attr := attrItem.Attribute()
