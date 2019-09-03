@@ -113,6 +113,13 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	// so we need to check first.
 	instNameMap := make(map[string]struct{})
 	for line, inst := range *batchInfo.BatchInfo {
+
+		objID, exist := inst[common.BKObjIDField]
+		if exist == true && objID != object.ObjectID {
+			blog.Errorf("create object[%s] instance batch failed, because bk_obj_id field conflict with url field, rid: %s", object.ObjectID, params.ReqID)
+			return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl, line)
+		}
+
 		iName, exist := inst[common.BKInstNameField]
 		if !exist {
 			blog.Errorf("create object[%s] instance batch failed, because missing bk_inst_name field., rid: %s", object.ObjectID, params.ReqID)
@@ -137,6 +144,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	updatedInstanceIDs := make([]int64, 0)
 	createdInstanceIDs := make([]int64, 0)
 
+	nonInnerAttributes, err := obj.GetNonInnerAttributes()
 	for colIdx, colInput := range *batchInfo.BatchInfo {
 		if colInput == nil {
 			// this is a empty excel line.
@@ -166,7 +174,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			}
 			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(targetInstID, condition.CreateCondition().ToMapStr())
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
-		} else if exists, err := item.IsExists(); nil != err {
+		} else if exists, err := item.IsInstanceExists(nonInnerAttributes); nil != err {
 			blog.Errorf("[operation-inst] failed to get inst is exist, err: %s, rid: %s", err.Error(), params.ReqID)
 			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 			continue
@@ -175,12 +183,11 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			if item.GetObject().IsCommon() {
 				cond.Field(common.BKObjIDField).Eq(item.GetObject().Object().ObjectID)
 			}
-			val, exists := item.GetValues().Get(common.BKInstParentStr)
-			if exists {
+			val, parentFieldExist := item.GetValues().Get(common.BKInstParentStr)
+			if parentFieldExist {
 				cond.Field(common.BKInstParentStr).Eq(val)
 			}
-			attrs, err := item.GetObject().GetNonInnerAttributes()
-			for _, attrItem := range attrs {
+			for _, attrItem := range nonInnerAttributes {
 				// check the inst
 				attr := attrItem.Attribute()
 				if attr.IsOnly || attr.PropertyID == item.GetObject().GetInstNameFieldName() {

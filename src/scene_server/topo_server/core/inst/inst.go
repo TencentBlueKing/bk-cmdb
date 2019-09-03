@@ -59,6 +59,8 @@ type Inst interface {
 	IsDefault() bool
 
 	GetBizID() (int64, error)
+
+	IsInstanceExists(nonInnerAttributes []model.AttributeInterface) (bool, error)
 }
 
 var _ Inst = (*inst)(nil)
@@ -215,12 +217,18 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 }
 
 func (cli *inst) IsExists() (bool, error) {
+	return cli.IsInstanceExists(nil)
+}
 
+func (cli *inst) IsInstanceExists(nonInnerAttributes []model.AttributeInterface) (bool, error) {
 	tObj := cli.target.Object()
-	attrs, err := cli.target.GetNonInnerAttributes()
-	if nil != err {
-		blog.Errorf("failed to get attributes for the object(%s), error info is is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
-		return false, err
+	if nonInnerAttributes == nil {
+		var err error
+		nonInnerAttributes, err = cli.target.GetNonInnerAttributes()
+		if nil != err {
+			blog.Errorf("failed to get attributes for the object(%s), error info is is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
+			return false, err
+		}
 	}
 
 	cond := condition.CreateCondition()
@@ -237,7 +245,7 @@ func (cli *inst) IsExists() (bool, error) {
 			cond.Field(common.BKInstParentStr).Eq(val)
 		}
 
-		for _, attrItem := range attrs {
+		for _, attrItem := range nonInnerAttributes {
 
 			// check the inst
 			attr := attrItem.Attribute()
