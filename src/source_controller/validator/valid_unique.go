@@ -102,9 +102,13 @@ func isEmpty(value interface{}) bool {
 }
 
 // validUpdateUnique valid update unique
-func (valid *Validator) validUpdateUnique(valData map[string]interface{}, mapData map[string]interface{}) error {
+func (valid *Validator) validUpdateUnique(valData map[string]interface{}, originData map[string]interface{}) error {
 
 	objID := valid.objID
+	mapData := make(map[string]interface{})
+	for key, val := range originData {
+		mapData[key] = val
+	}
 	instID := mapData[common.GetInstIDField(objID)]
 	// retrive isonly value
 	for key, val := range valData {
