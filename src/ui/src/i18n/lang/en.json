@@ -889,5 +889,5 @@
     "自定义字段": "Custom Field",
     "默认值": "Defaults",
     "枚举值": "Enum value",
-    "自定义字段功能提示": "Custom fields: Add custom fields when the built-in fields of the model do not meet the business needs."
+    "自定义字段功能提示": "Custom fields: Add custom fields when the built-in fields of the model do not meet the business needs.(* is a required field)"
 }
