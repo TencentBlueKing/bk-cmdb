@@ -147,6 +147,8 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	resourceTypes = []meta.ResourceType{
 		// meta.AuditCategory,
 		meta.ClassificationResource,
+		meta.PlatResource,
+		meta.ModelResource,
 	}
 	for _, resourceType := range resourceTypes {
 		jobs = append(jobs, meta.WorkRequest{

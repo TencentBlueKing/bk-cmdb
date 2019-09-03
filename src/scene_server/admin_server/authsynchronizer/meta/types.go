@@ -32,6 +32,7 @@ var (
 	UserGroupSyncResource  = ResourceType("userGroupSync")
 
 	ServiceTemplateResource = ResourceType("serviceTemplateSync")
+	PlatResource            = ResourceType("platSync")
 )
 
 // ResourceType represent a resource type that will be enqueue to WorkerQueue
@@ -59,4 +60,5 @@ type SyncHandler interface {
 	HandleClassificationSync(task *WorkRequest) error
 	HandleUserGroupSync(task *WorkRequest) error
 	HandleServiceTemplateSync(task *WorkRequest) error
+	HandlePlatSync(task *WorkRequest) error
 }
