@@ -66,6 +66,7 @@
                                 </template>
                             </li>
                             <li class="property-add no-drag fl"
+                                :class="{ 'disabled': !updateAuth }"
                                 v-cursor="{
                                     active: !updateAuth,
                                     auth: [$OPERATION.U_MODEL]
@@ -806,6 +807,7 @@
             }
             .group-name {
                 font-size: 16px;
+                font-weight: normal;
                 display: inline-block;
                 vertical-align: middle;
                 span {
@@ -877,13 +879,14 @@
                 background-color: #f4f6f9;
             }
             &:hover {
+                border-color: #3a84ff;
                 .drag-logo {
                     display: block;
                 }
                 .property-icon {
                     display: inline-block;
                 }
-                &::before {
+                &:not(.only-ready)::before {
                     display: block;
                 }
             }
@@ -921,6 +924,7 @@
                 margin-left: 6px;
                 .field-name {
                     display: flex;
+                    align-items: center;
                     span {
                         line-height: 21px;
                         @include ellipsis;
@@ -929,7 +933,8 @@
                         font-size: 16px;
                         font-style: normal;
                         font-weight: bold;
-                        margin: 0 4px;
+                        margin: 4px 4px 0;
+                        line-height: 7px;
                     }
                 }
                 p {
@@ -957,6 +962,10 @@
             .icon-plus {
                 font-weight: bold;
                 margin-top: -2px;
+            }
+            &:not(.disabled):hover {
+                color: #3a84ff;
+                border-color: #3a84ff;
             }
         }
         .property-empty {

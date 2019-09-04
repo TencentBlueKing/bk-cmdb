@@ -66,7 +66,7 @@
                 ref="component"
             ></component>
         </div>
-        <label class="form-label">
+        <label class="form-label" v-show="['int', 'float'].includes(fieldType)">
             <span class="label-text">
                 {{$t('单位')}}
             </span>

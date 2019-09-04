@@ -724,6 +724,7 @@
             font-size: 20px;
             color: #333948;
             line-height: 1;
+            padding-bottom: 14px;
         }
         .label-item,
         label {
@@ -758,7 +759,6 @@
             }
         }
         .footer {
-            padding: 0 24px;
             font-size: 0;
             text-align: right;
             .bk-primary {
