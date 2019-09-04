@@ -120,9 +120,10 @@
         <bk-dialog class="bk-dialog-no-padding group-dialog"
             v-model="groupDialog.isShow"
             width="480"
-            :mask-close="false">
+            :mask-close="false"
+            @after-leave="groupDialog.isShowContent = false">
             <div class="group-dialog-header" slot="tools">{{groupDialog.title}}</div>
-            <div class="group-dialog-content">
+            <div class="group-dialog-content" v-if="groupDialog.isShowContent">
                 <label class="label-item">
                     <span>{{$t('分组名称')}}</span>
                     <span class="color-danger">*</span>
@@ -137,7 +138,7 @@
                 <div class="label-item">
                     <span>{{$t('是否默认折叠')}}</span>
                     <div class="cmdb-form-item">
-                        <bk-switcher theme="primary" v-model="groupForm.isFlod" size="small"></bk-switcher>
+                        <bk-switcher theme="primary" v-model="groupForm.isCollapse" size="small"></bk-switcher>
                     </div>
                 </div>
             </div>
@@ -234,13 +235,14 @@
                     deletedProperties: []
                 },
                 groupDialog: {
+                    isShowContent: false,
                     isShow: false,
                     type: 'create',
                     title: this.$t('新建分组')
                 },
                 groupForm: {
                     groupName: '',
-                    isFlod: true
+                    isCollapse: false
                 },
                 slider: {
                     isShow: false,
@@ -521,6 +523,7 @@
             },
             handleAddGroup () {
                 this.groupDialog.isShow = true
+                this.groupDialog.isShowContent = true
                 this.groupDialog.type = 'create'
                 this.groupDialog.title = this.$t('新建分组')
             },
@@ -528,7 +531,7 @@
                 this.groupDialog.isShow = false
                 this.groupDialog.group = {}
                 this.groupForm.groupName = ''
-                this.groupForm.isFlod = true
+                this.groupForm.isCollapse = false
             },
             async handleCreateGroup () {
                 const groupedProperties = this.groupedProperties
@@ -546,7 +549,8 @@
                         'bk_group_index': groupedProperties.length - 1,
                         'bk_group_name': this.groupForm.groupName,
                         'bk_obj_id': this.objId,
-                        'bk_supplier_account': this.supplierAccount
+                        'bk_supplier_account': this.supplierAccount,
+                        'is_collapse': this.groupForm.isCollapse
                     }, {
                         inject: this.isInjectable
                     }),
@@ -554,7 +558,7 @@
                         requestId: `post_createGroup_${groupId}`
                     }
                 }).then(group => {
-                    groupedProperties.splice(groupedProperties.length - 1, 0, {
+                    groupedProperties.push({
                         info: group,
                         properties: []
                     })
