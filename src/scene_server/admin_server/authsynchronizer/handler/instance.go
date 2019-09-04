@@ -42,31 +42,31 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 	}
 	objectID := object.ObjectID
 	if util.InStrArr(ignoreObjectIDs, objectID) {
-		blog.V(5).Infof("ignore instance sync task: %s", objectID)
+		blog.V(5).Infof("HandleInstanceSync, ignore instance sync task for model: %s, rid: %s", objectID, rid)
 		return nil
 	}
 
 	// step1 construct instances resource query parameter for iam
 	bizIDMap, err := ih.authManager.ExtractBusinessIDFromObjects(object)
 	if err != nil {
-		blog.Errorf("extract business id from model failed, model: %+v, err: %+v", object, err)
+		blog.Errorf("HandleInstanceSync failed, extract business id from model failed, model: %+v, err: %+v", object, err)
 		return err
 	}
 	bizID := bizIDMap[object.ID]
 	mainlineTopo, err := ih.clientSet.CoreService().Mainline().SearchMainlineModelTopo(ctx, header, false)
 	if err != nil {
-		blog.Errorf("list mainline models failed, err: %+v", err)
+		blog.Errorf("HandleInstanceSync failed, list mainline models failed, err: %+v, rid: %s", err, rid)
 		return err
 	}
 	mainlineModels := mainlineTopo.LeftestObjectIDList()
 
 	parentResources, err := ih.authManager.MakeResourcesByObjects(ctx, header, authmeta.EmptyAction, object)
 	if err != nil {
-		blog.Errorf("MakeResourcesByObjects failed, make parent auth resource by objects failed, object: %+v, err: %+v, rid: %s", object, err, rid)
+		blog.Errorf("HandleInstanceSync failed, MakeResourcesByObjects failed, make parent auth resource by objects failed, object: %+v, err: %+v, rid: %s", object, err, rid)
 		return fmt.Errorf("make parent auth resource by objects failed, err: %+v", err)
 	}
 	if len(parentResources) != 1 {
-		blog.Errorf("MakeResourcesByInstances failed, make parent auth resource by objects failed, get %d with object %s, rid: %s", len(parentResources), object.ObjectID, rid)
+		blog.Errorf("HandleInstanceSync failed, MakeResourcesByInstances failed, make parent auth resource by objects failed, get %d with object %s, rid: %s", len(parentResources), object.ObjectID, rid)
 		return fmt.Errorf("make parent auth resource by objects failed, get %d with object %d", len(parentResources), object.ID)
 	}
 
@@ -102,12 +102,12 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 	// step2. collect instances by model, and convert to iam interface format
 	instances, err := ih.authManager.CollectInstancesByModelID(context.Background(), header, object.ObjectID)
 	if err != nil {
-		blog.Errorf("CollectInstancesByModelID failed, err: %+v", err)
+		blog.Errorf("HandleInstanceSync failed, CollectInstancesByModelID failed, objectID: %s, err: %+v, rid: %s", object.ObjectID, err, rid)
 		return err
 	}
 	resources, err := ih.authManager.MakeResourcesByInstances(context.Background(), header, authmeta.EmptyAction, instances...)
 	if err != nil {
-		blog.Errorf("diff and sync resource between iam and cmdb failed, err: %+v", err)
+		blog.Errorf("HandleInstanceSync failed, MakeResourcesByInstances failed, object: %s, instances: %+v, err: %+v", objectID, instances, err)
 		return nil
 	}
 

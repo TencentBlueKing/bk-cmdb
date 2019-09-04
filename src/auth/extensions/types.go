@@ -84,17 +84,17 @@ func (is *InstanceSimplify) ParseBizID(data mapstr.MapStr) (int64, error) {
 
 	metaValue, ok := metaInterface.(map[string]interface{})
 	if !ok {
-		return 0, metadata.LabelKeyNotExistError
+		return 0, nil
 	}
 
 	labelInterface, exist := metaValue["label"]
 	if !exist {
-		return 0, metadata.LabelKeyNotExistError
+		return 0, nil
 	}
 
 	labelValue, ok := labelInterface.(map[string]interface{})
 	if !ok {
-		return 0, metadata.LabelKeyNotExistError
+		return 0, nil
 	}
 
 	bizID, exist := labelValue[common.BKAppIDField]
