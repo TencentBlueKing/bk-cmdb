@@ -200,9 +200,10 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 		objectIDMap[object.ID] = object
 	}
 
-	mainlineTopo, err := am.clientSet.CoreService().Mainline().SearchMainlineModelTopo(context.Background(), header, false)
+	mainlineTopo, err := am.clientSet.CoreService().Mainline().SearchMainlineModelTopo(ctx, header, false)
 	if err != nil {
-		blog.Errorf("list mainline models failed, err: %+v", err)
+		blog.Errorf("list mainline models failed, err: %+v, rid: %s", err, rid)
+		return nil, err
 	}
 	mainlineModels := mainlineTopo.LeftestObjectIDList()
 

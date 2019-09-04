@@ -50,7 +50,7 @@ func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensi
 
 // Start do main loop
 func (p *Producer) Start() {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(5 * time.Minute)
 	go func(producer *Producer) {
 		for {
 			select {
@@ -147,6 +147,8 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	resourceTypes = []meta.ResourceType{
 		// meta.AuditCategory,
 		meta.ClassificationResource,
+		meta.PlatResource,
+		meta.ModelResource,
 	}
 	for _, resourceType := range resourceTypes {
 		jobs = append(jobs, meta.WorkRequest{

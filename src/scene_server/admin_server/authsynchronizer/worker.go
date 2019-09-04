@@ -101,6 +101,8 @@ func (w *Worker) doWork(work *meta.WorkRequest) error {
 	// 	err = w.SyncHandler.HandleUserGroupSync(work)
 	case meta.ServiceTemplateResource:
 		err = w.SyncHandler.HandleServiceTemplateSync(work)
+	case meta.PlatResource:
+		err = w.SyncHandler.HandlePlatSync(work)
 	default:
 		return fmt.Errorf("unsupported work resource type: %s", work.ResourceType)
 
