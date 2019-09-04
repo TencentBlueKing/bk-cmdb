@@ -16,6 +16,9 @@
                         @close-tips="showFeatureTips = false">
                     </feature-tips>
                     <field-group class="model-detail-wrapper"
+                        :class="{
+                            'has-tips': showFeatureTips
+                        }"
                         :custom-obj-id="model.bk_obj_id">
                     </field-group>
                 </template>
@@ -65,7 +68,7 @@
 <style lang="scss" scoped>
     .custom-fields-layout {
         padding: 0;
-        height: 100%;
+        border-top: 1px solid $cmdbLayoutBorderColor;
     }
     .tab-layout {
         /deep/ .bk-tab-header {
@@ -75,6 +78,9 @@
     }
     .model-detail-wrapper {
         padding: 0 !important;
+        &.has-tips {
+            height: calc(100% - 52px);
+        }
     }
 </style>
 

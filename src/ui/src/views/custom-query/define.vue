@@ -128,6 +128,7 @@
             </bk-button>
         </div>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="propertySlider.isShow"
             :width="394"
             :title="$t('添加分组条件')"

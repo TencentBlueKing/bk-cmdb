@@ -101,6 +101,7 @@
             </div>
         </bk-dialog>
         <bk-sideslider
+            v-transfer-dom
             :width="800"
             :is-show.sync="importSlider.isShow"
             :title="$t('批量导入')">

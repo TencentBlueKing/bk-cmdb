@@ -86,6 +86,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.show"
             :title="slider.title"
             :width="800"
@@ -131,7 +132,7 @@
                 </bk-tab-panel>
             </bk-tab>
         </bk-sideslider>
-        <bk-sideslider :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
+        <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
                 v-if="columnsConfig.show"
                 :properties="properties"

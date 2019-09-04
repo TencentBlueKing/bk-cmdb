@@ -42,6 +42,7 @@ export default [{
     path: 'index/details/:modelId',
     component: () => import('./children/index.vue'),
     meta: new Meta({
+        title: '模型',
         auth: {
             operation: [
                 OPERATION.U_MODEL,

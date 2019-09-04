@@ -6,7 +6,16 @@
         <div class="nav-wrapper"
             :class="{ unfold: unfold, flexible: !navStick }">
             <div class="business-wrapper" v-if="showBusinessSelector">
-                <cmdb-business-selector class="business-selector" @on-select="handleToggleBusiness"></cmdb-business-selector>
+                <transition name="fade">
+                    <cmdb-business-selector class="business-selector"
+                        v-show="unfold"
+                        @on-select="handleToggleBusiness"
+                        @business-empty="handleBusinessEmpty">
+                    </cmdb-business-selector>
+                </transition>
+                <transition name="fade">
+                    <i class="business-flag bk-icon icon-angle-down" v-show="!unfold"></i>
+                </transition>
             </div>
             <ul class="menu-list">
                 <template v-for="(menu, index) in currentMenus">
@@ -71,6 +80,7 @@
 <script>
     import { mapGetters } from 'vuex'
     import MENU_DICTIONARY from '@/dictionary/menu'
+    import Bus from '@/utils/bus'
     import {
         MENU_BUSINESS,
         MENU_RESOURCE,
@@ -252,21 +262,11 @@
                 }
             },
             handleToggleBusiness (id) {
-                const routerName = this.$route.name
-                if (routerName === MENU_BUSINESS) {
-                    if (this.businessMenuRedirectRoute) {
-                        this.$router.replace(this.businessMenuRedirectRoute)
-                    } else {
-                        this.$router.replace({
-                            name: 'hosts',
-                            params: Object.assign({
-                                business: id
-                            }, this.$route.params),
-                            query: this.$route.query
-                        })
-                    }
-                }
+                Bus.$emit('business-change', id)
                 this.$emit('business-change', id)
+            },
+            handleBusinessEmpty () {
+                Bus.$emit('business-empty')
             }
         }
     }
@@ -310,6 +310,7 @@ $color: #63656E;
 }
 
 .business-wrapper {
+    position: relative;
     padding: 13px 0;
     height: 59px;
     border-bottom: 1px solid #DCDEE5;
@@ -318,6 +319,18 @@ $color: #63656E;
         display: block;
         width: 240px;
         margin: 0 auto;
+    }
+    .business-flag {
+        position: absolute;
+        left: 14px;
+        top: 13px;
+        width: 32px;
+        height: 32px;
+        line-height: 30px;
+        text-align: center;
+        font-size: 12px;
+        border: 1px solid #C4C6CC;
+        border-radius: 2px;
     }
 }
 
@@ -466,10 +479,11 @@ $color: #63656E;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 55px;
-    line-height: 54px;
-    border-top: 1px solid rgba(255, 255, 255, .05);
+    height: 50px;
+    line-height: 49px;
+    border-top: 1px solid #DCDEE5;
     font-size: 0;
+    color: #63656E;
     &:before {
         content: "";
         display: inline-block;
@@ -489,7 +503,7 @@ $color: #63656E;
         cursor: pointer;
         transition: transform $duration $cubicBezier;
         &:hover {
-            color: #fff;
+            opacity: .8;
         }
         &.sticked {
             transform: rotate(180deg);
