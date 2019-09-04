@@ -118,13 +118,12 @@
     "申请业务权限": "Apply for business permission",
     "申请创建业务": "Apply to create business",
     "搜索结果": "Search results",
-    "请输入搜索内容": "Enter search content",
     "共计N条": "Total {N}",
     "每页显示条数": "{num} data per page",
     "请选择时间": "Please select time",
     "更多详情": "More details",
     "更多信息": "Show All",
-    "请输入关键字": "Please input keyword...",
+    "请输入关键字": "Please input keyword",
     "添加": "Add",
     "全部展开": "Expand all",
     "暂无数据": "No data",
@@ -873,7 +872,7 @@
     "添加实例": "Add Instance",
     "配置字段": "Setting Field",
     "模型创建成功": "Created successfully",
-    "实例数量": "Instance count",
+    "实例数量": "Instance",
     "立即启用": "Enable",
     "字段预览": "Preview Field",
     "分组名称": "Group Name",
@@ -889,5 +888,7 @@
     "自定义字段": "Custom Field",
     "默认值": "Defaults",
     "枚举值": "Enum value",
-    "自定义字段功能提示": "Custom fields: Add custom fields when the built-in fields of the model do not meet the business needs.(* is a required field)"
+    "自定义字段功能提示": "Custom fields: Add custom fields when the built-in fields of the model do not meet the business needs.(* is a required field)",
+    "运营分析": "Operational Analysis",
+    "搜索历史": "History"
 }
