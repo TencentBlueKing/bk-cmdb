@@ -229,32 +229,6 @@
                 }
                 const flatternedText = this.$tools.getPropertyText(property, cloneSource)
                 return isHeightLight ? `<em>${flatternedText}</em>` : flatternedText
-            },
-            handleInputSearch (el) {
-                const target = el.srcElement
-                this.searchTriggerType = 'input'
-                if (target.value.length === 32) {
-                    this.toggleTips && this.toggleTips.destroy()
-                    this.toggleTips = this.$bkPopover(this.$refs.searchInput, {
-                        theme: 'dark max-length-tips',
-                        content: this.$t('最大支持搜索32个字符'),
-                        zIndex: 9999,
-                        trigger: 'manual',
-                        boundary: 'window',
-                        arrow: true
-                    })
-                    this.$nextTick(() => {
-                        this.toggleTips.show()
-                    })
-                } else if (this.toggleTips) {
-                    this.toggleTips.hide()
-                }
-            },
-            handleClearInput () {
-                this.query.queryString = ''
-                if (this.toggleTips) {
-                    this.toggleTips.hide()
-                }
             }
         }
     }
@@ -315,10 +289,5 @@
                 width: 104px;
             }
         }
-    }
-    .max-length-tips-theme {
-        font-size: 12px;
-        padding: 6px 12px;
-        left: 248px !important;
     }
 </style>
