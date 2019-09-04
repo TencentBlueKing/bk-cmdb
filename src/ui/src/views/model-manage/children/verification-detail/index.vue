@@ -1,5 +1,5 @@
 <template>
-    <div class="verification-detail-wrapper">
+    <div class="model-slider-content verification-detail-wrapper">
         <div class="form-label">
             <span class="label-text">
                 {{$t('校验规则')}}
@@ -171,7 +171,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .slider-content.verification-detail-wrapper {
+    .model-slider-content.verification-detail-wrapper {
         .form-label {
             .label-text {
                 width: 130px;

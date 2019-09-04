@@ -24,7 +24,7 @@ import {
 
 const getSubmenu = (views, symbol, pathPrefix = '') => {
     const submenuViews = views.filter(view => {
-        return view.meta && view.meta.menu && view.meta.menu.parent === symbol
+        return view.meta.menu.parent === symbol
     })
     const submenu = submenuViews.map(view => {
         const menu = view.meta.menu
@@ -44,7 +44,7 @@ const getMenuRoute = (views, symbol, pathPrefix = '') => {
     if (menuView) {
         return {
             name: menuView.name,
-            path: menuView.path ? `/${pathPrefix}/${menuView.path}` : undefined
+            path: `/${pathPrefix}/${menuView.path}`
         }
     }
     return {}

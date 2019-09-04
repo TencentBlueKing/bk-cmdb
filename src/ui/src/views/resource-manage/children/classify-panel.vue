@@ -62,7 +62,7 @@
                 if (data) {
                     return data.instance_count > 999 ? '999+' : data.instance_count
                 }
-                return '--'
+                return 0
             },
             redirect (model) {
                 const map = {

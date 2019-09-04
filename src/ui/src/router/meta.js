@@ -1,22 +1,14 @@
 export default class Meta {
     constructor (data = {}) {
         this.owner = ''
-        this.title = ''
-        this.i18nTitle = ''
-        this.resetMenu = true
-        this.showBreadcumbs = true
         Object.keys(data).forEach(key => {
             this[key] = data[key]
         })
 
-        this.menu = !data.menu ? false : Object.assign({
-            id: null,
-            i18n: null,
-            path: null,
-            order: 1,
+        this.menu = Object.assign({
+            i18n: '',
             parent: null,
-            adminView: true,
-            businessView: true
+            relative: null
         }, data.menu)
 
         this.auth = Object.assign({

@@ -165,16 +165,6 @@ const checkBusiness = to => {
     return authorizedBusiness.length
 }
 
-const isShouldShow = to => {
-    const isAdminView = router.app.$store.getters.isAdminView
-    const menu = to.meta.menu
-    return menu
-        ? isAdminView
-            ? menu.adminView
-            : menu.businessView
-        : true
-}
-
 const setPermission = async to => {
     const permission = []
     const authMeta = to.meta.auth
@@ -214,31 +204,28 @@ router.beforeEach((to, from, next) => {
         try {
             setLoading(true)
             router.app.$store.commit('setBreadcumbs', [])
+            router.app.$store.commit('setTitle', null)
             if (setupStatus.preload) {
                 await preload(router.app)
             }
-            if (!isShouldShow(to)) {
-                next({ name: MENU_INDEX })
-            } else {
-                // 防止直接进去申请业务的提示界面导致无法正确跳转权限中心
-                if (to.name === 'requireBusiness' && !router.app.$store.getters.permission.length) {
-                    return next({ name: MENU_INDEX })
-                }
-
-                const isAvailable = checkAvailable(to, from)
-                if (!isAvailable) {
-                    throw new StatusError({ name: '404' })
-                }
-                await getAuth(to)
-                const viewAuth = isViewAuthorized(to)
-                if (!viewAuth) {
-                    throw new StatusError({ name: '403' })
-                }
-
-                setAdminView(to)
-
-                return next()
+            // 防止直接进去申请业务的提示界面导致无法正确跳转权限中心
+            if (to.name === 'requireBusiness' && !router.app.$store.getters.permission.length) {
+                return next({ name: MENU_INDEX })
             }
+
+            const isAvailable = checkAvailable(to, from)
+            if (!isAvailable) {
+                throw new StatusError({ name: '404' })
+            }
+            await getAuth(to)
+            const viewAuth = isViewAuthorized(to)
+            if (!viewAuth) {
+                throw new StatusError({ name: '403' })
+            }
+
+            setAdminView(to)
+
+            return next()
         } catch (e) {
             if (e.__CANCEL__) {
                 next()

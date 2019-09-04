@@ -55,6 +55,9 @@
                                     v-for="(submenu, submenuIndex) in menu.submenu"
                                     exact
                                     active-class="active"
+                                    :class="{
+                                        active: isMenuActive(submenu)
+                                    }"
                                     :key="submenuIndex"
                                     :to="submenu.route"
                                     :title="$t(submenu.i18n)">
@@ -102,8 +105,7 @@
             }
         },
         computed: {
-            ...mapGetters(['navStick', 'navFold', 'admin', 'businessMenuRedirectRoute']),
-            ...mapGetters('menu', ['active']),
+            ...mapGetters(['navStick', 'navFold', 'admin']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectModelClassify', ['classifications', 'models']),
             unfold () {
@@ -166,9 +168,20 @@
         },
         methods: {
             setDefaultExpand () {
-                const expandedId = this.$tools.getValue(this.$route, 'meta.menu.parent')
+                const expandedId = this.$route.meta.menu.parent
+                const relative = this.$route.meta.menu.relative
                 if (expandedId) {
                     this.$set(this.state, expandedId, { expanded: true })
+                } else if (relative) {
+                    const parent = this.currentMenus.find(menu => {
+                        if (menu.hasOwnProperty('route')) {
+                            return menu.route.name === relative
+                        }
+                        return menu.submenu.some(submenu => submenu.route.name === relative)
+                    })
+                    if (parent) {
+                        this.$set(this.state, parent.id, { expanded: true })
+                    }
                 }
             },
             isMenuExpanded (menu) {
@@ -176,6 +189,9 @@
                     return this.state[menu.id].expanded
                 }
                 return false
+            },
+            isMenuActive (menu) {
+                return this.$route.meta.menu.relative === menu.route.name
             },
             getCollectionRoute (model) {
                 const map = {
@@ -335,6 +351,7 @@ $color: #63656E;
 }
 
 .menu-list {
+    padding: 10px 0;
     height: calc(100% - 120px);
     overflow-y: auto;
     overflow-x: hidden;
@@ -353,7 +370,6 @@ $color: #63656E;
 
     .menu-item {
         position: relative;
-        transition: background-color $duration $cubicBezier;
         &.is-link {
             .icon-close {
                 display: none;
@@ -380,8 +396,8 @@ $color: #63656E;
                 }
             }
         }
-        &.is-open {
-            background-color: #F0F1F5;
+        &:hover {
+            background-color: #F6F6F9;
         }
         &.active.is-link {
             background-color: #3a84ff;
@@ -445,7 +461,7 @@ $color: #63656E;
         color: $color;
         @include ellipsis;
         &:hover {
-            background-color: #DCDEE5;
+            background-color: #E8E9EF;
         }
         &.active {
             color: #fff;

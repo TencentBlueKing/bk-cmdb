@@ -794,6 +794,11 @@
             .filter-content {
                 display: flex;
                 margin-top: 10px;
+                &:hover {
+                    .userapi-delete {
+                        opacity: 1;
+                    }
+                }
                 .content-right {
                     margin-left: 97px;
                 }
@@ -802,7 +807,7 @@
                     margin-right: 10px;
                 }
                 .filter-field-value {
-                    flex: 1;
+                    flex: 323px 0 0;
                     width: 0;
                     &.cmdb-search-input {
                         /deep/ .search-input-wrapper {
@@ -821,8 +826,12 @@
                     line-height: 32px;
                     text-align: center;
                     font-size: 16px;
-                    color: #c3cdd7;
+                    color: #C4C6CC;
                     cursor: pointer;
+                    opacity: 0;
+                    &:hover {
+                        color: #7d8088;
+                    }
                 }
             }
         }
