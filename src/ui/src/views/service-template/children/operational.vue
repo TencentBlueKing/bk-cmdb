@@ -92,6 +92,7 @@
             </div>
         </div>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.show"
             :title="slider.title"
             :width="800"

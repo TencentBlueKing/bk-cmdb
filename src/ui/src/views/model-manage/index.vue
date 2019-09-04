@@ -1,7 +1,6 @@
 <template>
-    <div class="group-wrapper" :style="{ 'padding-top': showFeatureTips ? '114px' : '72px' }">
+    <div class="group-wrapper" :style="{ 'padding-top': showFeatureTips ? '94px' : '52px' }">
         <cmdb-main-inject
-            :style="{ 'padding-top': showFeatureTips ? '10px' : '' }"
             inject-type="prepend"
             :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
             <feature-tips
@@ -98,7 +97,7 @@
                     </template>
                 </div>
                 <ul class="model-list clearfix">
-                    <li class="model-item"
+                    <li class="model-item bgc-white"
                         :class="{
                             'ispaused': model['bk_ispaused'],
                             'ispre': isInner(model)
@@ -500,12 +499,12 @@
     }
     .btn-group {
         position: absolute;
-        top: 0;
+        top: 58px;
         left: 0;
         width: calc(100% - 17px);
-        padding: 20px;
+        padding: 0 20px 20px;
         font-size: 0;
-        background-color: #fff;
+        background-color: #fafbfd;
         z-index: 100;
         .bk-primary {
             margin-right: 10px;

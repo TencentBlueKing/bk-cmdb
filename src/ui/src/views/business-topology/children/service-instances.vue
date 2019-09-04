@@ -107,6 +107,7 @@
             @create-instance-success="handleCreateInstanceSuccess">
         </service-instance-empty>
         <bk-sideslider
+            v-transfer-dom
             :width="800"
             :title="processForm.title"
             :is-show.sync="processForm.show"

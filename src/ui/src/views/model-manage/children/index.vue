@@ -327,7 +327,12 @@
                 const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
                 if (model) {
                     this.$store.commit('objectModel/setActiveModel', model)
-                    this.$store.commit('setHeaderTitle', model['bk_obj_name'])
+                    this.$store.commit('setBreadcumbs', [{
+                        i18n: '模型管理',
+                        route: {
+                            path: '/model/index'
+                        }
+                    }, { name: model.bk_obj_name }])
                     this.initModelInfo()
                 } else {
                     this.$router.replace({ name: 'status404' })
@@ -467,10 +472,14 @@
 <style lang="scss" scoped>
     .model-detail-wrapper {
         padding: 0;
-        height: 100%;
     }
     .model-details-tab {
-        height: calc(100% - 100px) !important;
+        height: calc(100% - 70px) !important;
+        /deep/ {
+            .bk-tab-section {
+                padding: 0;
+            }
+        }
     }
     .model-info {
         padding: 0 24px;

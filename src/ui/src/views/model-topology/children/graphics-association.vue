@@ -1,5 +1,6 @@
 <template>
     <bk-sideslider
+        v-transfer-dom
         :width="514"
         :title="title"
         :is-show.sync="isShow"

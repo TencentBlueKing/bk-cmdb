@@ -1,5 +1,5 @@
 <template>
-    <div class="category-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="category-wrapper">
         <feature-tips
             :feature-name="'category'"
             :show-tips="showFeatureTips"
@@ -7,7 +7,7 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="category-list">
-            <div class="category-item" v-for="(mainCategory, index) in list" :key="index">
+            <div class="category-item bgc-white" v-for="(mainCategory, index) in list" :key="index">
                 <div class="category-title" :style="{ 'background-color': mainCategory['editStatus'] ? '#f0f1f5' : '' }">
                     <div class="main-edit"
                         :style="{ width: editMainStatus === mainCategory['id'] ? '100%' : 'auto' }"

@@ -149,6 +149,7 @@
         </bk-dialog>
 
         <bk-sideslider
+            v-transfer-dom
             :width="540"
             :title="slider.title"
             :is-show.sync="slider.isShow"
@@ -169,6 +170,7 @@
         </bk-sideslider>
 
         <bk-sideslider
+            v-transfer-dom
             :width="676"
             :title="$t('字段预览')"
             :is-show.sync="previewShow">
@@ -180,6 +182,7 @@
         </bk-sideslider>
 
         <bk-sideslider
+            v-transfer-dom
             :width="540"
             :title="$t('字段详情')"
             :is-show.sync="fieldDetailsDialog.isShow"
@@ -740,11 +743,11 @@
     $modelHighlightColor: #3c96ff;
     .group-layout {
         height: 100%;
-        padding: 0 20px 20px;
+        padding: 10px 20px 20px;
         @include scrollbar-y;
     }
     .layout-header {
-        margin: 10px 0 14px;
+        margin: 0 0 14px;
     }
     .group {
         margin-bottom: 19px;

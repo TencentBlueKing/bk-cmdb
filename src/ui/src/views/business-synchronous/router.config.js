@@ -6,6 +6,7 @@ export default {
     path: 'synchronous/module/:moduleId/set/:setId',
     component: () => import('./index.vue'),
     meta: new Meta({
-        owner: MENU_BUSINESS
+        owner: MENU_BUSINESS,
+        title: '同步模板'
     })
 }
