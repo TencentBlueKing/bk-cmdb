@@ -25,6 +25,7 @@
                                         <component class="form-component"
                                             :is="`cmdb-form-${property['bk_property_type']}`"
                                             :class="{ error: errors.has(property['bk_property_id']) }"
+                                            :unit="property['unit']"
                                             :disabled="checkDisabled(property)"
                                             :options="property.option || []"
                                             :data-vv-name="property['bk_property_id']"
