@@ -1,5 +1,5 @@
 <template>
-    <div class="template-wrapper" ref="templateWrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="template-wrapper" ref="templateWrapper">
         <feature-tips
             :feature-name="'serviceTemplate'"
             :show-tips="showFeatureTips"

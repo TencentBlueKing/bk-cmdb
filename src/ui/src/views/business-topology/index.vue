@@ -62,13 +62,13 @@
 
 <style lang="scss" scoped>
     .info-layout {
-        height: 100%;
         padding: 0;
+        border-top: 1px solid $cmdbLayoutBorderColor;
     }
     .tree-layout {
         width: 280px;
         height: 100%;
-        padding: 20px 0;
+        padding: 10px 0;
         border-right: 1px solid #dcdee5;
     }
     .tab-layout {

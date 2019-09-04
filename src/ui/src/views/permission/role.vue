@@ -58,6 +58,7 @@
             @closeRoleForm="form.isShow = false">
         </v-role-form>
         <bk-sideslider
+            v-transfer-dom
             :width="600"
             :title="slider.title"
             :is-show.sync="slider.isShow">

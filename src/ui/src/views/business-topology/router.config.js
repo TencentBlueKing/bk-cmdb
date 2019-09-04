@@ -45,8 +45,6 @@ export default {
             setAuthScope () {
                 this.authScope = 'business'
             }
-        },
-        i18nTitle: '服务拓扑',
-        requireBusiness: true
+        }
     })
 }

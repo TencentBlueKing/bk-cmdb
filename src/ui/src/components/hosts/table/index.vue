@@ -55,7 +55,7 @@
                     </bk-select>
                 </div>
                 <div class="fr">
-                    <bk-select class="options-collection"
+                    <bk-select class="options-collection bgc-white"
                         v-if="showCollection"
                         ref="collectionSelector"
                         v-model="selectedCollection"
@@ -92,7 +92,7 @@
                 </div>
             </div>
         </div>
-        <bk-table class="hosts-table"
+        <bk-table class="hosts-table bkc-white"
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
             :pagination="table.pagination"
@@ -116,6 +116,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.show"
             :title="slider.title"
             :width="800"
@@ -135,6 +136,7 @@
             </bk-tab>
         </bk-sideslider>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="columnsConfig.show"
             :width="600"
             :title="$t('列表显示属性配置')">

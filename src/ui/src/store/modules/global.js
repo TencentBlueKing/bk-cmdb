@@ -32,7 +32,7 @@ const state = {
     permission: [],
     appHeight: window.innerHeight,
     isAdminView: true,
-    businessMenuRedirectRoute: null
+    breadcumbs: []
 }
 
 const getters = {
@@ -55,7 +55,7 @@ const getters = {
     headerTitle: state => state.headerTitle,
     featureTipsParams: state => state.featureTipsParams,
     permission: state => state.permission,
-    businessMenuRedirectRoute: state => state.businessMenuRedirectRoute
+    breadcumbs: state => state.breadcumbs
 }
 
 const actions = {
@@ -110,8 +110,8 @@ const mutations = {
     setAppHeight (state, height) {
         state.appHeight = height
     },
-    setBusinessMenuRedirectRoute (state, businessMenuRedirectRoute) {
-        state.businessMenuRedirectRoute = businessMenuRedirectRoute
+    setBreadcumbs (state, breadcumbs) {
+        state.breadcumbs = breadcumbs
     }
 }
 
