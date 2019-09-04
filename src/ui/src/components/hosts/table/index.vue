@@ -127,7 +127,6 @@
                         :properties="properties.host"
                         :property-groups="propertyGroups"
                         :object-unique="objectUnique"
-                        :save-auth="saveAuth"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleSliderBeforeClose">
                     </cmdb-form-multiple>

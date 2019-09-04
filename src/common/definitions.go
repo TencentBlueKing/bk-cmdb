@@ -495,6 +495,8 @@ const (
 	// BKIsIncrementField the isincrement field
 	BKIsIncrementField = "is_increment"
 
+	BKIsCollapseField = "is_collapse"
+
 	// BKProxyListField the proxy list field
 	BKProxyListField = "bk_proxy_list"
 
@@ -847,8 +849,8 @@ const (
 	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
-	BKSessionLanugageKey    = "language"
-	BKHTTPSupplierID        = "bk_supplier_id"
+	//BKSessionLanugageKey = "language"
+	BKHTTPSupplierID = "bk_supplier_id"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
@@ -903,7 +905,7 @@ const (
 const (
 	// URLFilterWhiteList url filter white list not execute any filter
 	// multiple url separated by commas
-	URLFilterWhiteListSuffix = "/healthz"
+	URLFilterWhiteListSuffix = "/healthz,/version"
 
 	URLFilterWhiteListSepareteChar = ","
 )
@@ -944,8 +946,8 @@ const (
 	WEBSessionOwnerUinListeKey = "owner_uin_list"
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
-	WEBSessionLanguageKey      = "language"
-	WEBSessionSupplierID       = "supplier_id"
+	//WEBSessionLanguageKey      = "language"
+	WEBSessionSupplierID = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"

@@ -459,7 +459,7 @@ func (s *Service) SearchInstTopo(params types.ContextParams, pathParams, queryPa
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	obj, err := s.Core.ObjectOperation().FindObjectWithID(params, instID)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
 		return nil, err
