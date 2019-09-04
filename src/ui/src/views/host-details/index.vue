@@ -168,7 +168,6 @@
 
 <style lang="scss" scoped>
     .details-layout {
-        padding: 0;
         overflow: hidden;
         .details-tab {
             height: calc(100% - var(--infoHeight)) !important;

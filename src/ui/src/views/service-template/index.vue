@@ -276,6 +276,7 @@
 
 <style lang="scss" scoped>
     .template-wrapper {
+        padding: 0 20px;
         .filter-text {
             .bk-select {
                 width: 184px;

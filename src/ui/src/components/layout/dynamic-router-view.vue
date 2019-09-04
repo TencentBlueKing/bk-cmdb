@@ -67,7 +67,6 @@
     .main-views {
         height: calc(100% - 58px);
         margin-top: 58px;
-        padding: 0 20px 10px;
         min-width: 1106px;
     }
 </style>

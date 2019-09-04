@@ -26,15 +26,12 @@
     import { mapGetters } from 'vuex'
     export default {
         computed: {
-            ...mapGetters(['breadcumbs']),
+            ...mapGetters(['breadcumbs', 'title']),
             current () {
-                if (this.$route.meta.title) {
-                    return this.$t(this.$route.meta.title)
-                }
-                if (this.$route.meta.menu) {
+                if (this.$route.meta.menu.i18n) {
                     return this.$t(this.$route.meta.menu.i18n)
                 }
-                return ''
+                return this.title
             }
         },
         methods: {
@@ -74,9 +71,16 @@
             @include inlineBlock;
             font-size: 12px;
             line-height: 20px;
+            color: #979BA5;
         }
-        .breadcumbs-link.is-last {
-            cursor: default;
+        .breadcumbs-link {
+            &.is-last {
+                cursor: default;
+                color: #63656E;
+            }
+            &:not(.is-last):hover {
+                color: #000;
+            }
         }
         .breadcumbs-arrow {
             margin: 0 5px;

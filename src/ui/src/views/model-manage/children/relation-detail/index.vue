@@ -1,5 +1,5 @@
 <template>
-    <div class="slider-content">
+    <div class="model-slider-content">
         <label class="form-label" v-if="isEdit">
             <span class="label-text">
                 {{$t('唯一标识')}}

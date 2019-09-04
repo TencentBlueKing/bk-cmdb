@@ -139,6 +139,7 @@
     import theFieldGroup from '@/components/model-manage/field-group'
     import theChooseIcon from '@/components/model-manage/choose-icon/_choose-icon'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
+    import { MENU_MODEL_MANAGEMENT, MENU_MODEL_BUSINESS_TOPOLOGY } from '@/dictionary/menu-symbol'
     export default {
         components: {
             theFieldGroup,
@@ -327,12 +328,22 @@
                 const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
                 if (model) {
                     this.$store.commit('objectModel/setActiveModel', model)
-                    this.$store.commit('setBreadcumbs', [{
-                        i18n: '模型管理',
-                        route: {
-                            path: '/model/index'
-                        }
-                    }, { name: model.bk_obj_name }])
+                    console.log(model)
+                    if (model.bk_classification_id === 'bk_biz_topo') {
+                        this.$store.commit('setBreadcumbs', [{
+                            i18n: '业务层级',
+                            route: {
+                                name: MENU_MODEL_BUSINESS_TOPOLOGY
+                            }
+                        }, { name: model.bk_obj_name }])
+                    } else {
+                        this.$store.commit('setBreadcumbs', [{
+                            i18n: '模型管理',
+                            route: {
+                                name: MENU_MODEL_MANAGEMENT
+                            }
+                        }, { name: model.bk_obj_name }])
+                    }
                     this.initModelInfo()
                 } else {
                     this.$router.replace({ name: 'status404' })
@@ -440,6 +451,7 @@
                             requestId: 'deleteModel'
                         }
                     })
+                    this.$router.replace({ name: MENU_MODEL_BUSINESS_TOPOLOGY })
                 } else {
                     await this.deleteObject({
                         id: this.activeModel['id'],
@@ -450,9 +462,9 @@
                             requestId: 'deleteModel'
                         }
                     })
+                    this.$router.replace({ name: MENU_MODEL_MANAGEMENT })
                 }
                 this.$http.cancel('post_searchClassificationsObjects')
-                this.$router.replace({ name: 'model' })
             },
             handleGoInstance () {
                 this.$router.push({
