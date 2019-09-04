@@ -890,5 +890,7 @@
     "枚举值": "Enum value",
     "自定义字段功能提示": "Custom fields: Add custom fields when the built-in fields of the model do not meet the business needs.(* is a required field)",
     "运营分析": "Operational Analysis",
-    "搜索历史": "History"
+    "搜索历史": "History",
+    "实例": "Instance",
+    "分配到": "Assigned"
 }
