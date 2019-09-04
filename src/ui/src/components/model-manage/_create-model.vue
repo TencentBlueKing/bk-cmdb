@@ -177,7 +177,7 @@
             display: none;
         }
         .dialog-content {
-            padding: 14px 15px 20px 28px;
+            padding: 15px 15px 20px 28px;
         }
         .title {
             font-size: 20px;
@@ -217,7 +217,6 @@
             }
         }
         .footer {
-            padding: 0 24px;
             font-size: 0;
             text-align: right;
             .bk-primary {

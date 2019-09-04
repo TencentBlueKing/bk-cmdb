@@ -9,7 +9,7 @@
                 :name="model.bk_obj_id"
                 :label="model.bk_obj_name">
                 <template>
-                    <feature-tips class="mt10"
+                    <feature-tips
                         :feature-name="'customFields'"
                         :show-tips="showFeatureTips"
                         :desc="$t('自定义字段功能提示')"
@@ -73,12 +73,16 @@
 <style lang="scss" scoped>
     .custom-fields-layout {
         padding: 0;
-        border-top: 1px solid $cmdbLayoutBorderColor;
     }
     .tab-layout {
-        /deep/ .bk-tab-header {
-            padding: 0;
-            margin: 0 20px;
+        /deep/ {
+            .bk-tab-content {
+                padding-top: 10px;
+            }
+            .bk-tab-header {
+                padding: 0;
+                margin: 0 20px;
+            }
         }
     }
     .model-detail-wrapper {

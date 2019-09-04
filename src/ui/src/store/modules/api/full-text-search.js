@@ -9,7 +9,9 @@
  */
 import $http from '@/api'
 
-const state = {}
+const state = {
+    searchHistory: []
+}
 
 const getters = {}
 
@@ -27,7 +29,24 @@ const actions = {
     }
 }
 
-const mutations = {}
+const mutations = {
+    setSearchHistory (state, keywords) {
+        const len = state.searchHistory.length
+        !state.searchHistory.find(keyword => keyword === keywords) && state.searchHistory.unshift(keywords)
+        if (len > 8) {
+            state.searchHistory.pop(keywords)
+        }
+        localStorage.setItem('searchHistory', JSON.stringify(state.searchHistory))
+    },
+    getSearchHistory (state) {
+        const history = JSON.parse(localStorage.getItem('searchHistory'))
+        state.searchHistory = history || []
+    },
+    clearSearchHistory (state) {
+        localStorage.setItem('searchHistory', JSON.stringify([]))
+        state.searchHistory = []
+    }
+}
 
 export default {
     namespaced: true,
