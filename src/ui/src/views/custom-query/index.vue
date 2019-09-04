@@ -260,6 +260,7 @@
 
 <style lang="scss" scoped>
     .api-wrapper {
+        padding: 0 20px;
         .filter-wrapper {
             .business-selector {
                 float: left;

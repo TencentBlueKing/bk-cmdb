@@ -23,7 +23,7 @@
         </bk-button>
         <section class="filter-content" slot="content"
             :style="{
-                height: $APP.height - 150 + 'px'
+                height: $APP.height - 200 + 'px'
             }">
             <h2 class="filter-title">
                 {{$t('高级筛选')}}
@@ -453,7 +453,7 @@
     .filter-trigger {
         width: 32px;
         padding: 0;
-        line-height: 14px;
+        line-height: 30px;
     }
     .filter-trigger.is-active {
         color: #3A84FF;

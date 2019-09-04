@@ -55,11 +55,15 @@
                 </div>
             </div>
             <div class="options-button fr">
-                <bk-button v-bk-tooltips="$t('查看删除历史')" @click="routeToHistory">
-                    <i class="icon-cc-history"></i>
+                <bk-button class="icon-button"
+                    v-bk-tooltips="$t('查看删除历史')"
+                    icon="icon-cc-history"
+                    @click="routeToHistory">
                 </bk-button>
-                <bk-button class="button-setting" v-bk-tooltips="$t('列表显示属性配置')" @click="columnsConfig.show = true">
-                    <i class="icon-cc-setting"></i>
+                <bk-button class="icon-button"
+                    v-bk-tooltips="$t('列表显示属性配置')"
+                    icon="icon-cc-setting"
+                    @click="columnsConfig.show = true">
                 </bk-button>
             </div>
             <div class="options-filter clearfix fr">
@@ -206,6 +210,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
+    import { MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
@@ -318,12 +323,12 @@
                 this.setTableHeader()
             },
             objId () {
-                this.$store.commit('setHeaderTitle', this.model['bk_obj_name'])
+                this.setDynamicBreadcumbs()
                 this.reload()
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.model['bk_obj_name'])
+            this.setDynamicBreadcumbs()
             this.reload()
         },
         methods: {
@@ -338,6 +343,17 @@
                 'batchDeleteInst',
                 'searchInstById'
             ]),
+            setDynamicBreadcumbs () {
+                this.$store.commit('setTitle', this.model.bk_obj_name)
+                this.$store.commit('setBreadcumbs', [{
+                    i18n: '资源目录',
+                    route: {
+                        name: MENU_RESOURCE_MANAGEMENT
+                    }
+                }, {
+                    name: this.model.bk_obj_name
+                }])
+            },
             async reload () {
                 try {
                     this.setRencentlyData()
@@ -746,52 +762,49 @@
 </script>
 
 <style lang="scss" scoped>
-.options-filter{
-    position: relative;
-    margin-right: 10px;
-    .filter-selector{
-        width: 115px;
-        border-radius: 2px 0 0 2px;
-        margin-right: -1px;
+    .models-layout {
+        padding: 0 20px;
     }
-    .filter-value{
-        width: 320px;
-        border-radius: 0 2px 2px 0;
-    }
-    .filter-search{
-        position: absolute;
-        right: 10px;
-        top: 8px;
-        cursor: pointer;
-    }
-}
-.models-button{
-    display: inline-block;
-    position: relative;
-    &:hover{
-        z-index: 1;
-        &.button-delete {
-            color: $cmdbDangerColor;
-            border-color: $cmdbDangerColor;
+    .options-filter{
+        position: relative;
+        margin-right: 5px;
+        .filter-selector{
+            width: 115px;
+            border-radius: 2px 0 0 2px;
+            margin-right: -1px;
         }
-        /deep/ &.bk-button.bk-default[disabled] {
-            border-color: #dcdee5 !important;
-            color: #c4c6cc !important;
+        .filter-value{
+            width: 320px;
+            border-radius: 0 2px 2px 0;
+        }
+        .filter-search{
+            position: absolute;
+            right: 10px;
+            top: 8px;
+            cursor: pointer;
         }
     }
-}
-.options-button{
-    font-size: 0;
-    white-space: nowrap;
-    .button-history{
-        border-radius: 2px 0 0 2px;
+    .models-button{
+        display: inline-block;
+        position: relative;
+        &:hover{
+            z-index: 1;
+            &.button-delete {
+                color: $cmdbDangerColor;
+                border-color: $cmdbDangerColor;
+            }
+            /deep/ &.bk-button.bk-default[disabled] {
+                border-color: #dcdee5 !important;
+                color: #c4c6cc !important;
+            }
+        }
     }
-    .button-setting{
-        border-radius: 0 2px 2px 0;
-        margin-left: -1px;
+    .options-button{
+        .icon-button {
+            margin-left: 5px;
+        }
     }
-}
-.models-table{
-    margin-top: 14px;
-}
+    .models-table{
+        margin-top: 14px;
+    }
 </style>

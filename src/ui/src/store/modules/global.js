@@ -32,7 +32,8 @@ const state = {
     permission: [],
     appHeight: window.innerHeight,
     isAdminView: true,
-    breadcumbs: []
+    breadcumbs: [],
+    title: null
 }
 
 const getters = {
@@ -55,7 +56,8 @@ const getters = {
     headerTitle: state => state.headerTitle,
     featureTipsParams: state => state.featureTipsParams,
     permission: state => state.permission,
-    breadcumbs: state => state.breadcumbs
+    breadcumbs: state => state.breadcumbs,
+    title: state => state.title
 }
 
 const actions = {
@@ -84,9 +86,6 @@ const mutations = {
     setUserList (state, list) {
         state.userList = list
     },
-    setHeaderTitle (state, headerTitle) {
-        state.headerTitle = headerTitle
-    },
     setAdminView (state, isAdminView) {
         state.isAdminView = isAdminView
     },
@@ -112,6 +111,9 @@ const mutations = {
     },
     setBreadcumbs (state, breadcumbs) {
         state.breadcumbs = breadcumbs
+    },
+    setTitle (state, title) {
+        state.title = title
     }
 }
 

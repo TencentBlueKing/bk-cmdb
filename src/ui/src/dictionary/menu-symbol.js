@@ -5,7 +5,9 @@ export const MENU_MODEL = 'menu_model'
 export const MENU_ANALYSIS = 'menu_analysis'
 
 export const MENU_BUSINESS_HOST = 'menu_business_host'
+export const MENU_BUSINESS_HOST_MANAGEMENT = 'menu_business_host_management'
 export const MENU_BUSINESS_SERVICE = 'menu_business_service'
+export const MENU_BUSINESS_SERVICE_TEMPLATE = 'menu_business_service_template'
 export const MENU_BUSINESS_ADVANCED = 'menu_business_advanced'
 
 export const MENU_RESOURCE_EVENTPUSH = 'menu_resource_eventpush'
