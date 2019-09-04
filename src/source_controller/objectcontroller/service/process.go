@@ -53,6 +53,9 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	moduleName := input[common.BKModuleNameField]
 	query := make(map[string]interface{})
 	query[common.BKModuleNameField] = moduleName
+	if bizID, ok := input[common.BKAppIDField]; ok == true {
+		query[common.BKAppIDField] = bizID
+	}
 
 	fields := []string{common.BKProcIDField, common.BKAppIDField, common.BKModuleNameField}
 	var result []interface{}
