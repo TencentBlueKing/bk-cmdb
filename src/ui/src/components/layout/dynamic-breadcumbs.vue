@@ -6,10 +6,10 @@
             <template v-for="(item, index) in breadcumbs">
                 <a class="breadcumbs-link" href="javascript:void(0)"
                     :class="{
-                        'is-last': index === breadcumbs.length - 1
+                        'no-route': !item.hasOwnProperty('route')
                     }"
                     :key="index"
-                    @click="handleBreadcumbsClick(item, index)">
+                    @click="handleBreadcumbsClick(item)">
                     {{item.i18n ? $t(item.i18n) : item.name}}
                 </a>
                 <span class="breadcumbs-arrow"
@@ -35,10 +35,7 @@
             }
         },
         methods: {
-            handleBreadcumbsClick (item, index) {
-                if (index === this.breadcumbs.length - 1) {
-                    return false
-                }
+            handleBreadcumbsClick (item) {
                 if (item.hasOwnProperty('route')) {
                     this.$router.push(item.route)
                 }
@@ -74,11 +71,11 @@
             color: #979BA5;
         }
         .breadcumbs-link {
-            &.is-last {
+            &.no-route {
                 cursor: default;
                 color: #63656E;
             }
-            &:not(.is-last):hover {
+            &:not(.no-route):hover {
                 color: #000;
             }
         }

@@ -82,7 +82,7 @@ export default [{
         route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGEMENT, 'resource')
     }, {
         id: MENU_RESOURCE_EVENTPUSH,
-        i18n: '事件推送',
+        i18n: '事件订阅',
         icon: 'icon-cc-square',
         route: getMenuRoute(resourceViews, MENU_RESOURCE_EVENTPUSH, 'resource')
     }]

@@ -115,7 +115,7 @@
                                 <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
                             </div>
                         </div>
-                        <div v-if="modelType !== 'disabled'" class="info-instance" @click="handleGoInstance(model)">
+                        <div v-if="modelType !== 'disabled' && model.bk_classification_id !== 'bk_biz_topo'" class="info-instance" @click="handleGoInstance(model)">
                             <i class="icon-cc-share"></i>
                             <p>{{modelStatisticsSet[model.bk_obj_id] || 0}}</p>
                         </div>
@@ -203,9 +203,9 @@
     import cmdbMainInject from '@/components/layout/main-inject'
     import theCreateModel from '@/components/model-manage/_create-model'
     import featureTips from '@/components/feature-tips/index'
-    // import theModel from './children'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
     import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
+    import { MENU_RESOURCE_HOST, MENU_RESOURCE_BUSINESS, MENU_RESOURCE_INSTANCE } from '@/dictionary/menu-symbol'
     export default {
         components: {
             // theModel,
@@ -479,15 +479,22 @@
             },
             handleGoInstance (model) {
                 this.sucessDialog.isShow = false
-                this.$router.push({
-                    name: 'generalModel',
-                    params: {
-                        objId: model.bk_obj_id
-                    },
-                    query: {
-                        from: this.$route.fullPath
-                    }
-                })
+                const map = {
+                    host: MENU_RESOURCE_HOST,
+                    biz: MENU_RESOURCE_BUSINESS
+                }
+                if (map.hasOwnProperty(model.bk_obj_id)) {
+                    this.$router.push({
+                        name: map[model.bk_obj_id]
+                    })
+                } else {
+                    this.$router.push({
+                        name: MENU_RESOURCE_INSTANCE,
+                        params: {
+                            objId: model.bk_obj_id
+                        }
+                    })
+                }
             }
         }
     }

@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+import { MENU_BUSINESS, MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
 import {
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
@@ -16,11 +16,14 @@ export const OPERATION = {
 
 export default [{
     name: 'createServiceInstance',
-    path: '/business/:business/service/instance/create/set/:setId/module/:moduleId',
+    path: 'service/instance/create/set/:setId/module/:moduleId',
     component: () => import('./create.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
-        resetMenu: false,
+        menu: {
+            i18n: '添加服务实例',
+            relative: MENU_BUSINESS_SERVICE_TOPOLOGY
+        },
         auth: {
             operation: Object.values(OPERATION),
             setAuthScope () {
@@ -30,12 +33,15 @@ export default [{
     })
 }, {
     name: 'cloneServiceInstance',
-    path: '/business/:business/service/instance/clone/set/:setId/module/:moduleId/instance/:instanceId/host/:hostId',
+    path: 'service/instance/clone/set/:setId/module/:moduleId/instance/:instanceId/host/:hostId',
     props: true,
     component: () => import('./clone.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
-        resetMenu: false,
+        menu: {
+            i18n: '克隆服务实例',
+            relative: MENU_BUSINESS_SERVICE_TOPOLOGY
+        },
         auth: {
             operation: Object.values(OPERATION),
             setAuthScope () {

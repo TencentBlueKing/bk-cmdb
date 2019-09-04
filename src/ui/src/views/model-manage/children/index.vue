@@ -52,7 +52,7 @@
                         <span class="text-primary" @click="isEditName = false">{{$t('取消')}}</span>
                     </template>
                 </div>
-                <div class="model-text ml10" v-if="!activeModel['bk_ispaused']">
+                <div class="model-text ml10" v-if="!activeModel['bk_ispaused'] && activeModel.bk_classification_id !== 'bk_biz_topo'">
                     <span>{{$t('实例数量')}}：</span>
                     <div class="text-content-count"
                         :title="modelStatisticsSet[activeModel['bk_obj_id']] || 0"
@@ -139,7 +139,13 @@
     import theFieldGroup from '@/components/model-manage/field-group'
     import theChooseIcon from '@/components/model-manage/choose-icon/_choose-icon'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
-    import { MENU_MODEL_MANAGEMENT, MENU_MODEL_BUSINESS_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import {
+        MENU_MODEL_MANAGEMENT,
+        MENU_MODEL_BUSINESS_TOPOLOGY,
+        MENU_RESOURCE_HOST,
+        MENU_RESOURCE_BUSINESS,
+        MENU_RESOURCE_INSTANCE
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             theFieldGroup,
@@ -467,15 +473,23 @@
                 this.$http.cancel('post_searchClassificationsObjects')
             },
             handleGoInstance () {
-                this.$router.push({
-                    name: 'generalModel',
-                    params: {
-                        objId: this.activeModel.bk_obj_id
-                    },
-                    query: {
-                        from: this.$route.fullPath
-                    }
-                })
+                const model = this.activeModel
+                const map = {
+                    host: MENU_RESOURCE_HOST,
+                    biz: MENU_RESOURCE_BUSINESS
+                }
+                if (map.hasOwnProperty(model.bk_obj_id)) {
+                    this.$router.push({
+                        name: map[model.bk_obj_id]
+                    })
+                } else {
+                    this.$router.push({
+                        name: MENU_RESOURCE_INSTANCE,
+                        params: {
+                            objId: model.bk_obj_id
+                        }
+                    })
+                }
             }
         }
     }
