@@ -46,6 +46,7 @@
                     v-if="filter.type === 'enum'"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
+                    :auto-select="false"
                     v-model="filter.value"
                     @on-selected="handleFilterData">
                 </cmdb-form-enum>
@@ -488,50 +489,45 @@
 </script>
 
 <style lang="scss" scoped>
-.business-layout {
-    padding: 0 20px;
-}
-.options-filter{
-    position: relative;
-    margin-right: 10px;
-    .filter-selector{
-        width: 115px;
-        border-radius: 2px 0 0 2px;
-        margin-right: -1px;
+    .business-layout {
+        padding: 0 20px;
     }
-    .filter-value{
-        width: 320px;
-        border-radius: 0 2px 2px 0;
-        /deep/ .bk-form-input {
-            border-radius: 0 2px 2px 0;
-        }
-    }
-    .filter-search{
-        position: absolute;
-        right: 10px;
-        top: 9px;
-        cursor: pointer;
-    }
-}
-.options-button{
-    font-size: 0;
-    .bk-button {
-        width: 32px;
-        padding: 0;
-        /deep/ .bk-icon {
-            line-height: 14px;
-        }
-    }
-    .button-history{
+    .options-filter{
+        position: relative;
         margin-right: 10px;
-        border-radius: 2px 0 0 2px;
+        .filter-selector{
+            width: 115px;
+            border-radius: 2px 0 0 2px;
+            margin-right: -1px;
+        }
+        .filter-value{
+            width: 320px;
+            border-radius: 0 2px 2px 0;
+            /deep/ .bk-form-input {
+                border-radius: 0 2px 2px 0;
+            }
+        }
+        .filter-search{
+            position: absolute;
+            right: 10px;
+            top: 9px;
+            cursor: pointer;
+        }
     }
-    .button-setting{
-        border-radius: 0 2px 2px 0;
-        margin-left: -1px;
+    .options-button{
+        font-size: 0;
+        .bk-button {
+            width: 32px;
+            padding: 0;
+            /deep/ .bk-icon {
+                line-height: 14px;
+            }
+        }
+        .button-history{
+            margin-right: 10px;
+        }
     }
-}
-.business-table{
-    margin-top: 14px;
-}
+    .business-table{
+        margin-top: 14px;
+    }
 </style>
