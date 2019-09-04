@@ -10,6 +10,7 @@
                     maxlength="32"
                     :placeholder="$t('请输入关键字')"
                     v-model.trim="keywords"
+                    @input="handleInputSearch"
                     @focus="handleShowHistory"
                     @blur="showHistory = false"
                     @enter="handleShowResult">
@@ -113,6 +114,7 @@
         },
         data () {
             return {
+                toggleTips: null,
                 beforeKeywords: '',
                 keywords: '',
                 debounceTimer: null,
@@ -216,6 +218,15 @@
             }
         },
         watch: {
+            '$route' (to, from) {
+                const queryLen = Object.keys(to.query).length
+                if (to.path === '/index' && !queryLen) {
+                    this.keywords = ''
+                    this.setStyle.marginTop = null
+                    this.setStyle.backgroundColor = 'transparent'
+                    this.result.isShow = false
+                }
+            },
             keywords (keywords) {
                 let delay = 0
                 if (this.query.trigger === 'input') {
@@ -266,7 +277,7 @@
                 }
                 return res
             },
-            getFullTextSearch (wait = 600, show) {
+            getFullTextSearch (wait = 600) {
                 let _resolve = null
                 const _promise = new Promise((resolve, reject) => {
                     _resolve = resolve
@@ -278,13 +289,6 @@
                 this.debounceTimer = setTimeout(async () => {
                     if (!this.keywords) return
                     this.searching = true
-                    this.$router.replace({
-                        name: MENU_INDEX,
-                        query: {
-                            keywords: this.keywords,
-                            show: show || this.result.isShow
-                        }
-                    })
                     try {
                         let data = await this.$store.dispatch(this.interfacePath, {
                             params: this.isFullTextSearch ? this.params : this.searchParams,
@@ -317,7 +321,6 @@
                             }
                         }
                         this.lenovoList = hitData.length > 8 ? hitData.slice(0, 8) : hitData
-                        this.$store.commit('fullTextSearch/setSearchHistory', this.keywords)
                         this.searching = false
                         this.query.trigger = 'input'
                         this.$nextTick(() => {
@@ -344,14 +347,20 @@
             handlClearHistory () {
                 this.$store.commit('fullTextSearch/clearSearchHistory')
             },
+            resetIndex () {
+                // this.$refs.searchInput.$refs.input.focus()
+                this.$router.replace({
+                    name: MENU_INDEX
+                })
+            },
             async handleShowResult () {
                 if (!this.keywords) {
-                    this.$refs.searchInput.$refs.input.focus()
+                    this.resetIndex()
                     return
                 }
                 this.query.trigger = 'input'
                 this.updating = true
-                await this.getFullTextSearch(0, true)
+                await this.getFullTextSearch(0)
                 this.setStyle.marginTop = 50
                 this.setStyle.backgroundColor = '#FAFBFD'
                 this.showLenovo = false
@@ -361,6 +370,14 @@
                 this.modelMap = this.$tools.clone(this.curModelMap)
                 this.$set(this.result, 'data', this.$tools.clone(this.query.data))
                 this.beforeKeywords = this.keywords
+                this.$store.commit('fullTextSearch/setSearchHistory', this.keywords)
+                this.$router.replace({
+                    name: MENU_INDEX,
+                    query: {
+                        keywords: this.keywords,
+                        show: true
+                    }
+                })
                 this.result.isShow = true
                 this.updating = false
             },
@@ -439,6 +456,24 @@
                 this.pagination.current = current
                 this.query.trigger = 'click'
                 this.getFullTextSearch()
+            },
+            handleInputSearch (value) {
+                if (value.length === 32) {
+                    this.toggleTips && this.toggleTips.destroy()
+                    this.toggleTips = this.$bkPopover(this.$refs.searchInput.$el, {
+                        theme: 'dark max-length-tips',
+                        content: this.$t('最大支持搜索32个字符'),
+                        zIndex: 9999,
+                        trigger: 'manual',
+                        boundary: 'window',
+                        arrow: true
+                    })
+                    this.$nextTick(() => {
+                        this.toggleTips.show()
+                    })
+                } else if (this.toggleTips) {
+                    this.toggleTips.hide()
+                }
             }
         }
     }
@@ -579,5 +614,13 @@
             opacity: 0;
             max-height: 0;
         }
+    }
+</style>
+
+<style lang="scss">
+    .max-length-tips-theme {
+        font-size: 12px;
+        padding: 6px 12px;
+        left: 248px !important;
     }
 </style>
