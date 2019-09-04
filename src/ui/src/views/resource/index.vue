@@ -46,6 +46,7 @@
             </template>
         </cmdb-hosts-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="importInst.show"
             :width="800"
             :title="$t('批量导入')">
@@ -388,12 +389,11 @@
 
 <style lang="scss" scoped>
     .resource-layout{
-        height: 100%;
         padding: 0;
         overflow: hidden;
         .resource-main{
             height: 100%;
-            padding: 20px;
+            padding: 0 20px;
             overflow: hidden;
         }
         .resource-filter{

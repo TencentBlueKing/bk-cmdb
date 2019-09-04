@@ -23,6 +23,9 @@
 <script>
     import { mapGetters } from 'vuex'
     import {
+        MENU_RESOURCE_HOST,
+        MENU_RESOURCE_BUSINESS,
+        MENU_RESOURCE_INSTANCE,
         MENU_RESOURCE_COLLECTION,
         MENU_RESOURCE_HOST_COLLECTION,
         MENU_RESOURCE_BUSINESS_COLLECTION
@@ -62,17 +65,22 @@
                 return '--'
             },
             redirect (model) {
-                const path = this.getModelLink(model)
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
-                this.$router.push(path)
-            },
-            getModelLink (model) {
-                if (model.hasOwnProperty('path')) {
-                    return model.path
+                const map = {
+                    host: MENU_RESOURCE_HOST,
+                    biz: MENU_RESOURCE_BUSINESS
                 }
-                return `/general-model/${model['bk_obj_id']}`
+                if (map.hasOwnProperty(model.bk_obj_id)) {
+                    this.$router.push({
+                        name: map[model.bk_obj_id]
+                    })
+                } else {
+                    this.$router.push({
+                        name: MENU_RESOURCE_INSTANCE,
+                        params: {
+                            objId: model.bk_obj_id
+                        }
+                    })
+                }
             },
             isCollected (model) {
                 return this.collection.includes(model.bk_obj_id)

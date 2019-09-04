@@ -68,6 +68,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :width="450"
             :title="slider.title"
             :is-show.sync="slider.isShow"

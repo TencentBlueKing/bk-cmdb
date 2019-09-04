@@ -114,6 +114,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :quick-close="true"
             :is-show.sync="details.isShow"
             :width="800"

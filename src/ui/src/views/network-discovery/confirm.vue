@@ -79,6 +79,7 @@
             </template>
         </cmdb-table>
         <bk-sideslider
+            v-transfer-dom
             :width="740"
             :title="slider.title"
             :is-show.sync="slider.isShow">

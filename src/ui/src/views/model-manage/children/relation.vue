@@ -67,6 +67,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :width="450"
             :title="slider.title"
             :is-show.sync="slider.isShow">
@@ -262,6 +263,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .model-relation-wrapper {
+        padding: 0 20px;
+    }
     .options {
         padding: 20px 0 14px;
     }

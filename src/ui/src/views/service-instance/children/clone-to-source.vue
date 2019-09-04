@@ -46,6 +46,7 @@
             <bk-button class="options-button" @click="backToModule">{{$t('取消')}}</bk-button>
         </div>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="processForm.show"
             :title="processForm.title"
             :width="800"

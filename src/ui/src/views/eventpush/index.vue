@@ -1,5 +1,5 @@
 <template>
-    <div class="push-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="push-wrapper">
         <feature-tips
             :feature-name="'eventpush'"
             :show-tips="showFeatureTips"
@@ -83,6 +83,7 @@
             </div>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.isShow"
             :title="slider.title"
             :width="564"

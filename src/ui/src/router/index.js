@@ -75,7 +75,8 @@ const router = new Router({
             name: MENU_BUSINESS,
             component: dynamicRouterView,
             children: businessViews,
-            path: '/business'
+            path: '/business',
+            redirect: '/business/host',
         }, {
             name: MENU_MODEL,
             component: dynamicRouterView,
@@ -199,7 +200,8 @@ const checkBusinessMenuRedirect = (to) => {
 }
 
 const setAdminView = to => {
-    router.app.$store.commit('setAdminView', to.matched[0].name !== MENU_BUSINESS)
+    const isAdminView = to.matched.length && to.matched[0].name !== MENU_BUSINESS
+    router.app.$store.commit('setAdminView', isAdminView)
 }
 
 const setupStatus = {
@@ -211,6 +213,7 @@ router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
             setLoading(true)
+            router.app.$store.commit('setBreadcumbs', [])
             if (setupStatus.preload) {
                 await preload(router.app)
             }
@@ -230,18 +233,6 @@ router.beforeEach((to, from, next) => {
                 const viewAuth = isViewAuthorized(to)
                 if (!viewAuth) {
                     throw new StatusError({ name: '403' })
-                }
-
-
-                // 在业务菜单下刷新页面时，先重定向到一级路由，一级路由视图中的业务选择器设定成功后再跳转到二级视图
-                const shouldRedirectToBusinessMenu = checkBusinessMenuRedirect(to)
-                if (shouldRedirectToBusinessMenu) {
-                    return next({ name: MENU_BUSINESS })
-                }
-                const isBusinessCheckPass = checkBusiness(to)
-                if (!isBusinessCheckPass) {
-                    await setPermission(to)
-                    throw new StatusError({ name: 'requireBusiness', query: { _t: Date.now() } })
                 }
 
                 setAdminView(to)
