@@ -36,7 +36,14 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		common.BKInnerObjIDWeblogic,
 		common.BKInnerObjIDTomcat,
 		common.BKInnerObjIDApache})
-	err := db.Table(common.BKTableNameObjAttDes).Find(attrCond.ToMapStr()).All(ctx, &attrs)
+
+	objStrMapArr := make([]map[string]string, 0)
+	err := db.Table(common.BKTableNameObjDes).Find(attrCond.ToMapStr()).Fields(common.BKObjIDField).All(ctx, &objStrMapArr)
+	if err != nil {
+		return err
+	}
+
+	err = db.Table(common.BKTableNameObjAttDes).Find(attrCond.ToMapStr()).All(ctx, &attrs)
 	if err != nil {
 		return err
 	}
@@ -46,28 +53,44 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		propertyIDToProperty[keyfunc(attr.ObjectID, attr.PropertyID)] = attr
 	}
 
-	shouldCheck := []string{
-		keyfunc(common.BKInnerObjIDSwitch, common.BKAssetIDField),
-		keyfunc(common.BKInnerObjIDRouter, common.BKAssetIDField),
-		keyfunc(common.BKInnerObjIDBlance, common.BKAssetIDField),
-		keyfunc(common.BKInnerObjIDFirewall, common.BKAssetIDField),
-		keyfunc(common.BKInnerObjIDWeblogic, common.BKInstKeyField),
-		keyfunc(common.BKInnerObjIDTomcat, common.BKInstKeyField),
-		keyfunc(common.BKInnerObjIDApache, common.BKInstKeyField),
+	var shouldCheck []string
+	var uniques []metadata.ObjectUnique
+	for _, objMap := range objStrMapArr {
+		objID := objMap[common.BKObjIDField]
+		switch objID {
+		case common.BKInnerObjIDSwitch:
+			shouldCheck = append(shouldCheck, keyfunc(common.BKInnerObjIDSwitch, common.BKAssetIDField))
+			uniques = append(uniques, buildUnique(propertyIDToProperty, common.BKInnerObjIDSwitch, common.BKAssetIDField))
+
+		case common.BKInnerObjIDRouter:
+			shouldCheck = append(shouldCheck, keyfunc(common.BKInnerObjIDRouter, common.BKAssetIDField))
+			uniques = append(uniques, buildUnique(propertyIDToProperty, common.BKInnerObjIDRouter, common.BKAssetIDField))
+
+		case common.BKInnerObjIDBlance:
+			shouldCheck = append(shouldCheck, keyfunc(common.BKInnerObjIDBlance, common.BKAssetIDField))
+			uniques = append(uniques, buildUnique(propertyIDToProperty, common.BKInnerObjIDBlance, common.BKAssetIDField))
+
+		case common.BKInnerObjIDFirewall:
+			shouldCheck = append(shouldCheck, keyfunc(common.BKInnerObjIDFirewall, common.BKAssetIDField))
+			uniques = append(uniques, buildUnique(propertyIDToProperty, common.BKInnerObjIDFirewall, common.BKAssetIDField))
+
+		case common.BKInnerObjIDWeblogic:
+			shouldCheck = append(shouldCheck, keyfunc(common.BKInnerObjIDWeblogic, common.BKInstKeyField))
+			uniques = append(uniques, buildUnique(propertyIDToProperty, common.BKInnerObjIDWeblogic, common.BKInstKeyField))
+
+		case common.BKInnerObjIDTomcat:
+			shouldCheck = append(shouldCheck, keyfunc(common.BKInnerObjIDTomcat, common.BKInstKeyField))
+			uniques = append(uniques, buildUnique(propertyIDToProperty, common.BKInnerObjIDTomcat, common.BKInstKeyField))
+
+		case common.BKInnerObjIDApache:
+			shouldCheck = append(shouldCheck, keyfunc(common.BKInnerObjIDApache, common.BKInstKeyField))
+			uniques = append(uniques, buildUnique(propertyIDToProperty, common.BKInnerObjIDApache, common.BKInstKeyField))
+
+		}
 	}
 
 	if notExistFields := checkKeysShouldExists(propertyIDToProperty, shouldCheck); len(notExistFields) > 0 {
 		return fmt.Errorf("expected field not exists: %v", notExistFields)
-	}
-
-	uniques := []metadata.ObjectUnique{
-		buildUnique(propertyIDToProperty, common.BKInnerObjIDSwitch, common.BKAssetIDField),
-		buildUnique(propertyIDToProperty, common.BKInnerObjIDRouter, common.BKAssetIDField),
-		buildUnique(propertyIDToProperty, common.BKInnerObjIDBlance, common.BKAssetIDField),
-		buildUnique(propertyIDToProperty, common.BKInnerObjIDFirewall, common.BKAssetIDField),
-		buildUnique(propertyIDToProperty, common.BKInnerObjIDWeblogic, common.BKInstKeyField),
-		buildUnique(propertyIDToProperty, common.BKInnerObjIDTomcat, common.BKInstKeyField),
-		buildUnique(propertyIDToProperty, common.BKInnerObjIDApache, common.BKInstKeyField),
 	}
 
 	for _, unique := range uniques {
