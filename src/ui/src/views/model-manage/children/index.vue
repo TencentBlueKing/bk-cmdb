@@ -488,6 +488,10 @@
     .model-details-tab {
         height: calc(100% - 70px) !important;
         /deep/ {
+            .bk-tab-header {
+                padding: 0;
+                margin: 0 20px;
+            }
             .bk-tab-section {
                 padding: 0;
             }
@@ -498,6 +502,8 @@
         height: 70px;
         background: #ebf4ff;
         font-size: 14px;
+        border-bottom: 1px solid #dcdee5;
+        border-top: 1px solid #dcdee5;
         .choose-icon-wrapper {
             position: relative;
             float: left;
@@ -600,7 +606,7 @@
         }
         .model-text {
             float: left;
-            margin: 18px 10px 16px 0;
+            margin: 18px 10px 0 0;
             line-height: 36px;
             font-size: 0;
             >span {
