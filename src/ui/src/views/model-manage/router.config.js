@@ -34,15 +34,16 @@ export default [{
                 const isAdminView = app.$store.getters.isAdminView
                 this.authScope = isAdminView ? 'global' : 'business'
             }
-        },
-        i18nTitle: '模型'
+        }
     })
 }, {
     name: 'modelDetails',
     path: 'index/details/:modelId',
     component: () => import('./children/index.vue'),
     meta: new Meta({
-        title: '模型',
+        menu: {
+            i18n: '模型详情'
+        },
         auth: {
             operation: [
                 OPERATION.U_MODEL,

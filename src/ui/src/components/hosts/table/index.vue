@@ -96,7 +96,7 @@
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 150"
+            :max-height="$APP.height - 185"
             @selection-change="handleSelectionChange"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"
@@ -176,6 +176,7 @@
 
 <script>
     import { mapGetters, mapActions, mapState } from 'vuex'
+    import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
@@ -543,25 +544,19 @@
             },
             handleRowClick (item) {
                 const business = item.biz[0]
-                if (!business.default) {
+                if (this.$route.name === MENU_RESOURCE_HOST) {
+                    this.$router.push({
+                        name: 'resourceHostDetails',
+                        params: {
+                            id: item.host.bk_host_id
+                        }
+                    })
+                } else {
                     this.$router.push({
                         name: 'businessHostDetails',
                         params: {
                             business: business.bk_biz_id,
                             id: item.host.bk_host_id
-                        },
-                        query: {
-                            from: this.$route.fullPath
-                        }
-                    })
-                } else {
-                    this.$router.push({
-                        name: 'resourceHostDetails',
-                        params: {
-                            id: item.host.bk_host_id
-                        },
-                        query: {
-                            from: this.$route.fullPath
                         }
                     })
                 }

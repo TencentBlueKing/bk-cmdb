@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { MENU_BUSINESS_HOST, MENU_BUSINESS } from '@/dictionary/menu-symbol'
+import { MENU_BUSINESS_HOST, MENU_BUSINESS, MENU_BUSINESS_HOST_MANAGEMENT } from '@/dictionary/menu-symbol'
 import {
     R_HOST,
     U_HOST,
@@ -13,7 +13,7 @@ export const OPERATION = {
 }
 
 export default {
-    name: 'hosts',
+    name: MENU_BUSINESS_HOST_MANAGEMENT,
     path: 'host',
     component: () => import('./index.vue'),
     meta: new Meta({

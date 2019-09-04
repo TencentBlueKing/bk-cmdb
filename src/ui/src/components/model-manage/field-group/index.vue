@@ -162,7 +162,6 @@
             :before-close="handleSliderBeforeClose">
             <the-field-detail
                 ref="fieldForm"
-                class="slider-content"
                 slot="content"
                 v-if="slider.isShow"
                 :is-read-only="isReadOnly"

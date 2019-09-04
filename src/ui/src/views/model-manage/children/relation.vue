@@ -72,7 +72,6 @@
             :title="slider.title"
             :is-show.sync="slider.isShow">
             <the-relation-detail
-                class="slider-content"
                 slot="content"
                 v-if="slider.isShow"
                 :is-read-only="isReadOnly || slider.isReadOnly"
