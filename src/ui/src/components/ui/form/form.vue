@@ -102,10 +102,7 @@
             return {
                 values: {},
                 refrenceValues: {},
-                scrollbar: false,
-                groupState: {
-                    none: true
-                }
+                scrollbar: false
             }
         },
         computed: {

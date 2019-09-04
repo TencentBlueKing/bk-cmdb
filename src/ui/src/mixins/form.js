@@ -47,6 +47,7 @@ export default {
             ]
             allGroups.forEach((group, index) => {
                 group['bk_group_index'] = index
+                this.$set(this.groupState, group['bk_group_id'], group['is_collapse'])
             })
             return allGroups
         },
@@ -68,6 +69,11 @@ export default {
                     return inGroup && !isAsst
                 })
             })
+        }
+    },
+    data () {
+        return {
+            groupState: {}
         }
     }
 }

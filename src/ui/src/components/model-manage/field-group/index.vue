@@ -7,75 +7,80 @@
             <div class="group"
                 v-for="(group, index) in groupedProperties"
                 :key="index">
-                <div class="group-header clearfix">
-                    <div class="header-title fl">
-                        <div class="group-name">
-                            {{group.info['bk_group_name']}}
-                            <span v-if="!isAdminView && group.info['bk_isdefault']">（{{$t('内置组不支持修改，排序')}}）</span>
-                        </div>
-                        <div class="title-icon-btn" v-if="updateAuth && isEditable(group.info) && group.info['bk_group_id'] !== 'none'">
-                            <i class="title-icon icon icon-cc-edit"
-                                @click="handleEditGroup(group)">
-                            </i>
-                            <i class="title-icon bk-icon icon-cc-delete"
-                                :class="{ disabled: ['default'].includes(group.info['bk_group_id']) }"
-                                @click="handleDeleteGroup(group, index)">
-                            </i>
+                <cmdb-collapse
+                    :collapse.sync="groupState[group.info['bk_group_id']]">
+                    <div class="group-header clearfix" slot="title">
+                        <div class="header-title fl">
+                            <div class="group-name">
+                                {{group.info['bk_group_name']}}
+                                <span v-if="!isAdminView && group.info['bk_isdefault']">（{{$t('内置组不支持修改，排序')}}）</span>
+                            </div>
+                            <div class="title-icon-btn" v-if="updateAuth && isEditable(group.info) && group.info['bk_group_id'] !== 'none'">
+                                <i class="title-icon icon icon-cc-edit"
+                                    @click.stop="handleEditGroup(group)">
+                                </i>
+                                <i class="title-icon bk-icon icon-cc-delete"
+                                    :class="{ disabled: ['default'].includes(group.info['bk_group_id']) }"
+                                    @click.stop="handleDeleteGroup(group, index)">
+                                </i>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <vue-draggable class="property-list clearfix"
-                    element="ul"
-                    v-model="group.properties"
-                    :options="{
-                        group: 'property',
-                        animation: 150,
-                        filter: '.no-drag',
-                        disabled: !updateAuth || !isEditable(group.info)
-                    }"
-                    :class="{
-                        empty: !group.properties.length,
-                        disabled: !updateAuth || !isEditable(group.info)
-                    }"
-                    @change="handleDragChange"
-                    @end="handleDragEnd">
-                    <li class="property-item fl"
-                        v-for="(property, _index) in group.properties"
-                        :class="{ 'only-ready': !isFieldEditable(property) }"
-                        :key="_index"
-                        :title="property['bk_property_name']"
-                        @click="handleFieldDetailsView(!isFieldEditable(property), property)">
-                        <span class="drag-logo"></span>
-                        <div class="drag-content">
-                            <div class="field-name">
-                                <span>{{property['bk_property_name']}}</span>
-                                <i v-if="property.isrequired">*</i>
-                            </div>
-                            <p>{{fieldTypeMap[property['bk_property_type']]}}</p>
-                        </div>
-                        <template v-if="isFieldEditable(property)">
-                            <i class="property-icon icon icon-cc-edit mr10"
-                                @click="handleEditField(group, property)">
-                            </i>
-                            <i class="property-icon bk-icon icon-cc-delete"
-                                @click="handleDeleteField({ property, index, _index })">
-                            </i>
-                        </template>
-                    </li>
-                    <li class="property-add no-drag fl"
-                        v-cursor="{
-                            active: !updateAuth,
-                            auth: [$OPERATION.U_MODEL]
-                        }"
-                        v-if="isEditable(group.info) && group.info['bk_group_id'] !== 'none'"
-                        @click="handleAddField(group)">
-                        <i class="bk-icon icon-plus"></i>
-                        {{$t('添加')}}
-                    </li>
-                    <template v-if="!group.properties.length">
-                        <li class="property-empty no-drag disabled" v-if="!(updateAuth && isEditable(group.info))">{{$t('暂无字段')}}</li>
+                    <template>
+                        <vue-draggable class="property-list clearfix"
+                            element="ul"
+                            v-model="group.properties"
+                            :options="{
+                                group: 'property',
+                                animation: 150,
+                                filter: '.no-drag',
+                                disabled: !updateAuth || !isEditable(group.info)
+                            }"
+                            :class="{
+                                empty: !group.properties.length,
+                                disabled: !updateAuth || !isEditable(group.info)
+                            }"
+                            @change="handleDragChange"
+                            @end="handleDragEnd">
+                            <li class="property-item fl"
+                                v-for="(property, _index) in group.properties"
+                                :class="{ 'only-ready': !isFieldEditable(property) }"
+                                :key="_index"
+                                :title="property['bk_property_name']"
+                                @click="handleFieldDetailsView(!isFieldEditable(property), property)">
+                                <span class="drag-logo"></span>
+                                <div class="drag-content">
+                                    <div class="field-name">
+                                        <span>{{property['bk_property_name']}}</span>
+                                        <i v-if="property.isrequired">*</i>
+                                    </div>
+                                    <p>{{fieldTypeMap[property['bk_property_type']]}}</p>
+                                </div>
+                                <template v-if="isFieldEditable(property)">
+                                    <i class="property-icon icon icon-cc-edit mr10"
+                                        @click.stop="handleEditField(group, property)">
+                                    </i>
+                                    <i class="property-icon bk-icon icon-cc-delete"
+                                        @click.stop="handleDeleteField({ property, index, _index })">
+                                    </i>
+                                </template>
+                            </li>
+                            <li class="property-add no-drag fl"
+                                v-cursor="{
+                                    active: !updateAuth,
+                                    auth: [$OPERATION.U_MODEL]
+                                }"
+                                v-if="isEditable(group.info) && group.info['bk_group_id'] !== 'none'"
+                                @click="handleAddField(group)">
+                                <i class="bk-icon icon-plus"></i>
+                                {{$t('添加')}}
+                            </li>
+                            <template v-if="!group.properties.length">
+                                <li class="property-empty no-drag disabled" v-if="!(updateAuth && isEditable(group.info))">{{$t('暂无字段')}}</li>
+                            </template>
+                        </vue-draggable>
                     </template>
-                </vue-draggable>
+                </cmdb-collapse>
                 <template v-if="updateAuth && !activeModel['bk_ispaused']">
                     <div class="add-group" v-if="index === (groupedProperties.length - 1)">
                         <a class="add-group-trigger" href="javascript:void(0)"
@@ -121,7 +126,7 @@
             v-model="groupDialog.isShow"
             width="480"
             :mask-close="false"
-            @after-leave="groupDialog.isShowContent = false">
+            @after-leave="handleCancelGroupLeave">
             <div class="group-dialog-header" slot="tools">{{groupDialog.title}}</div>
             <div class="group-dialog-content" v-if="groupDialog.isShowContent">
                 <label class="label-item">
@@ -145,7 +150,7 @@
             <div class="group-dialog-footer" slot="footer">
                 <bk-button theme="primary" @click="handleCreateGroup" v-if="groupDialog.type === 'create'">{{$t('确定')}}</bk-button>
                 <bk-button theme="primary" @click="handleUpdateGroup" v-else>{{$t('确定')}}</bk-button>
-                <bk-button @click="handleCancelGroupDialog">{{$t('取消')}}</bk-button>
+                <bk-button @click="groupDialog.isShow = false">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
 
@@ -217,6 +222,7 @@
                 groupedProperties: [],
                 shouldUpdatePropertyIndex: false,
                 previewShow: false,
+                groupState: {},
                 fieldTypeMap: {
                     'singlechar': this.$t('短字符'),
                     'int': this.$t('数字'),
@@ -361,7 +367,9 @@
                 properties = this.setPropertIndex(properties)
                 groups = this.separateMetadataGroups(groups)
                 groups = this.setGroupIndex(groups)
+                const groupState = {}
                 const groupedProperties = groups.map(group => {
+                    groupState[group['bk_group_id']] = group['is_collapse']
                     return {
                         info: group,
                         properties: properties.filter(property => {
@@ -372,6 +380,7 @@
                         })
                     }
                 })
+                this.groupState = groupState
                 this.groupedProperties = groupedProperties
             },
             getPropertyGroups () {
@@ -496,9 +505,11 @@
             },
             handleEditGroup (group) {
                 this.groupDialog.isShow = true
+                this.groupDialog.isShowContent = true
                 this.groupDialog.type = 'update'
                 this.groupDialog.title = this.$t('编辑分组')
                 this.groupDialog.group = group
+                this.groupForm.isCollapse = group.info['is_collapse']
                 this.groupForm.groupName = group.info['bk_group_name']
             },
             async handleUpdateGroup () {
@@ -513,7 +524,8 @@
                             id: this.groupDialog.group.info.id
                         },
                         data: {
-                            'bk_group_name': this.groupForm.groupName
+                            'bk_group_name': this.groupForm.groupName,
+                            'is_collapse': this.groupForm.isCollapse
                         }
                     }, { inject: this.isInjectable }),
                     config: {
@@ -522,7 +534,7 @@
                     }
                 })
                 this.groupDialog.group.info['bk_group_name'] = this.groupForm.groupName
-                this.handleCancelGroupDialog()
+                this.groupDialog.isShow = false
             },
             handleAddGroup () {
                 this.groupDialog.isShow = true
@@ -530,7 +542,8 @@
                 this.groupDialog.type = 'create'
                 this.groupDialog.title = this.$t('新建分组')
             },
-            handleCancelGroupDialog () {
+            handleCancelGroupLeave () {
+                this.groupDialog.isShowContent = false
                 this.groupDialog.isShow = false
                 this.groupDialog.group = {}
                 this.groupForm.groupName = ''
@@ -565,7 +578,8 @@
                         info: group,
                         properties: []
                     })
-                    this.handleCancelGroupDialog()
+                    this.groupState[group.bk_group_id] = group.is_collapse
+                    this.groupDialog.isShow = false
                 })
             },
             handleDeleteGroup (group, index) {
@@ -757,23 +771,25 @@
     .group {
         margin-bottom: 19px;
     }
+    /deep/ .collapse-layout {
+        width: 100%;
+        .collapse-trigger {
+            display: flex;
+            align-items: center;
+        }
+        .collapse-arrow {
+            margin-right: 8px;
+            color: #63656e;
+        }
+    }
     .group-header {
         .header-title {
             height: 21px;
-            padding: 0 21px 0 13px;
+            padding: 0 21px 0 0;
             line-height: 21px;
-            color: #333948;
+            color: #313237;
             position: relative;
             font-size: 0;
-            &:before {
-                content: "";
-                position: absolute;
-                left: 0;
-                top: 3px;
-                width: 4px;
-                height: 16px;
-                background-color: $cmdbBorderColor;
-            }
             .title-input {
                 width: 180px;
                 display: inline-block;
@@ -937,6 +953,7 @@
             text-align: center;
             border: 1px dashed #dcdee5;
             color: #979ba5;
+            background-color: #ffffff;
             cursor: pointer;
             .icon-plus {
                 font-weight: bold;
