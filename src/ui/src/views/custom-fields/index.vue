@@ -46,8 +46,13 @@
             ...mapGetters(['featureTipsParams'])
         },
         async created () {
-            this.showFeatureTips = this.featureTipsParams['customFields']
-            this.mainLine = await this.getMainLine()
+            try {
+                this.showFeatureTips = this.featureTipsParams['customFields']
+                const data = await this.getMainLine()
+                this.mainLine = data.filter(model => ['host', 'set', 'module'].includes(model.bk_obj_id))
+            } catch (e) {
+                this.mainLine = []
+            }
         },
         methods: {
             getMainLine () {

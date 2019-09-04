@@ -636,9 +636,6 @@
                     name: 'history',
                     params: {
                         objId: 'host'
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },

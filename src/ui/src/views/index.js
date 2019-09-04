@@ -46,6 +46,7 @@ export const businessViews = flatternViews([
 export const resourceViews = flatternViews([
     business,
     resource,
+    history,
     resourceHostDetails,
     generalModel,
     eventpush,
@@ -54,7 +55,6 @@ export const resourceViews = flatternViews([
 
 export const modelViews = flatternViews([
     model,
-    history,
     modelAssociation,
     modelTopology,
     businessModel

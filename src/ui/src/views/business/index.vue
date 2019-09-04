@@ -148,6 +148,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
+    import { MENU_RESOURCE_BUSINESS_HISTORY } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
@@ -453,10 +454,7 @@
             },
             routeToHistory () {
                 this.$router.push({
-                    name: 'businessHistory',
-                    query: {
-                        from: this.$route.fullPath
-                    }
+                    name: MENU_RESOURCE_BUSINESS_HISTORY
                 })
             },
             handleSliderBeforeClose () {
@@ -490,6 +488,9 @@
 </script>
 
 <style lang="scss" scoped>
+.business-layout {
+    padding: 0 20px;
+}
 .options-filter{
     position: relative;
     margin-right: 10px;

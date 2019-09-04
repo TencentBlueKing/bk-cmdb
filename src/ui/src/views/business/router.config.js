@@ -34,6 +34,9 @@ export default [{
     path: 'history/biz',
     component: () => import('./archived.vue'),
     meta: new Meta({
+        menu: {
+            i18n: '已归档业务'
+        },
         auth: {
             view: OPERATION.BUSINESS_ARCHIVE,
             operation: [OPERATION.BUSINESS_ARCHIVE],

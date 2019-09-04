@@ -76,6 +76,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     export default {
         name: 'clone-to-source',
         props: {
@@ -353,7 +354,7 @@
             },
             backToModule () {
                 this.$router.replace({
-                    name: 'topology',
+                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
                     query: {
                         module: this.$route.params.moduleId
                     }
