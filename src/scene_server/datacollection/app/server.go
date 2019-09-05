@@ -20,6 +20,9 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -130,6 +133,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			blog.Infof("[data-collection][RUN]connected to netcollect-redis %+v", process.Config.NetCollectRedis.Config)
 			process.Service.SetNetCli(netCli)
 		}
+		if process.Config.AuthConfig.Enable == true {
+			blog.Info("[data-collection] auth enabled")
+			authorize, err := auth.NewAuthorize(nil, process.Config.AuthConfig, engine.Metric().Registry())
+			if err != nil {
+				return fmt.Errorf("[data-collection] new authorize failed, err: %v", err)
+			}
+			datacollection.AuthManager = *extensions.NewAuthManager(engine.CoreAPI, authorize)
+		}
 
 		err = datacollection.Run(redisCli, snapcli, disCli, netCli)
 		if err != nil {
@@ -193,6 +204,13 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]
 		h.Config.Esb.AppCode = current.ConfigMap[esbPrefix+".appCode"]
 		h.Config.Esb.AppSecret = current.ConfigMap[esbPrefix+".appSecret"]
+
+		var err error
+		authPrefix := "auth"
+		h.Config.AuthConfig, err = authcenter.ParseConfigFromKV(authPrefix, current.ConfigMap)
+		if err != nil {
+			blog.Fatalf("auth config invalid, err: %+v", err)
+		}
 	}
 }
 
