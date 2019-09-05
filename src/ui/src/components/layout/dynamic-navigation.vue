@@ -9,6 +9,9 @@
                 <transition name="fade">
                     <cmdb-business-selector class="business-selector"
                         v-show="unfold"
+                        :popover-options="{
+                            appendTo: () => this.$el
+                        }"
                         @on-select="handleToggleBusiness"
                         @business-empty="handleBusinessEmpty">
                     </cmdb-business-selector>
