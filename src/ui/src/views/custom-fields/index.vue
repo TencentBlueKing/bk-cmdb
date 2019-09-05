@@ -46,10 +46,13 @@
             ...mapGetters(['featureTipsParams'])
         },
         async created () {
-            this.showFeatureTips = this.featureTipsParams['customFields']
-            const mainLine = await this.getMainLine()
-            this.mainLine = mainLine.filter(model => ['set', 'host', 'module'].includes(model['bk_obj_id']))
-            this.mainLine.unshift(this.mainLine.pop())
+            try {
+                this.showFeatureTips = this.featureTipsParams['customFields']
+                const data = await this.getMainLine()
+                this.mainLine = data.filter(model => ['host', 'set', 'module'].includes(model.bk_obj_id))
+            } catch (e) {
+                this.mainLine = []
+            }
         },
         methods: {
             getMainLine () {

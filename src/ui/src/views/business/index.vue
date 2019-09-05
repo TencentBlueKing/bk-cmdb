@@ -46,6 +46,7 @@
                     v-if="filter.type === 'enum'"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
+                    :auto-select="false"
                     v-model="filter.value"
                     @on-selected="handleFilterData">
                 </cmdb-form-enum>
@@ -148,6 +149,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
+    import { MENU_RESOURCE_BUSINESS_HISTORY } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
@@ -453,10 +455,7 @@
             },
             routeToHistory () {
                 this.$router.push({
-                    name: 'businessHistory',
-                    query: {
-                        from: this.$route.fullPath
-                    }
+                    name: MENU_RESOURCE_BUSINESS_HISTORY
                 })
             },
             handleSliderBeforeClose () {
@@ -526,11 +525,6 @@
         }
         .button-history{
             margin-right: 10px;
-            border-radius: 2px 0 0 2px;
-        }
-        .button-setting{
-            border-radius: 0 2px 2px 0;
-            margin-left: -1px;
         }
     }
     .business-table{
