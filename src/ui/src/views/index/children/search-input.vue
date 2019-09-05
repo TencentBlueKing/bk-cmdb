@@ -30,7 +30,7 @@
                                     :title="item.source.bk_inst_name"
                                     @click="handleGoInstace(item.source)">
                                     <span class="lenovo-name">{{item.source.bk_inst_name}}</span>
-                                    <span>({{$t('实例')}})</span>
+                                    <span>({{getShowModelName(item.source)}})</span>
                                 </li>
                                 <li :key="index" v-else-if="item.type === 'biz'"
                                     :title="item.source.bk_biz_name"
@@ -255,6 +255,16 @@
             }
         },
         methods: {
+            getShowModelName (source) {
+                let modelName = ''
+                try {
+                    const model = this.getModelById(source['bk_obj_id'])
+                    modelName = model['bk_obj_name']
+                } catch (e) {
+                    console.error(e)
+                }
+                return modelName
+            },
             formatData (data) {
                 const res = {
                     aggregations: [],
@@ -415,8 +425,8 @@
                 this.$router.push({
                     name: MENU_RESOURCE_INSTANCE,
                     params: {
-                        objId: model['bk_obj_id'],
-                        instId: model['bk_inst_id']
+                        objId: source['bk_obj_id'],
+                        instId: source['bk_inst_id']
                     }
                 })
             },
