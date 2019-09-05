@@ -4,6 +4,7 @@
         :clearable="allowClear"
         :searchable="searchable"
         :disabled="disabled"
+        :placeholder="placeholder"
         :popover-options="{
             boundary: 'window'
         }">
@@ -41,6 +42,10 @@
                 default () {
                     return []
                 }
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {

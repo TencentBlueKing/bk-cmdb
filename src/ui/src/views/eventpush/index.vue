@@ -62,12 +62,12 @@
                         }">
                         {{$t('编辑')}}
                     </span>
-                    <span class="text-danger"
+                    <span class="text-primary"
                         v-if="$isAuthorized($OPERATION.D_EVENT)"
                         @click.stop="deleteConfirm(row)">
                         {{$t('删除')}}
                     </span>
-                    <span class="text-danger disabled"
+                    <span class="text-primary disabled"
                         v-else
                         v-cursor="{
                             active: true,
@@ -236,6 +236,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .push-wrapper {
+        padding: 0 20px;
+    }
     .btn-wrapper {
         margin-bottom: 14px;
     }

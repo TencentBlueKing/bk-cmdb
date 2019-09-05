@@ -4,6 +4,7 @@ import {
     getRedirectId
 } from './util.js'
 import Cookies from 'js-cookie'
+import getValue from 'get-value'
 
 const origin = {
     url: 'biz/with_reduced',
@@ -32,7 +33,7 @@ export default {
     },
     response: response => {
         if (isRedirectResponse(redirect, response)) {
-            let authorizedBusiness = response.data.data.info
+            let authorizedBusiness = getValue(response, 'data.data.info', { default: [] })
             if (window.User.admin !== '1') {
                 const cookieBizId = Cookies.get('bk_privi_biz_id')
                 const authorizedBizIds = cookieBizId ? cookieBizId.split('-') : []

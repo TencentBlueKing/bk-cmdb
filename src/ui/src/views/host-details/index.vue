@@ -31,7 +31,7 @@
 
 <script>
     import { mapState, mapGetters } from 'vuex'
-    import { MENU_RESOURCE_HOST, MENU_BUSINESS_HOST } from '@/dictionary/menu-symbol'
+    import { MENU_RESOURCE_HOST, MENU_BUSINESS_HOST_MANAGEMENT } from '@/dictionary/menu-symbol'
     import cmdbHostInfo from './children/info.vue'
     import cmdbHostAssociation from './children/association.vue'
     import cmdbHostProperty from './children/property.vue'
@@ -74,7 +74,7 @@
                 this.$store.commit('setBreadcumbs', [{
                     i18n: this.$route.name === 'resourceHostDetails' ? '主机' : '业务主机',
                     route: {
-                        name: this.$route.name === 'resourceHostDetails' ? MENU_RESOURCE_HOST : MENU_BUSINESS_HOST
+                        name: this.$route.name === 'resourceHostDetails' ? MENU_RESOURCE_HOST : MENU_BUSINESS_HOST_MANAGEMENT
                     }
                 }, {
                     name: host

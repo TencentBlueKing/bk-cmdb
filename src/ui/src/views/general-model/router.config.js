@@ -1,6 +1,6 @@
 import Meta from '@/router/meta'
 import { getMetadataBiz } from '@/utils/tools'
-import { MENU_RESOURCE_INSTANCE } from '@/dictionary/menu-symbol'
+import { MENU_RESOURCE_INSTANCE, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
 import {
     C_INST,
     R_INST,
@@ -20,6 +20,9 @@ export default {
     path: 'instance/:objId',
     component: () => import('./index.vue'),
     meta: new Meta({
+        menu: {
+            relative: MENU_RESOURCE_MANAGEMENT
+        },
         auth: {
             operation: Object.values(OPERATION),
             setAuthScope (to, from, app) {

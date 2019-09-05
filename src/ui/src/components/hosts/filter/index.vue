@@ -6,6 +6,7 @@
         trigger="manual"
         :width="350"
         :on-show="handleShow"
+        :on-hide="handleHide"
         :tippy-options="{
             zIndex: 1001,
             interactive: true,
@@ -15,11 +16,11 @@
         <bk-button class="filter-trigger"
             theme="default"
             v-bk-tooltips.top="$t('高级筛选')"
-            icon="icon-cc-funnel"
             :class="{
                 'is-active': isFilterActive
             }"
             @click="handleToggleFilter">
+            <i class="icon-cc-funnel"></i>
         </bk-button>
         <section class="filter-content" slot="content"
             :style="{
@@ -177,7 +178,8 @@
                 isScrolling: false,
                 collectionName: '',
                 propertyPromise: null,
-                propertyResolver: null
+                propertyResolver: null,
+                isShow: false
             }
         },
         computed: {
@@ -191,7 +193,7 @@
                         && filterValue !== undefined
                         && !!String(filterValue).length
                 })
-                return hasIP || hasField
+                return hasIP || hasField || this.isShow
             }
         },
         watch: {
@@ -428,7 +430,11 @@
                 })
             },
             handleShow (popper) {
+                this.isShow = true
                 popper.popperChildren.tooltip.style.padding = 0
+            },
+            handleHide () {
+                this.isShow = false
             },
             getFilterLabel (filterItem) {
                 const model = this.$store.getters['objectModelClassify/getModelById'](filterItem.bk_obj_id) || {}
@@ -467,6 +473,10 @@
             position: absolute;
             right: 0px;
             top: 0px;
+            color: #979BA5;
+            &:hover {
+                color: #63656E;
+            }
         }
     }
     .filter-scroller {

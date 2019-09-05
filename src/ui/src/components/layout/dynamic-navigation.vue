@@ -24,6 +24,9 @@
                 <template v-for="(menu, index) in currentMenus">
                     <router-link class="menu-item is-link" tag="li" active-class="active"
                         v-if="menu.hasOwnProperty('route')"
+                        :class="{
+                            active: isMenuActive(menu)
+                        }"
                         :key="index"
                         :to="menu.route"
                         :title="$t(menu.i18n)">
@@ -86,13 +89,13 @@
 <script>
     import { mapGetters } from 'vuex'
     import MENU_DICTIONARY from '@/dictionary/menu'
-    import Bus from '@/utils/bus'
     import {
         MENU_BUSINESS,
         MENU_RESOURCE,
         MENU_RESOURCE_BUSINESS,
         MENU_RESOURCE_HOST,
         MENU_RESOURCE_INSTANCE,
+        MENU_RESOURCE_MANAGEMENT,
         MENU_RESOURCE_COLLECTION,
         MENU_RESOURCE_HOST_COLLECTION,
         MENU_RESOURCE_BUSINESS_COLLECTION
@@ -194,6 +197,18 @@
                 return false
             },
             isMenuActive (menu) {
+                const relative = this.$route.meta.menu.relative
+                if (relative === MENU_RESOURCE_MANAGEMENT) {
+                    if (menu.id === MENU_RESOURCE_MANAGEMENT) {
+                        const routeName = this.$route.name
+                        return !this.collectionMenus.some(collection => {
+                            if (routeName === MENU_RESOURCE_INSTANCE) {
+                                return collection.route.params && collection.route.params.objId === this.$route.params.objId
+                            }
+                            return collection.route.name === routeName
+                        })
+                    }
+                }
                 return this.$route.meta.menu.relative === menu.route.name
             },
             getCollectionRoute (model) {
@@ -281,11 +296,10 @@
                 }
             },
             handleToggleBusiness (id) {
-                Bus.$emit('business-change', id)
                 this.$emit('business-change', id)
             },
             handleBusinessEmpty () {
-                Bus.$emit('business-empty')
+                this.$emit('business-empty')
             }
         }
     }

@@ -285,6 +285,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .relation-wrapper {
+        padding: 0 20px;
+    }
     .operation-box {
         margin: 0 0 14px 0;
         font-size: 0;

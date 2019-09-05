@@ -1,4 +1,3 @@
-/* eslint-disable */
 import Vue from 'vue'
 import Router from 'vue-router'
 
@@ -6,8 +5,6 @@ import StatusError from './StatusError.js'
 
 import preload from '@/setup/preload'
 import afterload from '@/setup/afterload'
-import { translateAuth } from '@/setup/permission'
-import $http from '@/api'
 
 import index from '@/views/index/router.config'
 
@@ -18,7 +15,6 @@ import {
     MENU_MODEL,
     MENU_ANALYSIS
 } from '@/dictionary/menu-symbol'
-
 
 import {
     businessViews,
@@ -46,10 +42,6 @@ const statusRouters = [
         name: 'error',
         path: '/error',
         components: require('@/views/status/error')
-    }, {
-        name: 'requireBusiness',
-        path: '/require-business',
-        components: require('@/views/status/require-business')
     }
 ]
 
@@ -76,7 +68,7 @@ const router = new Router({
             component: dynamicRouterView,
             children: businessViews,
             path: '/business',
-            redirect: '/business/host',
+            redirect: '/business/host'
         }, {
             name: MENU_MODEL,
             component: dynamicRouterView,
@@ -124,22 +116,14 @@ const isViewAuthorized = to => {
     return viewAuth
 }
 
-const cancelRequest = () => {
-    const allRequest = $http.queue.get()
-    const requestQueue = allRequest.filter(request => request.cancelWhenRouteChange)
-    return $http.cancel(requestQueue.map(request => request.requestId))
-}
-
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
-/* eslint-disable-next-line */
 const setAuthScope = (to, from) => {
     const auth = to.meta.auth || {}
     if (typeof auth.setAuthScope === 'function') {
         auth.setAuthScope(to, from, router.app)
     }
 }
-/* eslint-disable-next-line */
 const checkAuthDynamicMeta = (to, from) => {
     router.app.$store.commit('auth/clearDynamicMeta')
     const auth = to.meta.auth || {}
@@ -154,39 +138,6 @@ const checkAvailable = (to, from) => {
         return to.meta.checkAvailable(to, from, router.app)
     }
     return true
-}
-
-const checkBusiness = to => {
-    const getters = router.app.$store.getters
-    if (!to.meta.requireBusiness) {
-        return true
-    }
-    const authorizedBusiness = getters['objectBiz/authorizedBusiness']
-    return authorizedBusiness.length
-}
-
-const setPermission = async to => {
-    const permission = []
-    const authMeta = to.meta.auth
-    if (authMeta) {
-        const { view, operation } = authMeta
-        const auth = [...operation]
-        if (view) {
-            auth.push(view)
-        }
-        const translated = await translateAuth(auth)
-        permission.push(...translated)
-    }
-    router.app.$store.commit('setPermission', permission)
-    return permission
-}
-
-const checkBusinessMenuRedirect = (to) => {
-    const isBusinessMenu = to.matched.length > 1 && to.matched[0].name === MENU_BUSINESS
-    if (!isBusinessMenu) {
-        return false
-    }
-    return router.app.$store.state.objectBiz.bizId === null
 }
 
 const setAdminView = to => {
@@ -208,10 +159,9 @@ router.beforeEach((to, from, next) => {
             if (setupStatus.preload) {
                 await preload(router.app)
             }
-            // 防止直接进去申请业务的提示界面导致无法正确跳转权限中心
-            if (to.name === 'requireBusiness' && !router.app.$store.getters.permission.length) {
-                return next({ name: MENU_INDEX })
-            }
+
+            setAuthScope(to, from)
+            checkAuthDynamicMeta(to, from)
 
             const isAvailable = checkAvailable(to, from)
             if (!isAvailable) {

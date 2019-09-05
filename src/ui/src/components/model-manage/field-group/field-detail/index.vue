@@ -12,7 +12,7 @@
                     :disabled="isEditField"
                     v-validate="'required|fieldId'">
                 </bk-input>
-                <p class="form-error">{{errors.first('fieldId')}}</p>
+                <p class="form-error">{{$t('唯一标识必须为英文字母、数字和下划线组成')}}</p>
             </div>
             <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('下划线/数字/字母')"></i>
         </label>
