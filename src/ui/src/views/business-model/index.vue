@@ -151,9 +151,6 @@
                     name: 'modelDetails',
                     params: {
                         modelId: model.bk_obj_id
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             }

@@ -55,7 +55,7 @@
                             <bk-input type="text" class="cmdb-form-input"
                                 name="modelName"
                                 :placeholder="$t('请输入名称')"
-                                v-validate="'required|singlechar'"
+                                v-validate="'required|singlechar|length:256'"
                                 v-model.trim="modelDialog.data['bk_obj_name']">
                             </bk-input>
                             <p class="form-error" :title="errors.first('modelName')">{{errors.first('modelName')}}</p>

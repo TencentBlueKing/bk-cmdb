@@ -66,7 +66,7 @@ export function getPropertyText (property, item) {
     if (propertyType === 'enum') {
         const options = Array.isArray(property.option) ? property.option : []
         const enumOption = options.find(option => option.id === propertyValue)
-        propertyValue = enumOption ? enumOption.name : null
+        propertyValue = enumOption ? enumOption.name : '--'
     } else if (['singleasst', 'multiasst'].includes(propertyType)) {
         const values = Array.isArray(propertyValue) ? propertyValue : []
         propertyValue = values.map(inst => inst['bk_inst_name']).join(',')

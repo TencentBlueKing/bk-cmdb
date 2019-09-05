@@ -57,7 +57,6 @@ func (p *Producer) Start() {
 			case <-ticker.C:
 				// get jobs
 				jobs := producer.generateJobs()
-
 				for _, job := range *jobs {
 					p.WorkerQueue <- job
 				}
@@ -107,9 +106,10 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		meta.ModelResource,
 		meta.ProcessResource,
 		meta.DynamicGroupResource,
-		meta.AuditCategory,
+		// meta.AuditCategory,
 		meta.ClassificationResource,
 		// meta.UserGroupSyncResource,
+		meta.ServiceTemplateResource,
 	}
 	for _, resourceType := range resourceTypes {
 		for _, businessSimplify := range businessList {
@@ -120,8 +120,15 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		}
 	}
 
-	for _, business := range businessList {
-		header := utils.NewListBusinessAPIHeader()
+	globalBusiness := extensions.BusinessSimplify{
+		BKAppIDField:      0,
+		BKAppNameField:    "",
+		BKSupplierIDField: 0,
+		BKOwnerIDField:    "0",
+		IsDefault:         0,
+	}
+	instanceBizList := append(businessList, globalBusiness)
+	for _, business := range instanceBizList {
 		objects, err := p.authManager.CollectObjectsByBusinessID(context.Background(), *header, business.BKAppIDField)
 		if err != nil {
 			blog.Errorf("get models by business id: %d failed, err: %+v", business.BKAppIDField, err)
@@ -137,22 +144,21 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	}
 
 	// some resource type need sync global resource
-	globalBusiness := extensions.BusinessSimplify{
-		BKAppIDField:      0,
-		BKAppNameField:    "",
-		BKSupplierIDField: 0,
-		BKOwnerIDField:    "",
-		IsDefault:         0,
-	}
 	resourceTypes = []meta.ResourceType{
-		meta.AuditCategory,
+		// meta.AuditCategory,
 		meta.ClassificationResource,
+		meta.PlatResource,
+		meta.ModelResource,
 	}
 	for _, resourceType := range resourceTypes {
 		jobs = append(jobs, meta.WorkRequest{
 			ResourceType: resourceType,
 			Data:         globalBusiness,
+			Header:       *header,
 		})
+	}
+	if blog.V(5) {
+		blog.InfoJSON("jobs: %s", jobs)
 	}
 	return &jobs
 }

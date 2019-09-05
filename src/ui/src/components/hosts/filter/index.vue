@@ -2,7 +2,7 @@
     <bk-popover
         ref="filterPopper"
         placement="bottom"
-        theme="light"
+        theme="light hosts-filter-shadow"
         trigger="manual"
         :width="350"
         :on-show="handleShow"
@@ -80,6 +80,7 @@
                             :is="`cmdb-form-${filterItem.bk_property_type}`"
                             v-model="filterItem.value">
                         </component>
+                        <i class="bk-icon icon-close" @click.stop="handleDeteleFilter(filterItem)"></i>
                     </div>
                 </div>
                 <div class="filter-add">
@@ -92,7 +93,7 @@
                 }">
                 <template v-if="$route.name === 'hosts'">
                     <div class="fl">
-                        <bk-button theme="primary" @click="handleSearch">{{$t('查询')}}</bk-button>
+                        <bk-button theme="primary" style="margin-right: 6px;" @click="handleSearch">{{$t('查询')}}</bk-button>
                         <bk-button theme="default"
                             v-if="isCollection"
                             :loading="$loading('updateCollection')"
@@ -255,6 +256,31 @@
             handleAddFilter () {
                 this.$refs.propertySelector.isShow = true
             },
+            async handleDeteleFilter (filterItem) {
+                const conditionList = this.filterCondition.filter(item => !(item.bk_obj_id === filterItem.bk_obj_id && item.bk_property_id === filterItem.bk_property_id))
+                const list = conditionList.map(condition => {
+                    return {
+                        bk_obj_id: condition.bk_obj_id,
+                        bk_property_id: condition.bk_property_id,
+                        operator: condition.operator,
+                        value: condition.value
+                    }
+                })
+                if (!this.isCollection) {
+                    const userCustomList = list.map(item => {
+                        return {
+                            ...item,
+                            operator: '',
+                            value: ''
+                        }
+                    })
+                    const key = this.$route.meta.filterPropertyKey
+                    await this.$store.dispatch('userCustom/saveUsercustom', {
+                        [key]: userCustomList
+                    })
+                }
+                this.$store.commit('hosts/setFilterList', list)
+            },
             handleSearch (toggle = true) {
                 const params = this.getParams()
                 this.$store.commit('hosts/setFilterParams', params)
@@ -409,9 +435,9 @@
                             })
                             if (existCondition) {
                                 if (this.isCollection) {
-                                    filterCondition.push(Object.assign(newCondition, existCondition))
-                                } else {
                                     filterCondition.push(Object.assign(existCondition, newCondition))
+                                } else {
+                                    filterCondition.push(Object.assign(newCondition, existCondition))
                                 }
                             } else {
                                 filterCondition.push(newCondition)
@@ -513,16 +539,32 @@
     }
     .filter-condition {
         display: flex;
+        &:hover .icon-close{
+            opacity: 1;
+        }
         .filter-operator {
             flex: 75px 0 0;
             margin-right: 8px;
         }
         .filter-value {
+            width: 0;
             flex: 1;
             &.cmdb-search-input {
                 /deep/ .search-input-wrapper {
                     z-index: var(--index);
                 }
+            }
+        }
+        .icon-close {
+            color: #d8d8d8;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 32px;
+            margin: 0 0 0 6px;
+            cursor: pointer;
+            opacity: 0;
+            &:hover {
+                color: #63656e;
             }
         }
     }
@@ -548,5 +590,11 @@
             padding: 20px 0 10px;
             text-align: right;
         }
+    }
+</style>
+
+<style lang="scss">
+    .hosts-filter-shadow-theme {
+        box-shadow: 0px 1px 6px 0px rgba(220,222,229,1) !important;
     }
 </style>

@@ -180,7 +180,8 @@
     "该模型已停用": "The model has been disabled",
     "主线模型无法查看": "Mainline model connot be viewed",
     "实例ID": "Instance ID:",
-    "主机ID": "Host ID:",
+    "主机ID": "Host ID",
+    "业务ID": "Business ID",
     "最大支持搜索32个字符": "Maximum support for searching 32 characters",
     "操作审计": "Operation Audit",
     "请选择业务": "Please Select Business",
@@ -383,7 +384,7 @@
     "编辑校验": "Modify rule",
     "查看校验": "View rule",
     "是": "Yes",
-    "确定删除唯一校验": "Confirm delete rule",
+    "确定删除唯一校验": "Confirm delete the {name} rule?",
     "暂无字段": "Empty",
     "内置": "Built-in",
     "确认要删除此分组": "Confirm to delete this group",
@@ -893,5 +894,7 @@
     "运营分析": "Operational Analysis",
     "搜索历史": "History",
     "实例": "Instance",
-    "分配到": "Assigned"
+    "分配到": "Assigned",
+    "其他信息": "Other information",
+    "更新条件": "Update condition"
 }

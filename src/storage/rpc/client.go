@@ -100,7 +100,6 @@ func Dial(connect string) (*client, error) {
 // DialHTTPPath connects to an HTTP RPC server
 // at the specified network address and path.
 func DialHTTPPath(network, address, path string) (*client, error) {
-	blog.V(3).Infof("connecting to rpc server %s", address)
 	var err error
 	conn, err := net.Dial("tcp", address)
 	if err != nil {

@@ -873,7 +873,7 @@
                 }
             },
             getEdgeArrows (asst) {
-                const asstType = this.associationList.find(({ id }) => id === asst['bk_asst_inst_id'])['direction']
+                const asstType = (this.associationList.find(({ id }) => id === asst['bk_asst_inst_id']) || {}).direction
                 let arrows = ''
                 switch (asstType) {
                     case 'bidirectional':

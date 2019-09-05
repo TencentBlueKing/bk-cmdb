@@ -26,8 +26,7 @@
                 this.$router.push({
                     path: '/index/search',
                     query: {
-                        keywords: this.queryString,
-                        from: this.$route.fullPath
+                        keywords: this.queryString
                     }
                 })
             }

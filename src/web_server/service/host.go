@@ -40,7 +40,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromHTTPHeader(c.Request.Header)
 
-	language := logics.GetLanguageByHTTPRequest(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	file, err := c.FormFile("file")
@@ -50,7 +50,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
@@ -97,7 +97,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	appIDStr := c.PostForm("bk_biz_id")
 	hostIDStr := c.PostForm("bk_host_id")
 
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 	header := c.Request.Header
 	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -164,7 +164,7 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/template/"
@@ -176,7 +176,7 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 			return
 		}
 	}
-	language := logics.GetLanguageByHTTPRequest(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -229,7 +229,7 @@ func getReturnStr(code int, message string, data interface{}) string {
 func (s *Service) ListenIPOptions(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 	header := c.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 

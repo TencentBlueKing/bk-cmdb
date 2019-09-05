@@ -4,7 +4,7 @@
             <div class="options-left">
                 <slot name="options-left">
                     <bk-button class="options-button mr10" theme="primary"
-                        :disabled="!table.checked.length || !$isAuthorized(editAuth)"
+                        :disabled="!table.checked.length"
                         @click="handleMultipleEdit">
                         {{$t('编辑')}}
                     </bk-button>
@@ -106,7 +106,7 @@
             <bk-table-column v-for="column in table.header"
                 :key="column.id"
                 :label="column.name"
-                :sortable="column.sortable"
+                :sortable="column.sortable ? 'custom' : false"
                 :prop="column.id"
                 :fixed="column.id === 'bk_host_innerip'"
                 :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
@@ -128,7 +128,6 @@
                         :properties="properties.host"
                         :property-groups="propertyGroups"
                         :object-unique="objectUnique"
-                        :save-auth="saveAuth"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleSliderBeforeClose">
                     </cmdb-form-multiple>
@@ -421,7 +420,10 @@
                         console.error(e.message)
                     }
                 } else {
-                    this.$store.commit('hosts/clearFilter')
+                    this.$refs.hostFilter.handleReset()
+                    const key = this.$route.meta.filterPropertyKey
+                    const customData = this.$store.getters['userCustom/getCustomData'](key, [])
+                    this.$store.commit('hosts/setFilterList', customData)
                 }
             },
             handleCreateCollection () {

@@ -101,6 +101,8 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		}
 	}
 
+	keyMap := make(map[string]int64)
+	notFoundKey := make(map[string]int64)
 	// set aggregations
 	bkObjIdAggr, found := result.Aggregations.Terms(common.BkObjIdAggName)
 	if found == true && bkObjIdAggr != nil {
@@ -108,6 +110,7 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 			agg := Aggregation{}
 			agg.setAgg(bucket)
 			searchResults.Aggregations = append(searchResults.Aggregations, agg)
+			keyMap[util.GetStrByInterface(agg.Key)] = agg.Count
 		}
 	}
 
@@ -119,10 +122,30 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 				agg := Aggregation{}
 				agg.setAgg(bucket)
 				searchResults.Aggregations = append(searchResults.Aggregations, agg)
+				keyMap[util.GetStrByInterface(agg.Key)] = agg.Count
 			}
 		}
 	}
 
+	// fix aggregation data incomplete problem
+	for _, hit := range searchResults.Hits {
+		if val, ok := hit.Source[common.BKObjIDField]; ok == true {
+			objID := util.GetStrByInterface(val)
+			if _, exist := keyMap[objID]; exist == false {
+				if _, ok := notFoundKey[objID]; ok == false {
+					notFoundKey[objID] = 0
+				}
+				notFoundKey[objID] += 1
+			}
+		}
+	}
+	for key, count := range notFoundKey {
+		agg := Aggregation{
+			Key:   key,
+			Count: count,
+		}
+		searchResults.Aggregations = append(searchResults.Aggregations, agg)
+	}
 	return searchResults, nil
 }
 

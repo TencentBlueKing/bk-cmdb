@@ -345,9 +345,6 @@
                         name: 'resourceHostDetails',
                         params: {
                             id: source['bk_host_id']
-                        },
-                        query: {
-                            from: this.$route.fullPath
                         }
                     })
                 } else if (source['hitsType'] === 'object') {
@@ -371,9 +368,6 @@
                         params: {
                             objId: source['bk_obj_id'],
                             instId: source['bk_inst_id'].toString().replace(/(\<\/?em\>)/g, '')
-                        },
-                        query: {
-                            from: this.$route.fullPath
                         }
                     })
                 } else if (source['hitsType'] === 'biz') {
@@ -381,9 +375,6 @@
                         name: 'business',
                         params: {
                             bizName: source['bk_biz_name'].toString().replace(/(\<\/?em\>)/g, '')
-                        },
-                        query: {
-                            from: this.$route.fullPath
                         }
                     })
                 }

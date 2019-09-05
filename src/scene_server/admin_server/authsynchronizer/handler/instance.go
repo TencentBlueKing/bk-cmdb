@@ -18,8 +18,10 @@ import (
 	"net/http"
 
 	authmeta "configcenter/src/auth/meta"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
 )
 
@@ -27,6 +29,22 @@ import (
 func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 	object := task.Data.(metadata.Object)
 	header := task.Header.(http.Header)
+	rid := util.GetHTTPCCRequestID(header)
+	ctx := util.NewContextFromHTTPHeader(header)
+
+	ignoreObjectIDs := []string{
+		common.BKInnerObjIDHost,
+		common.BKInnerObjIDSet,
+		common.BKInnerObjIDModule,
+		common.BKInnerObjIDApp,
+		common.BKInnerObjIDProc,
+		common.BKInnerObjIDPlat,
+	}
+	objectID := object.ObjectID
+	if util.InStrArr(ignoreObjectIDs, objectID) {
+		blog.V(5).Infof("ignore instance sync task: %s", objectID)
+		return nil
+	}
 
 	// step1 construct instances resource query parameter for iam
 	bizIDMap, err := ih.authManager.ExtractBusinessIDFromObjects(object)
@@ -35,24 +53,50 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		return err
 	}
 	bizID := bizIDMap[object.ID]
-	objectResource, err := ih.authManager.MakeResourcesByObjects(context.Background(), header, authmeta.EmptyAction, object)
+	mainlineTopo, err := ih.clientSet.CoreService().Mainline().SearchMainlineModelTopo(ctx, header, false)
 	if err != nil {
-		blog.Errorf("make auth resource from model failed, model: %+v, err: %+v", object, err)
+		blog.Errorf("list mainline models failed, err: %+v", err)
 		return err
 	}
+	mainlineModels := mainlineTopo.LeftestObjectIDList()
 
-	layers := objectResource[0].Layers
+	parentResources, err := ih.authManager.MakeResourcesByObjects(ctx, header, authmeta.EmptyAction, object)
+	if err != nil {
+		blog.Errorf("MakeResourcesByObjects failed, make parent auth resource by objects failed, object: %+v, err: %+v, rid: %s", object, err, rid)
+		return fmt.Errorf("make parent auth resource by objects failed, err: %+v", err)
+	}
+	if len(parentResources) != 1 {
+		blog.Errorf("MakeResourcesByInstances failed, make parent auth resource by objects failed, get %d with object %s, rid: %s", len(parentResources), object.ObjectID, rid)
+		return fmt.Errorf("make parent auth resource by objects failed, get %d with object %d", len(parentResources), object.ID)
+	}
+
+	parentResource := parentResources[0]
+	layers := parentResource.Layers
 	layers = append(layers, authmeta.Item{
-		Type:       authmeta.Model,
-		Name:       object.ObjectID,
-		InstanceID: object.ID,
+		Type:       parentResource.Type,
+		Action:     parentResource.Action,
+		Name:       parentResource.Name,
+		InstanceID: parentResource.InstanceID,
 	})
-	rs := &authmeta.ResourceAttribute{
-		Basic: authmeta.Basic{
-			Type: authmeta.Model,
-		},
-		BusinessID: bizID,
-		Layers:     layers,
+	rs := &authmeta.ResourceAttribute{}
+	if util.InStrArr(mainlineModels, object.ObjectID) == true {
+		rs = &authmeta.ResourceAttribute{
+			Basic: authmeta.Basic{
+				Type: authmeta.MainlineInstance,
+			},
+			BusinessID:      bizID,
+			Layers:          layers,
+			SupplierAccount: util.GetOwnerID(header),
+		}
+	} else {
+		rs = &authmeta.ResourceAttribute{
+			Basic: authmeta.Basic{
+				Type: authmeta.ModelInstance,
+			},
+			BusinessID:      bizID,
+			Layers:          layers,
+			SupplierAccount: util.GetOwnerID(header),
+		}
 	}
 
 	// step2. collect instances by model, and convert to iam interface format
