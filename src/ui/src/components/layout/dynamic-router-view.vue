@@ -1,16 +1,21 @@
 <template>
     <div class="clearfix">
-        <dynamic-navigation class="main-navigation" @business-change="handleBusinessChange"></dynamic-navigation>
+        <dynamic-navigation class="main-navigation"
+            @business-change="handleBusinessChange"
+            @business-empty="handleBusinessEmpty">
+        </dynamic-navigation>
         <dynamic-breadcumbs class="main-breadcumbs"></dynamic-breadcumbs>
         <div class="main-layout">
-            <div class="main-scroller">
+            <div class="main-scroller" v-bkloading="{ isLoading: globalLoading }">
                 <router-view class="main-views" :key="refreshKey" v-if="shouldRenderSubView"></router-view>
+                <router-view class="main-views" name="requireBusiness" v-show="showRequireBusiness"></router-view>
             </div>
         </div>
     </div>
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     import dynamicNavigation from './dynamic-navigation'
     import dynamicBreadcumbs from './dynamic-breadcumbs'
     import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
@@ -22,10 +27,12 @@
         data () {
             return {
                 refreshKey: Date.now(),
-                businessSelected: false
+                businessSelected: false,
+                showRequireBusiness: false
             }
         },
         computed: {
+            ...mapGetters(['globalLoading']),
             shouldRenderSubView () {
                 if (this.$route.matched && this.$route.matched[0].name === MENU_BUSINESS) {
                     return this.businessSelected
@@ -36,7 +43,12 @@
         methods: {
             handleBusinessChange () {
                 this.businessSelected = true
+                this.showRequireBusiness = false
                 this.refreshKey = Date.now()
+            },
+            handleBusinessEmpty () {
+                this.businessSelected = false
+                this.showRequireBusiness = true
             }
         }
     }

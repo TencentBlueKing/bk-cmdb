@@ -1,5 +1,9 @@
 import Meta from '@/router/meta'
-import { MENU_RESOURCE_BUSINESS, MENU_RESOURCE_BUSINESS_HISTORY } from '@/dictionary/menu-symbol'
+import {
+    MENU_RESOURCE_BUSINESS,
+    MENU_RESOURCE_BUSINESS_HISTORY,
+    MENU_RESOURCE_MANAGEMENT
+} from '@/dictionary/menu-symbol'
 import {
     C_BUSINESS,
     U_BUSINESS,
@@ -20,7 +24,8 @@ export default [{
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            i18n: '业务'
+            i18n: '业务',
+            relative: MENU_RESOURCE_MANAGEMENT
         },
         auth: {
             operation: Object.values(OPERATION),

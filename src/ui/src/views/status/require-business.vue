@@ -15,22 +15,36 @@
     </div>
 </template>
 <script>
-    import { mapGetters } from 'vuex'
+    import { translateAuth } from '@/setup/permission'
     export default {
-        computed: {
-            ...mapGetters(['permission'])
+        data () {
+            return {
+                permission: []
+            }
         },
-        created () {
-            this.$store.commit('setHeaderTitle', '')
-        },
-        beforeRouteEnter (to, from, next) {
-            if (from.fullPath === '/') {
-                next({ name: 'index' })
-            } else {
-                next()
+        watch: {
+            $route: {
+                immediate: true,
+                handler () {
+                    this.setPermission()
+                }
             }
         },
         methods: {
+            async setPermission () {
+                const permission = []
+                const authMeta = this.$route.meta.auth
+                if (authMeta) {
+                    const { view, operation } = authMeta
+                    const auth = [...operation]
+                    if (view) {
+                        auth.push(view)
+                    }
+                    const translated = await translateAuth(auth)
+                    permission.push(...translated)
+                }
+                this.permission = permission
+            },
             async handleApplyPermission () {
                 try {
                     const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
@@ -49,6 +63,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .tips-wrapper {
+        overflow: hidden;
+    }
     .content-wrapper {
         margin-top: 100px;
         text-align: center;

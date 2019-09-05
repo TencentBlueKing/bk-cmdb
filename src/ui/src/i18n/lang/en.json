@@ -41,6 +41,7 @@
     "系统出现异常，请记录下错误场景并与开发人员联系，谢谢": "The system is abnormal. Please record the error scene and contact the developer. Thank you.",
     "请输入合法的XXX": "Please enter legal XXX",
     "请输入": "Please enter",
+    "请输入": "Please enter {name}",
     "请输入正确的内容": "Please enter the correct content",
     "请输入以http://开头的URL": "Please enter a URL beginning with http://",
     "XXX不合法": "XXX is illegal",

@@ -835,12 +835,6 @@
                 }
             }
         }
-        .property-btn-group {
-            font-size: 0;
-            /deep/ .bk-button {
-                margin: 0 0 0 10px;
-            }
-        }
         .userapi-btn-group {
             display: flex;
             align-items: center;
@@ -860,6 +854,13 @@
                     color: #dcdee5;
                 }
             }
+        }
+    }
+    .property-btn-group {
+        font-size: 0;
+        padding: 0 20px;
+        /deep/ .bk-button {
+            margin: 0 10px 0 0;
         }
     }
 </style>

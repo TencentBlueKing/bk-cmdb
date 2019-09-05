@@ -3,6 +3,7 @@
         v-model="date"
         transfer
         :clearable="clearable"
+        :placeholder="placeholder"
         :disabled="disabled">
     </bk-date-picker>
 </template>
@@ -22,6 +23,10 @@
             clearable: {
                 type: Boolean,
                 default: true
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {

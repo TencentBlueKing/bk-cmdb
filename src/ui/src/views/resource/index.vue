@@ -83,6 +83,7 @@
 
 <script>
     import { mapGetters, mapActions, mapState } from 'vuex'
+    import { MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbImport from '@/components/import/import'
     import cmdbButtonGroup from '@/components/ui/other/button-group'
@@ -180,7 +181,10 @@
         },
         async created () {
             try {
-                this.$store.dispatch('userCustom/setRencentlyData', { id: 'resource' })
+                this.$store.commit('setBreadcumbs', [{
+                    i18n: '资源目录',
+                    route: { name: MENU_RESOURCE_MANAGEMENT }
+                }, { name: '主机' }])
                 await this.getProperties()
                 this.getHostList()
                 this.ready = true
