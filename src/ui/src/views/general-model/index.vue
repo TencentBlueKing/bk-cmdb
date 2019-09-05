@@ -81,6 +81,7 @@
                     v-if="filter.type === 'enum'"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
+                    :auto-select="false"
                     v-model="filter.value"
                     @on-selected="getTableData">
                 </cmdb-form-enum>
