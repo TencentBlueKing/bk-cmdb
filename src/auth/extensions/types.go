@@ -15,10 +15,8 @@ package extensions
 import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth"
-	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 type AuthManager struct {
@@ -61,49 +59,9 @@ func (is *InstanceSimplify) Parse(data mapstr.MapStr) (*InstanceSimplify, error)
 		return nil, err
 	}
 
-	bizID, err := is.ParseBizID(data)
+	bizID, err := metadata.ParseBizIDFromData(data)
 	is.BizID = bizID
 	return is, err
-}
-
-func (is *InstanceSimplify) ParseBizID(data mapstr.MapStr) (int64, error) {
-	/*
-		{
-		  "metadata": {
-			"label": {
-			  "bk_biz_id": "2"
-			}
-		  }
-		}
-	*/
-
-	metaInterface, exist := data[common.MetadataField]
-	if !exist {
-		return 0, nil
-	}
-
-	metaValue, ok := metaInterface.(map[string]interface{})
-	if !ok {
-		return 0, metadata.LabelKeyNotExistError
-	}
-
-	labelInterface, exist := metaValue["label"]
-	if !exist {
-		return 0, metadata.LabelKeyNotExistError
-	}
-
-	labelValue, ok := labelInterface.(map[string]interface{})
-	if !ok {
-		return 0, metadata.LabelKeyNotExistError
-	}
-
-	bizID, exist := labelValue[common.BKAppIDField]
-	if !exist {
-		// 自定义层级的metadata.label中没有 bk_biz_id 字段
-		return 0, nil
-	}
-
-	return util.GetInt64ByInterface(bizID)
 }
 
 type BusinessSimplify struct {
