@@ -182,7 +182,7 @@ func (assoc *association) SetMainlineInstAssociation(params types.ContextParams,
 		}
 		err = assoc.authManager.RegisterInstancesByID(params.Context, params.Header, current.Object().ObjectID, instID)
 		if err != nil {
-			blog.Errorf("create mainline instance for object: %s, but register to auth center failed, err: %v, rid: %s", current.Object().ObjectID, err, params.ReqID)
+			blog.Errorf("create mainline instance for object: %s, but register to auth center failed, instID: %d, err: %v, rid: %s", current.Object().ObjectID, instID, err, params.ReqID)
 			return err
 		}
 

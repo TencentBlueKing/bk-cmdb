@@ -150,7 +150,7 @@ func GetBusinessIDFromMeta(data interface{}) string {
 func ParseBizIDFromData(rawData mapstr.MapStr) (int64, error) {
 	rawMetadata, exist := rawData.Get(BKMetadata)
 	if exist == false {
-		return 0, fmt.Errorf("invalid input, metadata field not exist")
+		return 0, nil
 	}
 	js, _ := json.Marshal(rawMetadata)
 	meta := new(Metadata)
