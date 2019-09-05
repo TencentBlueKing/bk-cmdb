@@ -132,7 +132,6 @@ func (r *Result) mapData() (MapData, error) {
 }
 
 func parseListResult(res []byte) (ListResult, error) {
-
 	var lR ListResult
 
 	if err := json.Unmarshal(res, &lR); nil != err {
@@ -144,7 +143,6 @@ func parseListResult(res []byte) (ListResult, error) {
 }
 
 func parseDetailResult(res []byte) (DetailResult, error) {
-
 	var dR DetailResult
 
 	if err := json.Unmarshal(res, &dR); nil != err {
@@ -428,7 +426,6 @@ func (d *Discover) TryUnsetRedis(key string) {
 	if err != nil {
 		blog.Warnf("%s: remove from redis failed: %s", key, err)
 	} else {
-
 		blog.Infof("%s: remove from redis success", key)
 	}
 }
@@ -469,11 +466,9 @@ func (d *Discover) GetModel(model Model, ownerID string) (bool, error) {
 	}
 
 	return false, nil
-
 }
 
 func (d *Discover) TryCreateModel(msg string) error {
-
 	ownerID := d.parseOwnerId(msg)
 
 	model, err := d.parseModel(msg)
@@ -550,7 +545,6 @@ func (d *Discover) GetInst(ownerID, objID string, keys []string, instKey string)
 	}
 
 	return nil, nil
-
 }
 
 func (d *Discover) UpdateOrCreateInst(msg string) error {
@@ -635,7 +629,6 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 			blog.Debug("[changed]  %s: %v ---> %v", attrId, attrValue, inst[attrId])
 			hasDiff = true
 		}
-
 	}
 
 	if !hasDiff {

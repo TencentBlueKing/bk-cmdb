@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/auth/extensions"
 	bkc "configcenter/src/common"
 	"configcenter/src/common/backbone"
 
@@ -29,19 +30,21 @@ type Discover struct {
 
 	redisCli *redis.Client
 	*backbone.Engine
+	authManager extensions.AuthManager
 }
 
 var msgHandlerCnt = int64(0)
 
-func NewDiscover(ctx context.Context, redisCli *redis.Client, backbone *backbone.Engine) *Discover {
+func NewDiscover(ctx context.Context, redisCli *redis.Client, backbone *backbone.Engine, authManager extensions.AuthManager) *Discover {
 	header := http.Header{}
 	header.Add(bkc.BKHTTPOwnerID, bkc.BKDefaultOwnerID)
 	header.Add(bkc.BKHTTPHeaderUser, bkc.CCSystemCollectorUserName)
 
 	discover := &Discover{
-		redisCli:   redisCli,
-		ctx:        ctx,
-		httpHeader: header,
+		redisCli:    redisCli,
+		ctx:         ctx,
+		httpHeader:  header,
+		authManager: authManager,
 	}
 	discover.Engine = backbone
 	return discover
