@@ -93,7 +93,7 @@
             </div>
         </div>
         <bk-table class="hosts-table bkc-white"
-            v-bkloading="{ isLoading: $loading() }"
+            v-bkloading="{ isLoading: $loading('searchHosts') }"
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 185"

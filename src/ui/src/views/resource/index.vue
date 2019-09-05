@@ -23,17 +23,22 @@
                         {{$t('导入主机')}}
                     </bk-button>
                 </span>
-                <cmdb-selector class="options-business-selector"
+                <bk-select class="options-business-selector"
                     v-if="isAdminView"
-                    :placeholder="$t('分配到业务空闲机池')"
+                    :popover-width="180"
+                    :searchable="authorizedBusiness.length > 7"
                     :disabled="!table.checked.length"
-                    :list="authorizedBusiness"
-                    :auto-select="false"
-                    setting-key="bk_biz_id"
-                    display-key="bk_biz_name"
                     v-model="assignBusiness"
-                    @on-selected="handleAssignHosts">
-                </cmdb-selector>
+                    @selected="handleAssignHosts">
+                    <div class="select-btn" slot="trigger">
+                        {{$t('分配到')}}
+                    </div>
+                    <bk-option v-for="option in authorizedBusiness"
+                        :key="option.bk_biz_id"
+                        :id="option.bk_biz_id"
+                        :name="option.bk_biz_name">
+                    </bk-option>
+                </bk-select>
                 <cmdb-clipboard-selector class="options-clipboard"
                     :list="clipboardList"
                     :disabled="!table.checked.length"
@@ -179,6 +184,9 @@
                 await this.getProperties()
                 this.getHostList()
                 this.ready = true
+                if (!this.authorizedBusiness.length) {
+                    this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+                }
             } catch (e) {
                 console.error(e)
             }
@@ -228,7 +236,11 @@
                 }
                 return params
             },
-            handleAssignHosts (businessId, business) {
+            handleAssignHosts (businessId, option) {
+                const business = {
+                    bk_biz_id: businessId,
+                    bk_biz_name: option.name
+                }
                 if (!businessId) return
                 if (this.hasSelectAssignedHost()) {
                     this.$error(this.$t('请勿选择已分配主机'))
@@ -441,7 +453,15 @@
         display: inline-block;
         vertical-align: middle;
         margin: 0 10px 0 0;
-        width: 180px;
+        width: 88px;
+        .select-btn {
+            padding-left: 10px;
+        }
+        /deep/ {
+            &::before {
+                display: none;
+            }
+        }
     }
     .automatic-import{
         padding:40px 30px 0 30px;
