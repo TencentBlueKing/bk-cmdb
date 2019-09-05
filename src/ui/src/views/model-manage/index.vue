@@ -475,15 +475,11 @@
                 this.searchModel = ''
             },
             modelClick (model) {
-                const fullPath = this.searchModel ? `${this.$route.fullPath}?searchModel=${this.searchModel}` : this.$route.fullPath
                 this.$store.commit('objectModel/setActiveModel', model)
                 this.$router.push({
                     name: 'modelDetails',
                     params: {
                         modelId: model['bk_obj_id']
-                    },
-                    query: {
-                        from: fullPath
                     }
                 })
             },

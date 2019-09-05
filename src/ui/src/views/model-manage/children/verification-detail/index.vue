@@ -26,7 +26,7 @@
             </div>
         </div>
         <!-- <div class="verification-selector-mask" v-if="attribute.isShow"></div> -->
-        <div class="radio-box">
+        <!-- <div class="radio-box">
             <label class="label-text">
                 {{$t('属性为空值是否校验')}}
             </label>
@@ -38,7 +38,7 @@
                 <input type="radio" name="required" :value="false" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
                 <span class="cmdb-radio-text">{{$t('否')}}</span>
             </label>
-        </div>
+        </div> -->
         <div class="btn-group">
             <bk-button theme="primary"
                 :disabled="isReadOnly || !verificationInfo.selected.length"

@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/app/options"
-	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins"
 
 	"github.com/gin-gonic/gin"
@@ -83,7 +82,6 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		strOwnerUinList, _ = json.Marshal(userInfo.OwnerUinArr)
 	}
 
-	cookieLanguage, _ := c.Cookie("blueking_language")
 	session := sessions.Default(c)
 
 	session.Set(common.WEBSessionUinKey, userInfo.UserName)
@@ -102,12 +100,6 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		session.Set(common.WEBSessionMultiSupplierKey, common.LoginSystemMultiSupplierFalse)
 	}
 
-	session.Set(webCommon.IsSkipLogin, "0")
-	if "" != cookieLanguage {
-		session.Set(common.WEBSessionLanguageKey, cookieLanguage)
-	} else {
-		session.Set(common.WEBSessionLanguageKey, userInfo.Language)
-	}
 	if err := session.Save(); err != nil {
 		blog.Warnf("save session failed, err: %s, rid: %s", err.Error(), rid)
 	}

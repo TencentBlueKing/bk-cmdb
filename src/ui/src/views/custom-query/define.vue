@@ -29,7 +29,7 @@
                         v-model.trim="name"
                         :name="$t('查询名称')"
                         :disabled="!editable"
-                        v-validate="'required|max:15'">
+                        v-validate="'required|length:256'">
                     </bk-input>
                 </div>
                 <span v-show="errors.has($t('查询名称'))" class="color-danger">{{ errors.first($t('查询名称')) }}</span>

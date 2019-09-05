@@ -178,6 +178,7 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
+enable=true
 
 [confs]
 dir = $configures_dir

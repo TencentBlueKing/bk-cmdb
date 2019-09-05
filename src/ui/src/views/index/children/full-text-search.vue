@@ -176,9 +176,6 @@
                         name: 'resourceHostDetails',
                         params: {
                             id: source['bk_host_id']
-                        },
-                        query: {
-                            from: this.$route.fullPath
                         }
                     })
                 } else if (source['hitsType'] === 'object') {
@@ -202,9 +199,6 @@
                         params: {
                             objId: source['bk_obj_id'],
                             instId: source['bk_inst_id'].toString().replace(/(\<\/?em\>)/g, '')
-                        },
-                        query: {
-                            from: this.$route.fullPath
                         }
                     })
                 } else if (source['hitsType'] === 'biz') {
@@ -212,21 +206,16 @@
                         name: MENU_RESOURCE_BUSINESS,
                         params: {
                             bizName: source['bk_biz_name'].toString().replace(/(\<\/?em\>)/g, '')
-                        },
-                        query: {
-                            from: this.$route.fullPath
                         }
                     })
                 }
             },
             getShowPropertyText (property, source, thisProperty) {
                 const cloneSource = this.$tools.clone(source)
-                const reg = /^\<em\>.+\<\/em\>$/
+                const reg = /\<em\>.+\<\/em\>/
                 const propertyValue = cloneSource[thisProperty].toString()
                 const isHeightLight = reg.test(propertyValue)
-                if (isHeightLight) {
-                    cloneSource[thisProperty] = propertyValue.replace(/(\<\/?em\>)/g, '')
-                }
+                cloneSource[thisProperty] = isHeightLight ? propertyValue.replace(/(\<\/?em\>)/g, '') : propertyValue
                 const flatternedText = this.$tools.getPropertyText(property, cloneSource)
                 return isHeightLight ? `<em>${flatternedText}</em>` : flatternedText
             }

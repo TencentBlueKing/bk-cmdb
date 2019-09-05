@@ -393,9 +393,6 @@
                     name: 'resourceHostDetails',
                     params: {
                         id: host.bk_host_id
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },
@@ -420,9 +417,6 @@
                     params: {
                         objId: model['bk_obj_id'],
                         instId: model['bk_inst_id']
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },
@@ -431,9 +425,6 @@
                     name: MENU_RESOURCE_BUSINESS,
                     params: {
                         bizName: source['bk_biz_name']
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },

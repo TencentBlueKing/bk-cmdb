@@ -56,7 +56,7 @@
                 <bk-input type="text"class="cmdb-form-input"
                     :disabled="isViewMode"
                     name="description"
-                    v-validate="'required|singlechar'"
+                    v-validate="'required|singlechar|length:256'"
                     v-model="info.description">
                 </bk-input>
                 <p class="form-error" v-if="errors.has('description')">{{errors.first('description')}}</p>

@@ -56,7 +56,7 @@
                 :inst="processForm.instance"
                 :properties="processProperties"
                 :property-groups="processPropertyGroups"
-                :uneditable-properties="immutableProperties"
+                :disabled-properties="immutableProperties"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleBeforeClose">
                 <template slot="bind_ip">

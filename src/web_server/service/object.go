@@ -52,11 +52,11 @@ var sortFields = []string{
 // ImportObject import object attribute
 func (s *Service) ImportObject(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
 	ctx := util.NewContextFromGinContext(c)
 
-	language := logics.GetLanguageByHTTPRequest(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	header := c.Request.Header
@@ -241,12 +241,12 @@ func (s *Service) ExportObject(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 
 	ownerID := c.Param(common.BKOwnerIDField)
 	objID := c.Param(common.BKObjIDField)
 
-	language := logics.GetLanguageByHTTPRequest(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 

@@ -20,16 +20,19 @@ var (
 	// HostResource represent host resource
 	HostResource = ResourceType("host")
 	// BusinessResource represent business resource
-	BusinessResource       = ResourceType("business")
-	SetResource            = ResourceType("set")
-	ModuleResource         = ResourceType("module")
-	ModelResource          = ResourceType("model")
-	InstanceResource       = ResourceType("instance")
-	AuditCategory          = ResourceType("audit")
+	BusinessResource = ResourceType("business")
+	SetResource      = ResourceType("set")
+	ModuleResource   = ResourceType("module")
+	ModelResource    = ResourceType("model")
+	InstanceResource = ResourceType("instance")
+	// AuditCategory          = ResourceType("audit")
 	ProcessResource        = ResourceType("process")
 	DynamicGroupResource   = ResourceType("dynamicGroup")
 	ClassificationResource = ResourceType("classification")
 	UserGroupSyncResource  = ResourceType("userGroupSync")
+
+	ServiceTemplateResource = ResourceType("serviceTemplateSync")
+	PlatResource            = ResourceType("platSync")
 )
 
 // ResourceType represent a resource type that will be enqueue to WorkerQueue
@@ -56,4 +59,6 @@ type SyncHandler interface {
 	HandleDynamicGroupSync(task *WorkRequest) error
 	HandleClassificationSync(task *WorkRequest) error
 	HandleUserGroupSync(task *WorkRequest) error
+	HandleServiceTemplateSync(task *WorkRequest) error
+	HandlePlatSync(task *WorkRequest) error
 }

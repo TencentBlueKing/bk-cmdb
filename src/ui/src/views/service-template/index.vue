@@ -230,9 +230,6 @@
                     name: 'operationalTemplate',
                     params: {
                         templateId: id
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },

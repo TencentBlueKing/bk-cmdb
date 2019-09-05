@@ -158,7 +158,7 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 			continue
 		}
 
-		if strings.HasPrefix(item.Name(), "cc_") && strings.HasSuffix(item.Name(), confFileSuffix) {
+		if strings.HasPrefix(item.Name(), types.CC_DISCOVERY_PREFIX) && strings.HasSuffix(item.Name(), confFileSuffix) {
 			modules = append(modules, strings.Replace(item.Name(), ".conf", "", 1))
 		}
 	}
