@@ -880,6 +880,7 @@
             }
             &:hover {
                 border-color: #3a84ff;
+                background-color: #f0f5ff;
                 .drag-logo {
                     display: block;
                 }
