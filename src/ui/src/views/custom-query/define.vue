@@ -807,7 +807,7 @@
                     margin-right: 10px;
                 }
                 .filter-field-value {
-                    flex: 323px 0 0;
+                    flex: 1;
                     width: 0;
                     &.cmdb-search-input {
                         /deep/ .search-input-wrapper {
