@@ -286,7 +286,7 @@ input.cmdb-form-input {
 
     &.disabled,
     &:disabled {
-        opacity: .385;
+        color: #c4c6cc !important;
         cursor: not-allowed !important;
     }
 }

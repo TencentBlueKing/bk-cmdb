@@ -27,7 +27,7 @@ const getters = {
         if (!isPublicModel) {
             return true
         }
-        return model['bk_classification_id'] === 'bk_biz_topo' || ['host', 'biz'].includes(model['bk_obj_id'])
+        return model['bk_classification_id'] === 'bk_biz_topo' || ['set', 'module', 'host', 'biz'].includes(model['bk_obj_id'])
     },
     isMainLine: state => state.activeModel['bk_classification_id'] === 'bk_biz_topo'
 }

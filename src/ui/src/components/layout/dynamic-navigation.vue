@@ -483,6 +483,9 @@ $color: #63656E;
         &.active {
             color: #fff;
             background-color: #3a84ff;
+            &::before {
+                background-color: #fff;
+            }
         }
         &:before {
             content: "";
@@ -492,7 +495,7 @@ $color: #63656E;
             width: 4px;
             height: 4px;
             border-radius: 50%;
-            background-color: currentColor;
+            background-color: #c4c6cc;
         }
     }
 }

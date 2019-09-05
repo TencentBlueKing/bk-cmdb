@@ -12,10 +12,10 @@
                     v-model.trim="keywords"
                     @input="handleInputSearch"
                     @focus="handleShowHistory"
-                    @blur="showHistory = false"
                     @enter="handleShowResult">
                 </bk-input>
-                <i class="bk-icon search-btn icon-search" ref="searchBtn" @click="handleShowResult"></i>
+                <i class="bk-icon search-btn icon-search" ref="searchBtn" v-show="!keywords" @click="handleShowResult"></i>
+                <i class="bk-icon search-btn icon-close-circle-shape" v-show="keywords" @click="handleClear"></i>
                 <transition name="slide">
                     <div class="lenovo selectTips" v-show="showLenovo && lenovoList.length">
                         <ul class="lenovo-result">
@@ -55,7 +55,9 @@
                         <ul class="history-list">
                             <li v-for="(history, index) in historyList"
                                 :key="index"
-                                @click="handleHistorySearch(history)">{{history}}</li>
+                                @click="handleHistorySearch(history)">
+                                {{history}}
+                            </li>
                         </ul>
                     </div>
                 </transition>
@@ -228,17 +230,15 @@
                 }
             },
             keywords (keywords) {
-                let delay = 0
                 if (this.query.trigger === 'input') {
                     this.query.objId = ''
-                    delay = 600
                 }
                 if (keywords) {
                     this.showHistory = false
                     this.showLenovo = true
                     this.pagination.start = 0
                     this.pagination.current = 1
-                    this.getFullTextSearch(delay)
+                    this.getFullTextSearch(0)
                 } else {
                     this.handleHideLenovo()
                 }
@@ -335,6 +335,7 @@
                 return _promise
             },
             handleHideLenovo () {
+                this.showHistory = false
                 this.showLenovo = false
                 const timer = setTimeout(() => {
                     this.lenovoList = []
@@ -474,6 +475,11 @@
                 } else if (this.toggleTips) {
                     this.toggleTips.hide()
                 }
+            },
+            handleClear () {
+                this.$refs.searchInput.$refs.input.focus()
+                this.keywords = ''
+                this.toggleTips && this.toggleTips.hide()
             }
         }
     }
@@ -501,7 +507,9 @@
             .search-input {
                 font-size: 0;
                 /deep/ .bk-form-input {
+                    font-size: 14px;
                     height: 42px;
+                    line-height: 42px;
                     padding: 0 56px 0 16px;
                 }
             }
@@ -516,6 +524,9 @@
                 font-size: 18px;
                 text-align: center;
                 cursor: pointer;
+                &.icon-close-circle-shape:hover {
+                    color: #979BA5;
+                }
             }
             .selectTips {
                 position: absolute;
@@ -542,8 +553,12 @@
             .lenovo-result li{
                 display: flex;
                 .lenovo-name {
-                    max-width: 88%;
+                    max-width: 86%;
                     @include ellipsis;
+                }
+                span:not(.lenovo-name) {
+                    padding-left: 10px;
+                    color: #C4C6CC;
                 }
             }
             .history-title {
@@ -604,7 +619,7 @@
                 flex: 1;
             }
         }
-        .slide-enter-active, .slide-leave-active{
+        .slide-enter-active {
             transition: all .3s;
             max-height: 332px;
             opacity: 1;
