@@ -13,6 +13,7 @@
 package options
 
 import (
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
@@ -47,6 +48,7 @@ type Config struct {
 	DiscoverRedis   SnapRedis
 	NetCollectRedis SnapRedis
 	Esb             esbutil.EsbConfig
+	AuthConfig      authcenter.AuthConfig
 }
 
 type SnapRedis struct {
