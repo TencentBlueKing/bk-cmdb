@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"time"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -26,15 +27,17 @@ import (
 
 // NetCollect collect the net information
 type NetCollect struct {
-	ctx context.Context
-	db  dal.RDB
+	ctx         context.Context
+	db          dal.RDB
+	authManager extensions.AuthManager
 }
 
 // NewNetCollect returns a new netcollector
-func NewNetCollect(ctx context.Context, db dal.RDB) *NetCollect {
+func NewNetCollect(ctx context.Context, db dal.RDB, authManager extensions.AuthManager) *NetCollect {
 	h := &NetCollect{
-		ctx: ctx,
-		db:  db,
+		ctx:         ctx,
+		db:          db,
+		authManager: authManager,
 	}
 	return h
 }

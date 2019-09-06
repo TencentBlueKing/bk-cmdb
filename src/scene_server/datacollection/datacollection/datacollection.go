@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"time"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -33,16 +34,17 @@ import (
 
 type DataCollection struct {
 	*backbone.Engine
-	db       dal.RDB
-	ctx      context.Context
-	registry prometheus.Registerer
+	db          dal.RDB
+	ctx         context.Context
+	registry    prometheus.Registerer
+	AuthManager extensions.AuthManager
 }
 
 func NewDataCollection(ctx context.Context, backbone *backbone.Engine, db dal.RDB, registry prometheus.Registerer) *DataCollection {
 	return &DataCollection{ctx: ctx, Engine: backbone, db: db, registry: registry}
 }
 
-func (d *DataCollection) Run(redisCli, snapcli, disCli, netCli *redis.Client) error {
+func (d *DataCollection) Run(redisCli, snapCli, disCli, netCli *redis.Client) error {
 	blog.Infof("data-collection start...")
 
 	var err error
@@ -56,25 +58,25 @@ func (d *DataCollection) Run(redisCli, snapcli, disCli, netCli *redis.Client) er
 		time.Sleep(time.Second * 10)
 	}
 
-	man := NewManager()
+	manager := NewManager()
 
-	if snapcli != nil {
+	if snapCli != nil {
 		snapChanName := d.getSnapChanName(defaultAppID)
-		hostsnapCollector := hostsnap.NewHostSnap(d.ctx, redisCli, d.db)
-		snapPorter := BuildChanPorter("hostsnap", hostsnapCollector, redisCli, snapcli, snapChanName, hostsnap.MockMessage, d.registry, d.Engine)
-		man.AddPorter(snapPorter)
+		hostsnapCollector := hostsnap.NewHostSnap(d.ctx, redisCli, d.db, d.AuthManager)
+		snapPorter := BuildChanPorter("hostsnap", hostsnapCollector, redisCli, snapCli, snapChanName, hostsnap.MockMessage, d.registry, d.Engine)
+		manager.AddPorter(snapPorter)
 	}
 	if disCli != nil {
 		discoverChanName := d.getDiscoverChanName(defaultAppID)
-		middlewareCollector := middleware.NewDiscover(d.ctx, redisCli, d.Engine)
+		middlewareCollector := middleware.NewDiscover(d.ctx, redisCli, d.Engine, d.AuthManager)
 		middlewarePorter := BuildChanPorter("middleware", middlewareCollector, redisCli, disCli, discoverChanName, middleware.MockMessage, d.registry, d.Engine)
-		man.AddPorter(middlewarePorter)
+		manager.AddPorter(middlewarePorter)
 	}
 	if netCli != nil {
 		netDevChanName := d.getNetcollectChanName(defaultAppID)
-		netCollector := netcollect.NewNetCollect(d.ctx, d.db)
+		netCollector := netcollect.NewNetCollect(d.ctx, d.db, d.AuthManager)
 		netCollectPorter := BuildChanPorter("netcollect", netCollector, redisCli, netCli, netDevChanName, netcollect.MockMessage, d.registry, d.Engine)
-		man.AddPorter(netCollectPorter)
+		manager.AddPorter(netCollectPorter)
 	}
 
 	blog.Infof("data-collection started")

@@ -17,7 +17,6 @@ import (
 	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
@@ -61,13 +60,14 @@ func (is *InstanceSimplify) Parse(data mapstr.MapStr) (*InstanceSimplify, error)
 		return nil, err
 	}
 
-	bizID, err := is.ParseBizID(data)
+	bizID, err := ParseBizID(data)
 	is.BizID = bizID
 	return is, err
 }
 
-func (is *InstanceSimplify) ParseBizID(data mapstr.MapStr) (int64, error) {
+func ParseBizID(data mapstr.MapStr) (int64, error) {
 	/*
+		data:
 		{
 		  "metadata": {
 			"label": {
@@ -75,6 +75,7 @@ func (is *InstanceSimplify) ParseBizID(data mapstr.MapStr) (int64, error) {
 			}
 		  }
 		}
+		==> 2, nil
 	*/
 
 	metaInterface, exist := data[common.MetadataField]
@@ -84,22 +85,23 @@ func (is *InstanceSimplify) ParseBizID(data mapstr.MapStr) (int64, error) {
 
 	metaValue, ok := metaInterface.(map[string]interface{})
 	if !ok {
-		return 0, metadata.LabelKeyNotExistError
+		return 0, nil
 	}
 
 	labelInterface, exist := metaValue["label"]
 	if !exist {
-		return 0, metadata.LabelKeyNotExistError
+		return 0, nil
 	}
 
 	labelValue, ok := labelInterface.(map[string]interface{})
 	if !ok {
-		return 0, metadata.LabelKeyNotExistError
+		return 0, nil
 	}
 
 	bizID, exist := labelValue[common.BKAppIDField]
 	if !exist {
-		return 0, metadata.LabelKeyNotExistError
+		// 自定义层级的metadata.label中没有 bk_biz_id 字段
+		return 0, nil
 	}
 
 	return util.GetInt64ByInterface(bizID)
@@ -184,8 +186,8 @@ func (is *HostSimplify) Parse(data mapstr.MapStr) (*HostSimplify, error) {
 }
 
 type PlatSimplify struct {
-	BKCloudIDField   int64  `field:"bk_cloud_id"`
-	BKCloudNameField string `field:"bk_cloud_name"`
+	BKCloudIDField   int64  `field:"bk_cloud_id" json:"bk_cloud_id" bson:"bk_cloud_id"`
+	BKCloudNameField string `field:"bk_cloud_name" json:"bk_cloud_name" bson:"bk_cloud_name"`
 }
 
 func (is *PlatSimplify) Parse(data mapstr.MapStr) (*PlatSimplify, error) {
@@ -216,19 +218,18 @@ func (is *AuditCategorySimplify) Parse(data mapstr.MapStr) (*AuditCategorySimpli
 type ModelUniqueSimplify struct {
 	ID         uint64 `field:"id" json:"id" bson:"id"`
 	ObjID      string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
-	Ispre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	IsPre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
 	BusinessID int64
 }
 
 func (cls *ModelUniqueSimplify) Parse(data mapstr.MapStr) (*ModelUniqueSimplify, error) {
-
 	err := mapstr.SetValueToStructByTags(cls, data)
 	if nil != err {
 		return nil, err
 	}
 
 	// parse business id
-	cls.BusinessID, err = metadata.ParseBizIDFromData(data)
+	cls.BusinessID, err = ParseBizID(data)
 	if nil != err {
 		return nil, err
 	}
@@ -243,7 +244,6 @@ type ProcessSimplify struct {
 }
 
 func (is *ProcessSimplify) Parse(data mapstr.MapStr) (*ProcessSimplify, error) {
-
 	err := mapstr.SetValueToStructByTags(is, data)
 	if nil != err {
 		return nil, err
