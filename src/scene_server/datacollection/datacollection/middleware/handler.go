@@ -132,7 +132,6 @@ func (r *Result) mapData() (MapData, error) {
 }
 
 func parseListResult(res []byte) (ListResult, error) {
-
 	var lR ListResult
 
 	if err := json.Unmarshal(res, &lR); nil != err {
@@ -144,7 +143,6 @@ func parseListResult(res []byte) (ListResult, error) {
 }
 
 func parseDetailResult(res []byte) (DetailResult, error) {
-
 	var dR DetailResult
 
 	if err := json.Unmarshal(res, &dR); nil != err {
@@ -428,7 +426,6 @@ func (d *Discover) TryUnsetRedis(key string) {
 	if err != nil {
 		blog.Warnf("%s: remove from redis failed: %s", key, err)
 	} else {
-
 		blog.Infof("%s: remove from redis success", key)
 	}
 }
@@ -469,11 +466,10 @@ func (d *Discover) GetModel(model Model, ownerID string) (bool, error) {
 	}
 
 	return false, nil
-
 }
 
 func (d *Discover) TryCreateModel(msg string) error {
-
+	rid := util.GetHTTPCCRequestID(d.httpHeader)
 	ownerID := d.parseOwnerId(msg)
 
 	model, err := d.parseModel(msg)
@@ -510,6 +506,13 @@ func (d *Discover) TryCreateModel(msg string) error {
 	if !resp.Result {
 		blog.Errorf("create model failed %s", resp.ErrMsg)
 		return fmt.Errorf("create model failed: %s", resp.ErrMsg)
+	}
+	newObj.ID = int64(resp.Data.Created.ID)
+
+	// update registry to iam
+	if err := d.authManager.RegisterObject(d.ctx, d.httpHeader, newObj); err != nil {
+		blog.Errorf("TryCreateModel success, but RegisterObject failed, object: %+v, err: %s, rid: %s", newObj, err, rid)
+		return err
 	}
 
 	return nil
@@ -550,10 +553,10 @@ func (d *Discover) GetInst(ownerID, objID string, keys []string, instKey string)
 	}
 
 	return nil, nil
-
 }
 
 func (d *Discover) UpdateOrCreateInst(msg string) error {
+	rid := util.GetHTTPCCRequestID(d.httpHeader)
 
 	ownerID := d.parseOwnerId(msg)
 
@@ -595,6 +598,13 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 			return fmt.Errorf("search model failed: %s", resp.ErrMsg)
 		}
 		blog.Infof("create inst result: %v", resp)
+
+		// update registry to iam
+		instID := int64(resp.Data.Created.ID)
+		if err := d.authManager.RegisterInstancesByID(d.ctx, d.httpHeader, objID, instID); err != nil {
+			blog.Errorf("UpdateOrCreateInst success, but RegisterInstancesByID failed, objID: %s, instID: %d, err: %s, rid: %s", objID, instID, err, rid)
+			return err
+		}
 		return nil
 	}
 
@@ -635,7 +645,6 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 			blog.Debug("[changed]  %s: %v ---> %v", attrId, attrValue, inst[attrId])
 			hasDiff = true
 		}
-
 	}
 
 	if !hasDiff {
@@ -668,6 +677,12 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	blog.Infof("update inst result: %v", resp)
 
 	d.TryUnsetRedis(instKeyStr)
+
+	// update registry to iam
+	if err := d.authManager.UpdateRegisteredInstanceByID(d.ctx, d.httpHeader, objID, instID); err != nil {
+		blog.Errorf("UpdateOrCreateInst success, but UpdateRegisteredInstanceByID failed, objID: %s, instID: %d, err: %s, rid: %s", objID, instID, err, rid)
+		return err
+	}
 
 	return nil
 }
