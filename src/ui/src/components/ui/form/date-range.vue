@@ -2,7 +2,7 @@
     <bk-date-picker style="width: 100%"
         v-model="time"
         transfer
-        :placeholder="$t('选择日期范围')"
+        :placeholder="placeholder || $t('选择日期范围')"
         :clearable="clearable"
         :type="timer ? 'datetimerange' : 'daterange'"
         :disabled="disabled">
@@ -27,6 +27,10 @@
             clearable: {
                 type: Boolean,
                 default: true
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {

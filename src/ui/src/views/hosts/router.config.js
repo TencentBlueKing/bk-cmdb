@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
+import { MENU_BUSINESS_HOST, MENU_BUSINESS, MENU_BUSINESS_HOST_MANAGEMENT } from '@/dictionary/menu-symbol'
 import {
     R_HOST,
     U_HOST,
@@ -12,19 +12,15 @@ export const OPERATION = {
     HOST_TO_RESOURCE
 }
 
-const path = '/hosts'
-
 export default {
-    name: 'hosts',
-    path: path,
+    name: MENU_BUSINESS_HOST_MANAGEMENT,
+    path: 'host',
     component: () => import('./index.vue'),
     meta: new Meta({
+        owner: MENU_BUSINESS,
         menu: {
-            id: 'hosts',
             i18n: '业务主机',
-            path: path,
-            parent: NAV_BUSINESS_RESOURCE,
-            adminView: false
+            parent: MENU_BUSINESS_HOST
         },
         auth: {
             operation: Object.values(OPERATION),
@@ -32,8 +28,7 @@ export default {
                 this.authScope = 'business'
             }
         },
-        requireBusiness: true,
-        i18nTitle: '业务主机',
+        showBreadcumbs: true,
         filterPropertyKey: 'business_host_filter_properties'
     })
 }

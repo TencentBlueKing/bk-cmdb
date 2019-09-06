@@ -4,7 +4,8 @@
         type="datetime"
         transfer
         :clearable="clearable"
-        :disabled="disabled">
+        :disabled="disabled"
+        :placeholder="placeholder">
     </bk-date-picker>
 </template>
 
@@ -23,6 +24,10 @@
             clearable: {
                 type: Boolean,
                 default: true
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {

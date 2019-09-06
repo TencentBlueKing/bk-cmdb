@@ -1,7 +1,7 @@
 <template>
     <div class="search-layout">
         <div class="search-box" v-click-outside="handleClickOutside">
-            <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('开始查询')"
+            <input id="indexSearch" autocomplete="off" class="search-keyword" type="text" maxlength="40" :placeholder="$t('开始查询')"
                 v-model.trim="keyword"
                 @focus="focus = true">
             <label class="bk-icon icon-search" for="indexSearch"></label>
@@ -82,6 +82,7 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView']),
             ...mapGetters('objectModelClassify', ['classifications']),
             allModels () {
                 const allModels = []
@@ -97,6 +98,9 @@
             },
             loading () {
                 return this.$loading(this.requestId)
+            },
+            business () {
+                return this.$store.getters['objectBiz/bizId']
             }
         },
         watch: {
@@ -114,8 +118,14 @@
         methods: {
             // 函数节流，500ms发起一次主机查询
             handleSearch () {
+                let params = {}
+                if (this.isAdminView) {
+                    params = this.searchParams
+                } else {
+                    params = Object.assign({}, this.searchParams, { bk_biz_id: this.business })
+                }
                 this.$store.dispatch('hostSearch/searchHost', {
-                    params: this.searchParams,
+                    params,
                     config: {
                         requestId: this.requestId,
                         cancelPrevious: true
@@ -168,15 +178,14 @@
                 this.handleClickOutside()
             },
             showMoreHost () {
+                const name = this.isAdminView ? 'resource' : 'hosts'
                 this.$router.push({
-                    name: 'resource',
-                    query: {
-                        ip: this.keyword,
-                        exact: 0,
+                    name,
+                    params: {
+                        text: this.keyword,
                         inner: true,
                         outer: true,
-                        assigned: true,
-                        from: this.$route.fullPath
+                        exact: false
                     }
                 })
             },
@@ -189,6 +198,7 @@
 <style lang="scss" scoped>
     .search-layout {
         width: 50%;
+        max-width: 700px;
         margin: 0 auto;
     }
     .search-box{

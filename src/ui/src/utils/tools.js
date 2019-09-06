@@ -1,4 +1,5 @@
 import moment from 'moment'
+import GET_VALUE from 'get-value'
 
 /**
  * 拍平列表
@@ -9,7 +10,7 @@ import moment from 'moment'
 
 export function getFullName (names) {
     if (!names) return ''
-    const userList = window.CMDB_USER_LIST // set in setup/preload.js
+    const userList = window.CMDB_USER_LIST || [] // set in setup/preload.js
     const enNames = String(names).split(',')
     const fullNames = enNames.map(enName => {
         const user = userList.find(user => user['english_name'] === enName)
@@ -321,6 +322,10 @@ export function getSort (sort) {
     return prop
 }
 
+export function getValue () {
+    return GET_VALUE(...arguments)
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -338,5 +343,6 @@ export default {
     getInstFormValues,
     getMetadataBiz,
     getValidateRules,
-    getSort
+    getSort,
+    getValue
 }

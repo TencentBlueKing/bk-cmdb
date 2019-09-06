@@ -1,8 +1,12 @@
 import Meta from '@/router/meta'
+import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
 
 export default {
     name: 'synchronous',
-    path: '/synchronous/module/:moduleId/set/:setId',
+    path: 'synchronous/module/:moduleId/set/:setId',
     component: () => import('./index.vue'),
-    meta: new Meta({})
+    meta: new Meta({
+        owner: MENU_BUSINESS,
+        title: '同步模板'
+    })
 }

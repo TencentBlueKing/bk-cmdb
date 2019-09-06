@@ -68,13 +68,13 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :width="450"
             :title="slider.title"
             :is-show.sync="slider.isShow"
             :before-close="handleSliderBeforeClose">
             <the-field-detail
                 ref="fieldForm"
-                class="slider-content"
                 slot="content"
                 v-if="slider.isShow"
                 :is-read-only="isReadOnly"

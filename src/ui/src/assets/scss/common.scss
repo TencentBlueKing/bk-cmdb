@@ -13,7 +13,7 @@ body {
     overflow: hidden;
     font-family: -apple-system,BlinkMacSystemFont,PingFang SC,Microsoft Yahei,Arial;
     color: $cmdbTextColor;
-    background: #fff;
+    background-color: #FAFBFD;
 }
 
 ul,
@@ -67,6 +67,10 @@ textarea::-webkit-input-placeholder {
 .inline-block-middle {
     display: inline-block;
     vertical-align: middle;
+}
+
+.bgc-white {
+    background-color: #fff;
 }
 
 div.cmdb-form-item {
@@ -282,7 +286,7 @@ input.cmdb-form-input {
 
     &.disabled,
     &:disabled {
-        opacity: .385;
+        color: #c4c6cc !important;
         cursor: not-allowed !important;
     }
 }

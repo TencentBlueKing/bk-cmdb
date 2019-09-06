@@ -115,6 +115,7 @@
         </template>
 
         <bk-sideslider
+            v-transfer-dom
             :width="676"
             :is-show.sync="slider.show"
             :title="slider.title">
@@ -222,7 +223,14 @@
         },
         async created () {
             try {
-                this.$store.commit('setHeaderTitle', '')
+                this.$store.commit('setBreadcumbs', [{
+                    i18n: '服务拓扑',
+                    route: {
+                        path: '/business/topology'
+                    }
+                }, {
+                    name: '同步模板'
+                }])
                 await this.getCategory()
                 await this.getModaelProperty()
                 await this.getModuleInstance()

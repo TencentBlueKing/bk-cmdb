@@ -46,6 +46,7 @@
             <bk-button class="options-button" @click="backToModule">{{$t('取消')}}</bk-button>
         </div>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="processForm.show"
             :title="processForm.title"
             :width="800"
@@ -75,6 +76,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     export default {
         name: 'clone-to-source',
         props: {
@@ -352,7 +354,7 @@
             },
             backToModule () {
                 this.$router.replace({
-                    name: 'topology',
+                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
                     query: {
                         module: this.$route.params.moduleId
                     }
