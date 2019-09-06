@@ -15,8 +15,9 @@ package extensions
 import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth"
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 type AuthManager struct {
@@ -59,9 +60,51 @@ func (is *InstanceSimplify) Parse(data mapstr.MapStr) (*InstanceSimplify, error)
 		return nil, err
 	}
 
-	bizID, err := metadata.ParseBizIDFromData(data)
+	bizID, err := ParseBizID(data)
 	is.BizID = bizID
 	return is, err
+}
+
+func ParseBizID(data mapstr.MapStr) (int64, error) {
+	/*
+		data:
+		{
+		  "metadata": {
+			"label": {
+			  "bk_biz_id": "2"
+			}
+		  }
+		}
+		==> 2, nil
+	*/
+
+	metaInterface, exist := data[common.MetadataField]
+	if !exist {
+		return 0, nil
+	}
+
+	metaValue, ok := metaInterface.(map[string]interface{})
+	if !ok {
+		return 0, nil
+	}
+
+	labelInterface, exist := metaValue["label"]
+	if !exist {
+		return 0, nil
+	}
+
+	labelValue, ok := labelInterface.(map[string]interface{})
+	if !ok {
+		return 0, nil
+	}
+
+	bizID, exist := labelValue[common.BKAppIDField]
+	if !exist {
+		// 自定义层级的metadata.label中没有 bk_biz_id 字段
+		return 0, nil
+	}
+
+	return util.GetInt64ByInterface(bizID)
 }
 
 type BusinessSimplify struct {
@@ -175,19 +218,18 @@ func (is *AuditCategorySimplify) Parse(data mapstr.MapStr) (*AuditCategorySimpli
 type ModelUniqueSimplify struct {
 	ID         uint64 `field:"id" json:"id" bson:"id"`
 	ObjID      string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
-	Ispre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	IsPre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
 	BusinessID int64
 }
 
 func (cls *ModelUniqueSimplify) Parse(data mapstr.MapStr) (*ModelUniqueSimplify, error) {
-
 	err := mapstr.SetValueToStructByTags(cls, data)
 	if nil != err {
 		return nil, err
 	}
 
 	// parse business id
-	cls.BusinessID, err = metadata.ParseBizIDFromData(data)
+	cls.BusinessID, err = ParseBizID(data)
 	if nil != err {
 		return nil, err
 	}
@@ -202,7 +244,6 @@ type ProcessSimplify struct {
 }
 
 func (is *ProcessSimplify) Parse(data mapstr.MapStr) (*ProcessSimplify, error) {
-
 	err := mapstr.SetValueToStructByTags(is, data)
 	if nil != err {
 		return nil, err
