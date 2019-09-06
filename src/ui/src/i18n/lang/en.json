@@ -378,7 +378,7 @@
         "编辑校验": "Modify rule",
         "是": "Yes",
         "否": "No",
-        "确定删除唯一校验": "Confirm delete rule",
+        "确定删除唯一校验": "Confirm delete the {name} rule?",
         "所有更改已自动保存": "All changes saved automatically",
         "立即添加": "Add",
         "暂无字段": "Empty",
