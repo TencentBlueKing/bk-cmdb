@@ -105,7 +105,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	}
 
 	// generate id field
-	id, err := p.dbProxy.NextSequence(ctx, common.BKTableNameProcessTemplate)
+	id, err := p.dbProxy.NextSequence(ctx, common.BKTableNameServiceInstance)
 	if nil != err {
 		blog.Errorf("CreateServiceInstance failed, generate id failed, err: %+v, rid: %s", err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
