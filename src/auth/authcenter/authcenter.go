@@ -13,7 +13,6 @@
 package authcenter
 
 import (
-	"configcenter/src/common/metadata"
 	"context"
 	"errors"
 	"fmt"
@@ -28,6 +27,7 @@ import (
 	"configcenter/src/auth/authcenter/permit"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -725,6 +725,11 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	}
 	result, err := ac.authClient.ListResources(ctx, header, searchCondition)
 	return result, err
+}
+
+// list iam resource with convert level
+func (ac *AuthCenter) RawListResources(ctx context.Context, header http.Header, searchCondition SearchCondition) ([]meta.BackendResource, error) {
+	return ac.authClient.ListResources(ctx, header, searchCondition)
 }
 
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {
