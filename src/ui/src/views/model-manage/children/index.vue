@@ -44,7 +44,7 @@
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelName') }">
                             <bk-input type="text" class="cmdb-form-input"
                                 name="modelName"
-                                v-validate="'required|singlechar'"
+                                v-validate="'required|singlechar|length:256'"
                                 v-model.trim="modelInfo.objName">
                             </bk-input>
                         </div>
@@ -52,7 +52,7 @@
                         <span class="text-primary" @click="isEditName = false">{{$t('取消')}}</span>
                     </template>
                 </div>
-                <div class="model-text ml10" v-if="!activeModel['bk_ispaused']">
+                <div class="model-text ml10" v-if="!activeModel['bk_ispaused'] && activeModel.bk_classification_id !== 'bk_biz_topo'">
                     <span>{{$t('实例数量')}}：</span>
                     <div class="text-content-count"
                         :title="modelStatisticsSet[activeModel['bk_obj_id']] || 0"
@@ -139,6 +139,13 @@
     import theFieldGroup from '@/components/model-manage/field-group'
     import theChooseIcon from '@/components/model-manage/choose-icon/_choose-icon'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
+    import {
+        MENU_MODEL_MANAGEMENT,
+        MENU_MODEL_BUSINESS_TOPOLOGY,
+        MENU_RESOURCE_HOST,
+        MENU_RESOURCE_BUSINESS,
+        MENU_RESOURCE_INSTANCE
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             theFieldGroup,
@@ -327,7 +334,22 @@
                 const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
                 if (model) {
                     this.$store.commit('objectModel/setActiveModel', model)
-                    this.$store.commit('setHeaderTitle', model['bk_obj_name'])
+                    console.log(model)
+                    if (model.bk_classification_id === 'bk_biz_topo') {
+                        this.$store.commit('setBreadcumbs', [{
+                            i18n: '业务层级',
+                            route: {
+                                name: MENU_MODEL_BUSINESS_TOPOLOGY
+                            }
+                        }, { name: model.bk_obj_name }])
+                    } else {
+                        this.$store.commit('setBreadcumbs', [{
+                            i18n: '模型管理',
+                            route: {
+                                name: MENU_MODEL_MANAGEMENT
+                            }
+                        }, { name: model.bk_obj_name }])
+                    }
                     this.initModelInfo()
                 } else {
                     this.$router.replace({ name: 'status404' })
@@ -435,6 +457,7 @@
                             requestId: 'deleteModel'
                         }
                     })
+                    this.$router.replace({ name: MENU_MODEL_BUSINESS_TOPOLOGY })
                 } else {
                     await this.deleteObject({
                         id: this.activeModel['id'],
@@ -445,20 +468,28 @@
                             requestId: 'deleteModel'
                         }
                     })
+                    this.$router.replace({ name: MENU_MODEL_MANAGEMENT })
                 }
                 this.$http.cancel('post_searchClassificationsObjects')
-                this.$router.replace({ name: 'model' })
             },
             handleGoInstance () {
-                this.$router.push({
-                    name: 'generalModel',
-                    params: {
-                        objId: this.activeModel.bk_obj_id
-                    },
-                    query: {
-                        from: this.$route.fullPath
-                    }
-                })
+                const model = this.activeModel
+                const map = {
+                    host: MENU_RESOURCE_HOST,
+                    biz: MENU_RESOURCE_BUSINESS
+                }
+                if (map.hasOwnProperty(model.bk_obj_id)) {
+                    this.$router.push({
+                        name: map[model.bk_obj_id]
+                    })
+                } else {
+                    this.$router.push({
+                        name: MENU_RESOURCE_INSTANCE,
+                        params: {
+                            objId: model.bk_obj_id
+                        }
+                    })
+                }
             }
         }
     }
@@ -467,16 +498,26 @@
 <style lang="scss" scoped>
     .model-detail-wrapper {
         padding: 0;
-        height: 100%;
     }
     .model-details-tab {
-        height: calc(100% - 100px) !important;
+        height: calc(100% - 70px) !important;
+        /deep/ {
+            .bk-tab-header {
+                padding: 0;
+                margin: 0 20px;
+            }
+            .bk-tab-section {
+                padding: 0;
+            }
+        }
     }
     .model-info {
         padding: 0 24px;
         height: 70px;
         background: #ebf4ff;
         font-size: 14px;
+        border-bottom: 1px solid #dcdee5;
+        border-top: 1px solid #dcdee5;
         .choose-icon-wrapper {
             position: relative;
             float: left;
@@ -579,7 +620,7 @@
         }
         .model-text {
             float: left;
-            margin: 18px 10px 16px 0;
+            margin: 18px 10px 0 0;
             line-height: 36px;
             font-size: 0;
             >span {

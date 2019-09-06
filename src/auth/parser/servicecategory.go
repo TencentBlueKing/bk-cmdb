@@ -13,13 +13,9 @@
 package parser
 
 import (
-	"errors"
 	"net/http"
-	"regexp"
 
 	"configcenter/src/auth/meta"
-
-	"github.com/tidwall/gjson"
 )
 
 // utility.AddHandler(rest.Action{Verb: , Path: , Handler: ps.UpdateServiceCategory})
@@ -31,8 +27,7 @@ var ServiceCategoryAuthConfigs = []AuthConfig{
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceCategory,
-		// authorization should implements in scene server
-		ResourceAction: meta.SkipAction,
+		ResourceAction:        meta.Find,
 	}, {
 		Name:                  "findmanyServiceCategoryPattern",
 		Description:           "list 服务分类(含引用统计)",
@@ -40,8 +35,7 @@ var ServiceCategoryAuthConfigs = []AuthConfig{
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceCategory,
-		// authorization should implements in scene server
-		ResourceAction: meta.SkipAction,
+		ResourceAction:        meta.Find,
 	}, {
 		Name:                  "createServiceCategoryPattern",
 		Description:           "创建服务分类",
@@ -58,13 +52,6 @@ var ServiceCategoryAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceCategory,
 		ResourceAction:        meta.Update,
-		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
-			categoryID := gjson.GetBytes(request.Body, "id").Int()
-			if categoryID <= 0 {
-				return nil, errors.New("invalid category id")
-			}
-			return []int64{categoryID}, nil
-		},
 	}, {
 		Name:                  "deleteServiceCategoryPattern",
 		Description:           "删除服务分类",
@@ -73,13 +60,6 @@ var ServiceCategoryAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceCategory,
 		ResourceAction:        meta.Delete,
-		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
-			categoryID := gjson.GetBytes(request.Body, "id").Int()
-			if categoryID <= 0 {
-				return nil, errors.New("invalid category id")
-			}
-			return []int64{categoryID}, nil
-		},
 	},
 }
 

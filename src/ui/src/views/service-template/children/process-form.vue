@@ -144,10 +144,7 @@
                     bk_func_name: ''
                 },
                 refrenceValues: {},
-                scrollbar: false,
-                groupState: {
-                    none: true
-                }
+                scrollbar: false
             }
         },
         computed: {

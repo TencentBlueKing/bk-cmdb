@@ -18,7 +18,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 )
 
 func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
@@ -38,6 +38,7 @@ func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat in
 func (hs *hostServer) GetHostInstanceProperties(ctx context.Context, ownerID string, hostID string, h http.Header) (resp *metadata.HostInstancePropertiesResult, err error) {
 	subPath := fmt.Sprintf("/hosts/%s/%s", ownerID, hostID)
 
+	resp = new(metadata.HostInstancePropertiesResult)
 	err = hs.client.Get().
 		WithContext(ctx).
 		Body(nil).
@@ -89,13 +90,27 @@ func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat i
 	return
 }
 
+func (hs *hostServer) SyncHost(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/sync/new/host"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.GetHostFavoriteResult, err error) {
 	resp = new(metadata.GetHostFavoriteResult)
 	subPath := "hosts/favorites/search"
 
 	err = hs.client.Post().
 		WithContext(ctx).
-		Body(nil).
+		Body(dat).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -117,13 +132,13 @@ func (hs *hostServer) AddHostFavourite(ctx context.Context, h http.Header, dat *
 	return
 }
 
-func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error) {
+func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header, data *metadata.FavouriteParms) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("hosts/favorites/%s", id)
 
 	err = hs.client.Put().
 		WithContext(ctx).
-		Body(nil).
+		Body(data).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -259,7 +274,7 @@ func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header,
 
 func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/modules/resource/idle"
+	subPath := "/hosts/modules/resource/idle"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -485,7 +500,7 @@ func (hs *hostServer) MoveSetHost2IdleModule(ctx context.Context, h http.Header,
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules/idle/set"
 
-	err = hs.client.Put().
+	err = hs.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).

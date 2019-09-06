@@ -52,7 +52,7 @@
                         class="cmdb-form-input"
                         name="device_model"
                         v-model.trim="deviceDialog.data['device_model']"
-                        v-validate="'required|singlechar'">
+                        v-validate="'required|singlechar|length:256'">
                     </bk-input>
                     <div v-show="errors.has('device_model')" class="color-danger">{{ errors.first('device_model') }}</div>
                 </div>
@@ -62,7 +62,7 @@
                     </label>
                     <bk-input type="text" class="cmdb-form-input" name="device_name"
                         v-model.trim="deviceDialog.data['device_name']"
-                        v-validate="'required|singlechar'">
+                        v-validate="'required|singlechar|length:256'">
                     </bk-input>
                     <div v-show="errors.has('device_name')" class="color-danger">{{ errors.first('device_name') }}</div>
                 </div>
@@ -86,7 +86,7 @@
                     </label>
                     <bk-input type="text" class="cmdb-form-input" name="bk_vendor"
                         v-model.trim="deviceDialog.data['bk_vendor']"
-                        v-validate="'required|singlechar'">
+                        v-validate="'required|singlechar|length:256'">
                     </bk-input>
                     <div v-show="errors.has('bk_vendor')" class="color-danger">{{ errors.first('bk_vendor') }}</div>
                 </div>
@@ -101,6 +101,7 @@
             </div>
         </bk-dialog>
         <bk-sideslider
+            v-transfer-dom
             :width="800"
             :is-show.sync="importSlider.isShow"
             :title="$t('批量导入')">

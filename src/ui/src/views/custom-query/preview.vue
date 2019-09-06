@@ -3,22 +3,24 @@
         <div class="userapi-preview" v-click-outside="closePreview">
             <h3 class="preview-title">{{$t('预览查询')}}</h3>
             <i class="bk-icon icon-close" @click="closePreview"></i>
-            <bk-table
-                v-bkloading="{ isLoading: $loading('searchHost') }"
-                :data="table.list"
-                :pagination="table.pagination"
-                :max-height="$APP.height - 220"
-                @page-change="handlePageChange"
-                @page-limit-change="handleSizeChange"
-                @sort-change="handleSortChange">
-                <bk-table-column v-for="column in table.header"
-                    sortable="custom"
-                    :key="column.id"
-                    :prop="column.id"
-                    :label="column.name">
-                    <template slot-scope="{ row }">{{getHostCellText(column.property, row)}}</template>
-                </bk-table-column>
-            </bk-table>
+            <div class="preview-table">
+                <bk-table
+                    v-bkloading="{ isLoading: $loading('searchHost') }"
+                    :data="table.list"
+                    :pagination="table.pagination"
+                    :max-height="$APP.height - 220"
+                    @page-change="handlePageChange"
+                    @page-limit-change="handleSizeChange"
+                    @sort-change="handleSortChange">
+                    <bk-table-column v-for="column in table.header"
+                        sortable="custom"
+                        :key="column.id"
+                        :prop="column.id"
+                        :label="column.name">
+                        <template slot-scope="{ row }">{{getHostCellText(column.property, row)}}</template>
+                    </bk-table-column>
+                </bk-table>
+            </div>
         </div>
     </div>
 </template>
@@ -187,7 +189,7 @@
             min-width: 50%;
             max-height: 80%;
             min-height: 300px;
-            margin: 0 auto;
+            margin: 20px auto;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -208,6 +210,9 @@
                 cursor: pointer;
                 font-size: 12px;
             }
+        }
+        .preview-table {
+            padding: 0 20px 20px;
         }
     }
 </style>

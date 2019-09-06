@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/common/version"
+	webCommon "configcenter/src/web_server/common"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
@@ -33,7 +34,7 @@ func (s *Service) Index(c *gin.Context) {
 	session := sessions.Default(c)
 	role := session.Get("role")
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
-	language, _ := session.Get(common.WEBSessionLanguageKey).(string)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 
 	if s.Config.Site.AuthScheme == "internal" {
 		userPriviApp, rolePrivilege, modelPrivi, sysPrivi, mainLineObjIDArr := s.Logics.GetUserAppPri(ctx, userName, common.BKDefaultOwnerID, language)

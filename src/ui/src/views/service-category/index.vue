@@ -1,5 +1,5 @@
 <template>
-    <div class="category-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="category-wrapper">
         <feature-tips
             :feature-name="'category'"
             :show-tips="showFeatureTips"
@@ -7,7 +7,7 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="category-list">
-            <div class="category-item" v-for="(mainCategory, index) in list" :key="index">
+            <div class="category-item bgc-white" v-for="(mainCategory, index) in list" :key="index">
                 <div class="category-title" :style="{ 'background-color': mainCategory['editStatus'] ? '#f0f1f5' : '' }">
                     <div class="main-edit"
                         :style="{ width: editMainStatus === mainCategory['id'] ? '100%' : 'auto' }"
@@ -17,7 +17,7 @@
                             :input-ref="'categoryInput'"
                             :placeholder="$t('请输入一级分类')"
                             name="categoryName"
-                            v-validate="'required|namedCharacter'"
+                            v-validate="'required|namedCharacter|length:256'"
                             v-model="mainCategoryName"
                             @on-confirm="handleEditCategory(mainCategory, 'main', index)"
                             @on-cancel="handleCloseEditMain">
@@ -89,7 +89,7 @@
                             :placeholder="$t('请输入二级分类')"
                             :edit-id="mainCategory['bk_root_id']"
                             name="categoryName"
-                            v-validate="'required|namedCharacter'"
+                            v-validate="'required|namedCharacter|length:256'"
                             v-model="categoryName"
                             @on-confirm="handleAddCategory"
                             @on-cancel="handleCloseAddChild">
@@ -108,7 +108,7 @@
                             :input-ref="'categoryInput'"
                             :placeholder="$t('请输入二级分类')"
                             name="categoryName"
-                            v-validate="'required|namedCharacter'"
+                            v-validate="'required|namedCharacter|length:256'"
                             v-model="childCategoryName"
                             @on-confirm="handleEditCategory(childCategory, 'child', index)"
                             @on-cancel="handleCloseEditChild">
@@ -160,7 +160,7 @@
                             :input-ref="'categoryInput'"
                             :placeholder="$t('请输入一级分类')"
                             name="categoryName"
-                            v-validate="'required|namedCharacter'"
+                            v-validate="'required|namedCharacter|length:256'"
                             v-model="categoryName"
                             @on-confirm="handleAddCategory"
                             @on-cancel="handleCloseAddBox">
@@ -393,6 +393,7 @@
 
 <style lang="scss" scoped>
     .category-wrapper {
+        padding: 0 20px;
         .category-list {
             display: flex;
             flex-flow: row wrap;

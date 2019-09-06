@@ -232,7 +232,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 
 	if !rsp.Result {
 		blog.Errorf("failed to update the object attribute(%s), err: %s, rid: %s", a.attr.PropertyID, rsp.ErrMsg, a.params.ReqID)
-		return a.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
+		return a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 	return nil
 }
@@ -246,7 +246,7 @@ func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, erro
 
 	if !rsp.Result {
 		blog.Errorf("failed to query the object controller, cond: %#v, err: %s, rid: %s", cond, rsp.ErrMsg, a.params.ReqID)
-		return nil, a.params.Err.Error(common.CCErrTopoObjectAttributeSelectFailed)
+		return nil, a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return rsp.Data.Info, nil

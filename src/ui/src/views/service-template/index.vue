@@ -1,5 +1,5 @@
 <template>
-    <div class="template-wrapper" ref="templateWrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="template-wrapper" ref="templateWrapper">
         <feature-tips
             :feature-name="'serviceTemplate'"
             :show-tips="showFeatureTips"
@@ -230,9 +230,6 @@
                     name: 'operationalTemplate',
                     params: {
                         templateId: id
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },
@@ -276,6 +273,7 @@
 
 <style lang="scss" scoped>
     .template-wrapper {
+        padding: 0 20px;
         .filter-text {
             .bk-select {
                 width: 184px;

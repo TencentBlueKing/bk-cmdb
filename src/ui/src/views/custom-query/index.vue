@@ -1,5 +1,5 @@
 <template>
-    <div class="api-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="api-wrapper">
         <feature-tips
             :feature-name="'customQuery'"
             :show-tips="showFeatureTips"
@@ -81,6 +81,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.isShow"
             :width="515"
             :title="slider.title"
@@ -259,6 +260,7 @@
 
 <style lang="scss" scoped>
     .api-wrapper {
+        padding: 0 20px;
         .filter-wrapper {
             .business-selector {
                 float: left;

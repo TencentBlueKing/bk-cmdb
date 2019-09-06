@@ -99,7 +99,8 @@ func (is *InstanceSimplify) ParseBizID(data mapstr.MapStr) (int64, error) {
 
 	bizID, exist := labelValue[common.BKAppIDField]
 	if !exist {
-		return 0, metadata.LabelKeyNotExistError
+		// 自定义层级的metadata.label中没有 bk_biz_id 字段
+		return 0, nil
 	}
 
 	return util.GetInt64ByInterface(bizID)
@@ -184,8 +185,8 @@ func (is *HostSimplify) Parse(data mapstr.MapStr) (*HostSimplify, error) {
 }
 
 type PlatSimplify struct {
-	BKCloudIDField   int64  `field:"bk_cloud_id"`
-	BKCloudNameField string `field:"bk_cloud_name"`
+	BKCloudIDField   int64  `field:"bk_cloud_id" json:"bk_cloud_id" bson:"bk_cloud_id"`
+	BKCloudNameField string `field:"bk_cloud_name" json:"bk_cloud_name" bson:"bk_cloud_name"`
 }
 
 func (is *PlatSimplify) Parse(data mapstr.MapStr) (*PlatSimplify, error) {

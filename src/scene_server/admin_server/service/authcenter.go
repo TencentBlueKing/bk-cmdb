@@ -106,7 +106,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	assoKinds := make([]metadata.AssociationKind, 0)
 	for ak := range associationKinds {
 		// filter bk_mainline kind, do not register to auth center.
-		if associationKinds[ak].AssociationKindID != "bk_mainline" {
+		if associationKinds[ak].AssociationKindID != common.AssociationKindMainline {
 			assoKinds = append(assoKinds, associationKinds[ak])
 		}
 	}

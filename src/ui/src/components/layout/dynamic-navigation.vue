@@ -6,12 +6,27 @@
         <div class="nav-wrapper"
             :class="{ unfold: unfold, flexible: !navStick }">
             <div class="business-wrapper" v-if="showBusinessSelector">
-                <cmdb-business-selector class="business-selector" @on-select="handleToggleBusiness"></cmdb-business-selector>
+                <transition name="fade">
+                    <cmdb-business-selector class="business-selector"
+                        v-show="unfold"
+                        :popover-options="{
+                            appendTo: () => this.$el
+                        }"
+                        @on-select="handleToggleBusiness"
+                        @business-empty="handleBusinessEmpty">
+                    </cmdb-business-selector>
+                </transition>
+                <transition name="fade">
+                    <i class="business-flag bk-icon icon-angle-down" v-show="!unfold"></i>
+                </transition>
             </div>
             <ul class="menu-list">
                 <template v-for="(menu, index) in currentMenus">
                     <router-link class="menu-item is-link" tag="li" active-class="active"
                         v-if="menu.hasOwnProperty('route')"
+                        :class="{
+                            active: isMenuActive(menu)
+                        }"
                         :key="index"
                         :to="menu.route"
                         :title="$t(menu.i18n)">
@@ -46,6 +61,9 @@
                                     v-for="(submenu, submenuIndex) in menu.submenu"
                                     exact
                                     active-class="active"
+                                    :class="{
+                                        active: isMenuActive(submenu)
+                                    }"
                                     :key="submenuIndex"
                                     :to="submenu.route"
                                     :title="$t(submenu.i18n)">
@@ -77,6 +95,7 @@
         MENU_RESOURCE_BUSINESS,
         MENU_RESOURCE_HOST,
         MENU_RESOURCE_INSTANCE,
+        MENU_RESOURCE_MANAGEMENT,
         MENU_RESOURCE_COLLECTION,
         MENU_RESOURCE_HOST_COLLECTION,
         MENU_RESOURCE_BUSINESS_COLLECTION
@@ -92,8 +111,7 @@
             }
         },
         computed: {
-            ...mapGetters(['navStick', 'navFold', 'admin', 'businessMenuRedirectRoute']),
-            ...mapGetters('menu', ['active']),
+            ...mapGetters(['navStick', 'navFold', 'admin']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectModelClassify', ['classifications', 'models']),
             unfold () {
@@ -156,9 +174,20 @@
         },
         methods: {
             setDefaultExpand () {
-                const expandedId = this.$tools.getValue(this.$route, 'meta.menu.parent')
+                const expandedId = this.$route.meta.menu.parent
+                const relative = this.$route.meta.menu.relative
                 if (expandedId) {
                     this.$set(this.state, expandedId, { expanded: true })
+                } else if (relative) {
+                    const parent = this.currentMenus.find(menu => {
+                        if (menu.hasOwnProperty('route')) {
+                            return menu.route.name === relative
+                        }
+                        return menu.submenu.some(submenu => submenu.route.name === relative)
+                    })
+                    if (parent) {
+                        this.$set(this.state, parent.id, { expanded: true })
+                    }
                 }
             },
             isMenuExpanded (menu) {
@@ -166,6 +195,21 @@
                     return this.state[menu.id].expanded
                 }
                 return false
+            },
+            isMenuActive (menu) {
+                const relative = this.$route.meta.menu.relative
+                if (relative === MENU_RESOURCE_MANAGEMENT) {
+                    if (menu.id === MENU_RESOURCE_MANAGEMENT) {
+                        const routeName = this.$route.name
+                        return !this.collectionMenus.some(collection => {
+                            if (routeName === MENU_RESOURCE_INSTANCE) {
+                                return collection.route.params && collection.route.params.objId === this.$route.params.objId
+                            }
+                            return collection.route.name === routeName
+                        })
+                    }
+                }
+                return this.$route.meta.menu.relative === menu.route.name
             },
             getCollectionRoute (model) {
                 const map = {
@@ -252,21 +296,10 @@
                 }
             },
             handleToggleBusiness (id) {
-                const routerName = this.$route.name
-                if (routerName === MENU_BUSINESS) {
-                    if (this.businessMenuRedirectRoute) {
-                        this.$router.replace(this.businessMenuRedirectRoute)
-                    } else {
-                        this.$router.replace({
-                            name: 'hosts',
-                            params: Object.assign({
-                                business: id
-                            }, this.$route.params),
-                            query: this.$route.query
-                        })
-                    }
-                }
                 this.$emit('business-change', id)
+            },
+            handleBusinessEmpty () {
+                this.$emit('business-empty')
             }
         }
     }
@@ -310,6 +343,7 @@ $color: #63656E;
 }
 
 .business-wrapper {
+    position: relative;
     padding: 13px 0;
     height: 59px;
     border-bottom: 1px solid #DCDEE5;
@@ -319,9 +353,22 @@ $color: #63656E;
         width: 240px;
         margin: 0 auto;
     }
+    .business-flag {
+        position: absolute;
+        left: 14px;
+        top: 13px;
+        width: 32px;
+        height: 32px;
+        line-height: 30px;
+        text-align: center;
+        font-size: 12px;
+        border: 1px solid #C4C6CC;
+        border-radius: 2px;
+    }
 }
 
 .menu-list {
+    padding: 10px 0;
     height: calc(100% - 120px);
     overflow-y: auto;
     overflow-x: hidden;
@@ -340,7 +387,6 @@ $color: #63656E;
 
     .menu-item {
         position: relative;
-        transition: background-color $duration $cubicBezier;
         &.is-link {
             .icon-close {
                 display: none;
@@ -367,8 +413,8 @@ $color: #63656E;
                 }
             }
         }
-        &.is-open {
-            background-color: #F0F1F5;
+        &:hover {
+            background-color: #F6F6F9;
         }
         &.active.is-link {
             background-color: #3a84ff;
@@ -432,11 +478,14 @@ $color: #63656E;
         color: $color;
         @include ellipsis;
         &:hover {
-            background-color: #DCDEE5;
+            background-color: #E8E9EF;
         }
         &.active {
             color: #fff;
             background-color: #3a84ff;
+            &::before {
+                background-color: #fff;
+            }
         }
         &:before {
             content: "";
@@ -446,7 +495,7 @@ $color: #63656E;
             width: 4px;
             height: 4px;
             border-radius: 50%;
-            background-color: currentColor;
+            background-color: #c4c6cc;
         }
     }
 }
@@ -466,10 +515,11 @@ $color: #63656E;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 55px;
-    line-height: 54px;
-    border-top: 1px solid rgba(255, 255, 255, .05);
+    height: 50px;
+    line-height: 49px;
+    border-top: 1px solid #DCDEE5;
     font-size: 0;
+    color: #63656E;
     &:before {
         content: "";
         display: inline-block;
@@ -489,7 +539,7 @@ $color: #63656E;
         cursor: pointer;
         transition: transform $duration $cubicBezier;
         &:hover {
-            color: #fff;
+            opacity: .8;
         }
         &.sticked {
             transform: rotate(180deg);

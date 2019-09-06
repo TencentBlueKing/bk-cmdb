@@ -336,16 +336,10 @@
                     params: {
                         instanceId: this.instance.id,
                         hostId: this.instance.bk_host_id,
-                        setId: this.module.bk_set_id,
+                        setId: this.currentNode.parent.data.bk_inst_id,
                         moduleId: this.module.bk_module_id
                     },
                     query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.module.bk_module_id
-                            }
-                        },
                         title: this.instance.name
                     }
                 })
@@ -382,14 +376,6 @@
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.instance.service_template_id
-                    },
-                    query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.module.bk_module_id
-                            }
-                        }
                     }
                 })
             },

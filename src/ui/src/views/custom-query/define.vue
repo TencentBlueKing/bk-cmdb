@@ -29,7 +29,7 @@
                         v-model.trim="name"
                         :name="$t('查询名称')"
                         :disabled="!editable"
-                        v-validate="'required|max:15'">
+                        v-validate="'required|length:256'">
                     </bk-input>
                 </div>
                 <span v-show="errors.has($t('查询名称'))" class="color-danger">{{ errors.first($t('查询名称')) }}</span>
@@ -128,6 +128,7 @@
             </bk-button>
         </div>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="propertySlider.isShow"
             :width="394"
             :title="$t('添加分组条件')"
@@ -793,6 +794,11 @@
             .filter-content {
                 display: flex;
                 margin-top: 10px;
+                &:hover {
+                    .userapi-delete {
+                        opacity: 1;
+                    }
+                }
                 .content-right {
                     margin-left: 97px;
                 }
@@ -820,15 +826,13 @@
                     line-height: 32px;
                     text-align: center;
                     font-size: 16px;
-                    color: #c3cdd7;
+                    color: #C4C6CC;
                     cursor: pointer;
+                    opacity: 0;
+                    &:hover {
+                        color: #7d8088;
+                    }
                 }
-            }
-        }
-        .property-btn-group {
-            font-size: 0;
-            /deep/ .bk-button {
-                margin: 0 0 0 10px;
             }
         }
         .userapi-btn-group {
@@ -850,6 +854,13 @@
                     color: #dcdee5;
                 }
             }
+        }
+    }
+    .property-btn-group {
+        font-size: 0;
+        padding: 0 20px;
+        /deep/ .bk-button {
+            margin: 0 10px 0 0;
         }
     }
 </style>

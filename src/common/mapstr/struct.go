@@ -117,7 +117,7 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 
 		fieldValue := targetValue.FieldByName(structField.Name)
 		if !fieldValue.CanSet() {
-			continue
+			return fmt.Errorf("%s can't be set", structField.Name)
 		}
 
 		switch structField.Type.Kind() {
@@ -162,6 +162,12 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 					return err
 				}
 				fieldValue.Set(targetResult)
+			case bool:
+				if structField.Type.Elem().Kind() == reflect.Bool {
+					targetResult = getValueElem(targetResult)
+					targetResult.SetBool(t)
+					fieldValue.Set(targetResult.Addr())
+				}
 			case string:
 				targetResult = getValueElem(targetResult)
 				targetResult.SetString(t)

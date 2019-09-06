@@ -9,13 +9,16 @@
                 :name="model.bk_obj_id"
                 :label="model.bk_obj_name">
                 <template>
-                    <feature-tips class="mt10"
+                    <feature-tips
                         :feature-name="'customFields'"
                         :show-tips="showFeatureTips"
                         :desc="$t('自定义字段功能提示')"
                         @close-tips="showFeatureTips = false">
                     </feature-tips>
                     <field-group class="model-detail-wrapper"
+                        :class="{
+                            'has-tips': showFeatureTips
+                        }"
                         :custom-obj-id="model.bk_obj_id">
                     </field-group>
                 </template>
@@ -43,8 +46,13 @@
             ...mapGetters(['featureTipsParams'])
         },
         async created () {
-            this.showFeatureTips = this.featureTipsParams['customFields']
-            this.mainLine = await this.getMainLine()
+            try {
+                this.showFeatureTips = this.featureTipsParams['customFields']
+                const data = await this.getMainLine()
+                this.mainLine = data.filter(model => ['host', 'set', 'module'].includes(model.bk_obj_id))
+            } catch (e) {
+                this.mainLine = []
+            }
         },
         methods: {
             getMainLine () {
@@ -65,16 +73,23 @@
 <style lang="scss" scoped>
     .custom-fields-layout {
         padding: 0;
-        height: 100%;
     }
     .tab-layout {
-        /deep/ .bk-tab-header {
-            padding: 0;
-            margin: 0 20px;
+        /deep/ {
+            .bk-tab-content {
+                padding-top: 10px;
+            }
+            .bk-tab-header {
+                padding: 0;
+                margin: 0 20px;
+            }
         }
     }
     .model-detail-wrapper {
         padding: 0 !important;
+        &.has-tips {
+            height: calc(100% - 52px);
+        }
     }
 </style>
 

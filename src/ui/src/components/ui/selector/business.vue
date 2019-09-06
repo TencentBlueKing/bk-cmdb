@@ -4,7 +4,8 @@
         :searchable="authorizedBusiness.length > 5"
         :clearable="false"
         :placeholder="$t('请选择业务')"
-        :disabled="disabled">
+        :disabled="disabled"
+        :popover-options="popoverOptions">
         <bk-option
             v-for="(option, index) in authorizedBusiness"
             :key="index"
@@ -25,6 +26,12 @@
             disabled: {
                 type: Boolean,
                 default: false
+            },
+            popoverOptions: {
+                type: Object,
+                default () {
+                    return {}
+                }
             }
         },
         data () {
@@ -55,7 +62,7 @@
             if (this.authorizedBusiness.length) {
                 this.init()
             } else {
-                // todo 无权限时应该如何跳转
+                this.$emit('business-empty')
             }
         },
         methods: {
