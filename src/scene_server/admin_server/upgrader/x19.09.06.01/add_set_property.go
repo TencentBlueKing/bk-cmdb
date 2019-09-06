@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package x19_08_24_01
+package x19_09_06_01
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-func addModuleProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addSetProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	type Attribute struct {
 		ID                int64       `field:"id" json:"id" bson:"id"`
 		OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
@@ -53,7 +53,7 @@ func addModuleProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 	serviceCategoryIDProperty := Attribute{
 		ID:                0,
 		OwnerID:           conf.OwnerID,
-		ObjectID:          common.BKInnerObjIDModule,
+		ObjectID:          common.BKInnerObjIDSet,
 		PropertyID:        "set_template_id",
 		PropertyName:      "集群模板ID",
 		PropertyGroup:     "default",
@@ -79,7 +79,7 @@ func addModuleProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
 	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, serviceCategoryIDProperty, "id", uniqueFields, []string{})
 	if nil != err {
-		blog.Errorf("[upgrade v19.08.24.01] addModuleProperty set_template_id failed, err: %+v", err)
+		blog.Errorf("[upgrade v19.08.24.01] addSetProperty set_template_id failed, err: %+v", err)
 		return err
 	}
 
