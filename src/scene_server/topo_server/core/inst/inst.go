@@ -13,7 +13,6 @@
 package inst
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 
@@ -23,6 +22,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -287,6 +287,7 @@ func (cli *inst) IsInstanceExists(nonInnerAttributes []model.AttributeInterface)
 
 	return 0 != rsp.Data.Count, nil
 }
+
 func (cli *inst) Save(data mapstr.MapStr) error {
 
 	if nil != data {
