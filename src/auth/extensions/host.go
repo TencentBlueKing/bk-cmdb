@@ -63,7 +63,7 @@ func GetHostLayers(ctx context.Context, coreService coreservice.CoreServiceClien
 
 	bizTopoTreeRoot, err := coreService.Mainline().SearchMainlineInstanceTopo(ctx, *requestHeader, bkBizID, true)
 	if err != nil {
-		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
+		err = fmt.Errorf("SearchMainlineInstanceTopo failed, bkBizID: %d, err: %+v", bkBizID, err)
 		return
 	}
 

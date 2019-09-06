@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
@@ -33,7 +34,8 @@ var (
 )
 
 type HostSnap struct {
-	redisCli *redis.Client
+	redisCli    *redis.Client
+	authManager extensions.AuthManager
 
 	cache     *Cache
 	cachelock sync.RWMutex
@@ -46,7 +48,7 @@ type Cache struct {
 	flag  bool
 }
 
-func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB) *HostSnap {
+func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, authManager extensions.AuthManager) *HostSnap {
 	h := &HostSnap{
 		redisCli: redisCli,
 		ctx:      ctx,
@@ -55,6 +57,7 @@ func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB) *HostS
 			cache: map[bool]*HostCache{},
 			flag:  false,
 		},
+		authManager: authManager,
 	}
 	go h.fetchDBLoop()
 	return h
