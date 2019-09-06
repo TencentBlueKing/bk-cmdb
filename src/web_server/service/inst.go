@@ -35,9 +35,9 @@ import (
 // ImportInst import inst
 func (s *Service) ImportInst(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	logics.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
-	language := logics.GetLanguageByHTTPRequest(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -100,8 +100,8 @@ func (s *Service) ImportInst(c *gin.Context) {
 func (s *Service) ExportInst(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
-	logics.SetProxyHeader(c)
-	language := logics.GetLanguageByHTTPRequest(c)
+	webCommon.SetProxyHeader(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	pheader := c.Request.Header

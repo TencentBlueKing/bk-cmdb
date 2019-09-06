@@ -1,5 +1,5 @@
 <template>
-    <div class="verification-detail-wrapper">
+    <div class="model-slider-content verification-detail-wrapper">
         <div class="form-label">
             <span class="label-text">
                 {{$t('校验规则')}}
@@ -26,7 +26,7 @@
             </div>
         </div>
         <!-- <div class="verification-selector-mask" v-if="attribute.isShow"></div> -->
-        <div class="radio-box">
+        <!-- <div class="radio-box">
             <label class="label-text">
                 {{$t('属性为空值是否校验')}}
             </label>
@@ -38,7 +38,7 @@
                 <input type="radio" name="required" :value="false" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
                 <span class="cmdb-radio-text">{{$t('否')}}</span>
             </label>
-        </div>
+        </div> -->
         <div class="btn-group">
             <bk-button theme="primary"
                 :disabled="isReadOnly || !verificationInfo.selected.length"
@@ -171,7 +171,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .slider-content.verification-detail-wrapper {
+    .model-slider-content.verification-detail-wrapper {
         .form-label {
             .label-text {
                 width: 130px;

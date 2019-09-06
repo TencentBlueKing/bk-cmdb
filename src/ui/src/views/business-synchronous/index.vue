@@ -70,6 +70,10 @@
                                     {{`${attribute['property_name']}：${attribute['show_value'] ? attribute['show_value'] : '--'}`}}
                                 </div>
                             </div>
+                            <div class="mb50"
+                                v-show="process['operational_type'] === 'others'">
+                                {{$t('服务分类')}}：<span style="color: #313238;">{{process['service_category']}}</span>
+                            </div>
                         </div>
                         <div class="instances-box">
                             <div class="title">
@@ -85,6 +89,15 @@
                                     <span v-if="process['operational_type'] === 'changed'">（{{instance['changed_attributes'].length}}）</span>
                                 </div>
                             </div>
+                            <bk-pagination class="pagination pt10" v-show="process['operational_type'] === 'others'"
+                                align="right"
+                                size="small"
+                                :current="pagination.current"
+                                :count="pagination.count"
+                                :limit="pagination.size"
+                                @change="handlePageChange"
+                                @limit-change="handleSizeChange">
+                            </bk-pagination>
                         </div>
                     </section>
                 </div>
@@ -102,6 +115,7 @@
         </template>
 
         <bk-sideslider
+            v-transfer-dom
             :width="676"
             :is-show.sync="slider.show"
             :title="slider.title">
@@ -146,7 +160,15 @@
                     show: false,
                     title: '',
                     details: {}
-                }
+                },
+                pagination: {
+                    current: 1,
+                    count: 0,
+                    size: 10
+                },
+                categoryList: [],
+                changedAttributes: {},
+                list: []
             }
         },
         computed: {
@@ -159,19 +181,6 @@
             },
             treePath () {
                 return this.$route.query.path
-            },
-            list () {
-                const formatList = []
-                Object.keys(this.differenData).forEach(key => {
-                    formatList.push(...this.differenData[key].map(info => {
-                        return {
-                            operational_type: key,
-                            has_read: false,
-                            ...info
-                        }
-                    }).filter(process => process['operational_type'] !== 'unchanged'))
-                })
-                return formatList
             },
             properties () {
                 const changedList = this.list.filter(process => process['operational_type'] === 'changed')
@@ -214,7 +223,15 @@
         },
         async created () {
             try {
-                this.$store.commit('setHeaderTitle', '')
+                this.$store.commit('setBreadcumbs', [{
+                    i18n: '服务拓扑',
+                    route: {
+                        path: '/business/topology'
+                    }
+                }, {
+                    name: '同步模板'
+                }])
+                await this.getCategory()
                 await this.getModaelProperty()
                 await this.getModuleInstance()
                 if (this.list.length) {
@@ -237,6 +254,20 @@
                 'searchServiceInstanceDifferences',
                 'syncServiceInstanceByTemplate'
             ]),
+            getList () {
+                const formatList = []
+                Object.keys(this.differenData).forEach(key => {
+                    const differenItem = this.differenData[key].map(info => {
+                        return {
+                            operational_type: key,
+                            has_read: false,
+                            ...info
+                        }
+                    })
+                    formatList.push(...differenItem)
+                })
+                return formatList.filter(item => item.operational_type !== 'unchanged')
+            },
             async getModaelProperty () {
                 this.modelProperties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
@@ -248,6 +279,18 @@
                         fromCache: false
                     }
                 })
+            },
+            getCategory () {
+                this.$store.dispatch('serviceClassification/searchServiceCategory', {
+                    params: this.$injectMetadata({})
+                }).then(data => {
+                    this.categoryList = data.info
+                })
+            },
+            getCategoryName (id) {
+                const secondCategory = this.categoryList.find(item => item.category.id === id) || {}
+                const firstCategory = this.categoryList.find(item => item.category.id === secondCategory['category'].bk_parent_id)
+                return `${firstCategory['category'].name || '--'} / ${secondCategory['category'].name || '--'}`
             },
             async getModuleInstance () {
                 const data = await this.$store.dispatch('objectModule/searchModule', {
@@ -283,19 +326,56 @@
                             bk_module_id: Number(this.routerParams.moduleId),
                             service_template_id: this.serviceTemplateId
                         })
-                    }).then(res => {
-                        this.differenData = {
+                    }).then(async res => {
+                        const differen = {
                             added: res.added,
                             changed: res.changed,
                             removed: res.removed,
                             unchanged: res.unchanged
                         }
+                        const changedAttributes = res.changed_attributes
+                        this.changedAttributes = changedAttributes[0]
+                        if (changedAttributes.length) {
+                            const data = await this.getModuleServiceInstances()
+                            const serviceInstances = data.info.map(item => {
+                                return {
+                                    process: null,
+                                    service_instance: item
+                                }
+                            })
+                            this.pagination.count = data.count
+                            differen.others = [{
+                                process_template_id: -1,
+                                process_template_name: this.$t('其他信息'),
+                                service_instance_count: data.count,
+                                service_category: this.getCategoryName(changedAttributes[0].template_property_value),
+                                service_instances: serviceInstances
+                            }]
+                        }
+                        this.differenData = differen
+                        this.list = this.getList()
                     })
                     this.$store.commit('setHeaderTitle', `${this.$t('同步模板')}【${this.viewsTitle}】`)
                 } catch (error) {
                     console.error(error)
                     this.noFindData = true
                 }
+            },
+            getModuleServiceInstances () {
+                return this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
+                    params: this.$injectMetadata({
+                        bk_module_id: Number(this.routerParams.moduleId),
+                        with_name: true,
+                        page: {
+                            start: (this.pagination.current - 1) * this.pagination.size,
+                            limit: this.pagination.size
+                        }
+                    }),
+                    config: {
+                        requestId: 'getModuleServiceInstances',
+                        cancelPrevious: true
+                    }
+                })
             },
             propertiesGroup () {
                 const instance = this.changedData.instanceDetails
@@ -304,9 +384,10 @@
                         const property = this.modelProperties.find(property => property['bk_property_id'] === key)
                         let propertyValue = ''
                         if (['enum'].includes(property['bk_property_type'])) {
-                            propertyValue = property['option'].find(option => option['id'] === instance[key])['name']
+                            const enumValue = property['option'].find(option => option['id'] === instance[key])
+                            propertyValue = enumValue ? enumValue['name'] : enumValue
                         } else if (['bool'].includes(property['bk_property_type'])) {
-                            propertyValue = instance[key] ? '是' : '否'
+                            propertyValue = instance[key] ? this.$t('是') : this.$t('否')
                         } else {
                             propertyValue = instance[key]
                         }
@@ -350,8 +431,8 @@
                         result['before_value'] = property['option'].find(option => option['id'] === item['property_value'])['name']
                         result['show_value'] = property['option'].find(option => option['id'] === item['template_property_value']['value'])['name']
                     } else if (['bool'].includes(property['bk_property_type'])) {
-                        result['before_value'] = item['property_value'] ? '是' : '否'
-                        result['show_value'] = item['template_property_value']['value'] ? '是' : '否'
+                        result['before_value'] = item['property_value'] ? this.$t('是') : this.$t('否')
+                        result['show_value'] = item['template_property_value']['value'] ? this.$t('是') : this.$t('否')
                     } else {
                         result['before_value'] = item['property_value']
                         result['show_value'] = item['property_id'] === 'bind_ip'
@@ -362,34 +443,14 @@
                 })
             },
             async hanldeInstanceDetails (instance, type, processId) {
-                const instanceId = instance['service_instance']['id']
                 this.slider.title = instance['service_instance']['name']
                 this.changedData.type = type
                 if (type === 'changed') {
                     this.slider.details = this.getTableShowList(instance['changed_attributes'])
                 } else if (type === 'removed') {
-                    if (this.instanceMap.hasOwnProperty(instanceId)) {
-                        this.changedData.instanceDetails = this.instanceMap[instanceId]
-                    } else {
-                        try {
-                            const result = await this.getServiceInstanceProcesses({
-                                params: this.$injectMetadata({
-                                    service_instance_id: instanceId
-                                })
-                            })
-                            const targetProcess = result.filter(process => !process.relation.process_template_id)
-                            console.log(targetProcess)
-                            this.changedData.instanceDetails = result[0]['property']
-                            this.$store.commit('businessSync/setInstance', {
-                                id: instanceId,
-                                instanceProperty: result[0]['property']
-                            })
-                        } catch (e) {
-                            console.error(e)
-                        }
-                    }
+                    this.changedData.instanceDetails = instance.process || {}
                     this.slider.details = this.filterShowList()
-                } else {
+                } else if (type === 'added') {
                     try {
                         const result = await this.getBatchProcessTemplate({
                             params: this.$injectMetadata({
@@ -406,6 +467,12 @@
                         console.error(e)
                     }
                     this.slider.details = this.filterShowList()
+                } else {
+                    this.slider.details = [{
+                        property_name: this.$t('服务分类'),
+                        before_value: this.getCategoryName(this.changedAttributes.property_value),
+                        show_value: this.getCategoryName(this.changedAttributes.template_property_value)
+                    }]
                 }
                 this.slider.show = true
             },
@@ -428,6 +495,29 @@
                         module: this.routerParams.moduleId
                     }
                 })
+            },
+            async handleChangeInstances () {
+                const data = await this.getModuleServiceInstances()
+                const serviceInstances = data.info.map(item => {
+                    return {
+                        process: null,
+                        service_instance: item
+                    }
+                })
+                this.pagination.count = data.count
+                const index = this.list.findIndex(item => item['operational_type'] === 'others')
+                if (index !== -1) {
+                    this.$set(this.list[index], 'service_instances', serviceInstances)
+                }
+            },
+            handlePageChange (page) {
+                this.pagination.current = page
+                this.handleChangeInstances()
+            },
+            handleSizeChange (size) {
+                this.pagination.current = 1
+                this.pagination.size = size
+                this.handleChangeInstances()
             }
         }
     }
@@ -575,7 +665,7 @@
                     }
                     .service-instances {
                         @include scrollbar-y;
-                        max-height: 290px;
+                        max-height: 266px;
                         display: flex;
                         flex-wrap: wrap;
                         .instances-item {

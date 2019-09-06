@@ -20,7 +20,7 @@ export default {
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            i18n: '事件推送'
+            i18n: '事件订阅'
         },
         auth: {
             view: OPERATION.R_EVENT,

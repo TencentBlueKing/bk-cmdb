@@ -1,5 +1,9 @@
 import Meta from '@/router/meta'
-import { MENU_BUSINESS_SERVICE, MENU_BUSINESS } from '@/dictionary/menu-symbol'
+import {
+    MENU_BUSINESS,
+    MENU_BUSINESS_SERVICE,
+    MENU_BUSINESS_SERVICE_TOPOLOGY
+} from '@/dictionary/menu-symbol'
 import {
     U_HOST,
     HOST_TO_RESOURCE,
@@ -31,7 +35,7 @@ export const OPERATION = {
 }
 
 export default {
-    name: 'topology',
+    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
     path: 'topology',
     component: () => import('./index.vue'),
     meta: new Meta({
@@ -45,8 +49,6 @@ export default {
             setAuthScope () {
                 this.authScope = 'business'
             }
-        },
-        i18nTitle: '服务拓扑',
-        requireBusiness: true
+        }
     })
 }

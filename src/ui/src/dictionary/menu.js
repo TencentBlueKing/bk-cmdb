@@ -24,7 +24,7 @@ import {
 
 const getSubmenu = (views, symbol, pathPrefix = '') => {
     const submenuViews = views.filter(view => {
-        return view.meta && view.meta.menu && view.meta.menu.parent === symbol
+        return view.meta.menu.parent === symbol
     })
     const submenu = submenuViews.map(view => {
         const menu = view.meta.menu
@@ -44,7 +44,7 @@ const getMenuRoute = (views, symbol, pathPrefix = '') => {
     if (menuView) {
         return {
             name: menuView.name,
-            path: menuView.path ? `/${pathPrefix}/${menuView.path}` : undefined
+            path: `/${pathPrefix}/${menuView.path}`
         }
     }
     return {}
@@ -82,7 +82,7 @@ export default [{
         route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGEMENT, 'resource')
     }, {
         id: MENU_RESOURCE_EVENTPUSH,
-        i18n: '事件推送',
+        i18n: '事件订阅',
         icon: 'icon-cc-square',
         route: getMenuRoute(resourceViews, MENU_RESOURCE_EVENTPUSH, 'resource')
     }]

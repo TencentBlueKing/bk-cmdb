@@ -1,7 +1,6 @@
 <template>
-    <div class="group-wrapper" :style="{ 'padding-top': showFeatureTips ? '114px' : '72px' }">
+    <div class="group-wrapper" :style="{ 'padding-top': showFeatureTips ? '94px' : '52px' }">
         <cmdb-main-inject
-            :style="{ 'padding-top': showFeatureTips ? '10px' : '' }"
             inject-type="prepend"
             :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
             <feature-tips
@@ -98,7 +97,7 @@
                     </template>
                 </div>
                 <ul class="model-list clearfix">
-                    <li class="model-item"
+                    <li class="model-item bgc-white"
                         :class="{
                             'ispaused': model['bk_ispaused'],
                             'ispre': isInner(model)
@@ -106,7 +105,7 @@
                         v-for="(model, modelIndex) in classification['bk_objects']"
                         :key="modelIndex">
                         <div class="info-model"
-                            :class="{ 'radius': modelType === 'disabled' }"
+                            :class="{ 'radius': modelType === 'disabled' || classification['bk_classification_id'] === 'bk_biz_topo' }"
                             @click="modelClick(model)">
                             <div class="icon-box">
                                 <i class="icon" :class="[model['bk_obj_icon']]"></i>
@@ -116,9 +115,11 @@
                                 <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
                             </div>
                         </div>
-                        <div v-if="modelType !== 'disabled'" class="info-instance" @click="handleGoInstance(model)">
+                        <div v-if="modelType !== 'disabled' && model.bk_classification_id !== 'bk_biz_topo'"
+                            class="info-instance"
+                            @click="handleGoInstance(model)">
                             <i class="icon-cc-share"></i>
-                            <p>{{modelStatisticsSet[model.bk_obj_id] || 0}}</p>
+                            <p>{{modelStatisticsSet[model.bk_obj_id] | instanceCount}}</p>
                         </div>
                     </li>
                 </ul>
@@ -204,10 +205,18 @@
     import cmdbMainInject from '@/components/layout/main-inject'
     import theCreateModel from '@/components/model-manage/_create-model'
     import featureTips from '@/components/feature-tips/index'
-    // import theModel from './children'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
     import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
+    import { MENU_RESOURCE_HOST, MENU_RESOURCE_BUSINESS, MENU_RESOURCE_INSTANCE } from '@/dictionary/menu-symbol'
     export default {
+        filters: {
+            instanceCount (value) {
+                if ([null, undefined].includes(value)) {
+                    return '--'
+                }
+                return value > 999 ? '999+' : value
+            }
+        },
         components: {
             // theModel,
             theCreateModel,
@@ -466,29 +475,32 @@
                 this.searchModel = ''
             },
             modelClick (model) {
-                const fullPath = this.searchModel ? `${this.$route.fullPath}?searchModel=${this.searchModel}` : this.$route.fullPath
                 this.$store.commit('objectModel/setActiveModel', model)
                 this.$router.push({
                     name: 'modelDetails',
                     params: {
                         modelId: model['bk_obj_id']
-                    },
-                    query: {
-                        from: fullPath
                     }
                 })
             },
             handleGoInstance (model) {
                 this.sucessDialog.isShow = false
-                this.$router.push({
-                    name: 'generalModel',
-                    params: {
-                        objId: model.bk_obj_id
-                    },
-                    query: {
-                        from: this.$route.fullPath
-                    }
-                })
+                const map = {
+                    host: MENU_RESOURCE_HOST,
+                    biz: MENU_RESOURCE_BUSINESS
+                }
+                if (map.hasOwnProperty(model.bk_obj_id)) {
+                    this.$router.push({
+                        name: map[model.bk_obj_id]
+                    })
+                } else {
+                    this.$router.push({
+                        name: MENU_RESOURCE_INSTANCE,
+                        params: {
+                            objId: model.bk_obj_id
+                        }
+                    })
+                }
             }
         }
     }
@@ -500,12 +512,12 @@
     }
     .btn-group {
         position: absolute;
-        top: 0;
+        top: 58px;
         left: 0;
         width: calc(100% - 17px);
-        padding: 20px;
+        padding: 0 20px 20px;
         font-size: 0;
-        background-color: #fff;
+        background-color: #fafbfd;
         z-index: 100;
         .bk-primary {
             margin-right: 10px;
@@ -618,6 +630,7 @@
             height: 70px;
             border: 1px solid $cmdbTableBorderColor;
             border-radius: 4px;
+            background-color: #ffffff;
             cursor: pointer;
             &:nth-child(5n) {
                 margin-right: 0;
@@ -714,6 +727,7 @@
             font-size: 20px;
             color: #333948;
             line-height: 1;
+            padding-bottom: 14px;
         }
         .label-item,
         label {
@@ -748,7 +762,6 @@
             }
         }
         .footer {
-            padding: 0 24px;
             font-size: 0;
             text-align: right;
             .bk-primary {

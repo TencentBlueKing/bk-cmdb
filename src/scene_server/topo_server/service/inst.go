@@ -391,7 +391,7 @@ func (s *Service) SearchInstByAssociation(params types.ContextParams, pathParams
 
 // SearchInstByInstID search the inst by inst ID
 func (s *Service) SearchInstByInstID(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	objID := pathParams("obj_id")
+	objID := pathParams("bk_obj_id")
 
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
@@ -459,7 +459,7 @@ func (s *Service) SearchInstTopo(params types.ContextParams, pathParams, queryPa
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	obj, err := s.Core.ObjectOperation().FindObjectWithID(params, instID)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
 		return nil, err

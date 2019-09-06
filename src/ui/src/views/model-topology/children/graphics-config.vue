@@ -1,5 +1,6 @@
 <template>
     <bk-sideslider
+        v-transfer-dom
         :is-show.sync="isShow"
         :width="600"
         :title="$t('拓扑显示设置')"

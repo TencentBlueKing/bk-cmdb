@@ -3,7 +3,8 @@
         searchable
         v-model="selected"
         :clearable="false"
-        :disabled="disabled">
+        :disabled="disabled"
+        :placeholder="placeholder">
         <bk-option
             v-for="(option, index) in timezoneList"
             :key="index"
@@ -25,6 +26,10 @@
             disabled: {
                 type: Boolean,
                 default: false
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -56,9 +61,7 @@
             }
         },
         created () {
-            if (!this.disabled) {
-                this.selected = this.value ? this.value : 'Asia/Shanghai'
-            }
+            this.selected = this.value ? this.value : 'Asia/Shanghai'
         }
     }
 </script>

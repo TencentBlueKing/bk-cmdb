@@ -6,7 +6,7 @@ import customQuery from '@/views/custom-query/router.config'
 import eventpush from '@/views/eventpush/router.config'
 import history from '@/views/history/router.config'
 import hosts from '@/views/hosts/router.config'
-import hostDetails from '@/views/host-details/router.config'
+import { businessHostDetails, resourceHostDetails } from '@/views/host-details/router.config'
 import model from '@/views/model-manage/router.config'
 import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
@@ -18,6 +18,7 @@ import serviceInstance from '@/views/service-instance/router.config'
 import serviceSynchronous from '@/views/business-synchronous/router.config'
 import resourceManagement from '@/views/resource-manage/router.config'
 import customFields from '@/views/custom-fields/router.config'
+import requireBusiness from '@/views/status/require-business'
 
 const flatternViews = views => {
     const flatterned = []
@@ -33,7 +34,7 @@ const flatternViews = views => {
 
 export const businessViews = flatternViews([
     hosts,
-    hostDetails,
+    businessHostDetails,
     customQuery,
     businessTopology,
     serviceTemplate,
@@ -43,10 +44,18 @@ export const businessViews = flatternViews([
     customFields
 ])
 
+businessViews.forEach(view => {
+    view.components = {
+        default: view.component,
+        requireBusiness: requireBusiness
+    }
+})
+
 export const resourceViews = flatternViews([
     business,
     resource,
-    hostDetails,
+    history,
+    resourceHostDetails,
     generalModel,
     eventpush,
     resourceManagement
@@ -54,7 +63,6 @@ export const resourceViews = flatternViews([
 
 export const modelViews = flatternViews([
     model,
-    history,
     modelAssociation,
     modelTopology,
     businessModel

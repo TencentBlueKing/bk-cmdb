@@ -67,9 +67,9 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			// http request header add user
 			session := sessions.Default(c)
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
-			language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 			ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
 			supplierID, _ := session.Get(common.WEBSessionSupplierID).(string)
+			language := webCommon.GetLanguageByHTTPRequest(c)
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
@@ -115,13 +115,6 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	if "1" == config.Session.Skip {
 		session := sessions.Default(c)
-		cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
-		if "" == cookieLanuage || nil != err {
-			c.SetCookie(common.BKHTTPCookieLanugageKey, config.Session.DefaultLanguage, 0, "/", "", false, false)
-			session.Set(common.WEBSessionLanguageKey, config.Session.DefaultLanguage)
-		} else if cookieLanuage != session.Get(common.WEBSessionLanguageKey) {
-			session.Set(common.WEBSessionLanguageKey, cookieLanuage)
-		}
 
 		cookieOwnerID, err := c.Cookie(common.BKHTTPOwnerID)
 		if "" == cookieOwnerID || nil != err {
@@ -132,7 +125,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		}
 		session.Set(common.WEBSessionSupplierID, "0")
 
-		blog.V(5).Infof("skip login, cookie language: %s, cookieOwnerID: %s, rid: %s", cookieLanuage, cookieOwnerID, rid)
+		blog.V(5).Infof("skip login, cookie language: %s, cookieOwnerID: %s, rid: %s", webCommon.GetLanguageByHTTPRequest(c), cookieOwnerID, rid)
 		session.Set(common.WEBSessionUinKey, "admin")
 
 		session.Set(common.WEBSessionRoleKey, "1")
