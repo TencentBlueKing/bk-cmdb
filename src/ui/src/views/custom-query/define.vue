@@ -107,9 +107,6 @@
         </div>
         
         <div class="userapi-btn-group">
-            <bk-button theme="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
-                {{$t('预览')}}
-            </bk-button>
             <span class="inline-block-middle"
                 v-cursor="{
                     active: !editable,
@@ -123,6 +120,9 @@
                     {{$t('保存')}}
                 </bk-button>
             </span>
+            <bk-button class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
+                {{$t('预览')}}
+            </bk-button>
             <bk-button theme="default" class="userapi-btn" @click="closeSlider">
                 {{$t('取消')}}
             </bk-button>

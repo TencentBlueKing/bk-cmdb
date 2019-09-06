@@ -305,11 +305,14 @@
                     return
                 }
                 const searchResult = []
-                const reg = new RegExp(value, 'gi')
                 const currentClassifications = this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
                 const classifications = this.$tools.clone(currentClassifications)
                 for (let i = 0; i < classifications.length; i++) {
-                    classifications[i].bk_objects = classifications[i].bk_objects.filter(model => reg.test(model.bk_obj_name) || reg.test(model.bk_obj_id))
+                    classifications[i].bk_objects = classifications[i].bk_objects.filter(model => {
+                        const modelName = model.bk_obj_name
+                        const modelId = model.bk_obj_id
+                        return (modelName && modelName.indexOf(value) !== -1) || (modelId && modelId.indexOf(value) !== -1)
+                    })
                     searchResult.push(classifications[i])
                 }
                 this.filterClassifications = searchResult
