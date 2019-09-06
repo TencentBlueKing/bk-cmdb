@@ -34,6 +34,7 @@
                                         :disabled="!editable[property['bk_property_id']]"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
+                                        :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]">
                                     </component>

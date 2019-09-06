@@ -31,6 +31,7 @@
 
 <script>
     import { mapState, mapGetters } from 'vuex'
+    import { MENU_RESOURCE_HOST, MENU_BUSINESS_HOST_MANAGEMENT } from '@/dictionary/menu-symbol'
     import cmdbHostInfo from './children/info.vue'
     import cmdbHostAssociation from './children/association.vue'
     import cmdbHostProperty from './children/property.vue'
@@ -70,7 +71,14 @@
             info (info) {
                 const hostList = info.host.bk_host_innerip.split(',')
                 const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
-                this.$store.commit('setHeaderTitle', `${this.$t('主机详情')}(${host})`)
+                this.$store.commit('setBreadcumbs', [{
+                    i18n: this.$route.name === 'resourceHostDetails' ? '主机' : '业务主机',
+                    route: {
+                        name: this.$route.name === 'resourceHostDetails' ? MENU_RESOURCE_HOST : MENU_BUSINESS_HOST_MANAGEMENT
+                    }
+                }, {
+                    name: host
+                }])
             },
             id () {
                 this.getData()
@@ -160,8 +168,7 @@
 
 <style lang="scss" scoped>
     .details-layout {
-        padding: 0;
-        height: 100%;
+        overflow: hidden;
         .details-tab {
             height: calc(100% - var(--infoHeight)) !important;
             min-height: 400px;

@@ -1,6 +1,6 @@
 <template>
     <transition name="fade" duration="200">
-        <div class="selector-layout" v-if="visible">
+        <div class="selector-layout" v-if="visible" v-transfer-dom>
             <div class="host-wrapper">
                 <h2 class="title">{{$t('添加主机')}}</h2>
                 <div class="options">

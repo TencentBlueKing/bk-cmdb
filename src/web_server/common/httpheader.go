@@ -10,12 +10,10 @@
  * limitations under the License.
  */
 
-package logics
+package common
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
@@ -25,34 +23,20 @@ func SetProxyHeader(c *gin.Context) {
 	// http request header add user
 	session := sessions.Default(c)
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
-	language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 	ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
 	supplierID, _ := session.Get(common.WEBSessionSupplierID).(string)
 	c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
-	c.Request.Header.Add(common.BKHTTPLanguage, language)
+	c.Request.Header.Add(common.BKHTTPLanguage, GetLanguageByHTTPRequest(c))
 	c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
 	c.Request.Header.Add(common.BKHTTPSupplierID, supplierID)
 }
 
 func GetLanguageByHTTPRequest(c *gin.Context) string {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
 	cookieLanguage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
 	if "" != cookieLanguage && nil == err {
 		return cookieLanguage
 	}
 
-	session := sessions.Default(c)
-	language := session.Get(common.BKSessionLanugageKey)
-	if nil == language {
-		return ""
-	}
-	strLang, ok := language.(string)
-
-	if false == ok {
-		blog.Errorf("get language from session error, %v, rid: %s", language, rid)
-		return strLang
-	}
-
-	return strLang
+	return "zh-cn"
 }

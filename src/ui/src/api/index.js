@@ -231,7 +231,7 @@ function initConfig (method, url, userConfig) {
         // 转换返回数据，仅返回data对象
         transformData: true,
         // 当路由变更时取消请求
-        cancelWhenRouteChange: true,
+        cancelWhenRouteChange: false,
         // 取消上次请求
         cancelPrevious: false
     }

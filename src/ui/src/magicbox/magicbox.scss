@@ -1,6 +1,7 @@
 .bk-select {
     display: inline-block;
     vertical-align: middle;
+    background-color: #fff;
 }
 
 .bk-select-dropdown-content {
@@ -22,7 +23,7 @@
 }
 
 .bk-sideslider {
-    z-index: 1001 !important;
+    z-index: 1003 !important;
 }
 
 .bk-select-full-width {
@@ -55,6 +56,7 @@
 }
 
 .bk-table {
+    background-color: #fff;
     .bk-table-fixed {
         border-bottom: none;
     }
@@ -126,7 +128,6 @@
 
 .bk-tab {
     height: 100%;
-    background-color: #fff;
     .bk-tab-header {
         padding: 0 20px;
         height: 58px;
@@ -135,6 +136,9 @@
             height: 58px;
             .bk-tab-label-item {
                 line-height: 58px;
+                &.active {
+                    background-color: transparent;
+                }
             }
         }
     }
@@ -145,6 +149,7 @@
     .bk-tab-section {
         padding: 0 20px;
         height: calc(100% - 58px);
+        overflow: hidden;
         .bk-tab-content {
             height: 100%;
         }

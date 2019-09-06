@@ -102,6 +102,7 @@
             </div>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.show"
             :title="slider.title"
             :before-close="handleSliderBeforeClose"

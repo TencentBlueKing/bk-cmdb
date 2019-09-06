@@ -1,5 +1,5 @@
 <template>
-    <div class="push-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="push-wrapper">
         <feature-tips
             :feature-name="'eventpush'"
             :show-tips="showFeatureTips"
@@ -62,12 +62,12 @@
                         }">
                         {{$t('编辑')}}
                     </span>
-                    <span class="text-danger"
+                    <span class="text-primary"
                         v-if="$isAuthorized($OPERATION.D_EVENT)"
                         @click.stop="deleteConfirm(row)">
                         {{$t('删除')}}
                     </span>
-                    <span class="text-danger disabled"
+                    <span class="text-primary disabled"
                         v-else
                         v-cursor="{
                             active: true,
@@ -83,6 +83,7 @@
             </div>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.isShow"
             :title="slider.title"
             :width="564"
@@ -235,6 +236,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .push-wrapper {
+        padding: 0 20px;
+    }
     .btn-wrapper {
         margin-bottom: 14px;
     }

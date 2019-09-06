@@ -1,9 +1,5 @@
 <template>
     <div class="archived-layout">
-        <div class="archived-options clearfix">
-            <label class="fl">{{$t('归档历史')}}</label>
-            <bk-button class="fr" theme="primary" @click="back">{{$t('返回')}}</bk-button>
-        </div>
         <bk-table class="archived-table"
             :pagination="pagination"
             :data="list"
@@ -36,6 +32,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
+    import { MENU_RESOURCE_BUSINESS } from '@/dictionary/menu-symbol'
     export default {
         data () {
             return {
@@ -61,6 +58,14 @@
             }
         },
         async created () {
+            this.$store.commit('setBreadcumbs', [{
+                i18n: '业务',
+                route: {
+                    name: MENU_RESOURCE_BUSINESS
+                }
+            }, {
+                name: this.$t(this.$route.meta.menu.i18n)
+            }])
             try {
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
@@ -168,14 +173,6 @@
 
 <style lang="scss" scoped>
     .archived-layout{
-        padding: 20px;
-    }
-    .archived-options{
-        height: 36px;
-        line-height: 36px;
-        font-size: 14px;
-    }
-    .archived-table{
-        margin-top: 20px;
+        padding: 0 20px;
     }
 </style>
