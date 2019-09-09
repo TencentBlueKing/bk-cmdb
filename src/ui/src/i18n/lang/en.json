@@ -902,5 +902,7 @@
     "请输入IP开始搜索": "IP to search",
     "唯一标识必须为英文字母、数字和下划线组成": "Unique identifier must be composed of English letters, numbers, and underscores",
     "关联分类": "Associated classification",
-    "模型详情": "Model details"
+    "模型详情": "Model details",
+    "服务": "Service",
+    "高级功能": "Advanced Features"
 }
