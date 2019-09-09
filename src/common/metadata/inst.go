@@ -18,13 +18,17 @@ import (
 	"configcenter/src/common/util"
 )
 
+// SetInst contains partial fields of a real set
 type SetInst struct {
-	SetID     int64  `bson:"bk_set_id" json:"bk_set_id"`
-	SetName   string `bson:"bk_set_name" json:"bk_set_name"`
-	SetStatus string `bson:"bk_service_status" json:"bk_service_status"`
-	SetEnv    string `bson:"bk_set_env" json:"bk_set_env"`
+	BizID         int64  `bson:"bk_biz_id" json:"bk_biz_id"`
+	SetID         int64  `bson:"bk_set_id" json:"bk_set_id"`
+	SetName       string `bson:"bk_set_name" json:"bk_set_name"`
+	SetStatus     string `bson:"bk_service_status" json:"bk_service_status"`
+	SetEnv        string `bson:"bk_set_env" json:"bk_set_env"`
+	SetTemplateID int64  `bson:"bk_template_id" json:"bk_template_id"`
 }
 
+// ModuleInst contains partial fields of a real module
 type ModuleInst struct {
 	BizID             int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
 	ModuleID          int64  `bson:"bk_module_id" json:"bk_module_id" field:"bk_module_id" mapstructure:"bk_module_id"`
@@ -33,6 +37,7 @@ type ModuleInst struct {
 	ServiceCategoryID int64  `bson:"service_category_id" json:"service_category_id" field:"service_category_id" mapstructure:"service_category_id"`
 	ServiceTemplateID int64  `bson:"service_template_id" json:"service_template_id" field:"service_template_id" mapstructure:"service_template_id"`
 	ParentID          int64  `bson:"bk_parent_id" json:"bk_parent_id" field:"bk_parent_id" mapstructure:"bk_parent_id"`
+	SetTemplateID     int64  `bson:"bk_template_id" json:"bk_template_id"`
 }
 
 type BizInst struct {
@@ -41,6 +46,7 @@ type BizInst struct {
 	SupplierID      int64  `bson:"bk_supplier_id"`
 	SupplierAccount string `bson:"bk_supplier_account"`
 }
+
 type CloudInst struct {
 	CloudID   int64  `bson:"bk_cloud_id"`
 	CloudName string `bson:"bk_cloud_name"`

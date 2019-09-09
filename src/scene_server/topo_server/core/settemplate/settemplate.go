@@ -17,12 +17,17 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/worker"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -38,7 +43,12 @@ func NewSetTemplate(client apimachinery.ClientSetInterface) SetTemplate {
 }
 
 type setTemplate struct {
-	client apimachinery.ClientSetInterface
+	client      apimachinery.ClientSetInterface
+	Core        core.Core
+	Engine      *backbone.Engine
+	AuthManager *extensions.AuthManager
+	Error       errors.CCErrorIf
+	Language    language.CCLanguageIf
 }
 
 func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder) {
@@ -141,6 +151,7 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 }
 
 func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
+	rid := util.GetHTTPCCRequestID(header)
 	diffOption := metadata.DiffSetTplWithInstOption{
 		SetIDs: option.SetIDs,
 	}
@@ -149,17 +160,27 @@ func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header,
 		return err
 	}
 
+	// TODO use queue to dispatch task
 	// run sync
 	for _, setDiff := range setDiffs {
 		blog.V(3).Infof("begin to run sync task on set [%s](%d)", setDiff.SetDetail.SetName, setDiff.SetID)
 		// TODO: deal with result
-		AsyncRunSetSyncTask(header, setDiff.SetDetail, setDiff.ModuleDiffs)
+		backendWorker := worker.BackendWorker{
+			ClientSet:   st.client,
+			Core:        st.Core,
+			Engine:      st.Engine,
+			AuthManager: st.AuthManager,
+			Error:       st.Error,
+			Language:    st.Language,
+		}
+		for _, moduleDiff := range setDiff.ModuleDiffs {
+			err := backendWorker.AsyncRunModuleSyncTask(header, setDiff.SetDetail, moduleDiff)
+			if err != nil {
+				blog.Errorf("AsyncRunSetSyncTask failed, err: %+v, rid: %s", err, rid)
+				continue
+			}
+		}
 	}
-	return nil
-}
-
-func AsyncRunSetSyncTask(header http.Header, set metadata.SetInst, moduleDiffs []metadata.SetModuleDiff) errors.CCErrorCoder {
-	// TODO: implement me
 	return nil
 }
 
@@ -182,8 +203,8 @@ func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate,
 		template, ok := svcTplMap[module.ServiceTemplateID]
 		if ok == false {
 			moduleDiffs = append(moduleDiffs, metadata.SetModuleDiff{
-				BkModuleID:          module.ModuleID,
-				BkModuleName:        module.ModuleName,
+				ModuleID:            module.ModuleID,
+				ModuleName:          module.ModuleName,
 				ServiceTemplateID:   module.ServiceTemplateID,
 				ServiceTemplateName: "",
 				DiffType:            metadata.ModuleDiffRemove,
@@ -193,8 +214,8 @@ func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate,
 
 		if module.ModuleName != template.Name {
 			moduleDiffs = append(moduleDiffs, metadata.SetModuleDiff{
-				BkModuleID:          module.ModuleID,
-				BkModuleName:        module.ModuleName,
+				ModuleID:            module.ModuleID,
+				ModuleName:          module.ModuleName,
 				ServiceTemplateID:   module.ServiceTemplateID,
 				ServiceTemplateName: template.Name,
 				DiffType:            metadata.ModuleDiffChanged,
@@ -208,8 +229,8 @@ func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate,
 		}
 		template := svcTplMap[templateID]
 		moduleDiffs = append(moduleDiffs, metadata.SetModuleDiff{
-			BkModuleID:          0,
-			BkModuleName:        "",
+			ModuleID:            0,
+			ModuleName:          "",
 			ServiceTemplateID:   templateID,
 			ServiceTemplateName: template.Name,
 			DiffType:            metadata.ModuleDiffAdd,
