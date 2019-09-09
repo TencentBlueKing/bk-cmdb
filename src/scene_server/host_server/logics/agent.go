@@ -114,7 +114,7 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 	}
 	// 系统负载信息
 	strLoadavg := ""
-	load := js.Get("load").Get("load_avg")
+	load := js.Get("load")
 	if load != nil {
 		loadAvg, exist := load.CheckGet("load_avg")
 		if exist {
