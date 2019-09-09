@@ -93,8 +93,10 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 			blog.Errorf("HandleInstanceSync failed, DryRunRegisterResource failed, object: %s, instances: %+v, err: %+v", objectID, instances, err)
 			return nil
 		}
-		if len(resources) == 0 {
-			blog.InfoJSON("no cmdb resource found, skip sync for safe")
+		if len(iamResources.Resources) == 0 {
+			if blog.V(5) {
+				blog.InfoJSON("no cmdb resource found, skip sync for safe, %s", resources)
+			}
 			return nil
 		}
 		first := iamResources.Resources[0]

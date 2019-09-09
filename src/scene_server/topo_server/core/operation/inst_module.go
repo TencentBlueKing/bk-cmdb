@@ -220,6 +220,9 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 	if count > 1 {
 		return params.Err.CCErrorf(common.CCErrCommGetMultipleObject)
 	}
+	if len(moduleInstances) == 0 {
+		return params.Err.CCErrorf(common.CCErrCommNotFound)
+	}
 
 	moduleMapStr := moduleInstances[0]
 	moduleInstance := metadata.ModuleInst{}
