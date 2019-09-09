@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/mapstr"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/types"
 )
 
 // CreateBusiness create a new business

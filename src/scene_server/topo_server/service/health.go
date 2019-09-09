@@ -14,7 +14,7 @@ package service
 
 import (
 	"configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/types"
 )
 
 func (s *Service) Health(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {

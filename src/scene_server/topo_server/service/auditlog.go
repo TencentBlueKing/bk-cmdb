@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/types"
 )
 
 const CCTimeTypeParseFlag = "cc_time_type"

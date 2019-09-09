@@ -16,7 +16,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/types"
 )
 
 // New create a new inst factory

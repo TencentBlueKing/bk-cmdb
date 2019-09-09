@@ -13,8 +13,6 @@
 package operation
 
 import (
-	"context"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -24,7 +22,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/types"
 )
 
 // ModuleOperationInterface module operation methods
@@ -64,7 +62,7 @@ func (m *module) hasHost(params types.ContextParams, bizID int64, setIDs, module
 	if len(moduleIDS) > 0 {
 		option.ModuleIDArr = moduleIDS
 	}
-	rsp, err := m.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), params.Header, option)
+	rsp, err := m.clientSet.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

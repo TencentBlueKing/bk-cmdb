@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/types"
 )
 
 // Unique group opeartion interface declaration

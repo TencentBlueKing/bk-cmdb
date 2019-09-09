@@ -34,7 +34,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/types"
 	"configcenter/src/storage/dal"
 	"configcenter/src/thirdpartyclient/elasticsearch"
 

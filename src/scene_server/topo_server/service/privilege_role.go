@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/types"
 )
 
 func (s *Service) ParseCreateRolePrivilegeOriginData(data []byte) (mapstr.MapStr, error) {
