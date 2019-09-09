@@ -887,7 +887,7 @@
     "不可编辑": "Not editable",
     "是否必填": "Required or not",
     "非必填": "Not required",
-    "自定义字段": "Custom Field",
+    "自定义字段": "Custom field",
     "默认值": "Defaults",
     "枚举值": "Enum value",
     "自定义字段功能提示": "Custom fields: Add custom fields when the built-in fields of the model do not meet the business needs.(* is a required field)",
@@ -896,5 +896,16 @@
     "实例": "Instance",
     "分配到": "Assigned",
     "其他信息": "Other information",
-    "更新条件": "Update condition"
+    "更新条件": "Update condition",
+    "暂无服务实例": "No service instance",
+    "去服务拓扑添加": "Add service topology",
+    "请输入IP开始搜索": "IP to search",
+    "唯一标识必须为英文字母、数字和下划线组成": "Unique identifier must be composed of English letters, numbers, and underscores",
+    "关联分类": "Associated classification",
+    "模型详情": "Model details",
+    "服务": "Service",
+    "高级功能": "Advanced Features",
+    "未添加节点提示": "You have not add any node yet, {link}",
+    "添加节点": "add node",
+    "已添加节点提示": "{link} under business"
 }

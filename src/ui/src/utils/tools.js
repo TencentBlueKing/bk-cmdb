@@ -303,6 +303,7 @@ export function getValidateRules (property) {
     }
     if (['singlechar', 'longchar'].includes(propertyType)) {
         rules[propertyType] = true
+        rules.length = propertyType === 'singlechar' ? 256 : 2000
     }
     if (propertyType === 'float') {
         rules['float'] = true
@@ -326,6 +327,21 @@ export function getValue () {
     return GET_VALUE(...arguments)
 }
 
+export function transformHostSearchParams (params) {
+    const transformedParams = clone(params)
+    const conditions = transformedParams.condition
+    conditions.forEach(item => {
+        item.condition.forEach(field => {
+            const operator = field.operator
+            const value = field.value
+            if (['$in', '$multilike'].includes(operator) && !Array.isArray(value)) {
+                field.value = value.split('\n').filter(str => str.trim().length).map(str => str.trim())
+            }
+        })
+    })
+    return transformedParams
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -344,5 +360,6 @@ export default {
     getMetadataBiz,
     getValidateRules,
     getSort,
-    getValue
+    getValue,
+    transformHostSearchParams
 }

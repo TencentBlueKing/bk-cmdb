@@ -1,5 +1,10 @@
 <template>
     <div class="archived-layout">
+        <div class="archived-filter">
+            <div class="filter-item">
+                <bk-input v-model="filter.name" right-icon="bk-icon icon-search" @enter="handlePageChange(1)"></bk-input>
+            </div>
+        </div>
         <bk-table class="archived-table"
             :pagination="pagination"
             :data="list"
@@ -39,6 +44,10 @@
                 properties: [],
                 header: [],
                 list: [],
+                filter: {
+                    range: [],
+                    name: ''
+                },
                 pagination: {
                     current: 1,
                     limit: 10,
@@ -124,7 +133,7 @@
                 })
             },
             getSearchParams () {
-                return {
+                const params = {
                     condition: {
                         'bk_data_status': 'disabled'
                     },
@@ -135,6 +144,16 @@
                         sort: '-bk_biz_id'
                     }
                 }
+                if (this.filter.range.length) {
+                    params.condition.last_time = {
+                        '$gte': this.filter.range[0],
+                        '$lte': this.filter.range[1]
+                    }
+                }
+                if (this.filter.name) {
+                    params.condition.bk_biz_name = { '$regex': this.filter.name }
+                }
+                return params
             },
             handleRecovery (biz) {
                 this.$bkInfo({
@@ -174,5 +193,13 @@
 <style lang="scss" scoped>
     .archived-layout{
         padding: 0 20px;
+    }
+    .archived-filter {
+        padding: 0 0 15px 0;
+        .filter-item {
+            width: 220px;
+            margin-right: 5px;
+            @include inlineBlock;
+        }
     }
 </style>

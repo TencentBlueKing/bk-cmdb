@@ -355,7 +355,6 @@
                         this.differenData = differen
                         this.list = this.getList()
                     })
-                    this.$store.commit('setHeaderTitle', `${this.$t('同步模板')}【${this.viewsTitle}】`)
                 } catch (error) {
                     console.error(error)
                     this.noFindData = true

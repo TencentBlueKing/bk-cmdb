@@ -142,7 +142,7 @@
     import processForm from './process-form.vue'
     import processTable from './process'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
-    import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_SERVICE_TEMPLATE, MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     export default {
         components: {
             processTable,
@@ -452,7 +452,7 @@
                 }
             },
             handleGoInstance () {
-                this.$router.replace({ name: 'topology' })
+                this.$router.replace({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
             },
             handleCancelOperation () {
                 this.$router.replace({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
@@ -538,6 +538,7 @@
         font-size: 14px;
         text-align: center;
         color: #444444;
+        word-break: break-all;
         .bk-icon {
             width: 60px;
             height: 60px;

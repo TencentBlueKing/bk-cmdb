@@ -71,7 +71,7 @@
         <bk-table v-if="!instances.length" :data="[]" class="mb10">
             <div slot="empty" class="empty-text">
                 <img src="../../../assets/images/empty-content.png" alt="">
-                <p>暂无服务实例，<span @click="handleGoAddInstance">跳转服务拓扑添加</span></p>
+                <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去服务拓扑添加')}}</span></p>
             </div>
         </bk-table>
         <bk-pagination v-if="instances.length"
@@ -88,6 +88,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     import { mapState } from 'vuex'
     import serviceInstanceTable from './service-instance-table.vue'
     export default {
@@ -325,7 +326,7 @@
             },
             handleGoAddInstance () {
                 this.$router.replace({
-                    name: 'topology'
+                    name: MENU_BUSINESS_SERVICE_TOPOLOGY
                 })
             }
         }
@@ -414,7 +415,7 @@
 <style lang="scss">
     .check-view-color-theme {
         padding: 10px !important;
-        background-color: #699df4;
+        background-color: #699df4 !important;
         .tippy-arrow {
             border-bottom-color: #699df4 !important;
         }
