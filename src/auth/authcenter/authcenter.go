@@ -13,7 +13,6 @@
 package authcenter
 
 import (
-	"configcenter/src/common/metadata"
 	"context"
 	"errors"
 	"fmt"
@@ -28,6 +27,7 @@ import (
 	"configcenter/src/auth/authcenter/permit"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -325,6 +325,12 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	// get biz resource auth status at first.
 	// any business inputs
 	for biz, rsc := range businessesInputs {
+		// if resourceType that not related to resourceID, clear resourceID field
+		for idx, resourceAction := range rsc.ResourceActions {
+			if IsRelatedToResourceID(resourceAction.ResourceType) == false {
+				rsc.ResourceActions[idx].ResourceID = make([]RscTypeAndID, 0)
+			}
+		}
 		statuses, err := ac.authClient.verifyAnyResourceBatch(ctx, header, &rsc)
 		if err != nil {
 			return nil, fmt.Errorf("get any resource[%s/%s] auth status failed, err: %v", rsc.ScopeType, rsc.ScopeID, err)
@@ -347,6 +353,12 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 	// exact business inputs
 	for biz, rsc := range businessesExactInputs {
+		// if resourceType that not related to resourceID, clear resourceID field
+		for idx, resourceAction := range rsc.ResourceActions {
+			if IsRelatedToResourceID(resourceAction.ResourceType) == false {
+				rsc.ResourceActions[idx].ResourceID = make([]RscTypeAndID, 0)
+			}
+		}
 		statuses, err := ac.authClient.verifyExactResourceBatch(ctx, header, &rsc)
 		if err != nil {
 			return nil, fmt.Errorf("get exact resource[%s/%s] auth status failed, err: %v", rsc.ScopeType, rsc.ScopeID, err)
@@ -368,6 +380,12 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	}
 
 	if len(sysInput.ResourceActions) != 0 {
+		// if resourceType that not related to resourceID, clear resourceID field
+		for idx, resourceAction := range sysInput.ResourceActions {
+			if IsRelatedToResourceID(resourceAction.ResourceType) == false {
+				sysInput.ResourceActions[idx].ResourceID = make([]RscTypeAndID, 0)
+			}
+		}
 		// get system resource auth status secondly.
 		statuses, err := ac.authClient.verifyAnyResourceBatch(ctx, header, &sysInput)
 		if err != nil {
@@ -391,6 +409,12 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	}
 
 	if len(sysExactInput.ResourceActions) != 0 {
+		// if resourceType that not related to resourceID, clear resourceID field
+		for idx, resourceAction := range sysExactInput.ResourceActions {
+			if IsRelatedToResourceID(resourceAction.ResourceType) == false {
+				sysExactInput.ResourceActions[idx].ResourceID = make([]RscTypeAndID, 0)
+			}
+		}
 		// get system resource auth status secondly.
 		statuses, err := ac.authClient.verifyExactResourceBatch(ctx, header, &sysExactInput)
 		if err != nil {
@@ -414,7 +438,6 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	}
 
 	return decisions, nil
-
 }
 
 func (ac *AuthCenter) GetAnyAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
@@ -566,6 +589,21 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 		return err
 	}
 
+	// 清除不需要关联资源ID类型的注册
+	resourceEntities := make([]ResourceEntity, 0)
+	for index, resource := range registerInfo.Resources {
+		if IsRelatedToResourceID(resource.ResourceType) == true {
+			resourceEntities = append(resourceEntities, registerInfo.Resources[index])
+		}
+	}
+	if len(resourceEntities) == 0 {
+		if blog.V(5) {
+			blog.InfoJSON("no resource need to register for: %s, rid: %s", registerInfo, rid)
+		}
+		return nil
+	}
+	registerInfo.Resources = resourceEntities
+
 	header := http.Header{}
 	header.Set(AuthSupplierAccountHeaderKey, rs[0].SupplierAccount)
 
@@ -626,6 +664,8 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 }
 
 func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
+
 	if !ac.Config.Enable {
 		return nil
 	}
@@ -657,15 +697,29 @@ func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.Resourc
 		entity.ResourceID = rscInfo.ResourceID
 		entity.ResourceName = rscInfo.ResourceName
 
+		// 不关联实例ID的资源类型不需要取消注册
+		if IsRelatedToResourceID(entity.ResourceType) == false {
+			continue
+		}
+
 		info.Resources = append(info.Resources, entity)
 
 		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	}
+
+	if len(info.Resources) == 0 {
+		if blog.V(5) {
+			blog.InfoJSON("no resource to be deregister for original resource: %s, rid: %s", rs, rid)
+		}
+		return nil
 	}
 
 	return ac.authClient.deregisterResource(ctx, header, &info)
 }
 
 func (ac *AuthCenter) UpdateResource(ctx context.Context, r *meta.ResourceAttribute) error {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
+
 	if !ac.Config.Enable {
 		return nil
 	}
@@ -683,6 +737,14 @@ func (ac *AuthCenter) UpdateResource(ctx context.Context, r *meta.ResourceAttrib
 	if err != nil {
 		return fmt.Errorf("adaptor resource info failed, err: %v", err)
 	}
+
+	if IsRelatedToResourceID(rscInfo.ResourceType) == false {
+		if blog.V(5) {
+			blog.InfoJSON("resource type not related to resource id, skip updateRegister, rscInfo: %s, rid: %s", rscInfo, rid)
+		}
+		return nil
+	}
+
 	info := &UpdateInfo{
 		ScopeInfo:    *scope,
 		ResourceInfo: *rscInfo,
@@ -727,6 +789,11 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	return result, err
 }
 
+// list iam resource with convert level
+func (ac *AuthCenter) RawListResources(ctx context.Context, header http.Header, searchCondition SearchCondition) ([]meta.BackendResource, error) {
+	return ac.authClient.ListResources(ctx, header, searchCondition)
+}
+
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {
 	s := new(ScopeInfo)
 	// TODO: this operation may be wrong, because some api filters does not
@@ -767,6 +834,8 @@ func (s *acDiscovery) GetServers() ([]string, error) {
 }
 
 func (ac *AuthCenter) RawDeregisterResource(ctx context.Context, scope ScopeInfo, rs ...meta.BackendResource) error {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
+
 	if !ac.Config.Enable {
 		return nil
 	}
@@ -790,7 +859,18 @@ func (ac *AuthCenter) RawDeregisterResource(ctx context.Context, scope ScopeInfo
 		}
 		entity.ResourceID = resourceID
 
+		// 不关联实例ID的资源类型不需要注销
+		if IsRelatedToResourceID(entity.ResourceType) == false {
+			continue
+		}
 		info.Resources = append(info.Resources, entity)
+	}
+
+	if len(info.Resources) == 0 {
+		if blog.V(5) {
+			blog.InfoJSON("no resource need to deregister for original resource: %s, rid: %s", rs, rid)
+		}
+		return nil
 	}
 
 	return ac.authClient.deregisterResource(ctx, header, &info)
