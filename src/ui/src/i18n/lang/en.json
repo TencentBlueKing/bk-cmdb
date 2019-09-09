@@ -896,5 +896,11 @@
     "实例": "Instance",
     "分配到": "Assigned",
     "其他信息": "Other information",
-    "更新条件": "Update condition"
+    "更新条件": "Update condition",
+    "暂无服务实例": "No service instance",
+    "去服务拓扑添加": "Add service topology",
+    "请输入IP开始搜索": "IP to search",
+    "唯一标识必须为英文字母、数字和下划线组成": "Unique identifier must be composed of English letters, numbers, and underscores",
+    "关联分类": "Associated classification",
+    "模型详情": "Model details"
 }
