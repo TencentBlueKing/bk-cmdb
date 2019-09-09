@@ -191,7 +191,6 @@
             this.$store.commit('setHeaderStatus', {
                 back: true
             })
-            this.$store.commit('setHeaderTitle', this.$t('搜索结果'))
             this.query.queryString = this.$route.query.keywords
         },
         mounted () {
