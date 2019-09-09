@@ -59,7 +59,7 @@ export default [{
     menu: [{
         id: MENU_BUSINESS_HOST,
         i18n: '主机',
-        icon: 'icon-cc-resource',
+        icon: 'icon-cc-nav-host',
         submenu: getSubmenu(businessViews, MENU_BUSINESS_HOST, 'business')
     }, {
         id: MENU_BUSINESS_SERVICE,
@@ -69,7 +69,7 @@ export default [{
     }, {
         id: MENU_BUSINESS_ADVANCED,
         i18n: '高级功能',
-        icon: 'icon-cc-plus-circle',
+        icon: 'icon-cc-nav-advanced-features',
         submenu: getSubmenu(businessViews, MENU_BUSINESS_ADVANCED, 'business')
     }]
 }, {
@@ -83,7 +83,7 @@ export default [{
     }, {
         id: MENU_RESOURCE_EVENTPUSH,
         i18n: '事件订阅',
-        icon: 'icon-cc-square',
+        icon: 'icon-cc-nav-subscription',
         route: getMenuRoute(resourceViews, MENU_RESOURCE_EVENTPUSH, 'resource')
     }]
 }, {
@@ -92,22 +92,22 @@ export default [{
     menu: [{
         id: MENU_MODEL_MANAGEMENT,
         i18n: '模型管理',
-        icon: 'icon-cc-nav-model',
+        icon: 'icon-cc-nav-model-02',
         route: getMenuRoute(modelViews, MENU_MODEL_MANAGEMENT, 'model')
     }, {
         id: MENU_MODEL_TOPOLOGY,
         i18n: '模型拓扑',
-        icon: 'icon-cc-resources',
+        icon: 'icon-cc-nav-model-topo',
         route: getMenuRoute(modelViews, MENU_MODEL_TOPOLOGY, 'model')
     }, {
         id: MENU_MODEL_BUSINESS_TOPOLOGY,
         i18n: '业务层级',
-        icon: 'icon-cc-network-manage',
+        icon: 'icon-cc-nav-business-level',
         route: getMenuRoute(modelViews, MENU_MODEL_BUSINESS_TOPOLOGY, 'model')
     }, {
         id: MENU_MODEL_ASSOCIATION,
         i18n: '关联分类',
-        icon: 'icon-cc-network-manage',
+        icon: 'icon-cc-nav-associated',
         route: getMenuRoute(modelViews, MENU_MODEL_ASSOCIATION, 'model')
     }]
 }, {
@@ -116,7 +116,7 @@ export default [{
     menu: [{
         id: MENU_ANALYSIS_AUDIT,
         i18n: '操作审计',
-        icon: 'icon-cc-statement',
+        icon: 'icon-cc-nav-audit-02',
         route: getMenuRoute(analysisViews, MENU_ANALYSIS_AUDIT, 'analysis')
     }]
 }]

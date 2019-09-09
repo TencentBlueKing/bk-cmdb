@@ -201,6 +201,7 @@
             line-height: 29px;
             font-size: 22px;
             color: #63656E;
+            word-break: break-word;
         }
         .empty-tips {
             margin-top: 10px;
