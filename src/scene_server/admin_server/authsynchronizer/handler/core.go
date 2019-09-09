@@ -101,7 +101,7 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 	}
 	resourceType := dryRunResources.Resources[0].ResourceType
 	if authcenter.IsRelatedToResourceID(resourceType) {
-		blog.V(3).Infof("skip-sync for resourceType: %s, as it doesn't related to resourceID", resourceType)
+		blog.V(5).Infof("skip-sync for resourceType: %s, as it doesn't related to resourceID", resourceType)
 		return nil
 	}
 
