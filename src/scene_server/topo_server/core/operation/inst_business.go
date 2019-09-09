@@ -347,7 +347,12 @@ func (b *business) GetInternalModule(params types.ContextParams, obj model.Objec
 		break // should be only one set
 	}
 
-	for _, module := range modules {
+	for _, moduleMapStr := range modules {
+		module := metadata.ModuleInst{}
+		if err := moduleMapStr.MarshalJSONInto(&module); err != nil {
+			blog.ErrorJSON("GetInternalModule failed, module: %s, ")
+			return 0, nil, params.Err.CCError(common.CCErrCommParseDBFailed)
+		}
 		result.Module = append(result.Module, metadata.InnerModule{
 			ModuleID:   module.ModuleID,
 			ModuleName: module.ModuleName,
