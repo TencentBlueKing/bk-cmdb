@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	gtypes "configcenter/src/common/types"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/types"
 )
 
 type HealthOperationInterface interface {

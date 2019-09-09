@@ -18,7 +18,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/types"
 )
 
 var _ Association = (*association)(nil)

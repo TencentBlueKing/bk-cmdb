@@ -16,7 +16,7 @@ import (
 	"configcenter/src/apimachinery"
 
 	"configcenter/src/scene_server/topo_server/core/compatiblev2"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/types"
 )
 
 // CompatibleV2OperationInterface compatibleV2 methods
