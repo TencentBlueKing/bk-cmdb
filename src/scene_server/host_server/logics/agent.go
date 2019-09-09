@@ -30,16 +30,19 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 	if nil != err {
 		return nil, err
 	}
+	ret := make(map[string]interface{})
 	js = js.Get("data")
 	if nil == js {
-		return nil, nil
+		return ret, nil
 	}
-	ret := make(map[string]interface{})
 
 	// cpu
 	cpuUsageArr, _ := js.Get("cpu").Get("per_usage").Array()
 	cpuNum := len(cpuUsageArr)
-	cpuUsageFload, _ := js.Get("cpu").Get("total_usage").Float64()
+	cpuUsageFload, err := js.Get("cpu").Get("total_usage").Float64()
+	if err != nil {
+		return ret, err
+	}
 	cpuUsage := int((cpuUsageFload)*100 + 0.5)
 
 	// disk
@@ -110,14 +113,17 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 
 	}
 	// 系统负载信息
-	load := js.Get("load").Get("load_avg")
 	strLoadavg := ""
-	if nil != load {
-		load1 := load.Get("load1").Interface()
-		load5 := load.Get("load5").Interface()
-		load15 := load.Get("load15").Interface()
-		strLoadavg = fmt.Sprintf("%v %v %v", load1, load5, load15)
-		strLoadavg = strings.Replace(strLoadavg, "nil", "", -1)
+	load := js.Get("load").Get("load_avg")
+	if load != nil {
+		loadAvg, exist := load.CheckGet("load_avg")
+		if exist {
+			load1 := loadAvg.Get("load1").Interface()
+			load5 := loadAvg.Get("load5").Interface()
+			load15 := loadAvg.Get("load15").Interface()
+			strLoadavg = fmt.Sprintf("%v %v %v", load1, load5, load15)
+			strLoadavg = strings.Replace(strLoadavg, "nil", "", -1)
+		}
 	}
 
 	ret["Cpu"] = cpuNum
