@@ -212,7 +212,7 @@
         filters: {
             instanceCount (value) {
                 if ([null, undefined].includes(value)) {
-                    return '--'
+                    return 0
                 }
                 return value > 999 ? '999+' : value
             }
