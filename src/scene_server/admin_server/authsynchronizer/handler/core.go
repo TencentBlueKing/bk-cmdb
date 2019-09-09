@@ -14,6 +14,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -88,13 +89,19 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 		blog.ErrorJSON("diffAndSyncCore failed, DryRunRegisterResource failed, resources: %s, err: %s", resources, err)
 		return nil
 	}
+	if dryRunResources == nil {
+		blog.ErrorJSON("diffAndSyncCore failed, DryRunRegisterResource success, but result is nil, resources: %s", resources)
+		return errors.New("dry run result in unexpected nil")
+	}
 	if len(dryRunResources.Resources) == 0 {
-		blog.InfoJSON("no cmdb resource found, skip sync for safe")
+		if blog.V(5) {
+			blog.InfoJSON("no cmdb resource found, skip sync for safe, %s", resources)
+		}
 		return nil
 	}
 	resourceType := dryRunResources.Resources[0].ResourceType
 	if authcenter.IsRelatedToResourceID(resourceType) {
-		blog.Infof("skip-sync for resourceType: %s, as it doesn't related to resourceID", resourceType)
+		blog.V(3).Infof("skip-sync for resourceType: %s, as it doesn't related to resourceID", resourceType)
 		return nil
 	}
 
