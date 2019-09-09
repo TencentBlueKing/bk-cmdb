@@ -640,27 +640,23 @@
                         }
                     }
                 })
-                this.propertySlider.properties = {
-                    host: hostList.map(item => {
-                        return {
-                            ...item,
-                            __selected__: false
-                        }
-                    }),
-                    set: setList.map(item => {
-                        return {
-                            ...item,
-                            __selected__: false
-                        }
-                    }),
-                    module: moduleList.map(item => {
-                        return {
-                            ...item,
-                            __selected__: false
-                        }
-                    })
-                }
                 this.filter.allList = [...hostList, ...setList, ...moduleList]
+                const sliderProperty = this.filter.allList.filter(item => !['foreignkey'].includes(item['bk_property_type']))
+                const propertyMap = {}
+                sliderProperty.forEach(item => {
+                    if (propertyMap.hasOwnProperty(item['bk_obj_id'])) {
+                        propertyMap[item['bk_obj_id']].push({
+                            ...item,
+                            __selected__: false
+                        })
+                    } else {
+                        propertyMap[item['bk_obj_id']] = [{
+                            ...item,
+                            __selected__: false
+                        }]
+                    }
+                })
+                this.propertySlider.properties = propertyMap
                 this.object['host']['properties'] = res[0].filter(property => !property['bk_isapi'])
                 this.object['set']['properties'] = res[1].filter(property => !property['bk_isapi'])
                 this.object['module']['properties'] = res[2].filter(property => !property['bk_isapi'])
