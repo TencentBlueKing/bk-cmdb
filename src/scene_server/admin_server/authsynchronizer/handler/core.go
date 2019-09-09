@@ -82,6 +82,22 @@ func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribut
 }
 
 func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.BackendResource, iamIDPrefix string, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
+	// check final resource type related with resourceID
+	dryRunResources, err := ih.authManager.Authorize.DryRunRegisterResource(context.Background(), resources...)
+	if err != nil {
+		blog.ErrorJSON("diffAndSyncCore failed, DryRunRegisterResource failed, resources: %s, err: %s", resources, err)
+		return nil
+	}
+	if len(dryRunResources.Resources) == 0 {
+		blog.InfoJSON("no cmdb resource found, skip sync for safe")
+		return nil
+	}
+	resourceType := dryRunResources.Resources[0].ResourceType
+	if authcenter.IsRelatedToResourceID(resourceType) {
+		blog.Infof("skip-sync for resourceType: %s, as it doesn't related to resourceID", resourceType)
+		return nil
+	}
+
 	scope := authcenter.ScopeInfo{}
 	needRegister := make([]authmeta.ResourceAttribute, 0)
 	// init key:hit map for
