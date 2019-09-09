@@ -8,7 +8,7 @@
                     class="search-input"
                     autocomplete="off"
                     maxlength="32"
-                    :placeholder="$t('请输入关键字')"
+                    :placeholder="placeholder"
                     v-model.trim="keywords"
                     @input="handleInputSearch"
                     @focus="handleShowHistory"
@@ -163,6 +163,9 @@
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             inputMarginTop () {
                 return parseInt((this.$APP.height - 58) / 3, 10)
+            },
+            placeholder () {
+                return this.isFullTextSearch ? this.$t('请输入关键字') : this.$t('请输入IP开始搜索')
             },
             params () {
                 const keywords = this.keywords
