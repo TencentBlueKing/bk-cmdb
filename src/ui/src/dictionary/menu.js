@@ -24,7 +24,7 @@ import {
 
 const getSubmenu = (views, symbol, pathPrefix = '') => {
     const submenuViews = views.filter(view => {
-        return view.meta.menu.parent === symbol
+        return view.meta.menu.parent === symbol && view.meta.available
     })
     const submenu = submenuViews.map(view => {
         const menu = view.meta.menu

@@ -136,6 +136,8 @@ const checkAuthDynamicMeta = (to, from) => {
 const checkAvailable = (to, from) => {
     if (typeof to.meta.checkAvailable === 'function') {
         return to.meta.checkAvailable(to, from, router.app)
+    } else if (to.meta.hasOwnProperty('available')) {
+        return to.meta.available
     }
     return true
 }

@@ -312,6 +312,7 @@
             padding: 10px 32px;
             border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
+            z-index: 100;
         }
         .button-save{
             min-width: 76px;
