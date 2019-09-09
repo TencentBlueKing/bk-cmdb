@@ -10,34 +10,25 @@
  * limitations under the License.
  */
 
-package x19_08_26_03
+package x19_09_03_02
 
 import (
 	"context"
-	"fmt"
 
-	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-type Idgen struct {
-	ID         string `bson:"_id"`
-	SequenceID uint64 `bson:"SequenceID"`
+func init() {
+	upgrader.RegistUpgrader("x19_09_03_02", upgrade)
 }
 
-func SetModuleServiceTemplateFieldUneditable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	filter := map[string]interface{}{
-		common.BKObjIDField:      common.BKInnerObjIDModule,
-		common.BKPropertyIDField: common.BKServiceTemplateIDField,
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	if err := SetModuleServiceTemplateFieldUneditable(ctx, db, conf); err != nil {
+		blog.Errorf("SetModuleServiceTemplateFieldUneditable failed, err: %+v", err)
+		return err
 	}
-	doc := map[string]interface{}{
-		"editable": false,
-	}
-	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, doc); err != nil {
-		if db.IsNotFoundError(err) == false {
-			return fmt.Errorf("upgrade x19_08_26_03, set module service_template_id field uneditable failed, err: %v", err)
-		}
-	}
+
 	return nil
 }
