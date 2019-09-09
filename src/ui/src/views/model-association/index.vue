@@ -95,7 +95,7 @@
             <the-relation
                 ref="relationForm"
                 slot="content"
-                class="slider-content"
+                class="model-slider-content"
                 v-if="slider.isShow"
                 :is-edit="slider.isEdit"
                 :is-read-only="slider.isReadOnly"
