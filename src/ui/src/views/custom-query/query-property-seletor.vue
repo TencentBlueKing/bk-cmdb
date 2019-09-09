@@ -1,6 +1,6 @@
 <template>
     <div class="query-property-seletor">
-        <bk-input v-model="searchProperty"
+        <bk-input v-model.trim="searchProperty"
             :clearable="true"
             right-icon="bk-icon icon-search">
         </bk-input>
@@ -13,7 +13,7 @@
                     <div class="property-item"
                         v-for="property in group.children"
                         :key="property.bk_property_id">
-                        <bk-checkbox v-model="property.__selected__">{{property.bk_property_name}}</bk-checkbox>
+                        <bk-checkbox v-model="property.__selected__" @change="handleCloneGroups(property)">{{property.bk_property_name}}</bk-checkbox>
                     </div>
                 </div>
             </div>
@@ -37,13 +37,14 @@
             return {
                 searchProperty: '',
                 groups: [],
+                cloneGroups: [],
                 originGroups: []
             }
         },
         computed: {
             selectedPropertyList () {
                 const list = []
-                this.groups.forEach(item => {
+                this.cloneGroups.forEach(item => {
                     list.push(...item.children)
                 })
                 return list.filter(property => property.__selected__)
@@ -57,9 +58,9 @@
             },
             hasChanged () {
                 let res = false
-                for (let i = 0; i < this.groups.length; i++) {
-                    const originGroup = this.originGroups.find(item => item.id === this.groups[i].id) || {}
-                    if (JSON.stringify(originGroup.children) !== JSON.stringify(this.groups[i].children)) {
+                for (let i = 0; i < this.cloneGroups.length; i++) {
+                    const originGroup = this.originGroups.find(item => item.id === this.cloneGroups[i].id) || {}
+                    if (JSON.stringify(originGroup.children) !== JSON.stringify(this.cloneGroups[i].children)) {
                         res = true
                         break
                     }
@@ -70,6 +71,17 @@
         watch: {
             properties () {
                 this.init()
+            },
+            searchProperty (value) {
+                const groups = this.$tools.clone(this.cloneGroups)
+                if (!value) {
+                    this.groups = groups
+                    return
+                }
+                this.groups = groups.filter(group => {
+                    group.children = group.children.filter(property => property['bk_property_name'] && property['bk_property_name'].indexOf(value) !== -1)
+                    return group.children.length
+                })
             }
         },
         created () {
@@ -79,6 +91,7 @@
             init () {
                 this.groups = this.getGroups()
                 this.originGroups = this.$tools.clone(this.groups)
+                this.cloneGroups = this.$tools.clone(this.groups)
             },
             getGroups () {
                 const properties = this.$tools.clone(this.properties)
@@ -93,6 +106,14 @@
                             }
                             return property
                         })
+                    }
+                })
+            },
+            handleCloneGroups (property) {
+                this.cloneGroups.forEach(group => {
+                    const findIndex = group.children.findIndex(curProperty => curProperty['bk_property_id'] === property['bk_property_id'] && curProperty['bk_obj_id'] === property['bk_obj_id'])
+                    if (findIndex !== -1) {
+                        group.children.splice(findIndex, 1, property)
                     }
                 })
             }

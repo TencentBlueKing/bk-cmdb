@@ -693,6 +693,9 @@
                     height: 100%;
                     cursor: pointer;
                 }
+                ::-webkit-file-upload-button {
+                    cursor:pointer;
+                }
             }
             .export-form {
                 display: inline-block;
