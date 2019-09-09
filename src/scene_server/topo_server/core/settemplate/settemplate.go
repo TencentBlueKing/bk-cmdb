@@ -17,17 +17,12 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
-	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/scene_server/topo_server/worker"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -43,12 +38,7 @@ func NewSetTemplate(client apimachinery.ClientSetInterface) SetTemplate {
 }
 
 type setTemplate struct {
-	client      apimachinery.ClientSetInterface
-	Core        core.Core
-	Engine      *backbone.Engine
-	AuthManager *extensions.AuthManager
-	Error       errors.CCErrorIf
-	Language    language.CCLanguageIf
+	client apimachinery.ClientSetInterface
 }
 
 func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder) {
@@ -165,13 +155,8 @@ func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header,
 	for _, setDiff := range setDiffs {
 		blog.V(3).Infof("begin to run sync task on set [%s](%d)", setDiff.SetDetail.SetName, setDiff.SetID)
 		// TODO: deal with result
-		backendWorker := worker.BackendWorker{
-			ClientSet:   st.client,
-			Core:        st.Core,
-			Engine:      st.Engine,
-			AuthManager: st.AuthManager,
-			Error:       st.Error,
-			Language:    st.Language,
+		backendWorker := BackendWorker{
+			ClientSet: st.client,
 		}
 		for _, moduleDiff := range setDiff.ModuleDiffs {
 			err := backendWorker.AsyncRunModuleSyncTask(header, setDiff.SetDetail, moduleDiff)

@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // WrapperResult the data wrapper

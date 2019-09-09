@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/metadata"
 	paraparse "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/operation"
-	"configcenter/src/scene_server/topo_server/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateInst create a new inst

@@ -15,7 +15,7 @@ package model
 import (
 	"configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // AssociationType the association type

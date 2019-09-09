@@ -18,7 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/topo_server/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // FieldValid field valid method
