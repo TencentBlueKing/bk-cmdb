@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // BusinessOperationInterface business operation methods

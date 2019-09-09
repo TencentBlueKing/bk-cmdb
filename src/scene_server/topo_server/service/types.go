@@ -17,7 +17,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/scene_server/topo_server/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // LogicFunc the core logic function definition

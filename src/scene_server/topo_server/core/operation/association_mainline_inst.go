@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // checkInstNameRepeat 检查如果将 currentInsts 都删除之后，拥有共同父节点的孩子结点会不会出现名字冲突

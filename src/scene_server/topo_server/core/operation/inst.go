@@ -27,7 +27,7 @@ import (
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // InstOperationInterface inst operation methods
