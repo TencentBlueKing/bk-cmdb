@@ -334,7 +334,6 @@
                 const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
                 if (model) {
                     this.$store.commit('objectModel/setActiveModel', model)
-                    console.log(model)
                     if (model.bk_classification_id === 'bk_biz_topo') {
                         this.$store.commit('setBreadcumbs', [{
                             i18n: '业务层级',

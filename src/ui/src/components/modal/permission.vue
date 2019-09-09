@@ -13,7 +13,7 @@
                 </span>
                 <h3>{{i18n.permissionTitle}}</h3>
             </div>
-            <bk-table
+            <bk-table ref="table"
                 :data="list"
                 :max-height="180"
                 :border="true">
@@ -53,6 +53,15 @@
                     noData: this.$t('无数据'),
                     apply: this.$t('去申请'),
                     cancel: this.$t('取消')
+                }
+            }
+        },
+        watch: {
+            isModalShow (val) {
+                if (val) {
+                    this.$nextTick(() => {
+                        this.$refs.table.doLayout()
+                    })
                 }
             }
         },
