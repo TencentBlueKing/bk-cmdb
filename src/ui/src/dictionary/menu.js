@@ -106,7 +106,7 @@ export default [{
         route: getMenuRoute(modelViews, MENU_MODEL_BUSINESS_TOPOLOGY, 'model')
     }, {
         id: MENU_MODEL_ASSOCIATION,
-        i18n: '关联分类',
+        i18n: '关联类型',
         icon: 'icon-cc-nav-associated',
         route: getMenuRoute(modelViews, MENU_MODEL_ASSOCIATION, 'model')
     }]
