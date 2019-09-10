@@ -103,7 +103,7 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 	// mem info
 	memInfo := js.Get("mem").Get("meminfo")
 	var memTotal, memUsed, memUsage int64
-	if nil != memInfo {
+	if nil != memInfo.Interface() {
 		memTotal, _ = util.GetInt64ByInterface(memInfo.Get("total").Interface())
 		memUsed, _ = util.GetInt64ByInterface(memInfo.Get("used").Interface())
 		memUsageF, _ := memInfo.Get("usedPercent").Float64()
@@ -113,16 +113,14 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 
 	}
 	// 系统负载信息
+	load := js.Get("load").Get("load_avg")
 	strLoadavg := ""
-	load := js.Get("load")
-	if load != nil {
-		loadAvg, exist := load.CheckGet("load_avg")
-		if exist {
-			load1 := loadAvg.Get("load1").Interface()
-			load5 := loadAvg.Get("load5").Interface()
-			load15 := loadAvg.Get("load15").Interface()
-			strLoadavg = fmt.Sprintf("%v %v %v", load1, load5, load15)
-			strLoadavg = strings.Replace(strLoadavg, "nil", "", -1)
+	if nil != load.Interface() {
+		load1, _ := load.Get("load1").Float64()
+		load5, _ := load.Get("load5").Float64()
+		load15, _ := load.Get("load15").Float64()
+		if load1 != 0 && load5 != 0 && load15 != 0 {
+			strLoadavg = fmt.Sprintf("%.2f %.2f %.2f", load1, load5, load15)
 		}
 	}
 
@@ -163,12 +161,12 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 	// time zone info
 	city, _ := js.Get("city").String()
 	country, _ := js.Get("country").String()
-
-	ret["timezone"] = country + "/" + city
-	ret["rcvRate"], ret["sendRate"], err = getSnapNetInfo(js.Get("net").Get("dev"), unitMB)
-	if err != nil {
-		return nil, err
+	ret["timezone"] = ""
+	if country != "" && city != "" {
+		ret["timezone"] = country + "/" + city
 	}
+
+	ret["rcvRate"], ret["sendRate"], _ = getSnapNetInfo(js.Get("net").Get("dev"), unitMB)
 	return ret, nil
 
 }
