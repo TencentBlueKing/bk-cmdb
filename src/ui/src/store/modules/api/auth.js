@@ -120,8 +120,12 @@ const actions = {
         commit('setAdminEntranceAuth', data)
         return Promise.resolve(data)
     },
-    getSkipUrl (context, { params, config }) {
-        return $http.post('auth/skip_url', params, config)
+    async getSkipUrl (context, { params, config }) {
+        const url = await $http.post('auth/skip_url', params, config)
+        if (url.indexOf('tid') === -1) {
+            return url + '?system_id=bk_cmdb'
+        }
+        return url
     }
 }
 

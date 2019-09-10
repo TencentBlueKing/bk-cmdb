@@ -25,9 +25,7 @@ export default {
         auth: {
             view: OPERATION.R_EVENT,
             operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+            authScope: 'global'
         }
     })
 }
