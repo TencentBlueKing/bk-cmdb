@@ -907,5 +907,8 @@
     "高级功能": "Advanced Features",
     "未添加节点提示": "You have not add any node yet, {link}",
     "添加节点": "add node",
-    "已添加节点提示": "{link} under business"
+    "已添加节点提示": "{link} under business",
+    "查询条件": "Query conditions",
+    "服务分类变更": "Service classification change",
+    "模板详情": "Template details"
 }
