@@ -30,9 +30,7 @@ export default {
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'business'
-            }
+            authScope: 'business'
         }
     })
 }

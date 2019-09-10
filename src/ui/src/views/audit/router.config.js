@@ -11,9 +11,7 @@ export default {
         },
         auth: {
             view: R_AUDIT,
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+            authScope: 'global'
         },
         i18nTitle: '操作审计'
     })
