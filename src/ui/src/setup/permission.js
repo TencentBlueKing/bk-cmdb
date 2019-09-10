@@ -15,7 +15,13 @@ const convertAuth = authList => {
     return http.post('auth/convert', {
         data: authList.map(auth => {
             const { resource_type: type, action, scope } = GET_AUTH_META(auth)
-            return { type, action, business_id: scope === 'global' ? 0 : store.getters['objectBiz/bizId'] }
+            return {
+                scope: scope === 'global' ? 'system' : 'biz',
+                attribute: {
+                    type,
+                    action
+                }
+            }
         })
     })
 }
