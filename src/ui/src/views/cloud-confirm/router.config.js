@@ -16,7 +16,7 @@ export const OPERATION = {
     R_CONFIRM_HISTORY
 }
 
-const path = '/resource-confirm'
+const path = 'resource-confirm'
 
 export default [{
     name: 'resourceConfirm',
@@ -39,16 +39,14 @@ export default [{
     })
 }, {
     name: 'confirmHistory',
-    path: '/confirm-history',
+    path: 'confirm-history',
     component: () => import('./history.vue'),
     meta: new Meta({
         auth: {
             operation: [
                 OPERATION.R_CONFIRM_HISTORY
             ],
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+            authScope: 'global'
         },
         i18nTitle: '确认记录'
     })

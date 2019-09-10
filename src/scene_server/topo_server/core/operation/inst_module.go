@@ -31,7 +31,7 @@ import (
 type ModuleOperationInterface interface {
 	CreateModule(params types.ContextParams, obj model.Object, bizID, setID int64, data mapstr.MapStr) (inst.Inst, error)
 	DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setID, moduleIDS []int64) error
-	FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []metadata.ModuleInst, err error)
+	FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []mapstr.MapStr, err error)
 	UpdateModule(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error
 
 	SetProxy(inst InstOperationInterface)
@@ -179,16 +179,16 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 	return m.inst.DeleteInst(params, obj, innerCond, false)
 }
 
-func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []metadata.ModuleInst, err error) {
+func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []mapstr.MapStr, err error) {
 	// module table doesn't have metadata field
 	params.MetaData = nil
 	count, resultData, err := m.inst.FindInst(params, obj, cond, false)
 	if err != nil {
 		return 0, nil, err
 	}
-	moduleInstances := make([]metadata.ModuleInst, 0)
+	moduleInstances := make([]mapstr.MapStr, 0)
 	for _, item := range resultData {
-		moduleInstance := metadata.ModuleInst{}
+		moduleInstance := make(map[string]interface{})
 		if err := mapstr.DecodeFromMapStr(&moduleInstance, item.ToMapStr()); err != nil {
 			blog.Errorf("unmarshal module into struct failed, module: %+v, rid: %s", item, params.ReqID)
 			return 0, nil, err
@@ -220,9 +220,19 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 	if count > 1 {
 		return params.Err.CCErrorf(common.CCErrCommGetMultipleObject)
 	}
+	if len(moduleInstances) == 0 {
+		return params.Err.CCErrorf(common.CCErrCommNotFound)
+	}
 
-	moduleInstance := moduleInstances[0]
+	moduleMapStr := moduleInstances[0]
+	moduleInstance := metadata.ModuleInst{}
+	if err := moduleMapStr.MarshalJSONInto(&moduleInstance); err != nil {
+		blog.ErrorJSON("unmarshal db data into module failed, module: %s, err: %s, rid: %s", moduleMapStr, err.Error(), params.ReqID)
+		return params.Err.CCError(common.CCErrCommParseDBFailed)
+	}
+
 	if moduleInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+		// 检查并提示禁止修改服务分类
 		if val, ok := data[common.BKServiceCategoryIDField]; ok == true {
 			serviceCategoryID, err := util.GetInt64ByInterface(val)
 			if err != nil {
@@ -233,6 +243,7 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 			}
 		}
 
+		// 检查并提示禁止修改通过模板创建的模块名称
 		if val, ok := data[common.BKModuleNameField]; ok == true {
 			name := util.GetStrByInterface(val)
 			if len(name) == 0 {
@@ -242,27 +253,8 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 			}
 		}
 	}
-	updateItems := map[string]interface{}{}
-	if val, ok := data[common.BKModuleNameField]; ok == true {
-		updateItems[common.BKModuleNameField] = val
-	}
-	if val, ok := data[common.BKOperatorField]; ok == true {
-		updateItems[common.BKOperatorField] = val
-	}
-	if val, ok := data[common.BKBakOperatorField]; ok == true {
-		updateItems[common.BKBakOperatorField] = val
-	}
-	if val, ok := data[common.BKServiceCategoryIDField]; ok == true {
-		updateItems[common.BKServiceCategoryIDField] = val
-	}
-	if val, ok := data[common.BKModuleTypeField]; ok == true {
-		updateItems[common.BKModuleTypeField] = val
-	}
 
 	// module table don't have metadata field
 	params.MetaData = nil
-	if err := m.inst.UpdateInst(params, updateItems, obj, innerCond, -1); err != nil {
-		return err
-	}
-	return nil
+	return m.inst.UpdateInst(params, data, obj, innerCond, -1)
 }

@@ -205,7 +205,7 @@
 
 <style lang="scss" scoped>
     .hosts-layout{
-        height: 100%;
+        border-top: 1px solid $cmdbLayoutBorderColor;
         padding: 0;
         display: flex;
         .hosts-topology {
@@ -248,6 +248,7 @@
         }
     }
     .topology-tree {
+        width: 280px;
         max-height: 100%;
         padding: 10px 0;
         @include scrollbar-y;

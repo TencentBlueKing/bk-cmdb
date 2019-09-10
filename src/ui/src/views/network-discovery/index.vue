@@ -101,10 +101,7 @@
             },
             routeToConfig () {
                 this.$router.push({
-                    name: 'networkDiscoveryConfig',
-                    query: {
-                        from: this.$route.fullPath
-                    }
+                    name: 'networkDiscoveryConfig'
                 })
             },
             routeToConfirm (item) {
@@ -113,9 +110,6 @@
                     name: 'networkDiscoveryConfirm',
                     params: {
                         cloudId: item['bk_cloud_id']
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },

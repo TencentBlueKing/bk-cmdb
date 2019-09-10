@@ -4,6 +4,7 @@
         :clearable="allowClear"
         :searchable="searchable"
         :disabled="disabled"
+        :placeholder="placeholder"
         :popover-options="{
             boundary: 'window'
         }">
@@ -32,11 +33,19 @@
                 type: Boolean,
                 default: false
             },
+            autoSelect: {
+                type: Boolean,
+                default: true
+            },
             options: {
                 type: Array,
                 default () {
                     return []
                 }
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -68,15 +77,17 @@
         },
         methods: {
             setInitData () {
-                if (this.value === '') {
-                    const defaultOption = this.options.find(option => option['is_default'])
-                    if (defaultOption) {
-                        this.selected = defaultOption.id
+                if (this.autoSelect) {
+                    if (this.value === '') {
+                        const defaultOption = this.options.find(option => option['is_default'])
+                        if (defaultOption) {
+                            this.selected = defaultOption.id
+                        } else {
+                            this.$emit('input', null)
+                        }
                     } else {
-                        this.$emit('input', null)
+                        this.selected = this.value
                     }
-                } else {
-                    this.selected = this.value
                 }
             }
         }

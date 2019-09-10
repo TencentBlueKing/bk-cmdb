@@ -114,6 +114,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :quick-close="true"
             :is-show.sync="details.isShow"
             :width="800"
@@ -317,6 +318,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .audit-wrapper {
+        padding: 0 20px;
+    }
     .title-content{
         padding: 0 0 14px 0;
         display: flex;

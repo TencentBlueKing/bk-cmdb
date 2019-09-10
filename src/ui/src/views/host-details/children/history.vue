@@ -30,6 +30,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="details.show"
             :width="800"
             :title="$t('操作详情')">

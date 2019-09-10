@@ -81,9 +81,6 @@
                     name: 'generalModel',
                     params: {
                         objId: model.bk_obj_id
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 }
                 this.$router.push(router)

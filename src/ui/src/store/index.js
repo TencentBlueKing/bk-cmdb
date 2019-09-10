@@ -12,7 +12,6 @@ import businessSync from './modules/view/business-sync.js'
 import hosts from './modules/view/hosts.js'
 
 import auth from './modules/api/auth.js'
-import menu from './modules/menu.js'
 import eventSub from './modules/api/event-sub.js'
 import hostBatch from './modules/api/host-batch.js'
 import hostCustomApi from './modules/api/host-custom-api.js'
@@ -67,7 +66,6 @@ export default new Vuex.Store({
         hosts,
         
         auth,
-        menu,
         request,
         eventSub,
         hostBatch,

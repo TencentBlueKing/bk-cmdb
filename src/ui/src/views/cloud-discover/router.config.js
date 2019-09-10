@@ -14,7 +14,7 @@ export const OPERATION = {
     D_CLOUD_DISCOVER
 }
 
-const path = '/cloud-discover'
+const path = 'cloud-discover'
 
 export default {
     name: 'cloudDiscover',
@@ -31,9 +31,7 @@ export default {
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+            authScope: 'global'
         },
         requireBusiness: true,
         i18nTitle: '云资源发现'

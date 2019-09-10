@@ -55,7 +55,7 @@
                     </bk-select>
                 </div>
                 <div class="fr">
-                    <bk-select class="options-collection"
+                    <bk-select class="options-collection bgc-white"
                         v-if="showCollection"
                         ref="collectionSelector"
                         v-model="selectedCollection"
@@ -92,11 +92,11 @@
                 </div>
             </div>
         </div>
-        <bk-table class="hosts-table"
-            v-bkloading="{ isLoading: $loading() }"
+        <bk-table class="hosts-table bkc-white"
+            v-bkloading="{ isLoading: $loading('searchHosts') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 150"
+            :max-height="$APP.height - 185"
             @selection-change="handleSelectionChange"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"
@@ -116,6 +116,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.show"
             :title="slider.title"
             :width="800"
@@ -134,6 +135,7 @@
             </bk-tab>
         </bk-sideslider>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="columnsConfig.show"
             :width="600"
             :title="$t('列表显示属性配置')">
@@ -173,6 +175,7 @@
 
 <script>
     import { mapGetters, mapActions, mapState } from 'vuex'
+    import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
@@ -543,25 +546,19 @@
             },
             handleRowClick (item) {
                 const business = item.biz[0]
-                if (!business.default) {
+                if (this.$route.name === MENU_RESOURCE_HOST) {
+                    this.$router.push({
+                        name: 'resourceHostDetails',
+                        params: {
+                            id: item.host.bk_host_id
+                        }
+                    })
+                } else {
                     this.$router.push({
                         name: 'businessHostDetails',
                         params: {
                             business: business.bk_biz_id,
                             id: item.host.bk_host_id
-                        },
-                        query: {
-                            from: this.$route.fullPath
-                        }
-                    })
-                } else {
-                    this.$router.push({
-                        name: 'resourceHostDetails',
-                        params: {
-                            id: item.host.bk_host_id
-                        },
-                        query: {
-                            from: this.$route.fullPath
                         }
                     })
                 }
@@ -641,9 +638,6 @@
                     name: 'history',
                     params: {
                         objId: 'host'
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },
@@ -689,9 +683,6 @@
             }
             &:first-child {
                 margin-left: 0;
-            }
-            &:hover{
-                z-index: 1;
             }
         }
     }
