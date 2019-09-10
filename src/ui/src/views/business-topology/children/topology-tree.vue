@@ -1,5 +1,11 @@
 <template>
     <div class="topology-tree-wrapper">
+        <bk-input class="filter-input"
+            right-icon="bk-icon icon-search"
+            :placeholder="$t('请输入关键字')"
+            v-model="nodeKeyworyds"
+            @enter="handleFilterNode">
+        </bk-input>
         <bk-big-tree class="topology-tree"
             ref="tree"
             v-bkloading="{
@@ -51,7 +57,7 @@
                     @cancel="handleCancelCreateNode">
                 </create-module>
             </template>
-            <template v-else>
+            <!-- <template v-else>
                 <create-node v-if="createInfo.visible"
                     :next-model-id="createInfo.nextModelId"
                     :properties="createInfo.properties"
@@ -59,6 +65,24 @@
                     @submit="handleCreateNode"
                     @cancel="handleCancelCreateNode">
                 </create-node>
+            </template> -->
+            <!-- <template v-else>
+                <create-set v-if="createInfo.visible"
+                    :next-model-id="createInfo.nextModelId"
+                    :properties="createInfo.properties"
+                    :parent-node="createInfo.parentNode"
+                    @submit="handleCreateNode"
+                    @cancel="handleCancelCreateNode">
+                </create-set>
+            </template> -->
+            <template v-else>
+                <create-new-node v-if="createInfo.visible"
+                    :next-model-id="createInfo.nextModelId"
+                    :properties="createInfo.properties"
+                    :parent-node="createInfo.parentNode"
+                    @submit="handleCreateNode"
+                    @cancel="handleCancelCreateNode">
+                </create-new-node>
             </template>
         </bk-dialog>
     </div>
@@ -66,12 +90,16 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import createNode from './create-node.vue'
+    // import createNode from './create-node.vue'
     import createModule from './create-module.vue'
+    // import createSet from './create-set.vue'
+    import createNewNode from './create-node.new.vue'
     export default {
         components: {
-            createNode,
-            createModule
+            // createNode,
+            createModule,
+            // createSet,
+            createNewNode
         },
         data () {
             return {
@@ -83,7 +111,8 @@
                     properties: [],
                     parentNode: null,
                     nextModelId: null
-                }
+                },
+                nodeKeyworyds: ''
             }
         },
         computed: {
@@ -290,6 +319,9 @@
             },
             handleSelectChange (node) {
                 this.$store.commit('businessTopology/setSelectedNode', node)
+            },
+            handleFilterNode () {
+                this.$refs.tree.filter(this.nodeKeyworyds)
             }
         }
     }
@@ -298,6 +330,10 @@
 <style lang="scss" scoped>
     .topology-tree-wrapper {
         height: 100%;
+        .filter-input {
+            width: auto;
+            margin: 10px 20px 20px;
+        }
         /deep/ .bk-big-tree-node {
             .node-options {
                 .bk-icon {
