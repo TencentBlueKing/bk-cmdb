@@ -34,8 +34,13 @@ var (
 		common.BKInnerObjIDProc: true,
 	}
 
-	// notChangeIsRequireModel 不允新加修改许修改必填字段的模型
-	notChangeIsRequireModel = map[string]bool{
+	// RequiredFieldUnchangeableModels 模型的属性描述，的必填字段不允许修改
+	// example: 禁止如下修改
+	// db.getCollection('cc_ObjAttDes').update(
+	//     {bk_obj_id: {$in: ['biz', 'host', 'set', 'module', 'plat', 'process']}},
+	//     {$set: {isrequired: true}}
+	// )
+	RequiredFieldUnchangeableModels = map[string]bool{
 		common.BKInnerObjIDApp:    true,
 		common.BKInnerObjIDHost:   true,
 		common.BKInnerObjIDSet:    true,
@@ -368,7 +373,7 @@ func (m *modelAttribute) checkAddField(ctx core.ContextParams, attribute metadat
 		return ctx.Error.Errorf(common.CCErrCoreServiceNotAllowAddFieldErr, langObjID)
 	}
 
-	if _, ok := notChangeIsRequireModel[attribute.ObjectID]; ok {
+	if _, ok := RequiredFieldUnchangeableModels[attribute.ObjectID]; ok {
 		if attribute.IsRequired {
 			//  不允许修改必填字段的模型
 			return ctx.Error.Errorf(common.CCErrCoreServiceNotAllowAddRequiredFieldErr, langObjID)
@@ -381,7 +386,7 @@ func (m *modelAttribute) checkAddField(ctx core.ContextParams, attribute metadat
 // checkChangeRequireField 修改模型属性的时候，如果修改的属性包含是否为必填字段，需要判断是否可以模型是否可以必填字段
 func (m *modelAttribute) checkChangeField(ctx core.ContextParams, objID string, attrInfo mapstr.MapStr) error {
 	langObjID := m.getLangObjID(ctx, objID)
-	if _, ok := notChangeIsRequireModel[objID]; ok {
+	if _, ok := RequiredFieldUnchangeableModels[objID]; ok {
 		if attrInfo.Exists(metadata.AttributeFieldIsRequired) {
 			//  不允许修改必填字段的模型
 			return ctx.Error.Errorf(common.CCErrCoreServiceNotAllowChangeRequiredFieldErr, langObjID)
