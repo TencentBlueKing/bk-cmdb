@@ -195,6 +195,8 @@
                     })
                     if (modelId === 'module') {
                         properties.push(...this.getModuleServiceTemplateProperties())
+                    } else if (modelId === 'set') {
+                        properties.push(...this.getSetTemplateProperties())
                     }
                     this.$store.commit('businessTopology/setProperties', {
                         id: modelId,
@@ -223,6 +225,18 @@
                     unit: ''
                 }]
             },
+            getSetTemplateProperties () {
+                const group = this.geSetTemplateGroup()
+                return [{
+                    bk_property_id: '__set_template_name__',
+                    bk_property_name: this.$t('集群模版名称：'),
+                    bk_property_group: group.bk_group_id,
+                    bk_property_index: 1,
+                    bk_isapi: false,
+                    editable: false,
+                    unit: ''
+                }]
+            },
             updateCategoryProperty (state) {
                 const serviceCategoryProperty = this.properties.find(property => property.bk_property_id === '__service_category__') || {}
                 Object.assign(serviceCategoryProperty, state)
@@ -243,6 +257,8 @@
                     })
                     if (modelId === 'module') {
                         groups.push(this.getModuleServiceTemplateGroup())
+                    } else if (modelId === 'set') {
+                        groups.push(this.geSetTemplateGroup())
                     }
                     this.$store.commit('businessTopology/setPropertyGroups', {
                         id: modelId,
@@ -257,6 +273,15 @@
                     bk_group_index: -1,
                     bk_group_name: this.$t('服务模板信息'),
                     bk_obj_id: 'module',
+                    ispre: true
+                }
+            },
+            geSetTemplateGroup () {
+                return {
+                    bk_group_id: '__set_template_info__',
+                    bk_group_index: -1,
+                    bk_group_name: this.$t('集群模板信息'),
+                    bk_obj_id: 'set',
                     ispre: true
                 }
             },
