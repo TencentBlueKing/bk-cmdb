@@ -162,6 +162,7 @@ router.beforeEach((to, from, next) => {
                 await preload(router.app)
             }
 
+            setAdminView(to)
             setAuthScope(to, from)
             checkAuthDynamicMeta(to, from)
 
@@ -174,8 +175,6 @@ router.beforeEach((to, from, next) => {
             if (!viewAuth) {
                 throw new StatusError({ name: '403' })
             }
-
-            setAdminView(to)
 
             return next()
         } catch (e) {
