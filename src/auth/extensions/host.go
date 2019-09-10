@@ -199,6 +199,9 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 		blog.Errorf("get host:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get host by businessID:%d failed, err: %+v", businessID, err)
 	}
+	if len(hosts.Data.Info) == 0 {
+		return make([]HostSimplify, 0), nil
+	}
 
 	// extract hostID
 	hostIDs := make([]int64, 0)

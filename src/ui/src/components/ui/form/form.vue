@@ -25,10 +25,12 @@
                                         <component class="form-component"
                                             :is="`cmdb-form-${property['bk_property_type']}`"
                                             :class="{ error: errors.has(property['bk_property_id']) }"
+                                            :unit="property['unit']"
                                             :disabled="checkDisabled(property)"
                                             :options="property.option || []"
                                             :data-vv-name="property['bk_property_id']"
                                             :data-vv-as="property['bk_property_name']"
+                                            :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                                             v-validate="getValidateRules(property)"
                                             v-model.trim="values[property['bk_property_id']]">
                                         </component>
@@ -102,10 +104,7 @@
             return {
                 values: {},
                 refrenceValues: {},
-                scrollbar: false,
-                groupState: {
-                    none: true
-                }
+                scrollbar: false
             }
         },
         computed: {
@@ -264,7 +263,7 @@
             font-size: 12px;
             .property-name{
                 display: block;
-                margin: 6px 0 9px;
+                margin: 6px 0 10px;
                 color: $cmdbTextColor;
                 line-height: 16px;
                 font-size: 0;
@@ -295,10 +294,15 @@
                 color: #c3cdd7;
             }
             .property-value{
-                height: 36px;
-                line-height: 36px;
-                font-size: 12px;
+                height: 32px;
+                line-height: 32px;
+                font-size: 0;
                 position: relative;
+                /deep/ .control-append-group {
+                    .bk-input-text {
+                        flex: 1;
+                    }
+                }
             }
         }
     }
@@ -313,6 +317,7 @@
             padding: 10px 32px;
             border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
+            z-index: 100;
         }
         .button-save{
             min-width: 76px;

@@ -568,14 +568,6 @@
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.instance.service_template_id
-                    },
-                    query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.instance.bk_module_id
-                            }
-                        }
                     }
                 })
             }

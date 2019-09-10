@@ -1,7 +1,7 @@
 import Meta from '@/router/meta'
 export default {
     name: 'history',
-    path: '/history/:objId',
+    path: 'history/:objId',
     component: () => import('./index.vue'),
     meta: new Meta({
         checkAvailable: (to, from, app) => {

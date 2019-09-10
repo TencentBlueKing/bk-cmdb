@@ -92,6 +92,7 @@
             </div>
         </div>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.show"
             :title="slider.title"
             :width="800"
@@ -141,6 +142,7 @@
     import processForm from './process-form.vue'
     import processTable from './process'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
+    import { MENU_BUSINESS_SERVICE_TEMPLATE, MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     export default {
         components: {
             processTable,
@@ -192,7 +194,19 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.isCreatedType ? this.$t('新建服务模版') : '')
+            if (this.isCreatedType) {
+                this.$store.commit('setTitle', this.$t('新建模板'))
+                this.$store.commit('setBreadcumbs', [{
+                    i18n: '服务模板',
+                    route: {
+                        name: MENU_BUSINESS_SERVICE_TEMPLATE
+                    }
+                }, {
+                    i18n: '新建模板'
+                }])
+            } else {
+                this.$store.commit('setTitle', this.$t('模板详情'))
+            }
             this.processList = this.localProcessTemplate
             try {
                 await this.reload()
@@ -227,7 +241,14 @@
                 'clearLocalProcessTemplate'
             ]),
             initEdit () {
-                this.$store.commit('setHeaderTitle', this.originTemplateValues['name'])
+                this.$store.commit('setBreadcumbs', [{
+                    i18n: '服务模板',
+                    route: {
+                        name: MENU_BUSINESS_SERVICE_TEMPLATE
+                    }
+                }, {
+                    name: this.originTemplateValues['name']
+                }])
                 this.formData.templateId = this.originTemplateValues['id']
                 this.formData.templateName = this.originTemplateValues['name']
                 this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['bk_parent_id']
@@ -431,10 +452,10 @@
                 }
             },
             handleGoInstance () {
-                this.$router.replace({ name: 'topology' })
+                this.$router.replace({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
             },
             handleCancelOperation () {
-                this.$router.replace({ name: 'serviceTemplate' })
+                this.$router.replace({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
             },
             handleSliderBeforeClose () {
                 const hasChanged = this.$refs.processForm.hasChange()
@@ -461,6 +482,7 @@
 
 <style lang="scss" scoped>
     .create-template-wrapper {
+        padding: 0 20px;
         .info-group {
             h3 {
                 color: #63656e;
@@ -516,6 +538,7 @@
         font-size: 14px;
         text-align: center;
         color: #444444;
+        word-break: break-all;
         .bk-icon {
             width: 60px;
             height: 60px;

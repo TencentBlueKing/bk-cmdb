@@ -1,5 +1,3 @@
-/* eslint-disable-next-line */
-import Vue from 'vue'
 import businessSelector from './selector/business.vue'
 import clipboardSelector from './selector/clipboard.vue'
 import selector from './selector/selector.vue'
@@ -18,7 +16,6 @@ import singlechar from './form/singlechar.vue'
 import timezone from './form/timezone.vue'
 import enumeration from './form/enum.vue'
 import objuser from './form/objuser.vue'
-import tree from './tree/tree.vue'
 import resize from './other/resize.vue'
 import collapseTransition from './transition/collapse.js'
 import collapse from './collapse/collapse'
@@ -46,7 +43,6 @@ const install = (Vue, opts = {}) => {
         timezone,
         enumeration,
         objuser,
-        tree,
         resize,
         collapseTransition,
         collapse,
@@ -80,7 +76,6 @@ export default {
     timezone,
     enumeration,
     objuser,
-    tree,
     resize,
     collapseTransition,
     dotMenu,

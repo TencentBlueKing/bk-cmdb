@@ -26,9 +26,6 @@
                     params: {
                         business: this.isAdminView ? '' : this.host['biz'][0]['bk_biz_id'],
                         id: this.host['host']['bk_host_id']
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },

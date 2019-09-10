@@ -1,5 +1,5 @@
 <template>
-    <div class="relation-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="relation-wrapper">
         <feature-tips
             :feature-name="'association'"
             :show-tips="showFeatureTips"
@@ -86,6 +86,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             class="relation-slider"
             :width="450"
             :title="slider.title"
@@ -94,7 +95,7 @@
             <the-relation
                 ref="relationForm"
                 slot="content"
-                class="slider-content"
+                class="model-slider-content"
                 v-if="slider.isShow"
                 :is-edit="slider.isEdit"
                 :is-read-only="slider.isReadOnly"
@@ -284,6 +285,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .relation-wrapper {
+        padding: 0 20px;
+    }
     .operation-box {
         margin: 0 0 14px 0;
         font-size: 0;

@@ -1,5 +1,9 @@
 import Meta from '@/router/meta'
-import { NAV_SERVICE_MANAGEMENT } from '@/dictionary/menu'
+import {
+    MENU_BUSINESS,
+    MENU_BUSINESS_SERVICE,
+    MENU_BUSINESS_SERVICE_TOPOLOGY
+} from '@/dictionary/menu-symbol'
 import {
     U_HOST,
     HOST_TO_RESOURCE,
@@ -30,28 +34,19 @@ export const OPERATION = {
     R_SERVICE_INSTANCE
 }
 
-const path = '/topology'
-
 export default {
-    name: 'topology',
-    path: path,
+    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+    path: 'topology',
     component: () => import('./index.vue'),
     meta: new Meta({
+        owner: MENU_BUSINESS,
         menu: {
-            id: 'topology',
             i18n: '服务拓扑',
-            path: path,
-            order: 1,
-            parent: NAV_SERVICE_MANAGEMENT,
-            adminView: false
+            parent: MENU_BUSINESS_SERVICE
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'business'
-            }
-        },
-        i18nTitle: '服务拓扑',
-        requireBusiness: true
+            authScope: 'business'
+        }
     })
 }

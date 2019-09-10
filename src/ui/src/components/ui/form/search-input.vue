@@ -4,7 +4,7 @@
             <textarea ref="textarea"
                 v-model="localValue"
                 :rows="rows"
-                :placeholder="$t('请输入关键词')"
+                :placeholder="placeholder || $t('请输入关键词')"
                 @focus="handleFocus"
                 @blur="handleBlur"
                 @input="setValue"
@@ -12,7 +12,10 @@
                 @keydown.delete="handleDelete">
             </textarea>
             <i class="bk-icon icon-close"
-                v-show="focus && localValue.length"
+                :class="{
+                    'is-show': focus
+                }"
+                v-if="localValue.length"
                 @click="handleClear">
             </i>
         </div>
@@ -24,6 +27,10 @@
         name: 'cmdb-search-input',
         props: {
             value: {
+                type: String,
+                default: ''
+            },
+            placeholder: {
                 type: String,
                 default: ''
             }
@@ -99,6 +106,11 @@
             width: 100%;
             line-height: 22px;
             z-index: 100;
+            &:hover {
+                .icon-close {
+                    display: block;
+                }
+            }
             textarea {
                 display: block;
                 width: 100%;
@@ -109,7 +121,7 @@
                 @include scrollbar-y;
             }
             .icon-close {
-                display: block;
+                display: none;
                 position: absolute;
                 top: 50%;
                 right: 4px;
@@ -123,6 +135,9 @@
                 background-color: #C4C6CC;
                 color: #fff;
                 cursor: pointer;
+                &.is-show {
+                    display: block;
+                }
                 &:hover {
                     background-color: #979BA5;
                 }
