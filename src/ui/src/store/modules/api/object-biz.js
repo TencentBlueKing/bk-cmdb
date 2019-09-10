@@ -26,8 +26,8 @@ const getters = {
 const actions = {
     getAuthorizedBusiness ({ commit }) {
         return $http.get('biz/with_reduced').then(data => {
-            commit('setAuthorizedBusiness', data.info)
-            return data.info
+            commit('setAuthorizedBusiness', [] || data.info)
+            return [] || data.info
         })
     },
     /**
