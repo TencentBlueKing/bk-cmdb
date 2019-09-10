@@ -31,9 +31,7 @@ export default {
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+            authScope: 'global'
         },
         requireBusiness: true,
         i18nTitle: '云资源发现'
