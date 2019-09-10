@@ -59,8 +59,8 @@ func (p *Producer) Start() {
 			select {
 			case <-ticker.C:
 				if isMaster := p.Engine.ServiceManageInterface.IsMaster(); !isMaster {
-					blog.Error("not master, don't generate iam sync job, rid: %v")
-					return
+					blog.Info("not master, don't generate iam sync job")
+					continue
 				}
 				// get jobs
 				jobs := producer.generateJobs()
