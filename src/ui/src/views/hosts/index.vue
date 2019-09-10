@@ -248,6 +248,7 @@
         }
     }
     .topology-tree {
+        width: 280px;
         max-height: 100%;
         padding: 10px 0;
         @include scrollbar-y;

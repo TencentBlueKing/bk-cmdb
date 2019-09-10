@@ -8,7 +8,7 @@
         <div class="main-layout">
             <div class="main-scroller" v-bkloading="{ isLoading: globalLoading }">
                 <router-view class="main-views" :key="refreshKey" v-if="shouldRenderSubView"></router-view>
-                <router-view class="main-views" name="requireBusiness" v-show="showRequireBusiness"></router-view>
+                <router-view class="main-views" name="requireBusiness" v-if="showRequireBusiness"></router-view>
             </div>
         </div>
     </div>
@@ -44,6 +44,10 @@
             handleBusinessChange () {
                 this.businessSelected = true
                 this.showRequireBusiness = false
+                this.$router.replace({
+                    ...this.$route,
+                    query: {}
+                })
                 this.refreshKey = Date.now()
             },
             handleBusinessEmpty () {

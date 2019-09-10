@@ -29,9 +29,7 @@ export default [{
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+            authScope: 'global'
         }
     })
 }, {
@@ -45,9 +43,7 @@ export default [{
         auth: {
             view: OPERATION.BUSINESS_ARCHIVE,
             operation: [OPERATION.BUSINESS_ARCHIVE],
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+            authScope: 'global'
         },
         checkAvailable: (to, from, app) => {
             return app.$store.getters.isAdminView

@@ -24,9 +24,7 @@ export default {
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'business'
-            }
+            authScope: 'business'
         },
         showBreadcumbs: true,
         filterPropertyKey: 'business_host_filter_properties'

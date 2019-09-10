@@ -23,15 +23,14 @@ export default {
     path: 'custom-fields',
     component: () => import('./index.vue'),
     meta: new Meta({
+        available: false,
         menu: {
             i18n: '自定义字段',
             parent: MENU_BUSINESS_ADVANCED
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'business'
-            }
+            authScope: 'business'
         }
     })
 }

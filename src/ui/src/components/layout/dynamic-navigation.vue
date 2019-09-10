@@ -161,7 +161,9 @@
                 if (this.owner === MENU_RESOURCE) {
                     menus.splice(1, 0, ...this.collectionMenus)
                 }
-                return menus
+                return menus.filter(menu => {
+                    return menu.hasOwnProperty('route') || (Array.isArray(menu.submenu) && menu.submenu.length)
+                })
             }
         },
         watch: {
