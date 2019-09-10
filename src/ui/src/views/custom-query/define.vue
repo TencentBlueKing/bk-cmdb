@@ -28,6 +28,7 @@
                     <bk-input type="text" class="cmdb-form-input"
                         v-model.trim="name"
                         :name="$t('查询名称')"
+                        :placeholder="$t('请输入xx', { name: $t('查询名称') })"
                         :disabled="!editable"
                         v-validate="'required|length:256'">
                     </bk-input>
@@ -36,7 +37,7 @@
             </div>
             <div class="query-conditons">
                 <div class="query-title">
-                    <span>查询条件</span>
+                    <span>{{$t('查询条件')}}</span>
                     <i class="icon-cc-tips" v-bk-tooltips.right="$t('针对查询内容进行条件过滤')"></i>
                 </div>
                 <ul class="userapi-list">
@@ -107,9 +108,6 @@
         </div>
         
         <div class="userapi-btn-group">
-            <bk-button theme="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
-                {{$t('预览')}}
-            </bk-button>
             <span class="inline-block-middle"
                 v-cursor="{
                     active: !editable,
@@ -123,6 +121,9 @@
                     {{$t('保存')}}
                 </bk-button>
             </span>
+            <bk-button class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
+                {{$t('预览')}}
+            </bk-button>
             <bk-button theme="default" class="userapi-btn" @click="closeSlider">
                 {{$t('取消')}}
             </bk-button>
@@ -640,27 +641,23 @@
                         }
                     }
                 })
-                this.propertySlider.properties = {
-                    host: hostList.map(item => {
-                        return {
-                            ...item,
-                            __selected__: false
-                        }
-                    }),
-                    set: setList.map(item => {
-                        return {
-                            ...item,
-                            __selected__: false
-                        }
-                    }),
-                    module: moduleList.map(item => {
-                        return {
-                            ...item,
-                            __selected__: false
-                        }
-                    })
-                }
                 this.filter.allList = [...hostList, ...setList, ...moduleList]
+                const sliderProperty = this.filter.allList.filter(item => !['foreignkey'].includes(item['bk_property_type']))
+                const propertyMap = {}
+                sliderProperty.forEach(item => {
+                    if (propertyMap.hasOwnProperty(item['bk_obj_id'])) {
+                        propertyMap[item['bk_obj_id']].push({
+                            ...item,
+                            __selected__: false
+                        })
+                    } else {
+                        propertyMap[item['bk_obj_id']] = [{
+                            ...item,
+                            __selected__: false
+                        }]
+                    }
+                })
+                this.propertySlider.properties = propertyMap
                 this.object['host']['properties'] = res[0].filter(property => !property['bk_isapi'])
                 this.object['set']['properties'] = res[1].filter(property => !property['bk_isapi'])
                 this.object['module']['properties'] = res[2].filter(property => !property['bk_isapi'])

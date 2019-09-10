@@ -20,6 +20,7 @@
             </span>
             <div class="api-input fr">
                 <bk-input type="text" class="cmdb-form-input"
+                    right-icon="bk-icon icon-search"
                     v-model="filter.name"
                     :placeholder="$t('快速查询')"
                     @enter="getUserAPIList">

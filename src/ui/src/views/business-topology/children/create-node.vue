@@ -16,6 +16,7 @@
                     :data-vv-name="property['bk_property_id']"
                     :data-vv-as="property['bk_property_name']"
                     :options="property.option || []"
+                    :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                     v-validate="getValidateRules(property)"
                     v-model.trim="values[property['bk_property_id']]">
                 </component>
@@ -24,6 +25,7 @@
                         :data-vv-name="property['bk_property_id']"
                         :data-vv-as="property['bk_property_name']"
                         :options="property.option || []"
+                        :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                         v-validate="getValidateRules(property)"
                         v-model.trim="values[property['bk_property_id']]">
                     </bk-input>
@@ -68,7 +70,7 @@
             sortedProperties () {
                 const sortedProperties = this.properties.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
                 sortedProperties.sort((propertyA, propertyB) => {
-                    return this.$tools.getPropertyPriority(propertyA) - this.$tools.getPropertyPriority(propertyB)
+                    return propertyA['bk_property_index'] - propertyB['bk_property_index']
                 })
                 return sortedProperties
             },
@@ -112,6 +114,7 @@
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {
                     rules[propertyType] = true
+                    rules.length = propertyType === 'singlechar' ? 256 : 2000
                 }
                 if (propertyType === 'int') {
                     rules['numeric'] = true

@@ -30,10 +30,7 @@ export default [{
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope (to, from, app) {
-                const isAdminView = app.$store.getters.isAdminView
-                this.authScope = isAdminView ? 'global' : 'business'
-            }
+            authScope: 'global'
         }
     })
 }, {
@@ -49,12 +46,7 @@ export default [{
                 OPERATION.U_MODEL,
                 OPERATION.D_MODEL
             ],
-            setAuthScope (to, from, app) {
-                const modelId = to.params.modelId
-                const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
-                const bizId = getMetadataBiz(model)
-                this.authScope = bizId ? 'business' : 'global'
-            },
+            authScope: 'global',
             setDynamicMeta: (to, from, app) => {
                 const modelId = to.params.modelId
                 const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
