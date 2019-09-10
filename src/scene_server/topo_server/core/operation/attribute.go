@@ -86,7 +86,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 
 	if yes {
 		if att.Attribute().IsRequired {
-			return nil, params.Err.Error(common.CCErrTopoCanNotAddRequiredAttributeForMailineModel)
+			return nil, params.Err.Error(common.CCErrTopoCanNotAddRequiredAttributeForMainlineModel)
 		}
 	}
 
