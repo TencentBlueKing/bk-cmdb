@@ -103,7 +103,7 @@ func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objI
 
 	condMap := util.SetModOwner(cond.ToMapStr(), ctx.SupplierAccount)
 
-	resultAttrs := []metadata.Attribute{}
+	resultAttrs := make([]metadata.Attribute, 0)
 	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).All(ctx, &resultAttrs)
 	blog.V(5).Infof("checkUnique db cond:%#v, result:%#v, rid:%s", condMap, resultAttrs, ctx.ReqID)
 	if err != nil {
@@ -200,7 +200,7 @@ func (m *modelAttribute) searchReturnMapStr(ctx core.ContextParams, cond univers
 
 func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
 
-	resultAttrs := []metadata.Attribute{}
+	resultAttrs := make([]metadata.Attribute, 0)
 	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKObjIDField}
 
 	condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
@@ -256,7 +256,7 @@ func (m *modelAttribute) saveCheck(ctx core.ContextParams, attribute metadata.At
 
 	// check name duplicate
 	if err := m.checkUnique(ctx, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName); err != nil {
-		blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+		blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
 		return err
 	}
 
@@ -288,7 +288,7 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 	// 预定义字段，只能更新分组和分组内排序
 	if hasIsPreProperty {
 		hasNotAllowField := false
-		data.ForEach(func(key string, val interface{}) error {
+		_ = data.ForEach(func(key string, val interface{}) error {
 			if key != metadata.AttributeFieldPropertyGroup &&
 				key != metadata.AttributeFieldPropertyIndex {
 				hasNotAllowField = true
@@ -341,10 +341,10 @@ func (m *modelAttribute) checkAttributeInUnique(ctx core.ContextParams, objIDPro
 	cond := mongo.NewCondition()
 
 	var orCondArr []universalsql.ConditionElement
-	for objID, proeprtyIDArr := range objIDPropertyIDArr {
+	for objID, propertyIDArr := range objIDPropertyIDArr {
 		orCondItem := mongo.NewCondition()
 		orCondItem.Element(mongo.Field(common.BKObjIDField).Eq(objID))
-		orCondItem.Element(mongo.Field("keys.key_id").In(proeprtyIDArr))
+		orCondItem.Element(mongo.Field("keys.key_id").In(propertyIDArr))
 		orCondItem.Element(mongo.Field("keys.key_kind").Eq("property"))
 		orCondArr = append(orCondArr, orCondItem)
 	}
