@@ -9,6 +9,7 @@
                 <bk-input type="text" class="cmdb-form-input"
                     name="fieldId"
                     v-model.trim="fieldInfo['bk_property_id']"
+                    :placeholder="$t('请输入唯一标识')"
                     :disabled="isEditField"
                     v-validate="'required|fieldId'">
                 </bk-input>

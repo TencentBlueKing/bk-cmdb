@@ -55,6 +55,7 @@
                 <bk-input class="search-model"
                     :clearable="true"
                     :right-icon="'bk-icon icon-search'"
+                    :placeholder="$t('请输入关键字')"
                     v-model.trim="searchModel">
                 </bk-input>
             </div>
