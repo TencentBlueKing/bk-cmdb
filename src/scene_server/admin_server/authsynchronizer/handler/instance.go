@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -46,20 +48,6 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		return nil
 	}
 
-	// step1 construct instances resource query parameter for iam
-	bizIDMap, err := ih.authManager.ExtractBusinessIDFromObjects(object)
-	if err != nil {
-		blog.Errorf("HandleInstanceSync failed, extract business id from model failed, model: %+v, err: %+v", object, err)
-		return err
-	}
-	bizID := bizIDMap[object.ID]
-	mainlineTopo, err := ih.clientSet.CoreService().Mainline().SearchMainlineModelTopo(ctx, header, false)
-	if err != nil {
-		blog.Errorf("HandleInstanceSync failed, list mainline models failed, err: %+v, rid: %s", err, rid)
-		return err
-	}
-	mainlineModels := mainlineTopo.LeftestObjectIDList()
-
 	parentResources, err := ih.authManager.MakeResourcesByObjects(ctx, header, authmeta.EmptyAction, object)
 	if err != nil {
 		blog.Errorf("HandleInstanceSync failed, MakeResourcesByObjects failed, make parent auth resource by objects failed, object: %+v, err: %+v, rid: %s", object, err, rid)
@@ -78,26 +66,6 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		Name:       parentResource.Name,
 		InstanceID: parentResource.InstanceID,
 	})
-	rs := &authmeta.ResourceAttribute{}
-	if util.InStrArr(mainlineModels, object.ObjectID) == true {
-		rs = &authmeta.ResourceAttribute{
-			Basic: authmeta.Basic{
-				Type: authmeta.MainlineInstance,
-			},
-			BusinessID:      bizID,
-			Layers:          layers,
-			SupplierAccount: util.GetOwnerID(header),
-		}
-	} else {
-		rs = &authmeta.ResourceAttribute{
-			Basic: authmeta.Basic{
-				Type: authmeta.ModelInstance,
-			},
-			BusinessID:      bizID,
-			Layers:          layers,
-			SupplierAccount: util.GetOwnerID(header),
-		}
-	}
 
 	// step2. collect instances by model, and convert to iam interface format
 	instances, err := ih.authManager.CollectInstancesByModelID(context.Background(), header, object.ObjectID)
@@ -105,14 +73,48 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		blog.Errorf("HandleInstanceSync failed, CollectInstancesByModelID failed, objectID: %s, err: %+v, rid: %s", object.ObjectID, err, rid)
 		return err
 	}
-	resources, err := ih.authManager.MakeResourcesByInstances(context.Background(), header, authmeta.EmptyAction, instances...)
-	if err != nil {
-		blog.Errorf("HandleInstanceSync failed, MakeResourcesByInstances failed, object: %s, instances: %+v, err: %+v", objectID, instances, err)
-		return nil
+
+	bizInstanceMap := make(map[int64][]extensions.InstanceSimplify, 0)
+	for _, inst := range instances {
+		if _, ok := bizInstanceMap[inst.BizID]; ok == false {
+			bizInstanceMap[inst.BizID] = make([]extensions.InstanceSimplify, 0)
+		}
+		bizInstanceMap[inst.BizID] = append(bizInstanceMap[inst.BizID], inst)
 	}
 
-	taskName := fmt.Sprintf("sync instance for business: %d model: %s", bizID, object.ObjectID)
-	iamIDPrefix := ""
-	skipDeregister := false
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
+	for bizID, instances := range bizInstanceMap {
+		resources, err := ih.authManager.MakeResourcesByInstances(context.Background(), header, authmeta.EmptyAction, instances...)
+		if err != nil {
+			blog.Errorf("HandleInstanceSync failed, MakeResourcesByInstances failed, object: %s, instances: %+v, err: %+v", objectID, instances, err)
+			return err
+		}
+		iamResources, err := ih.authManager.Authorize.DryRunRegisterResource(ctx, resources...)
+		if err != nil {
+			blog.Errorf("HandleInstanceSync failed, DryRunRegisterResource failed, object: %s, instances: %+v, err: %+v", objectID, instances, err)
+			return nil
+		}
+		if len(iamResources.Resources) == 0 {
+			if blog.V(5) {
+				blog.InfoJSON("no cmdb resource found, skip sync for safe, %s", resources)
+			}
+			return nil
+		}
+		first := iamResources.Resources[0]
+		searchCondition := authcenter.SearchCondition{
+			ScopeInfo: authcenter.ScopeInfo{
+				ScopeType: first.ScopeType,
+				ScopeID:   first.ScopeID,
+			},
+			ResourceType:    first.ResourceType,
+			ParentResources: first.ResourceID[0 : len(first.ResourceID)-1],
+		}
+
+		taskName := fmt.Sprintf("sync instance for business: %d model: %s", bizID, object.ObjectID)
+		iamIDPrefix := ""
+		skipDeregister := false
+		if err := ih.diffAndSyncInstances(header, taskName, searchCondition, iamIDPrefix, resources, skipDeregister); err != nil {
+			blog.Errorf("diffAndSyncInstances failed, err: %+v")
+		}
+	}
+	return nil
 }

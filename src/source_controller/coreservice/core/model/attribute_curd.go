@@ -318,10 +318,10 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 	for _, dbAttribute := range dbAttributeArr {
 		err = m.checkUnique(ctx, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName)
 		if err != nil {
-			blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
 			return changeRow, err
 		}
-		if err = m.checkChangeField(ctx, dbAttribute.ObjectID, data); err != nil {
+		if err = m.checkChangeField(ctx, dbAttribute, data); err != nil {
 			return changeRow, err
 		}
 	}
@@ -378,15 +378,20 @@ func (m *modelAttribute) checkAddField(ctx core.ContextParams, attribute metadat
 	return nil
 }
 
-// checkChangeRequireField 修改模型属性的时候，如果修改的属性包含是否为必填字段，需要判断是否可以模型是否可以必填字段
-func (m *modelAttribute) checkChangeField(ctx core.ContextParams, objID string, attrInfo mapstr.MapStr) error {
-	langObjID := m.getLangObjID(ctx, objID)
-	if _, ok := notChangeIsRequireModel[objID]; ok {
+// 修改模型属性的时候，如果修改的属性包含是否为必填字段(isrequired)，需要判断该模型的必填字段是否允许被修改
+func (m *modelAttribute) checkChangeField(ctx core.ContextParams, attr metadata.Attribute, attrInfo mapstr.MapStr) error {
+	langObjID := m.getLangObjID(ctx, attr.ObjectID)
+	if _, ok := notChangeIsRequireModel[attr.ObjectID]; ok {
 		if attrInfo.Exists(metadata.AttributeFieldIsRequired) {
-			//  不允许修改必填字段的模型
-			return ctx.Error.Errorf(common.CCErrCoreServiceNotAllowChangeRequiredFieldErr, langObjID)
+			// 不允许修改模型的必填字段
+			val, ok := attrInfo[metadata.AttributeFieldIsRequired].(bool)
+			if !ok {
+				return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldIsRequired)
+			}
+			if val != attr.IsRequired {
+				return ctx.Error.Errorf(common.CCErrCoreServiceNotAllowChangeRequiredFieldErr, langObjID)
+			}
 		}
-
 	}
 	return nil
 }
