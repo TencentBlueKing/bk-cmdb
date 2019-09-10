@@ -3,7 +3,12 @@
         <div class="config-wrapper config-unselected fl">
             <div class="wrapper-header unselected-header">
                 <label class="header-label">{{$t('隐藏属性')}}</label>
-                <bk-input class="header-filter" type="text" :placeholder="$t('搜索属性')" v-model.trim="filter"></bk-input>
+                <bk-input class="header-filter"
+                    type="text"
+                    right-icon="bk-icon icon-search"
+                    :placeholder="$t('搜索属性')"
+                    v-model.trim="filter">
+                </bk-input>
             </div>
             <ul class="property-list property-list-unselected">
                 <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" :key="index" @click="selectProperty(property)">
