@@ -22,12 +22,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-type Idgen struct {
-	ID         string `bson:"_id"`
-	SequenceID uint64 `bson:"SequenceID"`
-}
-
-var groupID = "proc_mgr"
+var ProcMgrGroupID = "proc_mgr"
 
 func AddProcAttrGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	doc := map[string]interface{}{
@@ -39,7 +34,7 @@ func AddProcAttrGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		"metadata": map[string]interface{}{
 			"label": make(map[string]interface{}),
 		},
-		common.BKPropertyGroupIDField: groupID,
+		common.BKPropertyGroupIDField: ProcMgrGroupID,
 		common.BKObjIDField:           common.BKInnerObjIDProc,
 		common.BkSupplierAccount:      conf.OwnerID,
 	}
@@ -62,7 +57,7 @@ func ChangeProcFieldGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		},
 	}
 	doc := map[string]interface{}{
-		"bk_property_group": groupID,
+		"bk_property_group": ProcMgrGroupID,
 	}
 	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, doc); err != nil {
 		blog.Errorf("ChangeProcFieldGroup failed, err: %+v", err)
