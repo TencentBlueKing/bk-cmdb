@@ -28,6 +28,7 @@
                     <bk-input type="text" class="cmdb-form-input"
                         v-model.trim="name"
                         :name="$t('查询名称')"
+                        :placeholder="$t('请输入xx', { name: $t('查询名称') })"
                         :disabled="!editable"
                         v-validate="'required|length:256'">
                     </bk-input>
@@ -36,7 +37,7 @@
             </div>
             <div class="query-conditons">
                 <div class="query-title">
-                    <span>查询条件</span>
+                    <span>{{$t('查询条件')}}</span>
                     <i class="icon-cc-tips" v-bk-tooltips.right="$t('针对查询内容进行条件过滤')"></i>
                 </div>
                 <ul class="userapi-list">
