@@ -108,7 +108,7 @@ func (es *EsSrv) Search(ctx context.Context, query elastic.Query, types []string
 
 	// searchResult is of type SearchResult and returns hits, suggestions,
 	// and all kinds of other information from Elasticsearch.
-	blog.Debug("Query cmdb took %d milliseconds\n, rid: %s", searchResult.TookInMillis, rid)
-	blog.Debug("Query cmdb hits %s\n, rid: %s", searchResult.Hits.Hits, rid)
+	blog.V(5).Infof("Query cmdb took %d milliseconds\n, rid: %s", searchResult.TookInMillis, rid)
+	blog.V(5).Infof("Query cmdb hits %s\n, rid: %s", searchResult.Hits.Hits, rid)
 	return searchResult, nil
 }

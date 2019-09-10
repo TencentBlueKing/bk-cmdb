@@ -180,6 +180,10 @@ func (query Query) toEsQueryAndSearchTypes() (elastic.Query, []string) {
 		qBool.Should(qBizTerm)
 	}
 
+	// biz name
+	resourcePool := elastic.NewMatchQuery(common.BKAppNameField, "资源池")
+	qBool.MustNot(resourcePool)
+
 	// ignore bk_supplier_account
 	qSupplierMatch := elastic.NewMatchQuery(common.BkSupplierAccount, query.QueryString)
 	qBool.MustNot(qSupplierMatch)
