@@ -40,6 +40,8 @@ const (
 	cmdbUserID             string = "system"
 )
 
+const pageSize = 1000
+
 // ParseConfigFromKV returns a new config
 func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, error) {
 	var err error
@@ -607,14 +609,23 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 	header := http.Header{}
 	header.Set(AuthSupplierAccountHeaderKey, rs[0].SupplierAccount)
 
-	if err := ac.authClient.registerResource(ctx, header, registerInfo); err != nil {
-		if err == ErrDuplicated {
-			return nil
+	var firstErr error
+	count := len(resourceEntities)
+	for start := 0; start < count; start += pageSize {
+		end := start + pageSize
+		if end > count {
+			end = count
 		}
-		return err
+		entities := resourceEntities[start:end]
+		registerInfo.Resources = entities
+		if err := ac.authClient.registerResource(ctx, header, registerInfo); err != nil {
+			if err != ErrDuplicated {
+				firstErr = err
+			}
+		}
 	}
 
-	return nil
+	return firstErr
 }
 
 func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*RegisterInfo, error) {
