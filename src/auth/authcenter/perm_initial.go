@@ -367,5 +367,53 @@ var bizOperatorRoleAuth = RoleWithAuthResources{
 			ResourceTypeID: BizAuditLog,
 			ActionID:       Get,
 		},
+		// service template related.
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceTemplate,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceTemplate,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceTemplate,
+			ActionID:       Delete,
+		},
+		// service category related.
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceCategory,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceCategory,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceCategory,
+			ActionID:       Delete,
+		},
+		// service instance related.
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceInstance,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceInstance,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceInstance,
+			ActionID:       Delete,
+		},
 	},
 }
