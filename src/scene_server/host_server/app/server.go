@@ -90,7 +90,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	hostSrv.Core = engine
 	hostSrv.Service = service
 
-	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
+	if err := backbone.StartServer(ctx, engine, service.WebService(), true); err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)
 		return err
 	}

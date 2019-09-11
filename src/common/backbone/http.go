@@ -27,13 +27,16 @@ import (
 )
 
 func ListenAndServe(c Server) error {
-	rootMux := http.NewServeMux()
-	rootMux.HandleFunc("/", c.Handler.ServeHTTP)
-	rootMux.Handle("/debug/", http.DefaultServeMux)
-
+	handler := c.Handler
+	if c.PProfEnabled {
+		rootMux := http.NewServeMux()
+		rootMux.HandleFunc("/", c.Handler.ServeHTTP)
+		rootMux.Handle("/debug/", http.DefaultServeMux)
+		handler = rootMux
+	}
 	server := &http.Server{
 		Addr:    net.JoinHostPort(c.ListenAddr, strconv.FormatUint(uint64(c.ListenPort), 10)),
-		Handler: rootMux,
+		Handler: handler,
 	}
 
 	if len(c.TLS.CertFile) == 0 && len(c.TLS.KeyFile) == 0 {
