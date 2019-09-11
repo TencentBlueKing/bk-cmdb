@@ -58,34 +58,34 @@ var expectBizResourceType = []ResourceType{
 	// 		},
 	// 	},
 	// },
-	// {
-	// 	ResourceTypeID:       BizInstance,
-	// 	ResourceTypeName:     "实例",
-	// 	ParentResourceTypeID: BizModel,
-	// 	Share:                true,
-	// 	Actions: []Action{
-	// 		{
-	// 			ActionID:          Create,
-	// 			ActionName:        "新建",
-	// 			IsRelatedResource: false,
-	// 		},
-	// 		{
-	// 			ActionID:          Edit,
-	// 			ActionName:        "编辑",
-	// 			IsRelatedResource: true,
-	// 		},
-	// 		{
-	// 			ActionID:          Delete,
-	// 			ActionName:        "删除",
-	// 			IsRelatedResource: true,
-	// 		},
-	// 		{
-	// 			ActionID:          Get,
-	// 			ActionName:        "查询",
-	// 			IsRelatedResource: true,
-	// 		},
-	// 	},
-	// },
+	{
+		ResourceTypeID:       BizInstance,
+		ResourceTypeName:     "实例",
+		ParentResourceTypeID: BizModel,
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: true,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: true,
+			},
+			{
+				ActionID:          Get,
+				ActionName:        "查询",
+				IsRelatedResource: true,
+			},
+		},
+	},
 	{
 		ResourceTypeID:       BizCustomQuery,
 		ResourceTypeName:     "动态分组",
@@ -229,17 +229,17 @@ var expectBizResourceType = []ResourceType{
 			},
 		},
 	},
-	// {
-	// 	ResourceTypeID:       BizAuditLog,
-	// 	ResourceTypeName:     "操作审计",
-	// 	ParentResourceTypeID: "",
-	// 	Share:                false,
-	// 	Actions: []Action{
-	// 		{
-	// 			ActionID:          Get,
-	// 			ActionName:        "查询",
-	// 			IsRelatedResource: false,
-	// 		},
-	// 	},
-	// },
+	{
+		ResourceTypeID:       BizAuditLog,
+		ResourceTypeName:     "操作审计",
+		ParentResourceTypeID: "",
+		Share:                false,
+		Actions: []Action{
+			{
+				ActionID:          Get,
+				ActionName:        "查询",
+				IsRelatedResource: false,
+			},
+		},
+	},
 }
