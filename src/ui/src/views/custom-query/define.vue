@@ -181,6 +181,10 @@
             id: {
                 type: [String, Number],
                 default: ''
+            },
+            object: {
+                type: Object,
+                required: true
             }
         },
         data () {
@@ -212,32 +216,6 @@
                     isShow: false,
                     allList: []
                 },
-                object: {
-                    'host': {
-                        id: 'host',
-                        name: this.$t('主机'),
-                        properties: [],
-                        selected: []
-                    },
-                    'set': {
-                        id: 'set',
-                        name: this.$t('集群'),
-                        properties: [],
-                        selected: []
-                    },
-                    'module': {
-                        id: 'module',
-                        name: this.$t('模块'),
-                        properties: [],
-                        selected: []
-                    },
-                    'biz': {
-                        id: 'biz',
-                        name: this.$t('业务'),
-                        properties: [],
-                        selected: []
-                    }
-                },
                 userProperties: [],
                 operatorMap: {
                     'time': '$in',
@@ -246,8 +224,7 @@
                 isPreviewShow: false,
                 dataCopy: {
                     name: '',
-                    userProperties: [],
-                    attributeSelectd: ''
+                    userProperties: []
                 },
                 propertySlider: {
                     isShow: false,
@@ -264,18 +241,6 @@
                     return this.$isAuthorized(this.$OPERATION.D_CUSTOM_QUERY)
                 }
                 return true
-            },
-            selectedName () {
-                const nameList = []
-                this.attribute.selected.map(propertyId => {
-                    const attr = this.attribute.list.find(({ bk_property_id: bkPropertyId }) => {
-                        return bkPropertyId === propertyId
-                    })
-                    if (attr) {
-                        nameList.push(attr['bk_property_name'])
-                    }
-                })
-                return nameList.join(',')
             },
             filterList () {
                 return this.filter.allList.filter(item => {
@@ -388,8 +353,41 @@
                 return this.userProperties.map(property => `${property.objId}-${property.propertyId}`)
             }
         },
-        watch: {
-            'object.host.properties' (properties) {
+        async created () {
+            await this.initObjectProperties()
+            if (this.type !== 'create') {
+                await this.getUserAPIDetail()
+            }
+            await this.initAttributeObject()
+        },
+        methods: {
+            ...mapActions('objectModelProperty', [
+                'searchObjectAttribute'
+            ]),
+            ...mapActions('hostCustomApi', [
+                'getCustomQueryDetail',
+                'createCustomQuery',
+                'updateCustomQuery',
+                'deleteCustomQuery'
+            ]),
+            isCloseConfirmShow () {
+                if (this.name !== this.dataCopy.name || this.userProperties.length !== this.dataCopy.userProperties.length) {
+                    return true
+                }
+                return this.userProperties.some((property, index) => {
+                    const propertyCopy = this.dataCopy.userProperties[index]
+                    let res = false
+                    for (const key in property) {
+                        if (JSON.stringify(property[key]) !== JSON.stringify(propertyCopy[key])) {
+                            res = true
+                            break
+                        }
+                    }
+                    return res
+                })
+            },
+            initAttributeObject () {
+                const properties = this.object.host.properties
                 let selected = []
                 const tempList = []
                 properties.map(property => {
@@ -404,43 +402,8 @@
                         tempList.push(property)
                     }
                 })
-                // this.attribute.list = tempList.concat(this.attribute.default)
                 this.attribute.list = tempList
                 this.attribute.selected = selected
-                this.dataCopy.attributeSelected = this.$tools.clone(selected)
-            }
-        },
-        async created () {
-            await this.initObjectProperties()
-            if (this.type !== 'create') {
-                await this.getUserAPIDetail()
-            }
-        },
-        methods: {
-            ...mapActions('objectModelProperty', [
-                'searchObjectAttribute'
-            ]),
-            ...mapActions('hostCustomApi', [
-                'getCustomQueryDetail',
-                'createCustomQuery',
-                'updateCustomQuery',
-                'deleteCustomQuery'
-            ]),
-            isCloseConfirmShow () {
-                if (this.name !== this.dataCopy.name || JSON.stringify(this.dataCopy.attributeSelected) !== JSON.stringify(this.attribute.selected) || this.userProperties.length !== this.dataCopy.userProperties.length) {
-                    return true
-                }
-                return this.userProperties.some((property, index) => {
-                    const propertyCopy = this.dataCopy.userProperties[index]
-                    let res = false
-                    for (const key in property) {
-                        if (JSON.stringify(property[key]) !== JSON.stringify(propertyCopy[key])) {
-                            res = true
-                            break
-                        }
-                    }
-                    return res
-                })
             },
             async getUserAPIDetail () {
                 const res = await this.getCustomQueryDetail({
@@ -476,17 +439,13 @@
                             }
                         }
                     })
-                    if (condition['bk_obj_id'] === 'host') {
-                        this.attribute.selected = condition['fields']
-                    }
                 })
                 this.userProperties = properties
                 this.name = detail['name']
                 const timer = setTimeout(() => {
                     this.dataCopy = {
                         name: detail['name'],
-                        userProperties: this.$tools.clone(properties),
-                        attributeSelected: this.attribute.selected
+                        userProperties: this.$tools.clone(properties)
                     }
                     clearTimeout(timer)
                 })
@@ -541,8 +500,7 @@
                 }
                 this.dataCopy = {
                     name: this.name,
-                    userProperties: this.$tools.clone(this.userProperties),
-                    attributeSelected: this.attribute.selected
+                    userProperties: this.$tools.clone(this.userProperties)
                 }
             },
             closeSlider () {
@@ -658,10 +616,6 @@
                     }
                 })
                 this.propertySlider.properties = propertyMap
-                this.object['host']['properties'] = res[0].filter(property => !property['bk_isapi'])
-                this.object['set']['properties'] = res[1].filter(property => !property['bk_isapi'])
-                this.object['module']['properties'] = res[2].filter(property => !property['bk_isapi'])
-                this.object['biz']['properties'] = res[3].filter(property => !property['bk_isapi'])
             },
             /* 通过选择的propertyId, 查找其对应的对象，以获得更多信息 */
             getOriginalProperty (bkPropertyId, bkObjId) {
