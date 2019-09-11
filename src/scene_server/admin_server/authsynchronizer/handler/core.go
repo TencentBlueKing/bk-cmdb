@@ -83,6 +83,7 @@ func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribut
 }
 
 func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.BackendResource, iamIDPrefix string, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
+	ctx := context.Background()
 	// check final resource type related with resourceID
 	dryRunResources, err := ih.authManager.Authorize.DryRunRegisterResource(context.Background(), resources...)
 	if err != nil {
@@ -107,6 +108,7 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 
 	scope := authcenter.ScopeInfo{}
 	needRegister := make([]authmeta.ResourceAttribute, 0)
+	needUpdate := make([]authmeta.ResourceAttribute, 0)
 	// init key:hit map for
 	iamResourceKeyMap := map[string]int{}
 	iamResourceMap := map[string]authmeta.BackendResource{}
@@ -133,9 +135,16 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 		_, exist := iamResourceKeyMap[resourceKey]
 		if exist {
 			iamResourceKeyMap[resourceKey]++
-			// TODO compare name and decide whether need update
-			// iamResource := iamResourceMap[resourceKey]
-			// resource.Name != iamResource[len(iamResource) - 1].ResourceName
+			iamResource, ok := iamResourceMap[resourceKey]
+			if ok == false {
+				continue
+			}
+			if len(iamResource) == 0 {
+				continue
+			}
+			if iamResource[0].ResourceName != resource.Name {
+				needUpdate = append(needUpdate, resource)
+			}
 		} else {
 			needRegister = append(needRegister, resource)
 		}
@@ -148,9 +157,21 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 		if blog.V(5) {
 			blog.InfoJSON("synchronize register resource that only in cmdb, resources: %s", needRegister)
 		}
-		err := ih.authManager.Authorize.RegisterResource(context.Background(), needRegister...)
+		err := ih.authManager.Authorize.RegisterResource(ctx, needRegister...)
 		if err != nil {
 			blog.ErrorJSON("synchronize register resource that only in cmdb failed, resources: %s, err: %+v", needRegister, err)
+		}
+	}
+
+	if len(needUpdate) > 0 {
+		if blog.V(5) {
+			blog.InfoJSON("synchronize update resource that only in cmdb, resources: %s", needUpdate)
+		}
+		for _, resource := range resources {
+			err := ih.authManager.Authorize.UpdateResource(ctx, &resource)
+			if err != nil {
+				blog.ErrorJSON("synchronize update resource failed, resource: %s, err: %+v", resource, err)
+			}
 		}
 	}
 
