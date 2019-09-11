@@ -35,6 +35,7 @@ import (
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
+	"gopkg.in/redis.v5"
 )
 
 var (
@@ -183,13 +184,17 @@ func (lgc *Logics) ListenRedisSubscribe(ctx context.Context) {
 			continue
 		}
 		for {
-			receive, err := pub.ReceiveMessage()
-			if err != nil {
-				blog.Errorf("redis subscribe get value fail, err: %v, rid: %v", err, lgc.rid)
+			received, err := pub.ReceiveTimeout(10 * time.Second)
+			msg, ok := received.(*redis.Message)
+			if !ok {
 				continue
 			}
 
-			taskID, err := strconv.ParseInt(receive.Payload, 10, 64)
+			if "" == msg.Payload {
+				continue
+			}
+
+			taskID, err := strconv.ParseInt(msg.Payload, 10, 64)
 			if err != nil {
 				blog.Errorf("interface convert to int64 fail, err: %v, rid: %v", err, lgc.rid)
 				continue
