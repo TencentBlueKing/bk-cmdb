@@ -123,7 +123,7 @@ const actions = {
     async getSkipUrl (context, { params, config }) {
         const url = await $http.post('auth/skip_url', params, config)
         if (url.indexOf('tid') === -1) {
-            return url + '?system_id=bk_cmdb'
+            return url + '?system_id=bk_cmdb&apply_way=custom'
         }
         return url
     }

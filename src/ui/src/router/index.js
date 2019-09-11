@@ -207,12 +207,12 @@ const setPermission = async to => {
     const permission = []
     const authMeta = to.meta.auth
     if (authMeta) {
-        const { view, operation } = authMeta
+        const { view, operation, authScope } = authMeta
         const auth = [...operation]
         if (view) {
             auth.push(view)
         }
-        const translated = await translateAuth(auth)
+        const translated = await translateAuth(auth.map(str => `${str}.${authScope}`))
         permission.push(...translated)
     }
     router.app.$store.commit('setPermission', permission)
