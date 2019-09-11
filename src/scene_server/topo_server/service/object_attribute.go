@@ -62,7 +62,7 @@ func (s *Service) UpdateObjectAttribute(params types.ContextParams, pathParams, 
 		blog.Errorf("[api-att] failed to parse the path params id(%s), error info is %s, rid: %s", pathParams("id"), err.Error(), params.ReqID)
 		return nil, err
 	}
-
+	// TODO: why does remove this????
 	data.Remove(metadata.BKMetadata)
 
 	err = s.Core.AttributeOperation().UpdateObjectAttribute(params, data, id)

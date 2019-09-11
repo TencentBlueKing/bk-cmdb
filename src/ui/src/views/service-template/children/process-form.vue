@@ -38,6 +38,7 @@
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
+                                        :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]['value']">
                                     </component>
@@ -303,6 +304,7 @@
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {
                     rules[propertyType] = true
+                    rules.length = propertyType === 'singlechar' ? 256 : 2000
                 }
                 if (propertyType === 'float') {
                     rules['float'] = true
@@ -404,7 +406,7 @@
             }
             .property-name{
                 display: block;
-                margin: 6px 0 9px;
+                margin: 6px 0 10px;
                 color: $cmdbTextColor;
                 line-height: 16px;
                 font-size: 0;
@@ -435,10 +437,15 @@
                 color: #c3cdd7;
             }
             .property-value{
-                height: 36px;
-                line-height: 36px;
+                height: 32px;
+                line-height: 32px;
                 font-size: 12px;
                 position: relative;
+                /deep/ .control-append-group {
+                    .bk-input-text {
+                        flex: 1;
+                    }
+                }
             }
             .form-checkbox {
                 margin: 0 6px 0 0;

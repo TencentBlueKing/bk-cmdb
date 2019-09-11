@@ -21,9 +21,6 @@
                 }
             }
         },
-        created () {
-            this.$store.commit('setHeaderTitle', '')
-        },
         methods: {
             handleApplyPermission () {
                 const topWindow = window.top
