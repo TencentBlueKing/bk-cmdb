@@ -40,6 +40,8 @@ const (
 	cmdbUserID             string = "system"
 )
 
+const pageSize = 1000
+
 // ParseConfigFromKV returns a new config
 func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, error) {
 	var err error
@@ -608,12 +610,11 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 	header.Set(AuthSupplierAccountHeaderKey, rs[0].SupplierAccount)
 
 	var firstErr error
-	pageSize := 1000
 	count := len(resourceEntities)
 	for start := 0; start < count; start += pageSize {
 		end := start + pageSize
-		if end > len(resourceEntities) {
-			end = len(resourceEntities)
+		if end > count {
+			end = count
 		}
 		entities := resourceEntities[start:end]
 		registerInfo.Resources = entities
