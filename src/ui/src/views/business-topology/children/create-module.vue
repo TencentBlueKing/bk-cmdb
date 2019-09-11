@@ -2,7 +2,10 @@
     <div class="node-create-layout">
         <h2 class="node-create-title">{{$t('新增模块')}}</h2>
         <div class="node-create-path" :title="topoPath">{{$t('添加节点已选择')}}：{{topoPath}}</div>
-        <div class="node-create-form">
+        <div class="node-create-form"
+            :style="{
+                'max-height': Math.min($APP.height - 400, 400) + 'px'
+            }">
             <div class="form-item clearfix mt30">
                 <div class="create-type fl">
                     <input class="type-radio"
@@ -259,7 +262,6 @@
         @include ellipsis;
     }
     .node-create-form {
-        max-height: 400px;
         padding: 0 26px 27px;
         overflow: visible;
     }

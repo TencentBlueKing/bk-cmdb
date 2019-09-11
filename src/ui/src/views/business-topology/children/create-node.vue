@@ -2,7 +2,10 @@
     <div class="node-create-layout">
         <h2 class="node-create-title">{{title}}</h2>
         <div class="node-create-path">{{$t('添加节点已选择')}}：{{topoPath}}</div>
-        <div class="node-create-form">
+        <div class="node-create-form"
+            :style="{
+                'max-height': Math.min($APP.height - 400, 400) + 'px'
+            }">
             <div v-for="(property, index) in sortedProperties"
                 :class="['form-group', { 'form-group-flex': sortedProperties.length === 1 || property['bk_property_type'] === 'longchar' }]"
                 :key="index">
@@ -151,7 +154,6 @@
         font-size: 12px;
     }
     .node-create-form {
-        max-height: 400px;
         padding: 0 26px 52px;
         display: flex;
         flex-wrap: wrap;
