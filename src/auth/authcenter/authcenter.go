@@ -607,14 +607,24 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 	header := http.Header{}
 	header.Set(AuthSupplierAccountHeaderKey, rs[0].SupplierAccount)
 
-	if err := ac.authClient.registerResource(ctx, header, registerInfo); err != nil {
-		if err == ErrDuplicated {
-			return nil
+	var firstErr error
+	pageSize := 1000
+	count := len(resourceEntities)
+	for start := 0; start < count; start += pageSize {
+		end := start + pageSize
+		if end > len(resourceEntities) {
+			end = len(resourceEntities)
 		}
-		return err
+		entities := resourceEntities[start:end]
+		registerInfo.Resources = entities
+		if err := ac.authClient.registerResource(ctx, header, registerInfo); err != nil {
+			if err != ErrDuplicated {
+				firstErr = err
+			}
+		}
 	}
 
-	return nil
+	return firstErr
 }
 
 func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*RegisterInfo, error) {
