@@ -209,7 +209,7 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 
 	var file *xlsx.File
 	file = xlsx.NewFile()
-	sheet, err := file.AddSheet("host")
+	sheet, err := file.AddSheet(objID)
 	if err != nil {
 		blog.Errorf("get %s fields error: %v, rid: %s", objID, err, rid)
 		return err

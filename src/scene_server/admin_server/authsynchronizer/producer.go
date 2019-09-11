@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
@@ -32,10 +33,11 @@ type Producer struct {
 	ID          int
 	WorkerQueue chan meta.WorkRequest
 	QuitChan    chan bool
+	Engine      *backbone.Engine
 }
 
 // NewProducer make a producer
-func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensions.AuthManager, workerQueue chan meta.WorkRequest) *Producer {
+func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensions.AuthManager, workerQueue chan meta.WorkRequest, engine *backbone.Engine) *Producer {
 	// Create, and return the producer.
 	producer := Producer{
 		clientSet:   clientSet,
@@ -43,6 +45,7 @@ func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensi
 		ID:          0,
 		WorkerQueue: workerQueue,
 		QuitChan:    make(chan bool),
+		Engine:      engine,
 	}
 
 	return &producer
@@ -50,11 +53,15 @@ func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensi
 
 // Start do main loop
 func (p *Producer) Start() {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(30 * time.Minute)
 	go func(producer *Producer) {
 		for {
 			select {
 			case <-ticker.C:
+				if isMaster := p.Engine.ServiceManageInterface.IsMaster(); !isMaster {
+					blog.Info("not master, don't generate iam sync job")
+					continue
+				}
 				// get jobs
 				jobs := producer.generateJobs()
 				for _, job := range *jobs {

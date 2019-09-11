@@ -15,11 +15,16 @@ const convertAuth = authList => {
     return http.post('auth/convert', {
         data: authList.map(auth => {
             const { resource_type: type, action, scope } = GET_AUTH_META(auth)
-            return { type, action, business_id: scope === 'global' ? 0 : store.getters['objectBiz/bizId'] }
+            return {
+                scope: scope === 'global' ? 'system' : 'biz',
+                attribute: {
+                    type,
+                    action
+                }
+            }
         })
     })
 }
-
 export const translateAuth = async (authList = []) => {
     if (!authList.length) {
         return authList
@@ -32,7 +37,7 @@ export const translateAuth = async (authList = []) => {
             return {
                 action_id: convertedAuth[index].action,
                 action_name: RESOURCE_ACTION_NAME[action],
-                scope_id: scope === 'global' ? 'bk_cmdb' : String(business.bk_biz_id),
+                scope_id: scope === 'global' ? 'bk_cmdb' : business.bk_biz_id ? String(business.bk_biz_id) : '',
                 scope_name: scope === 'global' ? '配置平台' : business.bk_biz_name,
                 scope_type: scope === 'global' ? 'system' : 'biz',
                 scope_type_name: SCOPE_NAME[scope],

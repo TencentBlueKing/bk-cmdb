@@ -13,11 +13,11 @@
 package service
 
 import (
-	"configcenter/src/auth/authcenter"
 	"context"
 	"encoding/json"
 	"net/http"
 
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -194,8 +194,20 @@ type ConvertedResource struct {
 	Action string `json:"action"`
 }
 
+type ScopeType string
+
+const (
+	Business ScopeType = "biz"
+	System   ScopeType = "system"
+)
+
+type ResourceDetail struct {
+	Attribute meta.ResourceAttribute `json:"attribute"`
+	Scope     ScopeType              `json:"scope"`
+}
+
 type ConvertData struct {
-	Data []meta.ResourceAttribute `json:"data"`
+	Data []ResourceDetail `json:"data"`
 }
 
 // used for web to get auth's resource with cmdb's resource. in a word, it's for converting.
@@ -214,17 +226,30 @@ func (s *service) GetCmdbConvertResources(req *restful.Request, resp *restful.Re
 
 	converts := make([]ConvertedResource, 0)
 	for _, att := range attributes.Data {
-		typ, err := authcenter.ConvertResourceType(att.Type, att.BusinessID)
+		var bizID int64
+		switch att.Scope {
+		case Business:
+			// set biz id = 1 means that this resource need to convert to a business resource.
+			bizID = 1
+		case System:
+			// set biz id = 1 means that this resource need to convert to a global resource.
+			bizID = 0
+		default:
+			blog.Errorf("convert cmdb resource with iam, but got invalid scope: %s, rid: %s", att.Scope, rid)
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsIsInvalid, att.Scope)})
+			return
+		}
+		typ, err := authcenter.ConvertResourceType(att.Attribute.Type, bizID)
 		if err != nil {
 			blog.Errorf("convert attribute resource type: %+v failed, err: %v", att, err)
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Type)})
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Attribute.Type)})
 			return
 		}
 
-		action, err := authcenter.AdaptorAction(&att)
+		action, err := authcenter.AdaptorAction(&att.Attribute)
 		if err != nil {
 			blog.Errorf("convert attribute resource action: %+v failed, err: %v", att, err)
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Type)})
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Attribute.Type)})
 			return
 		}
 
