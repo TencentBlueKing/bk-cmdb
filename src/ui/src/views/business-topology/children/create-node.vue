@@ -2,7 +2,7 @@
     <div class="node-create-layout">
         <h2 class="node-create-title">{{title}}</h2>
         <div class="node-create-path">{{$t('添加节点已选择')}}：{{topoPath}}</div>
-        <div class="node-create-form">
+        <div class="node-create-form" :style="{ 'padding-bottom': formPaddingBottom }">
             <div v-for="(property, index) in sortedProperties"
                 :class="['form-group', { 'form-group-flex': sortedProperties.length === 1 || property['bk_property_type'] === 'longchar' }]"
                 :key="index">
@@ -76,6 +76,9 @@
             },
             title () {
                 return this.nextModelId === 'set' ? this.$t('新建集群') : this.$t('新建节点')
+            },
+            formPaddingBottom () {
+                return this.nextModelId === 'set' ? '20px' : '52px'
             }
         },
         watch: {
@@ -152,7 +155,7 @@
     }
     .node-create-form {
         max-height: 400px;
-        padding: 0 26px 52px;
+        padding: 0 26px;
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;

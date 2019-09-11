@@ -70,6 +70,7 @@
                     v-validate.disabled="'required'"
                     data-vv-name="firstClass"
                     key="firstClass"
+                    :auto-select="false"
                     :list="firstClassList">
                 </cmdb-selector>
                 <cmdb-selector class="service-class fr"
@@ -95,6 +96,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         props: {
             parentNode: {
@@ -235,7 +237,7 @@
                 this.$emit('cancel')
             },
             jumpServiceTemplate () {
-                this.$router.push({ name: 'serviceTemplate' })
+                this.$router.push({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
             }
         }
     }
