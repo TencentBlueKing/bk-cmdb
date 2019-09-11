@@ -86,7 +86,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 
 	setTemplate := metadata.SetTemplate{}
 	// validate foreign key
-	if setTemplateIDIf, ok := data[common.BKSetTemplateIDField]; ok == false {
+	if setTemplateIDIf, ok := data[common.BKSetTemplateIDField]; ok == true {
 		setTemplateID, err := util.GetInt64ByInterface(setTemplateIDIf)
 		if err != nil {
 			blog.Errorf("parse set_template_id field into int failed, id: %+v, rid: %s", setTemplateIDIf, params.ReqID)
