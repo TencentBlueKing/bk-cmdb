@@ -1,6 +1,10 @@
 <template>
     <div class="hosts-layout">
-        <div class="hosts-topology"
+        <cmdb-resize-layout class="hosts-topology fl"
+            direction="right"
+            :handler-offset="3"
+            :min="200"
+            :max="480"
             v-bkloading="{ isLoading: $loading(['getInstTopo', 'getInternalTopo']) }"
             :class="{ 'is-collapse': layout.topologyCollapse }">
             <bk-big-tree class="topology-tree"
@@ -14,7 +18,8 @@
                 }"
                 @select-change="handleSelectChange">
                 <template slot-scope="{ node, data }">
-                    <i v-if="[1, 2].includes(data.default)"
+                    <i class="fl"
+                        v-if="[1, 2].includes(data.default)"
                         :class="{
                             'internal-node-icon': true,
                             'icon-cc-host-free-pool': data.default === 1,
@@ -22,14 +27,18 @@
                             'is-selected': node.selected
                         }">
                     </i>
-                    <i :class="['node-icon', { 'is-selected': node.selected }]" v-else>{{data.bk_obj_name[0]}}</i>
-                    {{node.name}}
+                    <i :class="['node-icon fl', { 'is-selected': node.selected }]" v-else>{{data.bk_obj_name[0]}}</i>
+                    <span :class="['node-host-count fr', { 'is-selected': node.selected }]"
+                        v-if="data.hasOwnProperty('host_count')">
+                        {{data.host_count}}
+                    </span>
+                    <span class="node-name">{{node.name}}</span>
                 </template>
             </bk-big-tree>
             <i class="topology-collapse-icon bk-icon icon-angle-left"
                 @click="layout.topologyCollapse = !layout.topologyCollapse">
             </i>
-        </div>
+        </cmdb-resize-layout>
         <cmdb-hosts-table class="hosts-main" ref="hostsTable"
             delete-auth=""
             :show-collection="true"
@@ -100,6 +109,7 @@
                     emitEvent: true
                 })
                 this.ready = true
+                this.getHostCount()
             } catch (e) {
                 console.log(e)
             }
@@ -158,6 +168,30 @@
                     }
                 })
             },
+            async getHostCount () {
+                try {
+                    const data = await this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
+                        bizId: this.bizId
+                    })
+                    this.setHostCount(data)
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            setHostCount (data) {
+                data.forEach(datum => {
+                    const id = this.getNodeId(datum)
+                    const node = this.$refs.tree.getNodeById(id)
+                    if (node) {
+                        const count = datum.host_count
+                        this.$set(node.data, 'host_count', count > 999 ? '999+' : count)
+                    }
+                    const child = datum.child
+                    if (Array.isArray(child) && child.length) {
+                        this.setHostCount(child)
+                    }
+                })
+            },
             getNodeId (data) {
                 return `${data.bk_obj_id}-${data.bk_inst_id}`
             },
@@ -207,15 +241,13 @@
     .hosts-layout{
         border-top: 1px solid $cmdbLayoutBorderColor;
         padding: 0;
-        display: flex;
         .hosts-topology {
             position: relative;
-            flex: 280px 0 0;
+            width: 280px;
             height: 100%;
             border-right: 1px solid $cmdbLayoutBorderColor;
             &.is-collapse {
-                width: 0;
-                flex: 0 0 0;
+                width: 0 !important;
                 .topology-collapse-icon:before {
                     display: inline-block;
                     transform: rotate(180deg);
@@ -241,21 +273,21 @@
             }
         }
         .hosts-main{
-            flex: 1;
-            width: 0;
+            overflow: hidden;
             height: 100%;
             padding: 20px;
         }
     }
     .topology-tree {
-        width: 280px;
+        width: 100%;
         max-height: 100%;
         padding: 10px 0;
         @include scrollbar-y;
         .node-icon {
-            display: inline-block;
+            display: block;
             width: 20px;
             height: 20px;
+            margin: 8px 4px 8px 0;
             vertical-align: middle;
             border-radius: 50%;
             background-color: #C4C6CC;
@@ -268,8 +300,36 @@
                 background-color: #3A84FF;
             }
         }
-        .internal-node-icon.is-selected {
-            color: #FFB400;
+        .node-name {
+            height: 36px;
+            line-height: 36px;
+            overflow: hidden;
+            @include ellipsis;
+        }
+        .node-host-count {
+            padding: 0 5px;
+            margin: 9px 4px;
+            height: 18px;
+            line-height: 17px;
+            border-radius: 2px;
+            background-color: #f0f1f5;
+            color: #979ba5;
+            font-size: 12px;
+            text-align: center;
+            &.is-selected {
+                background-color: #a2c5fd;
+                color: #fff;
+            }
+        }
+        .internal-node-icon{
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            margin: 8px 4px 8px 0;
+            &.is-selected {
+                color: #FFB400;
+            }
         }
     }
     .hosts-table{
