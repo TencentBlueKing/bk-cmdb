@@ -136,6 +136,8 @@ const checkAuthDynamicMeta = (to, from) => {
 const checkAvailable = (to, from) => {
     if (typeof to.meta.checkAvailable === 'function') {
         return to.meta.checkAvailable(to, from, router.app)
+    } else if (to.meta.hasOwnProperty('available')) {
+        return to.meta.available
     }
     return true
 }
@@ -160,6 +162,7 @@ router.beforeEach((to, from, next) => {
                 await preload(router.app)
             }
 
+            setAdminView(to)
             setAuthScope(to, from)
             checkAuthDynamicMeta(to, from)
 
@@ -172,8 +175,6 @@ router.beforeEach((to, from, next) => {
             if (!viewAuth) {
                 throw new StatusError({ name: '403' })
             }
-
-            setAdminView(to)
 
             return next()
         } catch (e) {

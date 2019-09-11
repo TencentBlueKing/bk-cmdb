@@ -43,9 +43,7 @@ export const resourceHostDetails = {
                     resource_id: parseInt(to.params.id)
                 })
             },
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+            authScope: 'global'
         }
     })
 }
@@ -76,9 +74,7 @@ export const businessHostDetails = {
                     bk_biz_id: parseInt(to.params.business)
                 }])
             },
-            setAuthScope () {
-                this.authScope = 'business'
-            }
+            authScope: 'business'
         }
     })
 }
