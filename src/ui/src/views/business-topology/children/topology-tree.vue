@@ -23,7 +23,7 @@
             @select-change="handleSelectChange">
             <div class="node-info clearfix" slot-scope="{ node, data }">
                 <i :class="['node-model-icon fl', { 'is-selected': node.selected }, { 'is-template': isTemplate(node) }]">{{modelIconMap[data.bk_obj_id]}}</i>
-                <span v-if="showCreate(node, data)"
+                <!-- <span v-if="showCreate(node, data)"
                     class="fr"
                     style="display: inline-block; font-size: 0;"
                     v-cursor="{
@@ -36,7 +36,29 @@
                         @click.stop="showCreateDialog(node)">
                         {{$t('新建')}}
                     </bk-button>
-                </span>
+                </span> -->
+
+                <cmdb-dot-menu class="operation-menu fr" ref="dotMenu" color="#3a84ff" @click.native.stop>
+                    <ul class="menu-list">
+                        <li class="menu-item"
+                            v-for="(menu, index) in operationMenu(node, data)"
+                            :key="index">
+                            <span class="menu-span"
+                                v-cursor="{
+                                    active: !$isAuthorized($OPERATION[menu.auth]),
+                                    auth: [$OPERATION[menu.auth]]
+                                }">
+                                <bk-button class="menu-button"
+                                    :text="true"
+                                    :disabled="!$isAuthorized($OPERATION[menu.auth])"
+                                    @click="menu.handler(node, data)">
+                                    {{menu.name}}
+                                </bk-button>
+                            </span>
+                        </li>
+                    </ul>
+                </cmdb-dot-menu>
+
                 <div class="info-content">
                     <span class="node-name">{{data.bk_inst_name}}</span>
                     <span class="instance-num">{{data.service_instance_count}}</span>
@@ -66,7 +88,7 @@
                     @cancel="handleCancelCreateNode">
                 </create-node>
             </template> -->
-            <!-- <template v-else>
+            <template v-else-if="createInfo.nextModelId === 'set'">
                 <create-cluster v-if="createInfo.visible"
                     :next-model-id="createInfo.nextModelId"
                     :properties="createInfo.properties"
@@ -74,7 +96,7 @@
                     @submit="handleCreateNode"
                     @cancel="handleCancelCreateNode">
                 </create-cluster>
-            </template> -->
+            </template>
             <template v-else>
                 <create-new-node v-if="createInfo.visible"
                     :next-model-id="createInfo.nextModelId"
@@ -92,13 +114,13 @@
     import { mapGetters } from 'vuex'
     // import createNode from './create-node.vue'
     import createModule from './create-module.vue'
-    // import createCluster from './create-cluster.vue'
+    import createCluster from './create-cluster.vue'
     import createNewNode from './create-node.new.vue'
     export default {
         components: {
             // createNode,
             createModule,
-            // createCluster,
+            createCluster,
             createNewNode
         },
         data () {
@@ -216,6 +238,30 @@
                 const isModule = data.bk_obj_id === 'module'
                 return node.selected && !isModule && !this.isBlueKing
             },
+            operationMenu (node, data) {
+                const operation = [{
+                    name: this.$t('新增模块'),
+                    handler: this.showCreateDialog,
+                    disabled: '',
+                    auth: 'C_TOPO'
+                }, {
+                    name: this.$t('新增子节点'),
+                    handler: this.showCreateDialog,
+                    disabled: '',
+                    auth: 'C_TOPO'
+                }, {
+                    name: this.$t('新增集群'),
+                    handler: this.showCreateDialog,
+                    disabled: '',
+                    auth: 'C_TOPO'
+                }, {
+                    name: this.$t('删除'),
+                    handler: this.handleDelete,
+                    disabled: '',
+                    auth: 'D_TOPO'
+                }]
+                return operation
+            },
             isTemplate (node) {
                 return node.data.service_template_id
             },
@@ -328,7 +374,68 @@
             },
             handleFilterNode () {
                 this.$refs.tree.filter(this.nodeKeyworyds)
+            },
+            handleDelete (curNode, data) {
+                const instId = data.bk_inst_id
+                const otherId = ['set', 'module'].includes(data.bk_obj_id) ? curNode.parent.data.bk_inst_id : data.bk_obj_id
+                this.$bkInfo({
+                    title: `${this.$t('确定删除')} ${curNode.name}?`,
+                    subTitle: data.bk_obj_id === 'module'
+                        ? this.$t('删除模块提示')
+                        : this.$t('下属层级都会被删除，请先转移其下所有的主机'),
+                    extCls: 'bk-dialog-sub-header-center',
+                    confirmFn: async () => {
+                        const promiseMap = {
+                            set: this.deleteSetInstance,
+                            module: this.deleteModuleInstance
+                        }
+                        try {
+                            await (promiseMap[data.bk_obj_id] || this.deleteCustomInstance)(instId, otherId)
+                            const tree = curNode.tree
+                            const parentId = curNode.parent.id
+                            const nodeId = curNode.id
+                            tree.setSelected(parentId, {
+                                emitEvent: true
+                            })
+                            tree.removeNode(nodeId)
+                            this.$success(this.$t('删除成功'))
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                })
+            },
+            deleteSetInstance (id) {
+                return this.$store.dispatch('objectSet/deleteSet', {
+                    bizId: this.business,
+                    setId: id,
+                    config: {
+                        requestId: 'deleteNodeInstance',
+                        data: this.$injectMetadata({})
+                    }
+                })
+            },
+            deleteModuleInstance (id, setId) {
+                return this.$store.dispatch('objectModule/deleteModule', {
+                    bizId: this.business,
+                    setId: setId,
+                    moduleId: id,
+                    config: {
+                        requestId: 'deleteNodeInstance',
+                        data: this.$injectMetadata({})
+                    }
+                })
             }
+        },
+        deleteCustomInstance (id, modelId) {
+            return this.$store.dispatch('objectCommonInst/deleteInst', {
+                objId: modelId,
+                instId: id,
+                config: {
+                    requestId: 'deleteNodeInstance',
+                    data: this.$injectMetadata()
+                }
+            })
         }
     }
 </script>
@@ -382,6 +489,22 @@
             font-size: 12px;
             min-width: auto;
         }
+        .operation-menu {
+            width: 26px;
+            height: 26px;
+            margin: 5px 14px 0 0;
+            // display: none;
+            /deep/ {
+                .bk-tooltip-ref {
+                    height: 100%;
+                    border-radius: 50%;
+                    background-color: #d0e0fd;
+                }
+                .menu-trigger {
+                    padding: 3px 0;
+                }
+            }
+        }
         .info-content {
             display: flex;
             align-items: center;
@@ -406,10 +529,45 @@
     }
     .topology-tree {
         height: 100%;
-        .bk-big-tree-node.is-selected {
-            .instance-num {
-                background-color: #a2c5fd;
-                color: #fff;
+        .bk-big-tree-node {
+            &:hover {
+                .operation-menu {
+                    display: block;
+                }
+            }
+            &.is-selected {
+                .instance-num {
+                    background-color: #a2c5fd;
+                    color: #fff;
+                }
+            }
+        }
+    }
+    .menu-list {
+        padding: 6px 0;
+        font-size: 14px;
+        .menu-item {
+            height: 32px;
+            line-height: 32px;
+            &:hover {
+                .menu-button:not(.is-disabled) {
+                    color: #3a84ff;
+                    background-color: #e1ecff;
+                }
+            }
+        }
+        .menu-span {
+            display: block;
+        }
+        .menu-button {
+            width: 100%;
+            height: 32px;
+            line-height: 32px;
+            text-align: left;
+            padding: 0 14px;
+            color: #63656e;
+            &.is-disabled {
+                color: #c4c6cc;
             }
         }
     }
