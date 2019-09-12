@@ -26,9 +26,7 @@ export default {
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'business'
-            }
+            authScope: 'business'
         },
         i18nTitle: '服务分类',
         requireBusiness: true

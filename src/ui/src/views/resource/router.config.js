@@ -22,9 +22,7 @@ export default {
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+            authScope: 'global'
         },
         filterPropertyKey: 'resource_host_filter_properties'
     })

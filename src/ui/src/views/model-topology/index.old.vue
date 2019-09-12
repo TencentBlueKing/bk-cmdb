@@ -91,7 +91,7 @@
             :title="slider.title"
             @close="handleSliderCancel">
             <component
-                class="slider-content"
+                class="model-slider-content"
                 slot="content"
                 v-if="slider.isShow"
                 :is="slider.content"

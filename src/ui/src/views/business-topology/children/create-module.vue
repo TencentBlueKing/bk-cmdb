@@ -58,6 +58,7 @@
                     v-validate="'required|singlechar|length:256'"
                     data-vv-name="moduleName"
                     key="moduleName"
+                    :placeholder="$t('请输入xx', { name: $t('模块名称') })"
                     :disabled="!!withTemplate">
                 </cmdb-form-singlechar>
                 <span class="form-error" v-if="errors.has('moduleName')">{{errors.first('moduleName')}}</span>
