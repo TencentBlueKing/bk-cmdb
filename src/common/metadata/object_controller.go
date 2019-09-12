@@ -71,8 +71,9 @@ type UpdateGroupCondition struct {
 	} `json:"condition"`
 
 	Data struct {
-		Name  *string `field:"bk_group_name" json:"bk_group_name,omitempty"`
-		Index *int64  `field:"bk_group_index" json:"bk_group_index,omitempty"`
+		IsCollapse *bool   `field:"is_collapse" json:"is_collapse,omitempty"`
+		Name       *string `field:"bk_group_name" json:"bk_group_name,omitempty"`
+		Index      *int64  `field:"bk_group_index" json:"bk_group_index,omitempty"`
 	} `json:"data"`
 }
 

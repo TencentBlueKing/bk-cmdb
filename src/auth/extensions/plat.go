@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -28,6 +29,29 @@ import (
 /*
  * plat represent cloud plat here
  */
+
+func (am *AuthManager) CollectAllPlats(ctx context.Context, header http.Header) ([]PlatSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	cond := metadata.QueryCondition{
+		Condition: mapstr.MapStr(map[string]interface{}{}),
+	}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDPlat, &cond)
+	if err != nil {
+		blog.V(3).Infof("get all plats, err: %+v, rid: %s", err, rid)
+		return nil, fmt.Errorf("get all plats, err: %+v", err)
+	}
+	plats := make([]PlatSimplify, 0)
+	for _, cls := range result.Data.Info {
+		plat := PlatSimplify{}
+		_, err = plat.Parse(cls)
+		if err != nil {
+			return nil, fmt.Errorf("get all plat failed, err: %+v", err)
+		}
+		plats = append(plats, plat)
+	}
+	return plats, nil
+}
 
 func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header, platIDs ...int64) ([]PlatSimplify, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -48,14 +72,14 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 		plat := PlatSimplify{}
 		_, err = plat.Parse(cls)
 		if err != nil {
-			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+			return nil, fmt.Errorf("get plat by id failed, err: %+v", err)
 		}
 		plats = append(plats, plat)
 	}
 	return plats, nil
 }
 
-func (am *AuthManager) makeResourcesByPlat(header http.Header, action meta.Action, plats ...PlatSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action, plats ...PlatSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, plat := range plats {
 		resource := meta.ResourceAttribute{
@@ -79,7 +103,7 @@ func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, 
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByPlat(header, action, plats...)
+	resources := am.MakeResourcesByPlat(header, action, plats...)
 
 	return am.authorize(ctx, header, 0, resources...)
 }
@@ -106,7 +130,7 @@ func (am *AuthManager) UpdateRegisteredPlat(ctx context.Context, header http.Hea
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByPlat(header, meta.EmptyAction, plats...)
+	resources := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -175,7 +199,7 @@ func (am *AuthManager) RegisterPlat(ctx context.Context, header http.Header, pla
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByPlat(header, meta.EmptyAction, plats...)
+	resources := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
@@ -206,7 +230,7 @@ func (am *AuthManager) DeregisterPlat(ctx context.Context, header http.Header, p
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByPlat(header, meta.EmptyAction, plats...)
+	resources := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }

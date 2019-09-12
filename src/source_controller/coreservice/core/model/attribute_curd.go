@@ -34,8 +34,13 @@ var (
 		common.BKInnerObjIDProc: true,
 	}
 
-	// notChangeIsRequireModel 不允新加修改许修改必填字段的模型
-	notChangeIsRequireModel = map[string]bool{
+	// RequiredFieldUnchangeableModels 模型的属性描述，的必填字段不允许修改
+	// example: 禁止如下修改
+	// db.getCollection('cc_ObjAttDes').update(
+	//     {bk_obj_id: {$in: ['biz', 'host', 'set', 'module', 'plat', 'process']}},
+	//     {$set: {isrequired: true}}
+	// )
+	RequiredFieldUnchangeableModels = map[string]bool{
 		common.BKInnerObjIDApp:    true,
 		common.BKInnerObjIDHost:   true,
 		common.BKInnerObjIDSet:    true,
@@ -98,7 +103,7 @@ func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objI
 
 	condMap := util.SetModOwner(cond.ToMapStr(), ctx.SupplierAccount)
 
-	resultAttrs := []metadata.Attribute{}
+	resultAttrs := make([]metadata.Attribute, 0)
 	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).All(ctx, &resultAttrs)
 	blog.V(5).Infof("checkUnique db cond:%#v, result:%#v, rid:%s", condMap, resultAttrs, ctx.ReqID)
 	if err != nil {
@@ -195,7 +200,7 @@ func (m *modelAttribute) searchReturnMapStr(ctx core.ContextParams, cond univers
 
 func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
 
-	resultAttrs := []metadata.Attribute{}
+	resultAttrs := make([]metadata.Attribute, 0)
 	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKObjIDField}
 
 	condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
@@ -251,7 +256,7 @@ func (m *modelAttribute) saveCheck(ctx core.ContextParams, attribute metadata.At
 
 	// check name duplicate
 	if err := m.checkUnique(ctx, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName); err != nil {
-		blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+		blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
 		return err
 	}
 
@@ -283,7 +288,7 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 	// 预定义字段，只能更新分组和分组内排序
 	if hasIsPreProperty {
 		hasNotAllowField := false
-		data.ForEach(func(key string, val interface{}) error {
+		_ = data.ForEach(func(key string, val interface{}) error {
 			if key != metadata.AttributeFieldPropertyGroup &&
 				key != metadata.AttributeFieldPropertyIndex {
 				hasNotAllowField = true
@@ -318,10 +323,10 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 	for _, dbAttribute := range dbAttributeArr {
 		err = m.checkUnique(ctx, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName)
 		if err != nil {
-			blog.ErrorJSON("save atttribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
 			return changeRow, err
 		}
-		if err = m.checkChangeField(ctx, dbAttribute.ObjectID, data); err != nil {
+		if err = m.checkChangeField(ctx, dbAttribute, data); err != nil {
 			return changeRow, err
 		}
 	}
@@ -336,10 +341,10 @@ func (m *modelAttribute) checkAttributeInUnique(ctx core.ContextParams, objIDPro
 	cond := mongo.NewCondition()
 
 	var orCondArr []universalsql.ConditionElement
-	for objID, proeprtyIDArr := range objIDPropertyIDArr {
+	for objID, propertyIDArr := range objIDPropertyIDArr {
 		orCondItem := mongo.NewCondition()
 		orCondItem.Element(mongo.Field(common.BKObjIDField).Eq(objID))
-		orCondItem.Element(mongo.Field("keys.key_id").In(proeprtyIDArr))
+		orCondItem.Element(mongo.Field("keys.key_id").In(propertyIDArr))
 		orCondItem.Element(mongo.Field("keys.key_kind").Eq("property"))
 		orCondArr = append(orCondArr, orCondItem)
 	}
@@ -368,7 +373,7 @@ func (m *modelAttribute) checkAddField(ctx core.ContextParams, attribute metadat
 		return ctx.Error.Errorf(common.CCErrCoreServiceNotAllowAddFieldErr, langObjID)
 	}
 
-	if _, ok := notChangeIsRequireModel[attribute.ObjectID]; ok {
+	if _, ok := RequiredFieldUnchangeableModels[attribute.ObjectID]; ok {
 		if attribute.IsRequired {
 			//  不允许修改必填字段的模型
 			return ctx.Error.Errorf(common.CCErrCoreServiceNotAllowAddRequiredFieldErr, langObjID)
@@ -378,15 +383,20 @@ func (m *modelAttribute) checkAddField(ctx core.ContextParams, attribute metadat
 	return nil
 }
 
-// checkChangeRequireField 修改模型属性的时候，如果修改的属性包含是否为必填字段，需要判断是否可以模型是否可以必填字段
-func (m *modelAttribute) checkChangeField(ctx core.ContextParams, objID string, attrInfo mapstr.MapStr) error {
-	langObjID := m.getLangObjID(ctx, objID)
-	if _, ok := notChangeIsRequireModel[objID]; ok {
+// 修改模型属性的时候，如果修改的属性包含是否为必填字段(isrequired)，需要判断该模型的必填字段是否允许被修改
+func (m *modelAttribute) checkChangeField(ctx core.ContextParams, attr metadata.Attribute, attrInfo mapstr.MapStr) error {
+	langObjID := m.getLangObjID(ctx, attr.ObjectID)
+	if _, ok := RequiredFieldUnchangeableModels[attr.ObjectID]; ok {
 		if attrInfo.Exists(metadata.AttributeFieldIsRequired) {
-			//  不允许修改必填字段的模型
-			return ctx.Error.Errorf(common.CCErrCoreServiceNotAllowChangeRequiredFieldErr, langObjID)
+			// 不允许修改模型的必填字段
+			val, ok := attrInfo[metadata.AttributeFieldIsRequired].(bool)
+			if !ok {
+				return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldIsRequired)
+			}
+			if val != attr.IsRequired {
+				return ctx.Error.Errorf(common.CCErrCoreServiceNotAllowChangeRequiredFieldErr, langObjID)
+			}
 		}
-
 	}
 	return nil
 }
