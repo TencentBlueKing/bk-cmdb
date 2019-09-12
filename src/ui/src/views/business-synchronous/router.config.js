@@ -7,6 +7,8 @@ export default {
     component: () => import('./index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
-        title: '同步模板'
+        menu: {
+            i18n: '同步模板'
+        }
     })
 }

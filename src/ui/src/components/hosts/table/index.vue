@@ -684,9 +684,6 @@
             &:first-child {
                 margin-left: 0;
             }
-            &:hover{
-                z-index: 1;
-            }
         }
     }
     .hosts-table {

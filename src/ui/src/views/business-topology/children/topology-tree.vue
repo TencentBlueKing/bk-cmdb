@@ -147,8 +147,14 @@
             this.treeData = data
             this.mainLine = mainLine
             this.$nextTick(() => {
+                this.setDefaultState(data)
+            })
+        },
+        methods: {
+            setDefaultState (data) {
                 this.$refs.tree.setData(data)
-                const businessNodeId = this.idGenerator(data[0])
+                const businessData = data[0]
+                const businessNodeId = this.idGenerator(businessData)
                 const queryModule = parseInt(this.$route.query.module)
                 let defaultNodeId = businessNodeId
                 if (!isNaN(queryModule)) {
@@ -157,12 +163,12 @@
                     if (node) {
                         defaultNodeId = nodeId
                     }
+                } else if (Array.isArray(businessData.child) && businessData.child.length) {
+                    defaultNodeId = this.idGenerator(businessData.child[0])
                 }
                 this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
                 this.$refs.tree.setExpanded(defaultNodeId)
-            })
-        },
-        methods: {
+            },
             getTopologyData () {
                 return this.$store.dispatch('objectMainLineModule/getInstTopo', {
                     bizId: this.business,

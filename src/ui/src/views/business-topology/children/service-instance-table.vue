@@ -130,6 +130,8 @@
         <bk-dialog class="bk-dialog-no-padding"
             v-model="editLabel.show"
             :width="580"
+            :mask-close="false"
+            :esc-close="false"
             @confirm="handleSubmitEditLable"
             @cancel="handleCloseEditLable"
             @after-leave="handleSetEditBox">

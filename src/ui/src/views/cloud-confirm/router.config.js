@@ -46,9 +46,7 @@ export default [{
             operation: [
                 OPERATION.R_CONFIRM_HISTORY
             ],
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+            authScope: 'global'
         },
         i18nTitle: '确认记录'
     })
