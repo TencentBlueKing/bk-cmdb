@@ -21,22 +21,6 @@ import (
 )
 
 type ProcessClientInterface interface {
-	GetProcessDetailByID(ctx context.Context, ownerID string, appID string, procID string, h http.Header) (resp *metadata.Response, err error)
-	GetProcessBindModule(ctx context.Context, ownerID string, businessID string, procID string, h http.Header) (resp *metadata.Response, err error)
-	BindModuleProcess(ctx context.Context, ownerID string, businessID string, procID string, moduleName string, h http.Header) (resp *metadata.Response, err error)
-	DeleteModuleProcessBind(ctx context.Context, ownerID string, businessID string, procID string, moduleName string, h http.Header) (resp *metadata.Response, err error)
-	CreateProcess(ctx context.Context, ownerID string, businessID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	DeleteProcess(ctx context.Context, ownerID string, businessID string, procID string, h http.Header) (resp *metadata.Response, err error)
-	SearchProcess(ctx context.Context, ownerID string, businessID string, h http.Header) (resp *metadata.Response, err error)
-	UpdateProcess(ctx context.Context, ownerID string, businessID string, procID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	BatchUpdateProcess(ctx context.Context, ownerID, businessID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	OperateProcessInstance(ctx context.Context, namespace string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	QueryProcessOperateResult(ctx context.Context, namespace string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	CreateConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	UpdateConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	DeleteConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	QueryConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-
 	CreateProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	SearchProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
