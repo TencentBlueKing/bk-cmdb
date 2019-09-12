@@ -235,8 +235,8 @@
             },
             deleteTemplate (template) {
                 this.$bkInfo({
-                    title: this.$t('确认删除模版'),
-                    subTitle: this.$tc('即将删除服务模版', name, { name: template.name }),
+                    title: this.$t('确认删除模板'),
+                    subTitle: this.$tc('即将删除服务模板', name, { name: template.name }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({

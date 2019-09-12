@@ -10,7 +10,7 @@
                 <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('templateName') }">
                     <bk-input type="text" class="cmdb-form-input" id="templateName"
                         name="templateName"
-                        :placeholder="$t('请输入模版名称')"
+                        :placeholder="$t('请输入模板名称')"
                         :disabled="!isCreatedType"
                         v-model.trim="formData.templateName"
                         v-validate="'required|singlechar|length:256'">
