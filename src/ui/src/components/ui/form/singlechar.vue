@@ -37,7 +37,7 @@
         },
         methods: {
             handleInput (value) {
-                this.$emit('input', value.trim())
+                this.$emit('input', value)
             },
             handleChange () {
                 this.$emit('on-change', this.value)

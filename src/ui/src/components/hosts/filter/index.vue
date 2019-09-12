@@ -33,18 +33,18 @@
             <div class="filter-scroller" ref="scroller">
                 <div class="filter-group" style="padding: 0;">
                     <label class="filter-label">IP</label>
-                    <bk-input type="textarea" v-model="ip.text" :rows="4"></bk-input>
+                    <bk-input type="textarea" v-model="ip.text" :rows="4" :placeholder="$t('请输入IP')"></bk-input>
                 </div>
                 <div class="filter-group checkbox-group">
                     <bk-checkbox class="filter-checkbox"
                         v-model="ip.inner"
                         :disabled="!ip.outer">
-                        {{$t('内网')}}
+                        {{$t('内网IP')}}
                     </bk-checkbox>
                     <bk-checkbox class="filter-checkbox"
                         v-model="ip.outer"
                         :disabled="!ip.inner">
-                        {{$t('外网')}}
+                        {{$t('外网IP')}}
                     </bk-checkbox>
                     <bk-checkbox class="filter-checkbox" v-model="ip.exact">{{$t('精确')}}</bk-checkbox>
                 </div>
@@ -465,6 +465,10 @@
             },
             handleHide () {
                 this.isShow = false
+                const collectionPopover = this.$refs.collectionPopover
+                if (collectionPopover && collectionPopover.instance.state.isShown) {
+                    collectionPopover.instance.hide()
+                }
             },
             getFilterLabel (filterItem) {
                 const model = this.$store.getters['objectModelClassify/getModelById'](filterItem.bk_obj_id) || {}

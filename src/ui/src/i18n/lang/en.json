@@ -15,6 +15,7 @@
     "暂时没有数据": "No Data",
     "Sorry，您没有业务管理的权限，请联系配置平台管理员": "You do not have permission to manage your business, please contact your configuration platform administrator",
     "内网IP": "Intranet IP",
+    "外网IP": "Extranet IP",
     "等于": "Equal",
     "不等于": "Different",
     "包含": "Contain",
@@ -910,5 +911,6 @@
     "已添加节点提示": "{link} under business",
     "查询条件": "Query conditions",
     "服务分类变更": "Service classification change",
-    "模板详情": "Template details"
+    "模板详情": "Template details",
+    "主机拓扑提示": "Go to {link} to edit topology"
 }

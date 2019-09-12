@@ -61,7 +61,9 @@
                         v-model="selectedCollection"
                         :loading="$loading('searchCollection')"
                         :placeholder="$t('请选择收藏条件')"
-                        @change="handleSelectCollection">
+                        @selected="handleCollectionSelect"
+                        @clear="handleCollectionClear"
+                        @toggle="handleCollectionToggle">
                         <bk-option v-for="collection in collectionList"
                             :key="collection.id"
                             :id="collection.id"
@@ -390,43 +392,50 @@
                     console.error(e)
                 }
             },
-            handleSelectCollection (value) {
-                if (value) {
-                    const collection = this.collectionList.find(collection => collection.id === value)
-                    try {
-                        const filterList = JSON.parse(collection.query_params).map(condition => {
-                            return {
-                                bk_obj_id: condition.bk_obj_id,
-                                bk_property_id: condition.field,
-                                operator: condition.operator,
-                                value: condition.value
-                            }
-                        })
-                        const info = JSON.parse(collection.info)
-                        const filterIP = {
-                            text: info.ip_list.join('\n'),
-                            exact: info.exact_search,
-                            inner: info.bk_host_innerip,
-                            outer: info.bk_host_outerip
-                        }
-                        this.$store.commit('hosts/setFilterList', filterList)
-                        this.$store.commit('hosts/setFilterIP', filterIP)
-                        this.$store.commit('hosts/setCollection', collection)
-                        setTimeout(() => {
-                            this.$refs.hostFilter.handleSearch(false)
-                        }, 0)
-                    } catch (e) {
-                        this.$error(this.$t('应用收藏条件失败，转换数据错误'))
-                        console.error(e.message)
-                    }
-                } else {
-                    this.$refs.hostFilter.handleReset()
-                    const key = this.$route.meta.filterPropertyKey
-                    const customData = this.$store.getters['userCustom/getCustomData'](key, [])
-                    this.$store.commit('hosts/setFilterList', customData)
+            handleCollectionToggle (isOpen) {
+                if (isOpen) {
+                    this.$refs.hostFilter.$refs.filterPopper.instance.hide()
                 }
             },
+            handleCollectionSelect (value) {
+                const collection = this.collectionList.find(collection => collection.id === value)
+                try {
+                    const filterList = JSON.parse(collection.query_params).map(condition => {
+                        return {
+                            bk_obj_id: condition.bk_obj_id,
+                            bk_property_id: condition.field,
+                            operator: condition.operator,
+                            value: condition.value
+                        }
+                    })
+                    const info = JSON.parse(collection.info)
+                    const filterIP = {
+                        text: info.ip_list.join('\n'),
+                        exact: info.exact_search,
+                        inner: info.bk_host_innerip,
+                        outer: info.bk_host_outerip
+                    }
+                    this.$store.commit('hosts/setFilterList', filterList)
+                    this.$store.commit('hosts/setFilterIP', filterIP)
+                    this.$store.commit('hosts/setCollection', collection)
+                    setTimeout(() => {
+                        this.$refs.hostFilter.handleSearch(false)
+                    }, 0)
+                } catch (e) {
+                    this.$error(this.$t('应用收藏条件失败，转换数据错误'))
+                    console.error(e.message)
+                }
+            },
+            handleCollectionClear () {
+                this.$store.commit('hosts/clearFilter')
+                this.$refs.hostFilter.handleReset()
+                this.$refs.hostFilter.$refs.filterPopper.instance.hide()
+                const key = this.$route.meta.filterPropertyKey
+                const customData = this.$store.getters['userCustom/getCustomData'](key, [])
+                this.$store.commit('hosts/setFilterList', customData)
+            },
             handleCreateCollection () {
+                this.$store.commit('hosts/clearFilter')
                 this.selectedCollection = ''
                 this.$refs.collectionSelector.close()
                 this.$refs.hostFilter.handleToggleFilter()
