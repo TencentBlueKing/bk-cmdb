@@ -7,6 +7,13 @@
             :max="480"
             v-bkloading="{ isLoading: $loading(['getInstTopo', 'getInternalTopo']) }"
             :class="{ 'is-collapse': layout.topologyCollapse }">
+            <p class="topology-tips" v-if="showTopologyTips">
+                <i class="icon icon-cc-exclamation-tips"></i>
+                <i18n path="主机拓扑提示">
+                    <a href="javascript:void(0)" place="link" @click="handleTopologyTipsClick">{{$t('服务拓扑')}}</a>
+                </i18n>
+                <i class="bk-icon icon-close" @click="handleCloseTopologyTips"></i>
+            </p>
             <bk-big-tree class="topology-tree"
                 ref="tree"
                 selectable
@@ -53,12 +60,14 @@
 
 <script>
     import { mapGetters, mapActions, mapState } from 'vuex'
+    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     import cmdbHostsTable from '@/components/hosts/table'
     export default {
         components: {
             cmdbHostsTable
         },
         data () {
+            const showTopologyTips = window.localStorage.getItem('showTopologyTips')
             return {
                 properties: {
                     biz: [],
@@ -72,6 +81,7 @@
                 layout: {
                     topologyCollapse: false
                 },
+                showTopologyTips: showTopologyTips === null,
                 ready: false
             }
         },
@@ -232,6 +242,15 @@
             getHostList (resetPage = true) {
                 const params = this.getParams()
                 this.$refs.hostsTable.search(this.bizId, params, resetPage)
+            },
+            handleTopologyTipsClick () {
+                this.$router.push({
+                    name: MENU_BUSINESS_SERVICE_TOPOLOGY
+                })
+            },
+            handleCloseTopologyTips () {
+                this.showTopologyTips = false
+                window.localStorage.setItem('showTopologyTips', false)
             }
         }
     }
@@ -276,6 +295,32 @@
             overflow: hidden;
             height: 100%;
             padding: 20px;
+        }
+    }
+    .topology-tips {
+        font-size: 12px;
+        line-height: 16px;
+        margin: 10px 0 0 0;
+        padding: 2px 16px;
+        .icon,
+        .icon-close,
+        span,
+        a {
+            display: inline-block;
+            vertical-align: baseline;
+        }
+        a {
+            color: #3A84FF;
+        }
+        .icon, .icon-close {
+            cursor: pointer;
+            vertical-align: -1px;
+        }
+        .icon-close {
+            margin-left: 10px;
+            &:hover {
+                color: #3c96ff;
+            }
         }
     }
     .topology-tree {
