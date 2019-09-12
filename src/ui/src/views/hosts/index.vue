@@ -157,7 +157,8 @@
                         'default': ['空闲机', 'idle machine'].includes(module.bk_module_name) ? 1 : 2,
                         'bk_obj_id': 'module',
                         'bk_inst_id': module.bk_module_id,
-                        'bk_inst_name': module.bk_module_name
+                        'bk_inst_name': module.bk_module_name,
+                        'host_count': module.host_count
                     }
                 }))
                 return instance
