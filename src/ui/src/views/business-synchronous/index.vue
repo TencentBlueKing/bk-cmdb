@@ -17,12 +17,12 @@
         <template v-else-if="list.length">
             <feature-tips
                 :show-tips="showFeatureTips"
-                :desc="$t('同步模版功能提示')">
+                :desc="$t('同步模板功能提示')">
             </feature-tips>
             <p class="tips" :style="{ 'padding-top': showFeatureTips ? '20px' : '0' }">
                 {{$t('请确认')}}
                 <span>{{treePath}}</span>
-                {{$t('模版更新信息')}}
+                {{$t('模板更新信息')}}
             </p>
             <div class="info-tab">
                 <div class="tab-head">
@@ -62,7 +62,7 @@
                             <div class="process-name mb50"
                                 v-show="process['operational_type'] === 'removed'">
                                 <span style="font-weight: bold;">{{process['process_template_name']}}</span>
-                                {{$t('从模版中删除')}}
+                                {{$t('从模板中删除')}}
                             </div>
                             <div class="process-info clearfix" v-show="process['operational_type'] === 'changed'">
                                 <div class="info-item fl"

@@ -80,22 +80,24 @@
                                     </div>
                                     <p>{{fieldTypeMap[property['bk_property_type']]}}</p>
                                 </div>
-                                <i class="property-icon icon icon-cc-edit mr10"
-                                    :class="{ disabled: !isFieldEditable(property) }"
-                                    v-cursor="{
-                                        active: !updateAuth,
-                                        auth: [$OPERATION.U_MODEL]
-                                    }"
-                                    @click.stop="handleEditField(group, property)">
-                                </i>
-                                <i class="property-icon bk-icon icon-cc-delete"
-                                    :class="{ disabled: !isFieldEditable(property) }"
-                                    v-cursor="{
-                                        active: !updateAuth,
-                                        auth: [$OPERATION.U_MODEL]
-                                    }"
-                                    @click.stop="handleDeleteField({ property, index, _index })">
-                                </i>
+                                <template v-if="!property['ispre']">
+                                    <i class="property-icon icon icon-cc-edit mr10"
+                                        :class="{ disabled: !isFieldEditable(property) }"
+                                        v-cursor="{
+                                            active: !updateAuth,
+                                            auth: [$OPERATION.U_MODEL]
+                                        }"
+                                        @click.stop="handleEditField(group, property)">
+                                    </i>
+                                    <i class="property-icon bk-icon icon-cc-delete"
+                                        :class="{ disabled: !isFieldEditable(property) }"
+                                        v-cursor="{
+                                            active: !updateAuth,
+                                            auth: [$OPERATION.U_MODEL]
+                                        }"
+                                        @click.stop="handleDeleteField({ property, index, _index })">
+                                    </i>
+                                </template>
                             </li>
                             <li class="property-add no-drag fl"
                                 :class="{ 'disabled': !updateAuth }"
