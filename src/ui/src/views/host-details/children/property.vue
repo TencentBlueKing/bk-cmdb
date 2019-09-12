@@ -48,6 +48,7 @@
                                 :options="property.option || []"
                                 :data-vv-name="property.bk_property_id"
                                 :data-vv-as="property.bk_property_name"
+                                :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                                 v-validate="$tools.getValidateRules(property)"
                                 v-model.trim="editState.value">
                             </component>
@@ -238,7 +239,6 @@
             .property-edit {
                 opacity: 0;
                 margin: 8px 0 0 8px;
-                vertical-align: middle;
                 font-size: 16px;
                 color: #3c96ff;
                 cursor: pointer;
@@ -254,9 +254,11 @@
                 color: #3c96ff;
                 cursor: pointer;
                 display: none;
+                font-size: 16px;
             }
             .copy-box {
                 position: relative;
+                font-size: 0;
                 .copy-tips {
                     position: absolute;
                     top: -22px;
