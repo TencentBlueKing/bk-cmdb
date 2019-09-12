@@ -196,7 +196,7 @@
                     if (modelId === 'module') {
                         properties.push(...this.getModuleServiceTemplateProperties())
                     } else if (modelId === 'set') {
-                        properties.push(...this.getSetTemplateProperties())
+                        properties.push(...this.getClusterTemplateProperties())
                     }
                     this.$store.commit('businessTopology/setProperties', {
                         id: modelId,
@@ -225,10 +225,10 @@
                     unit: ''
                 }]
             },
-            getSetTemplateProperties () {
-                const group = this.geSetTemplateGroup()
+            getClusterTemplateProperties () {
+                const group = this.geClusterTemplateGroup()
                 return [{
-                    bk_property_id: '__set_template_name__',
+                    bk_property_id: '__cluster_template_name__',
                     bk_property_name: this.$t('集群模版名称：'),
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 1,
@@ -258,7 +258,7 @@
                     if (modelId === 'module') {
                         groups.push(this.getModuleServiceTemplateGroup())
                     } else if (modelId === 'set') {
-                        groups.push(this.geSetTemplateGroup())
+                        groups.push(this.geClusterTemplateGroup())
                     }
                     this.$store.commit('businessTopology/setPropertyGroups', {
                         id: modelId,
@@ -276,9 +276,9 @@
                     ispre: true
                 }
             },
-            geSetTemplateGroup () {
+            geClusterTemplateGroup () {
                 return {
-                    bk_group_id: '__set_template_info__',
+                    bk_group_id: '__cluster_template_info__',
                     bk_group_index: -1,
                     bk_group_name: this.$t('集群模板信息'),
                     bk_obj_id: 'set',

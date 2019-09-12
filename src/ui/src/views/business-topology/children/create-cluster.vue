@@ -11,16 +11,16 @@
                 <label>{{$t('集群模版')}}</label>
                 <bk-select style="width: 100%;"
                     :clearable="false"
-                    :searchable="setTemplateList.length > 7"
-                    v-model="setTemplate"
+                    :searchable="clusterTemplateList.length > 7"
+                    v-model="clusterTemplate"
                     v-validate.disabled="'required'"
-                    data-vv-name="setTemplate">
-                    <bk-option v-for="option in setTemplateList"
+                    data-vv-name="clusterTemplate">
+                    <bk-option v-for="option in clusterTemplateList"
                         :key="option.id"
                         :id="option.id"
                         :name="option.name">
                     </bk-option>
-                    <div class="add-template" slot="extension" v-if="!setTemplateList.length">
+                    <div class="add-template" slot="extension" v-if="!clusterTemplateList.length">
                         <i class="bk-icon icon-plus-circle"></i>
                         <span>{{$t('创建集群模版')}}</span>
                     </div>
@@ -33,15 +33,15 @@
                 </label>
                 <bk-input class="form-textarea"
                     type="textarea"
-                    data-vv-name="setName"
+                    data-vv-name="clusterName"
                     v-validate="'required|singlechar|length:256'"
-                    v-model="setName"
+                    v-model="clusterName"
                     :rows="rows"
                     :disabled="withTemplate"
                     :placeholder="$t('请输入集群名称，同时创建多个集群，换行分隔')"
                     @keydown="handleKeydown">
                 </bk-input>
-                <span class="form-error" v-if="errors.has('setName')">{{errors.first('setName')}}</span>
+                <span class="form-error" v-if="errors.has('clusterName')">{{errors.first('clusterName')}}</span>
             </div>
         </div>
         <div class="node-create-options">
@@ -65,10 +65,10 @@
         data () {
             return {
                 withTemplate: true,
-                setTemplate: '',
-                setName: '',
+                clusterTemplate: '',
+                clusterName: '',
                 rows: 1,
-                setTemplateList: []
+                clusterTemplateList: []
             }
         },
         computed: {
@@ -79,7 +79,7 @@
         },
         methods: {
             setRows () {
-                const rows = this.setName.split('\n').length
+                const rows = this.clusterName.split('\n').length
                 this.rows = Math.min(3, Math.max(rows, 1))
             },
             handleKeydown (value, keyEvent) {

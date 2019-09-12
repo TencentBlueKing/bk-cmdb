@@ -67,13 +67,13 @@
                 </create-node>
             </template> -->
             <!-- <template v-else>
-                <create-set v-if="createInfo.visible"
+                <create-cluster v-if="createInfo.visible"
                     :next-model-id="createInfo.nextModelId"
                     :properties="createInfo.properties"
                     :parent-node="createInfo.parentNode"
                     @submit="handleCreateNode"
                     @cancel="handleCancelCreateNode">
-                </create-set>
+                </create-cluster>
             </template> -->
             <template v-else>
                 <create-new-node v-if="createInfo.visible"
@@ -92,13 +92,13 @@
     import { mapGetters } from 'vuex'
     // import createNode from './create-node.vue'
     import createModule from './create-module.vue'
-    // import createSet from './create-set.vue'
+    // import createCluster from './create-cluster.vue'
     import createNewNode from './create-node.new.vue'
     export default {
         components: {
             // createNode,
             createModule,
-            // createSet,
+            // createCluster,
             createNewNode
         },
         data () {
