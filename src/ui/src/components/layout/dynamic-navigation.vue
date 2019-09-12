@@ -200,18 +200,21 @@
             },
             isMenuActive (menu) {
                 const relative = this.$route.meta.menu.relative
-                if (relative === MENU_RESOURCE_MANAGEMENT) {
-                    if (menu.id === MENU_RESOURCE_MANAGEMENT) {
-                        const routeName = this.$route.name
-                        return !this.collectionMenus.some(collection => {
-                            if (routeName === MENU_RESOURCE_INSTANCE) {
-                                return collection.route.params && collection.route.params.objId === this.$route.params.objId
-                            }
-                            return collection.route.name === routeName
-                        })
+                if (relative) {
+                    if (relative === MENU_RESOURCE_MANAGEMENT) {
+                        if (menu.id === MENU_RESOURCE_MANAGEMENT) {
+                            const routeName = this.$route.name
+                            return !this.collectionMenus.some(collection => {
+                                if (routeName === MENU_RESOURCE_INSTANCE) {
+                                    return collection.route.params && collection.route.params.objId === this.$route.params.objId
+                                }
+                                return collection.route.name === routeName
+                            })
+                        }
                     }
+                    return this.$route.meta.menu.relative === menu.route.name
                 }
-                return this.$route.meta.menu.relative === menu.route.name
+                return menu.route.name === this.$route.name
             },
             getCollectionRoute (model) {
                 const map = {
