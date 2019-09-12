@@ -9,6 +9,7 @@
                 <transition name="fade">
                     <cmdb-business-selector class="business-selector"
                         v-show="unfold"
+                        show-apply-permission
                         :popover-options="{
                             appendTo: () => this.$el
                         }"
