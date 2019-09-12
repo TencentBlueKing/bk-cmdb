@@ -250,7 +250,7 @@
                 }
             }
             .property-copy {
-                margin: 6px 0 0 8px;
+                margin: 8px 0 0 8px;
                 color: #3c96ff;
                 cursor: pointer;
                 display: none;
