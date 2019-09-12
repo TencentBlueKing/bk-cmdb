@@ -354,7 +354,7 @@
         }
         .node-host-count {
             padding: 0 5px;
-            margin: 9px 4px;
+            margin: 9px 20px 9px 4px;
             height: 18px;
             line-height: 17px;
             border-radius: 2px;
