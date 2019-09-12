@@ -157,6 +157,8 @@ var AllTables = []string{
 	BKTableNameServiceInstance,
 	BKTableNameProcessTemplate,
 	BKTableNameProcessInstanceRelation,
+	BKTableNameSetTemplate,
+	BKTableNameSetServiceTemplateRelation,
 }
 
 // GetInstTableName returns inst data table name

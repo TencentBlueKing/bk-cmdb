@@ -48,7 +48,7 @@ func (st *SetTemplate) UpdateSetTemplate(ctx context.Context, header http.Header
 	ret := new(metadata.SetTemplateResult)
 	subPath := fmt.Sprintf("/update/topo/set_template/%d/bk_biz_id/%d/", setTemplateID, bizID)
 
-	err := st.client.Post().
+	err := st.client.Put().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
@@ -119,7 +119,7 @@ func (st *SetTemplate) ListSetTemplate(ctx context.Context, header http.Header, 
 	ret := &metadata.ListSetTemplateResult{}
 	subPath := fmt.Sprintf("/findmany/topo/set_template/bk_biz_id/%d/", bizID)
 
-	err := st.client.Get().
+	err := st.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
@@ -139,7 +139,31 @@ func (st *SetTemplate) ListSetTemplate(ctx context.Context, header http.Header, 
 	return &ret.Data, nil
 }
 
-func (st *SetTemplate) ListSetServiceRelatedServiceTemplates(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder) {
+func (st *SetTemplate) ListSetTemplateWeb(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
+	ret := &metadata.ListSetTemplateResult{}
+	subPath := fmt.Sprintf("/findmany/topo/set_template/bk_biz_id/%d/web", bizID)
+
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("ListSetTemplateWeb failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
+func (st *SetTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
 		Data []metadata.ServiceTemplate `json:"data"`
@@ -154,10 +178,61 @@ func (st *SetTemplate) ListSetServiceRelatedServiceTemplates(ctx context.Context
 		Into(&ret)
 
 	if err != nil {
-		blog.Errorf("ListSetServiceRelatedServiceTemplates failed, http request failed, err: %+v", err)
+		blog.Errorf("ListSetTplRelatedSvcTpl failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
 
+	return ret.Data, nil
+}
+
+func (st *SetTemplate) ListSetTplRelatedSetsWeb(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.ListSetByTemplateOption) (*metadata.InstDataInfo, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data metadata.InstDataInfo `json:"data"`
+	}{}
+	subPath := fmt.Sprintf("/findmany/topo/set_template/%d/bk_biz_id/%d/sets/web", setTemplateID, bizID)
+
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("ListSetTplRelatedSetsWeb failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
+func (st *SetTemplate) DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data []metadata.SetDiff `json:"data"`
+	}{}
+	subPath := fmt.Sprintf("/findmany/topo/set_template/%d/bk_biz_id/%d/diff_with_instances", setTemplateID, bizID)
+
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("DiffSetTplWithInst failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
