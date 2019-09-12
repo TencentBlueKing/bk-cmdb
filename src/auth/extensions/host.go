@@ -63,7 +63,7 @@ func GetHostLayers(ctx context.Context, coreService coreservice.CoreServiceClien
 
 	bizTopoTreeRoot, err := coreService.Mainline().SearchMainlineInstanceTopo(ctx, *requestHeader, bkBizID, true)
 	if err != nil {
-		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
+		err = fmt.Errorf("SearchMainlineInstanceTopo failed, bkBizID: %d, err: %+v", bkBizID, err)
 		return
 	}
 
@@ -198,6 +198,9 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 	if err != nil {
 		blog.Errorf("get host:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get host by businessID:%d failed, err: %+v", businessID, err)
+	}
+	if len(hosts.Data.Info) == 0 {
+		return make([]HostSimplify, 0), nil
 	}
 
 	// extract hostID

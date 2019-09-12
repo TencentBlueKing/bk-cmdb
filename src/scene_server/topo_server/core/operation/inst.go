@@ -166,6 +166,36 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			}
 			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(targetInstID, condition.CreateCondition().ToMapStr())
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
+		} else if exists, err := item.IsExists(); nil != err {
+			blog.Errorf("[operation-inst] failed to get inst is exist, err: %s, rid: %s", err.Error(), params.ReqID)
+			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+			continue
+		} else if exists {
+			cond := condition.CreateCondition()
+			if item.GetObject().IsCommon() {
+				cond.Field(common.BKObjIDField).Eq(item.GetObject().Object().ObjectID)
+			}
+			val, exists := item.GetValues().Get(common.BKInstParentStr)
+			if exists {
+				cond.Field(common.BKInstParentStr).Eq(val)
+			}
+			attrs, err := item.GetObject().GetAttributesExceptInnerFields()
+			for _, attrItem := range attrs {
+				// check the inst
+				attr := attrItem.Attribute()
+				if attr.IsOnly || attr.PropertyID == item.GetObject().GetInstNameFieldName() {
+					cond.Field(attr.PropertyID).Eq(val)
+				}
+			}
+			preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
+			err = item.Update(colInput)
+			if nil != err {
+				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
+				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+				continue
+			}
+			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
+			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
 		} else {
 			// create with metadata
 			if bizID != 0 {

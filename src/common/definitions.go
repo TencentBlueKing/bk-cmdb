@@ -495,6 +495,8 @@ const (
 	// BKIsIncrementField the isincrement field
 	BKIsIncrementField = "is_increment"
 
+	BKIsCollapseField = "is_collapse"
+
 	// BKProxyListField the proxy list field
 	BKProxyListField = "bk_proxy_list"
 
