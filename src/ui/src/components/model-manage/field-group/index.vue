@@ -32,6 +32,22 @@
                                     }"
                                     @click.stop="handleDeleteGroup(group, index)">
                                 </i>
+                                <i class="title-icon bk-icon icon-arrows-up"
+                                    :class="{ authDisabled: !updateAuth, disabled: !canRiseGroup(index, group) }"
+                                    v-cursor="{
+                                        active: !updateAuth,
+                                        auth: [$OPERATION.U_MODEL]
+                                    }"
+                                    @click.stop="handleRiseGroup(index, group)">
+                                </i>
+                                <i class="title-icon bk-icon icon-arrows-down"
+                                    :class="{ authDisabled: !updateAuth, disabled: !canDropGroup(index, group) }"
+                                    v-cursor="{
+                                        active: !updateAuth,
+                                        auth: [$OPERATION.U_MODEL]
+                                    }"
+                                    @click.stop="handleDropGroup(index, group)">
+                                </i>
                             </div>
                         </div>
                     </div>
@@ -97,7 +113,7 @@
                 </cmdb-collapse>
                 <div class="add-group" v-if="index === (groupedProperties.length - 1)">
                     <a class="add-group-trigger" href="javascript:void(0)"
-                        :class="{ disabled: !(updateAuth && !activeModel['bk_ispaused']) }"
+                        :class="{ disabled: !updateAuth || activeModel['bk_ispaused'] }"
                         v-cursor="{
                             active: !updateAuth,
                             auth: [$OPERATION.U_MODEL]
@@ -362,17 +378,37 @@
             },
             canRiseGroup (index, group) {
                 if (this.isAdminView) {
-                    return index !== 0 && !['none'].includes(group.info['bk_group_id'])
+                    return index !== 0
                 }
                 const metadataIndex = this.metadataGroupedProperties.indexOf(group)
                 return metadataIndex !== 0
             },
             canDropGroup (index, group) {
                 if (this.isAdminView) {
-                    return index !== (this.groupedProperties.length - 2) && !['none'].includes(group.info['bk_group_id'])
+                    return index !== (this.groupedProperties.length - 1)
                 }
                 const metadataIndex = this.metadataGroupedProperties.indexOf(group)
                 return metadataIndex !== (this.metadataGroupedProperties.length - 1)
+            },
+            handleRiseGroup (index, group) {
+                if (!this.updateAuth || !this.canRiseGroup(index, group)) {
+                    return false
+                }
+                this.groupedProperties[index - 1]['info']['bk_group_index'] = index
+                group['info']['bk_group_index'] = index - 1
+                this.updateGroupIndex()
+                this.resortGroups()
+                this.updatePropertyIndex()
+            },
+            handleDropGroup (index, group) {
+                if (!this.updateAuth || !this.canDropGroup(index, group)) {
+                    return false
+                }
+                this.groupedProperties[index + 1]['info']['bk_group_index'] = index
+                group.info['bk_group_index'] = index + 1
+                this.updateGroupIndex()
+                this.resortGroups()
+                this.updatePropertyIndex()
             },
             async resetData () {
                 const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
@@ -522,7 +558,7 @@
                 return property['bk_property_name'].toLowerCase().indexOf(this.dialog.filter.toLowerCase()) !== -1
             },
             handleEditGroup (group) {
-                if (!(this.updateAuth && this.isEditable(group.info))) return
+                if (!this.updateAuth || !this.isEditable(group.info)) return
                 this.groupDialog.isShow = true
                 this.groupDialog.isShowContent = true
                 this.groupDialog.type = 'update'
@@ -559,7 +595,7 @@
                 this.groupDialog.isShow = false
             },
             handleAddGroup () {
-                if (!(this.updateAuth && !this.activeModel['bk_ispaused'])) return
+                if (!this.updateAuth || this.activeModel['bk_ispaused']) return
                 this.groupDialog.isShow = true
                 this.groupDialog.isShowContent = true
                 this.groupDialog.type = 'create'
@@ -606,7 +642,7 @@
                 })
             },
             handleDeleteGroup (group, index) {
-                if (!(this.updateAuth && this.isEditable(group.info))) return
+                if (!this.updateAuth || !this.isEditable(group.info)) return
                 if (['default', 'none'].includes(group.info['bk_group_id'])) {
                     return
                 }
