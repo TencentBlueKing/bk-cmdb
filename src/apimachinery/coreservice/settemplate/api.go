@@ -219,7 +219,7 @@ func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.H
 		Into(&ret)
 
 	if err != nil {
-		blog.Errorf("ListSetServiceTemplateRelations failed, http request failed, err: %+v", err)
+		blog.Errorf("ListSetTplRelatedSvcTpl failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {

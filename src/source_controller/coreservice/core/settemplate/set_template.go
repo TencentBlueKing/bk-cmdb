@@ -135,8 +135,10 @@ func (p *setTemplateOperation) CreateSetTemplate(ctx core.ContextParams, bizID i
 		relations := make([]metadata.SetServiceTemplateRelation, 0)
 		for _, serviceTemplateID := range option.ServiceTemplateIDs {
 			relations = append(relations, metadata.SetServiceTemplateRelation{
+				BizID:             setTemplate.BizID,
 				SetTemplateID:     setTemplate.ID,
 				ServiceTemplateID: serviceTemplateID,
+				SupplierAccount:   ctx.SupplierAccount,
 			})
 		}
 		if err := p.dbProxy.Table(common.BKTableNameSetServiceTemplateRelation).Insert(ctx.Context, relations); err != nil {
@@ -216,8 +218,10 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 		for _, serviceTemplateID := range serviceTemplateIDs {
 			if _, exist := existIDMap[serviceTemplateID]; exist == false {
 				addRelations = append(addRelations, metadata.SetServiceTemplateRelation{
+					BizID:             setTemplate.BizID,
 					SetTemplateID:     setTemplate.ID,
 					ServiceTemplateID: serviceTemplateID,
+					SupplierAccount:   ctx.SupplierAccount,
 				})
 			}
 		}
@@ -375,9 +379,9 @@ func (p *setTemplateOperation) ListSetTemplate(ctx core.ContextParams, bizID int
 
 func (p *setTemplateOperation) ListSetServiceTemplateRelations(ctx core.ContextParams, bizID int64, setTemplateID int64) ([]metadata.SetServiceTemplateRelation, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
-		common.BKAppIDField:      bizID,
-		common.BKFieldID:         setTemplateID,
-		common.BkSupplierAccount: ctx.SupplierAccount,
+		common.BKAppIDField:         bizID,
+		common.BKSetTemplateIDField: setTemplateID,
+		common.BkSupplierAccount:    ctx.SupplierAccount,
 	}
 
 	setServiceTemplateRelations := make([]metadata.SetServiceTemplateRelation, 0)
