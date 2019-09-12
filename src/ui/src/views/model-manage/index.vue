@@ -101,7 +101,7 @@
                     <li class="model-item bgc-white"
                         :class="{
                             'ispaused': model['bk_ispaused'],
-                            'ispre': isInner(model)
+                            'ispre': model.ispre
                         }"
                         v-for="(model, modelIndex) in classification['bk_objects']"
                         :key="modelIndex">
