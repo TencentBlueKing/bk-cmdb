@@ -30,7 +30,7 @@ func (ih *IAMHandler) HandleBusinessSync(task *meta.WorkRequest) error {
 		blog.Errorf("collect business failed, err: %+v", err)
 		return err
 	}
-
+	blog.Infof("start sync business, count: %d", len(businesses))
 	if len(businesses) == 0 {
 		blog.Info("no business found")
 	}
