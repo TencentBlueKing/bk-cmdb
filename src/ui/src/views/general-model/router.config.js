@@ -1,5 +1,4 @@
 import Meta from '@/router/meta'
-import { getMetadataBiz } from '@/utils/tools'
 import { MENU_RESOURCE_INSTANCE, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
 import {
     C_INST,
@@ -25,12 +24,7 @@ export default {
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope (to, from, app) {
-                const modelId = to.params.objId
-                const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
-                const bizId = getMetadataBiz(model)
-                this.authScope = bizId ? 'business' : 'global'
-            },
+            authScope: 'global',
             setDynamicMeta: (to, from, app) => {
                 const modelId = to.params.objId
                 const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
@@ -42,12 +36,6 @@ export default {
                             resource_model: modelId
                         }]
                     })
-                    const bizId = getMetadataBiz(model)
-                    if (bizId) {
-                        app.$store.commit('auth/setBusinessMeta', {
-                            bk_biz_id: parseInt(bizId)
-                        })
-                    }
                 }
             }
         },

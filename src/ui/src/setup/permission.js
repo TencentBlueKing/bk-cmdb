@@ -38,7 +38,7 @@ export const translateAuth = async (authList = []) => {
             return {
                 action_id: convertedAuth[index].action,
                 action_name: RESOURCE_ACTION_NAME[action],
-                scope_id: scope === 'global' ? 'bk_cmdb' : String(business.bk_biz_id),
+                scope_id: scope === 'global' ? 'bk_cmdb' : business.bk_biz_id ? String(business.bk_biz_id) : '',
                 scope_name: scope === 'global' ? '配置平台' : business.bk_biz_name,
                 scope_type: scope === 'global' ? 'system' : 'biz',
                 scope_type_name: SCOPE_NAME[scope],

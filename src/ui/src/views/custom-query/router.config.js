@@ -26,9 +26,7 @@ export default {
         },
         auth: {
             operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'business'
-            }
+            authScope: 'business'
         },
         requireBusiness: true,
         i18nTitle: '动态分组'

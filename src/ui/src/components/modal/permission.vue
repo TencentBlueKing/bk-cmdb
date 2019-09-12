@@ -59,9 +59,9 @@
         watch: {
             isModalShow (val) {
                 if (val) {
-                    this.$nextTick(() => {
+                    setTimeout(() => {
                         this.$refs.table.doLayout()
-                    })
+                    }, 0)
                 }
             }
         },
