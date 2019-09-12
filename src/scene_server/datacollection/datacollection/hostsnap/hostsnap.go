@@ -491,7 +491,7 @@ const MockMessageData = `{
                 "stolen": 0
             }
         },
-        BKHostOuterIPField       "env": {
+        "env": {
             "crontab": [
                 {
                     "user": "root",
