@@ -283,7 +283,7 @@
                     show: false
                 },
                 selectedCollection: '',
-                scope: 'all'
+                scope: 1
             }
         },
         computed: {
