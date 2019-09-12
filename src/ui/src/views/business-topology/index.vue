@@ -103,7 +103,7 @@
     }
     .tab-layout {
         height: 100%;
-        overflow: hidden;
+        @include scrollbar-x;
         .bk-tab {
             height: 100%;
         }
@@ -114,6 +114,7 @@
         /deep/ .bk-tab-section {
             height: calc(100% - 42px);
             padding-top: 14px;
+            min-width: 826px;
         }
         /deep/ .bk-tab-content {
             height: 100%;

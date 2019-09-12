@@ -668,6 +668,7 @@
                         height: 256px;
                         display: flex;
                         flex-wrap: wrap;
+                        align-content: flex-start;
                         .instances-item {
                             @include space-between;
                             width: 240px;

@@ -16,7 +16,14 @@
             collapse-icon="bk-icon icon-right-shape"
             @select-change="handleSelectChange">
             <div class="node-info clearfix" slot-scope="{ node, data }">
-                <i :class="['node-model-icon fl', { 'is-selected': node.selected }, { 'is-template': isTemplate(node) }]">{{modelIconMap[data.bk_obj_id]}}</i>
+                <i class="node-model-icon fl"
+                    :class="{
+                        'is-selected': node.selected,
+                        'is-template': isTemplate(node),
+                        'is-leaf-icon': node.isLeaf
+                    }">
+                    {{modelIconMap[data.bk_obj_id]}}
+                </i>
                 <span v-if="showCreate(node, data)"
                     class="fr"
                     style="display: inline-block; font-size: 0;"
@@ -335,6 +342,9 @@
             }
             &.is-selected {
                 background-color: #3a84ff;
+            }
+            &.is-leaf-icon {
+                margin-left: 2px;
             }
         }
         .node-button {
