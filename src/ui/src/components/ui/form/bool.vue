@@ -1,7 +1,7 @@
 <template>
     <bk-switcher
         class="form-bool"
-        size="min"
+        size="small"
         theme="primary"
         :value="localValue"
         :disabled="disabled"
