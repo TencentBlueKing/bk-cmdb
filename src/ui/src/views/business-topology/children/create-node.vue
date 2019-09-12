@@ -158,12 +158,7 @@
         font-size: 12px;
     }
     .node-create-form {
-<<<<<<< HEAD
-        padding: 0 26px 52px;
-=======
-        max-height: 400px;
         padding: 0 26px;
->>>>>>> Daryl0819/feature-ui_dev
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;

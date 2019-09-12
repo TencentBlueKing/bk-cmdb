@@ -911,5 +911,6 @@
     "已添加节点提示": "{link} under business",
     "查询条件": "Query conditions",
     "服务分类变更": "Service classification change",
-    "模板详情": "Template details"
+    "模板详情": "Template details",
+    "主机拓扑提示": "Go to {link} to edit topology"
 }
