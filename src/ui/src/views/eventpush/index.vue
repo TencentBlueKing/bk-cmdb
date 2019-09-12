@@ -28,7 +28,7 @@
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="subscription_name" :label="$t('推送名称')" sortable="custom">
+            <bk-table-column prop="subscription_name" :label="$t('订阅名称')" sortable="custom">
             </bk-table-column>
             <bk-table-column prop="system_name" :label="$t('系统名称')" sortable="custom">
             </bk-table-column>
@@ -166,13 +166,13 @@
             createPush () {
                 this.slider.isShow = true
                 this.slider.type = 'create'
-                this.slider.title = this.$t('新增推送')
+                this.slider.title = this.$t('新增订阅')
             },
             editPush (item) {
                 this.curPush = { ...item }
                 this.slider.isShow = true
                 this.slider.type = 'edit'
-                this.slider.title = this.$t('编辑推送')
+                this.slider.title = this.$t('编辑订阅')
             },
             deleteConfirm (item) {
                 this.$bkInfo({
