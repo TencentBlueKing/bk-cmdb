@@ -22,8 +22,8 @@
         :clearable="allowClear"
         :disabled="disabled">
         <bk-option
-            v-for="(option, index) in list"
-            :key="index"
+            v-for="option in list"
+            :key="option[settingKey]"
             :id="option[settingKey]"
             :name="option[displayKey]">
         </bk-option>

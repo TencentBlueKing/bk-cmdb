@@ -25,8 +25,7 @@
                     {{modelIconMap[data.bk_obj_id]}}
                 </i>
                 <span v-if="showCreate(node, data)"
-                    class="fr"
-                    style="display: inline-block; font-size: 0;"
+                    class="info-create-trigger fr"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.C_TOPO),
                         auth: [$OPERATION.C_TOPO]
@@ -38,9 +37,9 @@
                         {{$t('新建')}}
                     </bk-button>
                 </span>
+                <span class="instance-num fr">{{data.service_instance_count}}</span>
                 <div class="info-content">
                     <span class="node-name">{{data.bk_inst_name}}</span>
-                    <span class="instance-num">{{data.service_instance_count}}</span>
                 </div>
             </div>
         </bk-big-tree>
@@ -326,6 +325,14 @@
         }
     }
     .node-info {
+        &:hover {
+            .info-create-trigger {
+                display: inline-block;
+                & ~ .instance-num {
+                    display: none;
+                }
+            }
+        }
         .node-model-icon {
             width: 22px;
             height: 22px;
@@ -347,6 +354,10 @@
                 margin-left: 2px;
             }
         }
+        .info-create-trigger {
+            display: none;
+            font-size: 0;
+        }
         .node-button {
             height: 24px;
             padding: 0 6px;
@@ -356,6 +367,17 @@
             font-size: 12px;
             min-width: auto;
         }
+        .instance-num {
+            margin: 9px 5px;
+            padding: 0 5px;
+            height: 18px;
+            line-height: 17px;
+            border-radius: 2px;
+            background-color: #f0f1f5;
+            color: #979ba5;
+            font-size: 12px;
+            text-align: center;
+        }
         .info-content {
             display: flex;
             align-items: center;
@@ -364,17 +386,6 @@
             .node-name {
                 @include ellipsis;
                 margin-right: 8px;
-            }
-            .instance-num {
-                margin-right: 5px;
-                padding: 0 5px;
-                height: 18px;
-                line-height: 17px;
-                border-radius: 2px;
-                background-color: #f0f1f5;
-                color: #979ba5;
-                font-size: 12px;
-                text-align: center;
             }
         }
     }
