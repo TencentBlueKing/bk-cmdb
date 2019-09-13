@@ -98,7 +98,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	if batchInfo.InputType != common.InputTypeExcel {
 		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
 	}
-	if batchInfo.BatchInfo == nil || len(*batchInfo.BatchInfo) == 0 {
+	if len(batchInfo.BatchInfo) == 0 {
 		return results, fmt.Errorf("BatchInfo empty")
 	}
 
@@ -106,7 +106,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 	// 1. 检查批量数据中实例名称是否重复
 	instNameMap := make(map[string]bool)
-	for line, inst := range *batchInfo.BatchInfo {
+	for line, inst := range batchInfo.BatchInfo {
 
 		objID, exist := inst[common.BKObjIDField]
 		if exist == true && objID != object.ObjectID {
@@ -146,7 +146,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	instIDField := obj.GetInstIDFieldName()
 	instNameField := obj.GetInstNameFieldName()
 	objID := object.ObjectID
-	for colIdx, colInput := range *batchInfo.BatchInfo {
+	for colIdx, colInput := range batchInfo.BatchInfo {
 		if colInput == nil {
 			// ignore empty excel line
 			continue
