@@ -30,5 +30,9 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		return err
 	}
 
+	if err := CreateObjectIDIndex(ctx, db, conf); err != nil {
+		blog.Errorf("CreateObjectIDIndex failed, err: %+v", err)
+		return err
+	}
 	return nil
 }
