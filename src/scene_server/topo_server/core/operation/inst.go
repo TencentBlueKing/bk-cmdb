@@ -94,17 +94,12 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 	}
 
-	var rowErr map[int64]error
 	results := &BatchResult{}
 	if batchInfo.InputType != common.InputTypeExcel {
 		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
 	}
 	if batchInfo.BatchInfo == nil {
 		return results, fmt.Errorf("BatchInfo empty")
-	}
-
-	for errIdx, err := range rowErr {
-		results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", errIdx, err.Error()))
 	}
 
 	object := obj.Object()
