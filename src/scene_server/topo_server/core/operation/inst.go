@@ -98,15 +98,14 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	if batchInfo.InputType != common.InputTypeExcel {
 		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
 	}
-	if batchInfo.BatchInfo == nil {
+	if batchInfo.BatchInfo == nil || len(*batchInfo.BatchInfo) == 0 {
 		return results, fmt.Errorf("BatchInfo empty")
 	}
 
 	object := obj.Object()
 
-	// all the instances's name should not be same,
-	// so we need to check first.
-	instNameMap := make(map[string]struct{})
+	// 1. 检查批量数据中实例名称是否重复
+	instNameMap := make(map[string]bool)
 	for line, inst := range *batchInfo.BatchInfo {
 
 		objID, exist := inst[common.BKObjIDField]
@@ -133,28 +132,32 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			return nil, params.Err.Errorf(common.CCErrorTopoMultipleObjectInstanceName, name)
 		}
 
-		instNameMap[name] = struct{}{}
+		instNameMap[name] = true
 	}
-
-	updatedInstanceIDs := make([]int64, 0)
-	createdInstanceIDs := make([]int64, 0)
 
 	nonInnerAttributes, err := obj.GetNonInnerAttributes()
 	if err != nil {
 		blog.Errorf("[audit]failed to get the object(%s)' attribute, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
 		return nil, err
 	}
+
+	updatedInstanceIDs := make([]int64, 0)
+	createdInstanceIDs := make([]int64, 0)
+	instIDField := obj.GetInstIDFieldName()
+	instNameField := obj.GetInstNameFieldName()
+	objID := object.ObjectID
 	for colIdx, colInput := range *batchInfo.BatchInfo {
 		if colInput == nil {
-			// this is a empty excel line.
+			// ignore empty excel line
 			continue
 		}
 
 		delete(colInput, "import_from")
+		// create memory object
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
 
-		idFieldExist := item.GetValues().Exists(obj.GetInstIDFieldName())
+		idFieldExist := item.GetValues().Exists(instIDField)
 		if idFieldExist {
 			// check update
 			targetInstID, err := item.GetInstID()
@@ -165,6 +168,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			}
 			updatedInstanceIDs = append(updatedInstanceIDs, targetInstID)
 			preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(targetInstID, condition.CreateCondition().ToMapStr())
+			// call CoreService.UpdateInstance
 			err = item.Update(colInput)
 			if nil != err {
 				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
@@ -173,14 +177,19 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			}
 			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(targetInstID, condition.CreateCondition().ToMapStr())
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
-		} else if exists, err := item.IsInstanceExists(nonInnerAttributes); nil != err {
+			continue
+		}
+
+		existInDB, err := item.IsInstanceExists(nonInnerAttributes)
+		if nil != err {
 			blog.Errorf("[operation-inst] failed to get inst is exist, err: %s, rid: %s", err.Error(), params.ReqID)
 			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 			continue
-		} else if exists {
+		}
+		if existInDB {
 			cond := condition.CreateCondition()
 			if item.GetObject().IsCommon() {
-				cond.Field(common.BKObjIDField).Eq(item.GetObject().Object().ObjectID)
+				cond.Field(common.BKObjIDField).Eq(objID)
 			}
 			val, parentFieldExist := item.GetValues().Get(common.BKInstParentStr)
 			if parentFieldExist {
@@ -189,7 +198,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			for _, attrItem := range nonInnerAttributes {
 				// check the inst
 				attr := attrItem.Attribute()
-				if attr.IsOnly || attr.PropertyID == item.GetObject().GetInstNameFieldName() {
+				if attr.IsOnly || attr.PropertyID == instNameField {
 					cond.Field(attr.PropertyID).Eq(val)
 				}
 			}
@@ -202,28 +211,30 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			}
 			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
-		} else {
-			// create with metadata
-			if bizID != 0 {
-				colInput[metadata.BKMetadata] = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
-			}
-			// set data
-			err := item.Create()
-			if nil != err {
-				blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
-				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-				continue
-			}
-			results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
-			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item, nonInnerAttributes)
-
-			instanceID, err := item.GetInstID()
-			if err != nil {
-				blog.Errorf("unexpected error, instances created success, but get id failed, err: %+v, rid: %s", err, params.ReqID)
-				continue
-			}
-			createdInstanceIDs = append(createdInstanceIDs, instanceID)
+			continue
 		}
+
+		// create with metadata
+		if bizID != 0 {
+			colInput[metadata.BKMetadata] = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+		}
+		// set data
+		// call CoreService.CreateInstance
+		err = item.Create()
+		if nil != err {
+			blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
+			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+			continue
+		}
+		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
+		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item, nonInnerAttributes)
+
+		instanceID, err := item.GetInstID()
+		if err != nil {
+			blog.Errorf("unexpected error, instances created success, but get id failed, err: %+v, rid: %s", err, params.ReqID)
+			continue
+		}
+		createdInstanceIDs = append(createdInstanceIDs, instanceID)
 	}
 
 	results.SuccessCreated = createdInstanceIDs
