@@ -59,8 +59,8 @@ type Inst interface {
 
 	GetBizID() (int64, error)
 
-	IsInstanceExists(nonInnerAttributes []model.AttributeInterface) (bool, error)
-	UpdateInstance(data mapstr.MapStr, nonInnerAttributes []model.AttributeInterface) error
+	CheckInstanceExists(nonInnerAttributes []model.AttributeInterface) (exist bool, filter condition.Condition, err error)
+	UpdateInstance(filter condition.Condition, data mapstr.MapStr, nonInnerAttributes []model.AttributeInterface) error
 }
 
 var _ Inst = (*inst)(nil)
@@ -155,56 +155,27 @@ func (cli *inst) Create() error {
 }
 
 func (cli *inst) Update(data mapstr.MapStr) error {
-	return cli.UpdateInstance(data, nil)
+	exist, filter, err := cli.CheckInstanceExists(nil)
+	if err != nil {
+		return err
+	}
+	if exist == true {
+		return cli.UpdateInstance(filter, data, nil)
+	}
+	return cli.params.Err.CCError(common.CCErrCommNotFound)
 }
 
-func (cli *inst) UpdateInstance(data mapstr.MapStr, nonInnerAttributes []model.AttributeInterface) error {
+func (cli *inst) UpdateInstance(filter condition.Condition, data mapstr.MapStr, nonInnerAttributes []model.AttributeInterface) error {
 	rid := cli.params.ReqID
 	tObj := cli.target.Object()
 	objID := tObj.ObjectID
 	if tObj.IsPaused {
 		return cli.params.Err.Error(common.CCErrorTopoModelStopped)
 	}
-	instIDField := cli.target.GetInstIDFieldName()
-	instNameField := cli.target.GetInstNameFieldName()
-	instID, idFieldExist := cli.datas.Get(instIDField)
-
-	cond := condition.CreateCondition()
-	// app/set/module等非通用模型没有 bk_obj_id 字段
-	if cli.target.IsCommon() {
-		cond.Field(common.BKObjIDField).Eq(objID)
-	}
-
-	if idFieldExist {
-		// construct the update condition by the instid
-		cond.Field(instIDField).Eq(instID)
-	} else {
-		if nonInnerAttributes == nil {
-			var err error
-			nonInnerAttributes, err = cli.target.GetNonInnerAttributes()
-			if nil != err {
-				blog.Errorf("failed to get attributes for the object(%s), err: %s, rid: %s", objID, err.Error(), rid)
-				return err
-			}
-		}
-
-		// construct the update condition by the unique key
-		for _, attrItem := range nonInnerAttributes {
-			// check the inst
-			att := attrItem.Attribute()
-			if att.IsOnly || att.PropertyID == instNameField {
-				val, exists := cli.datas.Get(att.PropertyID)
-				if !exists {
-					return cli.params.Err.Errorf(common.CCErrCommParamsLostField, att.PropertyID)
-				}
-				cond.Field(att.PropertyID).Eq(val)
-			}
-		}
-	}
 
 	// execute update action
 	updateOption := metadata.UpdateOption{
-		Condition: cond.ToMapStr(),
+		Condition: filter.ToMapStr(),
 		Data:      data,
 	}
 	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(cli.params.Context, cli.params.Header, objID, &updateOption)
@@ -219,12 +190,13 @@ func (cli *inst) UpdateInstance(data mapstr.MapStr, nonInnerAttributes []model.A
 	}
 
 	// read the updated data
-	instItems, err := cli.searchInsts(cli.target, cond)
+	instItems, err := cli.searchInsts(cli.target, filter)
 	if nil != err {
-		blog.ErrorJSON("[inst-inst] failed to search updated data, cond: %s, err: %s, rid: %s", cond, err.Error(), rid)
+		blog.ErrorJSON("[inst-inst] failed to search updated data, cond: %s, err: %s, rid: %s", filter.ToMapStr(), err.Error(), rid)
 		return err
 	}
 
+	// TODO: 这种实现方案非常不安全
 	for _, item := range instItems { // should be only one item
 		cli.datas = item.GetValues()
 	}
@@ -233,10 +205,11 @@ func (cli *inst) UpdateInstance(data mapstr.MapStr, nonInnerAttributes []model.A
 }
 
 func (cli *inst) IsExists() (bool, error) {
-	return cli.IsInstanceExists(nil)
+	exist, _, err := cli.CheckInstanceExists(nil)
+	return exist, err
 }
 
-func (cli *inst) IsInstanceExists(nonInnerAttributes []model.AttributeInterface) (bool, error) {
+func (cli *inst) CheckInstanceExists(nonInnerAttributes []model.AttributeInterface) (exist bool, filter condition.Condition, err error) {
 	rid := cli.params.ReqID
 	objID := cli.target.GetObjectID()
 	instIDField := cli.target.GetInstIDFieldName()
@@ -246,7 +219,7 @@ func (cli *inst) IsInstanceExists(nonInnerAttributes []model.AttributeInterface)
 		nonInnerAttributes, err = cli.target.GetNonInnerAttributes()
 		if nil != err {
 			blog.Errorf("failed to get attributes for the object(%s), err: %s, rid: %s", objID, err.Error(), rid)
-			return false, err
+			return false, nil, err
 		}
 	}
 
@@ -271,7 +244,7 @@ func (cli *inst) IsInstanceExists(nonInnerAttributes []model.AttributeInterface)
 
 				val, exists := cli.datas.Get(attr.PropertyID)
 				if !exists {
-					return false, cli.params.Err.Errorf(common.CCErrCommParamsLostField, attr.PropertyID)
+					return false, nil, cli.params.Err.Errorf(common.CCErrCommParamsLostField, attr.PropertyID)
 				}
 				cond.Field(attr.PropertyID).Eq(val)
 			}
@@ -284,15 +257,15 @@ func (cli *inst) IsInstanceExists(nonInnerAttributes []model.AttributeInterface)
 	rsp, err := cli.clientSet.CoreService().Instance().ReadInstance(cli.params.Context, cli.params.Header, objID, queryCond)
 	if nil != err {
 		blog.Errorf("failed to search object(%s) instances, err: %s, rid: %s", objID, err.Error(), rid)
-		return false, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return false, nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
 		blog.Errorf("failed to search the object(%s) instances, err: %s, rid: %s", objID, rsp.ErrMsg, rid)
-		return false, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
+		return false, nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return 0 != rsp.Data.Count, nil
+	return 0 != rsp.Data.Count, cond, nil
 }
 
 func (cli *inst) Save(data mapstr.MapStr) error {
