@@ -28,13 +28,13 @@ var topoServerClient = clientSet.TopoServer()
 var procServerClient = clientSet.ProcServer()
 var apiServerClient = clientSet.ApiServer()
 
-func TestTopoServer(t *testing.T) {
+func TestSetTemplate(t *testing.T) {
 	RegisterFailHandler(Fail)
 	reporters := []Reporter{
 		reporter.NewHtmlReporter(test.GetReportDir()+"set_template-toposerver.html", test.GetReportUrl(), true),
 	}
-	RunSpecsWithDefaultAndCustomReporters(t, "TopoServer Suite", reporters)
-	RunSpecs(t, "TopoServer Suite")
+	RunSpecsWithDefaultAndCustomReporters(t, "SetTemplate Suite", reporters)
+	RunSpecs(t, "SetTemplate Suite")
 }
 
 var _ = BeforeSuite(func() {
