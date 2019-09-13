@@ -104,16 +104,18 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 	object := obj.Object()
 
-	// 1. 检查批量数据中实例名称是否重复
-	instNameMap := make(map[string]bool)
+	// 1. 检查实例与URL参数指定的模型一致
 	for line, inst := range batchInfo.BatchInfo {
-
 		objID, exist := inst[common.BKObjIDField]
 		if exist == true && objID != object.ObjectID {
 			blog.Errorf("create object[%s] instance batch failed, because bk_obj_id field conflict with url field, rid: %s", object.ObjectID, params.ReqID)
 			return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl, line)
 		}
+	}
 
+	// 2. 检查批量数据中实例名称是否重复
+	instNameMap := make(map[string]bool)
+	for line, inst := range batchInfo.BatchInfo {
 		iName, exist := inst[common.BKInstNameField]
 		if !exist {
 			blog.Errorf("create object[%s] instance batch failed, because missing bk_inst_name field., rid: %s", object.ObjectID, params.ReqID)
