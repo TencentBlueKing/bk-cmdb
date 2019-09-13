@@ -13,7 +13,6 @@
 package inst
 
 import (
-	"context"
 	"encoding/json"
 
 	"configcenter/src/apimachinery"
@@ -93,7 +92,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 	queryInput.Condition = cond.ToMapStr()
 
 	if targetModel.Object().ObjectID != common.BKInnerObjIDHost {
-		rsp, err := cli.clientSet.CoreService().Instance().ReadInstance(context.Background(), cli.params.Header, targetModel.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
+		rsp, err := cli.clientSet.CoreService().Instance().ReadInstance(cli.params.Context, cli.params.Header, targetModel.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to request the object controller , error info is %s, rid: %s", err.Error(), cli.params.ReqID)
 			return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -108,7 +107,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 	}
 
 	// search hosts
-	rsp, err := cli.clientSet.CoreService().Host().GetHosts(context.Background(), cli.params.Header, queryInput)
+	rsp, err := cli.clientSet.CoreService().Host().GetHosts(cli.params.Context, cli.params.Header, queryInput)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s, rid: %s", err.Error(), cli.params.ReqID)
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -289,7 +288,7 @@ func (cli *inst) IsInstanceExists(nonInnerAttributes []model.AttributeInterface)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to search the object (%s) instances, err: %s, rid: %s", objID, rsp.ErrMsg, rid)
+		blog.Errorf("failed to search the object(%s) instances, err: %s, rid: %s", objID, rsp.ErrMsg, rid)
 		return false, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -349,7 +348,8 @@ func (cli *inst) IsDefault() bool {
 	if cli.datas.Exists(common.BKDefaultField) {
 		defaultVal, err := cli.datas.Int64(common.BKDefaultField)
 		if nil != err {
-			blog.Errorf("[operation-inst]the default value(%#v) is invalid, error info is %s, rid: %s", cli.datas[common.BKDefaultField], err.Error(), cli.params.ReqID)
+			defaultFieldValue := cli.datas[common.BKDefaultField]
+			blog.Errorf("[operation-inst]the `default` field's value(%#v) invalid, err: %s, rid: %s", defaultFieldValue, err.Error(), cli.params.ReqID)
 			return false
 		}
 
