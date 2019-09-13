@@ -350,7 +350,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst, c
 		}
 	}
 
-	instIDS := []deletedInst{}
+	instIDS := make([]deletedInst, 0)
 	instIDS = append(instIDS, deletedInst{instID: id, obj: targetObj})
 	childInsts, err := targetInst.GetMainlineChildInst()
 	if nil != err {
@@ -537,7 +537,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 	}
 	object := obj.Object()
 
-	ids := []int64{}
+	ids := make([]int64, 0)
 	for _, id := range instIDS {
 		if 0 == len(strings.TrimSpace(id)) {
 			continue
