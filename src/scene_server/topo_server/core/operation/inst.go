@@ -145,9 +145,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 	updatedInstanceIDs := make([]int64, 0)
 	createdInstanceIDs := make([]int64, 0)
-	instIDField := obj.GetInstIDFieldName()
-	instNameField := obj.GetInstNameFieldName()
-	objID := object.ObjectID
 	for colIdx, colInput := range batchInfo.BatchInfo {
 		if colInput == nil {
 			// ignore empty excel line
@@ -159,59 +156,28 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
 
-		idFieldExist := item.GetValues().Exists(instIDField)
-		if idFieldExist {
-			// check update
-			targetInstID, err := item.GetInstID()
-			if nil != err {
-				blog.Errorf("[operation-inst] failed to get inst id, err: %s, rid: %s", err.Error(), params.ReqID)
-				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-				continue
-			}
-			updatedInstanceIDs = append(updatedInstanceIDs, targetInstID)
-			preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(targetInstID, condition.CreateCondition().ToMapStr())
-			// call CoreService.UpdateInstance
-			err = item.Update(colInput)
-			if nil != err {
-				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
-				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-				continue
-			}
-			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(targetInstID, condition.CreateCondition().ToMapStr())
-			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
-			continue
-		}
-
-		existInDB, err := item.IsInstanceExists(nonInnerAttributes)
+		existInDB, filter, err := item.CheckInstanceExists(nonInnerAttributes)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to get inst is exist, err: %s, rid: %s", err.Error(), params.ReqID)
 			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 			continue
 		}
 		if existInDB {
-			cond := condition.CreateCondition()
-			if item.GetObject().IsCommon() {
-				cond.Field(common.BKObjIDField).Eq(objID)
-			}
-			val, parentFieldExist := item.GetValues().Get(common.BKInstParentStr)
-			if parentFieldExist {
-				cond.Field(common.BKInstParentStr).Eq(val)
-			}
-			for _, attrItem := range nonInnerAttributes {
-				// check the inst
-				attr := attrItem.Attribute()
-				if attr.IsOnly || attr.PropertyID == instNameField {
-					cond.Field(attr.PropertyID).Eq(val)
-				}
-			}
-			preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
-			err = item.UpdateInstance(colInput, nonInnerAttributes)
+			preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
+			err = item.UpdateInstance(filter, colInput, nonInnerAttributes)
 			if nil != err {
 				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
-			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
+			instID, err := item.GetInstID()
+			if err != nil {
+				blog.ErrorJSON("update inst success, but get id field failed, inst: %s, err: %s, rid: %s", item.GetValues(), err.Error(), params.ReqID)
+				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+				continue
+			}
+			updatedInstanceIDs = append(updatedInstanceIDs, instID)
+			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
 			continue
 		}
