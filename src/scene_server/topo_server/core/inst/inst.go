@@ -154,37 +154,39 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 }
 
 func (cli *inst) UpdateInstance(data mapstr.MapStr, nonInnerAttributes []model.AttributeInterface) error {
-	if cli.target.Object().IsPaused {
+	rid := cli.params.ReqID
+	tObj := cli.target.Object()
+	objID := tObj.ObjectID
+	if tObj.IsPaused {
 		return cli.params.Err.Error(common.CCErrorTopoModelStopped)
 	}
-	instIDName := cli.target.GetInstIDFieldName()
-	instID, exists := cli.datas.Get(instIDName)
+	instIDField := cli.target.GetInstIDFieldName()
+	instNameField := cli.target.GetInstNameFieldName()
+	instID, idFieldExist := cli.datas.Get(instIDField)
 
-	tObj := cli.target.Object()
 	cond := condition.CreateCondition()
 	if cli.target.IsCommon() {
-		cond.Field(common.BKObjIDField).Eq(tObj.ObjectID)
+		cond.Field(common.BKObjIDField).Eq(objID)
 	}
 
-	if exists {
+	if idFieldExist {
 		// construct the update condition by the instid
-		cond.Field(instIDName).Eq(instID)
+		cond.Field(instIDField).Eq(instID)
 	} else {
-		// construct the update condition by the only key
-
 		if nonInnerAttributes == nil {
 			var err error
 			nonInnerAttributes, err = cli.target.GetNonInnerAttributes()
 			if nil != err {
-				blog.Errorf("failed to get attributes for the object(%s), error info is is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
+				blog.Errorf("failed to get attributes for the object(%s), err: %s, rid: %s", objID, err.Error(), rid)
 				return err
 			}
 		}
 
+		// construct the update condition by the unique key
 		for _, attrItem := range nonInnerAttributes {
 			// check the inst
 			att := attrItem.Attribute()
-			if att.IsOnly || att.PropertyID == cli.target.GetInstNameFieldName() {
+			if att.IsOnly || att.PropertyID == instNameField {
 				val, exists := cli.datas.Get(att.PropertyID)
 				if !exists {
 					return cli.params.Err.Errorf(common.CCErrCommParamsLostField, att.PropertyID)
@@ -192,28 +194,28 @@ func (cli *inst) UpdateInstance(data mapstr.MapStr, nonInnerAttributes []model.A
 				cond.Field(att.PropertyID).Eq(val)
 			}
 		}
-
 	}
 
 	// execute update action
-	updateCond := metadata.UpdateOption{}
-	updateCond.Data = data
-	updateCond.Condition = cond.ToMapStr()
-	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &updateCond)
+	updateOption := metadata.UpdateOption{
+		Condition: cond.ToMapStr(),
+		Data:      data,
+	}
+	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(cli.params.Context, cli.params.Header, objID, &updateOption)
 	if nil != err {
-		blog.Errorf("failed to update the object(%s) instances, error info is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
+		blog.Errorf("failed to update object(%s)'s instances, err: %s, rid: %s", objID, err.Error(), rid)
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to update the object(%s) instances, error info is %s, rid: %s", tObj.ObjectID, rsp.ErrMsg, cli.params.ReqID)
+		blog.Errorf("failed to update object(%s)'s instances, err: %s, rid: %s", objID, rsp.ErrMsg, rid)
 		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	// read the new data
+	// read the updated data
 	instItems, err := cli.searchInsts(cli.target, cond)
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to search the new insts data, error info is %s, rid: %s", err.Error(), cli.params.ReqID)
+		blog.ErrorJSON("[inst-inst] failed to search updated data, cond: %s, err: %s, rid: %s", cond, err.Error(), rid)
 		return err
 	}
 
