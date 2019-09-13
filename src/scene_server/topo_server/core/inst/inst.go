@@ -124,23 +124,29 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 }
 
 func (cli *inst) Create() error {
+	rid := cli.params.ReqID
+	objID := cli.target.GetObjectID()
+
+	// 暂停使用的model不允许创建实例
 	if cli.target.Object().IsPaused {
 		return cli.params.Err.Error(common.CCErrorTopoModelStopped)
 	}
+	// app/set/module等非通用模型没有 bk_obj_id 字段
 	if cli.target.IsCommon() {
-		cli.datas.Set(common.BKObjIDField, cli.target.Object().ObjectID)
+		cli.datas.Set(common.BKObjIDField, objID)
 	}
 
 	cli.datas.Set(common.BKOwnerIDField, cli.params.SupplierAccount)
 
-	rsp, err := cli.clientSet.CoreService().Instance().CreateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.CreateModelInstance{Data: cli.datas})
+	data := &metadata.CreateModelInstance{Data: cli.datas}
+	rsp, err := cli.clientSet.CoreService().Instance().CreateInstance(cli.params.Context, cli.params.Header, objID, data)
 	if nil != err {
-		blog.Errorf("failed to create object instance, error info is %s, rid: %s", err.Error(), cli.params.ReqID)
+		blog.Errorf("failed to create object instance, error info is %s, rid: %s", err.Error(), rid)
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to create object instance ,error info is %v, rid: %s", rsp.ErrMsg, cli.params.ReqID)
+		blog.Errorf("failed to create object instance ,error info is %v, rid: %s", rsp.ErrMsg, rid)
 		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -165,6 +171,7 @@ func (cli *inst) UpdateInstance(data mapstr.MapStr, nonInnerAttributes []model.A
 	instID, idFieldExist := cli.datas.Get(instIDField)
 
 	cond := condition.CreateCondition()
+	// app/set/module等非通用模型没有 bk_obj_id 字段
 	if cli.target.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(objID)
 	}
