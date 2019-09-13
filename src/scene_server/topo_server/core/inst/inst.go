@@ -238,12 +238,15 @@ func (cli *inst) IsExists() (bool, error) {
 }
 
 func (cli *inst) IsInstanceExists(nonInnerAttributes []model.AttributeInterface) (bool, error) {
-	tObj := cli.target.Object()
+	rid := cli.params.ReqID
+	objID := cli.target.GetObjectID()
+	instIDField := cli.target.GetInstIDFieldName()
+	instNameField := cli.target.GetInstNameFieldName()
 	if nonInnerAttributes == nil {
 		var err error
 		nonInnerAttributes, err = cli.target.GetNonInnerAttributes()
 		if nil != err {
-			blog.Errorf("failed to get attributes for the object(%s), error info is is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
+			blog.Errorf("failed to get attributes for the object(%s), err: %s, rid: %s", objID, err.Error(), rid)
 			return false, err
 		}
 	}
@@ -251,11 +254,11 @@ func (cli *inst) IsInstanceExists(nonInnerAttributes []model.AttributeInterface)
 	cond := condition.CreateCondition()
 	// if the inst id already exist, query it with id directly,
 	// otherwise, when import a object instance, the other field may be changed.
-	if id, exist := cli.datas[cli.target.GetInstIDFieldName()]; exist {
-		cond.Field(cli.target.GetInstIDFieldName()).Eq(id)
+	if id, exist := cli.datas[instIDField]; exist {
+		cond.Field(instIDField).Eq(id)
 	} else {
 		if cli.target.IsCommon() {
-			cond.Field(common.BKObjIDField).Eq(tObj.ObjectID)
+			cond.Field(common.BKObjIDField).Eq(objID)
 		}
 		val, exists := cli.datas.Get(common.BKInstParentStr)
 		if exists {
@@ -263,10 +266,9 @@ func (cli *inst) IsInstanceExists(nonInnerAttributes []model.AttributeInterface)
 		}
 
 		for _, attrItem := range nonInnerAttributes {
-
 			// check the inst
 			attr := attrItem.Attribute()
-			if attr.IsOnly || attr.PropertyID == cli.target.GetInstNameFieldName() {
+			if attr.IsOnly || attr.PropertyID == instNameField {
 
 				val, exists := cli.datas.Get(attr.PropertyID)
 				if !exists {
@@ -274,23 +276,20 @@ func (cli *inst) IsInstanceExists(nonInnerAttributes []model.AttributeInterface)
 				}
 				cond.Field(attr.PropertyID).Eq(val)
 			}
-
 		}
 	}
 
-	queryCond := metadata.QueryInput{}
-	queryCond.Condition = cond.ToMapStr()
-
-	rsp, err := cli.clientSet.CoreService().Instance().ReadInstance(
-		context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()},
-	)
+	queryCond := &metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := cli.clientSet.CoreService().Instance().ReadInstance(cli.params.Context, cli.params.Header, objID, queryCond)
 	if nil != err {
-		blog.Errorf("failed to search object(%s) instances  , error info is %s, rid: %s", tObj.ObjectID, err.Error(), cli.params.ReqID)
+		blog.Errorf("failed to search object(%s) instances, err: %s, rid: %s", objID, err.Error(), rid)
 		return false, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to search the object (%s) instances, error info is %s, rid: %s", tObj.ObjectID, rsp.ErrMsg, cli.params.ReqID)
+		blog.Errorf("failed to search the object (%s) instances, err: %s, rid: %s", objID, rsp.ErrMsg, rid)
 		return false, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
