@@ -218,7 +218,6 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 		hostIDs = append(hostIDs, hostID)
 	}
 
-	blog.V(4).Infof("list hosts by business:%d result: %+v, rid: %s", businessID, hostIDs, rid)
 	return am.collectHostByHostIDs(ctx, header, hostIDs...)
 }
 
@@ -249,7 +248,6 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDs, err)
 		return nil, err
 	}
-	blog.V(5).Infof("get host module config: %+v, rid: %s", hostModuleResult.Data.Info, rid)
 	if len(rawData) == 0 {
 		err = fmt.Errorf("get host:%+v layer failed, get host module config by host id not found, maybe hostID invalid", hostIDs)
 		return nil, err
@@ -263,7 +261,6 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 		}
 		hostModuleMap[host.BKHostIDField] = host
 	}
-	blog.V(9).Infof("hostModuleMap: %+v, rid: %s", hostModuleMap, rid)
 	for idx, host := range hosts {
 		hostModule, exist := hostModuleMap[host.BKHostIDField]
 		if exist == false {
