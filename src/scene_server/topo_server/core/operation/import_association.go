@@ -453,6 +453,7 @@ func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID,
 	inst.Data.ObjectID = ia.objID
 	inst.Data.AsstObjectID = asstInfo.AsstObjID
 	inst.Data.AsstInstID = assInstID
+	inst.Data.AssociationKindID = asstInfo.AsstKindID
 	rsp, err := ia.cli.clientSet.CoreService().Association().CreateInstAssociation(ia.ctx, ia.params.Header, &inst)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
