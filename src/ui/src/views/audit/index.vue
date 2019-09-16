@@ -2,7 +2,7 @@
     <div class="audit-wrapper">
         <div class="title-content">
             <div class="group-content" v-if="isAdminView">
-                <span class="title-name">{{$t('业务')}}</span>
+                <span class="title-name" :title="$t('业务')">{{$t('业务')}}</span>
                 <div class="selector-content">
                     <bk-select v-model="filter.bizId" searchable>
                         <bk-option v-for="business in authorizedBusiness"
@@ -14,7 +14,7 @@
                 </div>
             </div>
             <div class="group-content">
-                <span class="title-name">IP</span>
+                <span class="title-name" title="IP">IP</span>
                 <div class="selector-content">
                     <bk-input class="cmdb-form-input" type="text"
                         :placeholder="$t('使用逗号分隔')"
@@ -23,7 +23,7 @@
                 </div>
             </div>
             <div class="group-content">
-                <span class="title-name">{{$t('模型')}}</span>
+                <span class="title-name" :title="$t('模型')">{{$t('模型')}}</span>
                 <div class="selector-content">
                     <bk-select v-model="filter.classify" searchable>
                         <bk-option-group v-for="group in filterClassifications"
@@ -39,7 +39,7 @@
                 </div>
             </div>
             <div class="group-content">
-                <span class="title-name">{{$t('类型')}}</span>
+                <span class="title-name" :title="$t('类型')">{{$t('类型')}}</span>
                 <div class="selector-content">
                     <bk-select
                         v-model="filter.bkOpType"
@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="group-content">
-                <span class="title-name">{{$t('时间')}}</span>
+                <span class="title-name" :title="$t('时间')">{{$t('时间')}}</span>
                 <div class="selector-content date-range-content">
                     <cmdb-form-date-range
                         class="date-range"
@@ -359,6 +359,7 @@
                 max-width: 48px;
                 font-size: 14px;
                 padding-right: 5px;
+                @include ellipsis;
             }
             .date-range-content {
                 width: calc(100% - 40px);
