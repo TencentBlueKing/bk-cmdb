@@ -99,8 +99,8 @@
                 :biz-id="bizId"
                 :type="slider.type"
                 :object="object"
-                @create="handleCreate"
-                @update="getUserAPIList"
+                @create="handleSuccess"
+                @update="handleSuccess"
                 @cancel="handleSliderBeforeClose">
             </v-define>
         </bk-sideslider>
@@ -238,10 +238,8 @@
                 this.hideUserAPISlider()
                 return true
             },
-            handleCreate (data) {
-                this.slider.id = data['id']
-                this.slider.type = 'update'
-                this.slider.title = this.$t('编辑动态分组')
+            handleSuccess (data) {
+                this.hideUserAPISlider()
                 this.handlePageChange(1)
             },
             async getUserAPIDetail (row) {
