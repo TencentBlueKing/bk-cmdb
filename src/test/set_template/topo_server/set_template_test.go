@@ -12,6 +12,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 )
 
 var _ = Describe("create empty set template test", func() {
@@ -207,6 +208,58 @@ var _ = Describe("create normal set template test", func() {
 		s, e := json.Marshal(rsp)
 		Expect(e).Should(BeNil())
 		Expect(string(s)).Should(ContainSubstring(fmt.Sprintf(`"bk_set_id":%d`, setID)))
+	})
+
+	// update set-template and check diff result
+	var serviceTemplateID4 int64
+	It("create service template 4", func() {
+		data := map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"label": map[string]interface{}{
+					"bk_biz_id": strconv.FormatInt(bizID, 10),
+				},
+			},
+			"name":                "svcTpl4",
+			"service_category_id": 1,
+		}
+		rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data[common.BKFieldID]).To(Not(Equal(int64(0))))
+		Expect(rsp.Data[common.BKFieldName]).To(Equal("svcTpl4"))
+		serviceTemplateID3, err = util.GetInt64ByInterface(rsp.Data[common.BKFieldID])
+		Expect(err).To(BeNil())
+	})
+
+	It("update set template", func() {
+		option := metadata.UpdateSetTemplateOption{
+			Name:               "setTpl4",
+			ServiceTemplateIDs: []int64{serviceTemplateID3, serviceTemplateID4},
+		}
+		rsp, err := topoServerClient.SetTemplate().UpdateSetTemplate(ctx, header, bizID, setTemplateID, option)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data.Name).To(Equal("setTpl4"))
+		Expect(rsp.Data.ID).To(Equal(setTemplateID))
+	})
+	It("diff set template with set", func() {
+		option := metadata.DiffSetTplWithInstOption{
+			SetIDs: []int64{setID},
+		}
+		setDiffs, err := topoServerClient.SetTemplate().DiffSetTplWithInst(ctx, header, bizID, setTemplateID, option)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(setDiffs).To(HaveLen(1))
+		setDiff := setDiffs[0]
+		Expect(setDiff.SetID).To(Equal(setID))
+		Expect(setDiff.ModuleDiffs).To(HaveLen(2))
+		m := MatchFields(IgnoreMissing|IgnoreExtras, Fields{
+			"DiffType": Equal(metadata.ModuleDiffAdd),
+		})
+		Expect(setDiff.ModuleDiffs).Should(ContainElement(m))
+		m = MatchFields(IgnoreMissing|IgnoreExtras, Fields{
+			"DiffType": Equal(metadata.ModuleDiffRemove),
+		})
+		Expect(setDiff.ModuleDiffs).Should(ContainElement(m))
 	})
 
 	// delete setTemplate be referenced
