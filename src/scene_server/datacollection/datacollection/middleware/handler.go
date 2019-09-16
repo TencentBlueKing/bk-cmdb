@@ -18,8 +18,10 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	bkc "configcenter/src/common"
+	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -598,14 +600,63 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 			return fmt.Errorf("search model failed: %s", resp.ErrMsg)
 		}
 		blog.Infof("create inst result: %v", resp)
+		instID := int64(resp.Data.Created.ID)
+
+		if err := func() error {
+			bizID, err := extensions.ParseBizID(data)
+			if err != nil {
+				if blog.V(5) {
+					blog.InfoJSON("ParseBizID from input data: %+v failed, err: %+v", data)
+				}
+				return err
+			}
+			auditHeader, err := GetAuditLogHeader(d.CoreAPI, d.httpHeader, objID)
+			if err != nil {
+				blog.Errorf("GetAuditLogHeader failed, objID: %s, err: %s, rid: %s", objID, err.Error(), rid)
+				return err
+			}
+			instIDField := common.GetInstIDField(objID)
+			data[instIDField] = instID
+			auditLog := metadata.SaveAuditLogParams{
+				ID:    instID,
+				Model: objID,
+				Content: metadata.Content{
+					CurData: data,
+					PreData: nil,
+					Headers: auditHeader,
+				},
+				OpDesc: "create " + objID,
+				OpType: auditoplog.AuditOpTypeAdd,
+				ExtKey: "",
+				BizID:  bizID,
+			}
+
+			result, err := d.CoreAPI.CoreService().Audit().SaveAuditLog(d.ctx, d.httpHeader, auditLog)
+			if err != nil {
+				blog.Errorf("create inst audit log failed, http failed, err:%s, rid:%s", err.Error(), rid)
+				return err
+			}
+			if !result.Result {
+				blog.Errorf("create inst audit log failed, err code:%d, err msg:%s, rid:%s", result.Code, result.ErrMsg, rid)
+				return err
+			}
+			return nil
+		}(); err != nil && blog.V(3) {
+			blog.Errorf("save inst create audit log failed, err: %+v, rid: %s", err.Error(), rid)
+		}
 
 		// update registry to iam
-		instID := int64(resp.Data.Created.ID)
 		if err := d.authManager.RegisterInstancesByID(d.ctx, d.httpHeader, objID, instID); err != nil {
 			blog.Errorf("UpdateOrCreateInst success, but RegisterInstancesByID failed, objID: %s, instID: %d, err: %s, rid: %s", objID, instID, err, rid)
 			return err
 		}
 		return nil
+	}
+
+	preUpdatedData, err := DeepCopyToMap(inst)
+	if err != nil {
+		blog.ErrorJSON("DeepCopyToMap pre updated inst failed, inst: %s, err: %s, rid: %s", inst, err.Error(), rid)
+		// should not return here, it must try to to more jobs at it best
 	}
 
 	instID, err := util.GetInt64ByInterface(inst[bkc.BKInstIDField])
@@ -675,8 +726,63 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return fmt.Errorf("search model failed: %s", resp.ErrMsg)
 	}
 	blog.Infof("update inst result: %v", resp)
-
 	d.TryUnsetRedis(instKeyStr)
+
+	if err := func() error {
+		bizID, err := extensions.ParseBizID(inst)
+		if err != nil {
+			if blog.V(5) {
+				blog.InfoJSON("ParseBizID from input data: %+v failed, err: %+v", inst)
+			}
+			return err
+		}
+		auditHeader, err := GetAuditLogHeader(d.CoreAPI, d.httpHeader, objID)
+		if err != nil {
+			blog.Errorf("GetAuditLogHeader failed, objID: %s, err: %s, rid: %s", objID, err.Error(), rid)
+			return err
+		}
+		qc := metadata.QueryCondition{
+			Condition: map[string]interface{}{
+				common.BKInstIDField: instID,
+			},
+		}
+		readResult, err := d.CoreAPI.CoreService().Instance().ReadInstance(d.ctx, d.httpHeader, objID, &qc)
+		if err != nil {
+			blog.Errorf("read updated inst failed, objID: %s, instID: %d, err: %s, rid: %s", objID, instID, err.Error(), rid)
+			return err
+		}
+		if len(readResult.Data.Info) == 0 {
+			blog.Errorf("read updated inst failed, not found, objID: %s, instID: %d, rid: %s", objID, instID, rid)
+			return fmt.Errorf("get updated instance failed, not found, objID: %s, instID: %d", objID, instID)
+		}
+		updatedInst := readResult.Data.Info[0]
+		auditLog := metadata.SaveAuditLogParams{
+			ID:    instID,
+			Model: objID,
+			Content: metadata.Content{
+				CurData: updatedInst,
+				PreData: preUpdatedData,
+				Headers: auditHeader,
+			},
+			OpDesc: "update " + objID,
+			OpType: auditoplog.AuditOpTypeModify,
+			ExtKey: "",
+			BizID:  bizID,
+		}
+
+		result, err := d.CoreAPI.CoreService().Audit().SaveAuditLog(d.ctx, d.httpHeader, auditLog)
+		if err != nil {
+			blog.Errorf("save inst update audit log failed, http failed, err:%s, rid:%s", err.Error(), rid)
+			return err
+		}
+		if !result.Result {
+			blog.Errorf("save inst update audit log failed, err code:%d, err msg:%s, rid:%s", result.Code, result.ErrMsg, rid)
+			return fmt.Errorf("coreservice save audit log result faield, result: %+v", result)
+		}
+		return nil
+	}(); err != nil && blog.V(3) {
+		blog.Errorf("save inst update audit log failed, err: %s, rid: %s", err.Error(), rid)
+	}
 
 	// update registry to iam
 	if err := d.authManager.UpdateRegisteredInstanceByID(d.ctx, d.httpHeader, objID, instID); err != nil {
