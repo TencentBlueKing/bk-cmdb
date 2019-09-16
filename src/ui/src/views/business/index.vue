@@ -149,7 +149,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import { MENU_RESOURCE_BUSINESS_HISTORY, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
+    import { MENU_RESOURCE_BUSINESS_HISTORY } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
@@ -242,10 +242,6 @@
         },
         async created () {
             try {
-                this.$store.commit('setBreadcumbs', [{
-                    i18n: '资源目录',
-                    route: { name: MENU_RESOURCE_MANAGEMENT }
-                }, { name: '业务' }])
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: 'biz',

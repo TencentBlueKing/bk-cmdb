@@ -147,6 +147,16 @@ const setAdminView = to => {
     router.app.$store.commit('setAdminView', isAdminView)
 }
 
+const updateBreadcrumbs = to => {
+    router.app.$store.commit('setTitle', '')
+    const menuI18n = to.meta.menu && to.meta.menu.i18n
+    if (menuI18n) {
+        router.app.$store.commit('addBreadcrumbs', {
+            id: to.name,
+            name: menuI18n
+        })
+    }
+}
 // 进入业务二级导航时需要先加载业务
 // 在App.vue中添加一个隐藏的业务选择器，业务选择器完成设置后resolve对应的promise
 const checkOwner = to => {
@@ -168,12 +178,10 @@ router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
             setLoading(true)
-            router.app.$store.commit('setBreadcumbs', [])
-            router.app.$store.commit('setTitle', null)
             if (setupStatus.preload) {
                 await preload(router.app)
             }
-
+            updateBreadcrumbs(to)
             await checkOwner(to)
             setAdminView(to)
             setAuthScope(to, from)

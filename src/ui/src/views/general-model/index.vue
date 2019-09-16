@@ -206,7 +206,6 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import { MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
@@ -319,12 +318,12 @@
                 this.setTableHeader()
             },
             objId () {
-                this.setDynamicBreadcumbs()
+                this.setDynamicBreadcrumbs()
                 this.reload()
             }
         },
         created () {
-            this.setDynamicBreadcumbs()
+            this.setDynamicBreadcrumbs()
             this.reload()
         },
         methods: {
@@ -339,16 +338,12 @@
                 'batchDeleteInst',
                 'searchInstById'
             ]),
-            setDynamicBreadcumbs () {
+            setDynamicBreadcrumbs () {
                 this.$store.commit('setTitle', this.model.bk_obj_name)
-                this.$store.commit('setBreadcumbs', [{
-                    i18n: '资源目录',
-                    route: {
-                        name: MENU_RESOURCE_MANAGEMENT
-                    }
-                }, {
+                this.$store.commit('addBreadcrumbs', {
+                    id: this.$route.name,
                     name: this.model.bk_obj_name
-                }])
+                })
             },
             async reload () {
                 try {
