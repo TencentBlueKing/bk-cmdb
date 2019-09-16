@@ -35,7 +35,7 @@ export const resourceHostDetails = {
         },
         auth: {
             view: null,
-            operation: [U_RESOURCE_HOST],
+            operation: { U_RESOURCE_HOST },
             setDynamicMeta (to, from, app) {
                 const meta = GET_AUTH_META(U_RESOURCE_HOST)
                 app.$store.commit('auth/setResourceMeta', {
@@ -60,7 +60,7 @@ export const businessHostDetails = {
         },
         auth: {
             view: null,
-            operation: [U_HOST, D_SERVICE_INSTANCE],
+            operation: { U_HOST, D_SERVICE_INSTANCE },
             setDynamicMeta (to, from, app) {
                 const hostMeta = GET_AUTH_META(U_HOST)
                 const serviceInstanceMeta = GET_AUTH_META(D_SERVICE_INSTANCE)

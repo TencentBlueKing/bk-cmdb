@@ -25,7 +25,7 @@ export default [{
             relative: MENU_BUSINESS_SERVICE_TOPOLOGY
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'business'
         }
     })
@@ -41,7 +41,7 @@ export default [{
             relative: MENU_BUSINESS_SERVICE_TOPOLOGY
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'business'
         }
     })

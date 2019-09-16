@@ -44,10 +44,6 @@
             handleBusinessChange () {
                 this.businessSelected = true
                 this.showRequireBusiness = false
-                this.$router.replace({
-                    ...this.$route,
-                    query: {}
-                })
                 this.refreshKey = Date.now()
             },
             handleBusinessEmpty () {

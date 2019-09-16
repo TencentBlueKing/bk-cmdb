@@ -16,7 +16,7 @@ export default {
             i18n: '模型拓扑'
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'global'
         }
     })

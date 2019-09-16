@@ -25,7 +25,7 @@ export default {
             parent: MENU_BUSINESS_SERVICE
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'business'
         },
         i18nTitle: '服务分类',

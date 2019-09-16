@@ -94,9 +94,9 @@ const router = new Router({
 
 const getAuth = to => {
     const auth = to.meta.auth || {}
-    const view = auth.view
-    const operation = auth.operation || []
-    const routerAuth = view ? [view, ...operation] : operation
+    const view = auth.view || {}
+    const operation = auth.operation || {}
+    const routerAuth = Object.values({ ...view, ...operation })
     if (routerAuth.length) {
         return router.app.$store.dispatch('auth/getAuth', {
             type: 'operation',
@@ -112,7 +112,7 @@ const isViewAuthorized = to => {
     if (!view) {
         return true
     }
-    const viewAuth = router.app.$store.getters['auth/isAuthorized'](view)
+    const viewAuth = router.app.$isAuthorized(Object.values(view))
     return viewAuth
 }
 
@@ -147,6 +147,18 @@ const setAdminView = to => {
     router.app.$store.commit('setAdminView', isAdminView)
 }
 
+// 进入业务二级导航时需要先加载业务
+// 在App.vue中添加一个隐藏的业务选择器，业务选择器完成设置后resolve对应的promise
+const checkOwner = to => {
+    const matched = to.matched
+    if (matched.length && matched[0].name === MENU_BUSINESS) {
+        router.app.$store.commit('setBusinessSelectorVisible', true)
+        return router.app.$store.state.businessSelectorPromise
+    }
+    router.app.$store.commit('setBusinessSelectorVisible', false)
+    return Promise.resolve()
+}
+
 const setupStatus = {
     preload: true,
     afterload: true
@@ -162,6 +174,7 @@ router.beforeEach((to, from, next) => {
                 await preload(router.app)
             }
 
+            await checkOwner(to)
             setAdminView(to)
             setAuthScope(to, from)
             checkAuthDynamicMeta(to, from)
