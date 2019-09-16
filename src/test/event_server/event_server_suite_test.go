@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/test"
 	"configcenter/src/test/reporter"
@@ -193,6 +194,7 @@ var _ = Describe("event server test", func() {
 				rsp, err := eventServerClient.Subscribe(context.Background(), "0", "0", header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsNeedSet))
 			})
 
 			It("subscribe event missing confirm mode", func() {
@@ -207,6 +209,7 @@ var _ = Describe("event server test", func() {
 				rsp, err := eventServerClient.Subscribe(context.Background(), "0", "0", header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 			})
 
 			It("subscribe event missing subscription form", func() {
@@ -221,6 +224,7 @@ var _ = Describe("event server test", func() {
 				rsp, err := eventServerClient.Subscribe(context.Background(), "0", "0", header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsNeedSet))
 			})
 		})
 
@@ -280,7 +284,8 @@ var _ = Describe("event server test", func() {
 				}
 				rsp, err := eventServerClient.Subscribe(context.Background(), "0", "0", header, input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 			})
 
 			It("search subscribe bk_biz_id = 0", func() {
@@ -299,12 +304,12 @@ var _ = Describe("event server test", func() {
 				json.Unmarshal(j, &data)
 				Expect(int(data.Count)).To(Equal(1))
 				Expect(data.Info[0].SubscriptionName).To(Equal("dwe"))
-				Expect(data.Info[0].SystemName).To(Equal("abc"))
-				Expect(data.Info[0].CallbackURL).To(Equal("http://127.0.0.1:8080/callback"))
-				Expect(data.Info[0].ConfirmMode).To(Equal("regular"))
-				Expect(data.Info[0].ConfirmPattern).To(Equal(".*"))
-				Expect(data.Info[0].SubscriptionForm).To(Equal("hostcreate"))
-				Expect(int(data.Info[0].TimeOutSeconds)).To(Equal(10))
+				Expect(data.Info[0].SystemName).To(Equal("cmdb"))
+				Expect(data.Info[0].CallbackURL).To(Equal("http://127.0.0.1:8080"))
+				Expect(data.Info[0].ConfirmMode).To(Equal("httpstatus"))
+				Expect(data.Info[0].ConfirmPattern).To(Equal("200"))
+				Expect(data.Info[0].SubscriptionForm).To(Equal("hostdelete"))
+				Expect(int(data.Info[0].TimeOutSeconds)).To(Equal(60))
 			})
 		})
 
@@ -322,6 +327,7 @@ var _ = Describe("event server test", func() {
 				rsp, err := eventServerClient.Subscribe(context.Background(), "0", "0", header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 			})
 
 			It("subscribe event with empty subscription_name", func() {
@@ -337,6 +343,7 @@ var _ = Describe("event server test", func() {
 				rsp, err := eventServerClient.Subscribe(context.Background(), "0", "0", header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsNeedSet))
 			})
 
 			/*
@@ -369,6 +376,7 @@ var _ = Describe("event server test", func() {
 				rsp, err := eventServerClient.Query(context.Background(), "0", "0", header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrEventSubscribeSelectFailed))
 			})
 
 			It("search subscribe limit = -1", func() {
@@ -402,6 +410,7 @@ var _ = Describe("event server test", func() {
 				rsp, err := eventServerClient.Rebook(context.Background(), "0", "0", fmt.Sprintf("%d", subscriptionId), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsNeedSet))
 			})
 
 			It("update subscribe event missing confirm mode", func() {
@@ -416,6 +425,7 @@ var _ = Describe("event server test", func() {
 				rsp, err := eventServerClient.Rebook(context.Background(), "0", "0", fmt.Sprintf("%d", subscriptionId), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 			})
 
 			It("update subscribe event missing subscription form", func() {
@@ -430,19 +440,66 @@ var _ = Describe("event server test", func() {
 				rsp, err := eventServerClient.Rebook(context.Background(), "0", "0", fmt.Sprintf("%d", subscriptionId), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsNeedSet))
 			})
 		})
 
 		Describe("update subscribe event with invalid parameters", func() {
 			It("update event subscribe with invalid subscription_id", func() {
 				input := &metadata.Subscription{
-					SubscriptionID:   100,
-					SubscriptionName: "123d",
-					SubscriptionForm: "hostcreate,hostdelete",
+					SubscriptionName: "123",
+					SystemName:       "cmdb",
+					ConfirmMode:      "regular",
+					ConfirmPattern:   ".*",
+					SubscriptionForm: "hostcreate",
+					CallbackURL:      "http://127.0.0.1:8080",
+					TimeOutSeconds:   60,
+				}
+				rsp, err := eventServerClient.Rebook(context.Background(), "0", "0", "1000", header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrEventSubscribeUpdateFailed))
+			})
+		})
+
+		Describe("update subscribe event with subscription_id = 1", func() {
+			It("update event subscribe", func() {
+				input := &metadata.Subscription{
+					SubscriptionName: "123",
+					SystemName:       "abc",
+					ConfirmMode:      "regular",
+					ConfirmPattern:   ".*",
+					SubscriptionForm: "hostcreate",
+					CallbackURL:      "http://127.0.0.1:8080/callback",
+					TimeOutSeconds:   10,
 				}
 				rsp, err := eventServerClient.Rebook(context.Background(), "0", "0", fmt.Sprintf("%d", subscriptionId), header, input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(true))
+			})
+
+			It("search subscribe bk_biz_id = 0", func() {
+				input := metadata.ParamSubscriptionSearch{
+					Page: metadata.BasePage{
+						Sort:  "subscription_id",
+						Limit: 10,
+						Start: 0,
+					},
+				}
+				rsp, err := eventServerClient.Query(context.Background(), "0", "0", header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+				j, err := json.Marshal(rsp.Data)
+				data := metadata.RspSubscriptionSearch{}
+				json.Unmarshal(j, &data)
+				Expect(int(data.Count)).To(Equal(1))
+				Expect(data.Info[0].SubscriptionName).To(Equal("123"))
+				Expect(data.Info[0].SystemName).To(Equal("abc"))
+				Expect(data.Info[0].CallbackURL).To(Equal("http://127.0.0.1:8080/callback"))
+				Expect(data.Info[0].ConfirmMode).To(Equal("regular"))
+				Expect(data.Info[0].ConfirmPattern).To(Equal(".*"))
+				Expect(data.Info[0].SubscriptionForm).To(Equal("hostcreate"))
+				Expect(int(data.Info[0].TimeOutSeconds)).To(Equal(10))
 			})
 		})
 
@@ -451,6 +508,7 @@ var _ = Describe("event server test", func() {
 				rsp, err := eventServerClient.UnSubscribe(context.Background(), "0", "0", "100", header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrEventSubscribeDeleteFailed))
 			})
 		})
 
@@ -461,10 +519,28 @@ var _ = Describe("event server test", func() {
 				Expect(rsp.Result).To(Equal(true))
 			})
 
+			It("search subscribe bk_biz_id = 0", func() {
+				input := metadata.ParamSubscriptionSearch{
+					Page: metadata.BasePage{
+						Sort:  "subscription_id",
+						Limit: 10,
+						Start: 0,
+					},
+				}
+				rsp, err := eventServerClient.Query(context.Background(), "0", "0", header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+				j, err := json.Marshal(rsp.Data)
+				data := metadata.RspSubscriptionSearch{}
+				json.Unmarshal(j, &data)
+				Expect(int(data.Count)).To(Equal(0))
+			})
+
 			It("unsubscribe event with subscription_id = 1", func() {
 				rsp, err := eventServerClient.UnSubscribe(context.Background(), "0", "0", fmt.Sprintf("%d", subscriptionId), header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrEventSubscribeDeleteFailed))
 			})
 		})
 		test.ClearDatabase()
