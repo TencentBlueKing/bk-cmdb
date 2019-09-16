@@ -44,13 +44,14 @@
                         <div class="property-form" v-if="property === editState.property">
                             <component class="form-component"
                                 :is="`cmdb-form-${property.bk_property_type}`"
-                                :class="{ error: errors.has(property.bk_property_id) }"
+                                :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
                                 :options="property.option || []"
                                 :data-vv-name="property.bk_property_id"
                                 :data-vv-as="property.bk_property_name"
                                 :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                                 v-validate="$tools.getValidateRules(property)"
-                                v-model.trim="editState.value">
+                                v-model.trim="editState.value"
+                                @enter="confirm">
                             </component>
                             <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                             <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
@@ -213,7 +214,7 @@
             .property-name {
                 position: relative;
                 width: 150px;
-                line-height: 30px;
+                line-height: 32px;
                 padding: 0 16px 0 36px;
                 font-size: 14px;
                 color: #63656E;
@@ -304,12 +305,12 @@
         .bk-icon {
             display: inline-block;
             vertical-align: middle;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             margin: 0 0 0 6px;
             border-radius: 2px;
             border: 1px solid #c4c6cc;
-            line-height: 28px;
+            line-height: 30px;
             font-size: 12px;
             text-align: center;
             cursor: pointer;
@@ -336,7 +337,6 @@
             position: absolute;
             top: 100%;
             left: 0;
-            margin: -2px 0 0 0;
             font-size: 12px;
             line-height: 1;
             color: $cmdbDangerColor;
@@ -345,57 +345,9 @@
             display: inline-block;
             vertical-align: middle;
             width: 270px;
-            height: 30px;
             margin: 0 4px 0 0;
-            /deep/ {
-                .bk-date-picker,
-                .bk-selector-input,
-                .form-float-input,
-                .form-singlechar-input,
-                .form-longchar-input,
-                .form-int-input,
-                [name="date-select"] {
-                    height: 30px ;
-                    font-size: 14px !important;
-                }
-                .bk-form-input {
-                    height: 30px;
-                    float: left;
-                }
-                .bk-date-picker:after {
-                    width: 30px;
-                    height: 30px;
-                }
-                .date-dropdown-panel,
-                .bk-selector-list {
-                    margin-top: -10px;
-                }
-                .bk-selector-icon {
-                    top: 9px;
-                }
-                .bk-selector-node .text {
-                    line-height: 30px;
-                    font-size: 14px;
-                }
-                .objuser-layout {
-                    font-size: 14px;
-                    .objuser-container {
-                        min-height: 30px;
-                    }
-                    .objuser-container.placeholder:after {
-                        line-height: 28px;
-                    }
-                    .objuser-selected {
-                        height: 18px;
-                        margin: 1px 3px;
-                        line-height: 16px;
-                    }
-                    .objuser-input {
-                        height: 18px;
-                        line-height: 18px;
-                        margin: 1px 0 0;
-                    }
-                }
+            &.bool {
+                width: 42px;
             }
         }
     }
