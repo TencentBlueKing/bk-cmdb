@@ -90,7 +90,10 @@ export const R_CLOUD_CONFIRM = 'cloudConfirm.findMany'
 export const R_CONFIRM_HISTORY = 'cloudConfirmHistory.findMany'
 
 // 统计报表
-export const R_STATISTICAL_REPORT = 'statisticalReport.findMany'
+export const C_STATISTICAL_REPORT = 'operationStatistic.create'
+export const U_STATISTICAL_REPORT = 'operationStatistic.update'
+export const D_STATISTICAL_REPORT = 'operationStatistic.delete'
+export const R_STATISTICAL_REPORT = 'operationStatistic.findMany'
 
 // 服务分类
 export const C_SERVICE_CATEGORY = 'processServiceCategory.create'
@@ -183,7 +186,8 @@ export const RESOURCE_TYPE_NAME = {
     processServiceCategory: '服务分类',
     processServiceTemplate: '服务模板',
     processServiceInstance: '服务实例',
-    mainlineInstance: '服务拓扑'
+    mainlineInstance: '服务拓扑',
+    operationStatistic: '运营统计'
 }
 
 export const RESOURCE_ACTION_NAME = {

@@ -322,7 +322,6 @@ func (m *core) ProcessOperation() ProcessOperation {
 
 func (m *core) StatisticOperation() StatisticOperation {
 	return m.operation
-
 }
 
 func (m *core) LabelOperation() LabelOperation {

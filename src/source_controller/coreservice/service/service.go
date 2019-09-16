@@ -120,9 +120,9 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		host.New(db, cache, s),
 		auditlog.New(db),
 		process.New(db, s),
-		operation.New(db),
 		label.New(db),
 		settemplate.New(db),
+		operation.New(db),
 	)
 	return nil
 }

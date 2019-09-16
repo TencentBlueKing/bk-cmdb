@@ -1,29 +1,25 @@
-import Meta from '@/router/meta'
-import { NAV_AUDIT_ANALYSE } from '@/dictionary/menu'
 import {
-    R_STATISTICAL_REPORT
-} from '@/dictionary/auth'
-
-export const OPERATION = {
-    R_STATISTICAL_REPORT
-}
-
-const path = '/operation'
+    C_STATISTICAL_REPORT,
+    D_STATISTICAL_REPORT,
+    R_STATISTICAL_REPORT,
+    U_STATISTICAL_REPORT } from '@/dictionary/auth'
+import Meta from '@/router/meta'
 
 export default {
-    name: 'statisticalReport',
-    path: path,
+    name: 'operation',
+    path: 'operation',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            id: 'statisticalReport',
-            i18n: '统计报表',
-            path: path,
-            parent: NAV_AUDIT_ANALYSE,
-            businessView: false
+            i18n: '运营统计'
         },
         auth: {
-            operation: Object.values(OPERATION)
+            view: {
+                C_STATISTICAL_REPORT,
+                D_STATISTICAL_REPORT,
+                R_STATISTICAL_REPORT,
+                U_STATISTICAL_REPORT },
+            authScope: 'global'
         }
     })
 }
