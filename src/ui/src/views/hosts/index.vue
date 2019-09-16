@@ -7,7 +7,7 @@
             :max="480"
             v-bkloading="{ isLoading: $loading(['getInstTopo', 'getInternalTopo']) }"
             :class="{ 'is-collapse': layout.topologyCollapse }">
-            <p class="topology-tips" v-if="showTopologyTips">
+            <p class="topology-tips" v-if="showTopologyTips" v-show="!layout.topologyCollapse">
                 <i class="icon icon-cc-exclamation-tips"></i>
                 <i18n path="主机拓扑提示">
                     <a href="javascript:void(0)" place="link" @click="handleTopologyTipsClick">{{$t('服务拓扑')}}</a>
@@ -354,7 +354,7 @@
         }
         .node-host-count {
             padding: 0 5px;
-            margin: 9px 4px;
+            margin: 9px 20px 9px 4px;
             height: 18px;
             line-height: 17px;
             border-radius: 2px;

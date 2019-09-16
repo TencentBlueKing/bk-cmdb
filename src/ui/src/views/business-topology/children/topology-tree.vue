@@ -361,14 +361,14 @@
         .node-button {
             height: 24px;
             padding: 0 6px;
-            margin: 0 10px 0 4px;
+            margin: 0 20px 0 4px;
             line-height: 22px;
             border-radius: 4px;
             font-size: 12px;
             min-width: auto;
         }
         .instance-num {
-            margin: 9px 5px;
+            margin: 9px 20px 9px 5px;
             padding: 0 5px;
             height: 18px;
             line-height: 17px;
