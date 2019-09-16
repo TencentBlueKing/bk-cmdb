@@ -489,6 +489,9 @@
                 })
             },
             injectScope (params) {
+                if (!this.showScope) {
+                    return params
+                }
                 const biz = params.condition.find(condition => condition.bk_obj_id === 'biz')
                 if (this.scope === 'all') {
                     biz.condition = biz.condition.filter(condition => condition.field !== 'default')

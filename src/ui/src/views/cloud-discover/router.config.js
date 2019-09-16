@@ -30,7 +30,7 @@ export default {
             adminView: false
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'global'
         },
         requireBusiness: true,

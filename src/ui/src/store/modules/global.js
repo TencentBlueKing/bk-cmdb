@@ -1,6 +1,11 @@
 import { language } from '@/i18n'
 import $http from '@/api'
 
+let businessSelectorResolver
+const businessSelectorPromise = new Promise(resolve => {
+    businessSelectorResolver = resolve
+})
+
 const state = {
     site: window.Site,
     user: window.User,
@@ -33,7 +38,10 @@ const state = {
     appHeight: window.innerHeight,
     isAdminView: true,
     breadcumbs: [],
-    title: null
+    title: null,
+    businessSelectorVisible: false,
+    businessSelectorPromise,
+    businessSelectorResolver
 }
 
 const getters = {
@@ -57,7 +65,8 @@ const getters = {
     featureTipsParams: state => state.featureTipsParams,
     permission: state => state.permission,
     breadcumbs: state => state.breadcumbs,
-    title: state => state.title
+    title: state => state.title,
+    businessSelectorVisible: state => state.businessSelectorVisible
 }
 
 const actions = {
@@ -114,6 +123,12 @@ const mutations = {
     },
     setTitle (state, title) {
         state.title = title
+    },
+    setBusinessSelectorVisible (state, visible) {
+        state.businessSelectorVisible = visible
+    },
+    resolveBusinessSelectorPromise (state) {
+        state.businessSelectorResolver && state.businessSelectorResolver()
     }
 }
 

@@ -32,7 +32,7 @@ export default [{
             adminView: false
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: OPERATION
         },
         requireBusiness: true,
         i18nTitle: '资源确认'
@@ -43,9 +43,7 @@ export default [{
     component: () => import('./history.vue'),
     meta: new Meta({
         auth: {
-            operation: [
-                OPERATION.R_CONFIRM_HISTORY
-            ],
+            operation: { R_CONFIRM_HISTORY },
             authScope: 'global'
         },
         i18nTitle: '确认记录'
