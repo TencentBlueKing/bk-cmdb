@@ -71,7 +71,7 @@
             v-bkloading="{ isLoading: $loading('post_searchBusiness_list') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 160"
+            :max-height="$APP.height - 190"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
@@ -168,8 +168,8 @@
                     list: [],
                     pagination: {
                         count: 0,
-                        limit: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_biz_id',
                     sort: 'bk_biz_id'

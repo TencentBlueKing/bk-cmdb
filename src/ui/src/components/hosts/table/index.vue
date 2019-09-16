@@ -246,14 +246,12 @@
                     list: [],
                     pagination: {
                         current: 1,
-                        limit: 10,
                         count: 0,
-                        limitList: [10, 50, 100, 500]
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
-                    exportUrl: `${window.API_HOST}hosts/export`,
-                    tableMinusHeight: 200
+                    exportUrl: `${window.API_HOST}hosts/export`
                 },
                 filter: {
                     business: '',

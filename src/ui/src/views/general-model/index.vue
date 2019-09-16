@@ -108,7 +108,7 @@
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 160"
+            :max-height="$APP.height - 190"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
@@ -230,8 +230,8 @@
                     allList: [],
                     pagination: {
                         count: 0,
-                        limit: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
                     sort: 'bk_inst_id'
@@ -382,8 +382,8 @@
                     allList: [],
                     pagination: {
                         count: 0,
-                        limit: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
                     sort: 'bk_inst_id'

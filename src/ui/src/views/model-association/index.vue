@@ -132,7 +132,7 @@
                     pagination: {
                         count: 0,
                         current: 1,
-                        limit: 10
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-ispre',
                     sort: '-ispre'
