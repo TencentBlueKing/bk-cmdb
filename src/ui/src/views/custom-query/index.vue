@@ -32,7 +32,7 @@
             v-bkloading="{ isLoading: $loading('searchCustomQuery') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 220"
+            :height="$APP.height - 190"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
@@ -144,7 +144,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        limit: 10
+                        ...this.$tools.getDefaultPaginationConfig()
                     }
                 },
                 slider: {

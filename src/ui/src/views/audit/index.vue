@@ -70,7 +70,7 @@
             v-bkloading="{ isLoading: $loading('getOperationLog') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 250"
+            :max-height="$APP.height - 190"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
@@ -162,7 +162,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        limit: 10
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-op_time',
                     sort: '-op_time'

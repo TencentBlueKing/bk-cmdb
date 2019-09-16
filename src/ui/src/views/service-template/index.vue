@@ -52,7 +52,7 @@
             v-bkloading="{ isLoading: $loading('get_proc_service_template') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 210"
+            :max-height="$APP.height - 190"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
             <bk-table-column prop="name" :label="$t('模板名称')"></bk-table-column>
@@ -125,7 +125,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        limit: 10
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-last_time',
                     sort: '-id'

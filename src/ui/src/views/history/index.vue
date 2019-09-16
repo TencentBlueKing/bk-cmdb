@@ -42,8 +42,8 @@
                 list: [],
                 pagination: {
                     current: 1,
-                    limit: 10,
-                    count: 0
+                    count: 0,
+                    ...this.$tools.getDefaultPaginationConfig()
                 },
                 opTime: [opSatrtTime, opEndTime],
                 startDate,

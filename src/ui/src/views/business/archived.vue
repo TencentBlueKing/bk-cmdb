@@ -8,7 +8,7 @@
         <bk-table class="archived-table"
             :pagination="pagination"
             :data="list"
-            :max-height="$APP.height - 160"
+            :max-height="$APP.height - 190"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column v-for="column in header"
@@ -50,8 +50,8 @@
                 },
                 pagination: {
                     current: 1,
-                    limit: 10,
-                    count: 0
+                    count: 0,
+                    ...this.$tools.getDefaultPaginationConfig()
                 }
             }
         },
