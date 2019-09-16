@@ -4,7 +4,7 @@
             @business-change="handleBusinessChange"
             @business-empty="handleBusinessEmpty">
         </dynamic-navigation>
-        <dynamic-breadcumbs class="main-breadcumbs"></dynamic-breadcumbs>
+        <dynamic-breadcrumbs class="main-breadcrumbs"></dynamic-breadcrumbs>
         <div class="main-layout">
             <div class="main-scroller" v-bkloading="{ isLoading: globalLoading }">
                 <router-view class="main-views" :key="refreshKey" v-if="shouldRenderSubView"></router-view>
@@ -17,12 +17,12 @@
 <script>
     import { mapGetters } from 'vuex'
     import dynamicNavigation from './dynamic-navigation'
-    import dynamicBreadcumbs from './dynamic-breadcumbs'
+    import dynamicBreadcrumbs from './dynamic-breadcrumbs'
     import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
     export default {
         components: {
             dynamicNavigation,
-            dynamicBreadcumbs
+            dynamicBreadcrumbs
         },
         data () {
             return {
@@ -65,7 +65,7 @@
         margin-top: -58px;
         z-index: 99;
     }
-    .main-breadcumbs {
+    .main-breadcrumbs {
         overflow: hidden;
         position: relative;
         background-color: #fafbfd;

@@ -28,7 +28,6 @@ export default {
             operation: OPERATION,
             authScope: 'business'
         },
-        requireBusiness: true,
-        i18nTitle: '动态分组'
+        requireBusiness: true
     })
 }

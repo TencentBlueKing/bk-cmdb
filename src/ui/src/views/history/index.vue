@@ -28,7 +28,6 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import { MENU_RESOURCE_HOST, MENU_RESOURCE_INSTANCE, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     import moment from 'moment'
     export default {
         data () {
@@ -129,22 +128,10 @@
         async created () {
             try {
                 this.$store.commit('setTitle', this.$t('删除历史'))
-                this.$store.commit('setBreadcumbs', [{
-                    i18n: '资源目录',
-                    route: {
-                        name: MENU_RESOURCE_MANAGEMENT
-                    }
-                }, {
-                    name: this.model.bk_obj_name,
-                    route: {
-                        name: this.objId === 'host' ? MENU_RESOURCE_HOST : MENU_RESOURCE_INSTANCE,
-                        params: {
-                            objId: this.objId
-                        }
-                    }
-                }, {
-                    name: this.$t('删除历史')
-                }])
+                this.$store.commit('addBreadcrumbs', {
+                    id: this.$route.name,
+                    name: this.model.bk_obj_name
+                })
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: this.objId,

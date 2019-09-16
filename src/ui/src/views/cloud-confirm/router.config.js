@@ -24,18 +24,12 @@ export default [{
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            id: 'resourceConfirm',
-            i18n: '资源确认',
-            path: path,
-            order: 4,
-            parent: NAV_BUSINESS_RESOURCE,
-            adminView: false
+            i18n: '资源确认'
         },
         auth: {
             operation: OPERATION
         },
-        requireBusiness: true,
-        i18nTitle: '资源确认'
+        requireBusiness: true
     })
 }, {
     name: 'confirmHistory',
@@ -45,7 +39,6 @@ export default [{
         auth: {
             operation: { R_CONFIRM_HISTORY },
             authScope: 'global'
-        },
-        i18nTitle: '确认记录'
+        }
     })
 }]

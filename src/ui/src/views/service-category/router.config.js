@@ -28,7 +28,6 @@ export default {
             operation: OPERATION,
             authScope: 'business'
         },
-        i18nTitle: '服务分类',
         requireBusiness: true
     })
 }

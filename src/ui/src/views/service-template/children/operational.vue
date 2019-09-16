@@ -196,14 +196,10 @@
         async created () {
             if (this.isCreatedType) {
                 this.$store.commit('setTitle', this.$t('新建模板'))
-                this.$store.commit('setBreadcumbs', [{
-                    i18n: '服务模板',
-                    route: {
-                        name: MENU_BUSINESS_SERVICE_TEMPLATE
-                    }
-                }, {
-                    i18n: '新建模板'
-                }])
+                this.$store.commit('addBreadcrumbs', {
+                    id: this.$route.name,
+                    name: '新建模板'
+                })
             } else {
                 this.$store.commit('setTitle', this.$t('模板详情'))
             }
@@ -241,14 +237,10 @@
                 'clearLocalProcessTemplate'
             ]),
             initEdit () {
-                this.$store.commit('setBreadcumbs', [{
-                    i18n: '服务模板',
-                    route: {
-                        name: MENU_BUSINESS_SERVICE_TEMPLATE
-                    }
-                }, {
+                this.$store.commit('addBreadcrumbs', {
+                    id: this.$route.name,
                     name: this.originTemplateValues['name']
-                }])
+                })
                 this.formData.templateId = this.originTemplateValues['id']
                 this.formData.templateName = this.originTemplateValues['name']
                 this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['bk_parent_id']

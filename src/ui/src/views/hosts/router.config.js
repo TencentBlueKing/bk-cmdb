@@ -24,7 +24,7 @@ export default {
             operation: OPERATION,
             authScope: 'business'
         },
-        showBreadcumbs: true,
+        showBreadcrumbs: true,
         filterPropertyKey: 'business_host_filter_properties'
     })
 }

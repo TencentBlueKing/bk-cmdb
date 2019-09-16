@@ -37,7 +37,7 @@ const state = {
     permission: [],
     appHeight: window.innerHeight,
     isAdminView: true,
-    breadcumbs: [],
+    breadcrumbs: [],
     title: null,
     businessSelectorVisible: false,
     businessSelectorPromise,
@@ -64,7 +64,7 @@ const getters = {
     headerTitle: state => state.headerTitle,
     featureTipsParams: state => state.featureTipsParams,
     permission: state => state.permission,
-    breadcumbs: state => state.breadcumbs,
+    breadcrumbs: state => state.breadcrumbs,
     title: state => state.title,
     businessSelectorVisible: state => state.businessSelectorVisible
 }
@@ -118,8 +118,17 @@ const mutations = {
     setAppHeight (state, height) {
         state.appHeight = height
     },
-    setBreadcumbs (state, breadcumbs) {
-        state.breadcumbs = breadcumbs
+    setBreadcrumbs (state, breadcrumbs) {
+        state.breadcrumbs = breadcrumbs
+    },
+    addBreadcrumbs (state, breadcrumbs) {
+        const newBreadcrumbs = [...state.breadcrumbs]
+        const existIndex = newBreadcrumbs.findIndex(target => target.id === breadcrumbs.id)
+        if (existIndex > -1) {
+            newBreadcrumbs.splice(existIndex, 1)
+        }
+        newBreadcrumbs.push(breadcrumbs)
+        state.breadcrumbs = newBreadcrumbs.slice(-4)
     },
     setTitle (state, title) {
         state.title = title
