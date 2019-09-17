@@ -540,8 +540,8 @@ func (a *authClient) GetUserGroupMembers(ctx context.Context, header http.Header
 // scope type value can be enum of biz or system.
 func (a *authClient) DeleteResources(ctx context.Context, header http.Header, scopeType string, resType ResourceTypeID) error {
     util.CopyHeader(a.basicHeader, header)
-    resp := new(UserGroupMembersResult)
-    err := a.client.Get().
+    resp := new(BaseResponse)
+    err := a.client.Delete().
         SubResourcef("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/%s", SystemIDCMDB, scopeType, resType).
         WithContext(ctx).
         WithHeaders(header).
@@ -550,7 +550,13 @@ func (a *authClient) DeleteResources(ctx context.Context, header http.Header, sc
         return err
     }
     if !resp.Result || resp.Code != 0 {
-        return fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+        // resource not exist error code
+        if resp.Code == 1901002 {
+            // delete a not exist resource, so it means success to us.
+            return nil
+        } else {
+            return fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+        }
     }
 
     return nil
