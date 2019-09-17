@@ -54,12 +54,13 @@ func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensi
 
 // Start do main loop
 func (p *Producer) Start() {
-	time.Sleep(5 * time.Minute)
-	// loop immediately at first.
-	p.loop()
 	// then tick and loop
 	ticker := time.NewTicker(45 * time.Minute)
 	go func(producer *Producer) {
+		time.Sleep(5 * time.Minute)
+		// loop immediately at first.
+		p.loop()
+
 		for {
 			select {
 			case <-ticker.C:
@@ -178,8 +179,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 			Header:       *header,
 		})
 	}
-	if blog.V(5) {
-		blog.InfoJSON("jobs: %s", jobs)
-	}
+	blog.Infof("jobs: count: %d", len(jobs))
+
 	return &jobs
 }
