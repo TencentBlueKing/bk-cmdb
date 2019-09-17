@@ -1,13 +1,14 @@
 <template>
     <div class="archived-layout">
-        <div class="archived-options clearfix">
-            <label class="fl">{{$t('归档历史')}}</label>
-            <bk-button class="fr" theme="primary" @click="back">{{$t('返回')}}</bk-button>
+        <div class="archived-filter">
+            <div class="filter-item">
+                <bk-input v-model="filter.name" right-icon="bk-icon icon-search" @enter="handlePageChange(1)"></bk-input>
+            </div>
         </div>
         <bk-table class="archived-table"
             :pagination="pagination"
             :data="list"
-            :max-height="$APP.height - 160"
+            :max-height="$APP.height - 190"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column v-for="column in header"
@@ -42,10 +43,14 @@
                 properties: [],
                 header: [],
                 list: [],
+                filter: {
+                    range: [],
+                    name: ''
+                },
                 pagination: {
                     current: 1,
-                    limit: 10,
-                    count: 0
+                    count: 0,
+                    ...this.$tools.getDefaultPaginationConfig()
                 }
             }
         },
@@ -119,7 +124,7 @@
                 })
             },
             getSearchParams () {
-                return {
+                const params = {
                     condition: {
                         'bk_data_status': 'disabled'
                     },
@@ -130,6 +135,16 @@
                         sort: '-bk_biz_id'
                     }
                 }
+                if (this.filter.range.length) {
+                    params.condition.last_time = {
+                        '$gte': this.filter.range[0],
+                        '$lte': this.filter.range[1]
+                    }
+                }
+                if (this.filter.name) {
+                    params.condition.bk_biz_name = { '$regex': this.filter.name }
+                }
+                return params
             },
             handleRecovery (biz) {
                 this.$bkInfo({
@@ -168,14 +183,14 @@
 
 <style lang="scss" scoped>
     .archived-layout{
-        padding: 20px;
+        padding: 0 20px;
     }
-    .archived-options{
-        height: 36px;
-        line-height: 36px;
-        font-size: 14px;
-    }
-    .archived-table{
-        margin-top: 20px;
+    .archived-filter {
+        padding: 0 0 15px 0;
+        .filter-item {
+            width: 220px;
+            margin-right: 5px;
+            @include inlineBlock;
+        }
     }
 </style>

@@ -909,3 +909,11 @@ func (ac *AuthCenter) GetUserGroupMembers(ctx context.Context, header http.Heade
 	}
 	return ac.authClient.GetUserGroupMembers(ctx, header, bizID, groups)
 }
+
+func (ac *AuthCenter) DeleteResources(ctx context.Context, header http.Header, scopeType string, resType ResourceTypeID) error {
+	if !ac.Config.Enable {
+		return errors.New("auth center not enabled")
+	}
+
+	return ac.authClient.DeleteResources(ctx, header, scopeType, resType)
+}

@@ -40,6 +40,7 @@
                     ref="popoverCheckView"
                     :always="true"
                     :width="224"
+                    :tippy-options="{ zIndex: 999 }"
                     theme="check-view-color"
                     placement="bottom-end">
                     <div slot="content" class="popover-main">
@@ -64,6 +65,7 @@
                 :instance="instance"
                 :expanded="index === 0"
                 :current-view="currentView"
+                @show-process-details="handleShowProcessDetails"
                 @delete-instance="handleDeleteInstance"
                 @check-change="handleCheckChange">
             </service-instance-table>
@@ -71,7 +73,7 @@
         <bk-table v-if="!instances.length" :data="[]" class="mb10">
             <div slot="empty" class="empty-text">
                 <img src="../../../assets/images/empty-content.png" alt="">
-                <p>暂无服务实例，<span @click="handleGoAddInstance">跳转服务拓扑添加</span></p>
+                <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去服务拓扑添加')}}</span></p>
             </div>
         </bk-table>
         <bk-pagination v-if="instances.length"
@@ -84,10 +86,24 @@
             @change="handlePageChange"
             @limit-change="handleSizeChange">
         </bk-pagination>
+
+        <bk-sideslider
+            v-transfer-dom
+            :width="640"
+            :title="$t('进程详情')"
+            :is-show.sync="showDetails">
+            <cmdb-details slot="content" v-if="showDetails"
+                :show-options="false"
+                :inst="processInst"
+                :properties="properties"
+                :property-groups="propertyGroups">
+            </cmdb-details>
+        </bk-sideslider>
     </div>
 </template>
 
 <script>
+    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     import { mapState } from 'vuex'
     import serviceInstanceTable from './service-instance-table.vue'
     export default {
@@ -125,7 +141,11 @@
                 instances: [],
                 currentView: 'label',
                 checkViewTipsStatus: this.$store.getters['featureTipsParams'].hostServiceInstanceCheckView,
-                historyLabels: {}
+                historyLabels: {},
+                propertyGroups: [],
+                properties: [],
+                showDetails: false,
+                processInst: {}
             }
         },
         computed: {
@@ -135,6 +155,8 @@
             }
         },
         created () {
+            this.getProcessProperties()
+            this.getProcessPropertyGroups()
             this.getHostSeriveInstances()
             this.getHistoryLabel()
         },
@@ -146,6 +168,40 @@
             }
         },
         methods: {
+            async getProcessProperties () {
+                try {
+                    const action = 'objectModelProperty/searchObjectAttribute'
+                    this.properties = await this.$store.dispatch(action, {
+                        params: {
+                            bk_obj_id: 'process',
+                            bk_supplier_account: this.$store.getters.supplierAccount
+                        },
+                        config: {
+                            requestId: 'get_service_process_properties',
+                            fromCache: true
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                    this.properties = []
+                }
+            },
+            async getProcessPropertyGroups () {
+                try {
+                    const action = 'objectModelFieldGroup/searchGroup'
+                    this.propertyGroups = await this.$store.dispatch(action, {
+                        objId: 'process',
+                        params: {},
+                        config: {
+                            requestId: 'get_service_process_property_groups',
+                            fromCache: true
+                        }
+                    })
+                } catch (e) {
+                    this.propertyGroups = []
+                    console.error(e)
+                }
+            },
             async getHostSeriveInstances () {
                 try {
                     const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
@@ -325,8 +381,12 @@
             },
             handleGoAddInstance () {
                 this.$router.replace({
-                    name: 'topology'
+                    name: MENU_BUSINESS_SERVICE_TOPOLOGY
                 })
+            },
+            handleShowProcessDetails (inst) {
+                this.showDetails = true
+                this.processInst = inst
             }
         }
     }
@@ -414,7 +474,7 @@
 <style lang="scss">
     .check-view-color-theme {
         padding: 10px !important;
-        background-color: #699df4;
+        background-color: #699df4 !important;
         .tippy-arrow {
             border-bottom-color: #699df4 !important;
         }

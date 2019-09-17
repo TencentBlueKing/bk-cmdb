@@ -2,19 +2,23 @@
     <div class="config-layout clearfix">
         <div class="config-wrapper config-unselected fl">
             <div class="wrapper-header unselected-header">
-                <label class="header-label">{{$t('隐藏属性')}}</label>
-                <bk-input class="header-filter" type="text" :placeholder="$t('搜索属性')" v-model.trim="filter"></bk-input>
+                <bk-input class="header-filter"
+                    type="text"
+                    right-icon="bk-icon icon-search"
+                    :placeholder="$t('搜索属性')"
+                    v-model.trim="filter">
+                </bk-input>
             </div>
             <ul class="property-list property-list-unselected">
                 <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" :key="index" @click="selectProperty(property)">
                     <span class="property-name">{{property['bk_property_name']}}</span>
-                    <i class="bk-icon icon-angle-right"></i>
+                    <i class="bk-icon icon-arrows-right"></i>
                 </li>
             </ul>
         </div>
         <div class="config-wrapper config-selected fl">
             <div class="wrapper-header selected-header">
-                <label class="header-label">{{$t('已显示属性')}}</label>
+                <label class="header-label">{{$t('已选属性')}}</label>
             </div>
             <div class="property-list-layout">
                 <ul class="property-list property-list-selected">
@@ -30,10 +34,7 @@
                         v-for="(property, index) in drabbleProperties" :key="index">
                         <i class="icon-triple-dot"></i>
                         <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
-                        <i class="bk-icon icon-eye-slash-shape"
-                            v-bk-tooltips="$t('隐藏')"
-                            @click="unselectProperty(property)">
-                        </i>
+                        <i class="bk-icon icon-close" @click="unselectProperty(property)"></i>
                     </li>
                 </vue-draggable>
             </div>
@@ -196,8 +197,6 @@
             height: 78px;
             padding: 20px;
             line-height: 36px;
-            border-top: 1px solid #e7e9ef;
-            border-bottom: 1px solid #e7e9ef;
             .header-label{
                 display: inline-block;
                 vertical-align: middle;
@@ -206,7 +205,7 @@
             .header-filter{
                 display: inline-block;
                 vertical-align: middle;
-                width: 120px;
+                width: 100%;
             }
         }
     }
@@ -248,12 +247,13 @@
                 left: 15px;
                 top: 19px;
             }
-            .icon-angle-right{
+            .icon-arrows-right{
                 position: absolute;
                 top: 14px;
                 right: 18px;
+                font-size: 15px;
             }
-            .icon-eye-slash-shape{
+            .icon-close{
                 position: absolute;
                 top: 0;
                 right: 0;
@@ -261,9 +261,10 @@
                 height: 42px;
                 line-height: 42px;
                 text-align: center;
-            }
-            .icon-eye-slash-shape:hover{
-                color: #f00;
+                color: #c4c6cc;
+                &:hover {
+                    color: #7d8088;
+                }
             }
         }
     }

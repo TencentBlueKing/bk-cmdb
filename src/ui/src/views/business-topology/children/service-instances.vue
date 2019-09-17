@@ -19,7 +19,7 @@
                         {{$t('添加服务实例')}}
                     </bk-button>
                 </span>
-                <bk-dropdown-menu trigger="click">
+                <bk-dropdown-menu trigger="click" font-size="large">
                     <bk-button class="options-button clipboard-trigger" theme="default" slot="dropdown-trigger">
                         {{$t('更多')}}
                         <i class="bk-icon icon-angle-down"></i>
@@ -107,6 +107,7 @@
             @create-instance-success="handleCreateInstanceSuccess">
         </service-instance-empty>
         <bk-sideslider
+            v-transfer-dom
             :width="800"
             :title="processForm.title"
             :is-show.sync="processForm.show"
@@ -659,12 +660,6 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.currentModule.bk_module_id
-                            }
-                        },
                         title: this.currentNode.name
                     }
                 })
@@ -741,11 +736,8 @@
                     name: 'synchronous',
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
-                        setId: this.currentNode.parent.data.bk_inst_id
-                    },
-                    query: {
-                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / '),
-                        from: `${this.$route.path}?module=${this.currentNode.data.bk_inst_id}`
+                        setId: this.currentNode.parent.data.bk_inst_id,
+                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / ')
                     }
                 })
             },

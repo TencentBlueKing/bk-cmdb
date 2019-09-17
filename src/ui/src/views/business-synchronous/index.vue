@@ -17,12 +17,12 @@
         <template v-else-if="list.length">
             <feature-tips
                 :show-tips="showFeatureTips"
-                :desc="$t('同步模版功能提示')">
+                :desc="$t('同步模板功能提示')">
             </feature-tips>
-            <p class="tips" :style="{ 'padding-top': showFeatureTips ? '24px' : '0' }">
+            <p class="tips" :style="{ 'padding-top': showFeatureTips ? '20px' : '0' }">
                 {{$t('请确认')}}
                 <span>{{treePath}}</span>
-                {{$t('模版更新信息')}}
+                {{$t('模板更新信息')}}
             </p>
             <div class="info-tab">
                 <div class="tab-head">
@@ -33,6 +33,7 @@
                                 'active': showContentId === (process['process_template_name'] + index)
                             }]"
                             :key="index"
+                            :title="process['process_template_name']"
                             @click="handleContentView(process['process_template_name'], index)">
                             <span>{{process['process_template_name']}}</span>
                             <i :class="['badge', { 'has-read': process['has_read'] }]">{{process['service_instance_count'] | badge}}</i>
@@ -61,7 +62,7 @@
                             <div class="process-name mb50"
                                 v-show="process['operational_type'] === 'removed'">
                                 <span style="font-weight: bold;">{{process['process_template_name']}}</span>
-                                {{$t('从模版中删除')}}
+                                {{$t('从模板中删除')}}
                             </div>
                             <div class="process-info clearfix" v-show="process['operational_type'] === 'changed'">
                                 <div class="info-item fl"
@@ -115,6 +116,7 @@
         </template>
 
         <bk-sideslider
+            v-transfer-dom
             :width="676"
             :is-show.sync="slider.show"
             :title="slider.title">
@@ -127,6 +129,7 @@
 
 <script>
     import { mapGetters, mapActions, mapMutations } from 'vuex'
+    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     import instanceDetails from './children/details.vue'
     import featureTips from '@/components/feature-tips/index'
     export default {
@@ -179,7 +182,7 @@
                 return this.$route.params
             },
             treePath () {
-                return this.$route.query.path
+                return this.$route.params.path
             },
             properties () {
                 const changedList = this.list.filter(process => process['operational_type'] === 'changed')
@@ -222,7 +225,6 @@
         },
         async created () {
             try {
-                this.$store.commit('setHeaderTitle', '')
                 await this.getCategory()
                 await this.getModaelProperty()
                 await this.getModuleInstance()
@@ -338,7 +340,7 @@
                             this.pagination.count = data.count
                             differen.others = [{
                                 process_template_id: -1,
-                                process_template_name: this.$t('其他信息'),
+                                process_template_name: this.$t('服务分类变更'),
                                 service_instance_count: data.count,
                                 service_category: this.getCategoryName(changedAttributes[0].template_property_value),
                                 service_instances: serviceInstances
@@ -347,7 +349,6 @@
                         this.differenData = differen
                         this.list = this.getList()
                     })
-                    this.$store.commit('setHeaderTitle', `${this.$t('同步模板')}【${this.viewsTitle}】`)
                 } catch (error) {
                     console.error(error)
                     this.noFindData = true
@@ -482,7 +483,7 @@
             },
             handleGoBackModule () {
                 this.$router.replace({
-                    name: 'topology',
+                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
                     query: {
                         module: this.routerParams.moduleId
                     }
@@ -519,8 +520,7 @@
     .synchronous-wrapper {
         position: relative;
         color: #63656e;
-        padding-top: 10px;
-        height: 100%;
+        padding: 0 20px;
         .no-content {
             position: absolute;
             top: 50%;
@@ -657,9 +657,10 @@
                     }
                     .service-instances {
                         @include scrollbar-y;
-                        max-height: 266px;
+                        height: 256px;
                         display: flex;
                         flex-wrap: wrap;
+                        align-content: flex-start;
                         .instances-item {
                             @include space-between;
                             width: 240px;

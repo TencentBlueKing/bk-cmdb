@@ -114,6 +114,9 @@ const actions = {
      */
     batchDeleteInst ({ commit, state, dispatch, rootGetters }, { objId, config }) {
         return $http.delete(`deletemany/instance/object/${objId}`, config)
+    },
+    getInstanceCount (context) {
+        return $http.get('object/statistics')
     }
 }
 

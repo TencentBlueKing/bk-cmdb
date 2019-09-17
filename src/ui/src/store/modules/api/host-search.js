@@ -9,6 +9,7 @@
  */
 
 import $http from '@/api'
+import { transformHostSearchParams } from '@/utils/tools'
 
 const state = {
 
@@ -28,7 +29,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     searchHost ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/search`, params, config)
+        return $http.post(`hosts/search`, transformHostSearchParams(params), config)
     },
 
     searchHostByInnerip (context, { bizId, innerip, config }) {

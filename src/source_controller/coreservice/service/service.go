@@ -43,6 +43,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/source_controller/coreservice/core/operation"
 	"configcenter/src/source_controller/coreservice/core/process"
+	"configcenter/src/source_controller/coreservice/core/settemplate"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/remote"
@@ -121,6 +122,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		process.New(db, s),
 		operation.New(db),
 		label.New(db),
+		settemplate.New(db),
 	)
 	return nil
 }

@@ -70,7 +70,10 @@
             info (info) {
                 const hostList = info.host.bk_host_innerip.split(',')
                 const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
-                this.$store.commit('setHeaderTitle', `${this.$t('主机详情')}(${host})`)
+                this.$store.commit('addBreadcrumbs', {
+                    id: this.$route.name,
+                    name: host
+                })
             },
             id () {
                 this.getData()
@@ -160,8 +163,7 @@
 
 <style lang="scss" scoped>
     .details-layout {
-        padding: 0;
-        height: 100%;
+        overflow: hidden;
         .details-tab {
             height: calc(100% - var(--infoHeight)) !important;
             min-height: 400px;

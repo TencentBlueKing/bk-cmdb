@@ -1,9 +1,7 @@
 <template>
     <div class="history-layout">
-        <div class="history-options clearfix">
-            <label class="fl">{{$t('已删除历史')}}</label>
-            <bk-button class="fr ml10" theme="primary" @click="back">{{$t('返回')}}</bk-button>
-            <bk-date-picker class="history-date-range fr"
+        <div class="history-options">
+            <bk-date-picker class="history-date-range"
                 placement="bottom-end"
                 type="daterange"
                 :shortcuts="ranges"
@@ -43,8 +41,8 @@
                 list: [],
                 pagination: {
                     current: 1,
-                    limit: 10,
-                    count: 0
+                    count: 0,
+                    ...this.$tools.getDefaultPaginationConfig()
                 },
                 opTime: [opSatrtTime, opEndTime],
                 startDate,
@@ -66,6 +64,9 @@
             },
             objId () {
                 return this.$route.params.objId
+            },
+            model () {
+                return this.$store.getters['objectModelClassify/getModelById'](this.objId)
             },
             ranges () {
                 const language = this.$i18n.locale
@@ -126,15 +127,18 @@
         },
         async created () {
             try {
-                // await this.setTimeResolver()
+                this.$store.commit('setTitle', this.$t('删除历史'))
+                this.$store.commit('addBreadcrumbs', {
+                    id: this.$route.name,
+                    name: this.model.bk_obj_name
+                })
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: this.objId,
                         bk_supplier_account: this.supplierAccount
                     }),
                     config: {
-                        requestId: `post_searchObjectAttribute_${this.objId}`,
-                        fromCache: false
+                        requestId: `post_searchObjectAttribute_${this.objId}`
                     }
                 })
                 await this.setTableHeader()
@@ -242,11 +246,9 @@
 
 <style lang="scss" scoped>
     .history-layout{
-        padding: 20px;
+        padding: 0 20px;
     }
     .history-options{
-        height: 36px;
-        line-height: 36px;
         font-size: 14px;
     }
     .history-table{

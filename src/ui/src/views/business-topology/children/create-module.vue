@@ -2,7 +2,10 @@
     <div class="node-create-layout">
         <h2 class="node-create-title">{{$t('新增模块')}}</h2>
         <div class="node-create-path" :title="topoPath">{{$t('添加节点已选择')}}：{{topoPath}}</div>
-        <div class="node-create-form">
+        <div class="node-create-form"
+            :style="{
+                'max-height': Math.min($APP.height - 400, 400) + 'px'
+            }">
             <div class="form-item clearfix mt30">
                 <div class="create-type fl">
                     <input class="type-radio"
@@ -58,6 +61,7 @@
                     v-validate="'required|singlechar|length:256'"
                     data-vv-name="moduleName"
                     key="moduleName"
+                    :placeholder="$t('请输入xx', { name: $t('模块名称') })"
                     :disabled="!!withTemplate">
                 </cmdb-form-singlechar>
                 <span class="form-error" v-if="errors.has('moduleName')">{{errors.first('moduleName')}}</span>
@@ -69,6 +73,7 @@
                     v-validate.disabled="'required'"
                     data-vv-name="firstClass"
                     key="firstClass"
+                    :auto-select="false"
                     :list="firstClassList">
                 </cmdb-selector>
                 <cmdb-selector class="service-class fr"
@@ -94,6 +99,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         props: {
             parentNode: {
@@ -234,7 +240,7 @@
                 this.$emit('cancel')
             },
             jumpServiceTemplate () {
-                this.$router.push({ name: 'serviceTemplate' })
+                this.$router.push({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
             }
         }
     }
@@ -258,7 +264,6 @@
         @include ellipsis;
     }
     .node-create-form {
-        max-height: 400px;
         padding: 0 26px 27px;
         overflow: visible;
     }
