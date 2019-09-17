@@ -1,5 +1,5 @@
 <template>
-    <bk-date-picker style="width: 100%"
+    <bk-date-picker class="cmdb-date"
         v-model="date"
         transfer
         :clearable="clearable"
@@ -62,3 +62,9 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .cmdb-date {
+        width: 100%;
+    }
+</style>

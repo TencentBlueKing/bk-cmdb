@@ -4,7 +4,8 @@
         :placeholder="placeholder"
         :searchable="searchable"
         :clearable="allowClear"
-        :disabled="disabled">
+        :disabled="disabled"
+        :font-size="fontSize">
         <bk-option-group v-for="(group, index) in list"
             :key="index"
             :name="group[displayKey]">
@@ -20,10 +21,11 @@
         :placeholder="placeholder"
         :searchable="searchable"
         :clearable="allowClear"
-        :disabled="disabled">
+        :disabled="disabled"
+        :font-size="fontSize">
         <bk-option
-            v-for="(option, index) in list"
-            :key="index"
+            v-for="option in list"
+            :key="option[settingKey]"
             :id="option[settingKey]"
             :name="option[displayKey]">
         </bk-option>
@@ -75,6 +77,10 @@
             emptyText: {
                 type: String,
                 default: ''
+            },
+            fontSize: {
+                type: String,
+                default: '12px'
             }
         },
         data () {

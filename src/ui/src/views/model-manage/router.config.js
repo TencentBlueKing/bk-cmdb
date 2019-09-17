@@ -29,7 +29,7 @@ export default [{
             i18n: '模型'
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'global'
         }
     })
@@ -42,10 +42,7 @@ export default [{
             i18n: '模型详情'
         },
         auth: {
-            operation: [
-                OPERATION.U_MODEL,
-                OPERATION.D_MODEL
-            ],
+            operation: { U_MODEL, D_MODEL },
             authScope: 'global',
             setDynamicMeta: (to, from, app) => {
                 const modelId = to.params.modelId

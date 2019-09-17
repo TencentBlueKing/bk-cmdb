@@ -12,6 +12,20 @@
             :id="option.bk_biz_id"
             :name="option.bk_biz_name">
         </bk-option>
+        <div class="business-extension" slot="extension" v-if="showApplyPermission || showApplyCreate">
+            <a href="javascript:void(0)" class="extension-link"
+                v-if="showApplyPermission"
+                @click="handleApplyPermission">
+                <i class="bk-icon icon-plus-circle"></i>
+                {{$t('申请业务权限')}}
+            </a>
+            <a href="javascript:void(0)" class="extension-link"
+                v-if="showApplyCreate"
+                @click="handleApplyCreate">
+                <i class="bk-icon icon-plus-circle"></i>
+                {{$t('申请创建业务')}}
+            </a>
+        </div>
     </bk-select>
 </template>
 
@@ -32,7 +46,9 @@
                 default () {
                     return {}
                 }
-            }
+            },
+            showApplyPermission: Boolean,
+            showApplyCreate: Boolean
         },
         data () {
             return {
@@ -81,7 +97,38 @@
                 } else {
                     this.$http.deleteHeader('bk_biz_id')
                 }
-            }
+            },
+            async handleApplyPermission () {
+                try {
+                    const url = await this.$store.dispatch('auth/getSkipUrl', { permission: [] })
+                    window.open(url)
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleApplyCreate () {}
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .business-extension {
+        width: calc(100% + 32px);
+        margin-left: -16px;
+    }
+    .extension-link {
+        display: block;
+        line-height: 38px;
+        background-color: #FAFBFD;
+        padding: 0 9px;
+        font-size: 13px;
+        color: #63656E;
+        &:hover {
+            opacity: .85;
+        }
+        .bk-icon {
+            font-size: 18px;
+            color: #979BA5;
+        }
+    }
+</style>

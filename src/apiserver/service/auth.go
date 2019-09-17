@@ -13,11 +13,11 @@
 package service
 
 import (
-	"configcenter/src/auth/authcenter"
 	"context"
 	"encoding/json"
 	"net/http"
 
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"

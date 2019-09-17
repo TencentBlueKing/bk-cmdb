@@ -26,10 +26,11 @@ type Config struct {
 }
 
 type Server struct {
-	ListenAddr string
-	ListenPort uint
-	Handler    http.Handler
-	TLS        TLSConfig
+	ListenAddr   string
+	ListenPort   uint
+	Handler      http.Handler
+	TLS          TLSConfig
+	PProfEnabled bool
 }
 
 type TLSConfig struct {

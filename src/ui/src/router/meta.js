@@ -1,6 +1,8 @@
 export default class Meta {
     constructor (data = {}) {
         this.owner = ''
+        this.title = ''
+        this.breadcrumbs = null
         this.available = true
         Object.keys(data).forEach(key => {
             this[key] = data[key]
@@ -15,7 +17,7 @@ export default class Meta {
         this.auth = Object.assign({
             authScope: 'global',
             view: null,
-            operation: []
+            operation: {}
         }, data.auth)
     }
 }
