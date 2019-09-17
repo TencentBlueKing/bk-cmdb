@@ -10,9 +10,8 @@ export default {
             i18n: '操作审计'
         },
         auth: {
-            view: R_AUDIT,
+            view: { R_AUDIT },
             authScope: 'global'
-        },
-        i18nTitle: '操作审计'
+        }
     })
 }

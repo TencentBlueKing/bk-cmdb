@@ -118,6 +118,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	resultData = mapstr.New()
+
 	insts, errMsg, err := lgc.GetImportInsts(ctx, f, objID, header, 0, true, defLang, meta)
 	if nil != err {
 		blog.Errorf("ImportInsts  get %s inst info from excel error, error:%s, rid: %s", objID, err.Error(), rid)
@@ -127,25 +128,28 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 		resultData.Set("err", errMsg)
 		return resultData, common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, " file empty")
 	}
-	if 0 == len(insts) {
-		return nil, common.CCErrWebFileContentEmpty, defErr.Errorf(common.CCErrWebFileContentEmpty, "")
-	}
 
-	params := mapstr.MapStr{}
-	params[metadata.BKMetadata] = meta
-	params["input_type"] = common.InputTypeExcel
-	params["BatchInfo"] = insts
-	params[common.MetadataField] = meta
-	result, resultErr := lgc.CoreAPI.ApiServer().AddInst(context.Background(), header, util.GetOwnerID(header), objID, params)
-	if nil != err {
-		blog.Errorf("ImportInsts add inst info  http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
-		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
+	var resultErr error
+	result := &metadata.ResponseDataMapStr{}
+	result.BaseResp.Result = true
 
-	resultData.Merge(result.Data)
-	if !result.Result {
-		errCode = result.Code
-		err = defErr.New(result.Code, result.ErrMsg)
+	if 0 != len(insts) {
+		params := mapstr.MapStr{}
+		params[metadata.BKMetadata] = meta
+		params["input_type"] = common.InputTypeExcel
+		params["BatchInfo"] = insts
+		params[common.MetadataField] = meta
+		result, resultErr = lgc.CoreAPI.ApiServer().AddInst(context.Background(), header, util.GetOwnerID(header), objID, params)
+		if nil != err {
+			blog.Errorf("ImportInsts add inst info  http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
+			return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+		resultData.Merge(result.Data)
+		if !result.Result {
+			errCode = result.Code
+			err = defErr.New(result.Code, result.ErrMsg)
+		}
+
 	}
 
 	if len(f.Sheets) > 2 {
@@ -161,7 +165,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 				return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
 			resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
-			if result.Result && !asstResult.Result {
+			if errCode == 0 && !asstResult.Result {
 				errCode = asstResult.Code
 				err = defErr.New(asstResult.Code, asstResult.ErrMsg)
 			}

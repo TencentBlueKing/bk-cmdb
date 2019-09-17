@@ -105,7 +105,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			process.Service.SetAuthCenter(authCli)
 
 			if process.Config.AuthCenter.EnableSync {
-				authSynchronizer := authsynchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI, engine.Metric().Registry())
+				authSynchronizer := authsynchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI, engine.Metric().Registry(), service.Engine)
 				authSynchronizer.Run()
 				blog.Info("enable auth center and enable auth sync function.")
 			}
@@ -115,7 +115,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 		break
 	}
-	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
+	if err := backbone.StartServer(ctx, engine, service.WebService(), true); err != nil {
 		return err
 	}
 
