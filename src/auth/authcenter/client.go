@@ -473,12 +473,10 @@ func (a *authClient) ListResources(ctx context.Context, header http.Header, sear
 
 func (a *authClient) RegisterUserRole(ctx context.Context, header http.Header, roles RoleWithAuthResources) (int64, error) {
 	util.CopyHeader(a.basicHeader, header)
-	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/perm-templates", a.Config.SystemID)
-
 	resp := new(RegisterRoleResult)
 
 	err := a.client.Post().
-		SubResource(url).
+		SubResourcef("/bkiam/api/v1/perm-model/systems/%s/perm-templates", a.Config.SystemID).
 		WithContext(ctx).
 		WithHeaders(header).
 		Body(roles).
@@ -521,10 +519,9 @@ func (a *authClient) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p
 // get user's group members from auth center
 func (a *authClient) GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]UserGroupMembers, error) {
 	util.CopyHeader(a.basicHeader, header)
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/scope-types/%s/scopes/%d/group-users", SystemIDCMDB, "biz", bizID)
 	resp := new(UserGroupMembersResult)
 	err := a.client.Get().
-		SubResource(url).
+		SubResourcef("/bkiam/api/v1/perm/systems/%s/scope-types/%s/scopes/%d/group-users", SystemIDCMDB, "biz", bizID).
 		WithContext(ctx).
 		WithHeaders(header).
 		WithParam("group_codes", strings.Join(groups, ",")).
@@ -537,4 +534,24 @@ func (a *authClient) GetUserGroupMembers(ctx context.Context, header http.Header
 	}
 
 	return resp.Data, nil
+}
+
+// delete iam resource which has already registered from iam.
+// scope type value can be enum of biz or system.
+func (a *authClient) DeleteResources(ctx context.Context, header http.Header, scopeType string, resType ResourceTypeID) error {
+    util.CopyHeader(a.basicHeader, header)
+    resp := new(UserGroupMembersResult)
+    err := a.client.Get().
+        SubResourcef("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/%s", SystemIDCMDB, scopeType, resType).
+        WithContext(ctx).
+        WithHeaders(header).
+        Do().Into(&resp)
+    if err != nil {
+        return err
+    }
+    if !resp.Result || resp.Code != 0 {
+        return fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+    }
+
+    return nil
 }
