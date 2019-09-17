@@ -14,26 +14,25 @@ package x19_09_03_06
 
 import (
 	"context"
+	"fmt"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func init() {
-	upgrader.RegistUpgrader("x19_09_03_06", upgrade)
-}
-
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	if err := ChangeProcPlaceholder(ctx, db, conf); err != nil {
-		blog.Errorf("ChangeProcPlaceholder failed, err: %+v", err)
-		return err
+func UpdateSetDescriptionFieldType(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	filter := map[string]interface{}{
+		common.BKObjIDField:      common.BKInnerObjIDSet,
+		common.BKPropertyIDField: common.BKSetDescField,
 	}
-
-	if err := UpdateSetDescriptionFieldType(ctx, db, conf); err != nil {
+	doc := map[string]interface{}{
+		common.BKPropertyTypeField: common.FieldTypeSingleChar,
+	}
+	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, doc); err != nil {
 		blog.Errorf("UpdateSetDescriptionFieldType failed, err: %+v", err)
-		return err
+		return fmt.Errorf("UpdateSetDescriptionFieldType failed, err: %v", err)
 	}
-
 	return nil
 }
