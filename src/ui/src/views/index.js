@@ -18,6 +18,7 @@ import serviceInstance from '@/views/service-instance/router.config'
 import serviceSynchronous from '@/views/business-synchronous/router.config'
 import resourceManagement from '@/views/resource-manage/router.config'
 import customFields from '@/views/custom-fields/router.config'
+import setSync from '@/views/set-sync/router.config'
 import requireBusiness from '@/views/status/require-business'
 
 const flatternViews = views => {
@@ -41,7 +42,8 @@ export const businessViews = flatternViews([
     serviceCategory,
     serviceInstance,
     serviceSynchronous,
-    customFields
+    customFields,
+    setSync
 ])
 
 businessViews.forEach(view => {
