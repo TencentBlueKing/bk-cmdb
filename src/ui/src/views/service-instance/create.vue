@@ -49,6 +49,7 @@
 <script>
     import hostSelector from '@/components/ui/selector/host.vue'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
+    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     export default {
         name: 'create-service-instance',
         components: {
@@ -101,7 +102,10 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', `${this.$t('添加服务实例')}【${this.$route.query.title}】`)
+            this.$store.commit('addBreadcrumbs', {
+                id: this.$route.name,
+                name: this.$route.query.title
+            })
             this.getModuleInstance()
         },
         methods: {
@@ -204,7 +208,7 @@
             },
             handleBackToModule () {
                 this.$router.replace({
-                    name: 'topology',
+                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
                     query: {
                         module: this.moduleId
                     }
@@ -216,11 +220,9 @@
 
 <style lang="scss" scoped>
     .create-layout {
-        height: 100%;
-        padding: 32px 23px 0;
+        padding: 0 23px 0;
         font-size: 14px;
         color: #63656E;
-        background-color: #FAFBFD;
     }
     .create-label{
         display: block;

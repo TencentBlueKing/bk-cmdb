@@ -1,18 +1,11 @@
 import Meta from '@/router/meta'
-import { getMetadataBiz } from '@/utils/tools'
+import { MENU_RESOURCE_INSTANCE, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
 import {
     C_INST,
     R_INST,
     U_INST,
     D_INST
 } from '@/dictionary/auth'
-
-const prefix = '/general-model/'
-const param = 'objId'
-
-export const GET_MODEL_PATH = modelId => {
-    return prefix + modelId
-}
 
 export const OPERATION = {
     C_INST,
@@ -21,41 +14,19 @@ export const OPERATION = {
     D_INST
 }
 
-export default [{
-    path: GET_MODEL_PATH('host'),
-    redirect: {
-        name: 'resource'
-    }
-}, {
-    path: GET_MODEL_PATH('process'),
-    redirect: {
-        name: 'process'
-    }
-}, {
-    path: GET_MODEL_PATH('biz'),
-    redirect: {
-        name: 'business'
-    }
-}, {
-    path: GET_MODEL_PATH('plat'),
-    redirect: {
-        name: '404'
-    }
-}, {
-    name: 'generalModel',
-    path: GET_MODEL_PATH(`:${param}`),
+export default {
+    name: MENU_RESOURCE_INSTANCE,
+    path: 'instance/:objId',
     component: () => import('./index.vue'),
     meta: new Meta({
+        menu: {
+            relative: MENU_RESOURCE_MANAGEMENT
+        },
         auth: {
-            operation: Object.values(OPERATION),
-            setAuthScope (to, from, app) {
-                const modelId = to.params[param]
-                const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
-                const bizId = getMetadataBiz(model)
-                this.authScope = bizId ? 'business' : 'global'
-            },
+            operation: OPERATION,
+            authScope: 'global',
             setDynamicMeta: (to, from, app) => {
-                const modelId = to.params[param]
+                const modelId = to.params.objId
                 const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
                 if (model) {
                     app.$store.commit('auth/setParentMeta', {
@@ -65,19 +36,13 @@ export default [{
                             resource_model: modelId
                         }]
                     })
-                    const bizId = getMetadataBiz(model)
-                    if (bizId) {
-                        app.$store.commit('auth/setBusinessMeta', {
-                            bk_biz_id: parseInt(bizId)
-                        })
-                    }
                 }
             }
         },
         checkAvailable: (to, from, app) => {
-            const modelId = to.params[param]
+            const modelId = to.params.objId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
             return model && !model.bk_ispaused
         }
     })
-}]
+}

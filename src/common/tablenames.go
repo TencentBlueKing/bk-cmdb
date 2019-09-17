@@ -106,6 +106,9 @@ const (
 	BKTableNameServiceInstance         = "cc_ServiceInstance"
 	BKTableNameProcessTemplate         = "cc_ProcessTemplate"
 	BKTableNameProcessInstanceRelation = "cc_ProcessInstanceRelation"
+
+	BKTableNameSetTemplate                = "cc_SetTemplate"
+	BKTableNameSetServiceTemplateRelation = "cc_SetServiceTemplateRelation"
 )
 
 // AllTables alltables

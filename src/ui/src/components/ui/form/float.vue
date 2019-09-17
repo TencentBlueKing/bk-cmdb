@@ -5,6 +5,9 @@
         :disabled="disabled"
         @blur="handleInput"
         @change="handleChange">
+        <template slot="append" v-if="unit">
+            <div class="unit" :title="unit">{{unit}}</div>
+        </template>
     </bk-input>
 </template>
 
@@ -23,6 +26,10 @@
                 default: false
             },
             placeholder: {
+                type: String,
+                default: ''
+            },
+            unit: {
                 type: String,
                 default: ''
             }
@@ -63,3 +70,16 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .unit {
+        max-width: 120px;
+        font-size: 12px;
+        @include ellipsis;
+        padding: 0 10px;
+        height: 30px;
+        line-height: 30px;
+        background: #f2f4f8;
+        color: #63656e;
+    }
+</style>

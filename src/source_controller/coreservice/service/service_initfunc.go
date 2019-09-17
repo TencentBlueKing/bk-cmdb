@@ -230,4 +230,5 @@ func (s *coreService) initService() {
 	s.label()
 	s.privilege()
 	s.topographics()
+	s.initSetTemplate()
 }

@@ -26,6 +26,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/operation"
 	"configcenter/src/apimachinery/coreservice/privilege"
 	"configcenter/src/apimachinery/coreservice/process"
+	"configcenter/src/apimachinery/coreservice/settemplate"
 	"configcenter/src/apimachinery/coreservice/synchronize"
 	"configcenter/src/apimachinery/coreservice/topographics"
 	"configcenter/src/apimachinery/rest"
@@ -46,6 +47,7 @@ type CoreServiceClientInterface interface {
 	Label() label.LabelInterface
 	Privilege() privilege.PrivilegeInterface
 	TopoGraphics() topographics.TopoGraphicsInterface
+	SetTemplate() settemplate.SetTemplateInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -110,4 +112,8 @@ func (c *coreService) Privilege() privilege.PrivilegeInterface {
 
 func (c *coreService) TopoGraphics() topographics.TopoGraphicsInterface {
 	return topographics.NewTopoGraphicsInterface(c.restCli)
+}
+
+func (c *coreService) SetTemplate() settemplate.SetTemplateInterface {
+	return settemplate.NewSetTemplateInterfaceClient(c.restCli)
 }

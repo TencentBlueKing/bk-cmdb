@@ -85,12 +85,13 @@
         </template>
         
         <bk-sideslider
+            v-transfer-dom
             :width="slider.width"
             :is-show.sync="slider.isShow"
             :title="slider.title"
             @close="handleSliderCancel">
             <component
-                class="slider-content"
+                class="model-slider-content"
                 slot="content"
                 v-if="slider.isShow"
                 :is="slider.content"
@@ -1093,7 +1094,6 @@
     .topo-wrapper {
         position: relative;
         padding: 0;
-        height: 100%;
         &.has-nav {
             .topo-nav {
                 display: block;

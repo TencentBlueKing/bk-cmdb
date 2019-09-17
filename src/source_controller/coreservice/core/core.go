@@ -13,11 +13,12 @@
 package core
 
 import (
+	"context"
+
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
-	"context"
 )
 
 // ModelAttributeGroup model attribute group methods definitions
@@ -196,6 +197,7 @@ type Core interface {
 	StatisticOperation() StatisticOperation
 	ProcessOperation() ProcessOperation
 	LabelOperation() LabelOperation
+	SetTemplateOperation() SetTemplateOperation
 }
 
 // ProcessOperation methods
@@ -249,6 +251,10 @@ type LabelOperation interface {
 	RemoveLabel(ctx ContextParams, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder
 }
 
+type SetTemplateOperation interface {
+	CreateSetTemplate(ctx ContextParams, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder)
+}
+
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
@@ -260,12 +266,13 @@ type core struct {
 	operation       StatisticOperation
 	process         ProcessOperation
 	label           LabelOperation
+	setTemplate     SetTemplateOperation
 }
 
 // New create core
 func New(model ModelOperation, instance InstanceOperation, association AssociationOperation,
 	dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation,
-	audit AuditOperation, process ProcessOperation, operation StatisticOperation, label LabelOperation) Core {
+	audit AuditOperation, process ProcessOperation, label LabelOperation, setTemplate SetTemplateOperation, operation StatisticOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -277,6 +284,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		operation:       operation,
 		process:         process,
 		label:           label,
+		setTemplate:     setTemplate,
 	}
 }
 
@@ -319,4 +327,8 @@ func (m *core) StatisticOperation() StatisticOperation {
 
 func (m *core) LabelOperation() LabelOperation {
 	return m.label
+}
+
+func (m *core) SetTemplateOperation() SetTemplateOperation {
+	return m.setTemplate
 }

@@ -1,5 +1,3 @@
-/* eslint-disable-next-line */
-import Vue from 'vue'
 import businessSelector from './selector/business.vue'
 import clipboardSelector from './selector/clipboard.vue'
 import selector from './selector/selector.vue'
@@ -18,7 +16,6 @@ import singlechar from './form/singlechar.vue'
 import timezone from './form/timezone.vue'
 import enumeration from './form/enum.vue'
 import objuser from './form/objuser.vue'
-import tree from './tree/tree.vue'
 import resize from './other/resize.vue'
 import collapseTransition from './transition/collapse.js'
 import collapse from './collapse/collapse'
@@ -26,6 +23,7 @@ import dotMenu from './dot-menu/dot-menu.vue'
 import input from './form/input.vue'
 import searchInput from './form/search-input.vue'
 import inputSelect from './selector/input-select.vue'
+import iconButton from './button/icon-button.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -46,14 +44,14 @@ const install = (Vue, opts = {}) => {
         timezone,
         enumeration,
         objuser,
-        tree,
         resize,
         collapseTransition,
         collapse,
         dotMenu,
         input,
         searchInput,
-        inputSelect
+        inputSelect,
+        iconButton
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -80,11 +78,11 @@ export default {
     timezone,
     enumeration,
     objuser,
-    tree,
     resize,
     collapseTransition,
     dotMenu,
     input,
     searchInput,
-    inputSelect
+    inputSelect,
+    iconButton
 }

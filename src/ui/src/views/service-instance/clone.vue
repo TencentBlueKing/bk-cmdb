@@ -63,7 +63,10 @@
         },
         async created () {
             try {
-                this.$store.commit('setHeaderTitle', `${this.$t('克隆实例')}【${this.$route.query.title}】`)
+                this.$store.commit('addBreadcrumbs', {
+                    id: this.$route.name,
+                    name: this.$route.query.title
+                })
                 const [module, processes] = await Promise.all([
                     this.getModuleInstance(),
                     this.getServiceInstanceProcesses()
@@ -108,7 +111,7 @@
 
 <style lang="scss" scoped>
     .clone-layout {
-        padding: 28px 22px 28px 44px;
+        padding: 10px 20px 28px;
         font-size: 14px;
     }
     .host-type {

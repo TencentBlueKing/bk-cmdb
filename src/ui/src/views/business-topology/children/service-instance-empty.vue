@@ -118,14 +118,6 @@
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.moduleInstance.service_template_id
-                    },
-                    query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.moduleInstance.bk_module_id
-                            }
-                        }
                     }
                 })
             },
@@ -182,12 +174,6 @@
                             setId: this.moduleNode.parent.data.bk_inst_id
                         },
                         query: {
-                            from: {
-                                name: this.$route.name,
-                                query: {
-                                    module: this.moduleInstance.bk_module_id
-                                }
-                            },
                             title: this.moduleNode.name
                         }
                     })
@@ -215,6 +201,7 @@
             line-height: 29px;
             font-size: 22px;
             color: #63656E;
+            word-break: break-word;
         }
         .empty-tips {
             margin-top: 10px;
