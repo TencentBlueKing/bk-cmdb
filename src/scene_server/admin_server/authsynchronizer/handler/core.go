@@ -136,9 +136,11 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 			}
 			if iamResource[0].ResourceName != resource.Name {
 				needUpdate = append(needUpdate, resource)
+				blog.Infof("need update resource, type: %s, name: %s, id: %d", resource.Type, resource.Name, resource.InstanceID)
 			}
 		} else {
 			needRegister = append(needRegister, resource)
+            blog.Infof("need register resource, type: %s, name: %s, id: %d", resource.Type, resource.Name, resource.InstanceID)
 		}
 	}
 
@@ -174,6 +176,10 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 		resourceKey := generateIAMResourceKey(iamResource)
 		if iamResourceKeyMap[resourceKey] == 0 {
 			needDeregister = append(needDeregister, iamResource)
+			if len(iamResource) != 0 {
+			    blog.Infof("need deregister, type: %s, name: %s, id: %d", iamResource[0].ResourceType, 
+			        iamResource[0].ResourceName, iamResource[0].ResourceID)
+            }
 		}
 	}
 
@@ -184,6 +190,7 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 			blog.ErrorJSON("task: %s, synchronize deregister resource that only in iam failed, resources: %s, err: %+v", taskName, needDeregister, err)
 		}
 	}
+	blog.Infof("%s finished.", taskName)
 	return nil
 }
 
