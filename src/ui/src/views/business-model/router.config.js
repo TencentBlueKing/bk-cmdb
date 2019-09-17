@@ -15,7 +15,7 @@ export default {
             i18n: '业务层级'
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'global'
         }
     })

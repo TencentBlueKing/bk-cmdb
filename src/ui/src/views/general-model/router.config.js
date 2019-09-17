@@ -23,7 +23,7 @@ export default {
             relative: MENU_RESOURCE_MANAGEMENT
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'global',
             setDynamicMeta: (to, from, app) => {
                 const modelId = to.params.objId

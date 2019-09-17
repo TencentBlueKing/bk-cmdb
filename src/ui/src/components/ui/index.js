@@ -23,6 +23,7 @@ import dotMenu from './dot-menu/dot-menu.vue'
 import input from './form/input.vue'
 import searchInput from './form/search-input.vue'
 import inputSelect from './selector/input-select.vue'
+import iconButton from './button/icon-button.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -49,7 +50,8 @@ const install = (Vue, opts = {}) => {
         dotMenu,
         input,
         searchInput,
-        inputSelect
+        inputSelect,
+        iconButton
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -81,5 +83,6 @@ export default {
     dotMenu,
     input,
     searchInput,
-    inputSelect
+    inputSelect,
+    iconButton
 }

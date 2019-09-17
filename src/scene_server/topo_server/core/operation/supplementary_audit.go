@@ -35,9 +35,9 @@ type WrapperResult struct {
 // AuditInterface audit log methods
 type AuditInterface interface {
 	CreateSnapshot(instID int64, cond mapstr.MapStr) *WrapperResult
-	CommitCreateLog(preData, currData *WrapperResult, inst inst.Inst)
+	CommitCreateLog(preData, currData *WrapperResult, inst inst.Inst, nonInnerAttributes []model.AttributeInterface)
 	CommitDeleteLog(preData, currData *WrapperResult, inst inst.Inst)
-	CommitUpdateLog(preData, currData *WrapperResult, inst inst.Inst)
+	CommitUpdateLog(preData, currData *WrapperResult, inst inst.Inst, nonInnerAttributes []model.AttributeInterface)
 }
 
 type auditLog struct {
@@ -47,7 +47,8 @@ type auditLog struct {
 	obj    model.Object
 }
 
-func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action auditoplog.AuditOpType) {
+// nonInnerAttributes 用于加速，避免不必要的数据查询(批量创建实例时，每次创建实例都会执行nonInnerAttributes)
+func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action auditoplog.AuditOpType, nonInnerAttributes []model.AttributeInterface) {
 
 	var targetData *WrapperResult
 	isPreItem := false
@@ -61,6 +62,14 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 		return
 	}
 
+	if nonInnerAttributes == nil {
+		var err error
+		nonInnerAttributes, err = a.obj.GetNonInnerAttributes()
+		if nil != err {
+			blog.Errorf("[audit]failed to get the object(%s)' attribute, error info is %s, rid: %s", a.obj.Object().ObjectID, err.Error(), a.params.ReqID)
+			return
+		}
+	}
 	for _, targetItem := range targetData.datas {
 
 		id, err := targetItem.GetInstID()
@@ -112,12 +121,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 		}
 
 		headers := []Header{}
-		attrs, err := a.obj.GetAttributesExceptInnerFields()
-		if nil != err {
-			blog.Errorf("[audit]failed to get the object(%s)' attribute, error info is %s, rid: %s", a.obj.Object().ObjectID, err.Error(), a.params.ReqID)
-			return
-		}
-		for _, attr := range attrs {
+		for _, attr := range nonInnerAttributes {
 			headers = append(headers, Header{
 				PropertyID:   attr.Attribute().PropertyID,
 				PropertyName: attr.Attribute().PropertyName,
@@ -184,18 +188,18 @@ func (a *auditLog) CreateSnapshot(instID int64, cond mapstr.MapStr) *WrapperResu
 	return result
 }
 
-func (a *auditLog) CommitCreateLog(preData, currData *WrapperResult, inst inst.Inst) {
+func (a *auditLog) CommitCreateLog(preData, currData *WrapperResult, inst inst.Inst, nonInnerAttributes []model.AttributeInterface) {
 	if nil == currData {
 		currData = &WrapperResult{}
 		currData.datas = append(currData.datas, inst)
 	}
-	a.commitSnapshot(preData, currData, auditoplog.AuditOpTypeAdd)
+	a.commitSnapshot(preData, currData, auditoplog.AuditOpTypeAdd, nonInnerAttributes)
 }
 
 func (a *auditLog) CommitDeleteLog(preData, currData *WrapperResult, inst inst.Inst) {
-	a.commitSnapshot(preData, currData, auditoplog.AuditOpTypeDel)
+	a.commitSnapshot(preData, currData, auditoplog.AuditOpTypeDel, nil)
 }
 
-func (a *auditLog) CommitUpdateLog(preData, currData *WrapperResult, inst inst.Inst) {
-	a.commitSnapshot(preData, currData, auditoplog.AuditOpTypeModify)
+func (a *auditLog) CommitUpdateLog(preData, currData *WrapperResult, inst inst.Inst, nonInnerAttributes []model.AttributeInterface) {
+	a.commitSnapshot(preData, currData, auditoplog.AuditOpTypeModify, nonInnerAttributes)
 }

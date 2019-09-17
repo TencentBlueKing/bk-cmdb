@@ -7,6 +7,7 @@
                     v-cursor="button.auth"
                     :key="button.id">
                     <bk-button class="button-item"
+                        size="normal"
                         :theme="button.theme || 'default'"
                         :disabled="button.disabled || false"
                         @click="handleClick(button)">
@@ -17,6 +18,7 @@
                 </span>
                 <bk-button
                     v-else
+                    size="normal"
                     :theme="button.theme || 'default'"
                     :disabled="button.disabled || false"
                     :key="button.id"
@@ -30,6 +32,7 @@
         <bk-dropdown-menu
             v-else
             trigger="click"
+            font-size="large"
             @show="toggleDropdownState(true)"
             @hide="toggleDropdownState(false)">
             <bk-button slot="dropdown-trigger">

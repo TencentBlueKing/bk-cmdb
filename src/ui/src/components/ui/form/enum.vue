@@ -5,6 +5,7 @@
         :searchable="searchable"
         :disabled="disabled"
         :placeholder="placeholder"
+        :font-size="fontSize"
         :popover-options="{
             boundary: 'window'
         }">
@@ -46,6 +47,10 @@
             placeholder: {
                 type: String,
                 default: ''
+            },
+            fontSize: {
+                type: [String, Number],
+                default: 12
             }
         },
         data () {
