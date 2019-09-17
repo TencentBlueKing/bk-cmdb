@@ -14,7 +14,7 @@
     "biz_property_bk_supplier_id":"供应商ID",
 
     "set_property_bk_biz_id": "业务ID",
-    "set_property_bk_set_name": "集群名字",
+    "set_property_bk_set_name": "集群名",
     "set_property_bk_set_desc": "集群描述",
     "set_property_bk_set_env": "环境类型",
     "set_property_bk_service_status": "服务状态",

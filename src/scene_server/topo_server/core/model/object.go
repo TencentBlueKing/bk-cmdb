@@ -54,7 +54,7 @@ type Object interface {
 
 	GetGroups() ([]GroupInterface, error)
 	GetAttributes() ([]AttributeInterface, error)
-	GetAttributesExceptInnerFields() ([]AttributeInterface, error)
+	GetNonInnerAttributes() ([]AttributeInterface, error)
 
 	CreateUnique() Unique
 	GetUniques() ([]Unique, error)
@@ -618,7 +618,7 @@ func (o *object) CreateAttribute() AttributeInterface {
 	}
 }
 
-func (o *object) GetAttributesExceptInnerFields() ([]AttributeInterface, error) {
+func (o *object) GetNonInnerAttributes() ([]AttributeInterface, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(meta.AttributeFieldObjectID).Eq(o.obj.ObjectID)
@@ -631,15 +631,17 @@ func (o *object) GetAttributesExceptInnerFields() ([]AttributeInterface, error) 
 func (o *object) GetAttributes() ([]AttributeInterface, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(meta.AttributeFieldObjectID).Eq(o.obj.ObjectID).Field(meta.AttributeFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	cond.Field(meta.AttributeFieldObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AttributeFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	return o.searchAttributes(cond)
 }
 
 func (o *object) GetGroups() ([]GroupInterface, error) {
 
 	cond := condition.CreateCondition()
+	cond.Field(meta.GroupFieldObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.GroupFieldSupplierAccount).Eq(o.params.SupplierAccount)
 
-	cond.Field(meta.GroupFieldObjectID).Eq(o.obj.ObjectID).Field(meta.GroupFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	rsp, err := o.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), o.params.Header, o.obj.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.params.ReqID)
