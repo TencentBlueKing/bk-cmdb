@@ -54,7 +54,7 @@
             <slot name="download-desc"></slot>
             <a href="javascript:void(0);" style="text-decoration: none;" @click="handleDownloadTemplate">
                 <img src="../../assets/images/icon/down_model_icon.png">
-                <span class="submit-btn">{{$t('下载模版')}}</span>
+                <span class="submit-btn">{{$t('下载模板')}}</span>
             </a>
         </div>
     </div>

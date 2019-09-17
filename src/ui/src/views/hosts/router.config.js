@@ -1,14 +1,12 @@
 import Meta from '@/router/meta'
 import { MENU_BUSINESS_HOST, MENU_BUSINESS, MENU_BUSINESS_HOST_MANAGEMENT } from '@/dictionary/menu-symbol'
 import {
-    R_HOST,
     U_HOST,
     HOST_TO_RESOURCE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
     U_HOST,
-    R_HOST,
     HOST_TO_RESOURCE
 }
 
@@ -23,10 +21,10 @@ export default {
             parent: MENU_BUSINESS_HOST
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'business'
         },
-        showBreadcumbs: true,
+        showBreadcrumbs: true,
         filterPropertyKey: 'business_host_filter_properties'
     })
 }

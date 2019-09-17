@@ -24,7 +24,7 @@
             :v-bkloading="{ isLoading: $loading('searchSubscription') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 150"
+            :max-height="$APP.height - 190"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
@@ -119,8 +119,8 @@
                     list: [],
                     pagination: {
                         count: 0,
-                        limit: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-last_time',
                     sort: '-last_time'

@@ -22,6 +22,7 @@
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
+                    font-size="14"
                     :placeholder="$t('所有一级分类')"
                     :auto-select="false"
                     :allow-clear="true"
@@ -31,6 +32,7 @@
                 </cmdb-selector>
                 <cmdb-selector
                     class="fl"
+                    font-size="14px"
                     :placeholder="$t('所有二级分类')"
                     :auto-select="false"
                     :allow-clear="true"
@@ -43,6 +45,7 @@
                     class="filter-search fl"
                     :placeholder="$t('模板名称搜索')"
                     :right-icon="'bk-icon icon-search'"
+                    font-size="large"
                     v-model.trim="filter.templateName"
                     @enter="searchByTemplateName">
                 </bk-input>
@@ -52,7 +55,7 @@
             v-bkloading="{ isLoading: $loading('get_proc_service_template') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 210"
+            :max-height="$APP.height - 190"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
             <bk-table-column prop="name" :label="$t('模板名称')"></bk-table-column>
@@ -125,7 +128,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        limit: 10
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-last_time',
                     sort: '-id'
@@ -235,8 +238,8 @@
             },
             deleteTemplate (template) {
                 this.$bkInfo({
-                    title: this.$t('确认删除模版'),
-                    subTitle: this.$tc('即将删除服务模版', name, { name: template.name }),
+                    title: this.$t('确认删除模板'),
+                    subTitle: this.$tc('即将删除服务模板', name, { name: template.name }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({
