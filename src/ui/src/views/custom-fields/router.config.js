@@ -29,7 +29,7 @@ export default {
             parent: MENU_BUSINESS_ADVANCED
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'business'
         }
     })

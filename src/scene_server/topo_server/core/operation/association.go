@@ -80,6 +80,7 @@ type AssociationOperationInterface interface {
 
 	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	SearchInstAssociation(params types.ContextParams, query *metadata.QueryInput) ([]metadata.InstAsst, error)
+	SearchInstAssociationList(params types.ContextParams, query *metadata.QueryCondition) ([]metadata.InstAsst, uint64, error)
 	CheckBeAssociation(params types.ContextParams, obj model.Object, cond condition.Condition) error
 	CreateCommonInstAssociation(params types.ContextParams, data *metadata.InstAsst) error
 	DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error
@@ -963,4 +964,21 @@ func (assoc *association) DeleteInst(params types.ContextParams, assoID int64) (
 	}
 
 	return resp, err
+}
+
+// SearchInstAssociationList 与实例有关系的实例关系数据,以分页的方式返回
+func (assoc *association) SearchInstAssociationList(params types.ContextParams, query *metadata.QueryCondition) ([]metadata.InstAsst, uint64, error) {
+
+	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), params.Header, query)
+	if nil != err {
+		blog.Errorf("ReadInstAssociation http do error, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, 0, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rsp.Result {
+		blog.ErrorJSON("ReadInstAssociation http response error, query: %s, response: %s, rid: %s", query, rsp, params.ReqID)
+		return nil, 0, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return rsp.Data.Info, rsp.Data.Count, nil
 }
