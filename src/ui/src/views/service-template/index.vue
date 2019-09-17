@@ -22,6 +22,7 @@
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
+                    font-size="14"
                     :placeholder="$t('所有一级分类')"
                     :auto-select="false"
                     :allow-clear="true"
@@ -31,6 +32,7 @@
                 </cmdb-selector>
                 <cmdb-selector
                     class="fl"
+                    font-size="14px"
                     :placeholder="$t('所有二级分类')"
                     :auto-select="false"
                     :allow-clear="true"
@@ -43,6 +45,7 @@
                     class="filter-search fl"
                     :placeholder="$t('模板名称搜索')"
                     :right-icon="'bk-icon icon-search'"
+                    font-size="large"
                     v-model.trim="filter.templateName"
                     @enter="searchByTemplateName">
                 </bk-input>

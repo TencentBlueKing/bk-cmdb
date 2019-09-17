@@ -51,21 +51,22 @@
                 </div>
             </div>
             <div class="options-button fr">
-                <bk-button class="icon-button"
+                <icon-button class="ml5"
                     v-bk-tooltips="$t('查看删除历史')"
                     icon="icon-cc-history"
                     @click="routeToHistory">
-                </bk-button>
-                <bk-button class="icon-button"
+                </icon-button>
+                <icon-button class="ml5"
                     v-bk-tooltips="$t('列表显示属性配置')"
                     icon="icon-cc-setting"
                     @click="columnsConfig.show = true">
-                </bk-button>
+                </icon-button>
             </div>
             <div class="options-filter clearfix fr">
                 <bk-select class="filter-selector fl"
                     v-model="filter.id"
                     searchable
+                    font-size="14"
                     :clearable="false">
                     <bk-option v-for="(option, index) in filter.options"
                         :key="index"
@@ -78,24 +79,28 @@
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     :auto-select="false"
+                    font-size="14"
                     v-model="filter.value"
                     @on-selected="getTableData">
                 </cmdb-form-enum>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
@@ -785,11 +790,6 @@
                 border-color: #dcdee5 !important;
                 color: #c4c6cc !important;
             }
-        }
-    }
-    .options-button{
-        .icon-button {
-            margin-left: 5px;
         }
     }
     .models-table{
