@@ -19,7 +19,7 @@ import (
 type Labels map[string]string
 
 var (
-	LabelNGKeyRule   = regexp.MustCompile(`^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`)
+	LabelNGKeyRule   = regexp.MustCompile(`^[a-zA-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`)
 	LabelNGValueRule = regexp.MustCompile(`^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`)
 )
 

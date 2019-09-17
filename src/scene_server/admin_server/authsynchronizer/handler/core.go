@@ -14,7 +14,6 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -31,7 +30,6 @@ func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttr
 		return nil, err
 	}
 
-	blog.V(5).Infof("ih.authManager.Authorize.ListResources result: %+v", iamResources)
 	realResources := make([]authmeta.BackendResource, 0)
 	for _, iamResource := range iamResources {
 		if len(iamResource) == 0 {
@@ -41,7 +39,6 @@ func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttr
 			realResources = append(realResources, iamResource)
 		}
 	}
-	blog.InfoJSON("task: %s, realResources is: %s", taskName, realResources)
 	return realResources, nil
 }
 
@@ -53,7 +50,7 @@ func (ih *IAMHandler) diffAndSyncInstances(header http.Header, taskName string, 
 		return err
 	}
 	if blog.V(5) {
-		blog.InfoJSON("ih.authManager.Authorize.ListResources result: %s", iamResources)
+		blog.InfoJSON("ih.authManager.Authorize.ListResources, count: %d,  result: %v", len(iamResources), iamResources)
 	}
 	realResources := make([]authmeta.BackendResource, 0)
 	for _, iamResource := range iamResources {
@@ -65,7 +62,7 @@ func (ih *IAMHandler) diffAndSyncInstances(header http.Header, taskName string, 
 		}
 	}
 	if blog.V(5) {
-		blog.InfoJSON("task: %s, realResources is: %s", taskName, realResources)
+		blog.InfoJSON("task: %s, count: %d, iam realResources is: %v", taskName, len(realResources), realResources)
 	}
 	return ih.diffAndSyncCore(taskName, realResources, iamIDPrefix, resources, skipDeregister)
 }
@@ -86,12 +83,8 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 	// check final resource type related with resourceID
 	dryRunResources, err := ih.authManager.Authorize.DryRunRegisterResource(context.Background(), resources...)
 	if err != nil {
-		blog.ErrorJSON("diffAndSyncCore failed, DryRunRegisterResource failed, resources: %s, err: %s", resources, err)
+		blog.ErrorJSON("diffAndSyncCore failed, DryRunRegisterResource failed, %s, resources: %s, err: %s", taskName, resources, err)
 		return nil
-	}
-	if dryRunResources == nil {
-		blog.ErrorJSON("diffAndSyncCore failed, DryRunRegisterResource success, but result is nil, resources: %s", resources)
-		return errors.New("dry run result in unexpected nil")
 	}
 	if len(dryRunResources.Resources) == 0 {
 		if blog.V(5) {
@@ -100,13 +93,14 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 		return nil
 	}
 	resourceType := dryRunResources.Resources[0].ResourceType
-	if authcenter.IsRelatedToResourceID(resourceType) {
+	if !authcenter.IsRelatedToResourceID(resourceType) {
 		blog.V(5).Infof("skip-sync for resourceType: %s, as it doesn't related to resourceID", resourceType)
 		return nil
 	}
 
 	scope := authcenter.ScopeInfo{}
 	needRegister := make([]authmeta.ResourceAttribute, 0)
+	needUpdate := make([]authmeta.ResourceAttribute, 0)
 	// init key:hit map for
 	iamResourceKeyMap := map[string]int{}
 	iamResourceMap := map[string]authmeta.BackendResource{}
@@ -133,24 +127,38 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 		_, exist := iamResourceKeyMap[resourceKey]
 		if exist {
 			iamResourceKeyMap[resourceKey]++
-			// TODO compare name and decide whether need update
-			// iamResource := iamResourceMap[resourceKey]
-			// resource.Name != iamResource[len(iamResource) - 1].ResourceName
+			iamResource, ok := iamResourceMap[resourceKey]
+			if ok == false {
+				continue
+			}
+			if len(iamResource) == 0 {
+				continue
+			}
+			if iamResource[0].ResourceName != resource.Name {
+				needUpdate = append(needUpdate, resource)
+				blog.Infof("need update resource, type: %s, name: %s, id: %d", resource.Type, resource.Name, resource.InstanceID)
+			}
 		} else {
 			needRegister = append(needRegister, resource)
+            blog.Infof("need register resource, type: %s, name: %s, id: %d", resource.Type, resource.Name, resource.InstanceID)
 		}
-	}
-	if blog.V(5) {
-		blog.InfoJSON("task: %s, iamResourceKeyMap: %s, needRegister: %s", taskName, iamResourceKeyMap, needRegister)
 	}
 
 	if len(needRegister) > 0 {
-		if blog.V(5) {
-			blog.InfoJSON("synchronize register resource that only in cmdb, resources: %s", needRegister)
-		}
+		blog.InfoJSON("synchronize register %d resource that only in cmdb, resources: %s", len(needRegister), needRegister)
 		err := ih.authManager.Authorize.RegisterResource(context.Background(), needRegister...)
 		if err != nil {
-			blog.ErrorJSON("synchronize register resource that only in cmdb failed, resources: %s, err: %+v", needRegister, err)
+			blog.ErrorJSON("synchronize register %d resource that only in cmdb failed, resources: %s, err: %+v", len(needRegister), needRegister, err)
+		}
+	}
+
+	if len(needUpdate) > 0 {
+		blog.InfoJSON("synchronize update %d resource that only in cmdb, resources: %s", len(needUpdate), needUpdate)
+		for _, resource := range resources {
+			err := ih.authManager.Authorize.UpdateResource(context.Background(), &resource)
+			if err != nil {
+				blog.ErrorJSON("synchronize update resource failed, resource: %s, err: %+v", resource, err)
+			}
 		}
 	}
 
@@ -159,27 +167,30 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 	}
 
 	// deregister resource id that hasn't been hit
-	if len(resources) == 0 {
-		blog.Info("cmdb resource not found of current category, skip deregister resource for safety.")
-		return nil
-	}
+	// if len(resources) == 0 {
+	// 	blog.Info("cmdb resource not found of current category, skip deregister resource for safety.")
+	// 	return nil
+	// }
 	needDeregister := make([]authmeta.BackendResource, 0)
 	for _, iamResource := range iamResources {
 		resourceKey := generateIAMResourceKey(iamResource)
 		if iamResourceKeyMap[resourceKey] == 0 {
 			needDeregister = append(needDeregister, iamResource)
+			if len(iamResource) != 0 {
+			    blog.Infof("need deregister, type: %s, name: %s, id: %d", iamResource[0].ResourceType, 
+			        iamResource[0].ResourceName, iamResource[0].ResourceID)
+            }
 		}
 	}
 
 	if len(needDeregister) != 0 {
-		if blog.V(5) {
-			blog.InfoJSON("task: %s, synchronize deregister resource that only in iam, resources: %s", taskName, needDeregister)
-		}
+		blog.InfoJSON("task: %s, synchronize deregister %d resource that only in iam, resources: %s", taskName, len(needDeregister), needDeregister)
 		err := ih.authManager.Authorize.RawDeregisterResource(context.Background(), scope, needDeregister...)
 		if err != nil {
 			blog.ErrorJSON("task: %s, synchronize deregister resource that only in iam failed, resources: %s, err: %+v", taskName, needDeregister, err)
 		}
 	}
+	blog.Infof("%s finished.", taskName)
 	return nil
 }
 
