@@ -120,7 +120,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 	}
 
-	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
+	if err := backbone.StartServer(ctx, engine, service.WebService(), false); err != nil {
 		return err
 	}
 

@@ -69,7 +69,7 @@ func main() {
 
 func sigMock(collector string) error {
 	body := bytes.NewBufferString(`{"name":"` + collector + `"}`)
-	resp, err := http.Post("127.0.0.1:12140", "application/json", body)
+	resp, err := http.Post("http://127.0.0.1:12140", "application/json", body)
 	if err != nil {
 		return err
 	}
