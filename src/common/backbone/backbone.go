@@ -161,12 +161,13 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	return engine, nil
 }
 
-func StartServer(ctx context.Context, e *Engine, HTTPHandler http.Handler) error {
+func StartServer(ctx context.Context, e *Engine, HTTPHandler http.Handler, pprofEnabled bool) error {
 	e.server = Server{
-		ListenAddr: e.srvInfo.IP,
-		ListenPort: e.srvInfo.Port,
-		Handler:    e.Metric().HTTPMiddleware(HTTPHandler),
-		TLS:        TLSConfig{},
+		ListenAddr:   e.srvInfo.IP,
+		ListenPort:   e.srvInfo.Port,
+		Handler:      e.Metric().HTTPMiddleware(HTTPHandler),
+		TLS:          TLSConfig{},
+		PProfEnabled: pprofEnabled,
 	}
 
 	if err := ListenAndServe(e.server); err != nil {

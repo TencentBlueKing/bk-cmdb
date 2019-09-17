@@ -54,10 +54,12 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	}
 
 	for bizID, bizModules := range biz2Module {
-		ownerID := ""
+		ownerID := common.BKDefaultOwnerID
 		for modulename, modules := range bizModules {
 			// modules would always more than 0, so would never panic here
-			ownerID = modules[0].SupplierAccount
+			if modules[0].SupplierAccount != "" {
+				ownerID = modules[0].SupplierAccount
+			}
 			// build service template
 			svcTemplateID, err := db.NextSequence(ctx, common.BKTableNameServiceTemplate)
 			if err != nil {
