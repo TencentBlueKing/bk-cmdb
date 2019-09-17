@@ -22,6 +22,8 @@ func (r ResourceType) String() string {
 	return string(r)
 }
 
+// ResourceType 表示 CMDB 这一侧的资源类型， 对应的有 ResourceTypeID 表示 IAM 一侧的资源类型
+// 两者之间有映射关系，详情见 ConvertResourceType
 const (
 	Business                 ResourceType = "business"
 	Model                    ResourceType = "model"

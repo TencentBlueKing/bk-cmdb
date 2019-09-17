@@ -22,8 +22,9 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
@@ -350,8 +351,41 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	return Unknown, fmt.Errorf("unsupported action: %s", r.Action)
 }
 
+func GetBizNameByID(clientSet apimachinery.ClientSetInterface, header http.Header, bizID int64) (string, error) {
+	rid := util.GetHTTPCCRequestID(header)
+
+	param := metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+		},
+	}
+	result, err := clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKInnerObjIDApp, &param)
+	if err != nil {
+		return "", err
+	}
+	if result.Code == common.CCNoPermission {
+		return "", nil
+	}
+	if !result.Result {
+		return "", errors.New(result.ErrMsg)
+	}
+	if len(result.Data.Info) == 0 {
+		return "", fmt.Errorf("biz %d not found", bizID)
+	}
+	bizNameIf, exist := result.Data.Info[0][common.BKAppNameField]
+	if exist == false {
+		return "", fmt.Errorf("field %s not exist", common.BKAppNameField)
+	}
+	bizName := util.GetStrByInterface(bizNameIf)
+	blog.V(5).Infof("GetBizNameByID bizID: %d ==> bizName: %s, rid: %s", bizID, bizName, rid)
+	return bizName, nil
+}
+
 // TODO: add multiple language support
+// AdoptPermissions 用于鉴权没有通过时，根据鉴权的资源信息生成需要申请的权限信息
 func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
+	rid := util.GetHTTPCCRequestID(h)
+
 	ps := make([]metadata.Permission, 0)
 	bizIDMap := make(map[int64]string)
 	for _, r := range rs {
@@ -365,38 +399,12 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 			p.ScopeID = strconv.FormatInt(r.BusinessID, 10)
 			scopeName, exist := bizIDMap[r.BusinessID]
 			if !exist {
-				param := params.SearchParams{
-					Condition: map[string]interface{}{
-						common.BKAppIDField: r.BusinessID,
-					},
-				}
-
-				result, err := api.TopoServer().Instance().SearchApp(context.Background(), r.SupplierAccount, h, &param)
+				var err error
+				scopeName, err = GetBizNameByID(api, h, r.BusinessID)
 				if err != nil {
-					return nil, err
-				}
-				// if no permission to find business, return directly.
-				if result.Code == common.CCNoPermission {
-					return result.Permissions, nil
-				}
-				if !result.Result {
-					return nil, errors.New(result.ErrMsg)
-				}
-
-				if len(result.Data.Info) != 0 {
-					bizStr, yes := result.Data.Info[0]["bk_biz_name"]
-					if !yes {
-						// can not happen normally.
-						bizIDMap[r.BusinessID] = ""
-					}
-
-					name, ok := bizStr.(string)
-					if !ok {
-						// can not happen normal
-						bizIDMap[r.BusinessID] = ""
-					}
-					bizIDMap[r.BusinessID] = name
-					scopeName = name
+					blog.Errorf("AdoptPermissions failed, GetBizNameByID failed, bizID: %d, err: %s, rid: %s", r.BusinessID, err.Error(), rid)
+				} else {
+					bizIDMap[r.BusinessID] = scopeName
 				}
 			}
 			p.ScopeName = scopeName
