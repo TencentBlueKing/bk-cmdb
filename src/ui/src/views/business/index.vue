@@ -17,24 +17,25 @@
                     active: !$isAuthorized($OPERATION.BUSINESS_ARCHIVE),
                     auth: [$OPERATION.BUSINESS_ARCHIVE]
                 }">
-                    <bk-button class="button-history"
+                    <icon-button class="mr10"
                         icon="icon-cc-history"
-                        v-bk-tooltips.bottom="$t('查看已归档业务')"
+                        v-bk-tooltips.top="$t('查看已归档业务')"
                         :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
                         @click="routeToHistory">
-                    </bk-button>
+                    </icon-button>
                 </span>
-                <bk-button class="button-setting"
+                <icon-button
                     icon="icon-cc-setting"
-                    v-bk-tooltips.bottom="$t('列表显示属性配置')"
+                    v-bk-tooltips.top="$t('列表显示属性配置')"
                     @click="columnsConfig.show = true">
-                </bk-button>
+                </icon-button>
             </div>
             <div class="options-filter clearfix fr">
                 <bk-select
                     class="filter-selector fl"
                     v-model="filter.id"
                     searchable
+                    font-size="14"
                     :clearable="false">
                     <bk-option v-for="(option, index) in filter.options"
                         :key="index"
@@ -48,17 +49,20 @@
                     :allow-clear="true"
                     :auto-select="false"
                     v-model="filter.value"
+                    font-size="14"
                     @on-selected="handleFilterData">
                 </cmdb-form-enum>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>
@@ -71,7 +75,7 @@
             v-bkloading="{ isLoading: $loading('post_searchBusiness_list') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 160"
+            :max-height="$APP.height - 190"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
@@ -149,7 +153,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import { MENU_RESOURCE_BUSINESS_HISTORY, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
+    import { MENU_RESOURCE_BUSINESS_HISTORY } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
@@ -168,8 +172,8 @@
                     list: [],
                     pagination: {
                         count: 0,
-                        limit: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_biz_id',
                     sort: 'bk_biz_id'
@@ -242,10 +246,6 @@
         },
         async created () {
             try {
-                this.$store.commit('setBreadcumbs', [{
-                    i18n: '资源目录',
-                    route: { name: MENU_RESOURCE_MANAGEMENT }
-                }, { name: '业务' }])
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: 'biz',
@@ -525,9 +525,6 @@
             /deep/ .bk-icon {
                 line-height: 14px;
             }
-        }
-        .button-history{
-            margin-right: 10px;
         }
     }
     .business-table{

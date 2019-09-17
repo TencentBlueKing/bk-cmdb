@@ -2,7 +2,7 @@
     <div class="association">
         <div class="options clearfix">
             <div class="fl" v-show="activeView === viewName.list">
-                <span class="inline-block-middle" v-if="hasAssociation"
+                <span class="inline-block-middle mr10" v-if="hasAssociation"
                     v-cursor="{
                         active: !$isAuthorized(updateAuth),
                         auth: [updateAuth]
@@ -10,6 +10,11 @@
                     <bk-button theme="primary" class="options-button"
                         :disabled="!$isAuthorized(updateAuth)"
                         @click="showCreate = true">
+                        {{$t('新增关联')}}
+                    </bk-button>
+                </span>
+                <span class="inline-block-middle mr10" v-else v-bk-tooltips="$t('当前模型暂未定义可用关联')">
+                    <bk-button theme="primary" class="options-button" disabled>
                         {{$t('新增关联')}}
                     </bk-button>
                 </span>
@@ -103,7 +108,6 @@
         font-size: 0;
         .options-button {
             height: 32px;
-            margin: 0 11px 0 0;
             line-height: 30px;
             font-size: 14px;
             &.options-button-view {
