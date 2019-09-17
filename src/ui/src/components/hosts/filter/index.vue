@@ -13,15 +13,14 @@
             hideOnClick: false,
             onShown: checkIsScrolling
         }">
-        <bk-button class="filter-trigger"
-            theme="default"
+        <icon-button class="filter-trigger"
+            icon="icon-cc-funnel"
             v-bk-tooltips.top="$t('高级筛选')"
             :class="{
                 'is-active': isFilterActive
             }"
             @click="handleToggleFilter">
-            <i class="icon-cc-funnel"></i>
-        </bk-button>
+        </icon-button>
         <section class="filter-content" slot="content"
             :style="{
                 height: $APP.height - 200 + 'px'

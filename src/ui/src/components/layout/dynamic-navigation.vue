@@ -5,10 +5,11 @@
         @mouseleave="handleMouseLeave">
         <div class="nav-wrapper"
             :class="{ unfold: unfold, flexible: !navStick }">
-            <div class="business-wrapper" v-if="showBusinessSelector">
+            <div class="business-wrapper" v-if="businessSelectorVisible">
                 <transition name="fade">
                     <cmdb-business-selector class="business-selector"
                         v-show="unfold"
+                        show-apply-permission
                         :popover-options="{
                             appendTo: () => this.$el
                         }"
@@ -90,7 +91,6 @@
     import { mapGetters } from 'vuex'
     import MENU_DICTIONARY from '@/dictionary/menu'
     import {
-        MENU_BUSINESS,
         MENU_RESOURCE,
         MENU_RESOURCE_BUSINESS,
         MENU_RESOURCE_HOST,
@@ -111,7 +111,7 @@
             }
         },
         computed: {
-            ...mapGetters(['navStick', 'navFold', 'admin']),
+            ...mapGetters(['navStick', 'navFold', 'admin', 'businessSelectorVisible']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectModelClassify', ['classifications', 'models']),
             unfold () {
@@ -119,9 +119,6 @@
             },
             owner () {
                 return this.$route.matched[0].name
-            },
-            showBusinessSelector () {
-                return this.owner === MENU_BUSINESS
             },
             collection () {
                 if (this.owner === MENU_RESOURCE) {

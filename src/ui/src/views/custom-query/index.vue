@@ -22,6 +22,7 @@
                 <bk-input type="text" class="cmdb-form-input"
                     right-icon="bk-icon icon-search"
                     v-model="filter.name"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="getUserAPIList">
                 </bk-input>
@@ -32,7 +33,7 @@
             v-bkloading="{ isLoading: $loading('searchCustomQuery') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 220"
+            :height="$APP.height - 190"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
@@ -99,8 +100,8 @@
                 :biz-id="bizId"
                 :type="slider.type"
                 :object="object"
-                @create="handleCreate"
-                @update="getUserAPIList"
+                @create="handleSuccess"
+                @update="handleSuccess"
                 @cancel="handleSliderBeforeClose">
             </v-define>
         </bk-sideslider>
@@ -144,7 +145,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        limit: 10
+                        ...this.$tools.getDefaultPaginationConfig()
                     }
                 },
                 slider: {
@@ -238,10 +239,8 @@
                 this.hideUserAPISlider()
                 return true
             },
-            handleCreate (data) {
-                this.slider.id = data['id']
-                this.slider.type = 'update'
-                this.slider.title = this.$t('编辑动态分组')
+            handleSuccess (data) {
+                this.hideUserAPISlider()
                 this.handlePageChange(1)
             },
             async getUserAPIDetail (row) {

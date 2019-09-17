@@ -48,6 +48,7 @@
                     <i class="options-split"></i>
                     <bk-select class="options-collection"
                         v-model="scope"
+                        font-size="14"
                         :clearable="false">
                         <bk-option id="all" :name="$t('全部主机')"></bk-option>
                         <bk-option :id="0" :name="$t('已分配主机')"></bk-option>
@@ -59,6 +60,7 @@
                         v-if="showCollection"
                         ref="collectionSelector"
                         v-model="selectedCollection"
+                        font-size="14"
                         :loading="$loading('searchCollection')"
                         :placeholder="$t('请选择收藏条件')"
                         @selected="handleCollectionSelect"
@@ -81,16 +83,16 @@
                         :properties="filterProperties"
                         :show-scope="showScope">
                     </cmdb-host-filter>
-                    <bk-button class="options-button icon-btn ml10"
-                        icon="icon-cc-setting"
+                    <icon-button class="ml10"
+                        icon="icon icon-cc-setting"
                         v-bk-tooltips.top="$t('列表显示属性配置')"
                         @click="handleColumnConfigClick">
-                    </bk-button>
-                    <bk-button class="options-button icon-btn ml10" v-if="showHistory"
+                    </icon-button>
+                    <icon-button class="ml10" v-if="showHistory"
                         v-bk-tooltips="$t('查看删除历史')"
-                        icon="icon-cc-history"
+                        icon="icon icon-cc-history"
                         @click="routeToHistory">
-                    </bk-button>
+                    </icon-button>
                 </div>
             </div>
         </div>
@@ -246,14 +248,12 @@
                     list: [],
                     pagination: {
                         current: 1,
-                        limit: 10,
                         count: 0,
-                        limitList: [10, 50, 100, 500]
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
-                    exportUrl: `${window.API_HOST}hosts/export`,
-                    tableMinusHeight: 200
+                    exportUrl: `${window.API_HOST}hosts/export`
                 },
                 filter: {
                     business: '',
@@ -283,7 +283,7 @@
                     show: false
                 },
                 selectedCollection: '',
-                scope: 'all'
+                scope: 1
             }
         },
         computed: {
@@ -491,6 +491,9 @@
                 })
             },
             injectScope (params) {
+                if (!this.showScope) {
+                    return params
+                }
                 const biz = params.condition.find(condition => condition.bk_obj_id === 'biz')
                 if (this.scope === 'all') {
                     biz.condition = biz.condition.filter(condition => condition.field !== 'default')
