@@ -75,7 +75,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	service.SetSynchronizeServer(synchronizeClientInst)
 	go synchronSrv.Service.InitBackground()
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+	handler := restful.NewContainer().Add(service.WebService())
+	if err := backbone.StartServer(ctx, engine, handler, true); err != nil {
 		return err
 	}
 	select {}
