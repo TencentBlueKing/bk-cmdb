@@ -1,0 +1,217 @@
+<template>
+    <div class="set-instance-layout" :class="{ 'borderBottom': !localExpand }">
+        <div class="title" @click="localExpand = !localExpand">
+            <div class="left-info">
+                <i class="bk-icon icon-right-shape" :class="{ 'is-expand': localExpand }"></i>
+                <h2 class="path">广东省厅 / 深圳区 / 正式环境集群</h2>
+                <span class="count is-read">2</span>
+            </div>
+            <i v-show="iconClose" class="bk-icon icon-close" @click.stop="handleClose"></i>
+        </div>
+        <div class="main clearfix" v-show="localExpand">
+            <div class="sync fl">
+                <h3>{{$t('同步前')}}</h3>
+                <div class="sync-main fl">
+                    <div class="sync-title" :class="{ 'is-expand': beforeSyncExpand }" @click.stop="beforeSyncExpand = !beforeSyncExpand">
+                        <i class="bk-icon icon-right-shape"></i>
+                        <i class="bk-icon icon-cc-nav-model-02"></i>
+                        <span class="set-name">广东省厅级…正式环境集群</span>
+                    </div>
+                    <ul class="sync-info" v-show="beforeSyncExpand">
+                        <li class="mt20 has-delete">
+                            <i class="bk-icon icon-cc-nav-model-02"></i>
+                            <span class="name">Gamesever_01</span>
+                        </li>
+                        <li class="mt20 new-add">
+                            <i class="bk-icon icon-cc-nav-model-02"></i>
+                            <span class="name">Gamesever_01</span>
+                        </li>
+                        <li class="mt20">
+                            <i class="bk-icon icon-cc-nav-model-02"></i>
+                            <span class="name">Gamesever_01</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="sync fl sync-after">
+                <h3>{{$t('同步后')}}</h3>
+                <div class="sync-main fl">
+                    <div class="sync-title" :class="{ 'is-expand': afterSyncExpand }" @click.stop="afterSyncExpand = !afterSyncExpand">
+                        <i class="bk-icon icon-right-shape"></i>
+                        <span class="set-name">
+                            <i class="bk-icon icon-cc-nav-model-02"></i>
+                            广东省厅级…正式环境集群
+                        </span>
+                    </div>
+                    <ul class="sync-info" v-show="afterSyncExpand">
+                        <li class="mt20">
+                            <i class="bk-icon icon-cc-nav-model-02"></i>
+                            <span class="name">Gamesever_01</span>
+                        </li>
+                        <li class="mt20">
+                            <i class="bk-icon icon-cc-nav-model-02"></i>
+                            <span class="name">Gamesever_01</span>
+                        </li>
+                        <li class="mt20">
+                            <i class="bk-icon icon-cc-nav-model-02"></i>
+                            <span class="name">Gamesever_01</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="after-sync"></div>
+        </div>
+    </div>
+</template>
+
+<script>
+    export default {
+        props: {
+            expand: {
+                type: Boolean,
+                default: false
+            },
+            iconClose: {
+                type: Boolean,
+                default: true
+            }
+        },
+        data () {
+            return {
+                localExpand: this.expand,
+                beforeSyncExpand: true,
+                afterSyncExpand: true
+            }
+        },
+        methods: {
+            handleClose () {
+                this.$emit('close')
+            }
+        }
+    }
+</script>
+
+<style lang="scss" scoped>
+    .set-instance-layout {
+        border: 1px solid #DCDEE5;
+        background-color: #ffffff;
+        &.borderBottom {
+            border-bottom: none;
+        }
+    }
+    .title {
+        @include space-between;
+        height: 42px;
+        padding: 0 10px;
+        background-color: #F0F1F5;
+        border-bottom: 1px solid #DCDEE5;
+        cursor: pointer;
+        .left-info {
+            display: flex;
+            align-items: center;
+            color: #63656E;
+            font-size: 14px;
+        }
+        .path {
+            font-size: 14px;
+            padding: 0 10px;
+        }
+        .icon-right-shape {
+            transition: all .5s;
+            &.is-expand {
+                transform: rotateZ(90deg);
+            }
+        }
+        .count {
+            min-width: 18px;
+            height: 18px;
+            line-height: 16px;
+            font-size: 12px;
+            color: #ffffff;
+            text-align: center;
+            padding: 0 5px;
+            background-color: #FF5656;
+            border-radius: 100px;
+            &.is-read {
+                background-color: #C4C6CC;
+            }
+        }
+        .icon-close {
+            font-size: 16px;
+            font-weight: bold;
+            margin-right: 2px;
+            cursor: pointer;
+        }
+    }
+    .main {
+        margin: 14px 42px 26px;
+    }
+    .sync {
+        color: #63656E;
+        font-size: 14px;
+        &.sync-after {
+            margin-left: 100px;
+        }
+        > h3 {
+            font-size: 14px;
+            float: left;
+            margin-right: 30px;
+        }
+        .sync-title {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            &.is-expand {
+                .icon-right-shape {
+                    transform: rotateZ(90deg);
+                }
+            }
+            .bk-icon {
+                color: #C4C6CC;
+                &.icon-right-shape {
+                    transition: all .5s;
+                    margin-right: 10px;
+                }
+                &.icon-cc-nav-model-02 {
+                    font-size: 18px;
+                    margin-right: 6px;
+                }
+            }
+        }
+        .sync-info {
+            padding-left: 48px;
+            li {
+                .bk-icon {
+                    width: 20px;
+                    height: 20px;
+                    line-height: 20px;
+                    text-align: center;
+                    color: #ffffff;
+                    font-size: 12px;
+                    background-color: #C4C6CC;
+                    border-radius: 50%;
+                }
+                .name {
+                    display: inline-block;
+                    line-height: 20px;
+                    padding-left: 2px;
+                }
+                &.has-delete {
+                    color: #FF5656;
+                    .bk-icon {
+                        background-color: #FF5656;
+                    }
+                    .name {
+                        text-decoration: line-through;
+                    }
+                }
+                &.new-add {
+                    color: #2DCB56;
+                    .bk-icon {
+                        background-color: #2DCB56;
+                    }
+                }
+            }
+        }
+    }
+</style>
