@@ -69,6 +69,7 @@ type Basic struct {
 type BackendResourceLayer struct {
 	ResourceType string `json:"resource_type"`
 	ResourceID   string `json:"resource_id,omitempty"`
+	ResourceName string `json:"resource_name"`
 }
 
 // BackendResource represent a resource in auth backend, like iam.
