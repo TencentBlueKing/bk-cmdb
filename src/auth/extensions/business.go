@@ -37,9 +37,9 @@ func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Heade
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	cond := metadata.QueryCondition{}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(context.TODO(), header, common.BKInnerObjIDApp, &cond)
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
 	if err != nil {
-		blog.Errorf("list business failed, err: %v", err)
+		blog.Errorf("list business failed, err: %v, rid: %s", err, rid)
 		return nil, err
 	}
 

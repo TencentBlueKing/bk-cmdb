@@ -38,7 +38,7 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 		Condition: cond.ToMapStr(),
 		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
 	}
-	instances, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKInnerObjIDSet, query)
+	instances, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, query)
 	if err != nil {
 		blog.Errorf("get set:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get set by businessID:%d failed, err: %+v", businessID, err)

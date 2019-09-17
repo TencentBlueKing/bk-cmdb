@@ -43,8 +43,7 @@ func GetHostLayers(ctx context.Context, coreService coreservice.CoreServiceClien
 		Condition: cond.ToMapStr(),
 		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
 	}
-	result, err := coreService.Instance().ReadInstance(
-		context.Background(), *requestHeader, common.BKTableNameModuleHostConfig, query)
+	result, err := coreService.Instance().ReadInstance(ctx, *requestHeader, common.BKTableNameModuleHostConfig, query)
 	if err != nil {
 		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
 		return
@@ -157,6 +156,7 @@ func GetHostLayers(ctx context.Context, coreService coreservice.CoreServiceClien
 }
 
 func getInnerIPByHostIDs(coreService coreservice.CoreServiceClientInterface, rHeader http.Header, hostIDArr *[]int64) (hostIDInnerIPMap map[int64]string, err error) {
+	ctx := util.NewContextFromHTTPHeader(rHeader)
 	hostIDInnerIPMap = map[int64]string{}
 
 	cond := condition.CreateCondition()
@@ -166,8 +166,7 @@ func getInnerIPByHostIDs(coreService coreservice.CoreServiceClientInterface, rHe
 		Condition: cond.ToMapStr(),
 		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
 	}
-	hosts, err := coreService.Instance().ReadInstance(
-		context.Background(), rHeader, common.BKInnerObjIDHost, query)
+	hosts, err := coreService.Instance().ReadInstance(ctx, rHeader, common.BKInnerObjIDHost, query)
 	if err != nil {
 		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
 		return
@@ -194,7 +193,7 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 		Condition: cond.ToMapStr(),
 		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
 	}
-	hosts, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKTableNameModuleHostConfig, query)
+	hosts, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameModuleHostConfig, query)
 	if err != nil {
 		blog.Errorf("get host:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get host by businessID:%d failed, err: %+v", businessID, err)
@@ -506,7 +505,7 @@ func (am *AuthManager) DryRunAuthorizeByHostsIDs(ctx context.Context, header htt
 		return nil, fmt.Errorf("make resource failed, err: %+v", err)
 	}
 
-	realResources, err := am.Authorize.DryRunRegisterResource(context.Background(), resources...)
+	realResources, err := am.Authorize.DryRunRegisterResource(ctx, resources...)
 	if err != nil {
 		blog.Errorf("dry run register failed, err: %+v", err)
 		return nil, err
