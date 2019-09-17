@@ -521,14 +521,15 @@
                 min-height: 32px;
                 padding: 3px 0;
                 line-height: 1;
-                border: 1px solid $cmdbBorderColor;
+                border: 1px solid #c4c6cc;
                 border-radius: 2px;
                 background-color: #fff;
                 white-space: nowrap;
                 overflow: hidden;
                 &.disabled {
                     cursor: not-allowed;
-                    background-color: #fafafa;
+                    background-color: #fafbfd !important;
+                    border-color: #dcdee5 !important
                 }
                 &.focus {
                     white-space: normal;

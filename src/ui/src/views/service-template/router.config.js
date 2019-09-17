@@ -29,7 +29,7 @@ export default [{
             parent: MENU_BUSINESS_SERVICE
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'business'
         }
     })
@@ -43,7 +43,7 @@ export default [{
             relative: MENU_BUSINESS_SERVICE_TEMPLATE
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'business'
         },
         requireBusiness: true

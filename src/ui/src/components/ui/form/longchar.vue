@@ -5,7 +5,8 @@
         :value="value"
         :disabled="disabled"
         @input="handleInput"
-        @change="handleChange">
+        @change="handleChange"
+        @enter="handleEnter">
     </bk-input>
 </template>
 
@@ -32,10 +33,13 @@
         },
         methods: {
             handleInput (value) {
-                this.$emit('input', value.trim())
+                this.$emit('input', value)
             },
-            handleChange () {
-                this.$emit('on-change', this.value)
+            handleChange (value) {
+                this.$emit('on-change', value)
+            },
+            handleEnter (value) {
+                this.$emit('enter', value)
             }
         }
     }

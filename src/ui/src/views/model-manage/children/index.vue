@@ -334,21 +334,10 @@
                 const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
                 if (model) {
                     this.$store.commit('objectModel/setActiveModel', model)
-                    if (model.bk_classification_id === 'bk_biz_topo') {
-                        this.$store.commit('setBreadcumbs', [{
-                            i18n: '业务层级',
-                            route: {
-                                name: MENU_MODEL_BUSINESS_TOPOLOGY
-                            }
-                        }, { name: model.bk_obj_name }])
-                    } else {
-                        this.$store.commit('setBreadcumbs', [{
-                            i18n: '模型管理',
-                            route: {
-                                name: MENU_MODEL_MANAGEMENT
-                            }
-                        }, { name: model.bk_obj_name }])
-                    }
+                    this.$store.commit('addBreadcrumbs', {
+                        id: this.$route.name,
+                        name: model.bk_obj_name
+                    })
                     this.initModelInfo()
                 } else {
                     this.$router.replace({ name: 'status404' })
