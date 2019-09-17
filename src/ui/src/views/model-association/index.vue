@@ -26,6 +26,7 @@
                     v-model.trim="searchText"
                     :right-icon="'bk-icon icon-search'"
                     :placeholder="$t('请输入关联类型名称')"
+                    font-size="large"
                     @enter="searchRelation(true)">
                 </bk-input>
             </label>
