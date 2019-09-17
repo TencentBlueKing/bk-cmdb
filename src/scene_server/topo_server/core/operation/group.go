@@ -180,7 +180,7 @@ func (g *group) DeleteObjectAttributeGroup(params types.ContextParams, objID, pr
 		},
 	}
 
-	rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroup(context.Background(), params.Header, objID, input)
+	rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrs(context.Background(), params.Header, objID, &input)
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to set the group , error info is %s , rid: %s", err.Error(), params.ReqID)
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -196,7 +196,7 @@ func (g *group) DeleteObjectAttributeGroup(params types.ContextParams, objID, pr
 
 func (g *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error {
 
-	if(cond.Data.Index == nil && cond.Data.Name == nil){
+	if cond.Data.Index == nil && cond.Data.Name == nil {
 		return nil
 	}
 	input := metadata.UpdateOption{
