@@ -95,6 +95,12 @@ func (am *AuthManager) updateResources(ctx context.Context, resources ...meta.Re
 }
 
 func (am *AuthManager) Enabled() bool {
+	if am == nil {
+		return false
+	}
+	if am.Authorize == nil {
+		return false
+	}
 	return am.Authorize.Enabled()
 }
 
