@@ -51,21 +51,22 @@
                 </div>
             </div>
             <div class="options-button fr">
-                <bk-button class="icon-button"
+                <icon-button class="ml5"
                     v-bk-tooltips="$t('查看删除历史')"
                     icon="icon-cc-history"
                     @click="routeToHistory">
-                </bk-button>
-                <bk-button class="icon-button"
+                </icon-button>
+                <icon-button class="ml5"
                     v-bk-tooltips="$t('列表显示属性配置')"
                     icon="icon-cc-setting"
                     @click="columnsConfig.show = true">
-                </bk-button>
+                </icon-button>
             </div>
             <div class="options-filter clearfix fr">
                 <bk-select class="filter-selector fl"
                     v-model="filter.id"
                     searchable
+                    font-size="14"
                     :clearable="false">
                     <bk-option v-for="(option, index) in filter.options"
                         :key="index"
@@ -78,24 +79,28 @@
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     :auto-select="false"
+                    font-size="14"
                     v-model="filter.value"
                     @on-selected="getTableData">
                 </cmdb-form-enum>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
@@ -108,7 +113,7 @@
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 160"
+            :max-height="$APP.height - 190"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
@@ -206,7 +211,6 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import { MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
@@ -230,8 +234,8 @@
                     allList: [],
                     pagination: {
                         count: 0,
-                        limit: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
                     sort: 'bk_inst_id'
@@ -319,12 +323,12 @@
                 this.setTableHeader()
             },
             objId () {
-                this.setDynamicBreadcumbs()
+                this.setDynamicBreadcrumbs()
                 this.reload()
             }
         },
         created () {
-            this.setDynamicBreadcumbs()
+            this.setDynamicBreadcrumbs()
             this.reload()
         },
         methods: {
@@ -339,16 +343,12 @@
                 'batchDeleteInst',
                 'searchInstById'
             ]),
-            setDynamicBreadcumbs () {
+            setDynamicBreadcrumbs () {
                 this.$store.commit('setTitle', this.model.bk_obj_name)
-                this.$store.commit('setBreadcumbs', [{
-                    i18n: '资源目录',
-                    route: {
-                        name: MENU_RESOURCE_MANAGEMENT
-                    }
-                }, {
+                this.$store.commit('addBreadcrumbs', {
+                    id: this.$route.name,
                     name: this.model.bk_obj_name
-                }])
+                })
             },
             async reload () {
                 try {
@@ -382,8 +382,8 @@
                     allList: [],
                     pagination: {
                         count: 0,
-                        limit: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
                     sort: 'bk_inst_id'
@@ -790,11 +790,6 @@
                 border-color: #dcdee5 !important;
                 color: #c4c6cc !important;
             }
-        }
-    }
-    .options-button{
-        .icon-button {
-            margin-left: 5px;
         }
     }
     .models-table{

@@ -17,12 +17,12 @@
         <template v-else-if="list.length">
             <feature-tips
                 :show-tips="showFeatureTips"
-                :desc="$t('同步模版功能提示')">
+                :desc="$t('同步模板功能提示')">
             </feature-tips>
             <p class="tips" :style="{ 'padding-top': showFeatureTips ? '20px' : '0' }">
                 {{$t('请确认')}}
                 <span>{{treePath}}</span>
-                {{$t('模版更新信息')}}
+                {{$t('模板更新信息')}}
             </p>
             <div class="info-tab">
                 <div class="tab-head">
@@ -62,7 +62,7 @@
                             <div class="process-name mb50"
                                 v-show="process['operational_type'] === 'removed'">
                                 <span style="font-weight: bold;">{{process['process_template_name']}}</span>
-                                {{$t('从模版中删除')}}
+                                {{$t('从模板中删除')}}
                             </div>
                             <div class="process-info clearfix" v-show="process['operational_type'] === 'changed'">
                                 <div class="info-item fl"
@@ -225,14 +225,6 @@
         },
         async created () {
             try {
-                this.$store.commit('setBreadcumbs', [{
-                    i18n: '服务拓扑',
-                    route: {
-                        path: '/business/topology'
-                    }
-                }, {
-                    name: '同步模板'
-                }])
                 await this.getCategory()
                 await this.getModaelProperty()
                 await this.getModuleInstance()
@@ -668,6 +660,7 @@
                         height: 256px;
                         display: flex;
                         flex-wrap: wrap;
+                        align-content: flex-start;
                         .instances-item {
                             @include space-between;
                             width: 240px;

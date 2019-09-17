@@ -21,7 +21,7 @@ export default {
             i18n: '主机'
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'global'
         },
         filterPropertyKey: 'resource_host_filter_properties'

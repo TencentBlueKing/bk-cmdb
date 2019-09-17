@@ -21,7 +21,7 @@ export default {
             i18n: '关联类型'
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'global'
         }
     })

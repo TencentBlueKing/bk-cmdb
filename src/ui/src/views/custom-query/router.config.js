@@ -25,10 +25,9 @@ export default {
             parent: MENU_BUSINESS_HOST
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'business'
         },
-        requireBusiness: true,
-        i18nTitle: '动态分组'
+        requireBusiness: true
     })
 }
