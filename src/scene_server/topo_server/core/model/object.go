@@ -380,8 +380,7 @@ func (o *object) IsExists() (bool, error) {
 
 	// check name
 	cond = condition.CreateCondition()
-	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
-	cond.Field(o.GetInstIDFieldName()).Eq(o.obj.ObjectName)
+	cond.Field(metadata.ModelFieldObjectName).Eq(o.obj.ObjectName)
 	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
 
 	items, err = o.search(cond)
@@ -447,7 +446,7 @@ func (o *object) Create() error {
 	}
 
 	if exists {
-		return o.params.Err.Errorf(common.CCErrCommDuplicateItem, o.obj.ObjectName)
+		return o.params.Err.Errorf(common.CCErrCommDuplicateItem, o.obj.ObjectID+"/"+o.obj.ObjectName)
 	}
 
 	if o.obj.ObjIcon == "" {
