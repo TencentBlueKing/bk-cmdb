@@ -112,5 +112,6 @@
     "1101090": "update service category on module create by template forbidden",
     "1101091": "update name field on module create by template forbidden",
     "1101092": "can not add required attribute field for a mainline model",
+    "1101093": "line %d: bk_obj_id field conflict with url",
     "": "" 
 }

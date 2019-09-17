@@ -40,8 +40,6 @@ const (
 	cmdbUserID             string = "system"
 )
 
-const pageSize = 1000
-
 // ParseConfigFromKV returns a new config
 func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, error) {
 	var err error
@@ -574,6 +572,8 @@ func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.User
 	return authorizedAudits, nil
 }
 
+const pageSize = 500
+
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
 
@@ -599,9 +599,6 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 		}
 	}
 	if len(resourceEntities) == 0 {
-		if blog.V(5) {
-			blog.InfoJSON("no resource need to register for: %s, rid: %s", registerInfo, rid)
-		}
 		return nil
 	}
 	registerInfo.Resources = resourceEntities
@@ -637,13 +634,9 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 
 	if ac.Config.Enable == false {
 		blog.V(5).Infof("auth disabled, auth config: %+v, rid: %s", ac.Config, rid)
-		return nil, nil
+		return new(RegisterInfo), nil
 	}
 
-	if len(rs) <= 0 {
-		blog.V(5).Infof("no resource should be register, rid: %s", rid)
-		return nil, nil
-	}
 	info := RegisterInfo{}
 	info.CreatorType = cmdbUser
 	info.CreatorID = user

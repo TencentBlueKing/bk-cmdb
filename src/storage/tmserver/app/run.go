@@ -77,7 +77,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		break
 	}
 	tmServer.engin = engine
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(coreService.WebService())); err != nil {
+	handler := restful.NewContainer().Add(coreService.WebService())
+	if err := backbone.StartServer(ctx, engine, handler, true); err != nil {
 		return err
 	}
 	// waiting to exit
