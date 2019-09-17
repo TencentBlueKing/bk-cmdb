@@ -13,9 +13,11 @@
 package rest
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
@@ -101,13 +103,21 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 		restContexts := new(Contexts)
 		restContexts.Request = req
 		restContexts.resp = resp
+		header := req.Request.Header
+		rid := util.GetHTTPCCRequestID(header)
+		user := util.GetUser(header)
+		owner := util.GetOwnerID(header)
+		ctx := req.Request.Context()
+		ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+		ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
+		ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
 		restContexts.Kit = &Kit{
-			Header:          req.Request.Header,
-			Rid:             util.GetHTTPCCRequestID(req.Request.Header),
-			Ctx:             req.Request.Context(),
-			User:            util.GetUser(req.Request.Header),
+			Header:          header,
+			Rid:             rid,
+			Ctx:             ctx,
+			User:            user,
 			CCError:         r.ErrorIf.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)),
-			SupplierAccount: util.GetOwnerID(req.Request.Header),
+			SupplierAccount: owner,
 		}
 
 		action.Handler(restContexts)
