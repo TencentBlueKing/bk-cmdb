@@ -104,7 +104,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Engine: procSvr.Engine,
 	}
 
-	if err := backbone.StartServer(ctx, engine, procSvr.WebService()); err != nil {
+	if err := backbone.StartServer(ctx, engine, procSvr.WebService(), true); err != nil {
 		return err
 	}
 
