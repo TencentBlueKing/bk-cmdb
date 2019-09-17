@@ -23,8 +23,8 @@ export default {
             i18n: '事件订阅'
         },
         auth: {
-            view: OPERATION.R_EVENT,
-            operation: Object.values(OPERATION),
+            view: { R_EVENT },
+            operation: OPERATION,
             authScope: 'global'
         }
     })

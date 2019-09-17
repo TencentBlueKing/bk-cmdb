@@ -361,7 +361,7 @@ const (
 	CCErrorTopoDeletePredefinedAssociation = 1101055
 	// association do not exist.
 	CCErrorTopoAssociationDoNotExist = 1101056
-	// create model's instance patch, but instance's data missing field bk_inst_name
+	// create model's instance batch, but instance's data missing field bk_inst_name
 	CCErrorTopoObjectInstanceMissingInstanceNameField = 1101057
 	// object instance's bk_inst_name filed is not string
 	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
@@ -431,6 +431,7 @@ const (
 	CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden = 1101090
 	CCErrorTopoUpdateModuleFromTplNameForbidden            = 1101091
 	CCErrTopoCanNotAddRequiredAttributeForMainlineModel    = 1101092
+	CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl     = 1101093
 
 	// object controller 1102XXX
 

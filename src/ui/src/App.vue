@@ -7,6 +7,10 @@
         <the-header></the-header>
         <router-view class="views-layout"></router-view>
         <the-permission-modal ref="permissionModal"></the-permission-modal>
+        <cmdb-business-selector v-if="businessSelectorVisible" hidden
+            @on-select="resolveBusinessSelectorPromise"
+            @business-empty="resolveBusinessSelectorPromise">
+        </cmdb-business-selector>
     </div>
 </template>
 
@@ -30,7 +34,7 @@
             }
         },
         computed: {
-            ...mapGetters(['globalLoading']),
+            ...mapGetters(['globalLoading', 'businessSelectorVisible']),
             ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey'])
         },
         mounted () {
@@ -44,6 +48,9 @@
             removeResizeListener(this.$el, this.calculateAppHeight)
         },
         methods: {
+            resolveBusinessSelectorPromise () {
+                this.$store.commit('resolveBusinessSelectorPromise')
+            },
             calculateAppHeight () {
                 this.$store.commit('setAppHeight', this.$el.offsetHeight)
             }

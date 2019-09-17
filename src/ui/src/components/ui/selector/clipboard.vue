@@ -1,5 +1,5 @@
 <template>
-    <bk-dropdown-menu trigger="click" :disabled="disabled">
+    <bk-dropdown-menu trigger="click" :disabled="disabled" font-size="large">
         <bk-button class="clipboard-trigger" theme="default" slot="dropdown-trigger"
             :disabled="disabled">
             {{$t('复制')}}

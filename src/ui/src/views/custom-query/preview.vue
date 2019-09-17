@@ -8,7 +8,7 @@
                     v-bkloading="{ isLoading: $loading('searchHost') }"
                     :data="table.list"
                     :pagination="table.pagination"
-                    :max-height="$APP.height - 220"
+                    :max-height="379"
                     @page-change="handlePageChange"
                     @page-limit-change="handleSizeChange"
                     @sort-change="handleSortChange">
@@ -185,8 +185,7 @@
         z-index: 99;
         .userapi-preview {
             position: absolute;
-            max-width: 80%;
-            min-width: 50%;
+            width: 880px;
             max-height: 80%;
             min-height: 300px;
             margin: 20px auto;
@@ -197,10 +196,9 @@
             box-shadow: 0 0 8px 4px rgba(0, 0, 0, 0.1);
             border-radius: 2px;
             .preview-title {
-                padding-left: 24px;
-                line-height: 68px;
-                font-size: 20px;
-                color: #333948;
+                padding: 15px 0 15px 24px;
+                font-size: 24px;
+                color: #444444;
                 font-weight: normal;
             }
             .icon-close {
@@ -208,7 +206,8 @@
                 top: 12px;
                 right: 12px;
                 cursor: pointer;
-                font-size: 12px;
+                font-size: 14px;
+                font-weight: bold;
             }
         }
         .preview-table {

@@ -22,9 +22,11 @@
                                     <bk-checkbox class="form-checkbox"
                                         v-bk-tooltips="$t('纳入模板管理')"
                                         v-if="property['isLocking'] !== undefined"
-                                        v-model="values[property['bk_property_id']]['as_default_value']">
+                                        v-model="values[property['bk_property_id']]['as_default_value']"
+                                        @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
+                                        <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                     </bk-checkbox>
-                                    <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                    <span v-else class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                     <i class="property-name-tooltips icon-cc-tips"
                                         v-if="property['placeholder']"
                                         v-bk-tooltips="htmlEncode(property['placeholder'])">
@@ -363,6 +365,20 @@
                 } else {
                     this.$emit('on-cancel')
                 }
+            },
+            handleResetValue (status, property) {
+                if (!status) {
+                    const type = property['bk_property_type']
+                    if (['enum'].includes(type)) {
+                        const option = property['option']
+                        const defaultValue = option[0]['id'] ? option[0]['id'] : ''
+                        this.values[property['bk_property_id']]['value'] = defaultValue
+                    } else if (['bool'].includes(type)) {
+                        this.values[property['bk_property_id']]['value'] = false
+                    } else {
+                        this.values[property['bk_property_id']]['value'] = ''
+                    }
+                }
             }
         }
     }
@@ -414,9 +430,8 @@
             .property-name-text{
                 position: relative;
                 display: inline-block;
-                max-width: calc(100% - 20px);
-                padding: 0 14px 0 0;
                 vertical-align: middle;
+                padding: 0 14px 0 0;
                 font-size: 14px;
                 @include ellipsis;
                 &.required:after{
@@ -448,7 +463,6 @@
                 }
             }
             .form-checkbox {
-                margin: 0 6px 0 0;
                 outline: 0;
             }
         }

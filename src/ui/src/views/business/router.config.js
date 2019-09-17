@@ -28,7 +28,7 @@ export default [{
             relative: MENU_RESOURCE_MANAGEMENT
         },
         auth: {
-            operation: Object.values(OPERATION),
+            operation: OPERATION,
             authScope: 'global'
         }
     })
@@ -41,8 +41,8 @@ export default [{
             i18n: '已归档业务'
         },
         auth: {
-            view: OPERATION.BUSINESS_ARCHIVE,
-            operation: [OPERATION.BUSINESS_ARCHIVE],
+            view: { BUSINESS_ARCHIVE },
+            operation: { BUSINESS_ARCHIVE },
             authScope: 'global'
         },
         checkAvailable: (to, from, app) => {
