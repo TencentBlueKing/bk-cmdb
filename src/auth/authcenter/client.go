@@ -412,12 +412,13 @@ func (a *authClient) DeleteResourceType(ctx context.Context, header http.Header,
 }
 
 func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAuthorizedResources) ([]AuthorizedResource, error) {
+	header := util.CloneHeader(a.basicHeader)
 	resp := ListAuthorizedResourcesResult{}
 
 	err := a.client.Post().
 		SubResourcef("/bkiam/api/v1/perm/systems/%s/authorized-resources/search", SystemIDCMDB).
 		WithContext(ctx).
-		WithHeaders(a.basicHeader).
+		WithHeaders(header).
 		Body(body).
 		Do().Into(&resp)
 	if err != nil {
@@ -432,12 +433,13 @@ func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAutho
 
 // find resource list that a user got any authorized resources.
 func (a *authClient) GetAnyAuthorizedScopes(ctx context.Context, scopeID string, body *Principal) ([]string, error) {
+	header := util.CloneHeader(a.basicHeader)
 	resp := ListAuthorizedScopeResult{}
 
 	err := a.client.Post().
 		SubResourcef("/bkiam/api/v1/perm/systems/%s/scope_type/%s/authorized-scopes", SystemIDCMDB, scopeID).
 		WithContext(ctx).
-		WithHeaders(a.basicHeader).
+		WithHeaders(header).
 		Body(body).
 		Do().Into(&resp)
 	if err != nil {
