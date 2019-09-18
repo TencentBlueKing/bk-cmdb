@@ -4,7 +4,7 @@
             <div class="left-info">
                 <i class="bk-icon icon-right-shape" :class="{ 'is-expand': localExpand }"></i>
                 <h2 class="path">广东省厅 / 深圳区 / 正式环境集群</h2>
-                <span class="count is-read">2</span>
+                <span :class="['count', { 'is-read': hasRead }]">{{changeCount}}</span>
             </div>
             <i v-show="iconClose" class="bk-icon icon-close" @click.stop="handleClose"></i>
         </div>
@@ -15,20 +15,15 @@
                     <div class="sync-title" :class="{ 'is-expand': beforeSyncExpand }" @click.stop="beforeSyncExpand = !beforeSyncExpand">
                         <i class="bk-icon icon-right-shape"></i>
                         <i class="bk-icon icon-cc-nav-model-02"></i>
-                        <span class="set-name">广东省厅级…正式环境集群</span>
+                        <span class="set-name">{{instance.bk_set_name}}</span>
                     </div>
-                    <ul class="sync-info" v-show="beforeSyncExpand">
-                        <li class="mt20 has-delete">
-                            <i class="bk-icon icon-cc-nav-model-02"></i>
-                            <span class="name">Gamesever_01</span>
-                        </li>
-                        <li class="mt20 new-add">
-                            <i class="bk-icon icon-cc-nav-model-02"></i>
-                            <span class="name">Gamesever_01</span>
-                        </li>
+                    <ul class="sync-info"
+                        v-show="beforeSyncExpand"
+                        v-for="_module in beforeChangeList"
+                        :key="_module.bk_module_id">
                         <li class="mt20">
                             <i class="bk-icon icon-cc-nav-model-02"></i>
-                            <span class="name">Gamesever_01</span>
+                            <span class="name">{{_module.bk_module_name}}</span>
                         </li>
                     </ul>
                 </div>
@@ -38,28 +33,24 @@
                 <div class="sync-main fl">
                     <div class="sync-title" :class="{ 'is-expand': afterSyncExpand }" @click.stop="afterSyncExpand = !afterSyncExpand">
                         <i class="bk-icon icon-right-shape"></i>
-                        <span class="set-name">
-                            <i class="bk-icon icon-cc-nav-model-02"></i>
-                            广东省厅级…正式环境集群
-                        </span>
+                        <i class="bk-icon icon-cc-nav-model-02"></i>
+                        <span class="set-name">{{instance.bk_set_name}}</span>
                     </div>
-                    <ul class="sync-info" v-show="afterSyncExpand">
-                        <li class="mt20">
+                    <ul class="sync-info"
+                        v-show="afterSyncExpand"
+                        v-for="_module in instance.difference"
+                        :key="_module.bk_module_id">
+                        <li :class="['mt20', {
+                            'has-delete': _module.diff_type === 'delete',
+                            'has-changed': _module.diff_type === 'changed',
+                            'new-add': _module.diff_type === 'add'
+                        }]">
                             <i class="bk-icon icon-cc-nav-model-02"></i>
-                            <span class="name">Gamesever_01</span>
-                        </li>
-                        <li class="mt20">
-                            <i class="bk-icon icon-cc-nav-model-02"></i>
-                            <span class="name">Gamesever_01</span>
-                        </li>
-                        <li class="mt20">
-                            <i class="bk-icon icon-cc-nav-model-02"></i>
-                            <span class="name">Gamesever_01</span>
+                            <span class="name">{{_module.bk_module_name}}</span>
                         </li>
                     </ul>
                 </div>
             </div>
-            <div class="after-sync"></div>
         </div>
     </div>
 </template>
@@ -67,6 +58,10 @@
 <script>
     export default {
         props: {
+            instance: {
+                type: Object,
+                required: true
+            },
             expand: {
                 type: Boolean,
                 default: false
@@ -80,7 +75,24 @@
             return {
                 localExpand: this.expand,
                 beforeSyncExpand: true,
-                afterSyncExpand: true
+                afterSyncExpand: true,
+                hasRead: this.expand
+            }
+        },
+        computed: {
+            beforeChangeList () {
+                return this.instance.difference.filter(_module => _module.diff_type !== 'add')
+            },
+            changeCount () {
+                const changeList = this.instance.difference.filter(_module => _module.diff_type !== 'unchanged')
+                return changeList.length
+            }
+        },
+        watch: {
+            localExpand (value) {
+                if (value && !this.hasRead) {
+                    this.hasRead = true
+                }
             }
         },
         methods: {
@@ -203,6 +215,12 @@
                     }
                     .name {
                         text-decoration: line-through;
+                    }
+                }
+                &.has-changed {
+                    color: #3A84FF;
+                    .bk-icon {
+                        background-color: #3A84FF;
                     }
                 }
                 &.new-add {
