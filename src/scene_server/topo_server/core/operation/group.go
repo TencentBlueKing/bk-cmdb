@@ -148,6 +148,18 @@ func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond
 
 func (g *group) UpdateObjectAttributeGroup(params types.ContextParams, conds []metadata.PropertyGroupObjectAtt) error {
 	for _, cond := range conds {
+		grpCond := condition.CreateCondition()
+		grpCond.Field(metadata.GroupFieldGroupID).Eq(cond.Data.PropertyGroupID)
+		grpCond.Field(metadata.GroupFieldObjectID).Eq(cond.Condition.ObjectID)
+		grps, err := g.FindObjectGroup(params, grpCond)
+		if nil != err {
+			blog.Errorf("[operation-grp] failed to get the group  by the condition (%#v), error info is %s , rid: %s", cond, err.Error(), params.ReqID)
+			return err
+		}
+		if len(grps) != 1 {
+			cond.Data.PropertyGroupID = ""
+		}
+
 		input := metadata.UpdateOption{
 			Condition: mapstr.NewFromStruct(cond.Condition, "json"),
 			Data:      mapstr.NewFromStruct(cond.Data, "json"),

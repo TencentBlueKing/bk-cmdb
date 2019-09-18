@@ -497,6 +497,36 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
+		It("create object invalid bk_classification_id", func() {
+			input := metadata.Object{
+				ObjCls:     "124334452",
+				ObjIcon:    "icon-cc-business",
+				ObjectID:   "cc123",
+				ObjectName: "cc123",
+				OwnerID:    "0",
+				Creator:    "admin",
+			}
+			rsp, err := objectClient.CreateObject(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrTopoObjectCreateFailed))
+		})
+
+		It("create object invalid bk_obj_name", func() {
+			input := metadata.Object{
+				ObjCls:     "bk_network",
+				ObjIcon:    "icon-cc-business",
+				ObjectID:   "cc1234",
+				ObjectName: "~!@#$%^&*()",
+				OwnerID:    "0",
+				Creator:    "admin",
+			}
+			rsp, err := objectClient.CreateObject(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+		})
+
 		It("create object bk_classification_id = 'cc_class' and bk_obj_id='test_obj'", func() {
 			input := metadata.Object{
 				ObjCls:     "cc_class",
@@ -557,6 +587,16 @@ var _ = Describe("object test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
+		})
+
+		It("update object invalid bk_obj_name", func() {
+			input := map[string]interface{}{
+				"bk_obj_name": "~!@#$%^&*()",
+			}
+			rsp, err := objectClient.UpdateObject(context.Background(), objId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrTopoObjectUpdateFailed))
 		})
 
 		It("search objects", func() {
@@ -701,6 +741,20 @@ var _ = Describe("object test", func() {
 				Expect(rsp.Code).To(Equal(common.CCErrTopoObjectGroupCreateFailed))
 			})
 
+			It("create group invalid ObjectID", func() {
+				input := metadata.Group{
+					GroupID:    "123456",
+					GroupName:  "123456",
+					GroupIndex: 4,
+					ObjectID:   "123456",
+					OwnerID:    "0",
+				}
+				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrTopoObjectGroupCreateFailed))
+			})
+
 			It("update group", func() {
 				input := &metadata.PropertyGroupCondition{
 					Condition: map[string]interface{}{
@@ -817,14 +871,104 @@ var _ = Describe("object test", func() {
 				Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 			})
 
-			It("create object attribute bk_obj_id='cc_obj' and bk_property_id='test_singlechar' and bk_property_name='test_singlechar'", func() {
+			It("create object attribute invalid ObjectID", func() {
+				input := &metadata.ObjAttDes{
+					Attribute: metadata.Attribute{
+						OwnerID:       "0",
+						ObjectID:      "123456",
+						PropertyID:    "sglchar",
+						PropertyName:  "123456",
+						PropertyGroup: "default",
+						IsEditable:    true,
+						PropertyType:  "singlechar",
+					},
+				}
+				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrTopoObjectAttributeCreateFailed))
+			})
+
+			It("create object attribute long PropertyID", func() {
+				input := &metadata.ObjAttDes{
+					Attribute: metadata.Attribute{
+						OwnerID:       "0",
+						ObjectID:      "cc_obj",
+						PropertyID:    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+						PropertyName:  "1234567",
+						PropertyGroup: "default",
+						IsEditable:    true,
+						PropertyType:  "singlechar",
+					},
+				}
+				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommValExceedMaxFailed))
+			})
+
+			It("create object attribute invalid PropertyID", func() {
+				input := &metadata.ObjAttDes{
+					Attribute: metadata.Attribute{
+						OwnerID:       "0",
+						ObjectID:      "cc_obj",
+						PropertyID:    "~!@#$%^%^",
+						PropertyName:  "12345678",
+						PropertyGroup: "default",
+						IsEditable:    true,
+						PropertyType:  "singlechar",
+					},
+				}
+				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+			})
+
+			It("create object attribute invalid PropertyName", func() {
+				input := &metadata.ObjAttDes{
+					Attribute: metadata.Attribute{
+						OwnerID:       "0",
+						ObjectID:      "cc_obj",
+						PropertyID:    "cc1",
+						PropertyName:  "~!@#$%^%^",
+						PropertyGroup: "default",
+						IsEditable:    true,
+						PropertyType:  "singlechar",
+					},
+				}
+				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+			})
+
+			It("create object attribute invalid PropertyType", func() {
+				input := &metadata.ObjAttDes{
+					Attribute: metadata.Attribute{
+						OwnerID:       "0",
+						ObjectID:      "cc_obj",
+						PropertyID:    "cc2",
+						PropertyName:  "123456789",
+						PropertyGroup: "default",
+						IsEditable:    true,
+						PropertyType:  "xxxxxxxxxxxxxxx",
+					},
+				}
+				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+			})
+
+			It("create object attribute bk_obj_id='cc_obj' and bk_property_id='test_singlechar' and bk_property_name='test_singlechar' and invalid PropertyGroup", func() {
 				input := &metadata.ObjAttDes{
 					Attribute: metadata.Attribute{
 						OwnerID:       "0",
 						ObjectID:      "cc_obj",
 						PropertyID:    "test_singlechar",
 						PropertyName:  "test_singlechar",
-						PropertyGroup: "default",
+						PropertyGroup: "abcdefg",
 						IsEditable:    true,
 						PropertyType:  "singlechar",
 					},
@@ -838,7 +982,7 @@ var _ = Describe("object test", func() {
 				Expect(data.ObjectID).To(Equal(input.ObjectID))
 				Expect(data.PropertyID).To(Equal(input.PropertyID))
 				Expect(data.PropertyName).To(Equal(input.PropertyName))
-				Expect(data.PropertyGroup).To(Equal(input.PropertyGroup))
+				Expect(data.PropertyGroup).To(Equal("default"))
 				Expect(data.IsEditable).To(Equal(input.IsEditable))
 				Expect(data.PropertyType).To(Equal(input.PropertyType))
 				Expect(data.OwnerID).To(Equal(input.OwnerID))
@@ -862,6 +1006,16 @@ var _ = Describe("object test", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 				Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
+			})
+
+			It("update object attribute invalid bk_property_name", func() {
+				input := map[string]interface{}{
+					"bk_property_name": "~!@#$%^%^",
+				}
+				rsp, err := apiServerClient.UpdateObjectAtt(context.Background(), attrId1, header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 			})
 
 			It("delete object attribute id="+attrId, func() {
@@ -897,6 +1051,22 @@ var _ = Describe("object test", func() {
 				arr[0].Condition.PropertyID = "test_singlechar"
 				arr[0].Condition.OwnerID = "0"
 				arr[0].Data.PropertyGroupID = "1"
+				input := map[string]interface{}{
+					"data": arr,
+				}
+				rsp, err := objectClient.UpdatePropertyGroupObjectAtt(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+			})
+
+			It("update nonexist object attribute property group", func() {
+				arr := []metadata.PropertyGroupObjectAtt{
+					metadata.PropertyGroupObjectAtt{},
+				}
+				arr[0].Condition.ObjectID = "cc_obj"
+				arr[0].Condition.PropertyID = "test_singlechar"
+				arr[0].Condition.OwnerID = "0"
+				arr[0].Data.PropertyGroupID = "10000"
 				input := map[string]interface{}{
 					"data": arr,
 				}
