@@ -13,7 +13,6 @@
 package authcenter
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -352,14 +351,10 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 }
 
 func GetBizNameByID(clientSet apimachinery.ClientSetInterface, header http.Header, bizID int64) (string, error) {
+	ctx := util.NewContextFromHTTPHeader(header)
 	rid := util.GetHTTPCCRequestID(header)
 
-	param := metadata.QueryCondition{
-		Condition: map[string]interface{}{
-			common.BKAppIDField: bizID,
-		},
-	}
-	result, err := clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKInnerObjIDApp, &param)
+	result, err := clientSet.TopoServer().Instance().GetAppBasicInfo(ctx, header, bizID)
 	if err != nil {
 		return "", err
 	}
@@ -369,14 +364,7 @@ func GetBizNameByID(clientSet apimachinery.ClientSetInterface, header http.Heade
 	if !result.Result {
 		return "", errors.New(result.ErrMsg)
 	}
-	if len(result.Data.Info) == 0 {
-		return "", fmt.Errorf("biz %d not found", bizID)
-	}
-	bizNameIf, exist := result.Data.Info[0][common.BKAppNameField]
-	if exist == false {
-		return "", fmt.Errorf("field %s not exist", common.BKAppNameField)
-	}
-	bizName := util.GetStrByInterface(bizNameIf)
+	bizName := result.Data.BizName
 	blog.V(5).Infof("GetBizNameByID bizID: %d ==> bizName: %s, rid: %s", bizID, bizName, rid)
 	return bizName, nil
 }
