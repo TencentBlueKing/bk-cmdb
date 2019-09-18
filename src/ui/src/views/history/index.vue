@@ -10,11 +10,19 @@
                 v-model="defaultDate"
                 @change="setFilterTime">
             </bk-date-picker>
+            <bk-input class="history-host-filter ml10"
+                v-if="objId === 'host'"
+                right-icon="icon-search"
+                v-model="ip"
+                :placeholder="$t('请输入xx', { name: 'IP' })"
+                @enter="handlePageChange(1)">
+            </bk-input>
         </div>
         <bk-table class="history-table"
             v-bkloading="{ isLoading: $loading() }"
             :pagination="pagination"
             :data="list"
+            :max-height="$APP.height - 190"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column v-for="column in header"
@@ -48,7 +56,8 @@
                 startDate,
                 endDate,
                 opTimeResolver: null,
-                defaultDate: [startDate, endDate]
+                defaultDate: [startDate, endDate],
+                ip: ''
             }
         },
         computed: {
@@ -221,7 +230,7 @@
                 })
             },
             getSearchParams () {
-                return {
+                const params = {
                     condition: {
                         'op_type': 3,
                         'op_time': this.opTime,
@@ -231,6 +240,10 @@
                     limit: this.pagination.limit,
                     sort: '-op_time'
                 }
+                if (this.objId === 'host' && this.ip) {
+                    params.condition.ext_key = { '$regex': this.ip }
+                }
+                return params
             },
             handleSizeChange (size) {
                 this.pagination.limit = size
@@ -249,17 +262,15 @@
         padding: 0 20px;
     }
     .history-options{
-        font-size: 14px;
+        font-size: 0px;
+        .history-host-filter {
+            width: 260px;
+            display: inline-block;
+            vertical-align: top;
+        }
     }
     .history-table{
         margin-top: 20px;
     }
-</style>
 
-<style lang="scss">
-    .history-date-range{
-        .range-action{
-            display: none;
-        }
-    }
 </style>
