@@ -8,7 +8,7 @@
         <bk-table class="archived-table"
             :pagination="pagination"
             :data="list"
-            :max-height="$APP.height - 160"
+            :max-height="$APP.height - 190"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column v-for="column in header"
@@ -37,7 +37,6 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import { MENU_RESOURCE_BUSINESS } from '@/dictionary/menu-symbol'
     export default {
         data () {
             return {
@@ -50,8 +49,8 @@
                 },
                 pagination: {
                     current: 1,
-                    limit: 10,
-                    count: 0
+                    count: 0,
+                    ...this.$tools.getDefaultPaginationConfig()
                 }
             }
         },
@@ -67,14 +66,6 @@
             }
         },
         async created () {
-            this.$store.commit('setBreadcumbs', [{
-                i18n: '业务',
-                route: {
-                    name: MENU_RESOURCE_BUSINESS
-                }
-            }, {
-                name: this.$t(this.$route.meta.menu.i18n)
-            }])
             try {
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({

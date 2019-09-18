@@ -15,6 +15,7 @@ package metadata
 import (
 	"strings"
 
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 )
 
@@ -36,6 +37,17 @@ type QueryCondition struct {
 	Limit     SearchLimit   `json:"limit"`
 	SortArr   []SearchSort  `json:"sort"`
 	Condition mapstr.MapStr `json:"condition"`
+}
+
+// IsIllegal  limit is illegal, if limit = 0; change to default page size
+func (qc *QueryCondition) IsIllegal() bool {
+	if qc.Limit.Limit == 0 {
+		qc.Limit.Limit = common.BKDefaultLimit
+	}
+	if qc.Limit.Limit > common.BKMaxPageSize && qc.Limit.Limit != common.BKNoLimit {
+		return true
+	}
+	return false
 }
 
 // QueryResult common query result
@@ -116,4 +128,13 @@ func (ss *searchSortParse) ToMongo() string {
 		}
 	}
 	return strings.Join(orderByArr, ",")
+}
+
+// IsIllegal  limit is illegal
+func (page SearchLimit) IsIllegal() bool {
+	if page.Limit > common.BKMaxPageSize && page.Limit != common.BKNoLimit ||
+		page.Limit == 0 {
+		return true
+	}
+	return false
 }

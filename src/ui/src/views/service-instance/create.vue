@@ -102,17 +102,10 @@
             }
         },
         created () {
-            this.$store.commit('setBreadcumbs', [{
-                i18n: '服务拓扑',
-                route: {
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
-                    query: {
-                        module: this.$route.params.moduleId
-                    }
-                }
-            }, {
+            this.$store.commit('addBreadcrumbs', {
+                id: this.$route.name,
                 name: this.$route.query.title
-            }])
+            })
             this.getModuleInstance()
         },
         methods: {

@@ -93,8 +93,8 @@ func (m *Manager) porterLoop(p Porter) {
 
 func (m *Manager) runPorter(p Porter) {
 	defer func() {
-		if syserr := recover(); syserr != nil {
-			blog.Errorf("[manager] porter [%s] panic by: %v, stack:\n %s", p.Name(), syserr, debug.Stack())
+		if sysErr := recover(); sysErr != nil {
+			blog.Errorf("[manager] porter [%s] panic by: %v, stack:\n %s", p.Name(), sysErr, debug.Stack())
 		}
 	}()
 	if err := p.Run(); err != nil {

@@ -145,17 +145,23 @@
             }
         },
         watch: {
-            modelId (modelId) {
-                if (modelId) {
-                    this.type = 'details'
-                    this.init()
+            modelId: {
+                immediate: true,
+                handler (modelId) {
+                    if (modelId) {
+                        this.type = 'details'
+                        this.init()
+                    }
                 }
             },
-            async selectedNode (node) {
-                if (node) {
-                    this.type = 'details'
-                    await this.getInstance()
-                    this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
+            selectedNode: {
+                immediate: true,
+                async handler (node) {
+                    if (node) {
+                        this.type = 'details'
+                        await this.getInstance()
+                        this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
+                    }
                 }
             }
         },

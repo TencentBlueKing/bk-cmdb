@@ -104,11 +104,13 @@
                     return {}
                 }
                 rules.required = true
-                rules.instanceTag = true
                 if (type === 'key') {
+                    rules.instanceTagKey = true
                     const list = this.$tools.clone(this.list)
                     list.splice(currentIndex, 1)
                     rules.repeatTagKey = list.map(label => label.key)
+                } else {
+                    rules.instanceTagValue = true
                 }
                 return rules
             },
