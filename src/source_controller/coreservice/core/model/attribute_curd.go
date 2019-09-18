@@ -129,6 +129,9 @@ func (m *modelAttribute) checkAttributeMustNotEmpty(ctx core.ContextParams, attr
 	if attribute.PropertyName == "" {
 		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
 	}
+	if attribute.PropertyType == "" {
+		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
+	}
 	return nil
 }
 
@@ -136,28 +139,56 @@ func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribut
 	if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
 		return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
 	} else if attribute.PropertyID != "" {
-		match, err := regexp.MatchString(`^[a-z\d_]+$`, attribute.PropertyID)
-		if nil != err {
-			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
-		}
-		if !match {
+		match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, attribute.PropertyID)
+		if nil != err || !match {
 			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
 		}
 	}
 
 	if common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
 		return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
+	} else if attribute.PropertyName != "" {
+		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, attribute.PropertyName)
+		if nil != err || !match {
+			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyName)
+		}
 	}
 
 	if attribute.Placeholder != "" {
 		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(attribute.Placeholder) {
 			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)
 		}
+		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, attribute.Placeholder)
+		if nil != err || !match {
+			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHoler)
+		}
 	}
 
 	if attribute.Unit != "" {
 		if common.AttributeUnitMaxLength < utf8.RuneCountInString(attribute.Unit) {
 			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_uint"), common.AttributeUnitMaxLength)
+		}
+		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, attribute.Unit)
+		if nil != err || !match {
+			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldUnit)
+		}
+	}
+
+	if attribute.PropertyType != "" {
+		if attribute.PropertyType != common.FieldTypeSingleChar &&
+			attribute.PropertyType != common.FieldTypeLongChar &&
+			attribute.PropertyType != common.FieldTypeInt &&
+			attribute.PropertyType != common.FieldTypeFloat &&
+			attribute.PropertyType != common.FieldTypeEnum &&
+			attribute.PropertyType != common.FieldTypeDate &&
+			attribute.PropertyType != common.FieldTypeTime &&
+			attribute.PropertyType != common.FieldTypeUser &&
+			attribute.PropertyType != common.FieldTypeSingleAsst &&
+			attribute.PropertyType != common.FieldTypeMultiAsst &&
+			attribute.PropertyType != common.FieldTypeForeignKey &&
+			attribute.PropertyType != common.FieldTypeTimeZone &&
+			attribute.PropertyType != common.FieldTypeBool {
+			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
 	}
 
@@ -309,6 +340,10 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 	data.Remove(metadata.AttributeFieldPropertyType)
 	data.Remove(metadata.AttributeFieldCreateTime)
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
+
+	if grp, exists := data.Get(metadata.AttributeFieldPropertyGroup); exists && (grp == "") {
+		data.Remove(metadata.AttributeFieldPropertyGroup)
+	}
 
 	attribute := metadata.Attribute{}
 	if err = data.MarshalJSONInto(&attribute); err != nil {

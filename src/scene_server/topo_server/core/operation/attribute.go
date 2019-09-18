@@ -108,24 +108,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 	}
 	// create the default group
 	if 0 == len(groupResult) {
-
-		group := metadata.Group{
-			IsDefault:  true,
-			GroupIndex: -1,
-			GroupName:  common.BKBizDefault,
-			GroupID:    common.BKBizDefault,
-			ObjectID:   att.Attribute().ObjectID,
-			OwnerID:    att.Attribute().OwnerID,
-		}
-		if nil != params.MetaData {
-			group.Metadata = *params.MetaData
-		}
-
-		data := mapstr.NewFromStruct(group, "field")
-		if _, err := a.grp.CreateObjectGroup(params, data); nil != err {
-			blog.Errorf("[operation-obj] failed to create the default group, err: %s, rid: %s", err.Error(), params.ReqID)
-			return nil, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
-		}
+		att.Attribute().PropertyGroup=common.BKDefaultField
 	}
 
 	// create a new one
