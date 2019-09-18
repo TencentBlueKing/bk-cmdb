@@ -6,32 +6,22 @@ import {
     D_SERVICE_INSTANCE
 } from '@/dictionary/auth'
 import {
-    MENU_BUSINESS,
     MENU_RESOURCE,
-    MENU_RESOURCE_HOST,
-    MENU_BUSINESS_HOST_MANAGEMENT
+    MENU_RESOURCE_MANAGEMENT,
+    MENU_RESOURCE_HOST_DETAILS,
+    MENU_RESOURCE_BUSINESS_HOST_DETAILS
 } from '@/dictionary/menu-symbol'
-const component = () => import(/* webpackChunkName: "hostDetails" */ './index.vue')
+const component = () => import('./index.vue')
 
-export const OPERATION = {
-    U_HOST,
-    U_RESOURCE_HOST,
-    D_SERVICE_INSTANCE
-}
-
-export const RESOURCE_HOST = 'resourceHostDetails'
-
-export const BUSINESS_HOST = 'businessHostDetails'
-
-export const resourceHostDetails = {
-    name: RESOURCE_HOST,
-    path: 'host/:id',
+export default [{
+    name: MENU_RESOURCE_HOST_DETAILS,
+    path: '/resource/host/:id',
     component: component,
     meta: new Meta({
         owner: MENU_RESOURCE,
         menu: {
             i18n: '主机详情',
-            relative: MENU_RESOURCE_HOST
+            relative: MENU_RESOURCE_MANAGEMENT
         },
         auth: {
             view: null,
@@ -46,17 +36,15 @@ export const resourceHostDetails = {
             authScope: 'global'
         }
     })
-}
-
-export const businessHostDetails = {
-    name: BUSINESS_HOST,
-    path: 'host/:id',
+}, {
+    name: MENU_RESOURCE_BUSINESS_HOST_DETAILS,
+    path: '/resource/host/:business/:id',
     component: component,
     meta: new Meta({
-        owner: MENU_BUSINESS,
+        owner: MENU_RESOURCE,
         menu: {
             i18n: '主机详情',
-            relative: MENU_BUSINESS_HOST_MANAGEMENT
+            relative: MENU_RESOURCE_MANAGEMENT
         },
         auth: {
             view: null,
@@ -77,4 +65,4 @@ export const businessHostDetails = {
             authScope: 'business'
         }
     })
-}
+}]
