@@ -100,7 +100,8 @@ type SetDiff struct {
 }
 
 var (
-	ModuleDiffAdd     = "add"
-	ModuleDiffRemove  = "remove"
-	ModuleDiffChanged = "changed"
+	ModuleDiffAdd       = "add"
+	ModuleDiffRemove    = "remove"
+	ModuleDiffChanged   = "changed"
+	ModuleDiffUnchanged = "unchanged"
 )
