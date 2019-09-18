@@ -28,11 +28,12 @@
                     :popover-width="180"
                     :searchable="authorizedBusiness.length > 7"
                     :disabled="!table.checked.length"
+                    :placeholder="$t('分配到')"
                     v-model="assignBusiness"
                     @selected="handleAssignHosts">
-                    <div class="select-btn" slot="trigger">
+                    <bk-button class="select-btn" slot="trigger" :disabled="!table.checked.length">
                         {{$t('分配到')}}
-                    </div>
+                    </bk-button>
                     <bk-option v-for="option in authorizedBusiness"
                         :key="option.bk_biz_id"
                         :id="option.bk_biz_id"
@@ -83,7 +84,6 @@
 
 <script>
     import { mapGetters, mapActions, mapState } from 'vuex'
-    import { MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbImport from '@/components/import/import'
     import cmdbButtonGroup from '@/components/ui/other/button-group'
@@ -181,10 +181,6 @@
         },
         async created () {
             try {
-                this.$store.commit('setBreadcumbs', [{
-                    i18n: '资源目录',
-                    route: { name: MENU_RESOURCE_MANAGEMENT }
-                }, { name: '主机' }])
                 await this.getProperties()
                 this.getHostList()
                 this.ready = true
@@ -457,9 +453,10 @@
         display: inline-block;
         vertical-align: middle;
         margin: 0 10px 0 0;
-        width: 88px;
         .select-btn {
-            padding-left: 10px;
+            display: block;
+            height: 30px;
+            border: none;
         }
         /deep/ {
             &::before {

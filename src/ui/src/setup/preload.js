@@ -21,7 +21,7 @@ export function getViewAuth (app) {
         const meta = route.meta || {}
         const auth = meta.auth || {}
         if (auth.view) {
-            viewAuthorities.push(auth.view)
+            viewAuthorities.push(...Object.values(auth.view))
         }
     })
     return app.$store.dispatch('auth/getAuth', {

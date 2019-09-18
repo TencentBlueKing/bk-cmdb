@@ -59,7 +59,7 @@ export default [{
     menu: [{
         id: MENU_BUSINESS_HOST,
         i18n: '主机',
-        icon: 'icon-cc-nav-host',
+        icon: 'icon-cc-host',
         submenu: getSubmenu(businessViews, MENU_BUSINESS_HOST, 'business')
     }, {
         id: MENU_BUSINESS_SERVICE,
