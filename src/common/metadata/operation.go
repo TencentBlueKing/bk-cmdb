@@ -59,6 +59,11 @@ type IntIDCount struct {
 	Count int64 `json:"count" bson:"count"`
 }
 
+type IntIDArrayCount struct {
+	Id    int64   `json:"id" bson:"_id"`
+	Count []int64 `json:"count" bson:"count"`
+}
+
 type AggregateStringResponse struct {
 	BaseResp `json:",inline"`
 	Data     []StringIDCount `json:"data"`

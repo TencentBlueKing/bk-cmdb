@@ -211,7 +211,7 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) error {
 			}
 			currentData := metadata.BizHostChart{}
 			currentData.Id.Time = now
-			currentData.Count = info.Count
+			currentData.Count = int64(len(info.Count))
 			if len(bizHostChange) > 0 {
 				subHour := now.Sub(bizHostChange[0].UpdateTime.Time).Hours()
 				if subHour < 24 {
@@ -253,8 +253,8 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) error {
 	return nil
 }
 
-func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.IntIDCount, error) {
-	bizHostCount := make([]metadata.IntIDCount, 0)
+func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.IntIDArrayCount, error) {
+	bizHostCount := make([]metadata.IntIDArrayCount, 0)
 
 	cond := mapstr.MapStr{}
 	hostCount, err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(ctx)
@@ -264,7 +264,7 @@ func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.Int
 	}
 
 	if hostCount > 0 {
-		pipeline := []M{{"$group": M{"_id": "$bk_biz_id", "count": M{"$sum": 1}}}}
+		pipeline := []M{{"$group": M{"_id": "$bk_biz_id", "count": M{"$addToSet": "$bk_host_id"}}}}
 		if err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).AggregateAll(ctx, pipeline, &bizHostCount); err != nil {
 			blog.Errorf("aggregate: biz' host count fail, err: %v, rid: %v", err, ctx.ReqID)
 			return nil, err
@@ -368,7 +368,7 @@ func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam m
 			if host.Id == biz.BizID {
 				info := metadata.StringIDCount{
 					Id:    biz.BizName,
-					Count: host.Count,
+					Count: int64(len(host.Count)),
 				}
 				respData = append(respData, info)
 				matchedBiz = append(matchedBiz, biz.BizName)
