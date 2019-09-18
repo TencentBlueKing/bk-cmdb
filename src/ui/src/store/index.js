@@ -52,6 +52,7 @@ import serviceInstance from './modules/api/service-instance.js'
 import processInstance from './modules/api/process-instance.js'
 import instanceLabel from './modules/api/instance-label.js'
 import fullTextSearch from './modules/api/full-text-search.js'
+import setSync from './modules/api/set-sync.js'
 
 Vue.use(Vuex)
 
@@ -106,6 +107,7 @@ export default new Vuex.Store({
         serviceInstance,
         processInstance,
         instanceLabel,
-        fullTextSearch
+        fullTextSearch,
+        setSync
     }
 })
