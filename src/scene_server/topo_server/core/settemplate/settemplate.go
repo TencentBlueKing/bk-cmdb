@@ -196,16 +196,20 @@ func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate,
 			})
 			continue
 		}
-
-		if module.ModuleName != template.Name {
-			moduleDiffs = append(moduleDiffs, metadata.SetModuleDiff{
-				ModuleID:            module.ModuleID,
-				ModuleName:          module.ModuleName,
-				ServiceTemplateID:   module.ServiceTemplateID,
-				ServiceTemplateName: template.Name,
-				DiffType:            metadata.ModuleDiffChanged,
-			})
+		if _, ok := svcTplHitMap[module.ServiceTemplateID]; ok == true {
+			svcTplHitMap[module.ServiceTemplateID] = true
 		}
+		diffType := metadata.ModuleDiffUnchanged
+		if module.ModuleName != template.Name {
+			diffType = metadata.ModuleDiffChanged
+		}
+		moduleDiffs = append(moduleDiffs, metadata.SetModuleDiff{
+			ModuleID:            module.ModuleID,
+			ModuleName:          module.ModuleName,
+			ServiceTemplateID:   module.ServiceTemplateID,
+			ServiceTemplateName: template.Name,
+			DiffType:            diffType,
+		})
 	}
 
 	for templateID, hit := range svcTplHitMap {
