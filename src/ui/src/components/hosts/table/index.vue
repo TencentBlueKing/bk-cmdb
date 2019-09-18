@@ -97,7 +97,7 @@
             </div>
         </div>
         <bk-table class="hosts-table bkc-white"
-            v-bkloading="{ isLoading: $loading('searchHosts') }"
+            v-bkloading="{ isLoading: $loading(['searchHosts', 'batchSearchProperties', 'post_searchGroup_host']) }"
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 185"
@@ -244,7 +244,7 @@
                 propertyGroups: [],
                 table: {
                     checked: [],
-                    header: [],
+                    header: Array(8).fill({}),
                     list: [],
                     pagination: {
                         current: 1,
@@ -356,8 +356,7 @@
                         bk_supplier_account: this.supplierAccount
                     }, { inject: this.$route.name !== 'resource' }),
                     config: {
-                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
-                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
+                        requestId: 'batchSearchProperties'
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {
@@ -371,7 +370,6 @@
                     objId: 'host',
                     params: this.$injectMetadata(),
                     config: {
-                        fromCache: true,
                         requestId: 'post_searchGroup_host'
                     }
                 }).then(groups => {
