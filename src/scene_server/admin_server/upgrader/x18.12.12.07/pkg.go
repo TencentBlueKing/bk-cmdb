@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package x19_08_30_01
+package x18_12_12_07
 
 import (
 	"context"
@@ -20,13 +20,13 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19.08.30.01", upgrade)
+	upgrader.RegistUpgrader("x18.12.12.07", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = updateIPRegex(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19.08.30.01] updateIPRegex error  %s", err.Error())
+		blog.Errorf("[upgrade x18.12.12.07] updateIPRegex error  %s", err.Error())
 		return err
 	}
 	return
