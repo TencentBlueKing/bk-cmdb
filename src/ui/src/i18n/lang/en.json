@@ -912,5 +912,6 @@
     "查询条件": "Query conditions",
     "服务分类变更": "Service classification change",
     "模板详情": "Template details",
-    "主机拓扑提示": "Go to {link} to edit topology"
+    "主机拓扑提示": "Go to {link} to edit topology",
+    "同步数量提示": "The instance module {successCount} has been successfully synchronized, failing {failCount}"
 }
