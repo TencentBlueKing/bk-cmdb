@@ -173,7 +173,19 @@ type AuditOperation interface {
 	SearchAuditLog(ctx ContextParams, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error)
 }
 
-// Core core interfaces methods
+type StatisticOperation interface {
+	SearchInstCount(ctx ContextParams, inputParam mapstr.MapStr) (uint64, error)
+	SearchChartDataCommon(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
+	SearchOperationChart(ctx ContextParams, inputParam interface{}) (*metadata.ChartClassification, error)
+	CreateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (uint64, error)
+	UpdateChartPosition(ctx ContextParams, inputParam interface{}) (interface{}, error)
+	DeleteOperationChart(ctx ContextParams, id int64) (interface{}, error)
+	UpdateOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
+	SearchTimerChartData(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
+	TimerFreshData(params ContextParams) error
+}
+
+// Core core itnerfaces methods
 type Core interface {
 	ModelOperation() ModelOperation
 	InstanceOperation() InstanceOperation
@@ -182,6 +194,7 @@ type Core interface {
 	DataSynchronizeOperation() DataSynchronizeOperation
 	HostOperation() HostOperation
 	AuditOperation() AuditOperation
+	StatisticOperation() StatisticOperation
 	ProcessOperation() ProcessOperation
 	LabelOperation() LabelOperation
 	SetTemplateOperation() SetTemplateOperation
@@ -256,6 +269,7 @@ type core struct {
 	topo            TopoOperation
 	host            HostOperation
 	audit           AuditOperation
+	operation       StatisticOperation
 	process         ProcessOperation
 	label           LabelOperation
 	setTemplate     SetTemplateOperation
@@ -264,7 +278,7 @@ type core struct {
 // New create core
 func New(model ModelOperation, instance InstanceOperation, association AssociationOperation,
 	dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation,
-	audit AuditOperation, process ProcessOperation, label LabelOperation, setTemplate SetTemplateOperation) Core {
+	audit AuditOperation, process ProcessOperation, label LabelOperation, setTemplate SetTemplateOperation, operation StatisticOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -273,6 +287,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		topo:            topo,
 		host:            host,
 		audit:           audit,
+		operation:       operation,
 		process:         process,
 		label:           label,
 		setTemplate:     setTemplate,
@@ -309,6 +324,10 @@ func (m *core) AuditOperation() AuditOperation {
 
 func (m *core) ProcessOperation() ProcessOperation {
 	return m.process
+}
+
+func (m *core) StatisticOperation() StatisticOperation {
+	return m.operation
 }
 
 func (m *core) LabelOperation() LabelOperation {

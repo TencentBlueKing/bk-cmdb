@@ -70,3 +70,7 @@ func (s *coreService) TranslatePropertyGroupName(defLang language.DefaultCCLangu
 func (s *coreService) TranslateClassificationName(defLang language.DefaultCCLanguageIf, att *metadata.Classification) string {
 	return util.FirstNotEmptyString(defLang.Language("classification_"+att.ClassificationID), att.ClassificationName, att.ClassificationID)
 }
+
+func (s *coreService) TranslateOperationChartName(defLang language.DefaultCCLanguageIf, att metadata.ChartConfig) string {
+	return util.FirstNotEmptyString(defLang.Language("operation_chart_"+att.ChartType), att.Name, att.ChartType)
+}

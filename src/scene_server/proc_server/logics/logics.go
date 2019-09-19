@@ -39,7 +39,7 @@ type Logics struct {
 	ccLang       language.DefaultCCLanguageIf
 }
 
-// NewLogics get logic handle
+// NewLogics get logics handle
 func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, esbServ esbserver.EsbClientInterface, procHostInst *ProcHostInstConfig) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{

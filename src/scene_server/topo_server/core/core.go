@@ -62,7 +62,7 @@ type core struct {
 	setTemplate    settemplate.SetTemplate
 }
 
-// New create a core manager
+// New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Core {
 
 	// health

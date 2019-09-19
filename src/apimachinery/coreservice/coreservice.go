@@ -23,6 +23,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/label"
 	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
+	"configcenter/src/apimachinery/coreservice/operation"
 	"configcenter/src/apimachinery/coreservice/privilege"
 	"configcenter/src/apimachinery/coreservice/process"
 	"configcenter/src/apimachinery/coreservice/settemplate"
@@ -41,6 +42,7 @@ type CoreServiceClientInterface interface {
 	Host() host.HostClientInterface
 	Audit() auditlog.AuditClientInterface
 	Process() process.ProcessInterface
+	Operation() operation.OperationClientInterface
 	Cloud() cloudsync.CloudSyncClientInterface
 	Label() label.LabelInterface
 	Privilege() privilege.PrivilegeInterface
@@ -89,6 +91,11 @@ func (c *coreService) Audit() auditlog.AuditClientInterface {
 
 func (c *coreService) Process() process.ProcessInterface {
 	return process.NewProcessInterfaceClient(c.restCli)
+
+}
+
+func (c *coreService) Operation() operation.OperationClientInterface {
+	return operation.NewOperationClientInterface(c.restCli)
 }
 
 func (c *coreService) Cloud() cloudsync.CloudSyncClientInterface {

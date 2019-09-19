@@ -338,12 +338,12 @@ func (cli *HostWrapper) GetOperator() (string, error) {
 	return vals.String(fieldHostOperator), nil
 }
 
-// SetCPU set the cpu core num  for the host
+// SetCPU set the cpu logics num  for the host
 func (cli *HostWrapper) SetCPU(cpu int64) error {
 	return cli.host.SetValue(fieldCPU, cpu)
 }
 
-// GetCPU get the cpu core num
+// GetCPU get the cpu logics num
 func (cli *HostWrapper) GetCPU() (int, error) {
 	vals, err := cli.host.GetValues()
 	if nil != err {
