@@ -111,6 +111,16 @@ const customRules = {
         validate: (value, otherValue) => {
             return otherValue.findIndex(item => item === value) === -1
         }
+    },
+    setNameMap: {
+        validate: (value) => {
+            const nameList = value.split('\n').filter(name => name)
+            const nameSet = new Set(nameList)
+            if (nameList.length !== nameSet.size) {
+                return false
+            }
+            return true
+        }
     }
 }
 
@@ -143,7 +153,8 @@ const dictionary = {
             min_value: () => '该值小于最小值',
             max_value: () => '该值大于最大值',
             instanceTag: () => '请输入英文 / 数字',
-            repeatTagKey: () => '标签键不能重复'
+            repeatTagKey: () => '标签键不能重复',
+            setNameMap: () => '集群名称重复'
         },
         custom: {
             asst: {
@@ -179,7 +190,8 @@ const dictionary = {
             min_value: () => 'This value is less than the minimum',
             max_value: () => 'This value is greater than the maximum',
             instanceTag: () => 'Please enter English / Number',
-            repeatTagKey: () => 'Label key cannot be repeated'
+            repeatTagKey: () => 'Label key cannot be repeated',
+            setNameMap: () => 'Duplicate cluster name'
         },
         custom: {
             asst: {
