@@ -541,25 +541,25 @@ func (a *authClient) GetUserGroupMembers(ctx context.Context, header http.Header
 // delete iam resource which has already registered from iam.
 // scope type value can be enum of biz or system.
 func (a *authClient) DeleteResources(ctx context.Context, header http.Header, scopeType string, resType ResourceTypeID) error {
-    util.CopyHeader(a.basicHeader, header)
-    resp := new(BaseResponse)
-    err := a.client.Delete().
-        SubResourcef("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/%s", SystemIDCMDB, scopeType, resType).
-        WithContext(ctx).
-        WithHeaders(header).
-        Do().Into(&resp)
-    if err != nil {
-        return err
-    }
-    if !resp.Result || resp.Code != 0 {
-        // resource not exist error code
-        if resp.Code == 1901002 {
-            // delete a not exist resource, so it means success to us.
-            return nil
-        } else {
-            return fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
-        }
-    }
+	util.CopyHeader(a.basicHeader, header)
+	resp := new(BaseResponse)
+	err := a.client.Delete().
+		SubResourcef("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/%s", SystemIDCMDB, scopeType, resType).
+		WithContext(ctx).
+		WithHeaders(header).
+		Do().Into(&resp)
+	if err != nil {
+		return err
+	}
+	if !resp.Result || resp.Code != 0 {
+		// resource not exist error code
+		if resp.Code == 1901002 {
+			// delete a not exist resource, so it means success to us.
+			return nil
+		} else {
+			return fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+		}
+	}
 
-    return nil
+	return nil
 }

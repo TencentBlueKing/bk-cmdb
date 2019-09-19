@@ -43,7 +43,7 @@ func (s *coreService) UpdateModelInstances(params core.ContextParams, pathParams
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	
+
 	// TODO: remove this logic when biz model is changed.
 	cond := metadata.QueryCondition{
 		Condition: mapstr.MapStr{

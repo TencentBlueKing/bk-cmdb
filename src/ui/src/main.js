@@ -20,6 +20,7 @@ import './setup/permission'
 import './assets/scss/common.scss'
 import './assets/scss/admin-view.scss'
 import './assets/icon/cc-icon/style.css'
+
 Vue.use(cmdbUI)
 Vue.use(clipboard)
 Vue.mixin(cmdbRequestMixin)

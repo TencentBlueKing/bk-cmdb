@@ -22,7 +22,7 @@ import (
 	"configcenter/src/storage/types"
 )
 
-// Core core operation methods
+// Core logics operation methods
 type Core interface {
 	ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPReply, error)
 	Subscribe(chan *types.Transaction)
@@ -47,7 +47,6 @@ type SetDBProxy interface {
 
 // New create a core instance
 func New(txnMgr *session.Manager, db mongodb.Client) Core {
-
 	for _, cmd := range GCommands.cmds {
 		switch tmp := cmd.(type) {
 		case SetTransaction:
