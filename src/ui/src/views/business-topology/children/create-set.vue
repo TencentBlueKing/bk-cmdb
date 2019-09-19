@@ -4,52 +4,53 @@
         <div class="node-create-path" :title="topoPath">{{$t('添加节点已选择')}}：{{topoPath}}</div>
         <div class="node-create-form">
             <bk-radio-group class="form-item mb20" v-model="withTemplate">
-                <bk-radio :value="true">{{$t('从集群模版创建')}}</bk-radio>
+                <bk-radio :value="true">{{$t('从集群模板创建')}}</bk-radio>
                 <bk-radio :value="false">{{$t('直接创建')}}</bk-radio>
             </bk-radio-group>
             <div class="form-item" v-if="withTemplate">
-                <label>{{$t('集群模版')}}</label>
+                <label>{{$t('集群模板')}}</label>
                 <bk-select style="width: 100%;"
                     :clearable="false"
-                    :searchable="clusterTemplateList.length > 7"
-                    v-model="clusterTemplate"
+                    :searchable="setTemplateList.length > 7"
+                    v-model="setTemplate"
                     v-validate.disabled="'required'"
-                    data-vv-name="clusterTemplate">
-                    <bk-option v-for="option in clusterTemplateList"
+                    data-vv-name="setTemplate">
+                    <bk-option v-for="option in setTemplateList"
                         :key="option.id"
                         :id="option.id"
                         :name="option.name">
                     </bk-option>
-                    <div class="add-template" slot="extension" v-if="!clusterTemplateList.length">
+                    <div class="add-template" slot="extension" @click="handleAddTemplate" v-if="!setTemplateList.length">
                         <i class="bk-icon icon-plus-circle"></i>
-                        <span>{{$t('创建集群模版')}}</span>
+                        <span>{{$t('创建集群模板')}}</span>
                     </div>
                 </bk-select>
+                <span class="form-error" v-if="errors.has('setTemplate')">{{errors.first('setTemplate')}}</span>
             </div>
             <div class="form-item">
                 <label>
-                    {{$t('模块名称')}}
-                    <span>（{{$t('使用模版需要重命名模版的集群名称')}}）</span>
+                    {{$t('集群名称')}}
+                    <span>（{{$t('使用模板需要重命名模板的集群名称')}}）</span>
                 </label>
                 <bk-input class="form-textarea"
                     type="textarea"
-                    data-vv-name="clusterName"
-                    v-validate="'required|singlechar|length:256'"
-                    v-model="clusterName"
+                    data-vv-name="setName"
+                    v-validate="'required|singlechar|setNameMap|length:256'"
+                    v-model="setName"
                     :rows="rows"
-                    :disabled="withTemplate"
                     :placeholder="$t('请输入集群名称，同时创建多个集群，换行分隔')"
                     @keydown="handleKeydown">
                 </bk-input>
-                <span class="form-error" v-if="errors.has('clusterName')">{{errors.first('clusterName')}}</span>
+                <span class="form-error" v-if="errors.has('setName')">{{errors.first('setName')}}</span>
             </div>
         </div>
         <div class="node-create-options">
             <bk-button theme="primary" class="mr10"
-                :disabled="$loading() || errors.any()">
+                :disabled="$loading() || errors.any()"
+                @click="handleCreateSet">
                 {{$t('确定')}}
             </bk-button>
-            <bk-button theme="default">{{$t('取消')}}</bk-button>
+            <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>
 </template>
@@ -65,21 +66,39 @@
         data () {
             return {
                 withTemplate: true,
-                clusterTemplate: '',
-                clusterName: '',
+                setTemplate: '',
+                setName: '',
                 rows: 1,
-                clusterTemplateList: []
+                setTemplateList: []
             }
         },
         computed: {
             topoPath () {
                 const nodePath = [...this.parentNode.parents, this.parentNode]
                 return nodePath.map(node => node.data.bk_inst_name).join('/')
+            },
+            business () {
+                return this.$store.getters['objectBiz/bizId']
+            },
+            setTemplateMap () {
+                return this.$store.state.businessTopology.setTemplateMap
             }
+        },
+        watch: {
+            withTemplate (value) {
+                if (value) {
+                    this.setTemplate = this.setTemplateList[0] ? this.setTemplateList[0].id : ''
+                } else {
+                    this.setTemplate = 0
+                }
+            }
+        },
+        created () {
+            this.getSetTemplates()
         },
         methods: {
             setRows () {
-                const rows = this.clusterName.split('\n').length
+                const rows = this.setName.split('\n').length
                 this.rows = Math.min(3, Math.max(rows, 1))
             },
             handleKeydown (value, keyEvent) {
@@ -90,6 +109,46 @@
                         this.setRows()
                     })
                 }
+            },
+            async getSetTemplates () {
+                if (this.setTemplateMap.hasOwnProperty(this.business)) {
+                    this.setTemplateList = this.setTemplateMap[this.business]
+                } else {
+                    try {
+                        const data = await this.$store.dispatch('setSync/getSetTemplates', {
+                            bizId: this.business,
+                            params: {},
+                            config: {
+                                requestId: 'getSetTemplates'
+                            }
+                        })
+                        this.setTemplateList = data.info
+                        this.$store.commit('businessTopology/setSetTemplate', {
+                            id: this.business,
+                            templates: data.info
+                        })
+                    } catch (e) {
+                        console.error(e)
+                    }
+                }
+                this.setTemplate = this.setTemplateList[0] ? this.setTemplateList[0].id : ''
+            },
+            handleCreateSet () {
+                this.$validator.validateAll().then(isValid => {
+                    if (isValid) {
+                        // const nameList = this.setName.split('\n').filter(name => name)
+                        this.$emit('submit', {
+                            set_template_id: this.setTemplate,
+                            bk_set_name: this.setName
+                        })
+                    }
+                })
+            },
+            handleAddTemplate () {
+
+            },
+            handleCancel () {
+                this.$emit('cancel')
             }
         }
     }
