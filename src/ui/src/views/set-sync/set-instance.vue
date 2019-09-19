@@ -15,7 +15,7 @@
                     <div class="sync-title" :class="{ 'is-expand': beforeSyncExpand }" @click.stop="beforeSyncExpand = !beforeSyncExpand">
                         <i class="bk-icon icon-right-shape"></i>
                         <i class="bk-icon icon-cc-nav-model-02"></i>
-                        <span class="set-name">{{instance.bk_set_name}}</span>
+                        <span class="set-name">{{setDeatails.bk_set_name}}</span>
                     </div>
                     <ul class="sync-info"
                         v-show="beforeSyncExpand"
@@ -34,14 +34,14 @@
                     <div class="sync-title" :class="{ 'is-expand': afterSyncExpand }" @click.stop="afterSyncExpand = !afterSyncExpand">
                         <i class="bk-icon icon-right-shape"></i>
                         <i class="bk-icon icon-cc-nav-model-02"></i>
-                        <span class="set-name">{{instance.bk_set_name}}</span>
+                        <span class="set-name">{{setDeatails.bk_set_name}}</span>
                     </div>
                     <ul class="sync-info"
                         v-show="afterSyncExpand"
-                        v-for="_module in instance.difference"
+                        v-for="_module in instance.module_diffs"
                         :key="_module.bk_module_id">
                         <li :class="['mt20', {
-                            'has-delete': _module.diff_type === 'delete',
+                            'has-delete': _module.diff_type === 'remove',
                             'has-changed': _module.diff_type === 'changed',
                             'new-add': _module.diff_type === 'add'
                         }]">
@@ -81,11 +81,14 @@
         },
         computed: {
             beforeChangeList () {
-                return this.instance.difference.filter(_module => _module.diff_type !== 'add')
+                return this.instance.module_diffs.filter(_module => _module.diff_type !== 'add')
             },
             changeCount () {
-                const changeList = this.instance.difference.filter(_module => _module.diff_type !== 'unchanged')
+                const changeList = this.instance.module_diffs.filter(_module => _module.diff_type !== 'unchanged')
                 return changeList.length
+            },
+            setDeatails () {
+                return this.instance.set_detail
             }
         },
         watch: {
@@ -159,10 +162,11 @@
         margin: 14px 42px 26px;
     }
     .sync {
+        min-width: 320px;
         color: #63656E;
         font-size: 14px;
         &.sync-after {
-            margin-left: 100px;
+            margin-left: 50px;
         }
         > h3 {
             font-size: 14px;

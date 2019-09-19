@@ -69,7 +69,12 @@
                 ready: false,
                 infiniteIdentifier: 0,
                 syncStatus: 1,
-                syncList: []
+                syncList: [],
+                pagination: {
+                    current: 1,
+                    count: 0,
+                    size: 10
+                }
             }
         },
         computed: {
