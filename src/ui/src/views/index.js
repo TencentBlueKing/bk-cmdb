@@ -1,6 +1,5 @@
 import audit from '@/views/audit/router.config'
 import business from '@/views/business/router.config'
-import businessModel from '@/views/business-model/router.config'
 import businessTopology from '@/views/business-topology/router.config'
 import customQuery from '@/views/custom-query/router.config'
 import eventpush from '@/views/eventpush/router.config'
@@ -74,8 +73,7 @@ export const resourceViews = injectStatusComponents(flatternViews([
 export const modelViews = injectStatusComponents(flatternViews([
     model,
     modelAssociation,
-    modelTopology,
-    businessModel
+    modelTopology
 ]))
 
 export const analysisViews = injectStatusComponents(flatternViews([
