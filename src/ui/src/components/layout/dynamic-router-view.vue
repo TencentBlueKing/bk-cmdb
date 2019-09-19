@@ -24,7 +24,8 @@
         data () {
             return {
                 refreshKey: Date.now(),
-                meta: this.$route.meta
+                meta: this.$route.meta,
+                ready: false
             }
         },
         computed: {
@@ -40,7 +41,11 @@
         },
         methods: {
             handleBusinessChange () {
-                this.refreshKey = Date.now()
+                if (this.ready) {
+                    this.refreshKey = Date.now()
+                } else {
+                    this.ready = true
+                }
             }
         }
     }
