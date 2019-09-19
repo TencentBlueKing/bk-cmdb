@@ -95,6 +95,11 @@ const (
 	BKTableNameCloudResourceConfirm   = "cc_CloudResourceConfirm"
 	BKTableNameResourceConfirmHistory = "cc_ResourceConfirmHistory"
 
+	// Operation tables
+	BKTableNameChartConfig   = "cc_ChartConfig"
+	BKTableNameChartPosition = "cc_ChartPosition"
+	BKTableNameChartData     = "cc_ChartData"
+
 	// process tables
 	BKTableNameServiceCategory         = "cc_ServiceCategory"
 	BKTableNameServiceTemplate         = "cc_ServiceTemplate"
@@ -152,11 +157,17 @@ var AllTables = []string{
 	BKTableNameResourceConfirmHistory,
 	BKTableNameObjUnique,
 	BKTableNameAsstDes,
+	BKTableNameChartConfig,
+	BKTableNameChartPosition,
+	BKTableNameChartData,
 	BKTableNameServiceCategory,
 	BKTableNameServiceTemplate,
 	BKTableNameServiceInstance,
 	BKTableNameProcessTemplate,
 	BKTableNameProcessInstanceRelation,
+	BKTableNameChartConfig,
+	BKTableNameChartPosition,
+	BKTableNameChartData,
 }
 
 // GetInstTableName returns inst data table name

@@ -313,9 +313,9 @@ func (b *business) GetInternalModule(params types.ContextParams, obj model.Objec
 	}
 
 	// search modules
-    cond = condition.CreateCondition()
-    cond.Field(common.BKAppIDField).Eq(bizID)
-    cond.Field(common.BKDefaultField).NotEq(0)
+	cond = condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(bizID)
+	cond.Field(common.BKDefaultField).NotEq(0)
 
 	moduleObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
