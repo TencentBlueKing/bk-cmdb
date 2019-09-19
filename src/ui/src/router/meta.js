@@ -19,5 +19,7 @@ export default class Meta {
             view: null,
             operation: {}
         }, data.auth)
+
+        this.view = 'default'
     }
 }

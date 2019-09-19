@@ -136,8 +136,8 @@ const mutations = {
     setBusinessSelectorVisible (state, visible) {
         state.businessSelectorVisible = visible
     },
-    resolveBusinessSelectorPromise (state) {
-        state.businessSelectorResolver && state.businessSelectorResolver()
+    resolveBusinessSelectorPromise (state, val) {
+        state.businessSelectorResolver && state.businessSelectorResolver(val)
     }
 }
 
