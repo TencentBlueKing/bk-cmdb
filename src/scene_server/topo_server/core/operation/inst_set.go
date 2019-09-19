@@ -93,12 +93,14 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 			err := params.Err.CCErrorf(common.CCErrCommParamsInvalid, params.Lang.Language("set_property_set_template_id"))
 			return nil, err
 		}
-		st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(params.Context, params.Header, bizID, setTemplateID)
-		if err != nil {
-			err := params.Err.CCErrorf(common.CCErrCommParamsInvalid, params.Lang.Language("set_property_set_template_id"))
-			return nil, err
+		if setTemplateID != common.SetTemplateIDNotSet {
+			st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(params.Context, params.Header, bizID, setTemplateID)
+			if err != nil {
+				err := params.Err.CCErrorf(common.CCErrCommParamsInvalid, params.Lang.Language("set_property_set_template_id"))
+				return nil, err
+			}
+			setTemplate = st
 		}
-		setTemplate = st
 	}
 
 	// TODO: run in transaction
