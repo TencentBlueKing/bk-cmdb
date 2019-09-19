@@ -334,14 +334,21 @@
                 const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
                 if (model) {
                     this.$store.commit('objectModel/setActiveModel', model)
-                    this.$store.commit('addBreadcrumbs', {
-                        id: this.$route.name,
-                        name: model.bk_obj_name
-                    })
+                    this.setBreadcrumbs(model)
                     this.initModelInfo()
                 } else {
                     this.$router.replace({ name: 'status404' })
                 }
+            },
+            setBreadcrumbs (model) {
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('模型管理'),
+                    route: {
+                        name: MENU_MODEL_MANAGEMENT
+                    }
+                }, {
+                    label: model.bk_obj_name
+                }])
             },
             async getModelStatistics () {
                 const modelStatisticsSet = {}

@@ -2,7 +2,6 @@ export default class Meta {
     constructor (data = {}) {
         this.owner = ''
         this.title = ''
-        this.breadcrumbs = null
         this.available = true
         Object.keys(data).forEach(key => {
             this[key] = data[key]
