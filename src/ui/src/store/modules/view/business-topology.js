@@ -3,6 +3,7 @@ const state = {
     propertyMap: {},
     propertyGroupMap: {},
     serviceTemplateMap: {},
+    setTemplateMap: {},
     processTemplateMap: {},
     categoryMap: {},
     instanceIpMap: {},
@@ -31,6 +32,9 @@ const mutations = {
     setServiceTemplate (state, data) {
         Vue.set(state.serviceTemplateMap, data.id, data.templates)
     },
+    setSetTemplate (state, data) {
+        Vue.set(state.setTemplateMap, data.id, data.templates)
+    },
     setProcessTemplate (state, data) {
         Vue.set(state.processTemplateMap, data.id, data.template)
     },
@@ -53,6 +57,7 @@ const mutations = {
         state.propertyMap = {}
         state.propertyGroupMap = {}
         state.serviceTemplateMap = {}
+        state.setTemplateMap = {}
         state.processTemplateMap = {}
         state.categoryMap = {}
         state.instanceIpMap = {}
