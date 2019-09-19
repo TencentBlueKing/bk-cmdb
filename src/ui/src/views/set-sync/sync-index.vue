@@ -16,10 +16,11 @@
                     {{$t('删除模块')}}
                 </span>
             </div>
-            <bk-checkbox class="expand-all fr" v-model="expandAll">{{$t('全部展开')}}</bk-checkbox>
+            <bk-checkbox class="expand-all fr" v-model="expandAll" @change="handleExpandAll">{{$t('全部展开')}}</bk-checkbox>
         </div>
         <div class="instance-list">
             <set-instance class="instance-item"
+                ref="setInstance"
                 v-for="(instance, index) in diffList"
                 :key="instance.bk_set_id"
                 :instance="instance"
@@ -57,10 +58,10 @@
         methods: {
             async getDiffData () {
                 this.diffList = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
-                    bizId: this.bizId,
-                    setTemplateId: '',
+                    bizId: 3 || this.bizId,
+                    setTemplateId: 1,
                     params: {
-                        bk_set_ids: []
+                        bk_set_ids: [14]
                     },
                     config: {
                         requestId: 'diffTemplateAndInstances'
@@ -94,6 +95,11 @@
                             console.error(e)
                         }
                     }
+                })
+            },
+            handleExpandAll (expand) {
+                this.$refs.setInstance.forEach(instance => {
+                    instance.localExpand = expand
                 })
             }
         }
