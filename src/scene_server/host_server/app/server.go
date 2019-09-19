@@ -95,7 +95,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	go hostSrv.Service.InitBackground()
+	// 开启云同步功能
+	// go hostSrv.Service.InitBackground()
 	select {}
 }
 
