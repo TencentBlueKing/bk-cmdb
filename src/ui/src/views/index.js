@@ -19,6 +19,7 @@ import serviceSynchronous from '@/views/business-synchronous/router.config'
 import resourceManagement from '@/views/resource-manage/router.config'
 import customFields from '@/views/custom-fields/router.config'
 import requireBusiness from '@/views/status/require-business'
+import operation from '@/views/operation/router.config'
 
 const flatternViews = views => {
     const flatterned = []
@@ -69,7 +70,8 @@ export const modelViews = flatternViews([
 ])
 
 export const analysisViews = flatternViews([
-    audit
+    audit,
+    operation
 ])
 
 export default {

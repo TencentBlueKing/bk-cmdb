@@ -1083,6 +1083,24 @@ const (
 	ContextRequestOwnerField = "request_owner"
 )
 
+const (
+	OperationCustom      = "custom"
+	OperationReportType  = "report_type"
+	OperationConfigID    = "config_id"
+	BizModuleHostChart   = "biz_module_host_chart"
+	HostOSChart          = "host_os_chart"
+	HostBizChart         = "host_biz_chart"
+	HostCloudChart       = "host_cloud_chart"
+	HostChangeBizChart   = "host_change_biz_chart"
+	ModelAndInstCount    = "model_and_inst_count"
+	ModelInstChart       = "model_inst_chart"
+	ModelInstChangeChart = "model_inst_change_chart"
+	CreateObject         = "create object"
+	DeleteObject         = "delete object"
+	UpdateObject         = "update object"
+	OperationDescription = "op_desc"
+)
+
 // 云同步
 const (
 	CloudSyncTaskID            = "bk_task_id"

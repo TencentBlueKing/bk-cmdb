@@ -13,7 +13,8 @@ import {
     MENU_MODEL_TOPOLOGY,
     MENU_MODEL_BUSINESS_TOPOLOGY,
     MENU_MODEL_ASSOCIATION,
-    MENU_ANALYSIS_AUDIT
+    MENU_ANALYSIS_AUDIT,
+    MENU_ANALYSIS_OPERATION
 } from './menu-symbol'
 import {
     businessViews,
@@ -118,5 +119,10 @@ export default [{
         i18n: '操作审计',
         icon: 'icon-cc-nav-audit-02',
         route: getMenuRoute(analysisViews, MENU_ANALYSIS_AUDIT, 'analysis')
+    }, {
+        id: MENU_ANALYSIS_OPERATION,
+        i18n: '运营统计',
+        icon: 'icon-cc-nav-associated',
+        route: getMenuRoute(analysisViews, MENU_ANALYSIS_OPERATION, 'analysis')
     }]
 }]

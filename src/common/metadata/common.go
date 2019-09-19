@@ -70,9 +70,19 @@ type Response struct {
 	Data     interface{} `json:"data"`
 }
 
+type BoolResponse struct {
+	BaseResp `json:",inline"`
+	Data     bool `json:"data"`
+}
+
 type Uint64Response struct {
 	BaseResp `json:",inline"`
 	Count    uint64 `json:"count"`
+}
+
+type CoreUint64Response struct {
+	BaseResp `json:",inline"`
+	Data     uint64 `json:"data"`
 }
 
 type MapArrayResponse struct {

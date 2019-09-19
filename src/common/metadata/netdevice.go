@@ -113,7 +113,7 @@ type NetcollectReportSummary struct {
 	CloudID    int64          `json:"bk_cloud_id"`
 	CloudName  string         `json:"bk_cloud_name"`
 	LastTime   Time           `json:"last_time"`
-	Statistics map[string]int `json:"statistics"`
+	Statistics map[string]int `json:"operation"`
 }
 
 type RspNetcollectReport struct {
