@@ -97,7 +97,7 @@
             </div>
         </div>
         <bk-table class="hosts-table bkc-white"
-            v-bkloading="{ isLoading: $loading('searchHosts') }"
+            v-bkloading="{ isLoading: $loading(['searchHosts', 'batchSearchProperties', 'post_searchGroup_host']) }"
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 185"
@@ -179,11 +179,16 @@
 
 <script>
     import { mapGetters, mapActions, mapState } from 'vuex'
-    import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
     import hostValueFilter from '@/filters/host'
+    import {
+        MENU_BUSINESS,
+        MENU_BUSINESS_HOST_DETAILS,
+        MENU_RESOURCE_HOST_DETAILS,
+        MENU_RESOURCE_BUSINESS_HOST_DETAILS
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -244,7 +249,7 @@
                 propertyGroups: [],
                 table: {
                     checked: [],
-                    header: [],
+                    header: Array(8).fill({}),
                     list: [],
                     pagination: {
                         current: 1,
@@ -356,8 +361,7 @@
                         bk_supplier_account: this.supplierAccount
                     }, { inject: this.$route.name !== 'resource' }),
                     config: {
-                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
-                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
+                        requestId: 'batchSearchProperties'
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {
@@ -371,7 +375,6 @@
                     objId: 'host',
                     params: this.$injectMetadata(),
                     config: {
-                        fromCache: true,
                         requestId: 'post_searchGroup_host'
                     }
                 }).then(groups => {
@@ -558,16 +561,24 @@
             },
             handleRowClick (item) {
                 const business = item.biz[0]
-                if (this.$route.name === MENU_RESOURCE_HOST) {
+                if (this.$route.meta.owner === MENU_BUSINESS) {
                     this.$router.push({
-                        name: 'resourceHostDetails',
+                        name: MENU_BUSINESS_HOST_DETAILS,
+                        params: {
+                            business: business.bk_biz_id,
+                            id: item.host.bk_host_id
+                        }
+                    })
+                } else if (business.default) {
+                    this.$router.push({
+                        name: MENU_RESOURCE_HOST_DETAILS,
                         params: {
                             id: item.host.bk_host_id
                         }
                     })
                 } else {
                     this.$router.push({
-                        name: 'businessHostDetails',
+                        name: MENU_RESOURCE_BUSINESS_HOST_DETAILS,
                         params: {
                             business: business.bk_biz_id,
                             id: item.host.bk_host_id

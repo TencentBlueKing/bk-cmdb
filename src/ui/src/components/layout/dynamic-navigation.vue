@@ -13,6 +13,7 @@
                         :popover-options="{
                             appendTo: () => this.$el
                         }"
+                        :request-config="{ fromCache: true }"
                         @on-select="handleToggleBusiness"
                         @business-empty="handleBusinessEmpty">
                     </cmdb-business-selector>
