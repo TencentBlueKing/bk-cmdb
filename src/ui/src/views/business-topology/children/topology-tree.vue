@@ -57,6 +57,13 @@
                     @cancel="handleCancelCreateNode">
                 </create-module>
             </template>
+            <template v-else-if="createInfo.nextModelId === 'set'">
+                <create-set v-if="createInfo.visible"
+                    :parent-node="createInfo.parentNode"
+                    @submit="handleCreateNode"
+                    @cancel="handleCancelCreateNode">
+                </create-set>
+            </template>
             <template v-else>
                 <create-node v-if="createInfo.visible"
                     :next-model-id="createInfo.nextModelId"
@@ -73,10 +80,12 @@
 <script>
     import { mapGetters } from 'vuex'
     import createNode from './create-node.vue'
+    import createSet from './create-set.vue'
     import createModule from './create-module.vue'
     export default {
         components: {
             createNode,
+            createSet,
             createModule
         },
         data () {
@@ -280,10 +289,10 @@
                 const data = await this.$store.dispatch('objectModule/createModule', {
                     bizId: this.business,
                     setId: this.createInfo.parentNode.data.bk_inst_id,
-                    params: {
+                    params: this.$injectMetadata({
                         ...value,
                         bk_supplier_account: this.supplierAccount
-                    }
+                    })
                 })
                 return {
                     bk_inst_id: data.bk_module_id,

@@ -60,6 +60,27 @@
                     </bk-button>
                 </span> -->
             </span>
+            <span class="property-value fl" slot="__set_template_name__">
+                <span class="link"
+                    v-if="withSetTemplate"
+                    @click="goSetTemplate">
+                    {{flattenedInstance.__set_template_name__}}
+                    <bk-button class="sync-set-btn" @click="handleSyncSetTemplate">{{$t('同步集群')}}</bk-button>
+                </span>
+                <span v-else>{{flattenedInstance.__set_template_name__}}</span>
+                <!-- <span style="display: inline-block;"
+                    v-if="withTemplate"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_TOPO),
+                        auth: [$OPERATION.U_TOPO]
+                    }">
+                    <bk-button class="unbind-button"
+                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
+                        @click="handleRemoveTemplate">
+                        {{$t('解除模板')}}
+                    </bk-button>
+                </span> -->
+            </span>
         </cmdb-details>
         <cmdb-form class="topology-form" v-else-if="type === 'update'"
             ref="form"
@@ -124,6 +145,9 @@
             isModuleNode () {
                 return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
             },
+            isSetNode () {
+                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'set'
+            },
             isBlueking () {
                 let rootNode = this.selectedNode || {}
                 if (rootNode.parent) {
@@ -139,6 +163,9 @@
             },
             withTemplate () {
                 return this.isModuleNode && !!this.instance.service_template_id
+            },
+            withSetTemplate () {
+                return this.isSetNode && !!this.instance.set_template_id
             },
             flattenedInstance () {
                 return this.$tools.flattenItem(this.properties, this.instance)
@@ -202,7 +229,7 @@
                     if (modelId === 'module') {
                         properties.push(...this.getModuleServiceTemplateProperties())
                     } else if (modelId === 'set') {
-                        properties.push(...this.getClusterTemplateProperties())
+                        properties.push(...this.getSetTemplateProperties())
                     }
                     this.$store.commit('businessTopology/setProperties', {
                         id: modelId,
@@ -231,11 +258,11 @@
                     unit: ''
                 }]
             },
-            getClusterTemplateProperties () {
-                const group = this.geClusterTemplateGroup()
+            getSetTemplateProperties () {
+                const group = this.geSetTemplateGroup()
                 return [{
-                    bk_property_id: '__cluster_template_name__',
-                    bk_property_name: this.$t('集群模版名称：'),
+                    bk_property_id: '__set_template_name__',
+                    bk_property_name: this.$t('集群模板名称：'),
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 1,
                     bk_isapi: false,
@@ -264,7 +291,7 @@
                     if (modelId === 'module') {
                         groups.push(this.getModuleServiceTemplateGroup())
                     } else if (modelId === 'set') {
-                        groups.push(this.geClusterTemplateGroup())
+                        groups.push(this.geSetTemplateGroup())
                     }
                     this.$store.commit('businessTopology/setPropertyGroups', {
                         id: modelId,
@@ -282,9 +309,9 @@
                     ispre: true
                 }
             },
-            geClusterTemplateGroup () {
+            geSetTemplateGroup () {
                 return {
-                    bk_group_id: '__cluster_template_info__',
+                    bk_group_id: '__set_template_info__',
                     bk_group_index: -1,
                     bk_group_name: this.$t('集群模板信息'),
                     bk_obj_id: 'set',
@@ -337,7 +364,25 @@
                         cancelPrevious: true
                     }
                 })
-                return data.info[0]
+                const setTemplateId = data.info[0].set_template_id
+                let setTemplateName = ''
+                if (setTemplateId) {
+                    const setTemplateInfo = await this.getSetTemplateInfo(setTemplateId)
+                    setTemplateName = setTemplateInfo.name
+                }
+                return {
+                    __set_template_name__: setTemplateName,
+                    ...data.info[0]
+                }
+            },
+            getSetTemplateInfo (id) {
+                return this.$store.dispatch('setSync/getSingleSetTemplateInfo', {
+                    bizId: this.business,
+                    setTemplateId: id,
+                    config: {
+                        requestId: 'getSingleSetTemplateInfo'
+                    }
+                })
             },
             async getModuleInstance () {
                 const data = await this.$store.dispatch('objectModule/searchModule', {
@@ -466,6 +511,7 @@
                 }
             },
             updateSetInstance (value) {
+                delete value.__set_template_name__
                 return this.$store.dispatch('objectSet/updateSet', {
                     bizId: this.business,
                     setId: this.selectedNode.data.bk_inst_id,
@@ -594,6 +640,9 @@
                     }
                 })
             },
+            handleSyncSetTemplate () {
+
+            },
             goServiceTemplate () {
                 this.$router.push({
                     name: 'operationalTemplate',
@@ -601,6 +650,9 @@
                         templateId: this.instance.service_template_id
                     }
                 })
+            },
+            goSetTemplate () {
+
             }
         }
     }
@@ -646,5 +698,12 @@
             color: #ff5656;
             border-color: #ff5656;
         }
+    }
+    .sync-set-btn {
+        height: 26px;
+        line-height: 24px;
+        padding: 0 10px;
+        font-size: 12px;
+        margin-top: -2px;
     }
 </style>
