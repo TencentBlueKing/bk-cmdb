@@ -61,25 +61,15 @@
                 </span> -->
             </span>
             <span class="property-value fl" slot="__set_template_name__">
-                <span class="link"
-                    v-if="withSetTemplate"
-                    @click="goSetTemplate">
-                    {{flattenedInstance.__set_template_name__}}
-                    <bk-button class="sync-set-btn" @click="handleSyncSetTemplate">{{$t('同步集群')}}</bk-button>
-                </span>
-                <span v-else>{{flattenedInstance.__set_template_name__}}</span>
-                <!-- <span style="display: inline-block;"
-                    v-if="withTemplate"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_TOPO),
-                        auth: [$OPERATION.U_TOPO]
-                    }">
-                    <bk-button class="unbind-button"
-                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
-                        @click="handleRemoveTemplate">
-                        {{$t('解除模板')}}
+                <template v-if="withSetTemplate">
+                    <span class="link" @click="goSetTemplate">{{flattenedInstance.__set_template_name__}}</span>
+                    <bk-button :class="['sync-set-btn', { 'has-change': hasChange }]"
+                        :disabled="!hasChange"
+                        @click="handleSyncSetTemplate">
+                        {{$t('同步集群')}}
                     </bk-button>
-                </span> -->
+                </template>
+                <span v-else>{{flattenedInstance.__set_template_name__}}</span>
             </span>
         </cmdb-details>
         <cmdb-form class="topology-form" v-else-if="type === 'update'"
@@ -107,6 +97,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         data () {
             return {
@@ -116,7 +107,8 @@
                 propertyGroups: [],
                 instance: {},
                 first: '',
-                second: ''
+                second: '',
+                hasChange: false
             }
         },
         computed: {
@@ -187,6 +179,9 @@
                     if (node) {
                         this.type = 'details'
                         await this.getInstance()
+                        if (this.withSetTemplate) {
+                            this.getDiffTemplateAndInstances()
+                        }
                         this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
                     }
                 }
@@ -376,7 +371,7 @@
                 }
             },
             getSetTemplateInfo (id) {
-                return this.$store.dispatch('setSync/getSingleSetTemplateInfo', {
+                return this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
                     bizId: this.business,
                     setTemplateId: id,
                     config: {
@@ -640,8 +635,33 @@
                     }
                 })
             },
+            async getDiffTemplateAndInstances () {
+                try {
+                    const data = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
+                        bizId: this.business,
+                        setTemplateId: this.instance.set_template_id,
+                        params: {
+                            bk_set_ids: [this.instance.bk_set_id]
+                        },
+                        config: {
+                            requestId: 'diffTemplateAndInstances'
+                        }
+                    })
+                    const diff = data[0] ? data[0].module_diffs : []
+                    const len = diff.filter(_module => _module.diff_type !== 'unchanged').length
+                    this.hasChange = !!len
+                } catch (e) {
+                    console.error(e)
+                }
+            },
             handleSyncSetTemplate () {
-
+                this.$router.push({
+                    name: 'setSync',
+                    params: {
+                        templateId: this.instance.service_template_id,
+                        setIds: [this.instance.bk_set_id]
+                    }
+                })
             },
             goServiceTemplate () {
                 this.$router.push({
@@ -652,7 +672,12 @@
                 })
             },
             goSetTemplate () {
-
+                this.$router.push({
+                    name: MENU_BUSINESS_SET_TEMPLATE,
+                    params: {
+                        templateId: this.instance.service_template_id
+                    }
+                })
             }
         }
     }
@@ -700,10 +725,21 @@
         }
     }
     .sync-set-btn {
+        position: relative;
         height: 26px;
         line-height: 24px;
         padding: 0 10px;
         font-size: 12px;
         margin-top: -2px;
+        &.has-change::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #EA3636;
+        }
     }
 </style>
