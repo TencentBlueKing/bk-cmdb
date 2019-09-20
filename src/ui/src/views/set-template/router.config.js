@@ -15,4 +15,14 @@ export default [{
             parent: MENU_BUSINESS_SERVICE
         }
     })
+}, {
+    name: 'createTemplate',
+    path: 'create/template',
+    component: () => import('./children/create-template.vue'),
+    meta: new Meta({
+        owner: MENU_BUSINESS,
+        menu: {
+            i18n: '创建集群模板'
+        }
+    })
 }]
