@@ -268,9 +268,38 @@
                     this.$refs.tree.addNode(nodeData, parentNode.id, 0)
                     this.$success(this.$t('新建成功'))
                     this.handleCancelCreateNode()
+
+                    if (nextModelId === 'set' && value.set_template_id) {
+                        await this.addModulesInSetTemplate(nodeData, data.bk_inst_id)
+                    }
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            async addModulesInSetTemplate (parentNodeData, id) {
+                const modules = await this.$store.dispatch('objectModule/searchModule', {
+                    bizId: this.business,
+                    setId: id,
+                    params: this.$injectMetadata(),
+                    config: {
+                        requestId: 'searchModule'
+                    }
+                })
+                const parentNodeId = this.idGenerator(parentNodeData)
+                const nextModel = this.mainLineModels.find(model => model.bk_obj_id === 'module')
+                modules.info && modules.info.forEach(_module => {
+                    const nodeData = {
+                        default: 0,
+                        child: [],
+                        bk_obj_name: nextModel.bk_obj_name,
+                        bk_obj_id: nextModel.bk_obj_id,
+                        service_instance_count: 0,
+                        service_template_id: _module.service_template_id,
+                        bk_inst_id: _module.bk_module_id,
+                        bk_inst_name: _module.bk_module_name
+                    }
+                    this.$refs.tree.addNode(nodeData, parentNodeId, 0)
+                })
             },
             async createSet (value) {
                 const data = await this.$store.dispatch('objectSet/createSet', {

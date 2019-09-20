@@ -115,7 +115,7 @@
                     this.setTemplateList = this.setTemplateMap[this.business]
                 } else {
                     try {
-                        const data = await this.$store.dispatch('setSync/getSetTemplates', {
+                        const data = await this.$store.dispatch('setTemplate/getSetTemplates', {
                             bizId: this.business,
                             params: {},
                             config: {
