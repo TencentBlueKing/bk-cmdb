@@ -23,6 +23,7 @@ import (
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
+	enableauth "configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -133,7 +134,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			blog.Infof("[data-collection][RUN]connected to netcollect-redis %+v", process.Config.NetCollectRedis.Config)
 			process.Service.SetNetCli(netCli)
 		}
-		if process.Config.AuthConfig.Enable == true {
+		if enableauth.GetEnableAuth() {
 			blog.Info("[data-collection] auth enabled")
 			authorize, err := auth.NewAuthorize(nil, process.Config.AuthConfig, engine.Metric().Registry())
 			if err != nil {

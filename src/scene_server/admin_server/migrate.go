@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
@@ -38,13 +39,14 @@ func main() {
 	defer blog.CloseLogs()
 
 	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
+	enableAuth := op.AddFlags(pflag.CommandLine)
 
 	if err := command.Parse(os.Args); err != nil {
 		fmt.Fprintf(os.Stderr, "parse arguments failed, %v\n", err)
 		os.Exit(1)
 	}
 	util.InitFlags()
+	auth.SetEnableAuth(*enableAuth)
 
 	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "run app failed, %v\n", err)
