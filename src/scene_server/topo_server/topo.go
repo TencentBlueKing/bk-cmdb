@@ -19,6 +19,7 @@ import (
 	"runtime"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
@@ -36,9 +37,10 @@ func main() {
 	defer blog.CloseLogs()
 
 	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
+	enableAuth := op.AddFlags(pflag.CommandLine)
 
 	util.InitFlags()
+	auth.SetEnableAuth(*enableAuth)
 
 	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
