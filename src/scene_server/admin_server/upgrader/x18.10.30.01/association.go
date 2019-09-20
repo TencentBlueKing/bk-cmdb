@@ -41,6 +41,41 @@ func createAssociationTable(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	return nil
 }
 
+func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+
+	idxArr, err := db.Table(common.BKTableNameInstAsst).Indexes(ctx)
+	if err != nil {
+		blog.Errorf("get table %s index error. err:%s", common.BKTableNameInstAsst, err.Error())
+		return err
+	}
+
+	createIdxArr := []dal.Index{
+		dal.Index{Name: "idx_id", Keys: map[string]int32{"id": -1}, Background: true, Unique: true},
+		dal.Index{Name: "idx_objID_asstObjID_asstID", Keys: map[string]int32{"bk_obj_id": -1, "bk_asst_obj_id": -1, "bk_asst_id": -1}},
+	}
+	for _, idx := range createIdxArr {
+		exist := false
+		for _, existIdx := range idxArr {
+			if existIdx.Name == idx.Name {
+				exist = true
+				break
+			}
+		}
+		// index already exist, skip create
+		if exist {
+			continue
+		}
+		if err := db.Table(common.BKTableNameInstAsst).CreateIndex(ctx, idx); err != nil {
+			blog.ErrorJSON("create index to cc_InstAsst error, err:%s, current index:%s, all create index:%s", err.Error(), idx, createIdxArr)
+			return err
+		}
+
+	}
+
+	return nil
+
+}
+
 func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := common.BKTableNameAsstDes
 
@@ -196,40 +231,53 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 				return err
 			}
 
-			// update ObjAsst
-			instAssts := []metadata.InstAsst{}
-
 			instCond := condition.CreateCondition()
 			instCond.Field("bk_obj_id").Eq(asst.AsstObjID)
 			instCond.Field("bk_asst_obj_id").Eq(asst.ObjectID)
 			instCond.Field(flag).NotEq(true)
 
-			if err = db.Table(common.BKTableNameInstAsst).Find(instCond.ToMapStr()).All(ctx, &instAssts); err != nil {
-				return err
-			}
-			for _, instAsst := range instAssts {
-				updateInst := mapstr.New()
-				updateInst.Set("bk_obj_asst_id", asst.AssociationName)
-				updateInst.Set("bk_asst_id", asst.AsstKindID)
-
-				// 交换 源<->目标
-				updateInst.Set("bk_obj_id", instAsst.AsstObjectID)
-				updateInst.Set("bk_asst_obj_id", instAsst.ObjectID)
-				updateInst.Set("bk_inst_id", instAsst.AsstInstID)
-				updateInst.Set("bk_asst_inst_id", instAsst.InstID)
-
-				updateInst.Set(flag, true)
-
-				updateInst.Set("last_time", time.Now())
-				if err = db.Table(common.BKTableNameInstAsst).Update(ctx,
-					mapstr.MapStr{
-						"id": instAsst.ID,
-					}, updateInst); err != nil {
+			pageSize := uint64(2000)
+			page := 0
+			for {
+				page += 1
+				// update ObjAsst
+				instAssts := []metadata.InstAsst{}
+				blog.InfoJSON("find  data from table:%s, page:%s, cond:%s", common.BKTableNameInstAsst, page, instCond.ToMapStr())
+				if err = db.Table(common.BKTableNameInstAsst).Find(instCond.ToMapStr()).Limit(pageSize).All(ctx, &instAssts); err != nil {
 					return err
 				}
+
+				blog.InfoJSON("find  data from table:%s, cond:%s, result count:%s", common.BKTableNameInstAsst, instCond.ToMapStr(), len(instAssts))
+				if len(instAssts) == 0 {
+					break
+				}
+				for _, instAsst := range instAssts {
+					updateInst := mapstr.New()
+					updateInst.Set("bk_obj_asst_id", asst.AssociationName)
+					updateInst.Set("bk_asst_id", asst.AsstKindID)
+
+					// 交换 源<->目标
+					updateInst.Set("bk_obj_id", instAsst.AsstObjectID)
+					updateInst.Set("bk_asst_obj_id", instAsst.ObjectID)
+					updateInst.Set("bk_inst_id", instAsst.AsstInstID)
+					updateInst.Set("bk_asst_inst_id", instAsst.InstID)
+
+					updateInst.Set(flag, true)
+
+					updateInst.Set("last_time", time.Now())
+					blog.InfoJSON("update instasst, id:%s, updateInst:%s", instAsst.ID, updateInst)
+					if err = db.Table(common.BKTableNameInstAsst).Update(ctx,
+						mapstr.MapStr{
+							"id": instAsst.ID,
+						}, updateInst); err != nil {
+						return err
+					}
+				}
 			}
+
 		}
 	}
+	blog.InfoJSON("start drop column cond:%s", flag)
 	if err = db.Table(common.BKTableNameInstAsst).DropColumn(ctx, flag); err != nil {
 		return err
 	}
@@ -241,6 +289,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	cloudIDUpdateData := mapstr.New()
 	cloudIDUpdateData.Set(common.BKPropertyTypeField, common.FieldTypeForeignKey)
 	cloudIDUpdateData.Set(common.BKOptionField, nil)
+	blog.InfoJSON("update host cloud association cond:%s, data:%s", cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
 	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
 	if err != nil {
 		return err
@@ -248,11 +297,13 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	deleteHostCloudAssociation := condition.CreateCondition()
 	deleteHostCloudAssociation.Field("bk_obj_id").Eq(common.BKInnerObjIDHost)
 	deleteHostCloudAssociation.Field("bk_asst_obj_id").Eq(common.BKInnerObjIDPlat)
+	blog.InfoJSON("delete host cloud association table:%s, cond:%s", common.BKTableNameObjAsst, deleteHostCloudAssociation.ToMapStr())
 	err = db.Table(common.BKTableNameObjAsst).Delete(ctx, deleteHostCloudAssociation.ToMapStr())
 	if err != nil {
 		return err
 	}
 
+	blog.InfoJSON("delete host cloud association table:%s, cond:%s", common.BKTableNameObjAttDes, propertyCond.ToMapStr())
 	// drop outdate propertys
 	err = db.Table(common.BKTableNameObjAttDes).Delete(ctx, propertyCond.ToMapStr())
 	if err != nil {
@@ -262,6 +313,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	// drop outdate column
 	outdateColumns := []string{"bk_object_att_id", "bk_asst_forward", "bk_asst_name"}
 	for _, column := range outdateColumns {
+		blog.InfoJSON("delete field from table:%s, cond:%s", common.BKTableNameObjAsst, column)
 		if err = db.Table(common.BKTableNameObjAsst).DropColumn(ctx, column); err != nil {
 			return err
 		}
@@ -269,6 +321,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 	delCond := condition.CreateCondition()
 	delCond.Field(common.AssociationKindIDField).Eq(nil)
+	blog.InfoJSON("delete host cloud association table:%s, cond:%s", common.BKTableNameObjAsst, delCond.ToMapStr())
 	if err = db.Table(common.BKTableNameObjAsst).Delete(ctx, delCond.ToMapStr()); err != nil {
 		return err
 	}
