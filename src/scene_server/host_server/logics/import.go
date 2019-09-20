@@ -61,7 +61,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 
 		innerIP, isOk := host[common.BKHostInnerIPField].(string)
 		if isOk == false || "" == innerIP {
-			errMsg = append(errMsg, lgc.ccLang.Languagef("host_import_innerip_empty", strconv.FormatInt(index, 10)))
+			errMsg = append(errMsg, lgc.ccLang.Languagef("host_import_innerip_empty", index))
 			continue
 		}
 
