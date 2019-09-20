@@ -20,7 +20,7 @@ import resourceManagement from '@/views/resource-manage/router.config'
 import customFields from '@/views/custom-fields/router.config'
 import setSync from '@/views/set-sync/router.config'
 import requireBusiness from '@/views/status/require-business'
-
+import setTemplate from '@/views/set-template/router.config'
 const flatternViews = views => {
     const flatterned = []
     views.forEach(view => {
@@ -43,7 +43,8 @@ export const businessViews = flatternViews([
     serviceInstance,
     serviceSynchronous,
     customFields,
-    setSync
+    setSync,
+    setTemplate
 ])
 
 businessViews.forEach(view => {
