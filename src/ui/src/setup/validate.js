@@ -102,7 +102,12 @@ const customRules = {
             return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[-_:]){0,256}$/.test(value)
         }
     },
-    instanceTag: {
+    instanceTagKey: {
+        validate: value => {
+            return /^[a-zA-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
+        }
+    },
+    instanceTagValue: {
         validate: value => {
             return /^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
         }
@@ -152,9 +157,10 @@ const dictionary = {
             namedCharacter: () => '格式不正确，特殊符号仅支持(:_-)',
             min_value: () => '该值小于最小值',
             max_value: () => '该值大于最大值',
-            instanceTag: () => '请输入英文 / 数字',
             repeatTagKey: () => '标签键不能重复',
-            setNameMap: () => '集群名称重复'
+            setNameMap: () => '集群名称重复',
+            instanceTagValue: () => '请输入英文 / 数字',
+            instanceTagKey: () => '请输入英文 / 数字, 以英文开头'
         },
         custom: {
             asst: {
@@ -170,12 +176,12 @@ const dictionary = {
             length: (field, [maxLength]) => {
                 return `Content length max than ${maxLength}`
             },
-            associationId: () => 'The format is incorrect and can only contain underscores and lowercase English',
+            associationId: () => 'The format is incorrect and can only contain underscores and lowercase letter',
             classifyName: () => 'Please enter the correct content',
             classifyId: () => 'Please enter the correct content',
             required: () => 'This field is required',
             http: () => 'Please enter a URL beginning with http(s)://',
-            modelId: () => 'The format is incorrect and can only contain underscores, numbers, and lowercase English',
+            modelId: () => 'The format is incorrect and can only contain underscores, numbers, and lowercase letter',
             enumId: () => 'Please enter the correct content',
             enumName: () => 'Please enter the correct content',
             number: () => 'Please enter the correct content',
@@ -189,9 +195,10 @@ const dictionary = {
             namedCharacter: () => 'Special symbols only support(:_-)',
             min_value: () => 'This value is less than the minimum',
             max_value: () => 'This value is greater than the maximum',
-            instanceTag: () => 'Please enter English / Number',
-            repeatTagKey: () => 'Label key cannot be repeated',
-            setNameMap: () => 'Duplicate cluster name'
+            setNameMap: () => 'Duplicate cluster name',
+            instanceTagValue: () => 'Please enter letter / number',
+            instanceTagKey: () => 'Please enter letter / number starts with letter',
+            repeatTagKey: () => 'Label key cannot be repeated'
         },
         custom: {
             asst: {

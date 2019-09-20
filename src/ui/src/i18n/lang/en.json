@@ -913,5 +913,6 @@
     "服务分类变更": "Service classification change",
     "模板详情": "Template details",
     "主机拓扑提示": "Go to {link} to edit topology",
-    "同步数量提示": "The instance module {successCount} has been successfully synchronized, failing {failCount}"
+    "同步数量提示": "The instance module {successCount} has been successfully synchronized, failing {failCount}",
+    "空集群模板提示": "You have not create template, {link}"
 }
