@@ -24,20 +24,14 @@
                 <i class="bk-icon icon-full-screen" @click="resizeFull" v-bk-tooltips="$t('还原')"></i>
                 <i class="bk-icon icon-plus" @click="zoomIn" v-bk-tooltips="$t('放大')"></i>
                 <i class="bk-icon icon-minus" @click="zoomOut" v-bk-tooltips="$t('缩小')"></i>
-                <div class="topo-example" v-if="!isAdminView">
-                    <p class="example-item">
-                        <i></i>
-                        <span>{{$t('业务私有模型')}}</span>
-                    </p>
-                    <p class="example-item">
-                        <i></i>
-                        <span>{{$t('公有模型')}}</span>
-                    </p>
-                </div>
-                <div class="topo-example" v-else>
-                    <p class="example-item">
+                <div class="topo-legend">
+                    <p class="legend-item built-in">
                         <i></i>
                         <span>{{$t('内置模型')}}</span>
+                    </p>
+                    <p class="legend-item custom">
+                        <i></i>
+                        <span>{{$t('自定义模型')}}</span>
                     </p>
                 </div>
             </div>
@@ -85,7 +79,7 @@
                                 'node-icon',
                                 model['bk_obj_icon'],
                                 {
-                                    'is-public': !$tools.getMetadataBiz(model)
+                                    'is-public': model.ispre
                                 }
                             ]">
                             </i>
@@ -136,7 +130,7 @@
                 v-show="topoTooltip.showDelete"
                 @click="handleDeleteNode"
             >
-                <i class="icon-cc-del"></i>
+                <i class="icon-cc-hide"></i>
             </div>
         </div>
 
@@ -235,7 +229,8 @@
             noPositionModels () {
                 return this.localTopoModelList.filter(model => {
                     const position = model.position
-                    return position.x === null && position.y === null
+                    const isMainNode = this.isMainNode(model)
+                    return position.x === null && position.y === null && !isMainNode
                 })
             },
             localClassifications () {
@@ -289,13 +284,15 @@
                 }).then(res => res.info)
             },
             initNetwork () {
-                cy = cytoscape({
+                cy = window.cy = cytoscape({
                     container: this.$refs.topo,
 
                     autolock: true,
 
                     minZoom: 0.5,
                     maxZoom: 5,
+                    wheelSensitivity: 0.5,
+                    pixelRatio: 2,
 
                     // 元素定义，支持promise
                     elements: this.getTopoElements(),
@@ -303,7 +300,13 @@
                     layout: {
                         name: 'preset',
                         fit: true,
-                        padding: 30
+                        padding: 30,
+                        ready: () => {
+                            this.loadNodeImage()
+                        },
+                        stop: () => {
+                            this.updateElementPostion()
+                        }
                     },
 
                     style: [
@@ -377,7 +380,7 @@
 
                         // 添加按钮
                         {
-                            selector: 'node.add-btn',
+                            selector: 'node.add-business-btn',
                             style: {
                                 'width': 20,
                                 'height': 20,
@@ -385,8 +388,8 @@
                                 'text-valign': 'bottom',
                                 'text-halign': 'center',
                                 'font-size': '20px',
-                                'text-margin-y': '-21px',
-                                'font-weight': 'bold',
+                                'text-margin-y': '-19px',
+                                'font-family': 'arial',
                                 'label': '+',
                                 'shape': 'round-rectangle',
                                 'background-color': '#3c96ff',
@@ -509,11 +512,7 @@
                 })
 
                 // 所有操作的事件绑定
-                cy.on('layoutstart', (event) => {
-                    this.loadNodeImage()
-                }).on('layoutstop', (event) => {
-                    this.setMainNodePosition()
-                }).on('ready', (event) => {
+                cy.on('ready', (event) => {
                     event.cy.nodes().noOverlap({ padding: 5 })
                 }).on('resize', (event) => {
                     event.cy.fit()
@@ -601,16 +600,24 @@
                     targetNode.data('ehhoverover', true)
                 }).on('ehhoverout', (event, sourceNode, targetNode) => {
                     targetNode.data('ehhoverover', false)
-                }).on('click', 'node.add-btn', (event) => {
+                }).on('click', 'node.add-business-btn', (event) => {
                     const node = event.target
-                    this.handleAddLevel(node.data('model'))
-                }).on('mouseover', 'node.add-btn', (event) => {
+                    this.handleAddBusinessLevel(node.data('model'))
+                }).on('mouseover', 'node.add-business-btn', (event) => {
                     this.isTopoHover = true
-                }).on('mouseout', 'node.add-btn', (event) => {
+                }).on('mouseout', 'node.add-business-btn', (event) => {
                     this.isTopoHover = false
                 })
 
                 deletedNodes = cy.collection()
+            },
+            async updateNetwork () {
+                // 全量更新画布元素，如存在性能问题则需要依赖数据返回做按需更新
+                const elements = await this.getTopoElements()
+                cy.json({ elements })
+
+                this.loadNodeImage()
+                this.updateElementPostion()
             },
             async getTopoElements () {
                 const [asstData, mainLineData, nodeData] = await Promise.all([
@@ -630,13 +637,17 @@
                 // 包含分类属性的节点数据
                 const nodeObjects = this.localClassifications.reduce((acc, cur) => acc.concat(cur['bk_objects']), [])
 
-                // 主线模型
-                const mainLineIds = this.mainLineModelList.map(model => model['bk_obj_id'])
-
                 this.localTopoModelList.forEach((nodeItem, i) => {
-                    // nodes
+                    // nodes，模型节点
                     const nodeObjId = nodeItem.bk_obj_id
-                    const isMainNode = mainLineIds.includes(nodeObjId)
+                    const isMainNode = this.isMainNode(nodeItem)
+                    const nodeClasses = ['model']
+                    if (isMainNode) {
+                        nodeClasses.push('main')
+                    }
+                    if (nodeItem.ispre) {
+                        nodeClasses.push('ispre')
+                    }
                     elements.push({
                         data: {
                             id: nodeObjId,
@@ -644,13 +655,15 @@
                             icon: nodeItem.bk_obj_icon,
                             group: (nodeObjects.find(item => item.bk_obj_id === nodeObjId) || {}).bk_classification_id,
                             instId: nodeItem.bk_inst_id,
-                            type: nodeItem.node_type,
-                            main: isMainNode
+                            type: nodeItem.node_type
                         },
-                        position: nodeItem.position,
+                        position: {
+                            x: nodeItem.position.x,
+                            y: nodeItem.position.y
+                        },
                         group: 'nodes',
                         locked: false,
-                        classes: 'model'
+                        classes: nodeClasses.join(' ')
                     })
 
                     // edges
@@ -679,6 +692,21 @@
                     }
                 })
 
+                // nodes，添加业务层级操作按钮
+                this.mainLineModelList.forEach((model, i) => {
+                    if (this.canAddLevel(model)) {
+                        elements.push({
+                            data: {
+                                id: `add-business-btn-${model.bk_obj_id}`,
+                                model
+                            },
+                            group: 'nodes',
+                            locked: false,
+                            classes: 'add-business-btn'
+                        })
+                    }
+                })
+
                 return elements
             },
             loadNodeImage () {
@@ -690,28 +718,64 @@
                     node.addClass('bg')
                 })
             },
-            setMainNodePosition () {
+            updateElementPostion () {
                 const extent = cy.extent()
+                const isEdit = this.topoEdit.isEdit
+
+                // 先给节点解锁
+                cy.autolock(false)
+
+                // 1. 设置主节点位置
                 const centerPos = { x: (extent.x1 + extent.x2) / 2, y: (extent.y1 + extent.y2) / 2 }
                 const startPosY = extent.y1 + NODE_WIDTH
-                // todo分配空间可以再优化
                 // const nodeSpace = extent.h * 0.8 / this.mainLineModelList.length
                 const nodeSpace = 200
 
-                // 将主线节点坚排并lock
-                cy.autolock(false)
+                // 坚排并lock
                 this.mainLineModelList.forEach((model, i) => {
                     cy.nodes(`#${model['bk_obj_id']}`).position({
                         x: centerPos.x,
                         y: i * nodeSpace + startPosY
                     }).lock()
                 })
-                cy.autolock(true)
 
-                // 添加新建层级操作节点
-                this.makeAddLevelBtns()
+                // 2. 摆放添加业务层级按钮节点
+                cy.nodes('.add-business-btn').positions((node, i) => {
+                    // 所属模型节点信息
+                    const modelNodeId = node.data('model').bk_obj_id
+                    const modelNode = cy.nodes(`#${modelNodeId}`)
+                    const modelNodePos = modelNode.position()
+                    const modelNodeHeight = modelNode.outerHeight() + 10
 
-                // todo将位置更新回写到数据
+                    return {
+                        x: modelNodePos.x,
+                        y: modelNodePos.y + modelNodeHeight
+                    }
+                }).style('display', isEdit ? 'element' : 'none').lock()
+
+                // 3. 摆放无位置节点
+                const nodeCollection = cy.collection()
+                this.noPositionModels.forEach((model, i) => {
+                    const node = cy.nodes(`#${model['bk_obj_id']}`)
+                    nodeCollection.merge(node)
+                })
+                const collectionBoundingBox = nodeCollection.boundingBox()
+                const nodeTotal = nodeCollection.length
+                const nodeGutter = 20
+                // 不超过总宽度则使用每个节点宽度的总和，防止自动散开
+                const boundingBoxW = Math.min((collectionBoundingBox.w + nodeGutter) * nodeTotal, extent.w)
+                const maxCountInOneRow = Math.floor(extent.w / collectionBoundingBox.w)
+                const rowTotal = Math.ceil(nodeTotal / maxCountInOneRow)
+                const boundingBoxH = collectionBoundingBox.h * rowTotal
+                nodeCollection.layout({
+                    name: 'grid',
+                    fit: false,
+                    rows: rowTotal,
+                    boundingBox: { x1: extent.x1 + nodeGutter, y1: extent.y1 + nodeGutter, w: boundingBoxW, h: boundingBoxH }
+                }).run()
+
+                // 更新节点锁状态
+                cy.autolock(!isEdit)
             },
             handleToggleGroup (group) {
                 const groupId = group['bk_classification_id']
@@ -813,7 +877,7 @@
                         const svg = {
                             unselected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                 name: nodeData.name,
-                                iconColor: this.$tools.getMetadataBiz(model) ? '#3c96ff' : '#868b97',
+                                iconColor: model.ispre ? '#3c96ff' : '#798aad',
                                 backgroundColor: '#fff'
                             }))}`,
                             selected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
@@ -890,48 +954,13 @@
                 }
 
                 // 显示新建层级操作节点
-                cy.nodes('.add-btn').style('display', 'element')
-            },
-            makeAddLevelBtns () {
-                if (cy.nodes('.add-btn').length) {
-                    return
-                }
-
-                this.mainLineModelList.forEach((model, i) => {
-                    if (this.canAddLevel(model)) {
-                        const modelNode = cy.nodes(`#${model.bk_obj_id}`)
-                        const nodePos = modelNode.position()
-                        const nodeHeight = modelNode.outerHeight() + 10
-
-                        cy.add({
-                            data: {
-                                id: `addbtn-${model.bk_obj_id}`,
-                                model
-                            },
-                            group: 'nodes',
-                            position: { x: nodePos.x, y: nodePos.y + nodeHeight },
-                            classes: 'add-btn'
-                        })
-                    }
-                })
-
-                if (this.topoEdit.isEdit) {
-                    cy.nodes('.add-btn').style('display', 'element')
-                }
-            },
-            async addLevelNode (data) {
-                // 全量更新画布元素，如存在性能问题则需要依赖数据返回做按需更新
-                const elements = await this.getTopoElements()
-                cy.json({ elements })
-
-                this.loadNodeImage()
-                this.setMainNodePosition()
+                cy.nodes('.add-business-btn').style('display', 'element')
             },
             handleExitEdit () {
                 this.topoEdit.isEdit = false
                 cy.autolock(true)
                 eh.disable()
-                cy.nodes('.add-btn').style('display', 'none')
+                cy.nodes('.add-business-btn').style('display', 'none')
             },
             handleAddEdge () {
                 const nodeId = this.topoTooltip.hoverNode.id
@@ -1047,6 +1076,10 @@
             canAddLevel (model) {
                 return this.isAdminView && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
+            isMainNode (model) {
+                const mainLineIds = this.mainLineModelList.map(model => model['bk_obj_id'])
+                return mainLineIds.includes(model['bk_obj_id'])
+            },
             handleShowDetails (labelInfo) {
                 this.slider.title = labelInfo.text
                 this.slider.properties = {
@@ -1103,7 +1136,7 @@
                     }
                 })
             },
-            handleAddLevel (model) {
+            handleAddBusinessLevel (model) {
                 if (this.createAuth) {
                     this.addLevel.parent = model
                     this.addLevel.showDialog = true
@@ -1132,8 +1165,8 @@
                         }
                     })
 
-                    // 在画布中添加节点
-                    this.addLevelNode()
+                    // 更新拓扑图
+                    this.updateNetwork()
 
                     this.cancelCreateLevel()
                 } catch (e) {
@@ -1152,7 +1185,6 @@
     .topo-wrapper {
         position: relative;
         padding: 0;
-        height: 100%;
         &.hover {
             cursor: pointer;
         }
@@ -1190,7 +1222,7 @@
                 }
             }
         }
-        .topo-example {
+        .topo-legend {
             position: absolute;
             padding: 3px 10px;
             top: 57px;
@@ -1199,13 +1231,13 @@
             box-shadow: 0px 2px 1px 0px rgba(185, 203, 222, 0.5);
             font-size: 12px;
             z-index: 1;
-            .example-item {
+            .legend-item {
                 line-height: 30px;
                 font-size: 0;
-                &:first-child i{
+                &.custom i {
                     background: $cmdbBorderFocusColor;
                 }
-                &:last-child i{
+                &.built-in i {
                     background: #868b97;
                 }
                 i {
@@ -1368,7 +1400,7 @@
     .global-model {
         float: left;
         width: calc(100% - 210px);
-        height: calc(100% - 50px - 58px);
+        height: calc(100% - 50px);
         background-color: #f4f5f8;
         background-image: linear-gradient(#eef1f5 1px, transparent 0), linear-gradient(90deg, #eef1f5 1px, transparent 0);
         background-size: 10px 10px;
