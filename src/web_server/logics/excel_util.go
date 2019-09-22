@@ -194,9 +194,9 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 
 		switch cell.Type() {
 		case xlsx.CellTypeString:
-			host[fieldName] = cell.String()
+			host[fieldName] = strings.TrimSpace(cell.String())
 		case xlsx.CellTypeStringFormula:
-			host[fieldName] = cell.String()
+			host[fieldName] = strings.TrimSpace(cell.String())
 		case xlsx.CellTypeNumeric:
 			cellValue, err := cell.Float()
 			if nil != err {
@@ -260,7 +260,7 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 			}
 		default:
 			if util.IsStrProperty(field.PropertyType) {
-				host[fieldName] = cell.Value
+				host[fieldName] = strings.TrimSpace(cell.Value)
 			}
 
 		}
