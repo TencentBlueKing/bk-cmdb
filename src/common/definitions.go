@@ -719,7 +719,7 @@ const (
 	FieldTypeSingleLenChar int = 256
 
 	// FieldTypeLongLenChar the long char length limit
-	FieldTypeLongLenChar int = 2000
+	FieldTypeLongLenChar int = 15000
 )
 
 const (
