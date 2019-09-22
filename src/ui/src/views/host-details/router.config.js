@@ -7,6 +7,7 @@ import {
 } from '@/dictionary/auth'
 import {
     MENU_RESOURCE,
+    MENU_RESOURCE_HOST,
     MENU_RESOURCE_MANAGEMENT,
     MENU_RESOURCE_HOST_DETAILS,
     MENU_RESOURCE_BUSINESS_HOST_DETAILS
@@ -21,7 +22,7 @@ export default [{
         owner: MENU_RESOURCE,
         menu: {
             i18n: '主机详情',
-            relative: MENU_RESOURCE_MANAGEMENT
+            relative: [MENU_RESOURCE_HOST, MENU_RESOURCE_MANAGEMENT]
         },
         auth: {
             view: null,
@@ -44,7 +45,7 @@ export default [{
         owner: MENU_RESOURCE,
         menu: {
             i18n: '主机详情',
-            relative: MENU_RESOURCE_MANAGEMENT
+            relative: [MENU_RESOURCE_HOST, MENU_RESOURCE_MANAGEMENT]
         },
         auth: {
             view: null,
