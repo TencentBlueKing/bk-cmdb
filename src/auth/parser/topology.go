@@ -377,7 +377,7 @@ func (ps *parseStream) mainline() *parseStream {
 
 const (
 	findManyAssociationKindPattern = "/api/v3/topo/association/type/action/search"
-	createAssociationKindPattern   = "/api/v3/topo/association/type/action/search"
+	createAssociationKindPattern   = "/api/v3/topo/association/type/action/create"
 )
 
 var (
