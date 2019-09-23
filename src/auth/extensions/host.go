@@ -292,20 +292,6 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 	return am.constructHostFromSearchResult(ctx, header, result.Data.Info)
 }
 
-func (am *AuthManager) extractBusinessIDFromHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) (int64, error) {
-	var businessID int64
-	for _, host := range hosts {
-		bizID := host.BKAppIDField
-		// we should ignore metadata.LabelBusinessID field not found error
-		// TODO: confirm this, when a import hosts to resource pool.
-		// if idx > 0 && bizID != businessID {
-		// 	return 0, fmt.Errorf("authorization failed, get multiple business ID[%d:%d] from hosts", bizID, businessID)
-		// }
-		businessID = bizID
-	}
-	return am.correctBusinessID(ctx, header, businessID)
-}
-
 func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) ([]meta.ResourceAttribute, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
@@ -316,12 +302,18 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 	businessIDs = util.IntArrayUnique(businessIDs)
 	bizIDCorrectMap := make(map[int64]int64)
 	for _, businessID := range businessIDs {
-		bizID, err := am.correctBusinessID(ctx, header, businessID)
+		resPoolBizID, err := am.getResourcePoolBusinessID(ctx, header)
 		if err != nil {
 			return nil, fmt.Errorf("correct host related business id failed, err: %+v", err)
 		}
-		bizIDCorrectMap[businessID] = bizID
-	}
+		if businessID == resPoolBizID {
+		    // if this is resource pool business, then change the biz id to 0, so that it
+		    // represent global resources
+            bizIDCorrectMap[businessID] = 0
+        } else {
+            bizIDCorrectMap[businessID] = businessID
+        }
+    }
 
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, host := range hosts {
@@ -385,7 +377,7 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 	}
 	return am.batchAuthorize(ctx, header, resources...)
 }
-func (am *AuthManager) GenDeleteHostBatchNoPermissionResp(ctx context.Context, header http.Header, action authcenter.ActionID, hostIDs []int64) (*metadata.BaseResp, error) {
+func (am *AuthManager) GenEditHostBatchNoPermissionResp(ctx context.Context, header http.Header, action authcenter.ActionID, hostIDs []int64) (*metadata.BaseResp, error) {
 	var p metadata.Permission
 	p.SystemID = authcenter.SystemIDCMDB
 	p.SystemName = authcenter.SystemNameCMDB
@@ -399,12 +391,29 @@ func (am *AuthManager) GenDeleteHostBatchNoPermissionResp(ctx context.Context, h
 	}
 
 	for _, host := range hosts {
-		p.Resources = append(p.Resources, []metadata.Resource{{
-			ResourceType:     string(authcenter.SysHostInstance),
-			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysHostInstance],
-			ResourceID:       strconv.FormatInt(host.BKHostIDField, 10),
-			ResourceName:     host.BKHostInnerIPField,
-		}})
+	    resPoolBizID, err := am.getResourcePoolBusinessID(ctx, header)
+	    if err != nil {
+	        return nil, err
+        }
+	    
+	    if host.BKAppIDField == resPoolBizID {
+	        // this is a global host instance
+            p.Resources = append(p.Resources, []metadata.Resource{{
+                ResourceType:     string(authcenter.SysHostInstance),
+                ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysHostInstance],
+                ResourceID:       strconv.FormatInt(host.BKHostIDField, 10),
+                ResourceName:     host.BKHostInnerIPField,
+            }})
+        } else {
+            // this is a business host instance resource
+            p.Resources = append(p.Resources, []metadata.Resource{{
+                ResourceType:     string(authcenter.BizHostInstance),
+                ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.BizHostInstance],
+                ResourceID:       strconv.FormatInt(host.BKHostIDField, 10),
+                ResourceName:     host.BKHostInnerIPField,
+            }})
+        }
+		
 	}
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
