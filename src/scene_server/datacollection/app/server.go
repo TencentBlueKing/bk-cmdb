@@ -134,7 +134,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			blog.Infof("[data-collection][RUN]connected to netcollect-redis %+v", process.Config.NetCollectRedis.Config)
 			process.Service.SetNetCli(netCli)
 		}
-		if enableauth.GetEnableAuth() {
+		if enableauth.IsAuthed() {
 			blog.Info("[data-collection] auth enabled")
 			authorize, err := auth.NewAuthorize(nil, process.Config.AuthConfig, engine.Metric().Registry())
 			if err != nil {

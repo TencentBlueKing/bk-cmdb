@@ -46,7 +46,7 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 	var err error
 	var cfg AuthConfig
 
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		return AuthConfig{}, nil
 	}
 	enableSync, exist := configmap[prefix+".enableSync"]
@@ -98,7 +98,7 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 // NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
 func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer) (*AuthCenter, error) {
 	blog.V(5).Infof("new auth center client with parameters tls: %+v, cfg: %+v", tls, cfg)
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		return new(AuthCenter), nil
 	}
 	client, err := util.NewClient(tls)
@@ -146,11 +146,11 @@ type AuthCenter struct {
 }
 
 func (ac *AuthCenter) Enabled() bool {
-	return auth.GetEnableAuth()
+	return auth.IsAuthed()
 }
 
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		return meta.Decision{Authorized: true}, nil
 	}
 
@@ -189,7 +189,7 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, resources ...meta.ResourceAttribute) (decisions []meta.Decision, err error) {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
 	decisions = make([]meta.Decision, len(resources))
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		for i := range decisions {
 			decisions[i].Authorized = true
 		}
@@ -432,7 +432,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 }
 
 func (ac *AuthCenter) GetAnyAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		return make([]int64, 0), nil
 	}
 	info := &Principal{
@@ -462,7 +462,7 @@ func (ac *AuthCenter) GetAnyAuthorizedBusinessList(ctx context.Context, user met
 
 // get a user's authorized read business list.
 func (ac *AuthCenter) GetExactAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		return make([]int64, 0), nil
 	}
 
@@ -512,7 +512,7 @@ func (ac *AuthCenter) AdminEntrance(ctx context.Context, user meta.UserInfo) ([]
 
 	var systemList []string
 	var err error
-	if auth.GetEnableAuth() {
+	if auth.IsAuthed() {
 		systemList, err = ac.authClient.GetAnyAuthorizedScopes(ctx, ScopeTypeIDSystem, info)
 		if err != nil {
 			return nil, err
@@ -553,7 +553,7 @@ func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.User
 
 	var authorizedAudits []AuthorizedResource
 	var err error
-	if auth.GetEnableAuth() {
+	if auth.IsAuthed() {
 		authorizedAudits, err = ac.authClient.GetAuthorizedResources(ctx, info)
 		if err != nil {
 			return nil, err
@@ -568,7 +568,7 @@ const pageSize = 500
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
 
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		blog.V(5).Infof("auth disabled, auth config: %+v, rid: %s", ac.Config, rid)
 		return nil
 	}
@@ -623,7 +623,7 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 		user = cmdbUserID
 	}
 
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		blog.V(5).Infof("auth disabled, auth config: %+v, rid: %s", ac.Config, rid)
 		return new(RegisterInfo), nil
 	}
@@ -661,7 +661,7 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
 
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		return nil
 	}
 	if len(rs) <= 0 {
@@ -715,7 +715,7 @@ func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.Resourc
 func (ac *AuthCenter) UpdateResource(ctx context.Context, r *meta.ResourceAttribute) error {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
 
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		return nil
 	}
 
@@ -755,7 +755,7 @@ func (ac *AuthCenter) Get(ctx context.Context) error {
 }
 
 func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribute) ([]meta.BackendResource, error) {
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		return nil, nil
 	}
 
@@ -831,7 +831,7 @@ func (s *acDiscovery) GetServers() ([]string, error) {
 func (ac *AuthCenter) RawDeregisterResource(ctx context.Context, scope ScopeInfo, rs ...meta.BackendResource) error {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
 
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		return nil
 	}
 	if len(rs) <= 0 {
@@ -872,7 +872,7 @@ func (ac *AuthCenter) RawDeregisterResource(ctx context.Context, scope ScopeInfo
 }
 
 func (ac *AuthCenter) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p []metadata.Permission) (url string, err error) {
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		return "", errors.New("auth center not enabled")
 	}
 
@@ -895,14 +895,14 @@ func (ac *AuthCenter) GetNoAuthSkipUrl(ctx context.Context, header http.Header, 
 }
 
 func (ac *AuthCenter) GetUserGroupMembers(ctx context.Context, header http.Header, bizID int64, groups []string) ([]UserGroupMembers, error) {
-	if !auth.GetEnableAuth() {
+	if !auth.IsAuthed() {
 		return nil, errors.New("auth center not enabled")
 	}
 	return ac.authClient.GetUserGroupMembers(ctx, header, bizID, groups)
 }
 
 func (ac *AuthCenter) DeleteResources(ctx context.Context, header http.Header, scopeType string, resType ResourceTypeID) error  {
-    if !auth.GetEnableAuth() {
+    if !auth.IsAuthed() {
         return errors.New("auth center not enabled")
     }
     

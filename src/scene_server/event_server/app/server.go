@@ -105,7 +105,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
 		}
 		process.Service.SetAuth(authCli)
-		blog.Infof("enable auth center: %v", auth.GetEnableAuth())
+		blog.Infof("enable auth center: %v", auth.IsAuthed())
 
 		go func() {
 			errCh <- distribution.SubscribeChannel(subCli)

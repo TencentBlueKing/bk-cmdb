@@ -14,19 +14,30 @@ package auth
 
 import (
 	"strconv"
+
+	"configcenter/src/common/blog"
 )
 
 var EnableAuth = "true"
+var enableAuth = true
+var isSet = false
 
-// SetEnableAuth is the default handler which match the --enable-auth flag
-func SetEnableAuth(enableAuth bool) {
-	EnableAuth = strconv.FormatBool(enableAuth)
+func init() {
+	var err error
+	enableAuth, err = strconv.ParseBool(EnableAuth)
+	if err != nil {
+		blog.Fatalf("[auth] enableAuth %s configuration invalid", EnableAuth)
+	}
 }
 
-func GetEnableAuth() bool {
-	enableAuth, err := strconv.ParseBool(EnableAuth)
-	if err != nil {
-		enableAuth = true
+// SetEnableAuth is the default handler which match the --enable-auth flag
+func SetEnableAuth(enable bool) {
+	if !isSet {
+		enableAuth = enable
+		isSet = true
 	}
+}
+
+func IsAuthed() bool {
 	return enableAuth
 }

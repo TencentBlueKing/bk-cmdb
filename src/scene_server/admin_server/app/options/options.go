@@ -39,7 +39,7 @@ func NewServerOption() *ServerOption {
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) *bool {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60005", "The ip address and port for the serve on")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
-	return fs.Bool("enable-auth", auth.GetEnableAuth(),"The auth center enable status")
+	return fs.Bool("enable-auth", auth.IsAuthed(),"The auth center enable status")
 }
 
 type Config struct {
