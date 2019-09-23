@@ -313,11 +313,11 @@ func (valid *validator) validLongChar(ctx context.Context, val interface{}, key 
 			strReg, err := regexp.Compile(option)
 			if nil != err {
 				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
-				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+				return valid.errif.Errorf(common.CCErrFieldRegValidFailed, key)
 			}
 			if !strReg.MatchString(value) {
 				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
-				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+				return valid.errif.Errorf(common.CCErrFieldRegValidFailed, key)
 			}
 		}
 	default:
@@ -366,11 +366,11 @@ func (valid *validator) validChar(ctx context.Context, val interface{}, key stri
 			strReg, err := regexp.Compile(option)
 			if nil != err {
 				blog.Errorf(`params "%s" not match regexp "%s", rid:  %s`, val, option, rid)
-				return valid.errif.CCError(common.CCErrFieldRegValidFailed)
+				return valid.errif.CCErrorf(common.CCErrFieldRegValidFailed, key)
 			}
 			if !strReg.MatchString(value) {
 				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
-				return valid.errif.CCError(common.CCErrFieldRegValidFailed)
+				return valid.errif.CCErrorf(common.CCErrFieldRegValidFailed, key)
 			}
 		}
 	default:
