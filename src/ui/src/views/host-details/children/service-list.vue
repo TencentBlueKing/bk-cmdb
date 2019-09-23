@@ -49,9 +49,11 @@
                     </div>
                     <div class="options-check-view">
                         <i :class="['icon-cc-label', 'view-btn', 'pr10', { 'active': currentView === 'label' }]"
+                            :title="$t('显示标签')"
                             @click="checkView('label')"></i>
                         <span class="dividing-line"></span>
                         <i :class="['icon-cc-instance-path', 'view-btn', 'pl10', { 'active': currentView === 'path' }]"
+                            :title="$t('显示拓扑')"
                             @click="checkView('path')"></i>
                     </div>
                 </bk-popover>

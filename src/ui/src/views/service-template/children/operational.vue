@@ -122,10 +122,14 @@
                 <div class="content">
                     <i class="bk-icon icon-check-1"></i>
                     <p>{{$t('服务模板创建成功')}}</p>
-                    <span>{{$tc('创建成功前往服务拓扑', createdSucess.name, { name: createdSucess.name })}}</span>
+                    <span v-if="processList.length">{{$tc('创建成功前往服务拓扑', createdSucess.name, { name: createdSucess.name })}}</span>
+                    <span v-else>
+                        <i class="bk-icon icon-exclamation"></i>
+                        {{$t('创建成功无进程提示')}}
+                    </span>
                 </div>
                 <div class="btn-box">
-                    <bk-button
+                    <bk-button v-if="processList.length"
                         theme="primary"
                         class="mr10"
                         @click="handleGoInstance">
@@ -442,17 +446,29 @@
                         }
                     })
                 } else {
-                    this.createServiceTemplate({
-                        params: this.$injectMetadata({
-                            name: this.formData.templateName,
-                            service_category_id: this.formData.secondaryClassification
+                    if (!this.processList.length) {
+                        this.$bkInfo({
+                            title: this.$t('服务模板创建没进程提示'),
+                            confirmFn: () => {
+                                this.handleCreateTemplate()
+                            }
                         })
-                    }).then(data => {
-                        this.createdSucess.name = data.name
-                        this.formData.templateId = data.id
-                        this.handleSubmitProcessList()
-                    })
+                        return
+                    }
+                    this.handleCreateTemplate()
                 }
+            },
+            handleCreateTemplate () {
+                this.createServiceTemplate({
+                    params: this.$injectMetadata({
+                        name: this.formData.templateName,
+                        service_category_id: this.formData.secondaryClassification
+                    })
+                }).then(data => {
+                    this.createdSucess.name = data.name
+                    this.formData.templateId = data.id
+                    this.handleSubmitProcessList()
+                })
             },
             handleGoInstance () {
                 this.$router.replace({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
@@ -542,7 +558,7 @@
         text-align: center;
         color: #444444;
         word-break: break-all;
-        .bk-icon {
+        .icon-check-1 {
             width: 60px;
             height: 60px;
             line-height: 60px;
@@ -552,6 +568,15 @@
             border-radius: 50%;
             background-color: #2dcb56;
             margin-top: 12px;
+        }
+        .icon-exclamation {
+            width: 18px;
+            height: 18px;
+            line-height: 17px;
+            font-size: 12px;
+            border: 1px solid #444444;
+            border-radius: 50%;
+            margin-top: -4px;
         }
         p {
             font-size: 24px;
