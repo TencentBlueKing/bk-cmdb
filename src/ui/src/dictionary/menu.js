@@ -11,7 +11,6 @@ import {
     MENU_RESOURCE_MANAGEMENT,
     MENU_MODEL_MANAGEMENT,
     MENU_MODEL_TOPOLOGY,
-    MENU_MODEL_BUSINESS_TOPOLOGY,
     MENU_MODEL_ASSOCIATION,
     MENU_ANALYSIS_AUDIT,
     MENU_ANALYSIS_OPERATION
@@ -97,14 +96,9 @@ export default [{
         route: getMenuRoute(modelViews, MENU_MODEL_MANAGEMENT, 'model')
     }, {
         id: MENU_MODEL_TOPOLOGY,
-        i18n: '模型拓扑',
+        i18n: '模型关系',
         icon: 'icon-cc-nav-model-topo',
         route: getMenuRoute(modelViews, MENU_MODEL_TOPOLOGY, 'model')
-    }, {
-        id: MENU_MODEL_BUSINESS_TOPOLOGY,
-        i18n: '业务层级',
-        icon: 'icon-cc-nav-business-level',
-        route: getMenuRoute(modelViews, MENU_MODEL_BUSINESS_TOPOLOGY, 'model')
     }, {
         id: MENU_MODEL_ASSOCIATION,
         i18n: '关联类型',

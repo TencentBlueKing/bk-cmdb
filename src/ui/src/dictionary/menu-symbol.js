@@ -31,3 +31,8 @@ export const MENU_ANALYSIS_STATISTICS = 'menu_analysis_statistics'
 export const MENU_RESOURCE_COLLECTION = 'menu_resource_collection'
 export const MENU_RESOURCE_HOST_COLLECTION = 'menu_resource_host_collection'
 export const MENU_RESOURCE_BUSINESS_COLLECTION = 'menu_resource_business_collection'
+
+// 不同模式下不同资源的主机详情的id
+export const MENU_RESOURCE_HOST_DETAILS = 'menu_resource_host_details'
+export const MENU_RESOURCE_BUSINESS_HOST_DETAILS = 'menu_resource_business_host_details'
+export const MENU_BUSINESS_HOST_DETAILS = 'menu_business_host_details'
