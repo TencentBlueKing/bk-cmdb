@@ -13,6 +13,7 @@
 package mongo_test
 
 import (
+	"strconv"
 	"testing"
 
 	"configcenter/src/common/mapstr"
@@ -158,6 +159,51 @@ func TestNewConditionFromMapStrFromCommonCondition(t *testing.T) {
 	target.Field("struct").Eq(tmpStruct{A: 1})
 	target.Field("struct_arr").Eq([]tmpStruct{tmpStruct{A: 1}})
 
-	_, err := mongo.NewConditionFromMapStr(target.ToMapStr())
+	or := target.NewOR()
+	or.Item(mapstr.MapStr{"a": "b"})
+	or.Item(mapstr.MapStr{"b": "c"})
+	or.Array([]interface{}{mapstr.MapStr{"c": "b"}, mapstr.MapStr{"d": "b"}})
+	or.MapStrArr([]mapstr.MapStr{mapstr.MapStr{"e": "b"}, mapstr.MapStr{"f": "b"}})
+	or.Item(mapstr.MapStr{common.BKAppIDField: 1})
+	meta := metadata.Metadata{
+		Label: map[string]string{
+			common.BKAppIDField: strconv.FormatInt(1, 10),
+		},
+	}
+	or.Item(mapstr.MapStr{metadata.BKMetadata: meta.ToMapStr()})
+
+	t.Logf("target: %v", target.ToMapStr())
+	cond, err := mongo.NewConditionFromMapStr(target.ToMapStr())
 	require.NoError(t, err)
+	t.Logf("cond: %v", cond.ToMapStr())
+
+	json1, err := cond.ToMapStr().ToJSON()
+	require.NoError(t, err)
+	json2, err := target.ToMapStr().ToJSON()
+	require.NoError(t, err)
+	require.Equal(t, string(json1), string(json2))
+
+	target1 := mongo.NewCondition()
+	target1.Element(&mongo.Eq{Key: "testelementeq", Val: "testeqval"})
+	target1.And(&mongo.Lt{Key: "testandlt", Val: "testandltval"})
+	target1.Or(&mongo.Lt{Key: "testorlt", Val: "testorltval"})
+	target1.Element(&mongo.In{Key: "testelementin", Val: []string{"testelementin"}})
+	_, embed := target1.Embed("testembedname")
+	embed.Or(&mongo.Gt{Key: "testembedgt", Val: "testembedgtval"})
+	embed.And(&mongo.Gt{Key: "testembedgt", Val: "testembedgtval"})
+	embed.Element(&mongo.Lt{Key: "testembedeq", Val: "testembedeqval"})
+	embed.Element(&mongo.Lt{Key: "testembedeq2", Val: "testembedeqval2"})
+	_, subembed := embed.Embed("subembed")
+	subembed.Element(&mongo.Eq{Key: "subembedkey", Val: "subembedkeyval"})
+
+	t.Logf("target1: %v", target1.ToMapStr())
+	cond1, err := mongo.NewConditionFromMapStr(target1.ToMapStr())
+	require.NoError(t, err)
+	t.Logf("cond1: %v", cond1.ToMapStr())
+
+	json3, err := cond1.ToMapStr().ToJSON()
+	require.NoError(t, err)
+	json4, err := target1.ToMapStr().ToJSON()
+	require.NoError(t, err)
+	require.Equal(t, string(json3), string(json4))
 }

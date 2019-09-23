@@ -68,6 +68,24 @@ func FetchBizIDFromInstance(objID string, instanceData mapstr.MapStr) (int64, er
 	}
 }
 
+func (m *instanceManager) validBizID(ctx core.ContextParams, bizID int64) error {
+	if bizID != 0 {
+		cond := map[string]interface{}{
+			common.BKAppIDField: bizID,
+		}
+		cnt, err := m.countInstance(ctx, common.BKInnerObjIDApp, cond)
+		if err != nil {
+			blog.Errorf("search instance biz error %v, rid: %s", err, ctx.ReqID)
+			return err
+		}
+		if cnt != 1 {
+			blog.Errorf("biz %d invalid, rid: %s", bizID, ctx.ReqID)
+			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+		}
+	}
+	return nil
+}
+
 func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr) error {
 	bizID, err := FetchBizIDFromInstance(objID, instanceData)
 	if err != nil {
@@ -75,6 +93,11 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
 	}
 
+	err = m.validBizID(ctx, bizID)
+	if err != nil {
+		blog.Errorf("valid biz id error %v, rid: %s", err, ctx.ReqID)
+		return err
+	}
 	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
 	if nil != err {
 		blog.Errorf("init validator failed %s, rid: %s", err.Error(), ctx.ReqID)
@@ -204,6 +227,11 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 	if err != nil {
 		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v, rid: %s", err, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+	}
+	err = m.validBizID(ctx, bizID)
+	if err != nil {
+		blog.Errorf("valid biz id error %v, rid: %s", err, ctx.ReqID)
+		return err
 	}
 
 	valid, err := NewValidator(ctx, m.dependent, objID, bizID)

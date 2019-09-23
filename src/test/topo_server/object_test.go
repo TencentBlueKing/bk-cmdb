@@ -1131,7 +1131,7 @@ var _ = Describe("object test", func() {
 	Describe("set test", func() {
 		var setId1 string
 
-		It(fmt.Sprintf("create set bk_biz_id=%s and bk_parent_id=%s", bizId, childInstId), func() {
+		It("create set bk_biz_id="+bizId+" and bk_parent_id="+childInstId, func() {
 			input := mapstr.MapStr{
 				"bk_set_name":         "cc_set",
 				"bk_parent_id":        childInstIdInt,
@@ -1167,7 +1167,81 @@ var _ = Describe("object test", func() {
 			setId1 = strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)
 		})
 
-		PIt("create set invalid bk_set_name", func() {
+		It("create set same bk_biz_id and bk_parent_id and bk_set_name", func() {
+			input := mapstr.MapStr{
+				"bk_set_name":         "test",
+				"bk_parent_id":        childInstIdInt,
+				"bk_supplier_account": "0",
+				"bk_biz_id":           bizIdInt,
+				"bk_service_status":   "1",
+				"bk_set_env":          "2",
+			}
+			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
+		})
+
+		It("create set invalid bk_biz_id", func() {
+			input := mapstr.MapStr{
+				"bk_set_name":         "test1",
+				"bk_parent_id":        childInstIdInt,
+				"bk_supplier_account": "0",
+				"bk_biz_id":           1000,
+				"bk_service_status":   "1",
+				"bk_set_env":          "2",
+			}
+			rsp, err := instClient.CreateSet(context.Background(), "1000", header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+		})
+
+		It("create set invalid bk_parent_id", func() {
+			input := mapstr.MapStr{
+				"bk_set_name":         "test2",
+				"bk_parent_id":        1000,
+				"bk_supplier_account": "0",
+				"bk_biz_id":           bizIdInt,
+				"bk_service_status":   "1",
+				"bk_set_env":          "2",
+			}
+			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+		})
+
+		It("create set less bk_parent_id", func() {
+			input := mapstr.MapStr{
+				"bk_set_name":         "test3",
+				"bk_supplier_account": "0",
+				"bk_biz_id":           bizIdInt,
+				"bk_service_status":   "1",
+				"bk_set_env":          "2",
+			}
+			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsNeedSet))
+		})
+
+		It("create set unmatch bk_biz_id and bk_parent_id", func() {
+			input := mapstr.MapStr{
+				"bk_set_name":         "test4",
+				"bk_parent_id":        childInstIdInt,
+				"bk_supplier_account": "0",
+				"bk_biz_id":           2,
+				"bk_service_status":   "1",
+				"bk_set_env":          "2",
+			}
+			rsp, err := instClient.CreateSet(context.Background(), "2", header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+		})
+
+		It("create set invalid bk_set_name", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":         "~!@#$%^&*()_+-=",
 				"bk_parent_id":        childInstIdInt,
@@ -1179,6 +1253,7 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("update set", func() {
@@ -1188,6 +1263,16 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.UpdateSet(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("update nonexist set", func() {
+			input := map[string]interface{}{
+				"bk_set_name": "test123",
+			}
+			rsp, err := instClient.UpdateSet(context.Background(), bizId, "10000", header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("update set same bk_set_name", func() {
@@ -1200,13 +1285,14 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
-		PIt("update set invalid bk_set_name", func() {
+		It("update set invalid bk_set_name", func() {
 			input := map[string]interface{}{
 				"bk_set_name": "~!@#$%^&*()_+-=",
 			}
 			rsp, err := instClient.UpdateSet(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("delete set", func() {
@@ -1239,7 +1325,7 @@ var _ = Describe("object test", func() {
 		It(fmt.Sprintf("create module bk_biz_id=%s and bk_set_id=%s", bizId, setId), func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "cc_module",
-				"bk_parent_id":        1,
+				"bk_parent_id":        setId,
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
@@ -1248,13 +1334,14 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_module_name"].(string)).To(Equal("cc_module"))
 			Expect(strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)).To(Equal(setId))
+			Expect(strconv.FormatInt(int64(rsp.Data["bk_parent_id"].(float64)), 10)).To(Equal(setId))
 			moduleId = strconv.FormatInt(int64(rsp.Data["bk_module_id"].(float64)), 10)
 		})
 
 		It(fmt.Sprintf("create module bk_biz_id=%s and bk_set_id=%s", bizId, setId), func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module",
-				"bk_parent_id":        1,
+				"bk_parent_id":        setId,
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
@@ -1263,19 +1350,98 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_module_name"].(string)).To(Equal("test_module"))
 			Expect(strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)).To(Equal(setId))
+			Expect(strconv.FormatInt(int64(rsp.Data["bk_parent_id"].(float64)), 10)).To(Equal(setId))
 			moduleId1 = strconv.FormatInt(int64(rsp.Data["bk_module_id"].(float64)), 10)
+		})
+
+		It("create module same bk_module_name", func() {
+			input := map[string]interface{}{
+				"bk_module_name":      "test_module",
+				"bk_parent_id":        setId,
+				"service_category_id": 2,
+				"service_template_id": 0,
+			}
+			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
+		})
+
+		It("create module invalid bk_biz_id", func() {
+			input := map[string]interface{}{
+				"bk_module_name":      "test_module1",
+				"bk_parent_id":        setId,
+				"service_category_id": 2,
+				"service_template_id": 0,
+			}
+			rsp, err := instClient.CreateModule(context.Background(), "1000", setId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+		})
+
+		It("create module invalid bk_set_id", func() {
+			input := map[string]interface{}{
+				"bk_module_name":      "test_module2",
+				"bk_parent_id":        setId,
+				"service_category_id": 2,
+				"service_template_id": 0,
+			}
+			rsp, err := instClient.CreateModule(context.Background(), bizId, "1000", header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+		})
+
+		It("create module unmatch bk_biz_id and bk_set_id", func() {
+			input := map[string]interface{}{
+				"bk_module_name":      "test_module3",
+				"bk_parent_id":        setId,
+				"service_category_id": 2,
+				"service_template_id": 0,
+			}
+			rsp, err := instClient.CreateModule(context.Background(), "2", setId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("create module invalid bk_module_name", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "~!@#$%^&*()_+-=",
-				"bk_parent_id":        1,
+				"bk_parent_id":        setId,
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
-			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
+			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+		})
+
+		It("create module invalid bk_parent_id", func() {
+			input := map[string]interface{}{
+				"bk_module_name":      "test_module4",
+				"bk_parent_id":        1000,
+				"service_category_id": 2,
+				"service_template_id": 0,
+			}
+			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+		})
+
+		It("create module less bk_parent_id", func() {
+			input := map[string]interface{}{
+				"bk_module_name":      "test_module4",
+				"service_category_id": 2,
+				"service_template_id": 0,
+			}
+			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsNeedSet))
 		})
 
 		It("update module", func() {
@@ -1287,13 +1453,33 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(true))
 		})
 
-		PIt("update module invalid bk_module_name", func() {
+		It("update nonexist module", func() {
+			input := map[string]interface{}{
+				"bk_module_name": "new_module",
+			}
+			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, "10000", header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
+		})
+
+		It("update module same bk_module_name", func() {
+			input := map[string]interface{}{
+				"bk_module_name": "test_module",
+			}
+			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("update module invalid bk_module_name", func() {
 			input := map[string]interface{}{
 				"bk_module_name": "~!@#$%^&*()_+-=",
 			}
 			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("delete module", func() {

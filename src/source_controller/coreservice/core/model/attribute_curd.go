@@ -175,19 +175,10 @@ func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribut
 	}
 
 	if attribute.PropertyType != "" {
-		if attribute.PropertyType != common.FieldTypeSingleChar &&
-			attribute.PropertyType != common.FieldTypeLongChar &&
-			attribute.PropertyType != common.FieldTypeInt &&
-			attribute.PropertyType != common.FieldTypeFloat &&
-			attribute.PropertyType != common.FieldTypeEnum &&
-			attribute.PropertyType != common.FieldTypeDate &&
-			attribute.PropertyType != common.FieldTypeTime &&
-			attribute.PropertyType != common.FieldTypeUser &&
-			attribute.PropertyType != common.FieldTypeSingleAsst &&
-			attribute.PropertyType != common.FieldTypeMultiAsst &&
-			attribute.PropertyType != common.FieldTypeForeignKey &&
-			attribute.PropertyType != common.FieldTypeTimeZone &&
-			attribute.PropertyType != common.FieldTypeBool {
+		switch attribute.PropertyType {
+		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeTime,
+			common.FieldTypeUser, common.FieldTypeSingleAsst, common.FieldTypeMultiAsst, common.FieldTypeForeignKey, common.FieldTypeTimeZone, common.FieldTypeBool:
+		default:
 			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
 	}
