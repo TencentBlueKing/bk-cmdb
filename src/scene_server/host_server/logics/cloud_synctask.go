@@ -510,8 +510,8 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 
 func (lgc *Logics) CloudSyncSwitch(ctx context.Context, taskInfoItem *meta.TaskInfo) {
 	go func() {
-		ticker := time.NewTicker(time.Duration(taskInfoItem.NextTrigger) * time.Minute)
 		for {
+			ticker := time.NewTicker(time.Duration(taskInfoItem.NextTrigger) * time.Minute)
 			select {
 			case <-ticker.C:
 				lgc.ExecSync(ctx, taskInfoItem.Args)
