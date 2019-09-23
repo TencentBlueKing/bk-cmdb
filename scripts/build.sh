@@ -13,9 +13,6 @@ pushd $(pwd) > /dev/null
                     if [ "$1" = "debug" ];then
                         export ISDEBUG=true
                     fi
-                    if [ "$1" = "disable_auth" ];then
-                        export DISABLE_AUTH=true
-                    fi
                     make -f Makefile
                     if [ $? -ne 0 ];then
                         exit

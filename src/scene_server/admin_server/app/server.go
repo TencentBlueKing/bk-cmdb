@@ -97,7 +97,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		process.Service.SetDB(db)
 		process.Service.SetApiSrvAddr(process.Config.ProcSrvConfig.CCApiSrvAddr)
 
-		if auth.GetEnableAuth() {
+		if auth.IsAuthed() {
 			blog.Info("enable auth center access.")
 			authCli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter, engine.Metric().Registry())
 			if err != nil {
@@ -158,7 +158,7 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 
 		var err error
 		h.Config.AuthCenter, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-		if err != nil && auth.GetEnableAuth() {
+		if err != nil && auth.IsAuthed() {
 			blog.Errorf("parse authcenter error: %v, config: %+v", err, current.ConfigMap)
 		}
 	}
