@@ -209,6 +209,7 @@ func (s *Service) Actions() []*httpserver.Action {
 				defLang := s.Language.CreateDefaultCCLanguageIf(language)
 
 				// get the error info by the language
+				errors.SetGlobalCCError(s.Error)
 				defErr := s.Error.CreateDefaultCCErrorIf(language)
 
 				value, err := ioutil.ReadAll(req.Request.Body)

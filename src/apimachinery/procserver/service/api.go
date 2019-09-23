@@ -23,11 +23,11 @@ type ServiceClientInterface interface {
 	ServiceInstanceRemoveLabels(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	ServiceInstanceFindLabels(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 
-	CreateServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
-	DeleteServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
-	SearchServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
-	UpdateServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
-	RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	CreateServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
+	DeleteServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
+	SearchServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
+	UpdateServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
+	RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
 }
 
 func NewServiceClientInterface(client rest.ClientInterface) ServiceClientInterface {

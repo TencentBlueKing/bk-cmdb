@@ -20,6 +20,7 @@
     "set_property_bk_service_status": "服务状态",
     "set_property_description": "备注",
     "set_property_bk_capacity": "设计容量",
+    "set_property_set_template_id": "集群模板ID",
     "module_property_bk_biz_id": "业务ID",
     "module_property_bk_set_id": "集群ID",
     "module_property_bk_module_name": "模块名",
