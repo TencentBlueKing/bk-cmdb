@@ -103,7 +103,11 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	}
 
 	object := obj.Object()
-
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+		return results, err
+	}
 	// 1. 检查实例与URL参数指定的模型一致
 	for line, inst := range batchInfo.BatchInfo {
 		objID, exist := inst[common.BKObjIDField]
@@ -156,6 +160,12 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
 
+		if isMainline {
+			if err := c.validMainLineParentID(params, obj, colInput); nil != err {
+				blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+				return nil, err
+			}
+		}
 		existInDB, filter, err := item.CheckInstanceExists(nonInnerAttributes)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to get inst is exist, err: %s, rid: %s", err.Error(), params.ReqID)
@@ -211,10 +221,20 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	return results, nil
 }
 
-func (c *commonInst) isValidInstID(params types.ContextParams, obj metadata.Object, instID int64) error {
+func (c *commonInst) isValidBizInstID(params types.ContextParams, obj metadata.Object, instID int64, bizID int64) error {
 
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
+	if bizID != 0 {
+		or := cond.NewOR()
+		or.Item(mapstr.MapStr{common.BKAppIDField: bizID})
+		meta := metadata.Metadata{
+			Label: map[string]string{
+				common.BKAppIDField: strconv.FormatInt(bizID, 10),
+			},
+		}
+		or.Item(mapstr.MapStr{metadata.BKMetadata: meta})
+	}
 	if obj.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(obj.ObjectID)
 	}
@@ -230,7 +250,7 @@ func (c *commonInst) isValidInstID(params types.ContextParams, obj metadata.Obje
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.ObjectID, cond, rsp.ErrMsg, params.ReqID)
+		blog.Errorf("[operation-inst] faild to read the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.ObjectID, cond, rsp.ErrMsg, params.ReqID)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -241,6 +261,43 @@ func (c *commonInst) isValidInstID(params types.ContextParams, obj metadata.Obje
 	return params.Err.Error(common.CCErrTopoInstSelectFailed)
 }
 
+func (c *commonInst) isValidInstID(params types.ContextParams, obj metadata.Object, instID int64) error {
+	return c.isValidBizInstID(params, obj, instID, 0)
+}
+
+func (c *commonInst) validMainLineParentID(params types.ContextParams, obj model.Object, data mapstr.MapStr) error {
+	if obj.Object().ObjectID == common.BKInnerObjIDApp {
+		return nil
+	}
+	def, exist := data.Get(common.BKDefaultField)
+	if exist && def.(int) != 0 {
+		return nil
+	}
+	parent, err := obj.GetMainlineParentObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get the object(%s) mainline parent, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+		return err
+	}
+	bizID, err := data.Int64(common.BKAppIDField)
+	if err != nil {
+		bizID, err = metadata.ParseBizIDFromData(data)
+		if err != nil {
+			blog.Errorf("[operation-inst]failed to parse the biz id, err: %s, rid: %s", err.Error(), params.ReqID)
+			return params.Err.Errorf(common.CCErrCommParamsNeedInt, "biz id")
+		}
+	}
+	parentID, err := data.Int64(common.BKParentIDField)
+	if err != nil {
+		blog.Errorf("[operation-inst]failed to parse the parent id, err: %s, rid: %s", err.Error(), params.ReqID)
+		return params.Err.Errorf(common.CCErrCommParamsNeedInt, "parent id")
+	}
+	if err = c.isValidBizInstID(params, parent.Object(), parentID, bizID); err != nil {
+		blog.Errorf("[operation-inst]parent id %d is invalid, err: %s, rid: %s", parentID, err.Error(), params.ReqID)
+		return params.Err.Errorf(common.CCErrCommParamsIsInvalid, "parent id")
+	}
+	return nil
+}
+
 func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
 	// create new insts
@@ -248,13 +305,21 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	item.SetValues(data)
 
 	iData := item.ToMapStr()
-	if obj.Object().ObjectID == "plat" {
+	if obj.Object().ObjectID == common.BKInnerObjIDPlat {
 		iData["bk_supplier_account"] = params.SupplierAccount
 	}
-	// if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, iData); nil != err {
-	// 	blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  err: %s, rid: %s", iData, err.Error(), params.ReqID)
-	// 	return nil, err
-	// }
+
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if isMainline {
+		if err := c.validMainLineParentID(params, obj, data); nil != err {
+			blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+			return nil, err
+		}
+	}
 
 	if err := item.Create(); nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s, rid: %s", obj.Object().ObjectID, data, err.Error(), params.ReqID)
@@ -965,6 +1030,17 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 
 func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
 
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+		return err
+	}
+	if isMainline {
+		if err := c.validMainLineParentID(params, obj, data); nil != err {
+			blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+			return err
+		}
+	}
 	// update association
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()

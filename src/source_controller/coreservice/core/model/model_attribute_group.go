@@ -156,14 +156,27 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroup(ctx core.ContextParams, 
 
 	if name, exists := inputParam.Data.Get("bk_group_name"); exists {
 		name := name.(string)
-		_, exists, err = g.groupNameIsExists(ctx, objID, name, metadata.Metadata{Label: metadata.Label{}})
+		queryCond := metadata.QueryCondition{
+			Condition: cond.ToMapStr(),
+		}
+		resp, err := g.SearchModelAttributeGroupByCondition(ctx, queryCond)
 		if nil != err {
 			blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, name, err.Error())
 			return &metadata.UpdatedCount{}, err
 		}
-		if exists {
-			blog.Errorf("request(%s): it is to failed to update the group name, because (%s) exists", ctx.ReqID, name)
-			return &metadata.UpdatedCount{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, name)
+		for _, item := range resp.Info {
+			if item.GroupName == name {
+				continue
+			}
+			_, exists, err := g.groupNameIsExists(ctx, item.ObjectID, name, metadata.Metadata{Label: metadata.Label{}})
+			if nil != err {
+				blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, name, err.Error())
+				return &metadata.UpdatedCount{}, err
+			}
+			if exists {
+				blog.Errorf("request(%s): it is to failed to update the group name, because (%s) exists", ctx.ReqID, name)
+				return &metadata.UpdatedCount{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, name)
+			}
 		}
 	}
 	cnt, err := g.update(ctx, inputParam.Data, cond)
@@ -191,7 +204,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(ctx core.Cont
 	if name, exists := inputParam.Data.Get("bk_group_name"); exists {
 		name := name.(string)
 		queryCond := metadata.QueryCondition{
-			Condition: inputParam.Condition,
+			Condition: cond.ToMapStr(),
 		}
 		resp, err := g.SearchModelAttributeGroupByCondition(ctx, queryCond)
 		if nil != err {
@@ -199,7 +212,10 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(ctx core.Cont
 			return &metadata.UpdatedCount{}, err
 		}
 		for _, item := range resp.Info {
-			_, exists, err = g.groupNameIsExists(ctx, item.ObjectID, name, metadata.Metadata{Label: metadata.Label{}})
+			if item.GroupName == name {
+				continue
+			}
+			_, exists, err := g.groupNameIsExists(ctx, item.ObjectID, name, metadata.Metadata{Label: metadata.Label{}})
 			if nil != err {
 				blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, name, err.Error())
 				return &metadata.UpdatedCount{}, err

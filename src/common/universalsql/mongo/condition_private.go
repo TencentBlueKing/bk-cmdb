@@ -143,27 +143,27 @@ func parseAnd(targetCond *mongoCondition, embedName string, vals []mapstr.MapStr
 
 	outputCond = targetCond
 	for _, targetValMapStr := range vals {
-		targetValMapStr.ForEach(func(operator string, val interface{}) error {
-			andCond := newCondition()
-			andCond, err := parseConditionFromMapStr(andCond, "", targetValMapStr)
-			if nil != err {
-				return err
+		andCond := newCondition()
+		andCond, err := parseConditionFromMapStr(andCond, "", targetValMapStr)
+		if nil != err {
+			return outputCond, err
+		}
+		if 0 == len(embedName) {
+			// ATTENTION: maybe it is not a good way , to check embed condition
+			for key, val := range andCond.embed {
+				andCond.Element(&Eq{Key: key, Val: val.ToMapStr()})
 			}
-			if 0 == len(embedName) {
-				// ATTENTION: maybe it is not a good way , to check embed condition
-				outputCond.and = append(outputCond.and, andCond.elements...)
-			} else {
-				andCond.and = append(andCond.and, andCond.elements...)
-				andCond.elements = []universalsql.ConditionElement{}
-				tmp, ok := outputCond.embed[embedName]
-				if !ok {
-					outputCond.embed[embedName] = andCond
-					return nil
-				}
-				tmp.merge(andCond)
+			outputCond.and = append(outputCond.and, andCond.elements...)
+		} else {
+			andCond.and = append(andCond.and, andCond.elements...)
+			andCond.elements = []universalsql.ConditionElement{}
+			tmp, ok := outputCond.embed[embedName]
+			if !ok {
+				outputCond.embed[embedName] = andCond
+				continue
 			}
-			return nil
-		})
+			tmp.merge(andCond)
+		}
 	}
 
 	return outputCond, nil
@@ -173,29 +173,28 @@ func parseOr(targetCond *mongoCondition, embedName string, vals []mapstr.MapStr)
 
 	outputCond = targetCond
 	for _, targetValMapStr := range vals {
-		targetValMapStr.ForEach(func(operator string, val interface{}) error {
-			orCond := newCondition()
-			orCond, err := parseConditionFromMapStr(orCond, "", targetValMapStr)
-			if nil != err {
-				return err
-			}
+		orCond := newCondition()
+		orCond, err := parseConditionFromMapStr(orCond, "", targetValMapStr)
+		if nil != err {
+			return outputCond, err
+		}
 
-			if 0 == len(embedName) {
-				// ATTENTION: maybe it is not a good way , to check embed condition
-				outputCond.or = append(outputCond.or, orCond.elements...)
-			} else {
-				orCond.or = append(orCond.or, orCond.elements...)
-				orCond.elements = []universalsql.ConditionElement{}
-				tmp, ok := outputCond.embed[embedName]
-				if !ok {
-					outputCond.embed[embedName] = orCond
-					return nil
-				}
-				tmp.merge(orCond)
-
+		if 0 == len(embedName) {
+			// ATTENTION: maybe it is not a good way , to check embed condition
+			for key, val := range orCond.embed {
+				orCond.Element(&Eq{Key: key, Val: val.ToMapStr()})
 			}
-			return nil
-		})
+			outputCond.or = append(outputCond.or, orCond.elements...)
+		} else {
+			orCond.or = append(orCond.or, orCond.elements...)
+			orCond.elements = []universalsql.ConditionElement{}
+			tmp, ok := outputCond.embed[embedName]
+			if !ok {
+				outputCond.embed[embedName] = orCond
+				continue
+			}
+			tmp.merge(orCond)
+		}
 	}
 
 	return outputCond, nil
