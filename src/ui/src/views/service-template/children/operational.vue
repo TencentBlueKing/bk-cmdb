@@ -194,15 +194,7 @@
             }
         },
         async created () {
-            if (this.isCreatedType) {
-                this.$store.commit('setTitle', this.$t('新建模板'))
-                this.$store.commit('addBreadcrumbs', {
-                    id: this.$route.name,
-                    name: '新建模板'
-                })
-            } else {
-                this.$store.commit('setTitle', this.$t('模板详情'))
-            }
+            this.setBreadcrumbs()
             this.processList = this.localProcessTemplate
             try {
                 await this.reload()
@@ -236,11 +228,30 @@
                 'deleteLocalProcessTemplate',
                 'clearLocalProcessTemplate'
             ]),
+            setBreadcrumbs () {
+                if (this.isCreatedType) {
+                    this.$store.commit('setTitle', this.$t('新建模板'))
+                    this.$store.commit('setBreadcrumbs', [{
+                        label: this.$t('服务模板'),
+                        route: {
+                            name: MENU_BUSINESS_SERVICE_TEMPLATE
+                        }
+                    }, {
+                        label: this.$t('新建模板')
+                    }])
+                } else {
+                    this.$store.commit('setTitle', this.$t('模板详情'))
+                }
+            },
             initEdit () {
-                this.$store.commit('addBreadcrumbs', {
-                    id: this.$route.name,
-                    name: this.originTemplateValues['name']
-                })
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('服务模板'),
+                    route: {
+                        name: MENU_BUSINESS_SERVICE_TEMPLATE
+                    }
+                }, {
+                    label: this.originTemplateValues.name
+                }])
                 this.formData.templateId = this.originTemplateValues['id']
                 this.formData.templateName = this.originTemplateValues['name']
                 this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['bk_parent_id']

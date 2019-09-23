@@ -15,7 +15,7 @@
             expand-icon="bk-icon icon-down-shape"
             collapse-icon="bk-icon icon-right-shape"
             @select-change="handleSelectChange">
-            <div class="node-info clearfix" slot-scope="{ node, data }">
+            <div class="node-info clearfix" :class="{ 'is-selected': node.selected }" slot-scope="{ node, data }">
                 <i class="node-model-icon fl"
                     :class="{
                         'is-selected': node.selected,
@@ -191,7 +191,7 @@
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
-                return node.selected && !isModule && !this.isBlueKing
+                return !isModule && !this.isBlueKing
             },
             isTemplate (node) {
                 return node.data.service_template_id
@@ -325,7 +325,8 @@
         }
     }
     .node-info {
-        &:hover {
+        &:hover,
+        &.is-selected {
             .info-create-trigger {
                 display: inline-block;
                 & ~ .instance-num {

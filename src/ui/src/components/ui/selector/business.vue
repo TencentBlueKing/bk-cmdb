@@ -47,6 +47,12 @@
                     return {}
                 }
             },
+            requestConfig: {
+                type: Object,
+                default () {
+                    return {}
+                }
+            },
             showApplyPermission: Boolean,
             showApplyCreate: Boolean
         },
@@ -74,7 +80,7 @@
             }
         },
         async created () {
-            this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+            this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness', this.requestConfig)
             if (this.authorizedBusiness.length) {
                 this.init()
             } else {

@@ -10,7 +10,7 @@
                     }"
                     :key="index"
                     @click="handleBreadcrumbsClick(item, index)">
-                    {{$t(item.name)}}
+                    {{item.label}}
                 </a>
                 <span class="breadcrumbs-arrow"
                     v-if="index !== breadcrumbs.length - 1"
@@ -41,8 +41,9 @@
                 if (index === total - 1) {
                     return false
                 }
-                this.$store.commit('setBreadcrumbs', this.breadcrumbs.slice(0, index))
-                this.$router.go(index - total + 1)
+                if (item.hasOwnProperty('route')) {
+                    this.$router.replace(item.route)
+                }
             }
         }
     }
