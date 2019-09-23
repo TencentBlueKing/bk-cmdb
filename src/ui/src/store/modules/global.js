@@ -121,23 +121,14 @@ const mutations = {
     setBreadcrumbs (state, breadcrumbs) {
         state.breadcrumbs = breadcrumbs
     },
-    addBreadcrumbs (state, breadcrumbs) {
-        const newBreadcrumbs = [...state.breadcrumbs]
-        const existIndex = newBreadcrumbs.findIndex(target => target.id === breadcrumbs.id)
-        if (existIndex > -1) {
-            newBreadcrumbs.splice(existIndex, 1)
-        }
-        newBreadcrumbs.push(breadcrumbs)
-        state.breadcrumbs = newBreadcrumbs.slice(-4)
-    },
     setTitle (state, title) {
         state.title = title
     },
     setBusinessSelectorVisible (state, visible) {
         state.businessSelectorVisible = visible
     },
-    resolveBusinessSelectorPromise (state) {
-        state.businessSelectorResolver && state.businessSelectorResolver()
+    resolveBusinessSelectorPromise (state, val) {
+        state.businessSelectorResolver && state.businessSelectorResolver(val)
     }
 }
 
