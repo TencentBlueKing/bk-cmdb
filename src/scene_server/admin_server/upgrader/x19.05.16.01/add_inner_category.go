@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
@@ -112,7 +113,15 @@ func getOrCreateCategory(ctx context.Context, db dal.RDB, name string, parentID 
 		common.BKParentIDField:  parentID,
 	}
 	err := db.Table(common.BKTableNameServiceCategory).Find(filter).One(ctx, &category)
-	if db.IsNotFoundError(err) {
+
+	if err != nil {
+		if db.IsNotFoundError(err) == false {
+
+			blog.Errorf("find service category failed, filter: %+v, err: %+v", filter, err)
+			return 0, err
+		}
+
+		// insert if not found
 		categoryID, err := db.NextSequence(ctx, common.BKTableNameServiceCategory)
 		if err != nil {
 			return 0, fmt.Errorf("generate category id failed, err: %+v", err)
@@ -128,6 +137,12 @@ func getOrCreateCategory(ctx context.Context, db dal.RDB, name string, parentID 
 				return 0, fmt.Errorf("get parent category: %d failed, err: %+v", parentID, err)
 			}
 			rootID = parentCategory.RootID
+			if rootID == 0 {
+				rootID = parentCategory.ID
+			}
+		}
+		if rootID == 0 {
+			rootID = int64(categoryID)
 		}
 
 		category = metadata.ServiceCategory{
