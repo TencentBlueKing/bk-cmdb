@@ -141,7 +141,6 @@
     import { mapActions, mapGetters, mapMutations } from 'vuex'
     import {
         MENU_MODEL_MANAGEMENT,
-        MENU_MODEL_BUSINESS_TOPOLOGY,
         MENU_RESOURCE_HOST,
         MENU_RESOURCE_BUSINESS,
         MENU_RESOURCE_INSTANCE
@@ -452,7 +451,7 @@
                             requestId: 'deleteModel'
                         }
                     })
-                    this.$router.replace({ name: MENU_MODEL_BUSINESS_TOPOLOGY })
+                    this.$router.replace({ name: MENU_MODEL_MANAGEMENT })
                 } else {
                     await this.deleteObject({
                         id: this.activeModel['id'],
