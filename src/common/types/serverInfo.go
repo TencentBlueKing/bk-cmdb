@@ -42,6 +42,7 @@ const (
 	// CC_MODULE_SYNCHRONZESERVER multiple cmdb synchronize data server
 	CC_MODULE_SYNCHRONZESERVER = "sync"
 	CC_MODULE_OPERATION        = "operation"
+	CC_MODULE_TASK             = "task"
 )
 
 // AllModule all cc module
