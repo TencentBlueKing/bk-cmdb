@@ -18,6 +18,9 @@ export default {
         auth: {
             operation: OPERATION,
             authScope: 'global'
+        },
+        layout: {
+            hideBreadcrumbs: true
         }
     })
 }
