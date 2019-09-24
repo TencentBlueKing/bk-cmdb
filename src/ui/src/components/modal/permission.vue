@@ -20,7 +20,7 @@
                 <bk-table-column prop="scope" :label="$t('资源所属')"></bk-table-column>
                 <bk-table-column prop="resource" :label="$t('资源')">
                     <template slot-scope="{ row }">
-                        <div class="resource-list" v-html="row.resource"></div>
+                        <div v-html="row.resource"></div>
                     </template>
                 </bk-table-column>
                 <bk-table-column prop="action" :label="$t('需要申请的权限')"></bk-table-column>
@@ -148,10 +148,5 @@
                 font-weight: normal;
             }
         }
-    }
-    .resource-list {
-        padding: 12px 0;
-        word-break: break-all;
-        white-space: normal;
     }
 </style>

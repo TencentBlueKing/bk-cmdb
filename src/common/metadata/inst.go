@@ -47,6 +47,11 @@ type BizInst struct {
 	SupplierAccount string `bson:"bk_supplier_account"`
 }
 
+type BizBasicInfo struct {
+	BizID   int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id"`
+	BizName string `bson:"bk_biz_name" json:"bk_biz_name" field:"bk_biz_name"`
+}
+
 type CloudInst struct {
 	CloudID   int64  `bson:"bk_cloud_id"`
 	CloudName string `bson:"bk_cloud_name"`

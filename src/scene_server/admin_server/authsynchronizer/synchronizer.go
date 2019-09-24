@@ -20,6 +20,7 @@ import (
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
+	enableauth "configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/handler"
@@ -54,7 +55,7 @@ func NewSynchronizer(ctx context.Context, authConfig *authcenter.AuthConfig, cli
 
 // Run do start synchronize
 func (d *AuthSynchronizer) Run() error {
-	if d.AuthConfig.Enable == false {
+	if !enableauth.IsAuthed() {
 		blog.Info("authConfig is disabled, exit now")
 		return nil
 	}
