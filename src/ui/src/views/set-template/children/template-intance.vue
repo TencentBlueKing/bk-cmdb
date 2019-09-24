@@ -1,12 +1,12 @@
 <template>
     <div class="template-instance-layout">
-        <div class="instance-empty" v-if="list.length">
+        <div class="instance-empty" v-if="!list.length">
             <img src="../../../assets/images/empty-content.png" alt="">
             <i18n path="空集群模板实例提示" tag="div">
                 <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
             </i18n>
         </div>
-        <div class="instance-main">
+        <div class="instance-main" v-else>
             <div class="options clearfix">
                 <div class="fl">
                     <bk-button theme="primary">{{$t('批量同步')}}</bk-button>
@@ -31,7 +31,8 @@
                     </bk-option>
                 </bk-select>
             </div>
-            <bk-table v-bkloading="{ isLoading: $loading() }"
+            <bk-table class="instance-table"
+                v-bkloading="{ isLoading: $loading() }"
                 :data="list"
                 :pagination="pagination"
                 :max-height="$APP.height - 229"
@@ -39,9 +40,28 @@
                 @page-limit-change="handleSizeChange"
                 @selection-change="handleSelectionChange">
                 <bk-table-column type="selection" width="50" :selectable="handleSelectable"></bk-table-column>
-                <bk-table-column :label="$t('拓扑结构')" prop=""></bk-table-column>
+                <bk-table-column :label="$t('拓扑结构')" prop="topo_path">
+                    <template slot-scope="{ row }">
+                        <span>{{getTopoPath(row)}}</span>
+                    </template>
+                </bk-table-column>
                 <bk-table-column :label="$t('主机数量')" prop=""></bk-table-column>
-                <bk-table-column :label="$t('状态')" prop=""></bk-table-column>
+                <bk-table-column :label="$t('状态')" prop="status">
+                    <!-- <template slot-scope="{ row }">
+                        <span class="sync-status fail">
+                            <i class="bk-icon icon-cc-log-02 "></i>
+                            {{$t('同步失败')}}
+                        </span>
+                        <span class="sync-status success">
+                            <i class="bk-icon icon-check-1"></i>
+                            {{$t('已完成')}}
+                        </span>
+                        <span class="sync-status">
+                            <img class="svg-icon" src="../../../assets/images/icon/loading.svg" alt="">
+                            {{$t('同步中')}}
+                        </span>
+                    </template> -->
+                </bk-table-column>
                 <bk-table-column :label="$t('同步人')" prop=""></bk-table-column>
                 <bk-table-column :label="$t('操作')" width="180">
                     <template slot-scope="{ row }">
@@ -70,7 +90,42 @@
                 }
             }
         },
+        computed: {
+            business () {
+                return this.$store.state.objectBiz.bizId
+            },
+            limit () {
+                return {
+                    start: this.pagination.limit * (this.pagination.current - 1),
+                    limit: this.pagination.limit
+                }
+            }
+        },
+        async created () {
+            await this.getSetTemplateInstances()
+        },
         methods: {
+            async getSetTemplateInstances () {
+                const data = await this.$store.dispatch('setTemplate/getSetTemplateInstances', {
+                    bizId: this.business,
+                    setTemplateId: 1,
+                    params: {
+                        limit: this.limit
+                    },
+                    config: {
+                        requestId: 'getSetTemplateInstances'
+                    }
+                })
+                this.pagination.count = data.count
+                this.list = data.info || []
+            },
+            getTopoPath (row) {
+                const topoPath = this.$tools.clone(row.topo_path)
+                if (topoPath.length) {
+                    return topoPath.reverse().map(path => path.InstanceName).join(' / ')
+                }
+                return '--'
+            },
             handleLinkServiceTopo () {},
             handleViewSync () {},
             handleSearch () {},
@@ -111,6 +166,28 @@
             }
             .icon-cc-updating {
                 color: #C4C6CC;
+            }
+        }
+        .instance-table {
+            .sync-status {
+                color: #63656E;
+                .bk-icon {
+                    margin-top: -2px;
+                }
+                .svg-icon {
+                    @include inlineBlock;
+                    margin-top: -4px;
+                    width: 16px;
+                }
+                &.fail {
+                    color: #EA3536;
+                    .bk-icon {
+                        color: #63656E;
+                    }
+                }
+                &.success {
+                    color: #2DCB56;
+                }
             }
         }
     }
