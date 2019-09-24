@@ -101,6 +101,7 @@
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 185"
+            :row-style="{ cursor: 'pointer' }"
             @selection-change="handleSelectionChange"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"

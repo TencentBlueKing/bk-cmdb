@@ -68,6 +68,7 @@
             v-show="localExpanded"
             v-bkloading="{ isLoading: $loading(Object.values(requestId)) }"
             :data="flattenList"
+            :row-style="{ cursor: 'pointer' }"
             @row-click="showProcessDetails">
             <bk-table-column v-for="(column, index) in header"
                 :class-name="index === 0 ? 'is-highlight' : ''"

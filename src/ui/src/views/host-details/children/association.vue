@@ -101,6 +101,7 @@
         height: 100%;
         .association-view {
             height: calc(100% - 62px);
+            @include scrollbar-y;
         }
     }
     .options {
