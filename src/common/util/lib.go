@@ -22,6 +22,7 @@ import (
 	"sync/atomic"
 
 	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/storage/dal"
 
 	"github.com/emicklei/go-restful"
@@ -94,7 +95,12 @@ func NewContextFromGinContext(c *gin.Context) context.Context {
 
 func NewContextFromHTTPHeader(header http.Header) context.Context {
 	rid := GetHTTPCCRequestID(header)
-	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+	user := GetUser(header)
+	owner := GetOwnerID(header)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
+	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
 	return ctx
 }
 
@@ -217,4 +223,13 @@ func BuildMongoField(key ...string) string {
 // BuildMongoSyncItemField build mongodb sub item synchronize field key
 func BuildMongoSyncItemField(key string) string {
 	return BuildMongoField(common.MetadataField, common.MetaDataSynchronizeField, key)
+}
+
+func GetDefaultCCError(header http.Header) errors.DefaultCCErrorIf {
+	globalCCError := errors.GetGlobalCCError()
+	if globalCCError == nil {
+		return nil
+	}
+	language := GetLanguage(header)
+	return globalCCError.CreateDefaultCCErrorIf(language)
 }

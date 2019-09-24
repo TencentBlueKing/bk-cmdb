@@ -41,6 +41,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/label"
 	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
+	"configcenter/src/source_controller/coreservice/core/operation"
 	"configcenter/src/source_controller/coreservice/core/process"
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	"configcenter/src/storage/dal"
@@ -121,6 +122,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		process.New(db, s),
 		label.New(db),
 		settemplate.New(db),
+		operation.New(db),
 	)
 	return nil
 }
@@ -129,7 +131,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 func (s *coreService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
-	container.ServiceErrorHandler(rdapi.ServiceErrorHandler)
+
 	// init service actions
 	s.initService()
 
@@ -137,7 +139,7 @@ func (s *coreService) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.err
 	}
-	api.Path("/api/v3").Filter(s.engin.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/api/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
@@ -255,6 +257,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 
 				// get the error info by the language
 				defErr := s.err.CreateDefaultCCErrorIf(language)
+				errors.SetGlobalCCError(s.err)
 
 				value, err := ioutil.ReadAll(req.Request.Body)
 				if err != nil {

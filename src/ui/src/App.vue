@@ -48,8 +48,8 @@
             removeResizeListener(this.$el, this.calculateAppHeight)
         },
         methods: {
-            resolveBusinessSelectorPromise () {
-                this.$store.commit('resolveBusinessSelectorPromise')
+            resolveBusinessSelectorPromise (val) {
+                this.$store.commit('resolveBusinessSelectorPromise', !!val)
             },
             calculateAppHeight () {
                 this.$store.commit('setAppHeight', this.$el.offsetHeight)

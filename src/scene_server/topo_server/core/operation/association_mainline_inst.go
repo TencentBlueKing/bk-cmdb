@@ -355,7 +355,7 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 	exactNodes := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule}
 	for _, tir := range parentInsts {
 		tir.DeepFirstTraverse(func(node *metadata.TopoInstRst) {
-			if util.InStrArr(exactNodes, node.ObjID) == false && len(node.Child) > 0 {
+			if len(node.Child) > 0 {
 				// calculate service instance count
 				subTreeSvcInstCount := int64(0)
 				for _, child := range node.Child {
@@ -363,6 +363,7 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 				}
 				node.ServiceInstanceCount = subTreeSvcInstCount
 
+			} else if util.InStrArr(exactNodes, node.ObjID) == false && len(node.Child) > 0 {
 				// calculate host count
 				subTreeHosts := make([]int64, 0)
 				for _, child := range node.Child {

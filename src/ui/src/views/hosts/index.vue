@@ -125,7 +125,7 @@
             }
         },
         beforeDestroy () {
-            this.ready = true
+            this.ready = false
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),

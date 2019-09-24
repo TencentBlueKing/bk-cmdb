@@ -81,7 +81,7 @@
 
 <script>
     import { mapGetters, mapState } from 'vuex'
-    import { RESOURCE_HOST } from '../router.config.js'
+    import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
     export default {
         name: 'cmdb-host-property',
         data () {
@@ -101,7 +101,7 @@
                 return this.info.host || {}
             },
             updateAuth () {
-                const isResourceHost = this.$route.name === RESOURCE_HOST
+                const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
                 if (isResourceHost) {
                     return this.$OPERATION.U_RESOURCE_HOST
                 }
@@ -127,7 +127,7 @@
                     await this.$store.dispatch('hostUpdate/updateHost', {
                         params: this.$injectMetadata({
                             [property.bk_property_id]: value,
-                            bk_host_id: this.host.bk_host_id
+                            bk_host_id: String(this.host.bk_host_id)
                         }),
                         config: {
                             requestId: 'updateHostInfo'

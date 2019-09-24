@@ -196,7 +196,7 @@ func (g *group) DeleteObjectAttributeGroup(params types.ContextParams, objID, pr
 
 func (g *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error {
 
-	if(cond.Data.Index == nil && cond.Data.Name == nil){
+	if cond.Data.Index == nil && cond.Data.Name == nil {
 		return nil
 	}
 	input := metadata.UpdateOption{

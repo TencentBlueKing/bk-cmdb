@@ -31,10 +31,6 @@ export const viewRouters = []
 
 const statusRouters = [
     {
-        name: '403',
-        path: '/403',
-        components: require('@/views/status/403')
-    }, {
         name: '404',
         path: '/404',
         components: require('@/views/status/404')
@@ -106,14 +102,15 @@ const getAuth = to => {
     return Promise.resolve([])
 }
 
-const isViewAuthorized = to => {
+const checkViewAuthorized = to => {
     const auth = to.meta.auth || {}
     const view = auth.view
-    if (!view) {
-        return true
+    if (view) {
+        const viewAuth = router.app.$isAuthorized(Object.values(view))
+        if (!viewAuth) {
+            to.meta.view = 'permission'
+        }
     }
-    const viewAuth = router.app.$isAuthorized(Object.values(view))
-    return viewAuth
 }
 
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
@@ -147,27 +144,18 @@ const setAdminView = to => {
     router.app.$store.commit('setAdminView', isAdminView)
 }
 
-const updateBreadcrumbs = to => {
-    router.app.$store.commit('setTitle', '')
-    const menuI18n = to.meta.menu && to.meta.menu.i18n
-    if (menuI18n) {
-        router.app.$store.commit('addBreadcrumbs', {
-            id: to.name,
-            name: menuI18n
-        })
-    }
-}
-
 // 进入业务二级导航时需要先加载业务
 // 在App.vue中添加一个隐藏的业务选择器，业务选择器完成设置后resolve对应的promise
-const checkOwner = to => {
+const checkOwner = async to => {
     const matched = to.matched
     if (matched.length && matched[0].name === MENU_BUSINESS) {
         router.app.$store.commit('setBusinessSelectorVisible', true)
-        return router.app.$store.state.businessSelectorPromise
+        const result = await router.app.$store.state.businessSelectorPromise
+        to.meta.view = result ? 'default' : 'permission'
+    } else {
+        to.meta.view = 'default'
+        router.app.$store.commit('setBusinessSelectorVisible', false)
     }
-    router.app.$store.commit('setBusinessSelectorVisible', false)
-    return Promise.resolve()
 }
 
 const setupStatus = {
@@ -182,7 +170,6 @@ router.beforeEach((to, from, next) => {
             if (setupStatus.preload) {
                 await preload(router.app)
             }
-            updateBreadcrumbs(to)
             await checkOwner(to)
             setAdminView(to)
             setAuthScope(to, from)
@@ -193,11 +180,7 @@ router.beforeEach((to, from, next) => {
                 throw new StatusError({ name: '404' })
             }
             await getAuth(to)
-            const viewAuth = isViewAuthorized(to)
-            if (!viewAuth) {
-                throw new StatusError({ name: '403' })
-            }
-
+            checkViewAuthorized(to)
             return next()
         } catch (e) {
             if (e.__CANCEL__) {
@@ -220,6 +203,8 @@ router.afterEach((to, from) => {
         if (setupStatus.afterload) {
             afterload(router.app, to, from)
         }
+        router.app.$store.commit('setTitle', '')
+        router.app.$store.commit('setBreadcrumbs', [])
     } catch (e) {
         console.error(e)
     } finally {

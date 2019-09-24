@@ -13,6 +13,10 @@
 package extensions
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -20,9 +24,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"context"
-	"fmt"
-	"net/http"
 )
 
 /*
@@ -39,7 +40,7 @@ func (am *AuthManager) CollectModuleByBusinessIDs(ctx context.Context, header ht
 		Condition: cond.ToMapStr(),
 		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
 	}
-	instances, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKInnerObjIDModule, query)
+	instances, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, query)
 	if err != nil {
 		blog.Errorf("get module:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get module by businessID:%d failed, err: %+v", businessID, err)
@@ -152,6 +153,9 @@ func (am *AuthManager) GenModuleSetNoPermissionResp() *metadata.BaseResp {
 			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysSystemBase],
 		}},
 	}
+
+    p.ResourceType = p.Resources[0][0].ResourceType
+    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp
