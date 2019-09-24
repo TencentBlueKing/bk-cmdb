@@ -120,14 +120,21 @@
                         id: 0
                     },
                     {
-                        name: this.$t('标签'),
+                        name: `${this.$t('标签')}(value)`,
                         id: 1,
-                        multiable: true,
                         children: [{
                             id: '',
                             name: ''
                         }],
                         conditions: []
+                    },
+                    {
+                        name: `${this.$t('标签')}(key)`,
+                        id: 2,
+                        children: [{
+                            id: '',
+                            name: ''
+                        }]
                     }
                 ],
                 searchSelectData: [],
@@ -208,25 +215,6 @@
                 try {
                     const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
                         || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
-                    const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
-                    const submitLabel = {}
-                    labels.forEach(label => {
-                        const conditionId = label.condition.id
-                        if (!submitLabel[conditionId]) {
-                            submitLabel[conditionId] = [label.values[0].id]
-                        } else {
-                            if (submitLabel[conditionId].indexOf(label.values[0].id) < 0) {
-                                submitLabel[conditionId].push(label.values[0].id)
-                            }
-                        }
-                    })
-                    const selectors = Object.keys(submitLabel).map(key => {
-                        return {
-                            key: key,
-                            operator: 'in',
-                            values: submitLabel[key]
-                        }
-                    })
                     const data = await this.$store.dispatch('serviceInstance/getHostServiceInstances', {
                         params: this.$injectMetadata({
                             page: {
@@ -237,7 +225,7 @@
                             search_key: searchKey
                                 ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
                                 : '',
-                            selectors: selectors
+                            selectors: this.getSelectorParams()
                         })
                     })
                     this.checked = []
@@ -251,6 +239,48 @@
                     this.pagination.count = 0
                 }
             },
+            getSelectorParams () {
+                try {
+                    const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
+                    const labelsKey = this.searchSelectData.filter(item => item.id === 2 && item.hasOwnProperty('values'))
+                    const submitLabel = {}
+                    const submitLabelKey = {}
+                    labels.forEach(label => {
+                        const conditionId = label.condition.id
+                        if (!submitLabel[conditionId]) {
+                            submitLabel[conditionId] = [label.values[0].id]
+                        } else {
+                            if (submitLabel[conditionId].indexOf(label.values[0].id) < 0) {
+                                submitLabel[conditionId].push(label.values[0].id)
+                            }
+                        }
+                    })
+                    labelsKey.forEach(label => {
+                        const id = label.values[0].id
+                        if (!submitLabelKey[id]) {
+                            submitLabelKey[id] = id
+                        }
+                    })
+                    const selectors = Object.keys(submitLabel).map(key => {
+                        return {
+                            key: key,
+                            operator: 'in',
+                            values: submitLabel[key]
+                        }
+                    })
+                    const selectorsKey = Object.keys(submitLabelKey).map(key => {
+                        return {
+                            key: key,
+                            operator: 'exists',
+                            values: []
+                        }
+                    })
+                    return selectors.concat(selectorsKey)
+                } catch (e) {
+                    console.error(e)
+                    return []
+                }
+            },
             async getHistoryLabel () {
                 const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
                     params: this.$injectMetadata({}),
@@ -259,14 +289,28 @@
                         cancelPrevious: true
                     }
                 })
-                const keys = Object.keys(historyLabels).map(key => {
+                this.historyLabels = historyLabels
+                const keys = Object.keys(historyLabels)
+                const valueOption = keys.map(key => {
                     return {
                         name: key + ' : ',
                         id: key
                     }
                 })
-                this.historyLabels = historyLabels
-                this.$set(this.searchSelect[1], 'conditions', keys)
+                const keyOption = keys.map(key => {
+                    return {
+                        name: key,
+                        id: key
+                    }
+                })
+                if (!valueOption.length) {
+                    this.$set(this.searchSelect[1], 'disabled', true)
+                }
+                if (!keyOption.length) {
+                    this.$set(this.searchSelect[2], 'disabled', true)
+                }
+                this.$set(this.searchSelect[1], 'conditions', valueOption)
+                this.$set(this.searchSelect[2], 'children', keyOption)
             },
             handleDeleteInstance (id) {
                 const filterInstances = this.instances.filter(instance => instance.id !== id)
