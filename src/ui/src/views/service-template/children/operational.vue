@@ -84,7 +84,7 @@
                         <bk-button theme="primary"
                             :disabled="!$isAuthorized(auth)"
                             @click="handleSubmit">
-                            {{$t('确定')}}
+                            {{isCreatedType ? $t('提交') : $t('保存')}}
                         </bk-button>
                     </span>
                     <bk-button @click="handleCancelOperation">{{$t('取消')}}</bk-button>
