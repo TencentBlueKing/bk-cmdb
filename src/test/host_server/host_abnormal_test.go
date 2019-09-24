@@ -52,9 +52,9 @@ var _ = Describe("host abnormal test", func() {
 		It("create set", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":         "test",
-				"bk_parent_id":        bizId1,
+				"bk_parent_id":        bizId,
 				"bk_supplier_account": "0",
-				"bk_biz_id":           bizId1,
+				"bk_biz_id":           bizId,
 				"bk_service_status":   "1",
 				"bk_set_env":          "3",
 			}
@@ -67,13 +67,13 @@ var _ = Describe("host abnormal test", func() {
 		It("create set", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":         "test",
-				"bk_parent_id":        bizId,
+				"bk_parent_id":        bizId1,
 				"bk_supplier_account": "0",
-				"bk_biz_id":           bizId,
+				"bk_biz_id":           bizId1,
 				"bk_service_status":   "1",
 				"bk_set_env":          "3",
 			}
-			rsp, err := instClient.CreateSet(context.Background(), strconv.FormatInt(bizId, 10), header, input)
+			rsp, err := instClient.CreateSet(context.Background(), strconv.FormatInt(bizId1, 10), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			setId1 = int64(rsp.Data["bk_set_id"].(float64))
@@ -112,7 +112,7 @@ var _ = Describe("host abnormal test", func() {
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
+			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId1, 10), strconv.FormatInt(setId1, 10), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			moduleId2 = int64(rsp.Data["bk_module_id"].(float64))
@@ -161,6 +161,7 @@ var _ = Describe("host abnormal test", func() {
 				Expect(rsp.Result).To(Equal(false))
 			})
 
+			// for now, it's no max limit for cloud_id
 			It("add host using api with large cloud_id", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
@@ -173,7 +174,7 @@ var _ = Describe("host abnormal test", func() {
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(true))
 			})
 
 			It("add host using api with invalid cloud_id", func() {
@@ -191,6 +192,7 @@ var _ = Describe("host abnormal test", func() {
 				Expect(rsp.Result).To(Equal(false))
 			})
 
+			// for now, ip value has no restriction
 			It("add host using api with invalid bk_host_innerip", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
@@ -203,7 +205,7 @@ var _ = Describe("host abnormal test", func() {
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(true))
 			})
 
 			It("add host using api with invalid bk_host_innerip", func() {
@@ -259,6 +261,7 @@ var _ = Describe("host abnormal test", func() {
 				Expect(rsp.Result).To(Equal(false))
 			})
 
+			// if no bk_cloud_id is given, it would be the default value 0
 			It("add host using api with no bk_cloud_id", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
@@ -270,7 +273,7 @@ var _ = Describe("host abnormal test", func() {
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(true))
 			})
 
 			It("add host using api to biz", func() {
@@ -336,7 +339,7 @@ var _ = Describe("host abnormal test", func() {
 				hostId = int64(data["bk_host_id"].(float64))
 				data = rsp.Data.Info[1]["host"].(map[string]interface{})
 				hostId2 = int64(data["bk_host_id"].(float64))
-				Expect(rsp.Data.Count).To(Equal(3))
+				Expect(rsp.Data.Count).To(Equal(6))
 			})
 
 			It("create object attribute for host", func() {
@@ -391,7 +394,7 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		Describe("add host using excel test", func() {
-			It("add host using excel with large biz_id", func() {
+			It("add host using excel with noexist biz_id", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": 1000,
 					"host_info": map[string]interface{}{
@@ -423,6 +426,7 @@ var _ = Describe("host abnormal test", func() {
 				Expect(rsp.Result).To(Equal(false))
 			})
 
+			// for now, it's no max limit for cloud_id
 			It("add host using excel with large cloud_id", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": bizId1,
@@ -436,7 +440,7 @@ var _ = Describe("host abnormal test", func() {
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(true))
 			})
 
 			It("add host using excel with invalid cloud_id", func() {
@@ -455,6 +459,7 @@ var _ = Describe("host abnormal test", func() {
 				Expect(rsp.Result).To(Equal(false))
 			})
 
+			// for now, ip value has no restriction
 			It("add host using excel with invalid bk_host_innerip", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": bizId1,
@@ -468,7 +473,7 @@ var _ = Describe("host abnormal test", func() {
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(true))
 			})
 
 			It("add host using excel with invalid bk_host_innerip", func() {
@@ -540,7 +545,7 @@ var _ = Describe("host abnormal test", func() {
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(true))
 			})
 
 			It("add host using excel to biz", func() {
@@ -757,7 +762,7 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("transfer resourcehost to idlemodule invalid host ids", func() {
+		It("transfer resourcehost to idlemodule noexist host ids", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
 				HostID: []int64{
@@ -772,12 +777,12 @@ var _ = Describe("host abnormal test", func() {
 
 		It("transfer host to other biz's module", func() {
 			input := map[string]interface{}{
-				"bk_biz_id": bizId,
+				"bk_biz_id": bizId1,
 				"bk_host_id": []int64{
 					hostId2,
 				},
 				"bk_module_id": []int64{
-					moduleId,
+					moduleId1,
 				},
 				"is_increment": false,
 			}
@@ -959,6 +964,7 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(true))
 		})
 
+
 		It("transfer multiple host to module", func() {
 			input := map[string]interface{}{
 				"bk_biz_id": bizId1,
@@ -967,13 +973,30 @@ var _ = Describe("host abnormal test", func() {
 					hostId1,
 				},
 				"bk_module_id": []int64{
-					moduleId,
+					moduleId2,
 				},
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("transfer multiple host to noexist module in a biz", func() {
+			input := map[string]interface{}{
+				"bk_biz_id": bizId1,
+				"bk_host_id": []int64{
+					hostId3,
+					hostId1,
+				},
+				"bk_module_id": []int64{
+					moduleId1,
+				},
+				"is_increment": false,
+			}
+			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
 		})
 
 		It("search module host", func() {
