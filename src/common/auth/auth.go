@@ -14,13 +14,34 @@ package auth
 
 import (
 	"strconv"
+	"sync"
 
 	"configcenter/src/common/blog"
 )
 
 var EnableAuth = "true"
 var enableAuth = true
-var isSet = false
+var EnableAuthFlag *authValue
+var once = sync.Once{}
+
+type authValue struct {}
+
+func (a *authValue) String() string {
+	return strconv.FormatBool(enableAuth)
+}
+
+func (a *authValue) Set(s string) error {
+	v, err := strconv.ParseBool(s)
+	if err != nil {
+		return err
+	}
+	setEnableAuth(v)
+	return nil
+}
+
+func (a *authValue) Type() string {
+	return "bool"
+}
 
 func init() {
 	var err error
@@ -30,12 +51,12 @@ func init() {
 	}
 }
 
-// SetEnableAuth is the default handler which match the --enable-auth flag
-func SetEnableAuth(enable bool) {
-	if !isSet {
+// setEnableAuth is the default handler which match the --enable-auth flag
+func setEnableAuth(enable bool) {
+	once.Do(func() {
 		enableAuth = enable
-		isSet = true
-	}
+		blog.Infof("[auth] enableAuth: %v", enableAuth)
+	})
 }
 
 func IsAuthed() bool {
