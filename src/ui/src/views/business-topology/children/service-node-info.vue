@@ -573,7 +573,8 @@
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
-                        templateId: this.instance.service_template_id
+                        templateId: this.instance.service_template_id,
+                        moduleId: this.selectedNode.data.bk_inst_id
                     }
                 })
             }
