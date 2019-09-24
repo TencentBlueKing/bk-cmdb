@@ -1223,7 +1223,7 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsNeedSet))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create set unmatch bk_biz_id and bk_parent_id", func() {
@@ -1272,7 +1272,7 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.UpdateSet(context.Background(), bizId, "10000", header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
+			Expect(rsp.Code).To(Equal(common.CCErrCommNotFound))
 		})
 
 		It("update set same bk_set_name", func() {
@@ -1334,7 +1334,7 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_module_name"].(string)).To(Equal("cc_module"))
 			Expect(strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)).To(Equal(setId))
-			Expect(strconv.FormatInt(int64(rsp.Data["bk_parent_id"].(float64)), 10)).To(Equal(setId))
+			Expect(rsp.Data["bk_parent_id"].(string)).To(Equal(setId))
 			moduleId = strconv.FormatInt(int64(rsp.Data["bk_module_id"].(float64)), 10)
 		})
 
@@ -1350,7 +1350,7 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_module_name"].(string)).To(Equal("test_module"))
 			Expect(strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)).To(Equal(setId))
-			Expect(strconv.FormatInt(int64(rsp.Data["bk_parent_id"].(float64)), 10)).To(Equal(setId))
+			Expect(rsp.Data["bk_parent_id"].(string)).To(Equal(setId))
 			moduleId1 = strconv.FormatInt(int64(rsp.Data["bk_module_id"].(float64)), 10)
 		})
 
@@ -1403,7 +1403,7 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), "2", setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create module invalid bk_module_name", func() {
@@ -1441,7 +1441,7 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsNeedSet))
+			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("update module", func() {
@@ -1460,16 +1460,17 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, "10000", header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
+			Expect(rsp.Code).To(Equal(common.CCErrCommNotFound))
 		})
 
 		It("update module same bk_module_name", func() {
 			input := map[string]interface{}{
-				"bk_module_name": "test_module",
+				"bk_module_name": "new_module",
 			}
-			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
+			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId1, header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("update module invalid bk_module_name", func() {
@@ -1501,7 +1502,7 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Data.Count).To(Equal(1))
 			Expect(map[string]interface{}(rsp.Data.Info[0])).To(HaveKeyWithValue("bk_module_name", "new_module"))
 			Expect(strconv.FormatInt(int64(rsp.Data.Info[0]["bk_set_id"].(float64)), 10)).To(Equal(setId))
-			Expect(int(rsp.Data.Info[0]["bk_parent_id"].(float64))).To(Equal(1))
+			Expect(rsp.Data.Info[0]["bk_parent_id"].(string)).To(Equal(setId))
 		})
 	})
 })
