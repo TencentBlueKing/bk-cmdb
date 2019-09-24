@@ -76,7 +76,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
-		perm, err := s.AuthManager.GenDeleteHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Delete, iHostIDArr)
+		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Delete, iHostIDArr)
 		if err != nil {
 			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
@@ -476,20 +476,28 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	hostIDStr, err := data.String(common.BKHostIDField)
-	if err != nil {
-		blog.Errorf("update host batch failed, but without host id field, err:%s.input:%+v,rid:%s", err.Error(), data, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedString, common.BKHostIDField)})
-		return
-
-	}
+	// TODO: this is a wrong usage, just for compatible the wrong usage before.
+	// delete this, when the frontend use the right request field. not the number.
+	id := data[common.BKHostIDField]
+    hostIDStr := ""
+	switch id.(type){
+    case float64:
+        floatID := id.(float64)
+        hostIDStr = strconv.FormatInt(int64(floatID), 10)
+    case string:
+        hostIDStr = id.(string)
+    default:
+        blog.Errorf("update host batch failed, got invalid host id(%v) data type,rid:%s", id, srvData.rid)
+        _ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "bk_host_id")})
+        return
+    }
 
 	businessMedata := data.Remove(common.MetadataField)
 	data.Remove(common.BKHostIDField)
 	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
 	if err != nil {
 		blog.Errorf("update host batch, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -512,7 +520,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		perm, err := s.AuthManager.GenDeleteHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Edit, hostIDArr)
+		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Edit, hostIDArr)
 		if err != nil && err != auth.NoAuthorizeError {
 			blog.ErrorJSON("check host authorization get permission failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), srvData.rid)
 			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
