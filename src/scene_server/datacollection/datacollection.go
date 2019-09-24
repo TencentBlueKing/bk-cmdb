@@ -22,7 +22,6 @@ import (
 	"runtime"
 
 	"configcenter/src/common"
-	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
@@ -42,9 +41,8 @@ func main() {
 	pflag.CommandLine.StringVar(&collector, "collector", "", "collector name that send mock message send to")
 
 	op := options.NewServerOption()
-	enableAuth := op.AddFlags(pflag.CommandLine)
+	op.AddFlags(pflag.CommandLine)
 	util.InitFlags()
-	auth.SetEnableAuth(*enableAuth)
 
 	if mock {
 		if err := sigMock(collector); err != nil {
