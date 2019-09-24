@@ -1,0 +1,9 @@
+{
+  "operation_chart_host_os_chart": "Statistics by operating system type",
+  "operation_chart_host_biz_chart": "By business statistics",
+  "operation_chart_host_cloud_chart": "By cloud area statistics",
+  "operation_chart_host_change_biz_chart": "The number of hosts changes",
+  "operation_chart_model_inst_chart": "Instance quantity statistics",
+  "operation_chart_model_inst_change_chart": "Instance change statistics",
+  "": ""
+}

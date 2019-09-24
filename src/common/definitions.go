@@ -721,7 +721,7 @@ const (
 	FieldTypeSingleLenChar int = 256
 
 	// FieldTypeLongLenChar the long char length limit
-	FieldTypeLongLenChar int = 2000
+	FieldTypeLongLenChar int = 15000
 )
 
 const (
@@ -1071,6 +1071,7 @@ const (
 
 	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
 	ServiceTemplateIDNotSet = 0
+	SetTemplateIDNotSet     = 0
 
 	MetadataLabelBiz = "metadata.label.bk_biz_id"
 
@@ -1081,6 +1082,24 @@ const (
 	ContextRequestIDField    = "request_id"
 	ContextRequestUserField  = "request_user"
 	ContextRequestOwnerField = "request_owner"
+)
+
+const (
+	OperationCustom      = "custom"
+	OperationReportType  = "report_type"
+	OperationConfigID    = "config_id"
+	BizModuleHostChart   = "biz_module_host_chart"
+	HostOSChart          = "host_os_chart"
+	HostBizChart         = "host_biz_chart"
+	HostCloudChart       = "host_cloud_chart"
+	HostChangeBizChart   = "host_change_biz_chart"
+	ModelAndInstCount    = "model_and_inst_count"
+	ModelInstChart       = "model_inst_chart"
+	ModelInstChangeChart = "model_inst_change_chart"
+	CreateObject         = "create object"
+	DeleteObject         = "delete object"
+	UpdateObject         = "update object"
+	OperationDescription = "op_desc"
 )
 
 // 云同步

@@ -19,7 +19,7 @@
                 :show-tips="showFeatureTips"
                 :desc="$t('同步模板功能提示')">
             </feature-tips>
-            <p class="tips" :style="{ 'padding-top': showFeatureTips ? '20px' : '0' }">
+            <p class="tips">
                 {{$t('请确认')}}
                 <span>{{treePath}}</span>
                 {{$t('模板更新信息')}}
@@ -225,6 +225,7 @@
         },
         async created () {
             try {
+                this.setBreadcrumbs()
                 await this.getCategory()
                 await this.getModaelProperty()
                 await this.getModuleInstance()
@@ -248,6 +249,19 @@
                 'searchServiceInstanceDifferences',
                 'syncServiceInstanceByTemplate'
             ]),
+            setBreadcrumbs () {
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('服务拓扑'),
+                    route: {
+                        name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                        query: {
+                            module: this.$route.params.moduleId
+                        }
+                    }
+                }, {
+                    label: this.$t('同步模板')
+                }])
+            },
             getList () {
                 const formatList = []
                 Object.keys(this.differenData).forEach(key => {

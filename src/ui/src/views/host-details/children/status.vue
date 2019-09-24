@@ -1,6 +1,6 @@
 <template>
     <div :class="['status', { 'is-offline': !snapshot }]" v-bkloading="{ isLoading: $loading('getHostSnapshot') }">
-        <div class="status-info" v-if="snapshot">
+        <div class="status-info" v-if="snapshot && !$loading('getHostSnapshot')">
             <h2 class="info-title">
                 <span>{{$t('基本值')}}</span>
                 <span class="update-time fr">
@@ -40,7 +40,7 @@
                 <div class="gauge-chart" ref="diskChart"></div>
             </div>
         </div>
-        <div class="status-offline" v-else>
+        <div class="status-offline" v-else-if="!$loading('getHostSnapshot')">
             <div class="offline-image"></div>
             <p class="offline-text">
                 {{$t('当前主机没有安装 Agent 或者 Agent 已经离线')}}

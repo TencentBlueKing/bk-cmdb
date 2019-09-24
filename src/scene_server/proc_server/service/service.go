@@ -71,6 +71,7 @@ func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
 	ctx, cancel := ps.Engine.CCCtx.WithCancel()
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 
+	errors.SetGlobalCCError(ps.CCErr)
 	return &srvComm{
 		header:        header,
 		rid:           util.GetHTTPCCRequestID(header),

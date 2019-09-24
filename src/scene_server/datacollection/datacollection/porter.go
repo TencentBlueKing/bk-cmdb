@@ -50,7 +50,7 @@ func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Cl
 		slaveC:          make(chan string, cacheSize),
 		analyzeCounterC: make(chan int, runtime.NumCPU()),
 		runed:           util.NewBool(false),
-		Engine:			 engine,
+		Engine:          engine,
 	}
 
 	ns := "cmdb_collector_" + name + "_"

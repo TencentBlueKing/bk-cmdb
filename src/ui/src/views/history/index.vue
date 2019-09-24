@@ -10,11 +10,19 @@
                 v-model="defaultDate"
                 @change="setFilterTime">
             </bk-date-picker>
+            <bk-input class="history-host-filter ml10"
+                v-if="objId === 'host'"
+                right-icon="icon-search"
+                v-model="ip"
+                :placeholder="$t('请输入xx', { name: 'IP' })"
+                @enter="handlePageChange(1)">
+            </bk-input>
         </div>
         <bk-table class="history-table"
             v-bkloading="{ isLoading: $loading() }"
             :pagination="pagination"
             :data="list"
+            :max-height="$APP.height - 190"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column v-for="column in header"
@@ -29,6 +37,11 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import moment from 'moment'
+    import {
+        MENU_RESOURCE_HOST,
+        MENU_RESOURCE_INSTANCE,
+        MENU_RESOURCE_MANAGEMENT
+    } from '@/dictionary/menu-symbol'
     export default {
         data () {
             const startDate = moment().subtract(1, 'month').toDate()
@@ -48,7 +61,8 @@
                 startDate,
                 endDate,
                 opTimeResolver: null,
-                defaultDate: [startDate, endDate]
+                defaultDate: [startDate, endDate],
+                ip: ''
             }
         },
         computed: {
@@ -127,11 +141,7 @@
         },
         async created () {
             try {
-                this.$store.commit('setTitle', this.$t('删除历史'))
-                this.$store.commit('addBreadcrumbs', {
-                    id: this.$route.name,
-                    name: this.model.bk_obj_name
-                })
+                this.setBreadcrumbs()
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: this.objId,
@@ -150,6 +160,25 @@
         methods: {
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('operationAudit', ['getOperationLog']),
+            setBreadcrumbs () {
+                this.$store.commit('setTitle', this.$t('删除历史'))
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('资源目录'),
+                    route: {
+                        name: MENU_RESOURCE_MANAGEMENT
+                    }
+                }, {
+                    label: this.model.bk_obj_name,
+                    route: {
+                        name: this.objId === 'host' ? MENU_RESOURCE_HOST : MENU_RESOURCE_INSTANCE,
+                        params: {
+                            objId: this.objId
+                        }
+                    }
+                }, {
+                    label: this.$t('删除历史')
+                }])
+            },
             back () {
                 this.$router.go(-1)
             },
@@ -221,7 +250,7 @@
                 })
             },
             getSearchParams () {
-                return {
+                const params = {
                     condition: {
                         'op_type': 3,
                         'op_time': this.opTime,
@@ -231,6 +260,10 @@
                     limit: this.pagination.limit,
                     sort: '-op_time'
                 }
+                if (this.objId === 'host' && this.ip) {
+                    params.condition.ext_key = { '$regex': this.ip }
+                }
+                return params
             },
             handleSizeChange (size) {
                 this.pagination.limit = size
@@ -249,17 +282,15 @@
         padding: 0 20px;
     }
     .history-options{
-        font-size: 14px;
+        font-size: 0px;
+        .history-host-filter {
+            width: 260px;
+            display: inline-block;
+            vertical-align: top;
+        }
     }
     .history-table{
         margin-top: 20px;
     }
-</style>
 
-<style lang="scss">
-    .history-date-range{
-        .range-action{
-            display: none;
-        }
-    }
 </style>

@@ -20,6 +20,7 @@
     "set_property_bk_service_status": "service status",
     "set_property_description": "comment",
     "set_property_bk_capacity": "capacity",
+    "set_property_set_template_id": "set template id",
 
     "module_property_bk_biz_id": "business id",
     "module_property_bk_set_id": "set id",

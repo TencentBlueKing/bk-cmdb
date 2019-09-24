@@ -1708,8 +1708,8 @@ var _ = Describe("service template test", func() {
 			Expect(len(data.Added)).To(Equal(0))
 			Expect(len(data.Changed)).To(Equal(0))
 			Expect(data.Removed[0].ServiceInstanceCount).To(Equal(2))
-			Expect(data.Removed[0].ServiceInstances[0].ServiceInstance.ID).To(Or(Equal(serviceId),Equal(serviceId1)))
-			Expect(data.Removed[0].ServiceInstances[1].ServiceInstance.ID).To(Or(Equal(serviceId),Equal(serviceId1)))
+			Expect(data.Removed[0].ServiceInstances[0].ServiceInstance.ID).To(Or(Equal(serviceId), Equal(serviceId1)))
+			Expect(data.Removed[0].ServiceInstances[1].ServiceInstance.ID).To(Or(Equal(serviceId), Equal(serviceId1)))
 			Expect(data.Removed[0].ServiceInstances[1].ServiceInstance.ID).NotTo(Equal(data.Removed[0].ServiceInstances[0].ServiceInstance.ID))
 		})
 
