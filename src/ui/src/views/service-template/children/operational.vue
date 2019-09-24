@@ -84,10 +84,10 @@
                         <bk-button theme="primary"
                             :disabled="!$isAuthorized(auth)"
                             @click="handleSubmit">
-                            {{$t('确定')}}
+                            {{isCreatedType ? $t('提交') : $t('保存')}}
                         </bk-button>
                     </span>
-                    <bk-button @click="handleCancelOperation">{{$t('取消')}}</bk-button>
+                    <bk-button @click="handleReturn">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </div>
@@ -478,6 +478,19 @@
             },
             handleGoInstance () {
                 this.$router.replace({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
+            },
+            handleReturn () {
+                const moduleId = this.$route.params['moduleId']
+                if (moduleId) {
+                    this.$router.replace({
+                        name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                        query: {
+                            module: this.$route.params.moduleId
+                        }
+                    })
+                } else {
+                    this.handleCancelOperation()
+                }
             },
             handleCancelOperation () {
                 this.$router.replace({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
