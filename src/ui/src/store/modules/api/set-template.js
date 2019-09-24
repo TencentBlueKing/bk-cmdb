@@ -24,6 +24,9 @@ const actions = {
     },
     getServiceTemplateInSet ({ commit }, { bizId, setTemplateId }, config) {
         return $http.get(`findmany/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}/service_templates`)
+    },
+    getSetTemplateInstances ({ commit }, { bizId, setTemplateId, params, config }) {
+        return $http.post(`findmany/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}/sets/web`, params, config)
     }
 }
 

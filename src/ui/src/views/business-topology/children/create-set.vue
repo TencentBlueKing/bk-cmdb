@@ -122,7 +122,7 @@
                                 requestId: 'getSetTemplates'
                             }
                         })
-                        this.setTemplateList = data.info
+                        this.setTemplateList = data.info.map(template => ({ ...template.set_template }))
                         this.$store.commit('businessTopology/setSetTemplate', {
                             id: this.business,
                             templates: data.info
