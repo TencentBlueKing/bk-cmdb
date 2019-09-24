@@ -72,9 +72,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new authorize failed, err: %v", err)
 	}
-	blog.Infof("enable authcenter: %v", authConf.Enable)
+	blog.Infof("enable authcenter: %v", authorize.Enabled())
 
-	svc.SetConfig(authConf.Enable, engine, client, engine.Discovery(), authorize)
+	svc.SetConfig(engine, client, engine.Discovery(), authorize)
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
