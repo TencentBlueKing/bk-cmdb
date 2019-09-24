@@ -38,8 +38,8 @@
         </div>
 
         <ul class="topo-nav">
-            <li class="group-item group-total">
-                <div :class="['group-info', { 'selected': topoNav.selectedGroupId === -1 }]" @click="handleSelectGroup()">
+            <li class="group-item">
+                <div :class="['group-info', 'group-total', { 'selected': topoNav.selectedGroupId === -1 }]" @click="handleSelectGroup()">
                     <span class="group-name">全部模型</span>
                     <span class="model-count">{{localTopoModelList.length > 1000 ? '999+' : localTopoModelList.length}}</span>
                 </div>
@@ -118,27 +118,26 @@
 
         <div class="topology-node-tooltips" v-show="topoTooltip.hoverNode" ref="nodeTooltips">
             <div
-                class="icon-box is-line"
+                class="icon-box"
                 ref="addEdgeIcon"
                 @click="handleAddEdge"
             >
                 <i class="icon-cc-line"></i>
             </div>
             <div
-                class="icon-box is-del"
-                ref="deleteNodeIcon"
-                v-show="topoTooltip.showDelete"
-                @click="handleDeleteNode"
+                class="icon-box"
+                ref="hideNodeIcon"
+                @click="handleHideNode"
             >
                 <i class="icon-cc-hide"></i>
             </div>
         </div>
 
         <the-create-model
-            :is-show.sync="addLevel.showDialog"
+            :is-show.sync="addBusinessLevel.showDialog"
             :is-main-line="true"
             :title="$t('新建层级')"
-            @confirm="handleCreateLevel"
+            @confirm="handleCreateBusinessLevel"
         ></the-create-model>
     </div>
 </template>
@@ -159,9 +158,6 @@
     let cy = null
     // edge操作实例
     let eh = null
-
-    // 已删除节点集合
-    let deletedNodes
 
     const NODE_WIDTH = 55
 
@@ -192,8 +188,7 @@
                     title: this.$t('拓扑显示设置')
                 },
                 topoTooltip: {
-                    hoverNode: null,
-                    showDelete: true
+                    hoverNode: null
                 },
                 topoEdit: {
                     isEdit: false
@@ -208,7 +203,7 @@
                     isSelectAll: true,
                     selectedNodeId: ''
                 },
-                addLevel: {
+                addBusinessLevel: {
                     showDialog: false,
                     parent: null
                 },
@@ -217,12 +212,13 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView', 'isBusinessSelected']),
+            ...mapGetters(['isAdminView', 'isBusinessSelected', 'supplierAccount', 'userName', 'featureTipsParams', 'mainFullScreen']),
+            ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', [
                 'classifications',
                 'getModelById'
             ]),
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView', 'featureTipsParams']),
             createAuth () {
                 return this.$isAuthorized(this.$OPERATION.SYSTEM_TOPOLOGY)
             },
@@ -240,6 +236,18 @@
                     })
                     return classify
                 })
+            },
+            hideModelConfigKey () {
+                return `${this.userName}_model_${this.isAdminView ? 'adminView' : this.bizId}_hide_models`
+            },
+            hideModels () {
+                return this.usercustom[this.hideModelConfigKey] || []
+            }
+        },
+        watch: {
+            'topoNav.hideNodeIds' (hideNodeIds) {
+                this.saveHideModelConfig(hideNodeIds)
+                this.toggleAddBusinessBtn()
             }
         },
         created () {
@@ -252,6 +260,11 @@
             if (typeof cytoscape('collection', 'noOverlap') !== 'function') {
                 cytoscape.use(noOverlap)
             }
+
+            // 已记录的隐藏节点信息
+            const { hideNodeIds, hideGroupIds } = this.hideModels
+            this.topoNav.hideNodeIds = hideNodeIds
+            this.topoNav.hideGroupIds = hideGroupIds
         },
         mounted () {
             this.getMainLineModel()
@@ -513,7 +526,15 @@
 
                 // 所有操作的事件绑定
                 cy.on('ready', (event) => {
-                    event.cy.nodes().noOverlap({ padding: 5 })
+                    const cy = event.cy
+                    cy.nodes().noOverlap({ padding: 5 })
+
+                    // 初始化节点隐藏
+                    cy.batch(() => {
+                        this.topoNav.hideNodeIds.forEach((id) => {
+                            cy.$(`node#${id}`).style('visibility', 'hidden').connectedEdges().style('visibility', 'hidden')
+                        })
+                    })
                 }).on('resize', (event) => {
                     event.cy.fit()
                 }).on('mouseover', 'node.model', (event) => {
@@ -522,13 +543,12 @@
 
                     // 添加hover样式
                     node.addClass('hover')
-                    node.connectedEdges().addClass('hover')
+                    node.neighborhood().addClass('hover')
 
                     // 显示tooltip
                     if (this.topoEdit.isEdit && !this.specialModel.includes(nodeData.id)) {
                         // 设置tooltip状态数据
                         this.topoTooltip.hoverNode = nodeData
-                        this.checkIsShowDelete(nodeData.id)
 
                         // todo根据画布缩放值更新操作按钮大小
 
@@ -552,7 +572,7 @@
                 }).on('mouseout', 'node.model', (event) => {
                     const node = event.target
                     node.removeClass('hover')
-                    node.connectedEdges().removeClass('hover')
+                    node.neighborhood().removeClass('hover')
 
                     const popover = node.data('popover')
                     if (popover) {
@@ -608,8 +628,6 @@
                 }).on('mouseout', 'node.add-business-btn', (event) => {
                     this.isTopoHover = false
                 })
-
-                deletedNodes = cy.collection()
             },
             async updateNetwork () {
                 // 全量更新画布元素，如存在性能问题则需要依赖数据返回做按需更新
@@ -653,7 +671,7 @@
                             id: nodeObjId,
                             name: nodeItem.node_name,
                             icon: nodeItem.bk_obj_icon,
-                            group: (nodeObjects.find(item => item.bk_obj_id === nodeObjId) || {}).bk_classification_id,
+                            groupId: (nodeObjects.find(item => item.bk_obj_id === nodeObjId) || {}).bk_classification_id,
                             instId: nodeItem.bk_inst_id,
                             type: nodeItem.node_type
                         },
@@ -694,7 +712,7 @@
 
                 // nodes，添加业务层级操作按钮
                 this.mainLineModelList.forEach((model, i) => {
-                    if (this.canAddLevel(model)) {
+                    if (this.canAddBusinessLevel(model)) {
                         elements.push({
                             data: {
                                 id: `add-business-btn-${model.bk_obj_id}`,
@@ -790,8 +808,8 @@
                 }
                 this.toggleNodeByGroup(group, display)
             },
-            handleToggleNode (node, group) {
-                const nodeId = node['bk_obj_id']
+            handleToggleNode (model, group) {
+                const nodeId = model['bk_obj_id']
                 const groupId = group['bk_classification_id']
 
                 // 当前节点在隐藏列表中的索引
@@ -801,16 +819,14 @@
                     this.topoNav.hideNodeIds.splice(index, 1)
 
                     // 即时切换拓扑图中的节点显示状态
-                    cy.$(`node#${nodeId}`).style('display', 'element')
+                    cy.$(`node#${nodeId}`).style('visibility', 'visible').connectedEdges().style('visibility', 'visible')
                 } else {
                     this.topoNav.hideNodeIds.push(nodeId)
-
-                    // 使用display none会同时隐藏关联的edge
-                    cy.$(`node#${nodeId}`).style('display', 'none')
+                    cy.$(`node#${nodeId}`).style('visibility', 'hidden').connectedEdges().style('visibility', 'hidden')
                 }
 
                 // 节点所关联的组中所有节点id
-                const nodeIds = group['bk_objects'].map(node => node['bk_obj_id'])
+                const nodeIds = group['bk_objects'].map(model => model['bk_obj_id'])
                 const nodeCount = nodeIds.length
                 const hideNodeCount = this.topoNav.hideNodeIds.filter(id => nodeIds.includes(id)).length
                 const hideGroupIndex = this.topoNav.hideGroupIds.indexOf(groupId)
@@ -829,8 +845,8 @@
 
                     // 通过样式降低其它节点透明度，使用batch降低开销
                     cy.startBatch()
-                    cy.$('node').addClass('mask').outgoers().addClass('mask')
-                    cy.$(`node[group='${groupId}']`).removeClass('mask').outgoers().removeClass('mask')
+                    cy.$('node').addClass('mask').outgoers().addClass('mask').unselect()
+                    cy.$(`node[groupId='${groupId}']`).select().removeClass('mask').outgoers().removeClass('mask')
                     cy.endBatch()
 
                     this.topoNav.selectedGroupId = group['bk_classification_id']
@@ -843,13 +859,13 @@
                 // 取消单个节点选择
                 this.topoNav.selectedNodeId = ''
             },
-            handleSelectNode (node) {
-                const nodeId = node['bk_obj_id']
+            handleSelectNode (model) {
+                const nodeId = model['bk_obj_id']
                 this.topoNav.selectedNodeId = nodeId
 
                 cy.startBatch()
-                cy.$('*').addClass('mask')
-                cy.$(`node#${nodeId}`).removeClass('mask').outgoers().removeClass('mask')
+                cy.$('*').addClass('mask').unselect()
+                cy.$(`node#${nodeId}`).select().removeClass('mask').outgoers().removeClass('mask')
                 cy.endBatch()
 
                 // 取消组选择
@@ -857,7 +873,7 @@
             },
             toggleNodeByGroup (group, display) {
                 const groupId = group['bk_classification_id']
-                const nodeIds = group['bk_objects'].map(node => node['bk_obj_id'])
+                const nodeIds = group['bk_objects'].map(model => model['bk_obj_id'])
 
                 if (display) {
                     // 显示则从隐藏记录中过滤掉
@@ -867,7 +883,8 @@
                 }
 
                 // 同时在拓扑图中显示/隐藏这组节点
-                cy.$(`node[group='${groupId}']`).style('display', display ? 'element' : 'none')
+                const visibility = display ? 'visible' : 'hidden'
+                cy.$(`node[groupId='${groupId}']`).style('visibility', visibility).connectedEdges().style('visibility', visibility)
             },
             makeSvg (nodeData) {
                 return new Promise((resolve, reject) => {
@@ -877,7 +894,7 @@
                         const svg = {
                             unselected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                 name: nodeData.name,
-                                iconColor: model.ispre ? '#3c96ff' : '#798aad',
+                                iconColor: model.ispre ? '#798aad' : '#3c96ff',
                                 backgroundColor: '#fff'
                             }))}`,
                             selected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
@@ -954,7 +971,8 @@
                 }
 
                 // 显示新建层级操作节点
-                cy.nodes('.add-business-btn').style('display', 'element')
+                // cy.nodes('.add-business-btn').style('display', 'element')
+                this.toggleAddBusinessBtn()
             },
             handleExitEdit () {
                 this.topoEdit.isEdit = false
@@ -969,32 +987,18 @@
                 // 触发edge编辑，node为source
                 eh.start(node)
             },
-            handleDeleteNode () {
-                const { hoverNode } = this.topoTooltip
-                if (this.checkNodeAsst(hoverNode)) {
-                    return
+            handleHideNode () {
+                const { id, groupId } = this.topoTooltip.hoverNode
+                const group = this.localClassifications.find(item => item.bk_classification_id === groupId) || {}
+                const model = this.localTopoModelList.find(item => item.bk_obj_id === id) || {}
+
+                const node = cy.$(`node#${id}`)
+                const popover = node.data('popover')
+                if (popover) {
+                    popover.hide()
                 }
-                this.$bkInfo({
-                    title: this.$t('确定移除模型?'),
-                    subTitle: this.$t('移除模型提示'),
-                    confirmFn: () => {
-                        this.updateSingleNodePosition({
-                            bk_obj_id: hoverNode.id,
-                            bk_inst_id: hoverNode.instId,
-                            node_type: hoverNode.type,
-                            position: { x: null, y: null }
-                        })
 
-                        // 重置节点位置
-                        cy.$(`node#${hoverNode.id}`).position({ x: 0, y: 0 })
-                        // this.addToDeletedNodes(cy.$(`node#${hoverNode.id}`))
-
-                        this.topoTooltip.hoverNode = null
-                    },
-                    cancelFn: () => {
-                        this.topoTooltip.hoverNode = null
-                    }
-                })
+                this.handleToggleNode(model, group)
             },
             clearEditingEdge () {
                 // 删除编辑中的edge
@@ -1019,37 +1023,8 @@
                     instId: params.id
                 })
             },
-            addToDeletedNodes (node) {
-                deletedNodes.merge(node)
-                deletedNodes.layout({
-                    name: 'random'
-                }).run()
-            },
-            checkNodeAsst (node) {
-                let asstNum = 0
-                this.localTopoModelList.forEach(model => {
-                    if (model.hasOwnProperty('assts') && model.assts.length) {
-                        if (model['bk_obj_id'] === node.id) {
-                            asstNum += model.assts.length
-                        } else {
-                            model.assts.forEach(asst => {
-                                if (asst['bk_obj_id'] === node.id) {
-                                    asstNum++
-                                }
-                            })
-                        }
-                    }
-                })
-                if (asstNum) {
-                    this.$error(this.$tc('移除失败提示', asstNum, { asstNum }))
-                }
-                return !!asstNum
-            },
             handleSliderSave (params) {
                 switch (this.slider.content) {
-                    case 'theDisplay':
-                        this.handleDisplaySave(params)
-                        break
                     case 'theRelation':
                         this.handleRelationSave(params)
                         break
@@ -1065,15 +1040,7 @@
                 }
                 this.slider.isShow = false
             },
-            checkIsShowDelete (id) {
-                if (this.isAdminView) {
-                    this.topoTooltip.showDelete = true
-                } else {
-                    const model = this.getModelById(id)
-                    this.topoTooltip.showDelete = !!this.$tools.getMetadataBiz(model)
-                }
-            },
-            canAddLevel (model) {
+            canAddBusinessLevel (model) {
                 return this.isAdminView && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             isMainNode (model) {
@@ -1120,6 +1087,8 @@
             },
             resizeFull () {
                 cy.fit()
+
+                this.$store.commit('setLayoutStatus', { mainFullScreen: !this.mainFullScreen })
             },
             zoomIn () {
                 const zoom = cy.zoom()
@@ -1138,15 +1107,15 @@
             },
             handleAddBusinessLevel (model) {
                 if (this.createAuth) {
-                    this.addLevel.parent = model
-                    this.addLevel.showDialog = true
+                    this.addBusinessLevel.parent = model
+                    this.addBusinessLevel.showDialog = true
                 }
             },
-            async handleCreateLevel (data) {
+            async handleCreateBusinessLevel (data) {
                 try {
                     await this.createMainlineObject({
                         params: this.$injectMetadata({
-                            'bk_asst_obj_id': this.addLevel.parent['bk_obj_id'],
+                            'bk_asst_obj_id': this.addBusinessLevel.parent['bk_obj_id'],
                             'bk_classification_id': 'bk_biz_topo',
                             'bk_obj_icon': data['bk_obj_icon'],
                             'bk_obj_id': data['bk_obj_id'],
@@ -1168,14 +1137,31 @@
                     // 更新拓扑图
                     this.updateNetwork()
 
-                    this.cancelCreateLevel()
+                    this.cancelCreateBusinessLevel()
                 } catch (e) {
                     console.log(e)
                 }
             },
-            cancelCreateLevel () {
-                this.addLevel.parent = null
-                this.addLevel.showDialog = false
+            cancelCreateBusinessLevel () {
+                this.addBusinessLevel.parent = null
+                this.addBusinessLevel.showDialog = false
+            },
+            saveHideModelConfig (hideNodeIds) {
+                this.$store.dispatch('userCustom/saveUsercustom', {
+                    [this.hideModelConfigKey]: { hideNodeIds, hideGroupIds: this.topoNav.hideGroupIds }
+                })
+            },
+            toggleAddBusinessBtn () {
+                if (this.topoEdit.isEdit) {
+                    cy.nodes('.add-business-btn').forEach((node) => {
+                        const model = node.data('model')
+                        if (this.topoNav.hideNodeIds.includes(model.bk_obj_id)) {
+                            node.style('display', 'none')
+                        } else {
+                            node.style('display', 'element')
+                        }
+                    })
+                }
             }
         }
     }
@@ -1278,6 +1264,11 @@
                     display: inline-block;
                 }
             }
+            &:not(.group-total) {
+                .model-count {
+                    display: none;
+                }
+            }
             &.active {
                 .icon-angle-down {
                     transform: rotate(180deg);
@@ -1287,8 +1278,8 @@
                 color: #3a84ff;
                 background: #e1ecff;
                 .model-count {
-                    background: #fff;
-                    color: #3a84ff;
+                    color: #fff;
+                    background-color: #a2c5fd;
                 }
             }
             &.invisible {
@@ -1298,11 +1289,17 @@
                 }
             }
             .model-count {
+                position: absolute;
+                right: 14px;
+                top: 12px;
                 padding: 0 5px;
-                border-radius: 4px;
+                border-radius: 2px;
                 font-size: 12px;
                 color: #979ba5;
                 background: #f0f1f5;
+                height: 18px;
+                line-height: 17px;
+                text-align: center;
             }
             .toggle-arrow {
                 padding: 0 8px 0 15px;
