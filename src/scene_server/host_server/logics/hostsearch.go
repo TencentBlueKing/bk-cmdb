@@ -428,13 +428,13 @@ func (sh *searchHost) fillHostModuleInfo(appInfoLevelInst map[int64]*appLevelInf
 			for mdouleID := range setLevelInfo.moduleInfoMap {
 				moduleInfo, ok := sh.cacheInfoMap.moduleInfoMap[mdouleID]
 				if false == ok {
-					blog.Warnf("hostSearch not found module id, moduleID:%d, hostModuleMap:%v, rid:%s", mdouleID, sh.cacheInfoMap.moduleInfoMap, sh.ccRid)
+					blog.V(5).Infof("hostSearch not found module id, moduleID:%d, hostModuleMap:%v, rid:%s", mdouleID, sh.cacheInfoMap.moduleInfoMap, sh.ccRid)
 					continue
 				}
 
 				moduleName, err := moduleInfo.String(common.BKModuleNameField)
 				if nil != err {
-					blog.Warnf("hostSearch not found module name, moduleID:%d, hostModuleMap:%v, rid:%s", mdouleID, sh.cacheInfoMap.moduleInfoMap, sh.ccRid)
+                    blog.V(5).Infof("hostSearch not found module name, moduleID:%d, hostModuleMap:%v, rid:%s", mdouleID, sh.cacheInfoMap.moduleInfoMap, sh.ccRid)
 					continue
 				}
 				datacp := make(map[string]interface{})

@@ -78,7 +78,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
-	ctnr.Router(restful.CurlyRouter{})
 	for _, item := range svc.WebServices(authConf) {
 		ctnr.Add(item)
 	}
