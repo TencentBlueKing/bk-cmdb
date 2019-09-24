@@ -127,7 +127,7 @@
                     await this.$store.dispatch('hostUpdate/updateHost', {
                         params: this.$injectMetadata({
                             [property.bk_property_id]: value,
-                            bk_host_id: this.host.bk_host_id
+                            bk_host_id: String(this.host.bk_host_id)
                         }),
                         config: {
                             requestId: 'updateHostInfo'
