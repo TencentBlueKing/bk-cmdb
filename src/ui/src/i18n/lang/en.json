@@ -965,5 +965,6 @@
     "目标包含主机, 不允许删除": "Target contains host, not allowed to delete",
     "同步数量提示": "The instance module {successCount} has been successfully synchronized, failing {failCount}",
     "空集群模板实例提示": "No template instance, please go to {link} to add",
-    "同步任务进行中": "The synchronization task is in progress, {link}"
+    "同步任务进行中": "The synchronization task is in progress, {link}",
+    "集群模板名称占位符": "Please input template name, 20 letters max"
 }
