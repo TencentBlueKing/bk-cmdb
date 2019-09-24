@@ -33,6 +33,7 @@
         </p>
         <bk-table
             v-bkloading="{ isLoading: $loading('searchAssociationType') }"
+            :max-height="$APP.height - 229"
             :data="table.list"
             :pagination="table.pagination"
             @page-change="handlePageChange"

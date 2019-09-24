@@ -57,10 +57,10 @@
                 <div class="process-create">
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
-                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                            active: !$isAuthorized(auth),
+                            auth: [auth]
                         }">
-                        <bk-button class="create-btn" :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)" @click="handleCreateProcess">
+                        <bk-button class="create-btn" :disabled="!$isAuthorized(auth)" @click="handleCreateProcess">
                             <i class="bk-icon icon-plus"></i>
                             <span>{{$t('新建进程')}}</span>
                         </bk-button>
@@ -78,11 +78,11 @@
                 <div class="btn-box">
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
-                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                            active: !$isAuthorized(auth),
+                            auth: [auth]
                         }">
                         <bk-button theme="primary"
-                            :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
+                            :disabled="!$isAuthorized(auth)"
                             @click="handleSubmit">
                             {{$t('确定')}}
                         </bk-button>
@@ -122,10 +122,14 @@
                 <div class="content">
                     <i class="bk-icon icon-check-1"></i>
                     <p>{{$t('服务模板创建成功')}}</p>
-                    <span>{{$tc('创建成功前往服务拓扑', createdSucess.name, { name: createdSucess.name })}}</span>
+                    <span v-if="processList.length">{{$tc('创建成功前往服务拓扑', createdSucess.name, { name: createdSucess.name })}}</span>
+                    <span v-else>
+                        <i class="bk-icon icon-exclamation"></i>
+                        {{$t('创建成功无进程提示')}}
+                    </span>
                 </div>
                 <div class="btn-box">
-                    <bk-button
+                    <bk-button v-if="processList.length"
                         theme="primary"
                         class="mr10"
                         @click="handleGoInstance">
@@ -191,6 +195,12 @@
             },
             templateId () {
                 return this.$route.params['templateId']
+            },
+            auth () {
+                if (this.isCreatedType) {
+                    return this.$OPERATION.C_SERVICE_TEMPLATE
+                }
+                return this.$OPERATION.U_SERVICE_TEMPLATE
             }
         },
         async created () {
@@ -442,17 +452,29 @@
                         }
                     })
                 } else {
-                    this.createServiceTemplate({
-                        params: this.$injectMetadata({
-                            name: this.formData.templateName,
-                            service_category_id: this.formData.secondaryClassification
+                    if (!this.processList.length) {
+                        this.$bkInfo({
+                            title: this.$t('服务模板创建没进程提示'),
+                            confirmFn: () => {
+                                this.handleCreateTemplate()
+                            }
                         })
-                    }).then(data => {
-                        this.createdSucess.name = data.name
-                        this.formData.templateId = data.id
-                        this.handleSubmitProcessList()
-                    })
+                        return
+                    }
+                    this.handleCreateTemplate()
                 }
+            },
+            handleCreateTemplate () {
+                this.createServiceTemplate({
+                    params: this.$injectMetadata({
+                        name: this.formData.templateName,
+                        service_category_id: this.formData.secondaryClassification
+                    })
+                }).then(data => {
+                    this.createdSucess.name = data.name
+                    this.formData.templateId = data.id
+                    this.handleSubmitProcessList()
+                })
             },
             handleGoInstance () {
                 this.$router.replace({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
@@ -542,7 +564,7 @@
         text-align: center;
         color: #444444;
         word-break: break-all;
-        .bk-icon {
+        .icon-check-1 {
             width: 60px;
             height: 60px;
             line-height: 60px;
@@ -552,6 +574,15 @@
             border-radius: 50%;
             background-color: #2dcb56;
             margin-top: 12px;
+        }
+        .icon-exclamation {
+            width: 18px;
+            height: 18px;
+            line-height: 17px;
+            font-size: 12px;
+            border: 1px solid #444444;
+            border-radius: 50%;
+            margin-top: -4px;
         }
         p {
             font-size: 24px;
