@@ -779,6 +779,16 @@ const (
 	CCErrCloudSyncDeleteSyncTaskFail      = 1116011
 	CCErrCloudSyncUpdateSyncTaskFail      = 1116012
 
+	// task_server 1117xxx
+	// CCErrTaskNotFound task not found
+	CCErrTaskNotFound = 1117001
+	// CCErrTaskSubTaskNotFound sub task not found
+	CCErrTaskSubTaskNotFound = 1117002
+	// CCErrTaskStatusNotAllowChangeTo task not allow status change to xx
+	CCErrTaskStatusNotAllowChangeTo = 1117003
+	// CCErrTaskErrResponseEmtpyFail error response empty
+	CCErrTaskErrResponseEmtpyFail = 1117004
+
 	/** TODO: 以下错误码需要改造 **/
 
 	// json
