@@ -15,4 +15,14 @@ export default [{
             parent: MENU_BUSINESS_SERVICE
         }
     })
+}, {
+    name: 'setTemplateInfo',
+    path: 'set/template/info',
+    component: () => import('./children/template-info.vue'),
+    meta: new Meta({
+        owner: MENU_BUSINESS,
+        menu: {
+            i18n: '模板信息'
+        }
+    })
 }]

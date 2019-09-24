@@ -20,7 +20,9 @@ import resourceManagement from '@/views/resource-manage/router.config'
 import customFields from '@/views/custom-fields/router.config'
 import operation from '@/views/operation/router.config'
 
+import setSync from '@/views/set-sync/router.config'
 import setTemplate from '@/views/set-template/router.config'
+
 import statusPermission from '@/views/status/permission'
 import statusError from '@/views/status/error'
 
@@ -62,6 +64,7 @@ export const businessViews = injectStatusComponents(flatternViews([
     serviceInstance,
     serviceSynchronous,
     customFields,
+    setSync,
     setTemplate
 ]))
 
