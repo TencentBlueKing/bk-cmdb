@@ -79,18 +79,14 @@
                         requestId: 'getSetTemplates'
                     }
                 })
-                const list = data.info.map(item => ({
+                const list = (data.info || []).map(item => ({
                     set_instance_count: item.set_instance_count,
                     ...item.set_template
                 }))
                 this.list = list
                 this.originList = list
             },
-            handleCreate () {
-                this.$router.push({
-                    name: 'createTemplate'
-                })
-            },
+            handleCreate () {},
             handleEdit (row) {},
             handlePreview (row) {},
             handleDelete (row) {},

@@ -16,13 +16,13 @@ export default [{
         }
     })
 }, {
-    name: 'createTemplate',
-    path: 'create/template',
-    component: () => import('./children/create-template.vue'),
+    name: 'setTemplateInfo',
+    path: 'set/template/info',
+    component: () => import('./children/template-info.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            i18n: '创建集群模板'
+            i18n: '模板信息'
         }
     })
 }]
