@@ -438,6 +438,7 @@
                     }
                     if (status && status.bk_error_msg === 'success') {
                         this.$success(this.$t('保存成功'))
+                        this.$parent.handleCheckALL(false)
                         this.$parent.filter = ''
                         this.$parent.getServiceInstances()
                         this.$parent.getHistoryLabel()
