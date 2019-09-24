@@ -363,7 +363,6 @@ func GetBizNameByID(clientSet apimachinery.ClientSetInterface, header http.Heade
 		return "", errors.New(result.ErrMsg)
 	}
 	bizName := result.Data.BizName
-	blog.V(5).Infof("GetBizNameByID bizID: %d ==> bizName: %s, rid: %s", bizID, bizName, rid)
 	return bizName, nil
 }
 
