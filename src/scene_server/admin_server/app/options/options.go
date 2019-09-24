@@ -14,6 +14,7 @@ package options
 
 import (
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
 
@@ -38,6 +39,7 @@ func NewServerOption() *ServerOption {
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60005", "The ip address and port for the serve on")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
+	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
 }
 
 type Config struct {

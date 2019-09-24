@@ -28,7 +28,7 @@ import (
 // Service service methods
 type Service interface {
 	WebServices(auth authcenter.AuthConfig) []*restful.WebService
-	SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize)
+	SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize)
 }
 
 // NewService create a new service instance
@@ -39,7 +39,6 @@ func NewService() Service {
 }
 
 type service struct {
-	enableAuth bool
 	engine     *backbone.Engine
 	client     HTTPClient
 	core       core.Core
@@ -47,8 +46,7 @@ type service struct {
 	authorizer auth.Authorizer
 }
 
-func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
-	s.enableAuth = enableAuth
+func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
 	s.engine = engine
 	s.client = httpClient
 	s.discovery = discovery
