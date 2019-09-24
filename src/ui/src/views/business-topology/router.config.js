@@ -16,7 +16,9 @@ import {
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
     D_SERVICE_INSTANCE,
-    R_SERVICE_INSTANCE
+    R_SERVICE_INSTANCE,
+
+    U_SERVICE_TEMPLATE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
@@ -31,7 +33,9 @@ export const OPERATION = {
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
     D_SERVICE_INSTANCE,
-    R_SERVICE_INSTANCE
+    R_SERVICE_INSTANCE,
+
+    U_SERVICE_TEMPLATE
 }
 
 export default {

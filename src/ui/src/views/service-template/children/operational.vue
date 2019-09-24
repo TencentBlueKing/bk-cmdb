@@ -57,10 +57,10 @@
                 <div class="process-create">
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
-                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                            active: !$isAuthorized(auth),
+                            auth: [auth]
                         }">
-                        <bk-button class="create-btn" :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)" @click="handleCreateProcess">
+                        <bk-button class="create-btn" :disabled="!$isAuthorized(auth)" @click="handleCreateProcess">
                             <i class="bk-icon icon-plus"></i>
                             <span>{{$t('新建进程')}}</span>
                         </bk-button>
@@ -78,11 +78,11 @@
                 <div class="btn-box">
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
-                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                            active: !$isAuthorized(auth),
+                            auth: [auth]
                         }">
                         <bk-button theme="primary"
-                            :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
+                            :disabled="!$isAuthorized(auth)"
                             @click="handleSubmit">
                             {{$t('确定')}}
                         </bk-button>
@@ -195,6 +195,12 @@
             },
             templateId () {
                 return this.$route.params['templateId']
+            },
+            auth () {
+                if (this.isCreatedType) {
+                    return this.$OPERATION.C_SERVICE_TEMPLATE
+                }
+                return this.$OPERATION.U_SERVICE_TEMPLATE
             }
         },
         async created () {

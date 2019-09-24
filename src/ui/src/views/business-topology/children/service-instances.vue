@@ -8,19 +8,19 @@
                     :title="$t('全选本页')"
                     @change="handleCheckALL">
                 </bk-checkbox>
-                <bk-button v-if="withTemplate && !templates.length"
-                    class="options-button"
-                    theme="primary"
-                    @click="visible = true">
-                    {{$t('添加主机')}}
-                </bk-button>
                 <span style="display: inline-block;"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
                         auth: [$OPERATION.C_SERVICE_INSTANCE]
-                    }"
-                    v-else>
-                    <bk-button class="options-button" theme="primary"
+                    }">
+                    <bk-button v-if="withTemplate && !templates.length"
+                        class="options-button"
+                        theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                        @click="visible = true">
+                        {{$t('添加主机')}}
+                    </bk-button>
+                    <bk-button v-else class="options-button" theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
                         @click="handleCreateServiceInstance">
                         {{$t('添加服务实例')}}
