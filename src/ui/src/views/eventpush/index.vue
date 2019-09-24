@@ -21,7 +21,7 @@
             </span>
         </div>
         <bk-table
-            :v-bkloading="{ isLoading: $loading('searchSubscription') }"
+            v-bkloading="{ isLoading: $loading('searchSubscription') }"
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 229"
