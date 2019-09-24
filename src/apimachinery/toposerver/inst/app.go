@@ -89,6 +89,18 @@ func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.H
 	return
 }
 
+func (t *instanceClient) GetAppBasicInfo(ctx context.Context, h http.Header, bizID int64) (resp *metadata.AppBasicInfoResult, err error) {
+	resp = new(metadata.AppBasicInfoResult)
+	subPath := fmt.Sprintf("/app/%d/basic_info", bizID)
+	err = t.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := fmt.Sprintf("/app/default/%s/search", ownerID)

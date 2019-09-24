@@ -94,7 +94,12 @@ func NewContextFromGinContext(c *gin.Context) context.Context {
 
 func NewContextFromHTTPHeader(header http.Header) context.Context {
 	rid := GetHTTPCCRequestID(header)
-	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+	user := GetUser(header)
+	owner := GetOwnerID(header)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
+	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
 	return ctx
 }
 
