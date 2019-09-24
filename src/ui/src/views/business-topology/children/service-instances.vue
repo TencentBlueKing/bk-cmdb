@@ -13,7 +13,14 @@
                         active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
                         auth: [$OPERATION.C_SERVICE_INSTANCE]
                     }">
-                    <bk-button class="options-button" theme="primary"
+                    <bk-button v-if="withTemplate && !templates.length"
+                        class="options-button"
+                        theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                        @click="visible = true">
+                        {{$t('添加主机')}}
+                    </bk-button>
+                    <bk-button v-else class="options-button" theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
                         @click="handleCreateServiceInstance">
                         {{$t('添加服务实例')}}
@@ -156,6 +163,12 @@
                 </cmdb-edit-label>
             </batch-edit-label>
         </bk-dialog>
+
+        <host-selector
+            :visible.sync="visible"
+            :module-instance="currentModule || {}"
+            @host-selected="handleSelectHost">
+        </host-selector>
     </div>
 </template>
 
@@ -164,12 +177,14 @@
     import serviceInstanceEmpty from './service-instance-empty.vue'
     import batchEditLabel from './batch-edit-label.vue'
     import cmdbEditLabel from './edit-label.vue'
+    import hostSelector from '@/components/ui/selector/host.vue'
     export default {
         components: {
             serviceInstanceTable,
             serviceInstanceEmpty,
             batchEditLabel,
-            cmdbEditLabel
+            cmdbEditLabel,
+            hostSelector
         },
         data () {
             return {
@@ -221,7 +236,9 @@
                 topoStatus: false,
                 historyLabels: {},
                 processBindIp: [],
-                bindIp: ''
+                bindIp: '',
+                visible: false,
+                templates: []
             }
         },
         computed: {
@@ -294,6 +311,7 @@
                     }
                     this.pagination.current = 1
                     await this.getServiceInstances()
+                    this.getTemplate(node.data.service_template_id)
                     const timer = setTimeout(() => {
                         if (node.data.service_template_id && this.instances.length) {
                             this.getServiceInstanceDifferences()
@@ -850,6 +868,60 @@
                 el.curItem.children = children
                 el.updateChildMenu(cur, index, false)
                 el.showChildMenu(children)
+            },
+            async getTemplate (id) {
+                try {
+                    const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
+                        params: this.$injectMetadata({
+                            service_template_id: id
+                        }),
+                        config: {
+                            requestId: 'getBatchProcessTemplate',
+                            cancelPrevious: true
+                        }
+                    })
+                    this.templates = data.info
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            async handleSelectHost (checked) {
+                try {
+                    const addNum = checked.length
+                    await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
+                        params: this.$injectMetadata({
+                            name: this.currentModule.bk_module_name,
+                            bk_module_id: this.currentModule.bk_module_id,
+                            service_template_id: this.currentModule.service_template_id,
+                            instances: checked.map(hostId => {
+                                return {
+                                    bk_host_id: hostId,
+                                    processes: this.templates.map(template => {
+                                        const processInfo = {}
+                                        Object.keys(template.property).forEach(key => {
+                                            processInfo[key] = template.property[key].value
+                                        })
+                                        return {
+                                            process_template_id: template.id,
+                                            process_info: processInfo
+                                        }
+                                    })
+                                }
+                            })
+                        })
+                    })
+                    if (this.withTemplate) {
+                        this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count + addNum
+                        this.currentNode.parents.forEach(node => {
+                            node.data.service_instance_count = node.data.service_instance_count + addNum
+                        })
+                    }
+                    this.visible = false
+                    this.$success(this.$t('添加成功'))
+                    this.getServiceInstances()
+                } catch (e) {
+                    console.error(e)
+                }
             }
         }
     }
