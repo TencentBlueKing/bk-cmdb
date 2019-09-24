@@ -1295,6 +1295,16 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
+		It("update set biz, parent", func() {
+			input := map[string]interface{}{
+				"bk_biz_id":    2,
+				"bk_parent_id": 1,
+			}
+			rsp, err := instClient.UpdateSet(context.Background(), bizId, setId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
 		It("delete set", func() {
 			rsp, err := instClient.DeleteSet(context.Background(), bizId, setId1, header)
 			Expect(err).NotTo(HaveOccurred())
@@ -1481,6 +1491,17 @@ var _ = Describe("object test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
+		})
+
+		It("update module set, biz, parent", func() {
+			input := map[string]interface{}{
+				"bk_set_id":    1,
+				"bk_biz_id":    2,
+				"bk_parent_id": 1,
+			}
+			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("delete module", func() {
