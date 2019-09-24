@@ -239,9 +239,7 @@ var ActionIDNameMap = map[ActionID]string{
 	Get:                    "查询",
 	Delete:                 "删除",
 	Archive:                "归档",
-	ModelTopologyOperation: "拓扑层级管理",
-	// TODO: delete this when upgrade to v3.5.x
-	BindModule: "绑定到模块",
+	ModelTopologyOperation: "编辑业务层级",
 }
 
 func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
