@@ -59,6 +59,7 @@ var AllModule = map[string]bool{
 	CC_MODULE_CORESERVICE:      true,
 	CC_MODULE_SYNCHRONZESERVER: true,
 	CC_MODULE_OPERATION:        true,
+	CC_MODULE_TASK:             true,
 }
 
 // cc functionality define
