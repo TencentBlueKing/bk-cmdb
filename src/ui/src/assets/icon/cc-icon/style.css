@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'icomoon';
-  src:  url('fonts/icomoon.eot?t6ka8j');
-  src:  url('fonts/icomoon.eot?t6ka8j#iefix') format('embedded-opentype'),
-    url('fonts/icomoon.ttf?t6ka8j') format('truetype'),
-    url('fonts/icomoon.woff?t6ka8j') format('woff'),
-    url('fonts/icomoon.svg?t6ka8j#icomoon') format('svg');
+  src:  url('fonts/icomoon.eot?9pf54v');
+  src:  url('fonts/icomoon.eot?9pf54v#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?9pf54v') format('truetype'),
+    url('fonts/icomoon.woff?9pf54v') format('woff'),
+    url('fonts/icomoon.svg?9pf54v#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -625,30 +625,33 @@
 .icon-cc-unix:before {
   content: "\e9c7";
 }
-.icon-cc-ups:before {
+.icon-cc-updating:before {
   content: "\e9c8";
 }
-.icon-cc-user:before {
+.icon-cc-ups:before {
   content: "\e9c9";
 }
-.icon-cc-virtual:before {
+.icon-cc-user:before {
   content: "\e9ca";
 }
-.icon-cc-vmware:before {
+.icon-cc-virtual:before {
   content: "\e9cb";
 }
-.icon-cc-vsphere:before {
+.icon-cc-vmware:before {
   content: "\e9cc";
 }
-.icon-cc-weblogic:before {
+.icon-cc-vsphere:before {
   content: "\e9cd";
 }
-.icon-cc-win:before {
+.icon-cc-weblogic:before {
   content: "\e9ce";
 }
-.icon-cc-win7:before {
+.icon-cc-win:before {
   content: "\e9cf";
 }
-.icon-cc-wireless:before {
+.icon-cc-win7:before {
   content: "\e9d0";
+}
+.icon-cc-wireless:before {
+  content: "\e9d1";
 }
