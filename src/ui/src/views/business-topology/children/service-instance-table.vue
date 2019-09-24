@@ -216,7 +216,7 @@
                 return this.$store.state.businessTopology.selectedNodeInstance
             },
             flattenList () {
-                return this.$tools.flattenList(this.properties, this.list.map(data => data.property))
+                return this.$tools.flattenList(this.properties, this.list.map(data => data.property || {}))
             },
             requestId () {
                 return {

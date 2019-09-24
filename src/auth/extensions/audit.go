@@ -36,7 +36,7 @@ func (am *AuthManager) CollectAuditCategoryByBusinessID(ctx context.Context, hea
 	query := metadata.QueryInput{
 		Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
 	}
-	response, err := am.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), header, query)
+	response, err := am.clientSet.CoreService().Audit().SearchAuditLog(ctx, header, query)
 	if nil != err {
 		blog.Errorf("collect audit category by business %d failed, get audit log failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("collect audit category by business %d failed, get audit log failed, err: %+v", businessID, err)
@@ -264,6 +264,8 @@ func (am *AuthManager) GenAuthorizeAuditReadNoPermissionsResponse(ctx context.Co
 			}},
 		}
 	}
+    p.ResourceType = p.Resources[0][0].ResourceType
+    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
 }

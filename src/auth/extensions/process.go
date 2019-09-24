@@ -127,6 +127,8 @@ func (am *AuthManager) GenProcessNoPermissionResp(ctx context.Context, header ht
 		return nil, errors.New("get business detail failed")
 	}
 	p.ScopeName = businesses[0].BKAppNameField
+    p.ResourceType = p.Resources[0][0].ResourceType
+    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
 }
