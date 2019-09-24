@@ -121,10 +121,14 @@ func (s *Service) ListSetTemplate(params types.ContextParams, pathParams, queryP
 	if err := data.MarshalJSONInto(&option); err != nil {
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
+	// set default value
+	if option.Page.Limit == 0 {
+		option.Page.Limit = common.BKDefaultLimit
+	}
 
 	setTemplate, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTemplate(params.Context, params.Header, bizID, option)
 	if err != nil {
-		blog.Errorf("ListSetTemplate failed, do core service list failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
+		blog.Errorf("ListSetTemplate failed, do core service ListSetTemplate failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
 		return nil, err
 	}
 	return setTemplate, nil
