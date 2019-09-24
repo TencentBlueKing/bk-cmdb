@@ -415,6 +415,8 @@ func (am *AuthManager) GenEditHostBatchNoPermissionResp(ctx context.Context, hea
         }
 		
 	}
+	p.ResourceType = p.Resources[0][0].ResourceType
+	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
@@ -440,6 +442,8 @@ func (am *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, heade
 			ResourceName:     host.BKHostInnerIPField,
 		}})
 	}
+    p.ResourceType = p.Resources[0][0].ResourceType
+    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
@@ -465,6 +469,9 @@ func (am *AuthManager) GenMoveBizHostToResourcePoolNoPermissionResp(ctx context.
 			ResourceName:     host.BKHostInnerIPField,
 		}})
 	}
+
+    p.ResourceType = p.Resources[0][0].ResourceType
+    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
