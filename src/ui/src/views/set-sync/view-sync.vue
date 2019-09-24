@@ -4,7 +4,7 @@
             <i :class="['bk-icon', ...iconClass]"></i>
             <div class="right-content">
                 <div class="operations">
-                    <span>{{$t('正在同步中，请耐心等待…')}}</span>
+                    <span>{{$t('正在同步中请等待')}}</span>
                     <bk-button v-if="syncStatus === 2" theme="default">{{$t('返回列表')}}</bk-button>
                     <template v-else>
                         <bk-button theme="default">{{$t('失败重试')}}</bk-button>
@@ -12,7 +12,12 @@
                     </template>
                 </div>
                 <div class="sync-count">
-                    <p v-if="syncStatus === 2">{{$t('已同步10处，剩余5处')}}</p>
+                    <i18n v-if="syncStatus === 2"
+                        path="同步进度提示"
+                        tag="div">
+                        <span place="completedCount">10</span>
+                        <span place="remainingCount">5</span>
+                    </i18n>
                     <i18n v-else
                         path="同步数量提示"
                         tag="div">
