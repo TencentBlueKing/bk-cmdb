@@ -143,7 +143,8 @@
         MENU_MODEL_MANAGEMENT,
         MENU_RESOURCE_HOST,
         MENU_RESOURCE_BUSINESS,
-        MENU_RESOURCE_INSTANCE
+        MENU_RESOURCE_INSTANCE,
+        MENU_MODEL_BUSINESS_TOPOLOGY
     } from '@/dictionary/menu-symbol'
     export default {
         components: {
@@ -340,14 +341,23 @@
                 }
             },
             setBreadcrumbs (model) {
-                this.$store.commit('setBreadcrumbs', [{
+                const breadcrumbs = [{
                     label: this.$t('模型管理'),
                     route: {
                         name: MENU_MODEL_MANAGEMENT
                     }
                 }, {
                     label: model.bk_obj_name
-                }])
+                }]
+                if (this.$route.query.from === 'business') {
+                    breadcrumbs.splice(0, 1, {
+                        label: this.$t('业务层级'),
+                        route: {
+                            name: MENU_MODEL_BUSINESS_TOPOLOGY
+                        }
+                    })
+                }
+                this.$store.commit('setBreadcrumbs', breadcrumbs)
             },
             async getModelStatistics () {
                 const modelStatisticsSet = {}
