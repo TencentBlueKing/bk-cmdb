@@ -148,9 +148,12 @@
             },
             handleLinkClick (model) {
                 this.$router.push({
-                    name: 'modelDetails',
+                    name: 'businessModelDetails',
                     params: {
                         modelId: model.bk_obj_id
+                    },
+                    query: {
+                        from: 'business'
                     }
                 })
             }

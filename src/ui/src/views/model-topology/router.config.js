@@ -10,7 +10,7 @@ export const OPERATION = {
 export default {
     name: MENU_MODEL_TOPOLOGY,
     path: 'all/topology',
-    component: () => import('./index.new.vue'),
+    component: () => import('./index.old.vue'),
     meta: new Meta({
         menu: {
             i18n: '模型关系'
