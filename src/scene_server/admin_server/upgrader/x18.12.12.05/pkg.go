@@ -24,6 +24,11 @@ func init() {
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	if err = createInstanceAssociationIndex(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade x18.12.12.05] createInstanceAssociationIndex error  %s", err.Error())
+		return err
+	}
+
 	err = removeDeletedInstAsst(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade x18.12.12.05] fixBKObjAsstID error  %s", err.Error())

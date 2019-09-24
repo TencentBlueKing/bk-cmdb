@@ -567,6 +567,9 @@
                         params: {
                             business: business.bk_biz_id,
                             id: item.host.bk_host_id
+                        },
+                        query: {
+                            from: 'business'
                         }
                     })
                 } else if (business.default) {
@@ -574,6 +577,9 @@
                         name: MENU_RESOURCE_HOST_DETAILS,
                         params: {
                             id: item.host.bk_host_id
+                        },
+                        query: {
+                            from: 'resource'
                         }
                     })
                 } else {
@@ -582,6 +588,9 @@
                         params: {
                             business: business.bk_biz_id,
                             id: item.host.bk_host_id
+                        },
+                        query: {
+                            from: 'resource'
                         }
                     })
                 }

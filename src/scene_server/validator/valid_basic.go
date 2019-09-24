@@ -175,11 +175,11 @@ func (valid *ValidMap) validChar(val interface{}, key string) error {
 			strReg, err := regexp.Compile(option)
 			if nil != err {
 				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
-				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+				return valid.errif.Errorf(common.CCErrFieldRegValidFailed, key)
 			}
 			if !strReg.MatchString(value) {
 				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
-				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+				return valid.errif.Errorf(common.CCErrFieldRegValidFailed, key)
 			}
 		}
 	default:
@@ -223,11 +223,11 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) error {
 			strReg, err := regexp.Compile(option)
 			if nil != err {
 				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
-				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+				return valid.errif.Errorf(common.CCErrFieldRegValidFailed, key)
 			}
 			if !strReg.MatchString(value) {
 				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
-				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+				return valid.errif.Errorf(common.CCErrFieldRegValidFailed, key)
 			}
 		}
 	default:
