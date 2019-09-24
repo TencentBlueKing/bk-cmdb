@@ -914,5 +914,7 @@
     "模板详情": "Template details",
     "主机拓扑提示": "Go to {link} to edit topology",
     "同步数量提示": "The instance module {successCount} has been successfully synchronized, failing {failCount}",
-    "空集群模板提示": "You have not create template, {link}"
+    "空集群模板提示": "You have not create template, {link}",
+    "空集群模板实例提示": "No template instance, please go to {link} to add",
+    "同步任务进行中": "The synchronization task is in progress, {link}"
 }
