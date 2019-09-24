@@ -141,6 +141,8 @@ func (am *AuthManager) GenServiceCategoryNoPermissionResp() *metadata.BaseResp {
 			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysSystemBase],
 		}},
 	}
+    p.ResourceType = p.Resources[0][0].ResourceType
+    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp

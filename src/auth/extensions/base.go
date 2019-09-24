@@ -14,67 +14,65 @@ package extensions
 
 import (
 	"context"
+	"errors"
 	"fmt"
-    "errors"
-    "net/http"
-    "sync/atomic"
+	"net/http"
+	"sync/atomic"
 
-    "configcenter/src/auth"
-    "configcenter/src/auth/meta"
-    "configcenter/src/auth/parser"
-    "configcenter/src/common"
-    "configcenter/src/common/metadata"
+	"configcenter/src/auth"
+	"configcenter/src/auth/meta"
+	"configcenter/src/auth/parser"
+	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 )
 
 // this variable is used to accelerate the way to check if a business is resource pool
 // business or not.
 var resourcePoolBusinessID int64
 
-// correctBusinessID correct businessID to 0 if default field is 1, as we need to set it to 0 for iam.
-// it's an ugly design here, but it's the cheapest way to set business to 0 for all default resources.
 // this function is concurrent safe.
 func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header http.Header) (int64, error) {
 
-    // this operation is concurrent safe
-    if atomic.LoadInt64(&resourcePoolBusinessID) != 0 {
-        // resource pool business id is already set, return directly.
-        return atomic.LoadInt64(&resourcePoolBusinessID), nil
-    }
-    // get resource pool business id now.
-    query := &metadata.QueryCondition{
-        Fields:    []string{common.BKAppIDField},
-        Condition: map[string]interface{}{
-            "bk_biz_name": common.DefaultAppName,
-            "default": 1,
-        },
-    }
-    result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, query)
-    if err != nil {
-        return 0, err
-    }
-    
-    if !result.Result {
-        return 0, errors.New(result.ErrMsg)
-    }
-    
+	// this operation is concurrent safe
+	if atomic.LoadInt64(&resourcePoolBusinessID) != 0 {
+		// resource pool business id is already set, return directly.
+		return atomic.LoadInt64(&resourcePoolBusinessID), nil
+	}
+	// get resource pool business id now.
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKAppIDField},
+		Condition: map[string]interface{}{
+			"bk_biz_name": common.DefaultAppName,
+			"default":     1,
+		},
+	}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, query)
+	if err != nil {
+		return 0, err
+	}
+
+	if !result.Result {
+		return 0, errors.New(result.ErrMsg)
+	}
+
 	if len(result.Data.Info) != 1 {
-	    // normally, this can not be happen.
+		// normally, this can not be happen.
 		return 0, errors.New("get resource pool business id, but got multiple or not found")
 	}
 
-    // set resource pool as global
-    if !result.Data.Info[0].Exists(common.BKAppIDField) {
-        // this can not be happen normally.
-        return 0, fmt.Errorf("can not find resource pool business id")
-    }
-    bizID, err := result.Data.Info[0].Int64(common.BKAppIDField)
-    if err != nil {
-        return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
-    }
-    // update resource pool business id immediately
-    atomic.StoreInt64(&resourcePoolBusinessID, bizID)
+	// set resource pool as global
+	if !result.Data.Info[0].Exists(common.BKAppIDField) {
+		// this can not be happen normally.
+		return 0, fmt.Errorf("can not find resource pool business id")
+	}
+	bizID, err := result.Data.Info[0].Int64(common.BKAppIDField)
+	if err != nil {
+		return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
+	}
+	// update resource pool business id immediately
+	atomic.StoreInt64(&resourcePoolBusinessID, bizID)
 
-    return bizID, nil
+	return bizID, nil
 
 }
 
