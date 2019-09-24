@@ -14,6 +14,7 @@ package operation
 
 import (
 	"context"
+	"strconv"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -78,12 +79,48 @@ func (m *module) hasHost(params types.ContextParams, bizID int64, setIDs, module
 	return 0 != len(rsp.Data.Info), nil
 }
 
+func (m *module) validBizSetID(params types.ContextParams, bizID int64, setID int64) error {
+	cond := condition.CreateCondition()
+	cond.Field(common.BKSetIDField).Eq(setID)
+	or := cond.NewOR()
+	or.Item(mapstr.MapStr{common.BKAppIDField: bizID})
+	meta := metadata.Metadata{
+		Label: map[string]string{
+			common.BKAppIDField: strconv.FormatInt(bizID, 10),
+		},
+	}
+	or.Item(mapstr.MapStr{metadata.BKMetadata: meta})
+
+	query := &metadata.QueryInput{}
+	query.Condition = cond.ToMapStr()
+	query.Limit = common.BKNoLimit
+
+	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, common.BKInnerObjIDSet, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !rsp.Result {
+		blog.Errorf("[operation-inst] faild to read the object(%s) inst by the condition(%#v), err: %s, rid: %s", common.BKInnerObjIDSet, cond, rsp.ErrMsg, params.ReqID)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+	if rsp.Data.Count > 0 {
+		return nil
+	}
+
+	return params.Err.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField+"/"+common.BKSetIDField)
+}
+
 func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizID, setID int64, data mapstr.MapStr) (inst.Inst, error) {
 
 	data.Set(common.BKSetIDField, setID)
 	data.Set(common.BKAppIDField, bizID)
 	if !data.Exists(common.BKDefaultField) {
 		data.Set(common.BKDefaultField, 0)
+	}
+
+	if err := m.validBizSetID(params, bizID, setID); err != nil {
+		return nil, err
 	}
 
 	// validate service category id and service template id

@@ -184,7 +184,6 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 
 func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
-	blog.ErrorJSON("condition:%s",condition.ToMapStr())
 	if nil != err {
 		blog.Errorf("SearchModelInstance failed, parse condition failed, inputParam: %+v, err: %+v, rid: %s", inputParam, err, ctx.ReqID)
 		return &metadata.QueryResult{}, err

@@ -283,17 +283,17 @@ func (c *commonInst) validMainLineParentID(params types.ContextParams, obj model
 		bizID, err = metadata.ParseBizIDFromData(data)
 		if err != nil {
 			blog.Errorf("[operation-inst]failed to parse the biz id, err: %s, rid: %s", err.Error(), params.ReqID)
-			return params.Err.Errorf(common.CCErrCommParamsNeedInt, "biz id")
+			return params.Err.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
 		}
 	}
 	parentID, err := data.Int64(common.BKParentIDField)
 	if err != nil {
 		blog.Errorf("[operation-inst]failed to parse the parent id, err: %s, rid: %s", err.Error(), params.ReqID)
-		return params.Err.Errorf(common.CCErrCommParamsNeedInt, "parent id")
+		return params.Err.Errorf(common.CCErrCommParamsIsInvalid, common.BKParentIDField)
 	}
 	if err = c.isValidBizInstID(params, parent.Object(), parentID, bizID); err != nil {
 		blog.Errorf("[operation-inst]parent id %d is invalid, err: %s, rid: %s", parentID, err.Error(), params.ReqID)
-		return params.Err.Errorf(common.CCErrCommParamsIsInvalid, "parent id")
+		return params.Err.Errorf(common.CCErrCommParamsIsInvalid, common.BKParentIDField)
 	}
 	return nil
 }
@@ -1030,15 +1030,18 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 
 func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
 
-	isMainline, err := obj.IsMainlineObject()
-	if err != nil {
-		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
-		return err
-	}
-	if isMainline {
-		if err := c.validMainLineParentID(params, obj, data); nil != err {
-			blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+	exist := data.Exists(common.BKParentIDField)
+	if exist {
+		isMainline, err := obj.IsMainlineObject()
+		if err != nil {
+			blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
 			return err
+		}
+		if isMainline {
+			if err := c.validMainLineParentID(params, obj, data); nil != err {
+				blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+				return err
+			}
 		}
 	}
 	// update association
