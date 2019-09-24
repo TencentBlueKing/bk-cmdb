@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
@@ -85,6 +86,7 @@ func (s *Service) WebService() *restful.Container {
 	}
 	api.Path("/task/v3").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
+	s.addAPIService(api)
 	container.Add(api)
 
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
@@ -92,6 +94,23 @@ func (s *Service) WebService() *restful.Container {
 	container.Add(healthzAPI)
 
 	return container
+}
+
+func (s *Service) addAPIService(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	// module
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/create", Handler: s.CreateTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/findmany/list/{name}", Handler: s.ListTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/findone/detail/{task_id}", Handler: s.DetailTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/task/set/status/sucess/id/{task_id}/sub_id/{sub_task_id}", Handler: s.StatusToSuccess})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/task/set/status/failure/id/{task_id}/sub_id/{sub_task_id}", Handler: s.StatusToFailure})
+
+	utility.AddToRestfulWebService(web)
+
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
