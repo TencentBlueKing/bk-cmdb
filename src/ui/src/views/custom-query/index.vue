@@ -33,6 +33,7 @@
             v-bkloading="{ isLoading: $loading('searchCustomQuery') }"
             :data="table.list"
             :pagination="table.pagination"
+            :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 229"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"

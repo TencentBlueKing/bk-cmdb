@@ -100,6 +100,7 @@
             v-bkloading="{ isLoading: $loading(['searchHosts', 'batchSearchProperties', 'post_searchGroup_host']) }"
             :data="table.list"
             :pagination="table.pagination"
+            :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 190"
             @selection-change="handleSelectionChange"
             @row-click="handleRowClick"
