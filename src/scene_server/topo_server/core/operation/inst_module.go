@@ -293,5 +293,6 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 
 	// module table don't have metadata field
 	params.MetaData = nil
+	data.Remove(common.BKSetIDField)
 	return m.inst.UpdateInst(params, data, obj, innerCond, -1)
 }

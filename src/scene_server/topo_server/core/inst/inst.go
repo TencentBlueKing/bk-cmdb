@@ -166,6 +166,8 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 }
 
 func (cli *inst) UpdateInstance(filter condition.Condition, data mapstr.MapStr, nonInnerAttributes []model.AttributeInterface) error {
+	data.Remove(common.BKParentIDField)
+	data.Remove(common.BKAppIDField)
 	rid := cli.params.ReqID
 	tObj := cli.target.Object()
 	objID := tObj.ObjectID

@@ -160,12 +160,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
 
-		if isMainline {
-			if err := c.validMainLineParentID(params, obj, colInput); nil != err {
-				blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
-				return nil, err
-			}
-		}
 		existInDB, filter, err := item.CheckInstanceExists(nonInnerAttributes)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to get inst is exist, err: %s, rid: %s", err.Error(), params.ReqID)
@@ -190,6 +184,12 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
 			continue
+		}
+		if isMainline {
+			if err := c.validMainLineParentID(params, obj, colInput); nil != err {
+				blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+				return nil, err
+			}
 		}
 
 		// create with metadata
@@ -1029,21 +1029,8 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 }
 
 func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
-
-	exist := data.Exists(common.BKParentIDField)
-	if exist {
-		isMainline, err := obj.IsMainlineObject()
-		if err != nil {
-			blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
-			return err
-		}
-		if isMainline {
-			if err := c.validMainLineParentID(params, obj, data); nil != err {
-				blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
-				return err
-			}
-		}
-	}
+	data.Remove(common.BKParentIDField)
+	data.Remove(common.BKAppIDField)
 	// update association
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
