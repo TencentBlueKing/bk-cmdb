@@ -25,4 +25,15 @@ export default [{
             i18n: '模板信息'
         }
     })
+}, {
+    name: 'createSetTemplate',
+    path: 'set/template/create',
+    component: () => import('./create.vue'),
+    meta: new Meta({
+        owner: MENU_BUSINESS,
+        menu: {
+            i18n: '创建集群模板',
+            relative: MENU_BUSINESS_SET_TEMPLATE
+        }
+    })
 }]
