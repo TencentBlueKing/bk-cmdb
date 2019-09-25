@@ -60,6 +60,17 @@
                     </bk-button>
                 </span> -->
             </span>
+            <span class="property-value fl" slot="__set_template_name__">
+                <template v-if="withSetTemplate">
+                    <span class="link" @click="goSetTemplate">{{flattenedInstance.__set_template_name__}}</span>
+                    <bk-button :class="['sync-set-btn', { 'has-change': hasChange }]"
+                        :disabled="!hasChange"
+                        @click="handleSyncSetTemplate">
+                        {{$t('同步集群')}}
+                    </bk-button>
+                </template>
+                <span v-else>{{flattenedInstance.__set_template_name__}}</span>
+            </span>
         </cmdb-details>
         <cmdb-form class="topology-form" v-else-if="type === 'update'"
             ref="form"
@@ -86,6 +97,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         data () {
             return {
@@ -95,7 +107,8 @@
                 propertyGroups: [],
                 instance: {},
                 first: '',
-                second: ''
+                second: '',
+                hasChange: false
             }
         },
         computed: {
@@ -124,6 +137,9 @@
             isModuleNode () {
                 return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
             },
+            isSetNode () {
+                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'set'
+            },
             isBlueking () {
                 let rootNode = this.selectedNode || {}
                 if (rootNode.parent) {
@@ -139,6 +155,9 @@
             },
             withTemplate () {
                 return this.isModuleNode && !!this.instance.service_template_id
+            },
+            withSetTemplate () {
+                return this.isSetNode && !!this.instance.set_template_id
             },
             flattenedInstance () {
                 return this.$tools.flattenItem(this.properties, this.instance)
@@ -160,6 +179,9 @@
                     if (node) {
                         this.type = 'details'
                         await this.getInstance()
+                        if (this.withSetTemplate) {
+                            this.getDiffTemplateAndInstances()
+                        }
                         this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
                     }
                 }
@@ -201,6 +223,8 @@
                     })
                     if (modelId === 'module') {
                         properties.push(...this.getModuleServiceTemplateProperties())
+                    } else if (modelId === 'set') {
+                        properties.push(...this.getSetTemplateProperties())
                     }
                     this.$store.commit('businessTopology/setProperties', {
                         id: modelId,
@@ -229,6 +253,18 @@
                     unit: ''
                 }]
             },
+            getSetTemplateProperties () {
+                const group = this.geSetTemplateGroup()
+                return [{
+                    bk_property_id: '__set_template_name__',
+                    bk_property_name: this.$t('集群模板名称：'),
+                    bk_property_group: group.bk_group_id,
+                    bk_property_index: 1,
+                    bk_isapi: false,
+                    editable: false,
+                    unit: ''
+                }]
+            },
             updateCategoryProperty (state) {
                 const serviceCategoryProperty = this.properties.find(property => property.bk_property_id === '__service_category__') || {}
                 Object.assign(serviceCategoryProperty, state)
@@ -249,6 +285,8 @@
                     })
                     if (modelId === 'module') {
                         groups.push(this.getModuleServiceTemplateGroup())
+                    } else if (modelId === 'set') {
+                        groups.push(this.geSetTemplateGroup())
                     }
                     this.$store.commit('businessTopology/setPropertyGroups', {
                         id: modelId,
@@ -263,6 +301,15 @@
                     bk_group_index: -1,
                     bk_group_name: this.$t('服务模板信息'),
                     bk_obj_id: 'module',
+                    ispre: true
+                }
+            },
+            geSetTemplateGroup () {
+                return {
+                    bk_group_id: '__set_template_info__',
+                    bk_group_index: -1,
+                    bk_group_name: this.$t('集群模板信息'),
+                    bk_obj_id: 'set',
                     ispre: true
                 }
             },
@@ -312,7 +359,25 @@
                         cancelPrevious: true
                     }
                 })
-                return data.info[0]
+                const setTemplateId = data.info[0].set_template_id
+                let setTemplateName = ''
+                if (setTemplateId) {
+                    const setTemplateInfo = await this.getSetTemplateInfo(setTemplateId)
+                    setTemplateName = setTemplateInfo.name
+                }
+                return {
+                    __set_template_name__: setTemplateName,
+                    ...data.info[0]
+                }
+            },
+            getSetTemplateInfo (id) {
+                return this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
+                    bizId: this.business,
+                    setTemplateId: id,
+                    config: {
+                        requestId: 'getSingleSetTemplateInfo'
+                    }
+                })
             },
             async getModuleInstance () {
                 const data = await this.$store.dispatch('objectModule/searchModule', {
@@ -441,6 +506,7 @@
                 }
             },
             updateSetInstance (value) {
+                delete value.__set_template_name__
                 return this.$store.dispatch('objectSet/updateSet', {
                     bizId: this.business,
                     setId: this.selectedNode.data.bk_inst_id,
@@ -569,12 +635,48 @@
                     }
                 })
             },
+            async getDiffTemplateAndInstances () {
+                try {
+                    const data = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
+                        bizId: this.business,
+                        setTemplateId: this.instance.set_template_id,
+                        params: {
+                            bk_set_ids: [this.instance.bk_set_id]
+                        },
+                        config: {
+                            requestId: 'diffTemplateAndInstances'
+                        }
+                    })
+                    const diff = data[0] ? data[0].module_diffs : []
+                    const len = diff.filter(_module => _module.diff_type !== 'unchanged').length
+                    this.hasChange = !!len
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleSyncSetTemplate () {
+                this.$router.push({
+                    name: 'setSync',
+                    params: {
+                        templateId: this.instance.service_template_id,
+                        setIds: [this.instance.bk_set_id]
+                    }
+                })
+            },
             goServiceTemplate () {
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.instance.service_template_id,
                         moduleId: this.selectedNode.data.bk_inst_id
+                    }
+                })
+            },
+            goSetTemplate () {
+                this.$router.push({
+                    name: MENU_BUSINESS_SET_TEMPLATE,
+                    params: {
+                        templateId: this.instance.service_template_id
                     }
                 })
             }
@@ -621,6 +723,24 @@
         &:hover {
             color: #ff5656;
             border-color: #ff5656;
+        }
+    }
+    .sync-set-btn {
+        position: relative;
+        height: 26px;
+        line-height: 24px;
+        padding: 0 10px;
+        font-size: 12px;
+        margin-top: -2px;
+        &.has-change::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #EA3636;
         }
     }
 </style>

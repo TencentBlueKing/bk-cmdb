@@ -325,9 +325,6 @@
     font {
         padding: 0 2px;
     }
-</style>
-
-<style lang="scss">
     .add-template {
         width: 20%;
         cursor: pointer;
