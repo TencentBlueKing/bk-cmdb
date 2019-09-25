@@ -725,10 +725,10 @@ const (
 	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
 
 	//FieldTypeSingleCharRegexp the single char regex expression
-	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[\(\)\\+\-《》_，；:“”‘’。@#\."'\\\/？！～、：＃％＊—…＆·＄（）『』〔〕｛｝【】￥￡♀‖〖〗「」])+$`
+	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:\."'\/\\\+\-#@\(\)])+$`
 
 	//FieldTypeLongCharRegexp the single char regex expression
-	FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[\(\)\\+\-《》_,，；:;“”‘’。@#\."'\\\/？！～、：＃％＊—…＆·＄（）『』〔〕｛｝【】￥￡♀‖〖〗「」\s])+$`
+	FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
 )
 
 const (

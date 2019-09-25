@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 
@@ -106,7 +105,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("create service template with invalid service category", func() {
@@ -122,7 +120,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service template", func() {
@@ -153,7 +150,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.DeleteServiceCategory(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommRemoveReferencedRecordForbidden))
 		})
 
 		It("search service category", func() {
@@ -211,7 +207,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("create module with unmatch category and template", func() {
@@ -224,7 +219,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrProcServiceTemplateAndCategoryNotCoincide))
 		})
 
 		It("create module with same template", func() {
@@ -237,7 +231,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("search module", func() {
@@ -263,7 +256,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := instClient.UpdateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), strconv.FormatInt(moduleId, 10), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden))
 		})
 
 		It("search module", func() {
@@ -294,7 +286,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.DeleteServiceTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommRemoveReferencedRecordForbidden))
 		})
 
 		It("search service template", func() {
@@ -385,7 +376,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCoreServiceInstanceAlreadyExist))
 		})
 
 		It("search service instance", func() {
@@ -485,7 +475,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := processClient.CreateProcessTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCoreServiceProcessNameDuplicated))
 		})
 
 		It("create process template with same bk_func_name and bk_start_param_regex", func() {
@@ -518,7 +507,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := processClient.CreateProcessTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCoreServiceFuncNameDuplicated))
 		})
 
 		It("create process template with empty name", func() {
@@ -547,7 +535,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := processClient.CreateProcessTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("create process template with invalid service template", func() {
@@ -576,7 +563,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := processClient.CreateProcessTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search process template", func() {
@@ -684,7 +670,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := processClient.CreateProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrProcEditProcessInstanceCreateByTemplateForbidden))
 		})
 
 		It("udpate process instance", func() {
@@ -837,7 +822,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.UpdateServiceTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service template", func() {
@@ -979,7 +963,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := processClient.DeleteProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate))
 		})
 
 		It("search process instance", func() {
@@ -1077,7 +1060,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("service instance add labels with invalid instance id", func() {
@@ -1094,8 +1076,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
-			Expect(rsp.Code).To(Equal(1199006))
 		})
 
 		It("search module service instances labels", func() {
@@ -1181,7 +1161,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service instance exists key", func() {
@@ -1230,7 +1209,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service instance with equal key value", func() {
@@ -1286,7 +1264,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service instance with equal key many values", func() {
@@ -1311,7 +1288,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service instance with not equal key value", func() {
@@ -1367,7 +1343,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service instance with not equal key many values", func() {
@@ -1392,7 +1367,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service instance with value in values", func() {
@@ -1450,7 +1424,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service instance with value not in values", func() {
@@ -1508,7 +1481,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service instance with invalid operator", func() {
@@ -1529,7 +1501,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service instance with empty key", func() {
@@ -1550,7 +1521,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
 		})
 
 		It("search service instance with no matching data", func() {
@@ -1631,8 +1601,6 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.ServiceInstanceRemoveLabels(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsInvalid))
-			Expect(rsp.Code).To(Equal(1199006))
 		})
 
 		It("search service instance", func() {
@@ -1934,7 +1902,6 @@ var _ = Describe("service template test", func() {
 				rsp, err := serviceClient.DeleteServiceCategory(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrCommNotFound))
 			})
 		})
 	})

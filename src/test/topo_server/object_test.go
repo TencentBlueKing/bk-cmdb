@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
@@ -86,7 +85,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.CreateModel(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("create mainline object nonexist bk_asst_obj_id", func() {
@@ -206,7 +204,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.DeleteModel(context.Background(), "0", "test_object", header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrTopoObjectSelectFailed))
 		})
 
 		It("create mainline object bk_obj_id = 'cc_test_object' and bk_obj_name='cc_test_object'", func() {
@@ -371,7 +368,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.CreateClassification(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("create classification same ClassificationName", func() {
@@ -384,7 +380,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.CreateClassification(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("update classification", func() {
@@ -404,7 +399,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.UpdateClassification(context.Background(), clsId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("delete classification", func() {
@@ -464,7 +458,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.DeleteClassification(context.Background(), "0", header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrTopoObjectClassificationHasObject))
 		})
 
 		It("create object same bk_obj_id", func() {
@@ -479,7 +472,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("create object same bk_obj_name", func() {
@@ -494,7 +486,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("create object invalid bk_classification_id", func() {
@@ -509,7 +500,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrTopoObjectCreateFailed))
 		})
 
 		It("create object invalid bk_obj_name", func() {
@@ -524,7 +514,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create object bk_classification_id = 'cc_class' and bk_obj_id='test_obj'", func() {
@@ -586,7 +575,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.UpdateObject(context.Background(), objId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("update object invalid bk_obj_name", func() {
@@ -596,7 +584,6 @@ var _ = Describe("object test", func() {
 			rsp, err := objectClient.UpdateObject(context.Background(), objId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrTopoObjectUpdateFailed))
 		})
 
 		It("search objects", func() {
@@ -724,7 +711,6 @@ var _ = Describe("object test", func() {
 				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrTopoObjectGroupCreateFailed))
 			})
 
 			It("create group same GroupName", func() {
@@ -738,7 +724,6 @@ var _ = Describe("object test", func() {
 				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrTopoObjectGroupCreateFailed))
 			})
 
 			It("create group invalid ObjectID", func() {
@@ -752,7 +737,6 @@ var _ = Describe("object test", func() {
 				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrTopoObjectGroupCreateFailed))
 			})
 
 			It("update group", func() {
@@ -782,7 +766,6 @@ var _ = Describe("object test", func() {
 				rsp, err := objectClient.UpdatePropertyGroup(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 			})
 
 			It("delete group", func() {
@@ -850,7 +833,6 @@ var _ = Describe("object test", func() {
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 			})
 
 			It("create object attribute with same bk_property_name", func() {
@@ -868,7 +850,6 @@ var _ = Describe("object test", func() {
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 			})
 
 			It("create object attribute invalid ObjectID", func() {
@@ -886,7 +867,6 @@ var _ = Describe("object test", func() {
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrTopoObjectAttributeCreateFailed))
 			})
 
 			It("create object attribute long PropertyID", func() {
@@ -904,7 +884,6 @@ var _ = Describe("object test", func() {
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrCommValExceedMaxFailed))
 			})
 
 			It("create object attribute invalid PropertyID", func() {
@@ -922,7 +901,6 @@ var _ = Describe("object test", func() {
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 			})
 
 			It("create object attribute invalid PropertyName", func() {
@@ -940,7 +918,6 @@ var _ = Describe("object test", func() {
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 			})
 
 			It("create object attribute invalid PropertyType", func() {
@@ -958,7 +935,6 @@ var _ = Describe("object test", func() {
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 			})
 
 			It("create object attribute bk_obj_id='cc_obj' and bk_property_id='test_singlechar' and bk_property_name='test_singlechar' and invalid PropertyGroup", func() {
@@ -1005,7 +981,6 @@ var _ = Describe("object test", func() {
 				rsp, err := apiServerClient.UpdateObjectAtt(context.Background(), attrId1, header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 			})
 
 			It("update object attribute invalid bk_property_name", func() {
@@ -1015,7 +990,6 @@ var _ = Describe("object test", func() {
 				rsp, err := apiServerClient.UpdateObjectAtt(context.Background(), attrId1, header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 			})
 
 			It("delete object attribute id="+attrId, func() {
@@ -1092,7 +1066,6 @@ var _ = Describe("object test", func() {
 				rsp, err := objectClient.DeletePropertyGroup(context.Background(), strconv.FormatInt(groupId, 10), header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(common.CCErrTopoObjectGroupDeleteFailed))
 			})
 
 			It("search group bk_obj_id='cc_obj'", func() {
@@ -1179,7 +1152,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("create set invalid bk_biz_id", func() {
@@ -1194,7 +1166,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateSet(context.Background(), "1000", header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create set invalid bk_parent_id", func() {
@@ -1209,7 +1180,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create set less bk_parent_id", func() {
@@ -1223,7 +1193,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create set unmatch bk_biz_id and bk_parent_id", func() {
@@ -1238,7 +1207,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateSet(context.Background(), "2", header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create set invalid bk_set_name", func() {
@@ -1253,7 +1221,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("update set", func() {
@@ -1272,7 +1239,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.UpdateSet(context.Background(), bizId, "10000", header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommNotFound))
 		})
 
 		It("update set same bk_set_name", func() {
@@ -1282,7 +1248,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.UpdateSet(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("update set invalid bk_set_name", func() {
@@ -1292,7 +1257,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.UpdateSet(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("update set biz, parent", func() {
@@ -1374,7 +1338,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("create module invalid bk_biz_id", func() {
@@ -1387,7 +1350,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), "1000", setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create module invalid bk_set_id", func() {
@@ -1400,7 +1362,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), bizId, "1000", header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create module unmatch bk_biz_id and bk_set_id", func() {
@@ -1413,7 +1374,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), "2", setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create module invalid bk_module_name", func() {
@@ -1426,7 +1386,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create module invalid bk_parent_id", func() {
@@ -1439,7 +1398,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("create module less bk_parent_id", func() {
@@ -1451,7 +1409,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("update module", func() {
@@ -1470,7 +1427,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, "10000", header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommNotFound))
 		})
 
 		It("update module same bk_module_name", func() {
@@ -1480,7 +1436,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId1, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommDuplicateItem))
 		})
 
 		It("update module invalid bk_module_name", func() {
@@ -1490,7 +1445,6 @@ var _ = Describe("object test", func() {
 			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(common.CCErrCommParamsIsInvalid))
 		})
 
 		It("update module set, biz, parent", func() {
