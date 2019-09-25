@@ -984,5 +984,6 @@
     "已完成": "completed",
     "正在同步中请等待": "Being synced, please be patient...",
     "同步进度提示": "Synchronized {completedCount}, remaining {remainingCount}",
-    "已选集群实例": "{count} cluster instances have been selected"
+    "已选集群实例": "{count} cluster instances have been selected",
+    "集群模板名称占位符": "Please input template name, 20 letters max"
 }
