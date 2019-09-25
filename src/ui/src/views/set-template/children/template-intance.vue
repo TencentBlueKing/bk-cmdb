@@ -9,8 +9,8 @@
         <div class="instance-main" v-else>
             <div class="options clearfix">
                 <div class="fl">
-                    <bk-button theme="primary">{{$t('批量同步')}}</bk-button>
-                    <span class="option-item" v-if="!updating">{{$t('您可以批量同步多个模版实例')}}</span>
+                    <bk-button theme="primary" @click="handleBatchSync">{{$t('批量同步')}}</bk-button>
+                    <span class="option-item" v-if="!updating">{{$t('批量同步集群模板实例提示')}}</span>
                     <div class="option-item" v-else>
                         <i class="bk-icon icon-cc-updating"></i>
                         <i18n path="同步任务进行中" tag="span">
@@ -80,6 +80,7 @@
             return {
                 list: [],
                 filterList: [],
+                checkedList: [],
                 filterKey: '',
                 searchSetName: '',
                 updating: false,
@@ -129,11 +130,27 @@
             handleLinkServiceTopo () {},
             handleViewSync () {},
             handleSearch () {},
-            handleSelectionChange () {},
+            handleSelectionChange (selection) {
+                this.checkedList = selection.map(item => item.id)
+            },
             handlePageChange () {},
             handleSizeChange () {},
             handleSelectable () {},
-            handleSync () {}
+            handleBatchSync () {
+                this.$store.commit('setFeatures/setSyncIdMap', {
+                    id: `${this.business}_${1}`,
+                    instancesId: this.checkedList
+                })
+                this.$router.push({
+                    name: 'setSync',
+                    params: {
+                        setTemplateId: 1
+                    }
+                })
+            },
+            handleSync () {
+
+            }
         }
     }
 </script>

@@ -8,6 +8,7 @@ import serviceProcess from './modules/view/service-process.js'
 import businessTopology from './modules/view/business-topology.js'
 import businessSync from './modules/view/business-sync.js'
 import hosts from './modules/view/hosts.js'
+import setFeatures from './modules/view/set-features.js'
 import auth from './modules/api/auth.js'
 import eventSub from './modules/api/event-sub.js'
 import hostBatch from './modules/api/host-batch.js'
@@ -64,6 +65,7 @@ export default new Vuex.Store({
         businessTopology,
         businessSync,
         hosts,
+        setFeatures,
         auth,
         request,
         eventSub,
