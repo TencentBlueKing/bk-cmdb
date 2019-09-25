@@ -1,5 +1,5 @@
 <template>
-    <div class="sync-set-wrapper" v-bkloading="{ isLoading: $loading('diffTemplateAndInstances') }">
+    <div class="sync-set-layout" v-bkloading="{ isLoading: $loading('diffTemplateAndInstances') }">
         <template v-if="noInfo">
             <div class="no-content">
                 <img src="../../assets/images/no-content.png" alt="no-content">
@@ -31,7 +31,12 @@
                         {{$t('删除模块')}}
                     </span>
                 </div>
-                <bk-checkbox class="expand-all fr" v-model="expandAll" @change="handleExpandAll">{{$t('全部展开')}}</bk-checkbox>
+                <bk-checkbox class="expand-all fr"
+                    v-if="isSingleSync"
+                    v-model="expandAll"
+                    @change="handleExpandAll">
+                    {{$t('全部展开')}}
+                </bk-checkbox>
             </div>
             <div class="instance-list">
                 <set-instance class="instance-item"
@@ -39,19 +44,22 @@
                     v-for="(instance, index) in diffList"
                     :key="instance.bk_set_id"
                     :instance="instance"
-                    :expand="index === 0">
+                    :icon-close="diffList.length > 1"
+                    :expand="index === 0"
+                    @close="handleCloseInstance">
                 </set-instance>
             </div>
             <div class="footer">
                 <bk-button theme="primary" class="mr10" @click="handleConfirmSync">{{$t('确认同步')}}</bk-button>
                 <bk-button class="mr10">{{$t('取消')}}</bk-button>
-                <span>{{$tc('已选集群实例', 20, { count: 20 })}}</span>
+                <span v-if="isSingleSync">{{$tc('已选集群实例', setInstancesId.length, { count: setInstancesId.length })}}</span>
             </div>
         </template>
     </div>
 </template>
 
 <script>
+    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
     import setInstance from './set-instance'
     export default {
         components: {
@@ -66,19 +74,49 @@
             }
         },
         computed: {
-            bizId () {
+            business () {
                 return this.$store.getters['objectBiz/bizId']
+            },
+            setTemplateId () {
+                return this.$route.params['setTemplateId']
+            },
+            setInstancesId () {
+                const id = `${this.business}_${this.setTemplateId}`
+                let syncIdMap = this.$store.state.setFeatures.syncIdMap
+                const sessionSyncIdMap = sessionStorage.getItem('setSyncIdMap')
+                if (!Object.keys(syncIdMap).length && sessionSyncIdMap) {
+                    syncIdMap = JSON.parse(sessionSyncIdMap)
+                    this.$store.commit('setFeatures/resetSyncIdMap', syncIdMap)
+                }
+                return syncIdMap[id] || []
+            },
+            isSingleSync () {
+                return !(this.setInstancesId.length > 1)
             }
         },
         async created () {
+            this.setBreadcrumbs()
             await this.getDiffData()
         },
         methods: {
+            setBreadcrumbs () {
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('集群模板'),
+                    route: { name: MENU_BUSINESS_SET_TEMPLATE }
+                }, {
+                    label: this.$t('同步集群模板')
+                }])
+            },
             async getDiffData () {
                 try {
+                    if (!this.setInstancesId.length) {
+                        this.diffList = []
+                        this.noInfo = true
+                        return
+                    }
                     this.diffList = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
-                        bizId: 3 || this.bizId,
-                        setTemplateId: 1,
+                        bizId: this.business,
+                        setTemplateId: this.setTemplateId,
                         params: {
                             bk_set_ids: [14]
                         },
@@ -86,7 +124,7 @@
                             requestId: 'diffTemplateAndInstances'
                         }
                     })
-                    this.isLatestInfo = false
+                    this.isLatestInfo = !this.diffList.length
                     this.noInfo = false
                 } catch (e) {
                     console.error(e)
@@ -106,16 +144,16 @@
                                 name: 'viewSync'
                             })
                             await this.$store.dispatch('setSync/syncTemplateToInstances', {
-                                bizId: this.bizId,
-                                setTemplateId: '',
+                                bizId: this.business,
+                                setTemplateId: this.setTemplateId,
                                 params: {
-                                    bk_set_ids: []
+                                    bk_set_ids: this.setInstancesId
                                 },
                                 config: {
                                     requestId: 'syncTemplateToInstances'
                                 }
                             })
-                            this.$success(this.$t('同步成功'))
+                            // this.$success(this.$t('同步成功'))
                         } catch (e) {
                             console.error(e)
                         }
@@ -127,6 +165,13 @@
                     instance.localExpand = expand
                 })
             },
+            handleCloseInstance (id) {
+                this.$store.commit('setFeatures/deleteInstancesId', {
+                    id: `${this.business}_${this.setTemplateId}`,
+                    deleteId: id
+                })
+                this.diffList = this.diffList.filter(instance => instance.bk_set_id !== id)
+            },
             handleGoback () {
 
             }
@@ -135,7 +180,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .sync-set-wrapper {
+    .sync-set-layout {
         padding: 0 20px;
     }
     .no-content {
@@ -177,14 +222,18 @@
         color: #888991;
     }
     .instance-list {
-        padding: 20px 0 10px;
+        padding: 20px 0 0;
         .instance-item {
             margin-bottom: 10px;
         }
     }
     .footer {
+        position: sticky;
+        bottom: 0;
         display: flex;
         align-items: center;
+        padding: 10px 0 20px;
+        background-color: #fafbfd;
         > span {
             color: #979BA5;
             font-size: 14px;

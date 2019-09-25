@@ -100,7 +100,7 @@
         },
         methods: {
             handleClose () {
-                this.$emit('close')
+                this.$emit('close', this.instance.bk_set_id)
             }
         }
     }
