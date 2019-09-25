@@ -272,10 +272,6 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 	}
 
-	// if r.Basic.Type == meta.ModelModule || r.Basic.Type == meta.ModelSet || r.Basic.Type == meta.MainlineInstance {
-	// 	return ModelTopologyOperation, nil
-	// }
-
 	if r.Action == meta.Find || r.Action == meta.Update {
 		if r.Basic.Type == meta.ModelTopology {
 			return ModelTopologyView, nil
@@ -350,7 +346,6 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 func GetBizNameByID(clientSet apimachinery.ClientSetInterface, header http.Header, bizID int64) (string, error) {
 	ctx := util.NewContextFromHTTPHeader(header)
-	rid := util.GetHTTPCCRequestID(header)
 
 	result, err := clientSet.TopoServer().Instance().GetAppBasicInfo(ctx, header, bizID)
 	if err != nil {
@@ -363,7 +358,6 @@ func GetBizNameByID(clientSet apimachinery.ClientSetInterface, header http.Heade
 		return "", errors.New(result.ErrMsg)
 	}
 	bizName := result.Data.BizName
-	blog.V(5).Infof("GetBizNameByID bizID: %d ==> bizName: %s, rid: %s", bizID, bizName, rid)
 	return bizName, nil
 }
 
