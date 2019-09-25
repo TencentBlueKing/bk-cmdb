@@ -966,7 +966,6 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(true))
 		})
 
-
 		It("transfer multiple host to module", func() {
 			input := map[string]interface{}{
 				"bk_biz_id": bizId1,
@@ -1632,11 +1631,12 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
+		// although the host 2.0.0 cause the op result is false,the host 2.0.0.3 will be synced to moduleId
 		It("sync host one invalid host", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.21",
+						"bk_host_innerip": "2.0.0.3",
 						"bk_cloud_id":     0,
 					},
 					"1": map[string]interface{}{
@@ -1658,7 +1658,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.21",
+						"bk_host_innerip": "2.0.0.5",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1738,9 +1738,9 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		PIt("search module host", func() {
+		It("search module host", func() {
 			input := &params.HostCommonSearch{
-				AppID: int(bizId1),
+				AppID: int(bizId),
 				Condition: []params.SearchCondition{
 					params.SearchCondition{
 						ObjectID: "module",
@@ -1758,7 +1758,7 @@ var _ = Describe("host abnormal test", func() {
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(2))
+			Expect(rsp.Data.Count).To(Equal(4))
 		})
 
 		It("search module host", func() {
@@ -1853,7 +1853,7 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		PIt("clone host exist dstip", func() {
+		It("clone host exist dstip", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
 				OrgIP:   "2.0.0.22",
@@ -1862,7 +1862,7 @@ var _ = Describe("host abnormal test", func() {
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search module host", func() {
@@ -1919,6 +1919,8 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
+		// although the host 100 cause the op result is false,the hostId1's bk_host_name will be updated successfully
+		// so currently, the hostId1's bk_host_name is update_host_name
 		It("update host one nonexist hostid", func() {
 			input := map[string]interface{}{
 				"bk_host_id":   fmt.Sprintf("%v,%v", hostId1, 100),
@@ -1929,7 +1931,7 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		PIt("update host one nonexist attr", func() {
+		It("update host one nonexist attr", func() {
 			input := map[string]interface{}{
 				"bk_host_id":      fmt.Sprintf("%v,%v", hostId1, hostId3),
 				"bk_host_name":    "update_host_name",
@@ -1937,7 +1939,7 @@ var _ = Describe("host abnormal test", func() {
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("update host one invalid attr value", func() {
@@ -1950,76 +1952,54 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		PIt("get host base info", func() {
+		It("get host base info", func() {
 			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId1, 10), header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			for _, data := range rsp.Data {
 				if data.PropertyID == "bk_host_name" {
-					Expect(data.PropertyValue).To(Equal(""))
+					Expect(data.PropertyValue).To(Equal("update_host_name"))
 					break
 				}
 			}
 		})
 
-		It("delete host less bk_host_id", func() {
-			input := map[string]interface{}{
-				"bk_supplier_account": "0",
-			}
-			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
+		It("get host base info", func() {
+			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId3, 10), header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
-		PIt("delete host less bk_supplier_account", func() {
-			input := map[string]interface{}{
-				"bk_host_id": fmt.Sprintf("%v,%v", hostId1, hostId3),
-			}
-			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
-
-		It("delete host empty bk_host_id", func() {
-			input := map[string]interface{}{
-				"bk_host_id":          "",
-				"bk_supplier_account": "0",
-			}
-			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
-
+		// one host format check is unpass ,lead to all the host fail to delete
 		It("delete host one invalid bk_host_id", func() {
 			input := map[string]interface{}{
-				"bk_host_id":          fmt.Sprintf("%v,abc", hostId1),
-				"bk_supplier_account": "0",
+				"bk_host_id": fmt.Sprintf("%v,abc", hostId1),
 			}
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("delete host one nonexist bk_host_id", func() {
-			input := map[string]interface{}{
-				"bk_host_id":          fmt.Sprintf("%v,%v", hostId3, 100),
-				"bk_supplier_account": "0",
-			}
-			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
-
-		PIt("get host base info", func() {
+		It("get host base info", func() {
 			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId1, 10), header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
-		PIt("get host base info", func() {
+		// although the noexist host 100 case the result is false, but the right host hostId3 will be deleted
+		It("delete host one nonexist bk_host_id", func() {
+			input := map[string]interface{}{
+				"bk_host_id": fmt.Sprintf("%v,%v", hostId3, 100),
+			}
+			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("get host base info", func() {
 			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId3, 10), header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(false))
 		})
 	})
 })
