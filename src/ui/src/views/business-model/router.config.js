@@ -17,6 +17,7 @@ export default [{
     path: 'business/topology',
     component: () => import('./index.vue'),
     meta: new Meta({
+        available: false,
         menu: {
             i18n: '业务层级'
         },
