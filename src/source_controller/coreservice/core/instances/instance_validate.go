@@ -165,6 +165,9 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			return err
 		}
 	}
+	if instanceData.Exists(metadata.BKMetadata) {
+		instanceData.Set(metadata.BKMetadata, instMedataData)
+	}
 
 	// module instance's name must coincide with template
 	if objID == common.BKInnerObjIDModule {

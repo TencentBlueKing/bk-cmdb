@@ -1031,6 +1031,7 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.BKAppIDField)
+	data.Remove(metadata.BKMetadata)
 	// update association
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
