@@ -272,10 +272,6 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 	}
 
-	// if r.Basic.Type == meta.ModelModule || r.Basic.Type == meta.ModelSet || r.Basic.Type == meta.MainlineInstance {
-	// 	return ModelTopologyOperation, nil
-	// }
-
 	if r.Action == meta.Find || r.Action == meta.Update {
 		if r.Basic.Type == meta.ModelTopology {
 			return ModelTopologyView, nil
