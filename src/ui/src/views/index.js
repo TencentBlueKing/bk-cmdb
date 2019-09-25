@@ -18,9 +18,13 @@ import serviceInstance from '@/views/service-instance/router.config'
 import serviceSynchronous from '@/views/business-synchronous/router.config'
 import resourceManagement from '@/views/resource-manage/router.config'
 import customFields from '@/views/custom-fields/router.config'
+import operation from '@/views/operation/router.config'
+
+import setSync from '@/views/set-sync/router.config'
+import setTemplate from '@/views/set-template/router.config'
+
 import statusPermission from '@/views/status/permission'
 import statusError from '@/views/status/error'
-import operation from '@/views/operation/router.config'
 
 const flatternViews = views => {
     const flatterned = []
@@ -59,7 +63,9 @@ export const businessViews = injectStatusComponents(flatternViews([
     serviceCategory,
     serviceInstance,
     serviceSynchronous,
-    customFields
+    customFields,
+    setSync,
+    setTemplate
 ]))
 
 export const resourceViews = injectStatusComponents(flatternViews([
