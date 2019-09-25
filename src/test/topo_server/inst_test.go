@@ -291,9 +291,9 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(true))
 		j, err := json.Marshal(rsp.Data)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d",uniqueID)))
-		Expect(j).To(ContainSubstring(fmt.Sprintf("\"key_id\":%d",propertyID1)))
-		Expect(j).To(ContainSubstring(fmt.Sprintf("\"key_id\":%d",propertyID2)))
+		Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", uniqueID)))
+		Expect(j).To(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID1)))
+		Expect(j).To(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID2)))
 	})
 
 	It("create inst duplicate unique attribute", func() {
@@ -341,8 +341,8 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(true))
 		j, err := json.Marshal(rsp.Data)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d",uniqueID)))
-		Expect(j).To(ContainSubstring(fmt.Sprintf("\"key_id\":%d",propertyID2)))
+		Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", uniqueID)))
+		Expect(j).To(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID2)))
 	})
 
 	It("delete object attribute unique", func() {
@@ -357,9 +357,9 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(true))
 		j, err := json.Marshal(rsp.Data)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"id\":%d",uniqueID)))
-		Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"key_id\":%d",propertyID1)))
-		Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"key_id\":%d",propertyID2)))
+		Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"id\":%d", uniqueID)))
+		Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID1)))
+		Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID2)))
 	})
 
 	It("create inst duplicate once unique attribute", func() {
