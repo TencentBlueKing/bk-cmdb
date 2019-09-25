@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -146,9 +147,21 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		}
 	}
 
-	// 模块名重复定制提示信息
-	moduleName, exist := data[common.BKModuleNameField]
-	if exist == true {
+	inst, err := m.inst.CreateInst(params, obj, data)
+	if err != nil {
+		ccErr, ok := err.(errors.CCErrorCoder)
+		if ok == false {
+			return inst, err
+		}
+		if ccErr.GetCode() != common.CCErrCommDuplicateItem {
+			return inst, err
+		}
+
+		// 检测模块名重复并返回定制提示信息
+		moduleName, exist := data[common.BKModuleNameField]
+		if exist == false {
+			return inst, err
+		}
 		nameDuplicateFilter := &metadata.QueryCondition{
 			Limit: metadata.SearchLimit{
 				Limit: 1,
@@ -173,8 +186,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 			return nil, params.Err.CCError(common.CCErrorTopoModuleNameDuplicated)
 		}
 	}
-
-	return m.inst.CreateInst(params, obj, data)
+	return inst, nil
 }
 
 func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setIDs, moduleIDS []int64) error {
