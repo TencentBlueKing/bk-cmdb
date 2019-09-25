@@ -21,9 +21,15 @@
                 <p class="edit-cue">{{$t('所有更改已自动保存')}}</p>
             </template>
             <div class="vis-button-group">
-                <i class="bk-icon icon-full-screen" @click="resizeFull" v-bk-tooltips="$t('还原')"></i>
-                <i class="bk-icon icon-plus" @click="zoomIn" v-bk-tooltips="$t('放大')"></i>
-                <i class="bk-icon icon-minus" @click="zoomOut" v-bk-tooltips="$t('缩小')"></i>
+                <i
+                    :class="['bk-cc-icon', mainFullScreen ? 'icon-cc-fullscreen-outlined-reset' : 'icon-cc-fullscreen-outlined']"
+                    @click="resizeFull"
+                    v-bk-tooltips="$t(mainFullScreen ? '取消全屏' : '全屏')"
+                >
+                </i>
+                <i class="bk-cc-icon icon-cc-fit" @click="resizeFit" v-bk-tooltips="$t('还原')"></i>
+                <i class="bk-cc-icon icon-cc-zoom-out" @click="zoomOut" v-bk-tooltips="$t('缩小')"></i>
+                <i class="bk-cc-icon icon-cc-zoom-in" @click="zoomIn" v-bk-tooltips="$t('放大')"></i>
                 <div class="topo-legend">
                     <p class="legend-item built-in">
                         <i></i>
@@ -1085,9 +1091,10 @@
                     this.topoNav.activeGroupId = ''
                 }
             },
-            resizeFull () {
+            resizeFit () {
                 cy.fit()
-
+            },
+            resizeFull () {
                 this.$store.commit('setLayoutStatus', { mainFullScreen: !this.mainFullScreen })
             },
             zoomIn () {
@@ -1196,13 +1203,13 @@
         }
         .vis-button-group {
             float: right;
-            padding-top: 11px;
+            padding-top: 6px;
             >i {
-                margin-left: 32px;
-                font-size: 14px;
-                font-weight: bold;
+                margin-left: 28px;
+                font-size: 20px;
                 cursor: pointer;
                 outline: 0;
+                color: #979ba5;
                 &:hover {
                     color: $cmdbBorderFocusColor;
                 }
@@ -1264,7 +1271,7 @@
                     display: inline-block;
                 }
             }
-            &:not(.group-total) {
+            &:not(.group-total):hover {
                 .model-count {
                     display: none;
                 }
