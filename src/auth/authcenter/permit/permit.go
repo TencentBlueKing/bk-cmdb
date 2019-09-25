@@ -89,7 +89,8 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 		return true
 	case rsc.Type == meta.ModelModule && IsReadAction(rsc.Action):
 		return true
-
+	case rsc.Type == meta.MainlineModelTopology && IsReadAction(rsc.Action):
+		return true
 	case rsc.Type == meta.HostInstance:
 		// all these actions is batch operation, authorize has already been done
 		// in host server. so skip auth in apiserver.
