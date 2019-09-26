@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package x18_11_07_01
+package x18_12_13_02
 
 import (
 	"context"
@@ -21,32 +21,32 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x18_11_07_01", upgrade)
+	upgrader.RegistUpgrader("x18_12_13_02", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 
 	err = addCloudTaskTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18_11_07_01] addCloudTaskTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18_12_13_02] addCloudTaskTable error  %s", err.Error())
 		return err
 	}
 
 	err = addCloudResourceConfirmTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18_11_07_01] addCloudResourceConfirmTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18_12_13_02] addCloudResourceConfirmTable error  %s", err.Error())
 		return err
 	}
 
 	err = addCloudSyncHistoryTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18_11_07_01] addCloudSyncHistoryTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18_12_13_02] addCloudSyncHistoryTable error  %s", err.Error())
 		return err
 	}
 
 	err = addCloudConfirmHistoryTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18_11_07_01] addCloudConfirmHistoryTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18_12_13_02] addCloudConfirmHistoryTable error  %s", err.Error())
 		return err
 	}
 

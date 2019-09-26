@@ -17,6 +17,8 @@
             v-bkloading="{ isLoading: $loading('getHostAuditLog') }"
             :data="history"
             :pagination="pagination"
+            :max-height="$APP.height - 325"
+            :row-style="{ cursor: 'pointer' }"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"

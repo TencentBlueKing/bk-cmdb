@@ -15,7 +15,7 @@
             expand-icon="bk-icon icon-down-shape"
             collapse-icon="bk-icon icon-right-shape"
             @select-change="handleSelectChange">
-            <div class="node-info clearfix" slot-scope="{ node, data }">
+            <div class="node-info clearfix" :class="{ 'is-selected': node.selected }" slot-scope="{ node, data }">
                 <i class="node-model-icon fl"
                     :class="{
                         'is-selected': node.selected,
@@ -57,6 +57,13 @@
                     @cancel="handleCancelCreateNode">
                 </create-module>
             </template>
+            <template v-else-if="createInfo.nextModelId === 'set'">
+                <create-set v-if="createInfo.visible"
+                    :parent-node="createInfo.parentNode"
+                    @submit="handleCreateNode"
+                    @cancel="handleCancelCreateNode">
+                </create-set>
+            </template>
             <template v-else>
                 <create-node v-if="createInfo.visible"
                     :next-model-id="createInfo.nextModelId"
@@ -73,10 +80,12 @@
 <script>
     import { mapGetters } from 'vuex'
     import createNode from './create-node.vue'
+    import createSet from './create-set.vue'
     import createModule from './create-module.vue'
     export default {
         components: {
             createNode,
+            createSet,
             createModule
         },
         data () {
@@ -191,7 +200,7 @@
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
-                return node.selected && !isModule && !this.isBlueKing
+                return !isModule && !this.isBlueKing
             },
             isTemplate (node) {
                 return node.data.service_template_id
@@ -259,9 +268,38 @@
                     this.$refs.tree.addNode(nodeData, parentNode.id, 0)
                     this.$success(this.$t('新建成功'))
                     this.handleCancelCreateNode()
+
+                    if (nextModelId === 'set' && value.set_template_id) {
+                        await this.addModulesInSetTemplate(nodeData, data.bk_inst_id)
+                    }
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            async addModulesInSetTemplate (parentNodeData, id) {
+                const modules = await this.$store.dispatch('objectModule/searchModule', {
+                    bizId: this.business,
+                    setId: id,
+                    params: this.$injectMetadata(),
+                    config: {
+                        requestId: 'searchModule'
+                    }
+                })
+                const parentNodeId = this.idGenerator(parentNodeData)
+                const nextModel = this.mainLineModels.find(model => model.bk_obj_id === 'module')
+                modules.info && modules.info.forEach(_module => {
+                    const nodeData = {
+                        default: 0,
+                        child: [],
+                        bk_obj_name: nextModel.bk_obj_name,
+                        bk_obj_id: nextModel.bk_obj_id,
+                        service_instance_count: 0,
+                        service_template_id: _module.service_template_id,
+                        bk_inst_id: _module.bk_module_id,
+                        bk_inst_name: _module.bk_module_name
+                    }
+                    this.$refs.tree.addNode(nodeData, parentNodeId, 0)
+                })
             },
             async createSet (value) {
                 const data = await this.$store.dispatch('objectSet/createSet', {
@@ -280,10 +318,10 @@
                 const data = await this.$store.dispatch('objectModule/createModule', {
                     bizId: this.business,
                     setId: this.createInfo.parentNode.data.bk_inst_id,
-                    params: {
+                    params: this.$injectMetadata({
                         ...value,
                         bk_supplier_account: this.supplierAccount
-                    }
+                    })
                 })
                 return {
                     bk_inst_id: data.bk_module_id,
@@ -325,7 +363,8 @@
         }
     }
     .node-info {
-        &:hover {
+        &:hover,
+        &.is-selected {
             .info-create-trigger {
                 display: inline-block;
                 & ~ .instance-num {

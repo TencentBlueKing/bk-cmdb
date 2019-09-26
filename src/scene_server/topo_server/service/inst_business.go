@@ -242,6 +242,32 @@ func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathPara
 	return result, nil
 }
 
+func (s *Service) GetBusinessBasicInfo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
+	}
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKAppNameField, common.BKAppIDField},
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+		},
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDApp, query)
+	if err != nil {
+		blog.Errorf("failed to get business by id, bizID: %s, err: %s, rid: %s", bizID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if len(result.Data.Info) == 0 {
+		blog.Errorf("get business by id not found, bizID: %s, rid: %s", bizID, params.ReqID)
+		err := params.Err.CCError(common.CCErrCommNotFound)
+		return nil, err
+	}
+	bizData := result.Data.Info[0]
+	return bizData, nil
+}
+
 // SearchBusiness search the business by condition
 func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)

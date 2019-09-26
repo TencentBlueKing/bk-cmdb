@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -28,7 +29,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
 	rid := util.GetHTTPCCRequestID(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
-	if !s.Config.AuthCenter.Enable {
+	if !auth.IsAuthed() {
 		blog.Errorf("received auth center initialization request, but auth center not enabled, rid: %s", rid)
 		result := &metadata.RespError{
 			Msg: defErr.Error(common.CCErrCommAuthCenterIsNotEnabled),

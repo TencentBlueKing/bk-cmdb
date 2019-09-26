@@ -13,6 +13,7 @@
                         :popover-options="{
                             appendTo: () => this.$el
                         }"
+                        :request-config="{ fromCache: true }"
                         @on-select="handleToggleBusiness"
                         @business-empty="handleBusinessEmpty">
                     </cmdb-business-selector>
@@ -26,7 +27,7 @@
                     <router-link class="menu-item is-link" tag="li" active-class="active"
                         v-if="menu.hasOwnProperty('route')"
                         :class="{
-                            active: isMenuActive(menu)
+                            'is-relative-active': isRelativeActive(menu)
                         }"
                         :key="index"
                         :to="menu.route"
@@ -63,7 +64,7 @@
                                     exact
                                     active-class="active"
                                     :class="{
-                                        active: isMenuActive(submenu)
+                                        'is-relative-active': isRelativeActive(submenu)
                                     }"
                                     :key="submenuIndex"
                                     :to="submenu.route"
@@ -95,7 +96,7 @@
         MENU_RESOURCE_BUSINESS,
         MENU_RESOURCE_HOST,
         MENU_RESOURCE_INSTANCE,
-        MENU_RESOURCE_MANAGEMENT,
+        // MENU_RESOURCE_MANAGEMENT,
         MENU_RESOURCE_COLLECTION,
         MENU_RESOURCE_HOST_COLLECTION,
         MENU_RESOURCE_BUSINESS_COLLECTION
@@ -161,6 +162,30 @@
                 return menus.filter(menu => {
                     return menu.hasOwnProperty('route') || (Array.isArray(menu.submenu) && menu.submenu.length)
                 })
+            },
+            relativeActiveName () {
+                const relative = this.$tools.getValue(this.$route, 'meta.menu.relative')
+                if (relative) {
+                    const names = Array.isArray(relative) ? relative : [relative]
+                    let relativeActiveName = null
+                    for (let index = 0; index < names.length; index++) {
+                        const name = names[index]
+                        const isActive = this.currentMenus.some(menu => {
+                            if (menu.hasOwnProperty('route')) {
+                                return menu.route.name === name
+                            } else if (menu.submenu && menu.submenu.length) {
+                                return menu.submenu.some(submenu => submenu.route.name === name)
+                            }
+                            return false
+                        })
+                        if (isActive) {
+                            relativeActiveName = name
+                            break
+                        }
+                    }
+                    return relativeActiveName
+                }
+                return null
             }
         },
         watch: {
@@ -174,15 +199,14 @@
         methods: {
             setDefaultExpand () {
                 const expandedId = this.$route.meta.menu.parent
-                const relative = this.$route.meta.menu.relative
                 if (expandedId) {
                     this.$set(this.state, expandedId, { expanded: true })
-                } else if (relative) {
+                } else if (this.relativeActiveName) {
                     const parent = this.currentMenus.find(menu => {
                         if (menu.hasOwnProperty('route')) {
-                            return menu.route.name === relative
+                            return menu.route.name === this.relativeActiveName
                         }
-                        return menu.submenu.some(submenu => submenu.route.name === relative)
+                        return menu.submenu.some(submenu => submenu.route.name === this.relativeActiveName)
                     })
                     if (parent) {
                         this.$set(this.state, parent.id, { expanded: true })
@@ -195,23 +219,8 @@
                 }
                 return false
             },
-            isMenuActive (menu) {
-                const relative = this.$route.meta.menu.relative
-                if (relative) {
-                    if (relative === MENU_RESOURCE_MANAGEMENT) {
-                        if (menu.id === MENU_RESOURCE_MANAGEMENT) {
-                            const routeName = this.$route.name
-                            return !this.collectionMenus.some(collection => {
-                                if (routeName === MENU_RESOURCE_INSTANCE) {
-                                    return collection.route.params && collection.route.params.objId === this.$route.params.objId
-                                }
-                                return collection.route.name === routeName
-                            })
-                        }
-                    }
-                    return this.$route.meta.menu.relative === menu.route.name
-                }
-                return menu.route.name === this.$route.name
+            isRelativeActive (menu) {
+                return menu.route.name === this.relativeActiveName
             },
             getCollectionRoute (model) {
                 const map = {
@@ -418,6 +427,7 @@ $color: #63656E;
         &:hover {
             background-color: #F6F6F9;
         }
+        &.is-relative-active.is-link,
         &.active.is-link {
             background-color: #3a84ff;
             .menu-icon,
@@ -482,6 +492,7 @@ $color: #63656E;
         &:hover {
             background-color: #E8E9EF;
         }
+        &.is-relative-active,
         &.active {
             color: #fff;
             background-color: #3a84ff;

@@ -17,6 +17,11 @@ type SearchInstResult struct {
 	Data     InstResult `json:"data"`
 }
 
+type AppBasicInfoResult struct {
+	BaseResp
+	Data BizBasicInfo `json:"data"`
+}
+
 type CreateModelResult struct {
 	BaseResp `json:",inline"`
 	Data     Object `json:"data"`

@@ -16,11 +16,20 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
 type SetTemplateInterface interface {
-	CreateSetTemplate(ctx context.Context, h http.Header, bizID int64, option metadata.CreateSetTemplateOption) (resp *metadata.SetTemplateResult, err error)
+	CreateSetTemplate(ctx context.Context, h http.Header, bizID int64, option metadata.CreateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder)
+	UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder)
+	DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder
+	GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (*metadata.SetTemplateResult, errors.CCErrorCoder)
+	ListSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder)
+	ListSetTemplateWeb(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder)
+	ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder)
+	ListSetTplRelatedSetsWeb(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.ListSetByTemplateOption) (*metadata.InstDataInfo, errors.CCErrorCoder)
+	DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder)
 }
 
 func NewSetTemplateInterface(client rest.ClientInterface) SetTemplateInterface {

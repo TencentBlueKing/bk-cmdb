@@ -6,7 +6,7 @@ import customQuery from '@/views/custom-query/router.config'
 import eventpush from '@/views/eventpush/router.config'
 import history from '@/views/history/router.config'
 import hosts from '@/views/hosts/router.config'
-import { businessHostDetails, resourceHostDetails } from '@/views/host-details/router.config'
+import resourceHostDetails from '@/views/host-details/router.config'
 import model from '@/views/model-manage/router.config'
 import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
@@ -18,8 +18,13 @@ import serviceInstance from '@/views/service-instance/router.config'
 import serviceSynchronous from '@/views/business-synchronous/router.config'
 import resourceManagement from '@/views/resource-manage/router.config'
 import customFields from '@/views/custom-fields/router.config'
-import requireBusiness from '@/views/status/require-business'
 import operation from '@/views/operation/router.config'
+
+import setSync from '@/views/set-sync/router.config'
+import setTemplate from '@/views/set-template/router.config'
+
+import statusPermission from '@/views/status/permission'
+import statusError from '@/views/status/error'
 
 const flatternViews = views => {
     const flatterned = []
@@ -33,26 +38,37 @@ const flatternViews = views => {
     return flatterned
 }
 
-export const businessViews = flatternViews([
+const statusComponents = {
+    'permission': statusPermission,
+    'error': statusError
+}
+
+const injectStatusComponents = (views, status = ['permission', 'error']) => {
+    views.forEach(view => {
+        view.components = {
+            default: view.component
+        }
+        status.forEach(key => {
+            view.components[key] = statusComponents[key]
+        })
+    })
+    return views
+}
+
+export const businessViews = injectStatusComponents(flatternViews([
     hosts,
-    businessHostDetails,
     customQuery,
     businessTopology,
     serviceTemplate,
     serviceCategory,
     serviceInstance,
     serviceSynchronous,
-    customFields
-])
+    customFields,
+    setSync,
+    setTemplate
+]))
 
-businessViews.forEach(view => {
-    view.components = {
-        default: view.component,
-        requireBusiness: requireBusiness
-    }
-})
-
-export const resourceViews = flatternViews([
+export const resourceViews = injectStatusComponents(flatternViews([
     business,
     resource,
     history,
@@ -60,19 +76,19 @@ export const resourceViews = flatternViews([
     generalModel,
     eventpush,
     resourceManagement
-])
+]))
 
-export const modelViews = flatternViews([
+export const modelViews = injectStatusComponents(flatternViews([
     model,
+    businessModel,
     modelAssociation,
-    modelTopology,
-    businessModel
-])
+    modelTopology
+]))
 
-export const analysisViews = flatternViews([
+export const analysisViews = injectStatusComponents(flatternViews([
     audit,
     operation
-])
+]))
 
 export default {
     ...businessViews,

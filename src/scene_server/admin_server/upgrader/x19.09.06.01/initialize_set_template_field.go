@@ -10,32 +10,34 @@
  * limitations under the License.
  */
 
-package x19_08_24_01
+package x19_09_06_01
 
 import (
 	"context"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func createSetTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tables := []string{
-		common.BKTableNameSetTemplate,
-		common.BKTableNameSetServiceTemplateRelation,
+func initializeSetTemplateField(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	filter := map[string]interface{}{
+		common.BKSetTemplateIDField: map[string]interface{}{
+			common.BKDBExists: false,
+		},
+	}
+	doc := map[string]interface{}{
+		common.BKSetTemplateIDField: 0,
+	}
+	if err := db.Table(common.BKTableNameBaseSet).Update(ctx, filter, doc); err != nil {
+		blog.Errorf("[upgrade v19.08.24.01] initializeSetTemplateField set_template_id on set failed, err: %+v", err)
+		return err
+	}
+	if err := db.Table(common.BKTableNameBaseModule).Update(ctx, filter, doc); err != nil {
+		blog.Errorf("[upgrade v19.08.24.01] initializeSetTemplateField set_template_id on module failed, err: %+v", err)
+		return err
 	}
 
-	for _, tableName := range tables {
-		exists, err := db.HasTable(tableName)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			if err = db.CreateTable(tableName); err != nil && !db.IsDuplicatedError(err) {
-				return err
-			}
-		}
-	}
 	return nil
 }
