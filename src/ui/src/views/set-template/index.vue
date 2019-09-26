@@ -86,7 +86,11 @@
                 this.list = list
                 this.originList = list
             },
-            handleCreate () {},
+            handleCreate () {
+                this.$router.push({
+                    name: 'createSetTemplate'
+                })
+            },
             handleEdit (row) {},
             handlePreview (row) {},
             handleDelete (row) {},

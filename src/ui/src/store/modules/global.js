@@ -19,6 +19,9 @@ const state = {
     header: {
         back: false
     },
+    layout: {
+        mainFullScreen: false
+    },
     userList: [],
     headerTitle: '',
     featureTipsParams: {
@@ -59,6 +62,7 @@ const getters = {
     globalLoading: state => state.globalLoading,
     navStick: state => state.nav.stick,
     navFold: state => state.nav.fold,
+    mainFullScreen: state => state.layout.mainFullScreen,
     showBack: state => state.header.back,
     userList: state => state.userList,
     headerTitle: state => state.headerTitle,
@@ -91,6 +95,9 @@ const mutations = {
     },
     setHeaderStatus (state, status) {
         Object.assign(state.header, status)
+    },
+    setLayoutStatus (state, status) {
+        Object.assign(state.layout, status)
     },
     setUserList (state, list) {
         state.userList = list

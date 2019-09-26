@@ -996,5 +996,6 @@
     "重试": "Retry",
     "同步人": "Sync personnel",
     "批量同步集群模板实例提示": "You can sync multiple template instances in bulk",
-    "应用数量": "Application count"
+    "应用数量": "Application count",
+    "服务模板选择器提示语": "You can select service template to add modules only which would extend service info from service template."
 }
