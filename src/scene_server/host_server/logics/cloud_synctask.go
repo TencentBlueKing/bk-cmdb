@@ -321,7 +321,6 @@ func (lgc *Logics) SyncTaskRedisStopManager(ctx context.Context) {
 					blog.Errorf("remove stop task item fail, taskInfo: %s, error: %v, rid: %s", item, err, lgc.rid)
 					continue
 				}
-
 				mutex.Lock()
 				taskChan[key] <- true
 				mutex.Lock()
@@ -512,11 +511,12 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 
 func (lgc *Logics) CloudSyncSwitch(ctx context.Context, taskInfoItem *meta.TaskInfo) {
 	mutex := &sync.Mutex{}
+
+	timer := time.NewTimer(time.Duration(taskInfoItem.NextTrigger) * time.Minute)
 	go func() {
 		for {
-			ticker := time.NewTicker(time.Duration(taskInfoItem.NextTrigger) * time.Minute)
 			select {
-			case <-ticker.C:
+			case <-timer.C:
 				lgc.ExecSync(ctx, taskInfoItem.Args)
 				switch taskInfoItem.Method {
 				case "day":
@@ -526,7 +526,7 @@ func (lgc *Logics) CloudSyncSwitch(ctx context.Context, taskInfoItem *meta.TaskI
 				case "minute":
 					taskInfoItem.NextTrigger = 5
 				}
-				ticker.Stop()
+				timer.Reset(time.Duration(taskInfoItem.NextTrigger) * time.Minute)
 			case <-taskChan[taskInfoItem.Args.TaskID]:
 				mutex.Lock()
 				close(taskChan[taskInfoItem.Args.TaskID])
