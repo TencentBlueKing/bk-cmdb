@@ -18,7 +18,7 @@
                                 <slot :name="property['bk_property_id']">
                                     <span class="property-value clearfix fl" v-if="property.unit">
                                         <span class="property-value-text fl">{{getValue(property)}}</span>
-                                        <span class="property-value-unit fl">{{property.unit}}</span>
+                                        <span class="property-value-unit fl" v-if="getValue(property) !== '--'">{{property.unit}}</span>
                                     </span>
                                     <span class="property-value fl" v-else>{{getValue(property)}}</span>
                                 </slot>
