@@ -1,14 +1,12 @@
 <template>
     <div class="clearfix">
         <dynamic-navigation class="main-navigation"
-            @business-change="handleBusinessChange"
-            @business-empty="handleBusinessEmpty">
+            @business-change="handleBusinessChange">
         </dynamic-navigation>
         <dynamic-breadcrumbs class="main-breadcrumbs"></dynamic-breadcrumbs>
         <div class="main-layout">
             <div class="main-scroller" v-bkloading="{ isLoading: globalLoading }">
-                <router-view class="main-views" :key="refreshKey" v-if="shouldRenderSubView"></router-view>
-                <router-view class="main-views" name="requireBusiness" v-if="showRequireBusiness"></router-view>
+                <router-view class="main-views" :name="view" :key="refreshKey" v-if="view"></router-view>
             </div>
         </div>
     </div>
@@ -18,7 +16,6 @@
     import { mapGetters } from 'vuex'
     import dynamicNavigation from './dynamic-navigation'
     import dynamicBreadcrumbs from './dynamic-breadcrumbs'
-    import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
     export default {
         components: {
             dynamicNavigation,
@@ -27,28 +24,28 @@
         data () {
             return {
                 refreshKey: Date.now(),
-                businessSelected: false,
-                showRequireBusiness: false
+                meta: this.$route.meta,
+                ready: false
             }
         },
         computed: {
             ...mapGetters(['globalLoading']),
-            shouldRenderSubView () {
-                if (this.$route.matched && this.$route.matched[0].name === MENU_BUSINESS) {
-                    return this.businessSelected
-                }
-                return true
+            view () {
+                return this.meta.view
+            }
+        },
+        watch: {
+            $route (val) {
+                this.meta = this.$route.meta
             }
         },
         methods: {
             handleBusinessChange () {
-                this.businessSelected = true
-                this.showRequireBusiness = false
-                this.refreshKey = Date.now()
-            },
-            handleBusinessEmpty () {
-                this.businessSelected = false
-                this.showRequireBusiness = true
+                if (this.ready) {
+                    this.refreshKey = Date.now()
+                } else {
+                    this.ready = true
+                }
             }
         }
     }

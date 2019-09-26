@@ -200,6 +200,8 @@ const (
 	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
 	CCErrCommValExceedMaxFailed = 1199073
 
+	CCErrCommGlobalCCErrorNotInitialized = 1199074
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
@@ -432,6 +434,8 @@ const (
 	CCErrorTopoUpdateModuleFromTplNameForbidden            = 1101091
 	CCErrTopoCanNotAddRequiredAttributeForMainlineModel    = 1101092
 	CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl     = 1101093
+
+	CCErrorTopoModuleNameDuplicated = 1101094
 
 	// object controller 1102XXX
 

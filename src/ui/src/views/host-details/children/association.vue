@@ -51,7 +51,7 @@
     import cmdbHostAssociationList from './association-list.vue'
     import cmdbHostAssociationGraphics from './association-graphics.vue'
     import cmdbHostAssociationCreate from './association-create.vue'
-    import { RESOURCE_HOST } from '../router.config.js'
+    import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
     export default {
         name: 'cmdb-host-association',
         components: {
@@ -71,7 +71,7 @@
         },
         computed: {
             updateAuth () {
-                const isResourceHost = this.$route.name === RESOURCE_HOST
+                const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
                 if (isResourceHost) {
                     return this.$OPERATION.U_RESOURCE_HOST
                 }
@@ -101,6 +101,7 @@
         height: 100%;
         .association-view {
             height: calc(100% - 62px);
+            @include scrollbar-y;
         }
     }
     .options {

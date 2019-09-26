@@ -31,6 +31,7 @@
 <script>
     import cloneToSource from './children/clone-to-source.vue'
     import cloneToOther from './children/clone-to-other.vue'
+    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     export default {
         components: {
             [cloneToSource.name]: cloneToSource,
@@ -63,10 +64,17 @@
         },
         async created () {
             try {
-                this.$store.commit('addBreadcrumbs', {
-                    id: this.$route.name,
-                    name: this.$route.query.title
-                })
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('服务拓扑'),
+                    route: {
+                        name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                        query: {
+                            module: this.$route.params.moduleId
+                        }
+                    }
+                }, {
+                    label: this.$route.query.title
+                }])
                 const [module, processes] = await Promise.all([
                     this.getModuleInstance(),
                     this.getServiceInstanceProcesses()

@@ -1,7 +1,6 @@
 package proc_server_test
 
 import (
-	"configcenter/src/test/reporter"
 	"context"
 	"strconv"
 	"testing"
@@ -9,6 +8,7 @@ import (
 	"configcenter/src/common/mapstr"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/test"
+	"configcenter/src/test/reporter"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

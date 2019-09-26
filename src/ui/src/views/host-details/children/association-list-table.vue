@@ -59,7 +59,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { RESOURCE_HOST } from '../router.config.js'
+    import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
     export default {
         name: 'cmdb-host-association-list-table',
         props: {
@@ -101,7 +101,7 @@
                 'targetInstances'
             ]),
             updateAuth () {
-                const isResourceHost = this.$route.name === RESOURCE_HOST
+                const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
                 if (isResourceHost) {
                     return this.$OPERATION.U_RESOURCE_HOST
                 }

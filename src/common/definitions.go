@@ -721,7 +721,7 @@ const (
 	FieldTypeSingleLenChar int = 256
 
 	// FieldTypeLongLenChar the long char length limit
-	FieldTypeLongLenChar int = 2000
+	FieldTypeLongLenChar int = 15000
 )
 
 const (
@@ -1071,6 +1071,7 @@ const (
 
 	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
 	ServiceTemplateIDNotSet = 0
+	SetTemplateIDNotSet     = 0
 
 	MetadataLabelBiz = "metadata.label.bk_biz_id"
 

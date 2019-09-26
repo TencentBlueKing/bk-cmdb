@@ -44,6 +44,8 @@ func (st SetTemplate) Validate() (key string, err error) {
 
 // 拓扑模板与服务模板多对多关系, 记录拓扑模板的构成
 type SetServiceTemplateRelation struct {
-	SetTemplateID     int64 `json:"set_template_id"`
-	ServiceTemplateID int64 `json:"service_template_id"`
+	BizID             int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	SetTemplateID     int64  `field:"set_template_id" json:"set_template_id" bson:"set_template_id"`
+	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
+	SupplierAccount   string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }

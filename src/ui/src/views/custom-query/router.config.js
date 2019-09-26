@@ -25,6 +25,9 @@ export default {
             parent: MENU_BUSINESS_HOST
         },
         auth: {
+            view: {
+                R_CUSTOM_QUERY
+            },
             operation: OPERATION,
             authScope: 'business'
         },

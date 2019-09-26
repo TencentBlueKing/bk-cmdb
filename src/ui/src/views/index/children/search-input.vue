@@ -103,7 +103,7 @@
 <script>
     import searchResult from './full-text-search'
     import { mapGetters } from 'vuex'
-    import { MENU_INDEX, MENU_RESOURCE_INSTANCE, MENU_RESOURCE_BUSINESS } from '@/dictionary/menu-symbol'
+    import { MENU_INDEX, MENU_RESOURCE_INSTANCE, MENU_RESOURCE_BUSINESS, MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
     export default {
         components: {
             searchResult
@@ -403,7 +403,7 @@
             },
             handleGoResource (host) {
                 this.$router.push({
-                    name: 'resourceHostDetails',
+                    name: MENU_RESOURCE_HOST_DETAILS,
                     params: {
                         id: host.bk_host_id
                     }

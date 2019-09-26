@@ -115,8 +115,10 @@
     "确定删除选中的实例": "Confirm to delete selected instance(s)?",
     "管理员后台": "Administrator Backstage",
     "返回业务管理": "Return to Business Management",
+    "无功能权限": "Sorry, you don't have permission for this function",
+    "点击下方按钮申请": "You don't have permission yet, you can click 'Apply for permission' to get permission.",
+    "申请功能权限": "Apply for permission",
     "无业务权限": "Sorry, you have no business rights",
-    "点击下方按钮申请": "You don't have any business permission yet, you can click 'Apply for business permission' to get permission.",
     "申请业务权限": "Apply for business permission",
     "申请创建业务": "Apply to create business",
     "搜索结果": "Search results",
@@ -954,5 +956,15 @@
     "查询条件": "Query conditions",
     "服务分类变更": "Service classification change",
     "模板详情": "Template details",
-    "主机拓扑提示": "Go to {link} to edit topology"
+    "主机拓扑提示": "Go to {link} to edit topology",
+    "空集群模板提示": "You have not create template, {link}",
+    "显示标签": "Display label",
+    "显示拓扑": "Display topology",
+    "服务模板创建没进程提示": "The current template does not set process information, whether to confirm?",
+    "创建成功无进程提示": "the process has not been added and the service instance cannot be created",
+    "目标包含主机, 不允许删除": "Target contains host, not allowed to delete",
+    "同步数量提示": "The instance module {successCount} has been successfully synchronized, failing {failCount}",
+    "空集群模板实例提示": "No template instance, please go to {link} to add",
+    "同步任务进行中": "The synchronization task is in progress, {link}",
+    "集群模板名称占位符": "Please input template name, 20 letters max"
 }

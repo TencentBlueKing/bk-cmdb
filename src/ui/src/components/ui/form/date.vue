@@ -2,6 +2,7 @@
     <bk-date-picker class="cmdb-date"
         v-model="date"
         transfer
+        editable
         :clearable="clearable"
         :placeholder="placeholder"
         :disabled="disabled">

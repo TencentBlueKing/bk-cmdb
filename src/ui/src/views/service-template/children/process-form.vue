@@ -58,11 +58,11 @@
             <slot name="form-options">
                 <span style="display: inline-block"
                     v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
-                        auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                        active: !$isAuthorized(auth),
+                        auth: [auth]
                     }">
                     <bk-button class="button-save" theme="primary"
-                        :disabled="saveDisabled || $loading() || !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
+                        :disabled="saveDisabled || $loading() || !$isAuthorized(auth)"
                         @click="handleSave">
                         {{$t('保存')}}
                     </bk-button>
@@ -167,6 +167,12 @@
                     return filterProperties
                 })
                 return properties
+            },
+            auth () {
+                if (this.isCreatedService) {
+                    return this.$OPERATION.C_SERVICE_TEMPLATE
+                }
+                return this.$OPERATION.U_SERVICE_TEMPLATE
             }
         },
         watch: {

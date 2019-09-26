@@ -141,10 +141,10 @@
     import { mapActions, mapGetters, mapMutations } from 'vuex'
     import {
         MENU_MODEL_MANAGEMENT,
-        MENU_MODEL_BUSINESS_TOPOLOGY,
         MENU_RESOURCE_HOST,
         MENU_RESOURCE_BUSINESS,
-        MENU_RESOURCE_INSTANCE
+        MENU_RESOURCE_INSTANCE,
+        MENU_MODEL_BUSINESS_TOPOLOGY
     } from '@/dictionary/menu-symbol'
     export default {
         components: {
@@ -334,14 +334,30 @@
                 const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
                 if (model) {
                     this.$store.commit('objectModel/setActiveModel', model)
-                    this.$store.commit('addBreadcrumbs', {
-                        id: this.$route.name,
-                        name: model.bk_obj_name
-                    })
+                    this.setBreadcrumbs(model)
                     this.initModelInfo()
                 } else {
                     this.$router.replace({ name: 'status404' })
                 }
+            },
+            setBreadcrumbs (model) {
+                const breadcrumbs = [{
+                    label: this.$t('模型管理'),
+                    route: {
+                        name: MENU_MODEL_MANAGEMENT
+                    }
+                }, {
+                    label: model.bk_obj_name
+                }]
+                if (this.$route.query.from === 'business') {
+                    breadcrumbs.splice(0, 1, {
+                        label: this.$t('业务层级'),
+                        route: {
+                            name: MENU_MODEL_BUSINESS_TOPOLOGY
+                        }
+                    })
+                }
+                this.$store.commit('setBreadcrumbs', breadcrumbs)
             },
             async getModelStatistics () {
                 const modelStatisticsSet = {}
@@ -445,7 +461,7 @@
                             requestId: 'deleteModel'
                         }
                     })
-                    this.$router.replace({ name: MENU_MODEL_BUSINESS_TOPOLOGY })
+                    this.$router.replace({ name: MENU_MODEL_MANAGEMENT })
                 } else {
                     await this.deleteObject({
                         id: this.activeModel['id'],

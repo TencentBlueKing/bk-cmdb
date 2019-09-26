@@ -19,6 +19,9 @@ const state = {
     header: {
         back: false
     },
+    layout: {
+        mainFullScreen: false
+    },
     userList: [],
     headerTitle: '',
     featureTipsParams: {
@@ -59,6 +62,7 @@ const getters = {
     globalLoading: state => state.globalLoading,
     navStick: state => state.nav.stick,
     navFold: state => state.nav.fold,
+    mainFullScreen: state => state.layout.mainFullScreen,
     showBack: state => state.header.back,
     userList: state => state.userList,
     headerTitle: state => state.headerTitle,
@@ -92,6 +96,9 @@ const mutations = {
     setHeaderStatus (state, status) {
         Object.assign(state.header, status)
     },
+    setLayoutStatus (state, status) {
+        Object.assign(state.layout, status)
+    },
     setUserList (state, list) {
         state.userList = list
     },
@@ -121,23 +128,14 @@ const mutations = {
     setBreadcrumbs (state, breadcrumbs) {
         state.breadcrumbs = breadcrumbs
     },
-    addBreadcrumbs (state, breadcrumbs) {
-        const newBreadcrumbs = [...state.breadcrumbs]
-        const existIndex = newBreadcrumbs.findIndex(target => target.id === breadcrumbs.id)
-        if (existIndex > -1) {
-            newBreadcrumbs.splice(existIndex, 1)
-        }
-        newBreadcrumbs.push(breadcrumbs)
-        state.breadcrumbs = newBreadcrumbs.slice(-4)
-    },
     setTitle (state, title) {
         state.title = title
     },
     setBusinessSelectorVisible (state, visible) {
         state.businessSelectorVisible = visible
     },
-    resolveBusinessSelectorPromise (state) {
-        state.businessSelectorResolver && state.businessSelectorResolver()
+    resolveBusinessSelectorPromise (state, val) {
+        state.businessSelectorResolver && state.businessSelectorResolver(val)
     }
 }
 
