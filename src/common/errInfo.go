@@ -435,6 +435,8 @@ const (
 	CCErrTopoCanNotAddRequiredAttributeForMainlineModel    = 1101092
 	CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl     = 1101093
 
+	CCErrorTopoModuleNameDuplicated = 1101094
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -568,6 +570,7 @@ const (
 	CCErrProcReconstructServiceInstanceNameFailed         = 1108041
 
 	CCErrProcUnbindModuleServiceTemplateDisabled = 1108042
+	CCErrProcGetServiceCategoryFailed            = 1108043
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001
