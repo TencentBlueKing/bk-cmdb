@@ -1,5 +1,5 @@
 <template>
-    <section class="layout">
+    <section class="layout" v-bkloading="{ isLoading: $loading('createSetTemplate') }">
         <div class="layout-row">
             <label class="row-label inline-block-middle" :title="$t('模板名称')">{{$t('模板名称')}}</label>
             <i class="row-required">*</i>
@@ -14,7 +14,7 @@
         <div class="layout-row template-row">
             <label class="row-label inline-block-middle" :title="$t('集群拓扑')">{{$t('集群拓扑')}}</label>
             <i class="row-required">*</i>
-            <cmdb-set-template-tree class="row-content"></cmdb-set-template-tree>
+            <cmdb-set-template-tree class="row-content" ref="templateTree"></cmdb-set-template-tree>
         </div>
         <div class="template-options">
             <bk-button class="options-confirm" theme="primary" @click="handleConfirm">{{$t('确定')}}</bk-button>
@@ -35,7 +35,29 @@
             }
         },
         methods: {
-            handleConfirm () {},
+            async handleConfirm () {
+                try {
+                    const validateResult = await this.$validator.validateAll()
+                    if (!validateResult) {
+                        return false
+                    }
+                    const services = this.$refs.templateTree.services
+                    const bizId = this.$store.getters['objectBiz/bizId']
+                    await this.$store.dispatch('setTemplate/createSetTemplate', {
+                        bizId,
+                        params: {
+                            bk_biz_id: bizId,
+                            name: this.templateName,
+                            service_template_ids: services.map(template => template.id)
+                        },
+                        config: {
+                            requestId: 'createSetTemplate'
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                }
+            },
             handleCancel () {}
         }
     }
