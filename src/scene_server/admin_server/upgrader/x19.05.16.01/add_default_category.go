@@ -66,7 +66,7 @@ func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 		secondCategory = metadata.ServiceCategory{
 			ID:              int64(secondID),
 			Name:            common.DefaultServiceCategoryName,
-			RootID:          int64(firstCategory.ID),
+			RootID:          int64(firstCategory.RootID),
 			ParentID:        int64(firstCategory.ID),
 			SupplierAccount: "0",
 			IsBuiltIn:       true,

@@ -37,5 +37,6 @@
     "1108040": "unbound template on module failed",
     "1108041": "generate service instance name failed",
     "1108042": "unbound template on module disabled",
+    "1108043": "search service category failed",
     "": ""
 }
