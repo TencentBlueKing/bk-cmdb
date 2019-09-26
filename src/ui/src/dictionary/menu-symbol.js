@@ -21,6 +21,7 @@ export const MENU_RESOURCE_INSTANCE = 'menu_resource_instance'
 
 export const MENU_MODEL_MANAGEMENT = 'menu_model_management'
 export const MENU_MODEL_TOPOLOGY = 'menu_model_topology'
+export const MENU_MODEL_TOPOLOGY_NEW = 'menu_model_topology_new'
 export const MENU_MODEL_BUSINESS_TOPOLOGY = 'menu_model_business_topology'
 export const MENU_MODEL_ASSOCIATION = 'menu_model_association'
 
