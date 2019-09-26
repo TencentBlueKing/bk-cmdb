@@ -8,16 +8,16 @@
         <cmdb-collapse-transition>
             <ul class="node-children" v-show="!collapse">
                 <li class="node-child clearfix"
-                    v-for="module in modules"
-                    :key="module.id"
-                    :class="{ selected: selected === module.id }"
-                    @click="handleChildClick(module)">
+                    v-for="(service, index) in services"
+                    :key="service.id"
+                    :class="{ selected: selected === service.id }"
+                    @click="handleChildClick(service)">
                     <i class="child-icon icon icon-cc-cube fl"></i>
                     <span class="child-options fr">
-                        <i class="options-view icon icon-cc-show" @click="handleViewService"></i>
-                        <i class="options-delete icon icon-cc-tips-close" @click="handleDeleteService"></i>
+                        <i class="options-view icon icon-cc-show" @click="handleViewService(service)"></i>
+                        <i class="options-delete icon icon-cc-tips-close" @click="handleDeleteService(index)"></i>
                     </span>
-                    <span class="child-name">{{module.name}}</span>
+                    <span class="child-name">{{service.name}}</span>
                 </li>
                 <li class="options-child node-child clearfix"
                     v-if="['create', 'edit'].includes(mode)"
@@ -27,11 +27,35 @@
                 </li>
             </ul>
         </cmdb-collapse-transition>
+        <bk-dialog
+            header-position="left"
+            :draggable="false"
+            :mask-close="false"
+            :width="759"
+            :title="dialog.title"
+            v-model="dialog.visible"
+            @after-leave="handleDialogClose"
+            @confirm="handleDialogConfirm">
+            <component
+                ref="dialogComponent"
+                :is="dialog.component"
+                v-bind="dialog.props">
+            </component>
+            <template slot="footer" v-if="dialog.useCustomFooter">
+                <bk-button @click="dialog.visible = false">{{$t('关闭')}}</bk-button>
+            </template>
+        </bk-dialog>
     </div>
 </template>
 
 <script>
+    import serviceTemplateSelector from './service-template-selector.vue'
+    import serviceTemplateInfo from './service-template-info.vue'
     export default {
+        components: {
+            serviceTemplateSelector,
+            serviceTemplateInfo
+        },
         props: {
             mode: {
                 type: String,
@@ -44,10 +68,16 @@
         data () {
             return {
                 templateName: this.$t('模板集群名称'),
-                modules: [{ id: 1, name: 'gameserver' }, { id: 2, name: 'gameserver' }],
+                services: [],
                 collapse: false,
                 selected: null,
-                unwatch: null
+                unwatch: null,
+                dialog: {
+                    visible: false,
+                    title: '',
+                    useCustomFooter: false,
+                    props: {}
+                }
             }
         },
         watch: {
@@ -78,12 +108,41 @@
             handleCollapse () {
                 this.collapse = !this.collapse
             },
-            handleChildClick (module) {
-                this.selected = module.id
+            handleChildClick (service) {
+                this.selected = service.id
             },
-            handleAddService () {},
-            handleViewService () {},
-            handleDeleteService () {}
+            handleAddService () {
+                this.selected = null
+                this.dialog.props = {
+                    selected: this.services.map(service => service.id)
+                }
+                this.dialog.title = this.$t('添加服务模板')
+                this.dialog.useCustomFooter = false
+                this.dialog.component = serviceTemplateSelector.name
+                this.dialog.visible = true
+            },
+            handleViewService (service) {
+                this.dialog.props = {
+                    id: service.id
+                }
+                this.dialog.title = `【${service.name}】${this.$t('模板服务信息')}`
+                this.dialog.useCustomFooter = true
+                this.dialog.component = serviceTemplateInfo.name
+                this.dialog.visible = true
+            },
+            handleDialogConfirm () {
+                if (this.dialog.component === serviceTemplateSelector.name) {
+                    this.services = this.$refs.dialogComponent.getSelectedServices()
+                }
+            },
+            handleDialogClose () {
+                this.dialog.component = null
+                this.dialog.title = ''
+                this.dialog.props = {}
+            },
+            handleDeleteService (index) {
+                this.services.splice(index, 1)
+            }
         }
     }
 </script>
@@ -91,6 +150,7 @@
 <style lang="scss" scoped>
     $iconColor: #C4C6CC;
     $fontColor: #63656E;
+    $highlightColor: #3A84FF;
     .template-tree {
         padding: 10px 0 10px 20px;
         border: 1px dashed #C4C6CC;
@@ -139,6 +199,12 @@
             }
             &:hover,
             &.selected {
+                .child-icon {
+                    background-color: $highlightColor;
+                }
+                .child-name {
+                    color: $highlightColor;
+                }
                 .child-options {
                     display: block;
                 }
@@ -159,10 +225,10 @@
                 .child-icon {
                     font-size: 18px;
                     background-color: #fff;
-                    color: #3A84FF;
+                    color: $highlightColor;
                 }
                 .child-name {
-                    color: #3A84FF;
+                    color: $highlightColor;
                 }
             }
             .child-name {
@@ -181,18 +247,18 @@
                 color: #fff;
                 line-height: 20px;
                 font-size: 12px;
-                background-color: #3A84FF;
+                background-color: $iconColor;
             }
             .child-options {
                 display: none;
                 margin-right: 9px;
                 font-size: 0;
+                color: $iconColor;
                 .options-view {
                     font-size: 18px;
-                    color: #3A84FF;
                     cursor: pointer;
                     &:hover {
-                        opacity: .75;
+                        color: $highlightColor;
                     }
                 }
                 .options-delete {
@@ -202,10 +268,9 @@
                     font-size: 12px;
                     text-align: center;
                     line-height: 24px;
-                    color: $iconColor;
                     cursor: pointer;
                     &:hover {
-                        opacity: .75;
+                        color: $highlightColor;
                     }
                 }
             }

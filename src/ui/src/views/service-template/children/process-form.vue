@@ -20,7 +20,7 @@
                                 :key="propertyIndex">
                                 <div class="property-name clearfix">
                                     <bk-checkbox class="form-checkbox"
-                                        v-bk-tooltips="$t('纳入模板管理')"
+                                        v-bk-tooltips="{ content: $t('纳入模板管理'), placement: 'top-start' }"
                                         v-if="property['isLocking'] !== undefined"
                                         v-model="values[property['bk_property_id']]['as_default_value']"
                                         @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
