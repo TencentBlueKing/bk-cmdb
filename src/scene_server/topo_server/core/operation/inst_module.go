@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -146,7 +147,46 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		}
 	}
 
-	return m.inst.CreateInst(params, obj, data)
+	inst, err := m.inst.CreateInst(params, obj, data)
+	if err != nil {
+		ccErr, ok := err.(errors.CCErrorCoder)
+		if ok == false {
+			return inst, err
+		}
+		if ccErr.GetCode() != common.CCErrCommDuplicateItem {
+			return inst, err
+		}
+
+		// 检测模块名重复并返回定制提示信息
+		moduleName, exist := data[common.BKModuleNameField]
+		if exist == false {
+			return inst, err
+		}
+		nameDuplicateFilter := &metadata.QueryCondition{
+			Limit: metadata.SearchLimit{
+				Limit: 1,
+			},
+			Condition: map[string]interface{}{
+				common.BKParentIDField:   setID,
+				common.BKAppIDField:      bizID,
+				common.BKModuleNameField: moduleName,
+			},
+		}
+		result, err := m.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, nameDuplicateFilter)
+		if err != nil {
+			blog.ErrorJSON("create module failed, find duplicated name modules failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), params.ReqID)
+			return nil, err
+		}
+		if result.Result == false || result.Code != 0 {
+			blog.ErrorJSON("create module failed, find duplicated name modules failed, result false, filter: %s, result: %s, err: %s, rid: %s", nameDuplicateFilter, result, err.Error(), params.ReqID)
+			return nil, err
+		}
+		if result.Data.Count > 0 {
+			blog.ErrorJSON("create module failed, module name duplicated, filter: %s, rid: %s", nameDuplicateFilter, params.ReqID)
+			return nil, params.Err.CCError(common.CCErrorTopoModuleNameDuplicated)
+		}
+	}
+	return inst, nil
 }
 
 func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setIDs, moduleIDS []int64) error {
