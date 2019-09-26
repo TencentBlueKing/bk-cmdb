@@ -116,7 +116,7 @@
                 :fixed="column.id === 'bk_host_innerip'"
                 :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type) }}
+                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option')) | addUnit(getPropertyValue(column.objId, column.id, 'unit')) }}
                 </template>
             </bk-table-column>
         </bk-table>
@@ -197,7 +197,13 @@
             cmdbHostFilter
         },
         filters: {
-            hostValueFilter
+            hostValueFilter,
+            addUnit (value, unit) {
+                if (value === '--' || !unit) {
+                    return value
+                }
+                return value + unit
+            }
         },
         props: {
             columnsConfigProperties: {
@@ -355,6 +361,14 @@
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('hostUpdate', ['updateHost']),
             ...mapActions('hostSearch', ['searchHost', 'searchHostByInnerip']),
+            getPropertyValue (modelId, propertyId, field) {
+                const model = this.properties[modelId]
+                if (!model) {
+                    return ''
+                }
+                const curProperty = model.find(property => property.bk_property_id === propertyId)
+                return curProperty ? curProperty[field] : ''
+            },
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
