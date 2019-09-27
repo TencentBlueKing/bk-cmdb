@@ -108,13 +108,15 @@
         </bk-sideslider>
         
         <!-- eslint-disable vue/space-infix-ops -->
-        <v-preview ref="preview"
-            v-if="isPreviewShow"
-            :api-params="apiParams"
-            :attribute="object"
-            :table-header="previewHeader"
-            @close="isPreviewShow = false">
-        </v-preview>
+        <cmdb-main-inject inject-type="prepend" v-transfer-dom>
+            <v-preview ref="preview"
+                v-if="isPreviewShow"
+                :api-params="apiParams"
+                :attribute="object"
+                :table-header="previewHeader"
+                @close="isPreviewShow = false">
+            </v-preview>
+        </cmdb-main-inject>
         <!-- eslint-disable end -->
     </div>
 </template>
@@ -124,11 +126,13 @@
     import featureTips from '@/components/feature-tips/index'
     import vDefine from './define'
     import vPreview from './preview'
+    import cmdbMainInject from '@/components/layout/main-inject'
     export default {
         components: {
             featureTips,
             vDefine,
-            vPreview
+            vPreview,
+            cmdbMainInject
         },
         data () {
             return {
