@@ -3,17 +3,20 @@
         <bk-table class="process-table"
             v-bkloading="{ isLoading: loading }"
             :data="showList"
-            :max-height="$APP.height - 300">
+            :max-height="$APP.height - 300"
+            :row-style="{ cursor: 'pointer' }"
+            @row-click="handleRowClick">
             <bk-table-column v-for="column in table.header"
                 :key="column.id"
                 :prop="column.id"
-                :label="column.name">
+                :label="column.name"
+                :class-name="column.id === 'bk_func_name' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
                     <span v-if="column.id === 'bind_ip'">{{row[column.id] | ipText}}</span>
                     <span v-else>{{row[column.id] || '--'}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')">
+            <bk-table-column :label="$t('操作')" prop="operation">
                 <template slot-scope="{ row }">
                     <span
                         v-cursor="{
@@ -132,6 +135,10 @@
             },
             handleDelete (process) {
                 this.$emit('on-delete', process)
+            },
+            handleRowClick (row, event, column = {}) {
+                if (column.property === 'operation') return
+                this.handleEdite(row['originData'] || {})
             }
         }
     }
