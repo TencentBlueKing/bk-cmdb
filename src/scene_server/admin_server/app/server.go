@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -96,7 +97,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		process.Service.SetDB(db)
 		process.Service.SetApiSrvAddr(process.Config.ProcSrvConfig.CCApiSrvAddr)
 
-		if process.Config.AuthCenter.Enable {
+		if auth.IsAuthed() {
 			blog.Info("enable auth center access.")
 			authCli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter, engine.Metric().Registry())
 			if err != nil {
@@ -105,7 +106,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			process.Service.SetAuthCenter(authCli)
 
 			if process.Config.AuthCenter.EnableSync {
-				authSynchronizer := authsynchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI, engine.Metric().Registry())
+				authSynchronizer := authsynchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI, engine.Metric().Registry(), service.Engine)
 				authSynchronizer.Run()
 				blog.Info("enable auth center and enable auth sync function.")
 			}
@@ -115,7 +116,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 		break
 	}
-	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
+	if err := backbone.StartServer(ctx, engine, service.WebService(), true); err != nil {
 		return err
 	}
 
@@ -157,7 +158,7 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 
 		var err error
 		h.Config.AuthCenter, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-		if err != nil && h.Config.AuthCenter.Enable {
+		if err != nil && auth.IsAuthed() {
 			blog.Errorf("parse authcenter error: %v, config: %+v", err, current.ConfigMap)
 		}
 	}

@@ -2,9 +2,9 @@
     <div class="audit-wrapper">
         <div class="title-content">
             <div class="group-content" v-if="isAdminView">
-                <span class="title-name">{{$t('业务')}}</span>
+                <span class="title-name" :title="$t('业务')">{{$t('业务')}}</span>
                 <div class="selector-content">
-                    <bk-select v-model="filter.bizId" searchable>
+                    <bk-select v-model="filter.bizId" searchable font-size="14">
                         <bk-option v-for="business in authorizedBusiness"
                             :key="business.bk_biz_id"
                             :id="business.bk_biz_id"
@@ -14,18 +14,19 @@
                 </div>
             </div>
             <div class="group-content">
-                <span class="title-name">IP</span>
+                <span class="title-name" title="IP">IP</span>
                 <div class="selector-content">
                     <bk-input class="cmdb-form-input" type="text"
+                        font-size="large"
                         :placeholder="$t('使用逗号分隔')"
                         v-model.trim="filter.bkIP">
                     </bk-input>
                 </div>
             </div>
             <div class="group-content">
-                <span class="title-name">{{$t('模型')}}</span>
+                <span class="title-name" :title="$t('模型')">{{$t('模型')}}</span>
                 <div class="selector-content">
-                    <bk-select v-model="filter.classify" searchable>
+                    <bk-select v-model="filter.classify" searchable font-size="14">
                         <bk-option-group v-for="group in filterClassifications"
                             :key="group.id"
                             :name="group.name">
@@ -39,9 +40,10 @@
                 </div>
             </div>
             <div class="group-content">
-                <span class="title-name">{{$t('类型')}}</span>
+                <span class="title-name" :title="$t('类型')">{{$t('类型')}}</span>
                 <div class="selector-content">
                     <bk-select
+                        font-size="14"
                         v-model="filter.bkOpType"
                         :clearable="false">
                         <bk-option v-for="option in operateTypeList"
@@ -53,11 +55,12 @@
                 </div>
             </div>
             <div class="group-content">
-                <span class="title-name">{{$t('时间')}}</span>
+                <span class="title-name" :title="$t('时间')">{{$t('时间')}}</span>
                 <div class="selector-content date-range-content">
                     <cmdb-form-date-range
                         class="date-range"
                         :clearable="false"
+                        font-size="14"
                         v-model="filter.bkCreateTime">
                     </cmdb-form-date-range>
                 </div>
@@ -70,7 +73,8 @@
             v-bkloading="{ isLoading: $loading('getOperationLog') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 250"
+            :max-height="$APP.height - 190"
+            :row-style="{ cursor: 'pointer' }"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
@@ -114,6 +118,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :quick-close="true"
             :is-show.sync="details.isShow"
             :width="800"
@@ -161,7 +166,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        limit: 10
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-op_time',
                     sort: '-op_time'
@@ -317,6 +322,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .audit-wrapper {
+        padding: 0 20px;
+    }
     .title-content{
         padding: 0 0 14px 0;
         display: flex;
@@ -355,9 +363,10 @@
                 max-width: 48px;
                 font-size: 14px;
                 padding-right: 5px;
+                @include ellipsis;
             }
             .date-range-content {
-                width: calc(100% - 40px);
+                width: calc(100% - 10px);
                 .date-range {
                     width: 100%;
                 }

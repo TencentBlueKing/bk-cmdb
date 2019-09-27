@@ -1,6 +1,6 @@
 <template>
-    <div class="business-topo-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
-        <feature-tips
+    <div class="business-topo-wrapper">
+        <feature-tips class="tips"
             style="text-align: left;"
             :feature-name="'modelBusiness'"
             :show-tips="showFeatureTips"
@@ -148,12 +148,12 @@
             },
             handleLinkClick (model) {
                 this.$router.push({
-                    name: 'modelDetails',
+                    name: 'businessModelDetails',
                     params: {
                         modelId: model.bk_obj_id
                     },
                     query: {
-                        from: this.$route.fullPath
+                        from: 'business'
                     }
                 })
             }
@@ -163,7 +163,8 @@
 
 <style lang="scss" scoped>
     .business-topo-wrapper {
-        height: 100%;
+        position: relative;
+        padding: 0;
         background-color: #f4f5f8;
         background-image: linear-gradient(#eef1f5 1px, transparent 0), linear-gradient(90deg, #eef1f5 1px, transparent 0);
         background-size: 10px 10px;
@@ -173,7 +174,13 @@
             display: inline-block;
             vertical-align: middle;
             width: 0;
-            height: calc(100% - 20px);
+            height: 100%;
+        }
+        .tips {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            width: calc(100% - 40px);
         }
     }
     .topo-level {

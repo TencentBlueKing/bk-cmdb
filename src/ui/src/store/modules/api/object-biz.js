@@ -19,31 +19,13 @@ const state = {
 
 const getters = {
     business: state => state.business,
-    bizId: (state, getters, rootState, rootGetters) => {
-        const authorizedBusiness = state.authorizedBusiness
-        if (rootGetters.isAdminView || !authorizedBusiness.length) {
-            return null
-        }
-        const selected = parseInt(window.localStorage.getItem('selectedBusiness'))
-        if (selected) {
-            const isAuthorized = authorizedBusiness.some(business => business.bk_biz_id === selected)
-            if (isAuthorized) {
-                return selected
-            }
-            return authorizedBusiness[0]['bk_biz_id']
-        }
-        return null
-    },
+    bizId: state => state.bizId,
     authorizedBusiness: state => state.authorizedBusiness
 }
 
 const actions = {
-    getAuthorizedBusiness ({ commit }) {
-        return $http.get('biz/with_reduced', {
-            requestId: 'getAuthorizedBusiness',
-            fromCache: true,
-            cancelWhenRouteChange: false
-        }).then(data => {
+    getAuthorizedBusiness ({ commit }, config = {}) {
+        return $http.get('biz/with_reduced', config).then(data => {
             commit('setAuthorizedBusiness', data.info)
             return data.info
         })

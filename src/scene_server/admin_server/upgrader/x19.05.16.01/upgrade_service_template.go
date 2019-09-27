@@ -54,10 +54,26 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	}
 
 	for bizID, bizModules := range biz2Module {
-		ownerID := ""
+		ownerID := common.BKDefaultOwnerID
 		for modulename, modules := range bizModules {
+		    if len(modules) == 0 {
+		        continue
+            }
 			// modules would always more than 0, so would never panic here
-			ownerID = modules[0].SupplierAccount
+			if modules[0].SupplierAccount != "" {
+				ownerID = modules[0].SupplierAccount
+			}
+
+            processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: modulename}
+            processMappingInModule := []metadata.ProcessModule{}
+            if err = db.Table(common.BKTableNameProcModule).Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
+                return err
+            }
+            if len(processMappingInModule) <= 0 {
+                // this module does not bounded with a process, do not need to create service instance related info.
+                continue
+            }
+            
 			// build service template
 			svcTemplateID, err := db.NextSequence(ctx, common.BKTableNameServiceTemplate)
 			if err != nil {
@@ -74,7 +90,6 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				LastTime:          time.Now(),
 				SupplierAccount:   ownerID,
 			}
-			blog.InfoJSON("serviceTemplate: %s", serviceTemplate)
 			if err = db.Table(common.BKTableNameServiceTemplate).Insert(ctx, serviceTemplate); err != nil {
 				return err
 			}
@@ -90,16 +105,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 			if err = db.Table(common.BKTableNameBaseModule).Update(ctx, moduleFilter, moduleUpdateData); err != nil {
 				return err
 			}
-
-			// build process template
-			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: modulename}
-			processMappingInModule := []metadata.ProcessModule{}
-			if err = db.Table(common.BKTableNameProcModule).Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
-				return err
-			}
-			if len(processMappingInModule) <= 0 {
-				continue
-			}
+			
 
 			processIDInModule := []int64{}
 			for _, mapping := range processMappingInModule {
@@ -113,6 +119,8 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				return err
 			}
 			if len(oldProcess) <= 0 {
+			    // no process in this bounded module,
+			    // normally, this can not be happen.
 				continue
 			}
 

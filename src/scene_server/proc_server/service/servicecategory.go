@@ -14,29 +14,51 @@ package service
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
 
 func (ps *ProcServer) ListServiceCategoryWithStatistics(ctx *rest.Contexts) {
-	ps.listServiceCategory(ctx, true)
+	result, err := ps.listServiceCategory(ctx, true)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
 func (ps *ProcServer) ListServiceCategory(ctx *rest.Contexts) {
-	ps.listServiceCategory(ctx, false)
-}
-
-func (ps *ProcServer) listServiceCategory(ctx *rest.Contexts, withStatistics bool) {
-	meta := new(metadata.MetadataWrapper)
-	if err := ctx.DecodeInto(meta); err != nil {
+	result, err := ps.listServiceCategory(ctx, false)
+	if err != nil {
 		ctx.RespAutoError(err)
 		return
+	}
+	if result == nil {
+		blog.Errorf("ListServiceCategory result unexpected nil, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrProcGetServiceCategoryFailed))
+	}
+	data := metadata.MultipleServiceCategory{
+		Count: result.Count,
+	}
+	for _, item := range result.Info {
+		data.Info = append(data.Info, item.ServiceCategory)
+	}
+	ctx.RespEntity(data)
+}
+
+func (ps *ProcServer) listServiceCategory(ctx *rest.Contexts, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
+	rid := ctx.Kit.Rid
+	meta := new(metadata.MetadataWrapper)
+	if err := ctx.DecodeInto(meta); err != nil {
+		return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	bizID, err := metadata.BizIDFromMetadata(meta.Metadata)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get service category list, but get business id failed, err: %v", err)
-		return
+		blog.Errorf("get service category list failed, parse biz id from metadata failed, metadata: %+v, err: %+v, rid: %s", meta.Metadata, err, rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
 	}
 
 	listOption := metadata.ListServiceCategoriesOption{
@@ -66,13 +88,13 @@ func (ps *ProcServer) listServiceCategory(ctx *rest.Contexts, withStatistics boo
 		}
 	*/
 
-	list, err := ps.CoreAPI.CoreService().Process().ListServiceCategories(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPReadBodyFailed, "get service category list failed, err: %v", err)
-		return
+	list, ccErr := ps.CoreAPI.CoreService().Process().ListServiceCategories(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
+	if ccErr != nil {
+		blog.Errorf("CoreService ListServiceCategories failed, listOption: %+v, err: %s, rid: %s", listOption, ccErr.Error(), rid)
+		return nil, ccErr
 	}
 
-	ctx.RespEntity(list)
+	return list, nil
 }
 
 func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {

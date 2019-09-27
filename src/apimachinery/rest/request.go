@@ -268,7 +268,7 @@ func (r *Request) Do() *Result {
 				req.WithContext(r.ctx)
 			}
 
-			req.Header = r.headers
+			req.Header = commonUtil.CloneHeader(r.headers)
 			if len(req.Header) == 0 {
 				req.Header = make(http.Header)
 			}

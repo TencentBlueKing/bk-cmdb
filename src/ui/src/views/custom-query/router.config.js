@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
+import { MENU_BUSINESS, MENU_BUSINESS_HOST } from '@/dictionary/menu-symbol'
 import {
     C_CUSTOM_QUERY,
     U_CUSTOM_QUERY,
@@ -14,28 +14,23 @@ export const OPERATION = {
     D_CUSTOM_QUERY
 }
 
-const path = '/custom-query'
-
 export default {
     name: 'customQuery',
-    path: path,
+    path: 'custom-query',
     component: () => import('./index.vue'),
     meta: new Meta({
+        owner: MENU_BUSINESS,
         menu: {
-            id: 'customQuery',
             i18n: '动态分组',
-            path: path,
-            order: 4,
-            parent: NAV_BUSINESS_RESOURCE,
-            adminView: false
+            parent: MENU_BUSINESS_HOST
         },
         auth: {
-            operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'business'
-            }
+            view: {
+                R_CUSTOM_QUERY
+            },
+            operation: OPERATION,
+            authScope: 'business'
         },
-        requireBusiness: true,
-        i18nTitle: '动态分组'
+        requireBusiness: true
     })
 }

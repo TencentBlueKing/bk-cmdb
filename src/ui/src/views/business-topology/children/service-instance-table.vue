@@ -127,13 +127,15 @@
                 </span>
             </template>
         </bk-table>
-        <bk-dialog class="bk-dialog-no-padding"
+        <bk-dialog class="bk-dialog-no-padding edit-label-dialog"
             v-model="editLabel.show"
             :width="580"
+            :mask-close="false"
+            :esc-close="false"
             @confirm="handleSubmitEditLable"
             @cancel="handleCloseEditLable"
             @after-leave="handleSetEditBox">
-            <div slot="header" style="text-align: left;">
+            <div slot="header">
                 {{$t('编辑标签')}}
             </div>
             <template v-if="editLabel.visiable">
@@ -214,7 +216,7 @@
                 return this.$store.state.businessTopology.selectedNodeInstance
             },
             flattenList () {
-                return this.$tools.flattenList(this.properties, this.list.map(data => data.property))
+                return this.$tools.flattenList(this.properties, this.list.map(data => data.property || {}))
             },
             requestId () {
                 return {
@@ -336,16 +338,10 @@
                     params: {
                         instanceId: this.instance.id,
                         hostId: this.instance.bk_host_id,
-                        setId: this.module.bk_set_id,
+                        setId: this.currentNode.parent.data.bk_inst_id,
                         moduleId: this.module.bk_module_id
                     },
                     query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.module.bk_module_id
-                            }
-                        },
                         title: this.instance.name
                     }
                 })
@@ -382,14 +378,6 @@
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.instance.service_template_id
-                    },
-                    query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.module.bk_module_id
-                            }
-                        }
                     }
                 })
             },
@@ -450,6 +438,7 @@
                     }
                     if (status && status.bk_error_msg === 'success') {
                         this.$success(this.$t('保存成功'))
+                        this.$parent.handleCheckALL(false)
                         this.$parent.filter = ''
                         this.$parent.getServiceInstances()
                         this.$parent.getHistoryLabel()
@@ -608,6 +597,14 @@
                     background-color: #e1ecff;
                 }
             }
+        }
+    }
+    .edit-label-dialog {
+        /deep/ .bk-dialog-header {
+            text-align: left !important;
+            font-size: 24px;
+            color: #444444;
+            margin-top: -15px;
         }
     }
 </style>

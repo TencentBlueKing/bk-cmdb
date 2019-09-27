@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
@@ -95,25 +94,28 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 	}
 
-	var rowErr map[int64]error
 	results := &BatchResult{}
 	if batchInfo.InputType != common.InputTypeExcel {
 		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
 	}
-	if batchInfo.BatchInfo == nil {
+	if len(batchInfo.BatchInfo) == 0 {
 		return results, fmt.Errorf("BatchInfo empty")
-	}
-
-	for errIdx, err := range rowErr {
-		results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", errIdx, err.Error()))
 	}
 
 	object := obj.Object()
 
-	// all the instances's name should not be same,
-	// so we need to check first.
-	instNameMap := make(map[string]struct{})
-	for line, inst := range *batchInfo.BatchInfo {
+	// 1. 检查实例与URL参数指定的模型一致
+	for line, inst := range batchInfo.BatchInfo {
+		objID, exist := inst[common.BKObjIDField]
+		if exist == true && objID != object.ObjectID {
+			blog.Errorf("create object[%s] instance batch failed, because bk_obj_id field conflict with url field, rid: %s", object.ObjectID, params.ReqID)
+			return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl, line)
+		}
+	}
+
+	// 2. 检查批量数据中实例名称是否重复
+	instNameMap := make(map[string]bool)
+	for line, inst := range batchInfo.BatchInfo {
 		iName, exist := inst[common.BKInstNameField]
 		if !exist {
 			blog.Errorf("create object[%s] instance batch failed, because missing bk_inst_name field., rid: %s", object.ObjectID, params.ReqID)
@@ -132,82 +134,75 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			return nil, params.Err.Errorf(common.CCErrorTopoMultipleObjectInstanceName, name)
 		}
 
-		instNameMap[name] = struct{}{}
+		instNameMap[name] = true
+	}
+
+	nonInnerAttributes, err := obj.GetNonInnerAttributes()
+	if err != nil {
+		blog.Errorf("[audit]failed to get the object(%s)' attribute, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+		return nil, err
 	}
 
 	updatedInstanceIDs := make([]int64, 0)
 	createdInstanceIDs := make([]int64, 0)
-
-	for colIdx, colInput := range *batchInfo.BatchInfo {
+	for colIdx, colInput := range batchInfo.BatchInfo {
 		if colInput == nil {
-			// this is a empty excel line.
+			// ignore empty excel line
 			continue
 		}
 
 		delete(colInput, "import_from")
+		// create memory object
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
 
-		exist := item.GetValues().Exists(obj.GetInstIDFieldName())
-		if exist {
-			// check update
-			targetInstID, err := item.GetInstID()
+		existInDB, filter, err := item.CheckInstanceExists(nonInnerAttributes)
+		if nil != err {
+			blog.Errorf("[operation-inst] failed to get inst is exist, err: %s, rid: %s", err.Error(), params.ReqID)
+			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+			continue
+		}
+		if existInDB {
+			preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
+			err = item.UpdateInstance(filter, colInput, nonInnerAttributes)
 			if nil != err {
-				blog.Errorf("[operation-inst] failed to get inst id, err: %s, rid: %s", err.Error(), params.ReqID)
+				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
-			updatedInstanceIDs = append(updatedInstanceIDs, targetInstID)
-			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
-				blog.Errorf("[operation-inst] CreateInstBatch failed, update instance failed, validation failed, err: %+v, rid: %s", err, params.ReqID)
+			instID, err := item.GetInstID()
+			if err != nil {
+				blog.ErrorJSON("update inst success, but get id field failed, inst: %s, err: %s, rid: %s", item.GetValues(), err.Error(), params.ReqID)
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
-
-		} else {
-			// check this instance with object unique field.
-			// otherwise, this instance is really a new one, need to be created.
-			// TODO: add a logic to handle if this instance is already exist or not with unique api.
-			// if already exist, then update, otherwise create.
-
-			if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
-				switch tmpErr := err.(type) {
-				case errors.CCErrorCoder:
-					if tmpErr.GetCode() != common.CCErrCommDuplicateItem {
-						blog.Errorf("[operation-inst] failed to valid, input value(%#v) the instname is %s, err: %s, rid: %s", item.GetValues(), obj.GetInstNameFieldName(), err.Error(), params.ReqID)
-						results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-						continue
-					}
-				default:
-
-				}
-
-			}
-
-			// create with metadata
-			if bizID != 0 {
-				colInput[metadata.BKMetadata] = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
-			}
+			updatedInstanceIDs = append(updatedInstanceIDs, instID)
+			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
+			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
+			continue
 		}
 
+		// create with metadata
+		if bizID != 0 {
+			colInput[metadata.BKMetadata] = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+		}
 		// set data
-		err := item.Save(colInput)
+		// call CoreService.CreateInstance
+		err = item.Create()
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), params.ReqID)
 			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 			continue
 		}
 		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
-		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item, nonInnerAttributes)
 
 		instanceID, err := item.GetInstID()
 		if err != nil {
 			blog.Errorf("unexpected error, instances created success, but get id failed, err: %+v, rid: %s", err, params.ReqID)
 			continue
 		}
-		if exist == false {
-			createdInstanceIDs = append(createdInstanceIDs, instanceID)
-		}
+		createdInstanceIDs = append(createdInstanceIDs, instanceID)
 	}
 
 	results.SuccessCreated = createdInstanceIDs
@@ -266,7 +261,7 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 		return nil, err
 	}
 
-	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item, nil)
 
 	instID, err := item.GetInstID()
 	if err != nil {
@@ -323,7 +318,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst, c
 		}
 	}
 
-	instIDS := []deletedInst{}
+	instIDS := make([]deletedInst, 0)
 	instIDS = append(instIDS, deletedInst{instID: id, obj: targetObj})
 	childInsts, err := targetInst.GetMainlineChildInst()
 	if nil != err {
@@ -510,7 +505,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 	}
 	object := obj.Object()
 
-	ids := []int64{}
+	ids := make([]int64, 0)
 	for _, id := range instIDS {
 		if 0 == len(strings.TrimSpace(id)) {
 			continue
@@ -931,7 +926,7 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 
 		if !rsp.Result {
 
-			blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, params.ReqID)
+			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, params.ReqID)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
@@ -1002,6 +997,6 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 	currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
-	NewSupplementary().Audit(params, c.clientSet, obj, c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
+	NewSupplementary().Audit(params, c.clientSet, obj, c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nil)
 	return nil
 }

@@ -180,7 +180,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		blog.V(7).Infof("auth filter parse attribute result: %s, rid: %s", attribute, rid)
+		blog.V(7).Infof("auth filter parse attribute result: %v, rid: %s", attribute, rid)
 		decision, err := s.authorizer.Authorize(req.Request.Context(), attribute)
 		if err != nil {
 			blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s", path, err, rid)

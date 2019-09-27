@@ -6,24 +6,24 @@
         trigger="manual"
         :width="350"
         :on-show="handleShow"
+        :on-hide="handleHide"
         :tippy-options="{
             zIndex: 1001,
             interactive: true,
             hideOnClick: false,
             onShown: checkIsScrolling
         }">
-        <bk-button class="filter-trigger"
-            theme="default"
-            v-bk-tooltips.top="$t('高级筛选')"
+        <icon-button class="filter-trigger"
             icon="icon-cc-funnel"
+            v-bk-tooltips.top="$t('高级筛选')"
             :class="{
                 'is-active': isFilterActive
             }"
             @click="handleToggleFilter">
-        </bk-button>
+        </icon-button>
         <section class="filter-content" slot="content"
             :style="{
-                height: $APP.height - 150 + 'px'
+                height: $APP.height - 200 + 'px'
             }">
             <h2 class="filter-title">
                 {{$t('高级筛选')}}
@@ -32,18 +32,18 @@
             <div class="filter-scroller" ref="scroller">
                 <div class="filter-group" style="padding: 0;">
                     <label class="filter-label">IP</label>
-                    <bk-input type="textarea" v-model="ip.text" :rows="4"></bk-input>
+                    <bk-input type="textarea" v-model="ip.text" :rows="4" :placeholder="$t('请输入IP')"></bk-input>
                 </div>
                 <div class="filter-group checkbox-group">
                     <bk-checkbox class="filter-checkbox"
                         v-model="ip.inner"
                         :disabled="!ip.outer">
-                        {{$t('内网')}}
+                        {{$t('内网IP')}}
                     </bk-checkbox>
                     <bk-checkbox class="filter-checkbox"
                         v-model="ip.outer"
                         :disabled="!ip.inner">
-                        {{$t('外网')}}
+                        {{$t('外网IP')}}
                     </bk-checkbox>
                     <bk-checkbox class="filter-checkbox" v-model="ip.exact">{{$t('精确')}}</bk-checkbox>
                 </div>
@@ -90,7 +90,7 @@
                 :class="{
                     'is-sticky': isScrolling
                 }">
-                <template v-if="$route.name === 'hosts'">
+                <template v-if="isBusinessHost">
                     <div class="fl">
                         <bk-button theme="primary" style="margin-right: 6px;" @click="handleSearch">{{$t('查询')}}</bk-button>
                         <bk-button theme="default"
@@ -149,6 +149,7 @@
     import filterOperator from './_filter-field-operator.vue'
     import propertySelector from './filter-property-selector.vue'
     import { mapState, mapGetters } from 'vuex'
+    import { MENU_BUSINESS_HOST_MANAGEMENT } from '@/dictionary/menu-symbol'
     export default {
         components: {
             filterOperator,
@@ -178,7 +179,8 @@
                 isScrolling: false,
                 collectionName: '',
                 propertyPromise: null,
-                propertyResolver: null
+                propertyResolver: null,
+                isShow: false
             }
         },
         computed: {
@@ -192,7 +194,10 @@
                         && filterValue !== undefined
                         && !!String(filterValue).length
                 })
-                return hasIP || hasField
+                return hasIP || hasField || this.isShow
+            },
+            isBusinessHost () {
+                return this.$route.name === MENU_BUSINESS_HOST_MANAGEMENT
             }
         },
         watch: {
@@ -216,15 +221,15 @@
                     resolve()
                 }
             })
-            const formFullTextSearch = Object.keys(this.$route.params).length
-            if (formFullTextSearch) {
-                this.defaultIpConfig = Object.assign(this.defaultIpConfig, this.$route.params)
-            }
+            // const formFullTextSearch = Object.keys(this.$route.params).length
+            // if (formFullTextSearch) {
+            //     this.defaultIpConfig = Object.assign(this.defaultIpConfig, this.$route.params)
+            // }
             await this.initCustomFilterIP()
             await this.initCustomFilterList()
-            if (formFullTextSearch) {
-                this.handleSearch()
-            }
+            // if (formFullTextSearch) {
+            //     this.handleSearch()
+            // }
         },
         beforeDestroy () {
             this.$store.commit('hosts/clearFilter')
@@ -454,7 +459,15 @@
                 })
             },
             handleShow (popper) {
+                this.isShow = true
                 popper.popperChildren.tooltip.style.padding = 0
+            },
+            handleHide () {
+                this.isShow = false
+                const collectionPopover = this.$refs.collectionPopover
+                if (collectionPopover && collectionPopover.instance.state.isShown) {
+                    collectionPopover.instance.hide()
+                }
             },
             getFilterLabel (filterItem) {
                 const model = this.$store.getters['objectModelClassify/getModelById'](filterItem.bk_obj_id) || {}
@@ -479,7 +492,7 @@
     .filter-trigger {
         width: 32px;
         padding: 0;
-        line-height: 14px;
+        line-height: 30px;
     }
     .filter-trigger.is-active {
         color: #3A84FF;
@@ -493,6 +506,10 @@
             position: absolute;
             right: 0px;
             top: 0px;
+            color: #979BA5;
+            &:hover {
+                color: #63656E;
+            }
         }
     }
     .filter-scroller {

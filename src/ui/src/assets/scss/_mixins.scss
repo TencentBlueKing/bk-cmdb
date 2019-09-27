@@ -40,3 +40,12 @@
     display: inline-block;
     vertical-align: $align;
 }
+
+@mixin middleBlockHack {
+    &:before {
+        @include inlineBlock;
+        content: "";
+        width: 0;
+        height: 100%;
+    }
+}

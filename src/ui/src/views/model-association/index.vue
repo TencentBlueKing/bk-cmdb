@@ -1,5 +1,5 @@
 <template>
-    <div class="relation-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="relation-wrapper">
         <feature-tips
             :feature-name="'association'"
             :show-tips="showFeatureTips"
@@ -26,12 +26,14 @@
                     v-model.trim="searchText"
                     :right-icon="'bk-icon icon-search'"
                     :placeholder="$t('请输入关联类型名称')"
+                    font-size="large"
                     @enter="searchRelation(true)">
                 </bk-input>
             </label>
         </p>
         <bk-table
             v-bkloading="{ isLoading: $loading('searchAssociationType') }"
+            :max-height="$APP.height - 229"
             :data="table.list"
             :pagination="table.pagination"
             @page-change="handlePageChange"
@@ -86,6 +88,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             class="relation-slider"
             :width="450"
             :title="slider.title"
@@ -94,7 +97,7 @@
             <the-relation
                 ref="relationForm"
                 slot="content"
-                class="slider-content"
+                class="model-slider-content"
                 v-if="slider.isShow"
                 :is-edit="slider.isEdit"
                 :is-read-only="slider.isReadOnly"
@@ -131,7 +134,7 @@
                     pagination: {
                         count: 0,
                         current: 1,
-                        limit: 10
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-ispre',
                     sort: '-ispre'
@@ -284,6 +287,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .relation-wrapper {
+        padding: 0 20px;
+    }
     .operation-box {
         margin: 0 0 14px 0;
         font-size: 0;

@@ -5,35 +5,38 @@
                 <div class="choose-icon-wrapper">
                     <span class="model-type">{{getModelType()}}</span>
                     <template v-if="isEditable">
-                        <div class="icon-box" @click="isIconListShow = true">
-                            <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', { ispre: isPublicModel }]"></i>
+                        <div class="icon-box" v-if="!activeModel['bk_ispaused']" @click="isIconListShow = true">
+                            <i class="icon" :class="[activeModel['bk_obj_icon'] || 'icon-cc-default', { ispre: isPublicModel }]"></i>
                             <p class="hover-text">{{$t('点击切换')}}</p>
+                        </div>
+                        <div class="icon-box" v-else>
+                            <i class="icon" :class="[activeModel['bk_obj_icon'] || 'icon-cc-default', { ispre: isPublicModel }]"></i>
+                            <p class="hover-text is-paused">{{$t('已停用')}}</p>
                         </div>
                         <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
                             <the-choose-icon
                                 v-model="modelInfo.objIcon"
-                                type="update"
+                                @close="hideChooseBox"
                                 @chooseIcon="chooseIcon">
                             </the-choose-icon>
                         </div>
                     </template>
                     <template v-else>
                         <div class="icon-box" style="cursor: default;">
-                            <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', { ispre: isPublicModel }]"></i>
+                            <i class="icon" :class="[activeModel['bk_obj_icon'] || 'icon-cc-default', { ispre: isPublicModel }]"></i>
                         </div>
                     </template>
                 </div>
                 <div class="model-text">
                     <span>{{$t('唯一标识')}}：</span>
-                    <span class="text-content id">{{activeModel ? activeModel['bk_obj_id'] : ''}}</span>
+                    <span class="text-content id" :title="activeModel['bk_obj_id'] || ''">{{activeModel['bk_obj_id'] || ''}}</span>
                 </div>
                 <div class="model-text">
                     <span>{{$t('名称')}}：</span>
                     <template v-if="!isEditName">
-                        <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}
-                        </span>
+                        <span class="text-content" :title="activeModel['bk_obj_name'] || ''">{{activeModel['bk_obj_name'] || ''}}</span>
                         <i class="icon icon-cc-edit text-primary"
-                            v-if="isEditable && !activeModel.ispre"
+                            v-if="isEditable && !activeModel.ispre && !activeModel.bk_ispaused"
                             @click="editModelName">
                         </i>
                     </template>
@@ -49,6 +52,28 @@
                         <span class="text-primary" @click="isEditName = false">{{$t('取消')}}</span>
                     </template>
                 </div>
+                <div class="model-text ml10" v-if="!activeModel['bk_ispaused'] && activeModel.bk_classification_id !== 'bk_biz_topo'">
+                    <span>{{$t('实例数量')}}：</span>
+                    <div class="text-content-count"
+                        :title="modelStatisticsSet[activeModel['bk_obj_id']] || 0"
+                        @click="handleGoInstance">
+                        <span>{{modelStatisticsSet[activeModel['bk_obj_id']] || 0}}</span>
+                        <i class="icon-cc-share"></i>
+                    </div>
+                </div>
+                <span class="restart-btn"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_MODEL),
+                        auth: [$OPERATION.U_MODEL]
+                    }"
+                    v-if="!isMainLine && activeModel['bk_ispaused']"
+                    v-bk-tooltips.right="$t('保留模型和相应实例，隐藏关联关系')">
+                    <bk-button
+                        theme="primary"
+                        @click="dialogConfirm('restart')">
+                        {{$t('立即启用')}}
+                    </bk-button>
+                </span>
                 <div class="btn-group">
                     <template v-if="canBeImport">
                         <label class="label-btn"
@@ -73,13 +98,10 @@
                                 active: !$isAuthorized($OPERATION.U_MODEL),
                                 auth: [$OPERATION.U_MODEL]
                             }"
-                            v-if="!isMainLine"
+                            v-if="!isMainLine && !activeModel['bk_ispaused']"
                             v-bk-tooltips="$t('保留模型和相应实例，隐藏关联关系')">
                             <i class="bk-icon icon-minus-circle-shape"></i>
-                            <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
-                                {{$t('启用')}}
-                            </span>
-                            <span v-else @click="dialogConfirm('stop')">
+                            <span @click="dialogConfirm('stop')">
                                 {{$t('停用')}}
                             </span>
                         </label>
@@ -99,7 +121,7 @@
         </div>
         <bk-tab class="model-details-tab" type="unborder-card" :active.sync="tab.active">
             <bk-tab-panel name="field" :label="$t('模型字段')">
-                <the-field ref="field" v-if="tab.active === 'field'"></the-field>
+                <the-field-group ref="field" v-if="tab.active === 'field'"></the-field-group>
             </bk-tab-panel>
             <bk-tab-panel name="relation" :label="$t('模型关联')" :visible="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
@@ -107,24 +129,26 @@
             <bk-tab-panel name="verification" :label="$t('唯一校验')">
                 <the-verification v-if="tab.active === 'verification'"></the-verification>
             </bk-tab-panel>
-            <bk-tab-panel name="propertyGroup" :label="$t('字段分组')">
-                <the-property-group v-if="tab.active === 'propertyGroup'"></the-property-group>
-            </bk-tab-panel>
         </bk-tab>
     </div>
 </template>
 
 <script>
-    import thePropertyGroup from './group.vue'
-    import theField from './field'
     import theRelation from './relation'
-    import theChooseIcon from '@/components/model-manage/_choose-icon'
     import theVerification from './verification'
+    import theFieldGroup from '@/components/model-manage/field-group'
+    import theChooseIcon from '@/components/model-manage/choose-icon/_choose-icon'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
+    import {
+        MENU_MODEL_MANAGEMENT,
+        MENU_RESOURCE_HOST,
+        MENU_RESOURCE_BUSINESS,
+        MENU_RESOURCE_INSTANCE,
+        MENU_MODEL_BUSINESS_TOPOLOGY
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
-            thePropertyGroup,
-            theField,
+            theFieldGroup,
             theRelation,
             theVerification,
             theChooseIcon
@@ -140,7 +164,8 @@
                 },
                 isIconListShow: false,
                 isEditName: false,
-                specialModel: ['process', 'plat']
+                specialModel: ['process', 'plat'],
+                modelStatisticsSet: {}
             }
         },
         computed: {
@@ -305,14 +330,46 @@
                 this.isEditName = false
             },
             async initObject () {
+                await this.getModelStatistics()
                 const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
                 if (model) {
                     this.$store.commit('objectModel/setActiveModel', model)
-                    this.$store.commit('setHeaderTitle', model['bk_obj_name'])
+                    this.setBreadcrumbs(model)
                     this.initModelInfo()
                 } else {
                     this.$router.replace({ name: 'status404' })
                 }
+            },
+            setBreadcrumbs (model) {
+                const breadcrumbs = [{
+                    label: this.$t('模型管理'),
+                    route: {
+                        name: MENU_MODEL_MANAGEMENT
+                    }
+                }, {
+                    label: model.bk_obj_name
+                }]
+                if (this.$route.query.from === 'business') {
+                    breadcrumbs.splice(0, 1, {
+                        label: this.$t('业务层级'),
+                        route: {
+                            name: MENU_MODEL_BUSINESS_TOPOLOGY
+                        }
+                    })
+                }
+                this.$store.commit('setBreadcrumbs', breadcrumbs)
+            },
+            async getModelStatistics () {
+                const modelStatisticsSet = {}
+                const res = await this.$store.dispatch('objectModelClassify/getClassificationsObjectStatistics', {
+                    config: {
+                        requestId: 'getClassificationsObjectStatistics'
+                    }
+                })
+                res.forEach(item => {
+                    modelStatisticsSet[item.bk_obj_id] = item.instance_count
+                })
+                this.modelStatisticsSet = modelStatisticsSet
             },
             initModelInfo () {
                 this.modelInfo = {
@@ -404,6 +461,7 @@
                             requestId: 'deleteModel'
                         }
                     })
+                    this.$router.replace({ name: MENU_MODEL_MANAGEMENT })
                 } else {
                     await this.deleteObject({
                         id: this.activeModel['id'],
@@ -414,9 +472,28 @@
                             requestId: 'deleteModel'
                         }
                     })
+                    this.$router.replace({ name: MENU_MODEL_MANAGEMENT })
                 }
                 this.$http.cancel('post_searchClassificationsObjects')
-                this.$router.replace({ name: 'model' })
+            },
+            handleGoInstance () {
+                const model = this.activeModel
+                const map = {
+                    host: MENU_RESOURCE_HOST,
+                    biz: MENU_RESOURCE_BUSINESS
+                }
+                if (map.hasOwnProperty(model.bk_obj_id)) {
+                    this.$router.push({
+                        name: map[model.bk_obj_id]
+                    })
+                } else {
+                    this.$router.push({
+                        name: MENU_RESOURCE_INSTANCE,
+                        params: {
+                            objId: model.bk_obj_id
+                        }
+                    })
+                }
             }
         }
     }
@@ -425,24 +502,34 @@
 <style lang="scss" scoped>
     .model-detail-wrapper {
         padding: 0;
-        height: 100%;
     }
     .model-details-tab {
-        height: calc(100% - 100px) !important;
+        height: calc(100% - 70px) !important;
+        /deep/ {
+            .bk-tab-header {
+                padding: 0;
+                margin: 0 20px;
+            }
+            .bk-tab-section {
+                padding: 0;
+            }
+        }
     }
     .model-info {
-        padding: 0 24px 0 38px;
-        height: 100px;
-        background: rgba(235, 244, 255, .6);
+        padding: 0 24px;
+        height: 70px;
+        background: #ebf4ff;
         font-size: 14px;
+        border-bottom: 1px solid #dcdee5;
+        border-top: 1px solid #dcdee5;
         .choose-icon-wrapper {
             position: relative;
             float: left;
-            margin: 14px 30px 0 0;
+            margin: 8px 30px 0 0;
             .model-type {
                 position: absolute;
-                left: 58px;
-                top: -8px;
+                left: 42px;
+                top: -12px;
                 padding: 0 6px;
                 border-radius: 4px;
                 background-color: #ffb23a;
@@ -452,6 +539,7 @@
                 white-space: nowrap;
                 transform: scale(.5);
                 transform-origin: left center;
+                z-index: 2;
                 &:after {
                     content: "";
                     position: absolute;
@@ -467,10 +555,10 @@
             }
             .choose-icon-box {
                 position: absolute;
-                left: 0;
-                top: 80px;
-                width: 395px;
-                height: 262px;
+                left: -12px;
+                top: 62px;
+                width: 600px;
+                height: 460px;
                 background: #fff;
                 border: 1px solid #dde4e8;
                 box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.13);
@@ -494,14 +582,14 @@
             }
         }
         .icon-box {
-            padding-top: 20px;
-            width: 72px;
-            height: 72px;
+            padding-top: 16px;
+            width: 54px;
+            height: 54px;
             border: 1px solid #dde4eb;
             border-radius: 50%;
             background: #fff;
             text-align: center;
-            font-size: 32px;
+            font-size: 20px;
             color: $cmdbBorderFocusColor;
             cursor: pointer;
             &:hover {
@@ -515,51 +603,68 @@
                 position: absolute;
                 top: 0;
                 left: 0;
-                height: 72px;
-                width: 72px;
+                width: 54px;
+                height: 54px;
+                line-height: 54px;
                 font-size: 12px;
-                line-height: 72px;
                 border-radius: 50%;
                 text-align: center;
                 color: #fff;
+                &.is-paused {
+                    background: rgba(0, 0, 0, .5);
+                    display: block !important;
+                }
             }
             .icon {
                 vertical-align: top;
                 &.ispre {
-                    color: #868b97;
+                    color: #3a84ff;
                 }
             }
         }
         .model-text {
             float: left;
-            margin: 32px 10px 32px 0;
+            margin: 18px 10px 0 0;
             line-height: 36px;
             font-size: 0;
-            &:hover .icon-cc-edit {
-                display: inline-block;
-            }
             >span {
                 display: inline-block;
                 vertical-align: middle;
                 height: 36px;
                 font-size: 14px;
+                color: #737987;
             }
             .text-content {
-                max-width: 200px;
+                max-width: 110px;
                 vertical-align: middle;
+                color: #333948;
                 @include ellipsis;
                 &.id {
-                    width: 110px;
+                    min-width: 50px;
+                }
+            }
+            .text-content-count {
+                display: inline-block;
+                vertical-align: middle;
+                color: #3a84ff;
+                cursor: pointer;
+                >span {
+                    font-size: 14px;
+                    vertical-align: middle;
+                }
+                .icon-cc-share {
+                    font-size: 12px;
+                    margin-left: 6px;
+                    vertical-align: middle;
                 }
             }
             .icon-cc-edit {
-                display: none;
                 vertical-align: middle;
                 font-size: 14px;
             }
             .cmdb-form-item {
                 display: inline-block;
-                width: 200px;
+                width: 156px;
                 vertical-align: top;
                 input {
                     vertical-align: top;
@@ -570,10 +675,14 @@
                 margin-left: 5px;
             }
         }
+        .restart-btn {
+            display: inline-block;
+            margin: 19px 0 0 20px;
+        }
         .btn-group {
             float: right;
-            height: 100px;
-            line-height: 100px;
+            height: 70px;
+            line-height: 70px;
             .label-btn {
                 outline: 0;
                 position: relative;
@@ -588,6 +697,9 @@
                     width: 100%;
                     height: 100%;
                     cursor: pointer;
+                }
+                ::-webkit-file-upload-button {
+                    cursor:pointer;
                 }
             }
             .export-form {

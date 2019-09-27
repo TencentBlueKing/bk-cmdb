@@ -1,6 +1,8 @@
 <template>
     <div class="table-layout" v-show="show">
-        <div class="table-title" @click="localExpanded = !localExpanded">
+        <div class="table-title" @click="localExpanded = !localExpanded"
+            @mouseenter="handleShowDotMenu"
+            @mouseleave="handleHideDotMenu">
             <bk-checkbox class="title-checkbox"
                 :size="16"
                 v-model="checked"
@@ -9,8 +11,10 @@
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
-            <cmdb-dot-menu class="instance-menu" @click.native.stop>
-                <ul class="menu-list">
+            <cmdb-dot-menu class="instance-menu" ref="dotMenu" @click.native.stop>
+                <ul class="menu-list"
+                    @mouseenter="handleShowDotMenu"
+                    @mouseleave="handleHideDotMenu">
                     <li :class="['menu-item', { 'is-disabled': !$isAuthorized($OPERATION[menu.auth]) }]"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
@@ -63,8 +67,11 @@
         <bk-table
             v-show="localExpanded"
             v-bkloading="{ isLoading: $loading(Object.values(requestId)) }"
-            :data="flattenList">
-            <bk-table-column v-for="column in header"
+            :data="flattenList"
+            :row-style="{ cursor: 'pointer' }"
+            @row-click="showProcessDetails">
+            <bk-table-column v-for="(column, index) in header"
+                :class-name="index === 0 ? 'is-highlight' : ''"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
@@ -74,6 +81,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     export default {
         props: {
             instance: {
@@ -245,12 +253,21 @@
             },
             goTopologyInstance () {
                 this.$router.replace({
-                    name: 'topology',
+                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
                     query: {
                         module: this.instance.bk_module_id,
                         instanceName: this.instance.name
                     }
                 })
+            },
+            handleShowDotMenu () {
+                this.$refs.dotMenu.$el.style.opacity = 1
+            },
+            handleHideDotMenu () {
+                this.$refs.dotMenu.$el.style.opacity = 0
+            },
+            showProcessDetails (row) {
+                this.$emit('show-process-details', row)
             }
         }
     }
@@ -303,6 +320,7 @@
         }
     }
     .instance-menu {
+        opacity: 0;
         /deep/ .bk-tooltip-ref {
             width: 100%;
         }

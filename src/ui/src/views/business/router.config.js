@@ -1,5 +1,9 @@
 import Meta from '@/router/meta'
-import { NAV_BASIC_RESOURCE } from '@/dictionary/menu'
+import {
+    MENU_RESOURCE_BUSINESS,
+    MENU_RESOURCE_BUSINESS_HISTORY,
+    MENU_RESOURCE_MANAGEMENT
+} from '@/dictionary/menu-symbol'
 import {
     C_BUSINESS,
     U_BUSINESS,
@@ -14,42 +18,33 @@ export const OPERATION = {
     BUSINESS_ARCHIVE
 }
 
-const businessPath = '/business'
-const historyPath = '/history/biz'
-
 export default [{
-    name: 'business',
-    path: businessPath,
+    name: MENU_RESOURCE_BUSINESS,
+    path: 'business',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            id: 'business',
             i18n: '业务',
-            path: businessPath,
-            parent: NAV_BASIC_RESOURCE,
-            businessView: false
+            relative: MENU_RESOURCE_MANAGEMENT
         },
         auth: {
-            operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'global'
-            }
-        },
-        i18nTitle: '业务'
+            operation: OPERATION,
+            authScope: 'global'
+        }
     })
 }, {
-    name: 'businessHistory',
-    path: historyPath,
+    name: MENU_RESOURCE_BUSINESS_HISTORY,
+    path: 'history/biz',
     component: () => import('./archived.vue'),
     meta: new Meta({
-        auth: {
-            view: OPERATION.BUSINESS_ARCHIVE,
-            operation: [OPERATION.BUSINESS_ARCHIVE],
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+        menu: {
+            i18n: '已归档业务'
         },
-        i18nTitle: '业务',
+        auth: {
+            view: { BUSINESS_ARCHIVE },
+            operation: { BUSINESS_ARCHIVE },
+            authScope: 'global'
+        },
         checkAvailable: (to, from, app) => {
             return app.$store.getters.isAdminView
         }

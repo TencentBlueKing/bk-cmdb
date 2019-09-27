@@ -169,6 +169,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(ctx core.ContextPara
 			continue
 		}
 		if !exists {
+			blog.InfoJSON("CreateManyInstanceAssociation error. obj:%s,rid:%s", item.ObjectAsstID, ctx.ReqID)
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 				Message:     ctx.Error.Error(common.CCErrorAsstInstIsNotExist).Error(),
 				Code:        int64(common.CCErrorAsstInstIsNotExist),
