@@ -70,6 +70,8 @@
                             :key="collection.id"
                             :id="collection.id"
                             :name="collection.name">
+                            <span>{{collection.name}}</span>
+                            <i class="bk-icon icon-close" @click.stop="handleDeleteCollection(collection)"></i>
                         </bk-option>
                         <div slot="extension">
                             <a href="javascript:void(0)" class="collection-create" @click="handleCreateCollection">
@@ -415,6 +417,22 @@
                     this.$refs.hostFilter.$refs.filterPopper.instance.hide()
                 }
             },
+            async handleDeleteCollection (collection) {
+                try {
+                    await this.$store.dispatch('hostFavorites/deleteFavorites', {
+                        id: collection.id,
+                        config: {
+                            requestId: 'deleteFavorites'
+                        }
+                    })
+                    this.$success(this.$t('删除成功'))
+                    this.selectedCollection = ''
+                    this.$store.commit('hosts/deleteCollection', collection.id)
+                    this.handleCollectionClear()
+                } catch (e) {
+                    console.error(e)
+                }
+            },
             handleCollectionSelect (value) {
                 const collection = this.collectionList.find(collection => collection.id === value)
                 try {
@@ -751,6 +769,26 @@
     }
     .options-collection {
         width: 200px;
+    }
+    /deep/ .bk-option-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        &:hover {
+            .icon-close {
+                display: inline-block;
+            }
+        }
+        .icon-close {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 1px;
+            color: #979BA5;
+            display: none;
+            &:hover {
+                color: #3a84ff;
+            }
+        }
     }
     .collection-create {
         display: inline-block;
