@@ -33,14 +33,12 @@
             v-bkloading="{ isLoading: $loading('searchCustomQuery') }"
             :data="table.list"
             :pagination="table.pagination"
-            :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 229"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
-            @sort-change="handleSortChange"
-            @row-click="showUserAPIDetails">
+            @sort-change="handleSortChange">
             <!-- <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column> -->
-            <bk-table-column prop="name" :label="$t('查询名称')" class-name="is-highlight" sortable="custom" fixed></bk-table-column>
+            <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed></bk-table-column>
             <bk-table-column prop="id" label="ID" sortable="custom" fixed></bk-table-column>
             <bk-table-column prop="create_user" :label="$t('创建用户')" sortable="custom"></bk-table-column>
             <bk-table-column prop="create_time" :label="$t('创建时间')" sortable="custom">
@@ -429,8 +427,7 @@
                 this.slider.title = this.$t('新建动态分组')
             },
             /* 显示自定义API详情 */
-            showUserAPIDetails (userAPI, event, column = {}) {
-                if (column.property === 'operation') return
+            showUserAPIDetails (userAPI) {
                 this.slider.isShow = true
                 this.slider.type = 'update'
                 this.slider.id = userAPI['id']
