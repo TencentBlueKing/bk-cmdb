@@ -25,6 +25,7 @@
                 </span>
                 <bk-select class="options-business-selector"
                     v-if="isAdminView"
+                    :font-size="14"
                     :popover-width="180"
                     :searchable="authorizedBusiness.length > 7"
                     :disabled="!table.checked.length"
