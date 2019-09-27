@@ -87,6 +87,7 @@
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbImport from '@/components/import/import'
     import cmdbButtonGroup from '@/components/ui/other/button-group'
+    import { MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     export default {
         components: {
             cmdbHostsTable,
@@ -181,6 +182,7 @@
         },
         async created () {
             try {
+                this.setDynamicBreadcrumbs()
                 await this.getProperties()
                 this.getHostList()
                 this.ready = true
@@ -200,6 +202,16 @@
             ...mapActions('hostDelete', ['deleteHost']),
             ...mapActions('hostRelation', ['transferResourcehostToIdleModule']),
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
+            setDynamicBreadcrumbs () {
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('资源目录'),
+                    route: {
+                        name: MENU_RESOURCE_MANAGEMENT
+                    }
+                }, {
+                    label: this.$t('主机')
+                }])
+            },
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
