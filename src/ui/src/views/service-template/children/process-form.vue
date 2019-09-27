@@ -20,7 +20,7 @@
                                 :key="propertyIndex">
                                 <div class="property-name clearfix">
                                     <bk-checkbox class="form-checkbox"
-                                        v-bk-tooltips="$t('纳入模板管理')"
+                                        v-bk-tooltips="checkboxTips"
                                         v-if="property['isLocking'] !== undefined"
                                         v-model="values[property['bk_property_id']]['as_default_value']"
                                         @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
@@ -173,6 +173,25 @@
                     return this.$OPERATION.C_SERVICE_TEMPLATE
                 }
                 return this.$OPERATION.U_SERVICE_TEMPLATE
+            },
+            checkboxTips () {
+                return {
+                    content: this.$t('纳入模板管理'),
+                    placement: 'top-start',
+                    offset: -2,
+                    popperOptions: {
+                        modifiers: {
+                            customArrowStyles: {
+                                enabled: true,
+                                order: 100,
+                                fn (data, options) {
+                                    Object.assign(data.arrowStyles, { left: 0 })
+                                    return data
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         watch: {
