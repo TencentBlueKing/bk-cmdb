@@ -30,7 +30,7 @@ def generate_docker_file(image, src_dir, dst_dir, output):
             target_dir = os.path.normpath(dst_dir+"/"+new_root+"/"+d)
             run_cmd_params.append("RUN mkdir -p /" + target_dir)
         for f in files:
-            target_file = os.path.normpath(dst_dir+"/"+new_root+f)
+            target_file = os.path.normpath(dst_dir+"/"+new_root+"/"+f)
             copy_cmd_params.append("COPY /" + os.path.normpath(dst_dir+"/"+new_root) + "/" + f + " /" + target_file)
 
     template = DockerfileTemplate(docker_file_template_str)
