@@ -494,26 +494,26 @@ def main(argv):
 
 
     demo:
-    python init.py  \
-      --discovery          127.0.0.1:2181 \
-      --database           cmdb \
-      --redis_ip           127.0.0.1 \
-      --redis_port         6379 \
-      --redis_pass         1111 \
-      --mongo_ip           127.0.0.1 \
-      --mongo_port         27017 \
-      --mongo_user         cc \
-      --mongo_pass         cc \
-      --blueking_cmdb_url  http://127.0.0.1:8080/ \
-      --blueking_paas_url  http://paas.domain.com \
-      --listen_port        8080 \
-      --auth_scheme        internal \
-      --auth_enabled       false \
-      --auth_address       https://iam.domain.com/ \
-      --auth_app_code      bk_cmdb \
-      --auth_app_secret    xxxxxxx \
-      --full_text_search   off \
-      --es_url             http://127.0.0.1:9200 \
+    python init.py  \\
+      --discovery          127.0.0.1:2181 \\
+      --database           cmdb \\
+      --redis_ip           127.0.0.1 \\
+      --redis_port         6379 \\
+      --redis_pass         1111 \\
+      --mongo_ip           127.0.0.1 \\
+      --mongo_port         27017 \\
+      --mongo_user         cc \\
+      --mongo_pass         cc \\
+      --blueking_cmdb_url  http://127.0.0.1:8080/ \\
+      --blueking_paas_url  http://paas.domain.com \\
+      --listen_port        8080 \\
+      --auth_scheme        internal \\
+      --auth_enabled       false \\
+      --auth_address       https://iam.domain.com/ \\
+      --auth_app_code      bk_cmdb \\
+      --auth_app_secret    xxxxxxx \\
+      --full_text_search   off \\
+      --es_url             http://127.0.0.1:9200 \\
       --log_level          3
     '''
     try:
