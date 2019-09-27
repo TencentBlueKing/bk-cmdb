@@ -56,11 +56,9 @@
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 229"
-            :row-style="{ cursor: 'pointer' }"
-            @row-click="handleRowClick"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="name" :label="$t('模板名称')" class-name="is-highlight"></bk-table-column>
+            <bk-table-column prop="name" :label="$t('模板名称')"></bk-table-column>
             <bk-table-column prop="service_category" :label="$t('服务分类')"></bk-table-column>
             <bk-table-column prop="process_template_count" :label="$t('进程数量')"></bk-table-column>
             <bk-table-column prop="module_count" :label="$t('应用模块数')"></bk-table-column>
@@ -229,10 +227,6 @@
             handleSelectSecondary (id) {
                 this.categoryId = id
                 this.getTableData()
-            },
-            handleRowClick (row, event, column = {}) {
-                if (column.property === 'operation') return
-                this.operationTemplate(row.id)
             },
             operationTemplate (id) {
                 this.$router.push({
