@@ -145,8 +145,6 @@
             v-model="editLabel.show"
             :mask-close="false"
             :width="580"
-            @confirm="handleSubmitBatchLabel"
-            @cancel="handleCloseBatchLable"
             @after-leave="handleSetEditBox">
             <div class="reset-header" slot="header">
                 {{$t('批量编辑')}}
@@ -162,6 +160,10 @@
                     :default-list="[]">
                 </cmdb-edit-label>
             </batch-edit-label>
+            <div class="edit-label-footer" slot="footer">
+                <bk-button theme="primary" @click.stop="handleSubmitBatchLabel">{{$t('确定')}}</bk-button>
+                <bk-button theme="default" class="ml5" @click.stop="handleCloseBatchLable">{{$t('取消')}}</bk-button>
+            </div>
         </bk-dialog>
 
         <host-selector
@@ -901,8 +903,8 @@
                 this.editLabel.show = false
             },
             handleSetEditBox () {
-                this.editLabel.visiable = false
                 this.editLabel.list = []
+                this.editLabel.visiable = false
             },
             handleConditionSelect (cur, index) {
                 const values = this.historyLabels[cur.id]
@@ -1147,6 +1149,11 @@
         span {
             color: #979ba5;
             font-size: 14px;
+        }
+    }
+    .edit-label-footer {
+        .bk-button {
+            min-width: 76px;
         }
     }
 </style>
