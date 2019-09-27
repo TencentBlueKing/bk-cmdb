@@ -247,7 +247,7 @@
                 return `${this.userName}_model_${this.isAdminView ? 'adminView' : this.bizId}_hide_models`
             },
             hideModels () {
-                return this.usercustom[this.hideModelConfigKey] || []
+                return this.usercustom[this.hideModelConfigKey] || {}
             }
         },
         watch: {
@@ -269,8 +269,8 @@
 
             // 已记录的隐藏节点信息
             const { hideNodeIds, hideGroupIds } = this.hideModels
-            this.topoNav.hideNodeIds = hideNodeIds
-            this.topoNav.hideGroupIds = hideGroupIds
+            this.topoNav.hideNodeIds = hideNodeIds || []
+            this.topoNav.hideGroupIds = hideGroupIds || []
         },
         mounted () {
             this.getMainLineModel()
