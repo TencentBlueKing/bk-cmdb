@@ -58,6 +58,9 @@ export default [{
                 }])
             },
             authScope: 'business'
+        },
+        checkAvailable: (to, from, app) => {
+            return parseInt(to.params.business) === app.$store.getters['objectBiz/bizId']
         }
     })
 }]
