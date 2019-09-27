@@ -60,9 +60,11 @@
             },
             scrollerObserverHandler () {
                 this.$nextTick(() => {
-                    this.$store.commit('setScrollerState', {
-                        scrollbar: this.$refs.scroller.scrollHeight > this.$refs.scroller.offsetHeight
-                    })
+                    if (this.$refs.scroller) {
+                        this.$store.commit('setScrollerState', {
+                            scrollbar: this.$refs.scroller.scrollHeight > this.$refs.scroller.offsetHeight
+                        })
+                    }
                 })
             }
         }
