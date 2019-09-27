@@ -136,7 +136,7 @@
                     </div>
                 </template>
                 <template v-else>
-                    <bk-button theme="primary" @click="handleSearch">{{$t('查询')}}</bk-button>
+                    <bk-button theme="primary" class="mr5" @click="handleSearch">{{$t('查询')}}</bk-button>
                     <bk-button theme="default" @click="handleReset">{{$t('清空')}}</bk-button>
                 </template>
             </div>
