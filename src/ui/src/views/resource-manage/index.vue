@@ -58,7 +58,7 @@
                 const filterClassify = ['bk_biz_topo']
                 this.classifications.forEach(classification => {
                     if (!filterClassify.includes(classification.bk_classification_id)) {
-                        const models = classification.bk_objects.filter(model => !filterModels.includes(model.bk_obj_id))
+                        const models = classification.bk_objects.filter(model => !filterModels.includes(model.bk_obj_id) && !model.bk_ispaused)
                         if (models.length) {
                             result.push({
                                 ...classification,

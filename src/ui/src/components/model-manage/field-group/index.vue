@@ -826,7 +826,7 @@
     $modelHighlightColor: #3c96ff;
     .group-layout {
         height: 100%;
-        padding: 10px 20px 20px;
+        padding: 20px;
         @include scrollbar-y;
     }
     .layout-header {

@@ -22,10 +22,10 @@
                         <span class="property-value"
                             v-show="property !== editState.property"
                             @mouseover="handleHover($event, property)">
-                            {{$tools.getPropertyText(property, host)}}
+                            {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
                         </span>
                         <span class="popover-content" slot="content">
-                            {{$tools.getPropertyText(property, host)}}
+                            {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
                         </span>
                     </bk-popover>
                     <template v-if="isPropertyEditable(property)">
@@ -84,6 +84,11 @@
     import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
     export default {
         name: 'cmdb-host-property',
+        filters: {
+            filterShowText (value, unit) {
+                return value === '--' ? '--' : value + unit
+            }
+        },
         data () {
             return {
                 editState: {
