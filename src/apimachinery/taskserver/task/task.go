@@ -24,9 +24,8 @@ func (t *task) Create(ctx context.Context, header http.Header, name string, data
 	resp = new(metadata.CreateTaskResponse)
 	subPath := "/task/create"
 	body := metadata.CreateTaskRequest{
-		Name:   name,
-		Data:   data,
-		Header: header,
+		Name: name,
+		Data: data,
 	}
 
 	err = t.client.Post().
@@ -39,9 +38,9 @@ func (t *task) Create(ctx context.Context, header http.Header, name string, data
 	return
 }
 
-func (t *task) ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.CreateTaskResponse, err error) {
-	resp = new(metadata.CreateTaskResponse)
-	subPath := "/task/findmay/list/" + name
+func (t *task) ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error) {
+	resp = new(metadata.ListAPITaskResponse)
+	subPath := "/task/findmany/list/" + name
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -55,7 +54,7 @@ func (t *task) ListTask(ctx context.Context, header http.Header, name string, da
 
 func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse, err error) {
 	resp = new(metadata.TaskDetailResponse)
-	subPath := "/task/findmay/list/" + taskID
+	subPath := "/task/findone/detail/" + taskID
 
 	err = t.client.Post().
 		WithContext(ctx).
