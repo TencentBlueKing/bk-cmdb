@@ -17,11 +17,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
-	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -43,7 +42,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	service := new(hostsvc.Service)
+	service := new(tasksvc.Service)
 	taskSrv := new(TaskServer)
 
 	input := &backbone.BackboneParameter{
@@ -76,7 +75,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		blog.Errorf("new redis client failed, err: %s", err.Error())
 		return fmt.Errorf("new redis client failed, err: %s", err.Error())
 	}
-	db, err := taskSrv.Config.Mongo.GetMongoClient()
+	db, err := taskSrv.Config.Mongo.GetMongoClient(engine)
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %s", err.Error())
 		return fmt.Errorf("new mongo client failed, err: %s", err.Error())
@@ -94,13 +93,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
+	queue := service.NewQueue(taskSrv.taskQueue)
+	queue.Start()
 	select {}
 }
 
 type TaskServer struct {
-	Core    *backbone.Engine
-	Config  options.Config
-	Service *hostsvc.Service
+	Core      *backbone.Engine
+	Config    options.Config
+	Service   *tasksvc.Service
+	taskQueue map[string]tasksvc.TaskInfo
 }
 
 func (h *TaskServer) WebService() *restful.Container {
@@ -108,7 +110,6 @@ func (h *TaskServer) WebService() *restful.Container {
 }
 
 func (h *TaskServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	var err error
 
 	h.Config.Redis.Address = current.ConfigMap["redis.host"]
 	h.Config.Redis.Database = current.ConfigMap["redis.database"]
@@ -117,6 +118,37 @@ func (h *TaskServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	h.Config.Redis.MasterName = current.ConfigMap["redis.user"]
 
 	h.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+
+	taskNameArr := strings.Split(current.ConfigMap["task.name"], ",")
+
+	for _, name := range taskNameArr {
+		if name == "" {
+			continue
+		}
+		prefix := "task-" + name
+
+		strRetry := current.ConfigMap[prefix+".retry"]
+		var retry int64 = 0
+		var err error
+		if strRetry != "" {
+			retry, err = strconv.ParseInt(strRetry, 10, 64)
+			if err != nil {
+				retry = 0
+				blog.Errorf(" parse task name %s retry %s to int error. err:%s", name, strRetry, err.Error())
+			}
+		}
+
+		task := tasksvc.TaskInfo{
+			Name:  name,
+			Addr:  current.ConfigMap[prefix+".addrs"],
+			Path:  current.ConfigMap[prefix+".path"],
+			Retry: retry,
+		}
+		if h.taskQueue == nil {
+			h.taskQueue = make(map[string]tasksvc.TaskInfo, 0)
+		}
+		h.taskQueue[name] = task
+	}
 
 }
 

@@ -62,7 +62,7 @@ func (s *Service) DetailTask(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(taskInfo)
+	ctx.RespEntity(map[string]interface{}{"info": taskInfo})
 }
 
 func (s *Service) StatusToSuccess(ctx *rest.Contexts) {
