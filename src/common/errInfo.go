@@ -566,6 +566,7 @@ const (
 	CCErrProcReconstructServiceInstanceNameFailed         = 1108041
 
 	CCErrProcUnbindModuleServiceTemplateDisabled = 1108042
+	CCErrProcGetServiceCategoryFailed            = 1108043
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001

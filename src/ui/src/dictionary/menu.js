@@ -24,7 +24,7 @@ import {
 
 const getSubmenu = (views, symbol, pathPrefix = '') => {
     const submenuViews = views.filter(view => {
-        return view.meta.menu.parent === symbol && view.meta.available
+        return view.meta.menu.parent === symbol
     })
     const submenu = submenuViews.map(view => {
         const menu = view.meta.menu
@@ -44,13 +44,14 @@ const getMenuRoute = (views, symbol, pathPrefix = '') => {
     if (menuView) {
         return {
             name: menuView.name,
-            path: `/${pathPrefix}/${menuView.path}`
+            path: `/${pathPrefix}/${menuView.path}`,
+            available: menuView.meta.available
         }
     }
     return {}
 }
 
-export default [{
+const menus = [{
     id: MENU_INDEX,
     i18n: '首页'
 }, {
@@ -120,3 +121,24 @@ export default [{
         route: getMenuRoute(analysisViews, MENU_ANALYSIS_AUDIT, 'analysis')
     }]
 }]
+
+// 移除未被激活的menu
+;(() => {
+    menus.forEach(top => {
+        if (top.hasOwnProperty('menu')) {
+            top.menu.forEach(menu => {
+                if (menu.hasOwnProperty('submenu')) {
+                    menu.submenu = menu.submenu.filter(submenu => submenu.route.available)
+                }
+            })
+            top.menu = top.menu.filter(menu => {
+                if (menu.hasOwnProperty('route')) {
+                    return menu.route.available
+                }
+                return menu.submenu.length
+            })
+        }
+    })
+})()
+
+export default menus
