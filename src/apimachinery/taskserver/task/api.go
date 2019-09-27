@@ -23,13 +23,12 @@ import (
 type TaskClientInterface interface {
 	Create(ctx context.Context, header http.Header, name string, data []interface{}) (resp *metadata.CreateTaskResponse, err error)
 
-	ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.CreateTaskResponse, err error)
+	ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error)
 
 	TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse, err error)
 
-	TaskStatusToSuccess(ctx context.Context, header http.Header, taskID, subTaskID string) (resp *metadata.Response, err error)
-
-	TaskStatusToFailure(ctx context.Context, header http.Header, taskID, subTaskID string, errResponse *metadata.Response) (resp *metadata.Response, err error)
+	// TaskStatusToSuccess(ctx context.Context, header http.Header, taskID, subTaskID string) (resp *metadata.Response, err error)
+	// TaskStatusToFailure(ctx context.Context, header http.Header, taskID, subTaskID string, errResponse *metadata.Response) (resp *metadata.Response, err error)
 }
 
 func NewTaskClientInterface(client rest.ClientInterface) TaskClientInterface {

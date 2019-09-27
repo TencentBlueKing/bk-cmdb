@@ -14,25 +14,65 @@ package taskserver
 
 import (
 	"fmt"
+	"sync"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/taskserver/queue"
 	"configcenter/src/apimachinery/taskserver/task"
 	"configcenter/src/apimachinery/util"
+
+	"configcenter/src/apimachinery/flowctrl"
+	taskUtil "configcenter/src/apimachinery/taskserver/util"
 )
 
 type TaskServerClientInterface interface {
 	Task() task.TaskClientInterface
+	Queue(flag string) queue.TaskQueueClientInterface
 }
 
 func NewProcServerClientInterface(c *util.Capability, version string) TaskServerClientInterface {
 	base := fmt.Sprintf("/task/%s", version)
-	return &taskServer{client: rest.NewRESTClient(c, base)}
+	return &taskServer{
+		client:      rest.NewRESTClient(c, base),
+		capability:  c,
+		queueClient: make(map[string]queue.TaskQueueClientInterface, 0),
+	}
 }
 
 type taskServer struct {
 	client rest.ClientInterface
+	sync.RWMutex
+	queueClient map[string]queue.TaskQueueClientInterface
+	capability  *util.Capability
 }
 
-func (p *taskServer) Task() task.TaskClientInterface {
-	return task.NewTaskClientInterface(p.client)
+func (ts *taskServer) Task() task.TaskClientInterface {
+	return task.NewTaskClientInterface(ts.client)
+}
+
+func (ts *taskServer) Queue(flag string) queue.TaskQueueClientInterface {
+	ts.RLock()
+	srv, ok := ts.queueClient[flag]
+	ts.RUnlock()
+	if nil == srv || !ok {
+		ts.Lock()
+		ts.queueClient[flag] = queue.NewSychronizeClientInterface(ts.getSrvClent(flag))
+		srv = ts.queueClient[flag]
+		ts.Unlock()
+	}
+	return srv
+
+}
+
+func (ts *taskServer) getSrvClent(flag string) rest.ClientInterface {
+	flowcontrol := flowctrl.NewRateLimiter(ts.capability.Throttle.QPS(), ts.capability.Throttle.Burst())
+	config := taskUtil.NewSyncrhonizeConfig(flag)
+
+	capability := &util.Capability{
+		Client:   ts.capability.Client,
+		Discover: config,
+		Throttle: flowcontrol,
+	}
+
+	return rest.NewRESTClient(capability, "/")
 }
