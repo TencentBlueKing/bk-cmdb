@@ -41,6 +41,7 @@ func (lgc *Logics) Create(ctx context.Context, input *metadata.CreateTaskRequest
 	}
 
 	dbTask.TaskID = getStrTaskID("id")
+	dbTask.Name = input.Name
 	dbTask.User = lgc.user
 	dbTask.Header = getDBHTTPHeader(lgc.header)
 	dbTask.Status = metadata.APITaskStatusNew
@@ -143,13 +144,14 @@ func (lgc *Logics) changeStatus(ctx context.Context, taskID, subTaskID string, s
 		return lgc.ccErr.Error(common.CCErrCommDBSelectFailed)
 	}
 	if len(rows) == 0 {
+		blog.ErrorJSON("change task status, table:%s, input:%s, task not found, rid:%s", common.BKTableNameAPITask, condition, err.Error(), lgc.rid)
 		return lgc.ccErr.CCError(common.CCErrTaskNotFound)
 	}
 
 	existSubTask := false
 	canChangeStatus := false
 	for _, subTask := range rows[0].Detail {
-		if subTask.SubTaskID == taskID {
+		if subTask.SubTaskID == subTaskID {
 			existSubTask = true
 			if (subTask.Status == metadata.APITaskStatusNew || subTask.Status == metadata.APITaskStatuExecute) && subTask.Status != status {
 				canChangeStatus = true
@@ -169,6 +171,7 @@ func (lgc *Logics) changeStatus(ctx context.Context, taskID, subTaskID string, s
 	updateConditon.Set("detail.sub_task_id", subTaskID)
 	updateData := mapstr.New()
 	updateData.Set("detail.$.status", status)
+	updateData.Set(common.LastTimeField, time.Now())
 	if status == metadata.APITAskStatusFail {
 		// 任务的一个子任务失败，则任务失败
 		updateData.Set("status", status)
@@ -201,6 +204,7 @@ func (lgc *Logics) changeStatus(ctx context.Context, taskID, subTaskID string, s
 			updateConditon.Set("task_id", taskID)
 			updateData := mapstr.New()
 			updateData.Set("status", metadata.APITaskStatusSuccess)
+			updateData.Set(common.LastTimeField, time.Now())
 
 			err = lgc.db.Table(common.BKTableNameAPITask).Update(ctx, updateConditon, updateData)
 			if err != nil {
@@ -218,6 +222,8 @@ func getDBHTTPHeader(header http.Header) http.Header {
 	header.Del("User-Agent")
 	header.Del("Origin")
 	header.Del("Host")
+	header.Del("Content-Length")
+	header.Del("Connection")
 
 	return header
 }
