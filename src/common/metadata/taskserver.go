@@ -23,36 +23,34 @@ type CreateTaskRequest struct {
 	// task name
 	Name string `json:"name"`
 
-	Header http.Header `json:"header"`
-
 	Data []interface{} `json:"data"`
 }
 
 // APITaskDetail task info detaill
 type APITaskDetail struct {
 	// task id
-	TaskID string `json:"task_id"`
+	TaskID string `json:"task_id" bson:"task_id"`
 	// task name. 表示所在的任务队列
-	Name string `json:"name"`
+	Name string `json:"name" bson:"name"`
 	// task create user
-	User string `json:"user"`
+	User string `json:"user" bson:"user"`
 	//  http header
-	Header http.Header `json:"header"`
+	Header http.Header `json:"header" bson:"header"`
 	// task status
-	Status APITaskStatus `json:"status"`
+	Status APITaskStatus `json:"status" bson:"status"`
 	// sub task detail
-	Detail []APISubTaskDetail `json:"detail"`
+	Detail []APISubTaskDetail `json:"detail" bson:"detail"`
 
-	CreateTime time.Time `json:"create_time"`
-	LastTime   time.Time `json:"last_time"`
+	CreateTime time.Time `json:"create_time" bson:"create_time"`
+	LastTime   time.Time `json:"last_time" bson:"last_time"`
 }
 
 // APISubTaskDetail task data and execute detail
 type APISubTaskDetail struct {
-	SubTaskID string        `json:"sub_task_id"`
-	Data      interface{}   `json:"data"`
-	Status    APITaskStatus `json:"status"`
-	Response  *Response     `json:"response"`
+	SubTaskID string        `json:"sub_task_id" bson:"sub_task_id"`
+	Data      interface{}   `json:"data" bson:"data"`
+	Status    APITaskStatus `json:"status" bson:"status"`
+	Response  *Response     `json:"response" bson:"response"`
 }
 
 // APITaskStatus task status type
@@ -61,6 +59,8 @@ type APITaskStatus int64
 const (
 	// APITaskStatusNew new task ,waiting execute
 	APITaskStatusNew APITaskStatus = 0
+	// APITaskStatusWaitExecute 正在执行的任务中断了。 补偿后。确定需要重新执行
+	APITaskStatusWaitExecute APITaskStatus = 1
 
 	// APITaskStatuExecute task executing
 	APITaskStatuExecute APITaskStatus = 100
@@ -78,7 +78,7 @@ type ListAPITaskRequest struct {
 }
 
 type ListAPITaskData struct {
-	Info  []APITaskDetail `json:"data"`
+	Info  []APITaskDetail `json:"info"`
 	Count int64           `json:"count"`
 	Page  BasePage        `json:"page"`
 }
@@ -90,9 +90,7 @@ type ListAPITaskResponse struct {
 
 type CreateTaskResponse struct {
 	BaseResp
-	Data struct {
-		Info APITaskDetail `json:"info"`
-	} `json:"data"`
+	Data APITaskDetail `json:"data"`
 }
 
 type TaskDetailResponse struct {
