@@ -20,31 +20,31 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19.08.24.01", upgrade)
+	upgrader.RegistUpgrader("x19_09_06_01", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = createSetTemplateTables(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19.08.24.01] create tables failed, err: %s", err.Error())
+		blog.Errorf("[upgrade x19.09.06.01] create tables failed, err: %s", err.Error())
 		return err
 	}
 
 	err = addSetProperty(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19.08.24.01] addSetProperty failed, err: %s", err.Error())
+		blog.Errorf("[upgrade x19.09.06.01] addSetProperty failed, err: %s", err.Error())
 		return err
 	}
 
 	err = addModuleProperty(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19.08.24.01] addModuleProperty failed, err: %s", err.Error())
+		blog.Errorf("[upgrade x19.09.06.01] addModuleProperty failed, err: %s", err.Error())
 		return err
 	}
 
 	err = initializeSetTemplateField(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19.08.24.01] initializeSetTemplateField failed, err: %s", err.Error())
+		blog.Errorf("[upgrade x19.09.06.01] initializeSetTemplateField failed, err: %s", err.Error())
 		return err
 	}
 
