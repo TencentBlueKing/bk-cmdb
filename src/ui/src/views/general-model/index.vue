@@ -793,6 +793,9 @@
         .filter-value{
             width: 320px;
             border-radius: 0 2px 2px 0;
+            /deep/ .bk-form-input {
+                line-height: 32px;
+            }
         }
         .filter-search{
             position: absolute;

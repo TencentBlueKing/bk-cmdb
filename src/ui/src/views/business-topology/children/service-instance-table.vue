@@ -577,6 +577,7 @@
                 color: #979ba5;
                 background-color: #fafbfd;
                 border-radius: 2px;
+                cursor: default;
                 &>span {
                     @include ellipsis;
                     display: inline-block;

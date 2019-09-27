@@ -489,6 +489,9 @@
 </script>
 
 <style lang="scss" scoped="true">
+    .filter-content {
+        border: 1px solid #DCDEE5;
+    }
     .filter-trigger {
         width: 32px;
         padding: 0;
