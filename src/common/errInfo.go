@@ -788,6 +788,8 @@ const (
 	CCErrTaskStatusNotAllowChangeTo = 1117003
 	// CCErrTaskErrResponseEmtpyFail error response empty
 	CCErrTaskErrResponseEmtpyFail = 1117004
+	CCErrTaskLockedTaskFail       = 1117005
+	CCErrTaskUnLockedTaskFail     = 1117006
 
 	/** TODO: 以下错误码需要改造 **/
 
