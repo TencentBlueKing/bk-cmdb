@@ -154,8 +154,12 @@ func (s *coreService) CountSetTplInstances(params core.ContextParams, pathParams
 	}
 	result := make([]metadata.CountSetTplInstItem, 0)
 	if err := s.db.Table(common.BKTableNameBaseSet).AggregateAll(params.Context, pipeline, &result); err != nil {
-		blog.Errorf("CountSetTplInstances failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
-		return result, nil
+		if s.db.IsNotFoundError(err) == true {
+			result = make([]metadata.CountSetTplInstItem, 0)
+		} else {
+			blog.Errorf("CountSetTplInstances failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
+			return result, params.Error.Error(common.CCErrCommDBSelectFailed)
+		}
 	}
 
 	return result, nil
