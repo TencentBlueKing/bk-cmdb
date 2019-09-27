@@ -1,8 +1,9 @@
 import { R_AUDIT } from '@/dictionary/auth'
+import { MENU_ANALYSIS_AUDIT } from '@/dictionary/menu-symbol'
 import Meta from '@/router/meta'
 
 export default {
-    name: 'audit',
+    name: MENU_ANALYSIS_AUDIT,
     path: 'audit',
     component: () => import('./index.vue'),
     meta: new Meta({
