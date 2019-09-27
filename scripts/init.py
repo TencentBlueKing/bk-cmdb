@@ -70,6 +70,7 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIdleConns = 1000
 mechanism = SCRAM-SHA-1
+enable = true
 
 [snap-redis]
 host = $redis_host
@@ -219,6 +220,7 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
+enable = true
 
 [redis]
 host = $redis_host
@@ -250,6 +252,16 @@ database = 0
 address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
+
+[mongodb]
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+enable = true
 '''
     template = FileTemplate(proc_file_template_str)
     result = template.substitute(**context)
@@ -266,6 +278,7 @@ database = $db
 port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
+enable = true
 '''
     template = FileTemplate(operation_file_template_str)
     result = template.substitute(**context)
@@ -314,6 +327,7 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
+enable = true
 
 [level]
 businessTopoMax = 7
@@ -413,7 +427,7 @@ def main(argv):
     rd_server = ''
     redis_ip = ''
     redis_port = 6379
-    redis_user = 'root'
+    redis_user = 'cc'
     redis_pass = ''
     mongo_ip = ''
     mongo_port = 27017
