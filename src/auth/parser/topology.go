@@ -244,11 +244,12 @@ const (
 )
 
 var (
-	deleteMainlineObjectRegexp        = regexp.MustCompile(`^/api/v3/topo/model/mainline/owners/[^\s/]+/objectids/[^\s/]+/?$`)
-	findMainlineObjectTopoRegexp      = regexp.MustCompile(`^/api/v3/topo/model/[^\s/]+/?$`)
-	findMainlineInstanceTopoRegexp    = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
-	findMainineSubInstanceTopoRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/child/[^\s/]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
-	findMainlineIdleFaultModuleRegexp = regexp.MustCompile(`^/api/v3/topo/internal/[^\s/]+/[0-9]+/?$`)
+	deleteMainlineObjectRegexp                      = regexp.MustCompile(`^/api/v3/topo/model/mainline/owners/[^\s/]+/objectids/[^\s/]+/?$`)
+	findMainlineObjectTopoRegexp                    = regexp.MustCompile(`^/api/v3/topo/model/[^\s/]+/?$`)
+	findMainlineInstanceTopoRegexp                  = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
+	findMainineSubInstanceTopoRegexp                = regexp.MustCompile(`^/api/v3/topo/inst/child/[^\s/]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	findMainlineIdleFaultModuleRegexp               = regexp.MustCompile(`^/api/v3/topo/internal/[^\s/]+/[0-9]+/?$`)
+	findMainlineIdleFaultModuleWithStatisticsRegexp = regexp.MustCompile(`^/api/v3/topo/internal/[^\s/]+/[0-9]+/with_statistics/?$`)
 )
 
 func (ps *parseStream) mainline() *parseStream {
@@ -372,12 +373,36 @@ func (ps *parseStream) mainline() *parseStream {
 		return ps
 	}
 
+	// find mainline internal idle and fault module with statistics operation.
+	if ps.hitRegexp(findMainlineIdleFaultModuleWithStatisticsRegexp, http.MethodGet) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("find mainline idle and fault module with statistics, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find mainline idle and fault module with statistics, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.MainlineInstance,
+					Action: meta.Find,
+				},
+			},
+		}
+
+		return ps
+	}
 	return ps
 }
 
 const (
 	findManyAssociationKindPattern = "/api/v3/topo/association/type/action/search"
-	createAssociationKindPattern   = "/api/v3/topo/association/type/action/search"
+	createAssociationKindPattern   = "/api/v3/topo/association/type/action/create"
 )
 
 var (

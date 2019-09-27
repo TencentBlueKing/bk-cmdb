@@ -51,17 +51,22 @@
                 </div>
             </div>
             <div class="options-button fr">
-                <bk-button v-bk-tooltips="$t('查看删除历史')" @click="routeToHistory">
-                    <i class="icon-cc-history"></i>
-                </bk-button>
-                <bk-button class="button-setting" v-bk-tooltips="$t('列表显示属性配置')" @click="columnsConfig.show = true">
-                    <i class="icon-cc-setting"></i>
-                </bk-button>
+                <icon-button class="ml5"
+                    v-bk-tooltips="$t('查看删除历史')"
+                    icon="icon-cc-history"
+                    @click="routeToHistory">
+                </icon-button>
+                <icon-button class="ml5"
+                    v-bk-tooltips="$t('列表显示属性配置')"
+                    icon="icon-cc-setting"
+                    @click="columnsConfig.show = true">
+                </icon-button>
             </div>
             <div class="options-filter clearfix fr">
                 <bk-select class="filter-selector fl"
                     v-model="filter.id"
                     searchable
+                    font-size="14"
                     :clearable="false">
                     <bk-option v-for="(option, index) in filter.options"
                         :key="index"
@@ -73,24 +78,29 @@
                     v-if="filter.type === 'enum'"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
+                    :auto-select="false"
+                    font-size="14"
                     v-model="filter.value"
                     @on-selected="getTableData">
                 </cmdb-form-enum>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData">
                 </bk-input>
@@ -103,7 +113,8 @@
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 160"
+            :max-height="$APP.height - 190"
+            :row-style="{ cursor: 'pointer' }"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
@@ -120,6 +131,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.show"
             :title="slider.title"
             :width="800"
@@ -170,7 +182,7 @@
                 </bk-tab-panel>
             </bk-tab>
         </bk-sideslider>
-        <bk-sideslider :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
+        <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
                 v-if="columnsConfig.show"
                 :properties="properties"
@@ -182,6 +194,7 @@
             </cmdb-columns-config>
         </bk-sideslider>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="importSlider.show"
             :width="800"
             :title="$t('批量导入')">
@@ -203,6 +216,7 @@
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
     import cmdbImport from '@/components/import/import'
+    import { MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -222,8 +236,8 @@
                     allList: [],
                     pagination: {
                         count: 0,
-                        limit: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
                     sort: 'bk_inst_id'
@@ -311,12 +325,12 @@
                 this.setTableHeader()
             },
             objId () {
-                this.$store.commit('setHeaderTitle', this.model['bk_obj_name'])
+                this.setDynamicBreadcrumbs()
                 this.reload()
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.model['bk_obj_name'])
+            this.setDynamicBreadcrumbs()
             this.reload()
         },
         methods: {
@@ -331,6 +345,17 @@
                 'batchDeleteInst',
                 'searchInstById'
             ]),
+            setDynamicBreadcrumbs () {
+                this.$store.commit('setTitle', this.model.bk_obj_name)
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('资源目录'),
+                    route: {
+                        name: MENU_RESOURCE_MANAGEMENT
+                    }
+                }, {
+                    label: this.model.bk_obj_name
+                }])
+            },
             async reload () {
                 try {
                     this.setRencentlyData()
@@ -363,8 +388,8 @@
                     allList: [],
                     pagination: {
                         count: 0,
-                        limit: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
                     sort: 'bk_inst_id'
@@ -686,9 +711,6 @@
                     name: 'history',
                     params: {
                         objId: this.objId
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },
@@ -739,52 +761,44 @@
 </script>
 
 <style lang="scss" scoped>
-.options-filter{
-    position: relative;
-    margin-right: 10px;
-    .filter-selector{
-        width: 115px;
-        border-radius: 2px 0 0 2px;
-        margin-right: -1px;
+    .models-layout {
+        padding: 0 20px;
     }
-    .filter-value{
-        width: 320px;
-        border-radius: 0 2px 2px 0;
-    }
-    .filter-search{
-        position: absolute;
-        right: 10px;
-        top: 8px;
-        cursor: pointer;
-    }
-}
-.models-button{
-    display: inline-block;
-    position: relative;
-    &:hover{
-        z-index: 1;
-        &.button-delete {
-            color: $cmdbDangerColor;
-            border-color: $cmdbDangerColor;
+    .options-filter{
+        position: relative;
+        margin-right: 5px;
+        .filter-selector{
+            width: 115px;
+            border-radius: 2px 0 0 2px;
+            margin-right: -1px;
         }
-        /deep/ &.bk-button.bk-default[disabled] {
-            border-color: #dcdee5 !important;
-            color: #c4c6cc !important;
+        .filter-value{
+            width: 320px;
+            border-radius: 0 2px 2px 0;
+        }
+        .filter-search{
+            position: absolute;
+            right: 10px;
+            top: 8px;
+            cursor: pointer;
         }
     }
-}
-.options-button{
-    font-size: 0;
-    white-space: nowrap;
-    .button-history{
-        border-radius: 2px 0 0 2px;
+    .models-button{
+        display: inline-block;
+        position: relative;
+        &:hover{
+            z-index: 1;
+            &.button-delete {
+                color: $cmdbDangerColor;
+                border-color: $cmdbDangerColor;
+            }
+            /deep/ &.bk-button.bk-default[disabled] {
+                border-color: #dcdee5 !important;
+                color: #c4c6cc !important;
+            }
+        }
     }
-    .button-setting{
-        border-radius: 0 2px 2px 0;
-        margin-left: -1px;
+    .models-table{
+        margin-top: 14px;
     }
-}
-.models-table{
-    margin-top: 14px;
-}
 </style>

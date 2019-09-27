@@ -14,34 +14,66 @@ package extensions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"sync/atomic"
 
 	"configcenter/src/auth"
 	"configcenter/src/auth/meta"
 	"configcenter/src/auth/parser"
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 )
 
-// correctBusinessID correct businessID to 0 if default field is 1, as we need to set it to 0 for iam.
-// it's an ugly design here, but it's the cheapest way to set business to 0 for all default resources.
-func (am *AuthManager) correctBusinessID(ctx context.Context, header http.Header, businessID int64) (int64, error) {
+// this variable is used to accelerate the way to check if a business is resource pool
+// business or not.
+var resourcePoolBusinessID int64
 
-	businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
+// this function is concurrent safe.
+func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header http.Header) (int64, error) {
+
+	// this operation is concurrent safe
+	if atomic.LoadInt64(&resourcePoolBusinessID) != 0 {
+		// resource pool business id is already set, return directly.
+		return atomic.LoadInt64(&resourcePoolBusinessID), nil
+	}
+	// get resource pool business id now.
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKAppIDField},
+		Condition: map[string]interface{}{
+			"bk_biz_name": common.DefaultAppName,
+			"default":     1,
+		},
+	}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, query)
 	if err != nil {
-		return 0, fmt.Errorf("get business:%d detailed failed, err: %+v", businessID, err)
+		return 0, err
 	}
-	if len(businesses) != 1 {
-		return 0, fmt.Errorf("get business:%d failed, not found", businessID)
+
+	if !result.Result {
+		return 0, errors.New(result.ErrMsg)
 	}
-	business := businesses[0]
+
+	if len(result.Data.Info) != 1 {
+		// normally, this can not be happen.
+		return 0, errors.New("get resource pool business id, but got multiple or not found")
+	}
 
 	// set resource pool as global
-	if business.IsDefault == 1 {
-		return 0, nil
+	if !result.Data.Info[0].Exists(common.BKAppIDField) {
+		// this can not be happen normally.
+		return 0, fmt.Errorf("can not find resource pool business id")
 	}
+	bizID, err := result.Data.Info[0].Int64(common.BKAppIDField)
+	if err != nil {
+		return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
+	}
+	// update resource pool business id immediately
+	atomic.StoreInt64(&resourcePoolBusinessID, bizID)
 
-	return business.BKAppIDField, nil
+	return bizID, nil
+
 }
 
 func (am *AuthManager) authorize(ctx context.Context, header http.Header, businessID int64, resources ...meta.ResourceAttribute) error {
@@ -95,6 +127,12 @@ func (am *AuthManager) updateResources(ctx context.Context, resources ...meta.Re
 }
 
 func (am *AuthManager) Enabled() bool {
+	if am == nil {
+		return false
+	}
+	if am.Authorize == nil {
+		return false
+	}
 	return am.Authorize.Enabled()
 }
 

@@ -15,13 +15,6 @@ Vue.use(magicbox, {
         quickClose: true,
         width: 800
     },
-    'bk-table': {
-        rowStyle: () => {
-            return {
-                cursor: 'pointer'
-            }
-        }
-    },
     i18n: (key, value) => i18n.t(key, value)
 })
 

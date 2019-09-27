@@ -1,5 +1,5 @@
 <template>
-    <div class="slider-content">
+    <div class="model-slider-content">
         <label class="form-label">
             <span class="label-text">
                 {{$t('唯一标识')}}
@@ -296,7 +296,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .slider-content {
+    .model-slider-content {
         /deep/ textarea[disabled] {
             background-color: #fafbfd!important;
             cursor: not-allowed;

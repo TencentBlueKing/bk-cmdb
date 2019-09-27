@@ -153,32 +153,27 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 			},
 		}
 	}
-	if 0 == len(hosts) {
-		return &metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrWebFileContentEmpty,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentEmpty, "").Error(),
-			},
-			Data: nil,
+	var resultErr error
+	result := &metadata.ResponseDataMapStr{}
+	result.BaseResp.Result = true
+	result.Data = mapstr.New()
+	if 0 != len(hosts) {
+		params := map[string]interface{}{
+			"host_info":      hosts,
+			"bk_supplier_id": common.BKDefaultSupplierID,
+			"input_type":     common.InputTypeExcel,
 		}
-	}
-
-	params := map[string]interface{}{
-		"host_info":      hosts,
-		"bk_supplier_id": common.BKDefaultSupplierID,
-		"input_type":     common.InputTypeExcel,
-	}
-	result, resultErr := lgc.CoreAPI.ApiServer().AddHost(context.Background(), header, params)
-	if nil != resultErr {
-		blog.Errorf("ImportHosts add host info  http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
-		return &metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrCommHTTPDoRequestFailed,
-				ErrMsg: defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(),
-			},
-			Data: nil,
+		result, resultErr = lgc.CoreAPI.ApiServer().AddHost(context.Background(), header, params)
+		if nil != resultErr {
+			blog.Errorf("ImportHosts add host info  http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
+			return &metadata.ResponseDataMapStr{
+				BaseResp: metadata.BaseResp{
+					Result: false,
+					Code:   common.CCErrCommHTTPDoRequestFailed,
+					ErrMsg: defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(),
+				},
+				Data: nil,
+			}
 		}
 	}
 

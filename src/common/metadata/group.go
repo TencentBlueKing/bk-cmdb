@@ -51,6 +51,7 @@ type Group struct {
 	OwnerID    string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 	IsDefault  bool   `field:"bk_isdefault" json:"bk_isdefault" bson:"bk_isdefault"`
 	IsPre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	IsCollapse bool   `field:"is_collapse" json:"is_collapse" bson:"is_collapse"`
 }
 
 // Parse load the data from mapstr group into group instance

@@ -10,6 +10,7 @@
                         :placeholder="$t('标签键')">
                     <p class="input-error">{{errors.first('key-' + index)}}</p>
                 </div>
+                <span class="symbol">:</span>
                 <div class="label-value" :class="{ 'is-error': errors.has('value-' + index) }">
                     <input class="cmdb-form-input" type="text"
                         :data-vv-name="'value-' + index"
@@ -104,11 +105,13 @@
                     return {}
                 }
                 rules.required = true
-                rules.instanceTag = true
                 if (type === 'key') {
+                    rules.instanceTagKey = true
                     const list = this.$tools.clone(this.list)
                     list.splice(currentIndex, 1)
                     rules.repeatTagKey = list.map(label => label.key)
+                } else {
+                    rules.instanceTagValue = true
                 }
                 return rules
             },
@@ -165,12 +168,17 @@
         .label-key {
             position: relative;
             width: 172px;
-            margin-right: 10px;
         }
         .label-value {
             position: relative;
             width: 292px;
             margin-right: 10px;
+        }
+        .symbol {
+            padding: 0 6px;
+            color: #979ba5;
+            font-weight: bold;
+            font-size: 14px;
         }
         .icon-btn {
             color: #c4c6cc;

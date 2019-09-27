@@ -17,24 +17,25 @@
                     active: !$isAuthorized($OPERATION.BUSINESS_ARCHIVE),
                     auth: [$OPERATION.BUSINESS_ARCHIVE]
                 }">
-                    <bk-button class="button-history"
+                    <icon-button class="mr10"
                         icon="icon-cc-history"
-                        v-bk-tooltips.bottom="$t('查看已归档业务')"
+                        v-bk-tooltips.top="$t('查看已归档业务')"
                         :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
                         @click="routeToHistory">
-                    </bk-button>
+                    </icon-button>
                 </span>
-                <bk-button class="button-setting"
+                <icon-button
                     icon="icon-cc-setting"
-                    v-bk-tooltips.bottom="$t('列表显示属性配置')"
+                    v-bk-tooltips.top="$t('列表显示属性配置')"
                     @click="columnsConfig.show = true">
-                </bk-button>
+                </icon-button>
             </div>
             <div class="options-filter clearfix fr">
                 <bk-select
                     class="filter-selector fl"
                     v-model="filter.id"
                     searchable
+                    font-size="14"
                     :clearable="false">
                     <bk-option v-for="(option, index) in filter.options"
                         :key="index"
@@ -46,18 +47,22 @@
                     v-if="filter.type === 'enum'"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
+                    :auto-select="false"
                     v-model="filter.value"
+                    font-size="14"
                     @on-selected="handleFilterData">
                 </cmdb-form-enum>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
+                    font-size="large"
                     :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>
@@ -70,7 +75,8 @@
             v-bkloading="{ isLoading: $loading('post_searchBusiness_list') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 160"
+            :max-height="$APP.height - 190"
+            :row-style="{ cursor: 'pointer' }"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
@@ -86,6 +92,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.show"
             :title="slider.title"
             :width="800"
@@ -131,7 +138,7 @@
                 </bk-tab-panel>
             </bk-tab>
         </bk-sideslider>
-        <bk-sideslider :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
+        <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
                 v-if="columnsConfig.show"
                 :properties="properties"
@@ -147,6 +154,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
+    import { MENU_RESOURCE_BUSINESS_HISTORY } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
@@ -165,8 +173,8 @@
                     list: [],
                     pagination: {
                         count: 0,
-                        limit: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_biz_id',
                     sort: 'bk_biz_id'
@@ -239,7 +247,6 @@
         },
         async created () {
             try {
-                this.$store.dispatch('userCustom/setRencentlyData', { id: 'business' })
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: 'biz',
@@ -452,10 +459,7 @@
             },
             routeToHistory () {
                 this.$router.push({
-                    name: 'businessHistory',
-                    query: {
-                        from: this.$route.fullPath
-                    }
+                    name: MENU_RESOURCE_BUSINESS_HISTORY
                 })
             },
             handleSliderBeforeClose () {
@@ -489,47 +493,42 @@
 </script>
 
 <style lang="scss" scoped>
-.options-filter{
-    position: relative;
-    margin-right: 10px;
-    .filter-selector{
-        width: 115px;
-        border-radius: 2px 0 0 2px;
-        margin-right: -1px;
+    .business-layout {
+        padding: 0 20px;
     }
-    .filter-value{
-        width: 320px;
-        border-radius: 0 2px 2px 0;
-        /deep/ .bk-form-input {
-            border-radius: 0 2px 2px 0;
-        }
-    }
-    .filter-search{
-        position: absolute;
-        right: 10px;
-        top: 9px;
-        cursor: pointer;
-    }
-}
-.options-button{
-    font-size: 0;
-    .bk-button {
-        width: 32px;
-        padding: 0;
-        /deep/ .bk-icon {
-            line-height: 14px;
-        }
-    }
-    .button-history{
+    .options-filter{
+        position: relative;
         margin-right: 10px;
-        border-radius: 2px 0 0 2px;
+        .filter-selector{
+            width: 115px;
+            border-radius: 2px 0 0 2px;
+            margin-right: -1px;
+        }
+        .filter-value{
+            width: 320px;
+            border-radius: 0 2px 2px 0;
+            /deep/ .bk-form-input {
+                border-radius: 0 2px 2px 0;
+            }
+        }
+        .filter-search{
+            position: absolute;
+            right: 10px;
+            top: 9px;
+            cursor: pointer;
+        }
     }
-    .button-setting{
-        border-radius: 0 2px 2px 0;
-        margin-left: -1px;
+    .options-button{
+        font-size: 0;
+        .bk-button {
+            width: 32px;
+            padding: 0;
+            /deep/ .bk-icon {
+                line-height: 14px;
+            }
+        }
     }
-}
-.business-table{
-    margin-top: 14px;
-}
+    .business-table{
+        margin-top: 14px;
+    }
 </style>

@@ -16,7 +16,7 @@ export const OPERATION = {
     R_CONFIRM_HISTORY
 }
 
-const path = '/resource-confirm'
+const path = 'resource-confirm'
 
 export default [{
     name: 'resourceConfirm',
@@ -24,32 +24,21 @@ export default [{
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            id: 'resourceConfirm',
-            i18n: '资源确认',
-            path: path,
-            order: 4,
-            parent: NAV_BUSINESS_RESOURCE,
-            adminView: false
+            i18n: '资源确认'
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: OPERATION
         },
-        requireBusiness: true,
-        i18nTitle: '资源确认'
+        requireBusiness: true
     })
 }, {
     name: 'confirmHistory',
-    path: '/confirm-history',
+    path: 'confirm-history',
     component: () => import('./history.vue'),
     meta: new Meta({
         auth: {
-            operation: [
-                OPERATION.R_CONFIRM_HISTORY
-            ],
-            setAuthScope () {
-                this.authScope = 'global'
-            }
-        },
-        i18nTitle: '确认记录'
+            operation: { R_CONFIRM_HISTORY },
+            authScope: 'global'
+        }
     })
 }]

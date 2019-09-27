@@ -24,6 +24,7 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.18.01"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.26.01"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x18.09.30.01"
+
 	// 3.2.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/x18.10.10.01"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x18.10.30.01"
@@ -39,6 +40,7 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/x18.12.13.02"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.01.18.01"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.02.15.10"
+
 	// 3.4.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.04.16.01"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.04.16.02"
@@ -49,4 +51,11 @@ import (
 	// v3.5.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.08.20.01"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.08.26.01"
+	_ "configcenter/src/scene_server/admin_server/upgrader/x19.08.26.02"
+	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.01"
+	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.02"
+	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.03"
+	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.04"
+	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.05"
+	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.06"
 )

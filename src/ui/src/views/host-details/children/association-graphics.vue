@@ -29,6 +29,7 @@
             </a>
         </div>
         <bk-sideslider
+            v-transfer-dom
             :width="800"
             :is-show.sync="details.show"
             :title="details.title">

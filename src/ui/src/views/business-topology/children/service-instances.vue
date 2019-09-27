@@ -13,13 +13,20 @@
                         active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
                         auth: [$OPERATION.C_SERVICE_INSTANCE]
                     }">
-                    <bk-button class="options-button" theme="primary"
+                    <bk-button v-if="withTemplate && !templates.length"
+                        class="options-button"
+                        theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                        @click="visible = true">
+                        {{$t('添加主机')}}
+                    </bk-button>
+                    <bk-button v-else class="options-button" theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
                         @click="handleCreateServiceInstance">
                         {{$t('添加服务实例')}}
                     </bk-button>
                 </span>
-                <bk-dropdown-menu trigger="click">
+                <bk-dropdown-menu trigger="click" font-size="large">
                     <bk-button class="options-button clipboard-trigger" theme="default" slot="dropdown-trigger">
                         {{$t('更多')}}
                         <i class="bk-icon icon-angle-down"></i>
@@ -107,6 +114,7 @@
             @create-instance-success="handleCreateInstanceSuccess">
         </service-instance-empty>
         <bk-sideslider
+            v-transfer-dom
             :width="800"
             :title="processForm.title"
             :is-show.sync="processForm.show"
@@ -155,6 +163,12 @@
                 </cmdb-edit-label>
             </batch-edit-label>
         </bk-dialog>
+
+        <host-selector
+            :visible.sync="visible"
+            :module-instance="currentModule || {}"
+            @host-selected="handleSelectHost">
+        </host-selector>
     </div>
 </template>
 
@@ -163,12 +177,14 @@
     import serviceInstanceEmpty from './service-instance-empty.vue'
     import batchEditLabel from './batch-edit-label.vue'
     import cmdbEditLabel from './edit-label.vue'
+    import hostSelector from '@/components/ui/selector/host.vue'
     export default {
         components: {
             serviceInstanceTable,
             serviceInstanceEmpty,
             batchEditLabel,
-            cmdbEditLabel
+            cmdbEditLabel,
+            hostSelector
         },
         data () {
             return {
@@ -184,14 +200,21 @@
                         id: 0
                     },
                     {
-                        name: this.$t('标签'),
+                        name: `${this.$t('标签')}(value)`,
                         id: 1,
-                        multiable: true,
                         children: [{
                             id: '',
                             name: ''
                         }],
                         conditions: []
+                    },
+                    {
+                        name: `${this.$t('标签')}(key)`,
+                        id: 2,
+                        children: [{
+                            id: '',
+                            name: ''
+                        }]
                     }
                 ],
                 searchSelectData: [],
@@ -220,7 +243,9 @@
                 topoStatus: false,
                 historyLabels: {},
                 processBindIp: [],
-                bindIp: ''
+                bindIp: '',
+                visible: false,
+                templates: []
             }
         },
         computed: {
@@ -293,6 +318,7 @@
                     }
                     this.pagination.current = 1
                     await this.getServiceInstances()
+                    this.getTemplate(node.data.service_template_id)
                     const timer = setTimeout(() => {
                         if (node.data.service_template_id && this.instances.length) {
                             this.getServiceInstanceDifferences()
@@ -375,25 +401,6 @@
                 try {
                     const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
                         || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
-                    const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
-                    const submitLabel = {}
-                    labels.forEach(label => {
-                        const conditionId = label.condition.id
-                        if (!submitLabel[conditionId]) {
-                            submitLabel[conditionId] = [label.values[0].id]
-                        } else {
-                            if (submitLabel[conditionId].indexOf(label.values[0].id) < 0) {
-                                submitLabel[conditionId].push(label.values[0].id)
-                            }
-                        }
-                    })
-                    const selectors = Object.keys(submitLabel).map(key => {
-                        return {
-                            key: key,
-                            operator: 'in',
-                            values: submitLabel[key]
-                        }
-                    })
                     const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
                         params: this.$injectMetadata({
                             bk_module_id: this.currentNode.data.bk_inst_id,
@@ -405,7 +412,7 @@
                             search_key: searchKey
                                 ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
                                 : '',
-                            selectors: selectors
+                            selectors: this.getSelectorParams()
                         }),
                         config: {
                             requestId: 'getModuleServiceInstances',
@@ -427,22 +434,82 @@
                     this.instances = []
                 }
             },
+            getSelectorParams () {
+                try {
+                    const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
+                    const labelsKey = this.searchSelectData.filter(item => item.id === 2 && item.hasOwnProperty('values'))
+                    const submitLabel = {}
+                    const submitLabelKey = {}
+                    labels.forEach(label => {
+                        const conditionId = label.condition.id
+                        if (!submitLabel[conditionId]) {
+                            submitLabel[conditionId] = [label.values[0].id]
+                        } else {
+                            if (submitLabel[conditionId].indexOf(label.values[0].id) < 0) {
+                                submitLabel[conditionId].push(label.values[0].id)
+                            }
+                        }
+                    })
+                    labelsKey.forEach(label => {
+                        const id = label.values[0].id
+                        if (!submitLabelKey[id]) {
+                            submitLabelKey[id] = id
+                        }
+                    })
+                    const selectors = Object.keys(submitLabel).map(key => {
+                        return {
+                            key: key,
+                            operator: 'in',
+                            values: submitLabel[key]
+                        }
+                    })
+                    const selectorsKey = Object.keys(submitLabelKey).map(key => {
+                        return {
+                            key: key,
+                            operator: 'exists',
+                            values: []
+                        }
+                    })
+                    return selectors.concat(selectorsKey)
+                } catch (e) {
+                    console.error(e)
+                    return []
+                }
+            },
             async getHistoryLabel () {
-                const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
-                    params: this.$injectMetadata({}),
-                    config: {
-                        requestId: 'getHistoryLabel',
-                        cancelPrevious: true
+                try {
+                    const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
+                        params: this.$injectMetadata({}),
+                        config: {
+                            requestId: 'getHistoryLabel',
+                            cancelPrevious: true
+                        }
+                    })
+                    this.historyLabels = historyLabels
+                    const keys = Object.keys(historyLabels)
+                    const valueOption = keys.map(key => {
+                        return {
+                            name: key + ' : ',
+                            id: key
+                        }
+                    })
+                    const keyOption = keys.map(key => {
+                        return {
+                            name: key,
+                            id: key
+                        }
+                    })
+                    if (!valueOption.length) {
+                        this.$set(this.searchSelect[1], 'disabled', true)
                     }
-                })
-                const keys = Object.keys(historyLabels).map(key => {
-                    return {
-                        name: key + ' : ',
-                        id: key
+                    if (!keyOption.length) {
+                        this.$set(this.searchSelect[2], 'disabled', true)
                     }
-                })
-                this.historyLabels = historyLabels
-                this.$set(this.searchSelect[1], 'conditions', keys)
+                    this.$set(this.searchSelect[1], 'conditions', valueOption)
+                    this.$set(this.searchSelect[2], 'children', keyOption)
+                } catch (e) {
+                    console.error(e)
+                }
             },
             handleSearch () {
                 this.inSearch = true
@@ -659,12 +726,6 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.currentModule.bk_module_id
-                            }
-                        },
                         title: this.currentNode.name
                     }
                 })
@@ -741,11 +802,8 @@
                     name: 'synchronous',
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
-                        setId: this.currentNode.parent.data.bk_inst_id
-                    },
-                    query: {
-                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / '),
-                        from: `${this.$route.path}?module=${this.currentNode.data.bk_inst_id}`
+                        setId: this.currentNode.parent.data.bk_inst_id,
+                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / ')
                     }
                 })
             },
@@ -858,6 +916,60 @@
                 el.curItem.children = children
                 el.updateChildMenu(cur, index, false)
                 el.showChildMenu(children)
+            },
+            async getTemplate (id) {
+                try {
+                    const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
+                        params: this.$injectMetadata({
+                            service_template_id: id
+                        }),
+                        config: {
+                            requestId: 'getBatchProcessTemplate',
+                            cancelPrevious: true
+                        }
+                    })
+                    this.templates = data.info
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            async handleSelectHost (checked) {
+                try {
+                    const addNum = checked.length
+                    await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
+                        params: this.$injectMetadata({
+                            name: this.currentModule.bk_module_name,
+                            bk_module_id: this.currentModule.bk_module_id,
+                            service_template_id: this.currentModule.service_template_id,
+                            instances: checked.map(hostId => {
+                                return {
+                                    bk_host_id: hostId,
+                                    processes: this.templates.map(template => {
+                                        const processInfo = {}
+                                        Object.keys(template.property).forEach(key => {
+                                            processInfo[key] = template.property[key].value
+                                        })
+                                        return {
+                                            process_template_id: template.id,
+                                            process_info: processInfo
+                                        }
+                                    })
+                                }
+                            })
+                        })
+                    })
+                    if (this.withTemplate) {
+                        this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count + addNum
+                        this.currentNode.parents.forEach(node => {
+                            node.data.service_instance_count = node.data.service_instance_count + addNum
+                        })
+                    }
+                    this.visible = false
+                    this.$success(this.$t('添加成功'))
+                    this.getServiceInstances()
+                } catch (e) {
+                    console.error(e)
+                }
             }
         }
     }

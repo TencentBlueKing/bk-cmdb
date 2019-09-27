@@ -50,7 +50,6 @@ func (w *Worker) Start() {
 			select {
 			case work := <-w.WorkerQueue:
 				// Receive a work request.
-				blog.V(5).Infof("worker %d: Received work request, delaying for %f seconds\n", w.ID, work.Delay.Seconds())
 				if err := w.doWork(&work); err != nil {
 					blog.Errorf("do work failed, err: %v", err)
 				}
@@ -74,13 +73,14 @@ func (w *Worker) Stop() {
 }
 
 func (w *Worker) doWork(work *meta.WorkRequest) error {
-	blog.V(3).Infof("start doing work: %s", work.ResourceType)
 	var err error
 	switch work.ResourceType {
 	case meta.BusinessResource:
 		err = w.SyncHandler.HandleBusinessSync(work)
-	case meta.HostResource:
+	case meta.HostBizResource:
 		err = w.SyncHandler.HandleHostSync(work)
+	case meta.HostResourcePool:
+		err = w.SyncHandler.HandleHostResourcePoolSync(work)
 	case meta.SetResource:
 		err = w.SyncHandler.HandleSetSync(work)
 	case meta.ModuleResource:
@@ -89,18 +89,20 @@ func (w *Worker) doWork(work *meta.WorkRequest) error {
 		err = w.SyncHandler.HandleModelSync(work)
 	case meta.InstanceResource:
 		err = w.SyncHandler.HandleInstanceSync(work)
-	// case meta.AuditCategory:
-	// err = w.SyncHandler.HandleAuditSync(work)
 	case meta.ProcessResource:
+		// err = w.SyncHandler.HandleAuditSync(work)
+		// case meta.AuditCategory:
 		err = w.SyncHandler.HandleProcessSync(work)
 	case meta.DynamicGroupResource:
 		err = w.SyncHandler.HandleDynamicGroupSync(work)
 	case meta.ClassificationResource:
 		err = w.SyncHandler.HandleClassificationSync(work)
-	// case meta.UserGroupSyncResource:
-	// 	err = w.SyncHandler.HandleUserGroupSync(work)
 	case meta.ServiceTemplateResource:
+		// 	err = w.SyncHandler.HandleUserGroupSync(work)
+		// case meta.UserGroupSyncResource:
 		err = w.SyncHandler.HandleServiceTemplateSync(work)
+	case meta.PlatResource:
+		err = w.SyncHandler.HandlePlatSync(work)
 	default:
 		return fmt.Errorf("unsupported work resource type: %s", work.ResourceType)
 

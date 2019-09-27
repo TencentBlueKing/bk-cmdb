@@ -1,5 +1,5 @@
 <template>
-    <div class="push-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="push-wrapper">
         <feature-tips
             :feature-name="'eventpush'"
             :show-tips="showFeatureTips"
@@ -21,14 +21,14 @@
             </span>
         </div>
         <bk-table
-            :v-bkloading="{ isLoading: $loading('searchSubscription') }"
+            v-bkloading="{ isLoading: $loading('searchSubscription') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 150"
+            :max-height="$APP.height - 229"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="subscription_name" :label="$t('推送名称')" sortable="custom">
+            <bk-table-column prop="subscription_name" :label="$t('订阅名称')" sortable="custom">
             </bk-table-column>
             <bk-table-column prop="system_name" :label="$t('系统名称')" sortable="custom">
             </bk-table-column>
@@ -62,12 +62,12 @@
                         }">
                         {{$t('编辑')}}
                     </span>
-                    <span class="text-danger"
+                    <span class="text-primary"
                         v-if="$isAuthorized($OPERATION.D_EVENT)"
                         @click.stop="deleteConfirm(row)">
                         {{$t('删除')}}
                     </span>
-                    <span class="text-danger disabled"
+                    <span class="text-primary disabled"
                         v-else
                         v-cursor="{
                             active: true,
@@ -83,6 +83,7 @@
             </div>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.isShow"
             :title="slider.title"
             :width="564"
@@ -118,8 +119,8 @@
                     list: [],
                     pagination: {
                         count: 0,
-                        limit: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-last_time',
                     sort: '-last_time'
@@ -165,13 +166,13 @@
             createPush () {
                 this.slider.isShow = true
                 this.slider.type = 'create'
-                this.slider.title = this.$t('新增推送')
+                this.slider.title = this.$t('新增订阅')
             },
             editPush (item) {
                 this.curPush = { ...item }
                 this.slider.isShow = true
                 this.slider.type = 'edit'
-                this.slider.title = this.$t('编辑推送')
+                this.slider.title = this.$t('编辑订阅')
             },
             deleteConfirm (item) {
                 this.$bkInfo({
@@ -235,6 +236,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .push-wrapper {
+        padding: 0 20px;
+    }
     .btn-wrapper {
         margin-bottom: 14px;
     }

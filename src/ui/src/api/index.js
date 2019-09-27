@@ -181,7 +181,7 @@ function handleReject (error, config) {
     if (Axios.isCancel(error)) {
         return Promise.reject(error)
     }
-    if (config.globalError && error.response) {
+    if (error.response) {
         const { status, data } = error.response
         const nextError = { message: error.message }
         if (status === 401) {
@@ -193,10 +193,11 @@ function handleReject (error, config) {
         } else if (status === 500) {
             nextError.message = language === 'en' ? 'System error, please contact developers.' : '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
         }
-        $error(nextError.message)
+        config.globalError && $error(nextError.message)
         return Promise.reject(nextError)
+    } else {
+        config.globalError && $error(error.message)
     }
-    $error(error.message)
     return Promise.reject(error)
 }
 
@@ -231,7 +232,7 @@ function initConfig (method, url, userConfig) {
         // 转换返回数据，仅返回data对象
         transformData: true,
         // 当路由变更时取消请求
-        cancelWhenRouteChange: true,
+        cancelWhenRouteChange: false,
         // 取消上次请求
         cancelPrevious: false
     }

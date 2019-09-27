@@ -1,39 +1,63 @@
 import Meta from '@/router/meta'
-import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
-    R_HOST,
+    MENU_BUSINESS_HOST,
+    MENU_BUSINESS,
+    MENU_BUSINESS_HOST_MANAGEMENT,
+    MENU_BUSINESS_HOST_DETAILS
+} from '@/dictionary/menu-symbol'
+import {
     U_HOST,
-    HOST_TO_RESOURCE
+    D_SERVICE_INSTANCE,
+    HOST_TO_RESOURCE,
+    GET_AUTH_META
 } from '@/dictionary/auth'
 
-export const OPERATION = {
-    U_HOST,
-    R_HOST,
-    HOST_TO_RESOURCE
-}
-
-const path = '/hosts'
-
-export default {
-    name: 'hosts',
-    path: path,
+export default [{
+    name: MENU_BUSINESS_HOST_MANAGEMENT,
+    path: 'host',
     component: () => import('./index.vue'),
     meta: new Meta({
+        owner: MENU_BUSINESS,
         menu: {
-            id: 'hosts',
             i18n: '业务主机',
-            path: path,
-            parent: NAV_BUSINESS_RESOURCE,
-            adminView: false
+            parent: MENU_BUSINESS_HOST
         },
         auth: {
-            operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'business'
-            }
+            operation: {
+                U_HOST,
+                HOST_TO_RESOURCE
+            },
+            authScope: 'business'
         },
-        requireBusiness: true,
-        i18nTitle: '业务主机',
         filterPropertyKey: 'business_host_filter_properties'
     })
-}
+}, {
+    name: MENU_BUSINESS_HOST_DETAILS,
+    path: ':business/host/:id',
+    component: () => import('@/views/host-details/index'),
+    meta: new Meta({
+        owner: MENU_BUSINESS,
+        menu: {
+            i18n: '主机详情',
+            relative: MENU_BUSINESS_HOST_MANAGEMENT
+        },
+        auth: {
+            view: null,
+            operation: { U_HOST, D_SERVICE_INSTANCE },
+            setDynamicMeta (to, from, app) {
+                const hostMeta = GET_AUTH_META(U_HOST)
+                const serviceInstanceMeta = GET_AUTH_META(D_SERVICE_INSTANCE)
+                app.$store.commit('auth/setResourceMeta', [{
+                    ...hostMeta,
+                    resource_id: parseInt(to.params.id),
+                    bk_biz_id: parseInt(to.params.business)
+                }, {
+                    ...serviceInstanceMeta,
+                    resource_id: parseInt(to.params.id),
+                    bk_biz_id: parseInt(to.params.business)
+                }])
+            },
+            authScope: 'business'
+        }
+    })
+}]

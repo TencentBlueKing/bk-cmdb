@@ -20,6 +20,10 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
+	enableauth "configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -36,6 +40,8 @@ import (
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+
+	re "gopkg.in/redis.v5"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -85,9 +91,59 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("new esb client failed, err: %s", err.Error())
 		}
 
+		process.Service.SetDB(mgoCli)
 		process.Service.Logics = logics.NewLogics(ctx, service.Engine, mgoCli, esb)
+		datacollection := datacollection.NewDataCollection(ctx, process.Core, mgoCli, engine.Metric().Registry())
 
-		err = datacollection.NewDataCollection(ctx, process.Config, process.Core, engine.Metric().Registry()).Run()
+		blog.Infof("[data-collection][RUN]connecting to cc redis %+v", process.Config.CCRedis)
+		redisCli, err := redis.NewFromConfig(process.Config.CCRedis)
+		if nil != err {
+			blog.Errorf("[data-collection][RUN] connect cc redis failed: %v", err)
+			return err
+		}
+		blog.Infof("[data-collection][RUN]connected to cc redis %+v", process.Config.CCRedis)
+		process.Service.SetCache(redisCli)
+
+		var snapcli, disCli, netCli *re.Client
+		if process.Config.SnapRedis.Enable != "false" {
+			blog.Infof("[data-collection][RUN]connecting to snap-redis %+v", process.Config.SnapRedis.Config)
+			snapcli, err = redis.NewFromConfig(process.Config.SnapRedis.Config)
+			if nil != err {
+				blog.Errorf("[data-collection][RUN] connect snap-redis failed: %v", err)
+				return err
+			}
+			process.Service.SetSnapcli(snapcli)
+		}
+		if process.Config.DiscoverRedis.Enable != "false" {
+			blog.Infof("[data-collection][RUN]connecting to discover-redis %+v", process.Config.DiscoverRedis.Config)
+			disCli, err = redis.NewFromConfig(process.Config.DiscoverRedis.Config)
+			if nil != err {
+				blog.Errorf("[data-collection][RUN] connect discover-redis failed: %v", err)
+				return err
+			}
+			blog.Infof("[data-collection][RUN]connected to discover-redis %+v", process.Config.DiscoverRedis.Config)
+			process.Service.SetDisCli(disCli)
+		}
+		if process.Config.NetCollectRedis.Enable != "false" {
+			blog.Infof("[data-collection][RUN]connecting to netcollect-redis %+v", process.Config.NetCollectRedis.Config)
+			netCli, err = redis.NewFromConfig(process.Config.NetCollectRedis.Config)
+			if nil != err {
+				blog.Errorf("[data-collection][RUN] connect netcollect-redis failed: %v", err)
+				return err
+			}
+			blog.Infof("[data-collection][RUN]connected to netcollect-redis %+v", process.Config.NetCollectRedis.Config)
+			process.Service.SetNetCli(netCli)
+		}
+		if enableauth.IsAuthed() {
+			blog.Info("[data-collection] auth enabled")
+			authorize, err := auth.NewAuthorize(nil, process.Config.AuthConfig, engine.Metric().Registry())
+			if err != nil {
+				return fmt.Errorf("[data-collection] new authorize failed, err: %v", err)
+			}
+			datacollection.AuthManager = *extensions.NewAuthManager(engine.CoreAPI, authorize)
+		}
+
+		err = datacollection.Run(redisCli, snapcli, disCli, netCli)
 		if err != nil {
 			return fmt.Errorf("run datacollection routine failed %s", err.Error())
 		}
@@ -95,7 +151,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	blog.InfoJSON("process started with info %s", svrInfo)
-	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
+	if err := backbone.StartServer(ctx, engine, service.WebService(), true); err != nil {
 		return err
 	}
 	<-ctx.Done()
@@ -149,6 +205,13 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]
 		h.Config.Esb.AppCode = current.ConfigMap[esbPrefix+".appCode"]
 		h.Config.Esb.AppSecret = current.ConfigMap[esbPrefix+".appSecret"]
+
+		var err error
+		authPrefix := "auth"
+		h.Config.AuthConfig, err = authcenter.ParseConfigFromKV(authPrefix, current.ConfigMap)
+		if err != nil {
+			blog.Fatalf("auth config invalid, err: %+v", err)
+		}
 	}
 }
 

@@ -12,13 +12,10 @@
 
 package meta
 
-import (
-	"time"
-)
-
 var (
 	// HostResource represent host resource
-	HostResource = ResourceType("host")
+	HostBizResource  = ResourceType("host")
+	HostResourcePool = ResourceType("resourcePoolHost")
 	// BusinessResource represent business resource
 	BusinessResource = ResourceType("business")
 	SetResource      = ResourceType("set")
@@ -32,6 +29,7 @@ var (
 	UserGroupSyncResource  = ResourceType("userGroupSync")
 
 	ServiceTemplateResource = ResourceType("serviceTemplateSync")
+	PlatResource            = ResourceType("platSync")
 )
 
 // ResourceType represent a resource type that will be enqueue to WorkerQueue
@@ -42,12 +40,12 @@ type WorkRequest struct {
 	ResourceType ResourceType
 	Data         interface{}
 	Header       interface{}
-	Delay        time.Duration
 }
 
 // SyncHandler is an interface implemented for sync data to iam
 type SyncHandler interface {
 	HandleHostSync(task *WorkRequest) error
+	HandleHostResourcePoolSync(task *WorkRequest) error
 	HandleBusinessSync(task *WorkRequest) error
 	HandleSetSync(task *WorkRequest) error
 	HandleModuleSync(task *WorkRequest) error
@@ -59,4 +57,5 @@ type SyncHandler interface {
 	HandleClassificationSync(task *WorkRequest) error
 	HandleUserGroupSync(task *WorkRequest) error
 	HandleServiceTemplateSync(task *WorkRequest) error
+	HandlePlatSync(task *WorkRequest) error
 }

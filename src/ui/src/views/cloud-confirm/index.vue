@@ -182,10 +182,7 @@
             },
             confirmHistory () {
                 this.$router.push({
-                    name: 'confirmHistory',
-                    query: {
-                        from: this.$route.fullPath
-                    }
+                    name: 'confirmHistory'
                 })
             },
             handleSelectChange (selection) {
@@ -241,9 +238,6 @@
                     name: 'cloudDiscover',
                     params: {
                         type: 'create'
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             }

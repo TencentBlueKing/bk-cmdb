@@ -10,7 +10,7 @@
                 <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('templateName') }">
                     <bk-input type="text" class="cmdb-form-input" id="templateName"
                         name="templateName"
-                        :placeholder="$t('请输入模版名称')"
+                        :placeholder="$t('请输入模板名称')"
                         :disabled="!isCreatedType"
                         v-model.trim="formData.templateName"
                         v-validate="'required|singlechar|length:256'">
@@ -57,10 +57,10 @@
                 <div class="process-create">
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
-                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                            active: !$isAuthorized(auth),
+                            auth: [auth]
                         }">
-                        <bk-button class="create-btn" :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)" @click="handleCreateProcess">
+                        <bk-button class="create-btn" :disabled="!$isAuthorized(auth)" @click="handleCreateProcess">
                             <i class="bk-icon icon-plus"></i>
                             <span>{{$t('新建进程')}}</span>
                         </bk-button>
@@ -78,20 +78,21 @@
                 <div class="btn-box">
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
-                            auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                            active: !$isAuthorized(auth),
+                            auth: [auth]
                         }">
                         <bk-button theme="primary"
-                            :disabled="!$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
+                            :disabled="!$isAuthorized(auth)"
                             @click="handleSubmit">
-                            {{$t('确定')}}
+                            {{isCreatedType ? $t('提交') : $t('保存')}}
                         </bk-button>
                     </span>
-                    <bk-button @click="handleCancelOperation">{{$t('取消')}}</bk-button>
+                    <bk-button @click="handleReturn">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </div>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.show"
             :title="slider.title"
             :width="800"
@@ -121,10 +122,14 @@
                 <div class="content">
                     <i class="bk-icon icon-check-1"></i>
                     <p>{{$t('服务模板创建成功')}}</p>
-                    <span>{{$tc('创建成功前往服务拓扑', createdSucess.name, { name: createdSucess.name })}}</span>
+                    <span v-if="processList.length">{{$tc('创建成功前往服务拓扑', createdSucess.name, { name: createdSucess.name })}}</span>
+                    <span v-else>
+                        <i class="bk-icon icon-exclamation"></i>
+                        {{$t('创建成功无进程提示')}}
+                    </span>
                 </div>
                 <div class="btn-box">
-                    <bk-button
+                    <bk-button v-if="processList.length"
                         theme="primary"
                         class="mr10"
                         @click="handleGoInstance">
@@ -141,6 +146,7 @@
     import processForm from './process-form.vue'
     import processTable from './process'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
+    import { MENU_BUSINESS_SERVICE_TEMPLATE, MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     export default {
         components: {
             processTable,
@@ -189,10 +195,16 @@
             },
             templateId () {
                 return this.$route.params['templateId']
+            },
+            auth () {
+                if (this.isCreatedType) {
+                    return this.$OPERATION.C_SERVICE_TEMPLATE
+                }
+                return this.$OPERATION.U_SERVICE_TEMPLATE
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.isCreatedType ? this.$t('新建服务模版') : '')
+            this.setBreadcrumbs()
             this.processList = this.localProcessTemplate
             try {
                 await this.reload()
@@ -226,8 +238,30 @@
                 'deleteLocalProcessTemplate',
                 'clearLocalProcessTemplate'
             ]),
+            setBreadcrumbs () {
+                if (this.isCreatedType) {
+                    this.$store.commit('setTitle', this.$t('新建模板'))
+                    this.$store.commit('setBreadcrumbs', [{
+                        label: this.$t('服务模板'),
+                        route: {
+                            name: MENU_BUSINESS_SERVICE_TEMPLATE
+                        }
+                    }, {
+                        label: this.$t('新建模板')
+                    }])
+                } else {
+                    this.$store.commit('setTitle', this.$t('模板详情'))
+                }
+            },
             initEdit () {
-                this.$store.commit('setHeaderTitle', this.originTemplateValues['name'])
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('服务模板'),
+                    route: {
+                        name: MENU_BUSINESS_SERVICE_TEMPLATE
+                    }
+                }, {
+                    label: this.originTemplateValues.name
+                }])
                 this.formData.templateId = this.originTemplateValues['id']
                 this.formData.templateName = this.originTemplateValues['name']
                 this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['bk_parent_id']
@@ -418,23 +452,48 @@
                         }
                     })
                 } else {
-                    this.createServiceTemplate({
-                        params: this.$injectMetadata({
-                            name: this.formData.templateName,
-                            service_category_id: this.formData.secondaryClassification
+                    if (!this.processList.length) {
+                        this.$bkInfo({
+                            title: this.$t('服务模板创建没进程提示'),
+                            confirmFn: () => {
+                                this.handleCreateTemplate()
+                            }
                         })
-                    }).then(data => {
-                        this.createdSucess.name = data.name
-                        this.formData.templateId = data.id
-                        this.handleSubmitProcessList()
-                    })
+                        return
+                    }
+                    this.handleCreateTemplate()
                 }
             },
+            handleCreateTemplate () {
+                this.createServiceTemplate({
+                    params: this.$injectMetadata({
+                        name: this.formData.templateName,
+                        service_category_id: this.formData.secondaryClassification
+                    })
+                }).then(data => {
+                    this.createdSucess.name = data.name
+                    this.formData.templateId = data.id
+                    this.handleSubmitProcessList()
+                })
+            },
             handleGoInstance () {
-                this.$router.replace({ name: 'topology' })
+                this.$router.replace({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
+            },
+            handleReturn () {
+                const moduleId = this.$route.params['moduleId']
+                if (moduleId) {
+                    this.$router.replace({
+                        name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                        query: {
+                            module: this.$route.params.moduleId
+                        }
+                    })
+                } else {
+                    this.handleCancelOperation()
+                }
             },
             handleCancelOperation () {
-                this.$router.replace({ name: 'serviceTemplate' })
+                this.$router.replace({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
             },
             handleSliderBeforeClose () {
                 const hasChanged = this.$refs.processForm.hasChange()
@@ -461,6 +520,7 @@
 
 <style lang="scss" scoped>
     .create-template-wrapper {
+        padding: 0 20px;
         .info-group {
             h3 {
                 color: #63656e;
@@ -516,7 +576,8 @@
         font-size: 14px;
         text-align: center;
         color: #444444;
-        .bk-icon {
+        word-break: break-all;
+        .icon-check-1 {
             width: 60px;
             height: 60px;
             line-height: 60px;
@@ -526,6 +587,15 @@
             border-radius: 50%;
             background-color: #2dcb56;
             margin-top: 12px;
+        }
+        .icon-exclamation {
+            width: 18px;
+            height: 18px;
+            line-height: 17px;
+            font-size: 12px;
+            border: 1px solid #444444;
+            border-radius: 50%;
+            margin-top: -4px;
         }
         p {
             font-size: 24px;

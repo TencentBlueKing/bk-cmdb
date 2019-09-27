@@ -19,7 +19,9 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/utils"
@@ -32,10 +34,11 @@ type Producer struct {
 	ID          int
 	WorkerQueue chan meta.WorkRequest
 	QuitChan    chan bool
+	Engine      *backbone.Engine
 }
 
 // NewProducer make a producer
-func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensions.AuthManager, workerQueue chan meta.WorkRequest) *Producer {
+func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensions.AuthManager, workerQueue chan meta.WorkRequest, engine *backbone.Engine) *Producer {
 	// Create, and return the producer.
 	producer := Producer{
 		clientSet:   clientSet,
@@ -43,6 +46,7 @@ func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensi
 		ID:          0,
 		WorkerQueue: workerQueue,
 		QuitChan:    make(chan bool),
+		Engine:      engine,
 	}
 
 	return &producer
@@ -50,23 +54,35 @@ func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensi
 
 // Start do main loop
 func (p *Producer) Start() {
-	ticker := time.NewTicker(1 * time.Minute)
+	// then tick and loop
+	ticker := time.NewTicker(45 * time.Minute)
 	go func(producer *Producer) {
+		time.Sleep(5 * time.Minute)
+		// loop immediately at first.
+		p.loop()
+
 		for {
 			select {
 			case <-ticker.C:
-				// get jobs
-				jobs := producer.generateJobs()
-
-				for _, job := range *jobs {
-					p.WorkerQueue <- job
-				}
+				p.loop()
 			case <-p.QuitChan:
 				ticker.Stop()
 				return
 			}
 		}
 	}(p)
+}
+
+func (p *Producer) loop() {
+	if isMaster := p.Engine.ServiceManageInterface.IsMaster(); !isMaster {
+		blog.Info("not master, don't generate iam sync job")
+		return
+	}
+	// get jobs
+	jobs := p.generateJobs()
+	for _, job := range *jobs {
+		p.WorkerQueue <- job
+	}
 }
 
 func (p *Producer) generateJobs() *[]meta.WorkRequest {
@@ -81,7 +97,8 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 
 	// list all business
 	header := utils.NewListBusinessAPIHeader()
-	condition := metadata.QueryCondition{}
+	// find business, but not contains resource pool business
+	condition := metadata.QueryCondition{Condition: mapstr.MapStr{"default": 0}}
 	result, err := p.clientSet.CoreService().Instance().ReadInstance(context.TODO(), *header, common.BKInnerObjIDApp, &condition)
 	if err != nil {
 		blog.Errorf("list business failed, err: %v", err)
@@ -97,11 +114,11 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		}
 		businessList = append(businessList, businessSimplify)
 	}
-	blog.V(4).Infof("list business businessList: %+v", businessList)
+	blog.V(4).Infof("list business, count:%d", len(businessList))
 
 	// job of synchronize business scope resources to iam
 	resourceTypes := []meta.ResourceType{
-		meta.HostResource,
+		meta.HostBizResource,
 		meta.SetResource,
 		meta.ModuleResource,
 		meta.ModelResource,
@@ -130,12 +147,14 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	}
 	instanceBizList := append(businessList, globalBusiness)
 	for _, business := range instanceBizList {
+		header := utils.NewListBusinessAPIHeader()
 		objects, err := p.authManager.CollectObjectsByBusinessID(context.Background(), *header, business.BKAppIDField)
 		if err != nil {
 			blog.Errorf("get models by business id: %d failed, err: %+v", business.BKAppIDField, err)
 			continue
 		}
 		for _, object := range objects {
+			header := utils.NewListBusinessAPIHeader()
 			jobs = append(jobs, meta.WorkRequest{
 				ResourceType: meta.InstanceResource,
 				Data:         object,
@@ -148,16 +167,19 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	resourceTypes = []meta.ResourceType{
 		// meta.AuditCategory,
 		meta.ClassificationResource,
+		meta.PlatResource,
+		meta.ModelResource,
+		meta.HostResourcePool,
 	}
 	for _, resourceType := range resourceTypes {
+		header := utils.NewListBusinessAPIHeader()
 		jobs = append(jobs, meta.WorkRequest{
 			ResourceType: resourceType,
 			Data:         globalBusiness,
 			Header:       *header,
 		})
 	}
-	if blog.V(5) {
-		blog.InfoJSON("jobs: %s", jobs)
-	}
+	blog.Infof("jobs: count: %d", len(jobs))
+
 	return &jobs
 }

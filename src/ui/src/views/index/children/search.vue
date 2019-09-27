@@ -186,9 +186,6 @@
                         inner: true,
                         outer: true,
                         exact: false
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },
@@ -201,6 +198,7 @@
 <style lang="scss" scoped>
     .search-layout {
         width: 50%;
+        max-width: 700px;
         margin: 0 auto;
     }
     .search-box{

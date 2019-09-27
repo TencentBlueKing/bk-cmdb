@@ -1,4 +1,5 @@
 import $http from '@/api'
+import { $error } from '@/magicbox'
 import {
     GET_AUTH_META,
     STATIC_BUSINESS_MODE,
@@ -120,8 +121,21 @@ const actions = {
         commit('setAdminEntranceAuth', data)
         return Promise.resolve(data)
     },
-    getSkipUrl (context, { params, config }) {
-        return $http.post('auth/skip_url', params, config)
+    async getSkipUrl (context, { params, config = {} }) {
+        try {
+            const url = await $http.post('auth/skip_url', params, Object.assign(config, { globalError: false }))
+            if (url.indexOf('tid') === -1) {
+                return url + '?system_id=bk_cmdb&apply_way=custom'
+            }
+            return url
+        } catch (e) {
+            const url = (window.Site.authCenter || {}).url
+            if (url) {
+                return url + '?system_id=bk_cmdb&apply_way=custom'
+            }
+            $error(e.message)
+            throw e
+        }
     }
 }
 

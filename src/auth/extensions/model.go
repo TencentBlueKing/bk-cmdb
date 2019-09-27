@@ -46,7 +46,7 @@ func (am *AuthManager) CollectObjectsByBusinessID(ctx context.Context, header ht
 		Condition: cond,
 		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
 	}
-	models, err := am.clientSet.CoreService().Model().ReadModel(context.Background(), header, query)
+	models, err := am.clientSet.CoreService().Model().ReadModel(ctx, header, query)
 	if err != nil {
 		blog.Errorf("get models by business %d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get models by business %d failed, err: %+v", businessID, err)

@@ -145,17 +145,23 @@
             }
         },
         watch: {
-            modelId (modelId) {
-                if (modelId) {
-                    this.type = 'details'
-                    this.init()
+            modelId: {
+                immediate: true,
+                handler (modelId) {
+                    if (modelId) {
+                        this.type = 'details'
+                        this.init()
+                    }
                 }
             },
-            async selectedNode (node) {
-                if (node) {
-                    this.type = 'details'
-                    await this.getInstance()
-                    this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
+            selectedNode: {
+                immediate: true,
+                async handler (node) {
+                    if (node) {
+                        this.type = 'details'
+                        await this.getInstance()
+                        this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
+                    }
                 }
             }
         },
@@ -477,12 +483,12 @@
                 this.type = 'details'
             },
             handleDelete () {
+                if (this.selectedNode.data.host_count) {
+                    this.$error(this.$t('目标包含主机, 不允许删除'))
+                    return
+                }
                 this.$bkInfo({
                     title: `${this.$t('确定删除')} ${this.selectedNode.name}?`,
-                    subTitle: this.modelId === 'module'
-                        ? this.$t('删除模块提示')
-                        : this.$t('下属层级都会被删除，请先转移其下所有的主机'),
-                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         const promiseMap = {
                             set: this.deleteSetInstance,
@@ -567,15 +573,8 @@
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
-                        templateId: this.instance.service_template_id
-                    },
-                    query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.instance.bk_module_id
-                            }
-                        }
+                        templateId: this.instance.service_template_id,
+                        moduleId: this.selectedNode.data.bk_inst_id
                     }
                 })
             }

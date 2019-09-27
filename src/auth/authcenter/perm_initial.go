@@ -30,6 +30,18 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 	if err := ac.initDefaultUserRoleWithAuth(ctx); err != nil {
 		return fmt.Errorf("initail default user's role with auth failed: %v", err)
 	}
+	
+	// TODO: remove this operation, when it's auth is roll back.
+	// remove biz instance resource
+	if err := ac.authClient.DeleteResources(ctx, http.Header{}, "biz", BizInstance); err != nil {
+	    blog.Errorf("delete biz instance resource from iam failed, err: %v", err)
+    }
+	// TODO: remove this operation, when it's auth is roll back
+	// remove biz audit log resource
+    if err := ac.authClient.DeleteResources(ctx, http.Header{}, "biz", BizAuditLog); err != nil {
+        blog.Errorf("delete biz audit log resource from iam failed, err: %v", err)
+    }
+	
 	blog.Info("initial auth center success.")
 	return nil
 }
@@ -365,6 +377,60 @@ var bizOperatorRoleAuth = RoleWithAuthResources{
 		{
 			ScopeTypeID:    ScopeTypeIDBiz,
 			ResourceTypeID: BizAuditLog,
+			ActionID:       Get,
+		},
+		// service template related.
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceTemplate,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceTemplate,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceTemplate,
+			ActionID:       Delete,
+		},
+		// service category related.
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceCategory,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceCategory,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceCategory,
+			ActionID:       Delete,
+		},
+		// service instance related.
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceInstance,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceInstance,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessServiceInstance,
+			ActionID:       Delete,
+		},
+		// global resource related.
+		{
+			ScopeTypeID:    ScopeTypeIDSystem,
+			ResourceTypeID: SysBusinessInstance,
 			ActionID:       Get,
 		},
 	},

@@ -31,7 +31,7 @@ import (
 type ModuleOperationInterface interface {
 	CreateModule(params types.ContextParams, obj model.Object, bizID, setID int64, data mapstr.MapStr) (inst.Inst, error)
 	DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setID, moduleIDS []int64) error
-	FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []metadata.ModuleInst, err error)
+	FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []mapstr.MapStr, err error)
 	UpdateModule(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error
 
 	SetProxy(inst InstOperationInterface)
@@ -90,8 +90,9 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	// 如果服务分类没有设置，则从服务模版中获取，如果服务模版也没有设置，则参数错误
 	// 有效参数参数形式:
 	// 1. serviceCategoryID > 0  && serviceTemplateID == 0
-	// 2. serviceCategoryID not set && serviceTemplateID > 0
+	// 2. serviceCategoryID unset && serviceTemplateID > 0
 	// 3. serviceCategoryID > 0 && serviceTemplateID > 0 && serviceTemplate.ServiceCategoryID == serviceCategoryID
+	// 4. serviceCategoryID unset && serviceTemplateID unset, then module create with default category
 	var serviceCategoryID int64
 	serviceCategoryIDIf, serviceCategoryExist := data.Get(common.BKServiceCategoryIDField)
 	if serviceCategoryExist == true {
@@ -101,14 +102,24 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		}
 		serviceCategoryID = scID
 	}
-
-	serviceTemplateIDIf, serviceTemplateExist := data.Get(common.BKServiceTemplateIDField)
-	serviceTemplateID, err := util.GetInt64ByInterface(serviceTemplateIDIf)
-	if err != nil {
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	var serviceTemplateID int64
+	var err error
+	serviceTemplateIDIf, serviceTemplateFieldExist := data.Get(common.BKServiceTemplateIDField)
+	if serviceTemplateFieldExist == true {
+		serviceTemplateID, err = util.GetInt64ByInterface(serviceTemplateIDIf)
+		if err != nil {
+			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
 	}
-	if serviceCategoryExist == false && (serviceTemplateExist == false || serviceTemplateID == common.ServiceTemplateIDNotSet) {
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	data.Set(common.BKServiceTemplateIDField, serviceTemplateID)
+	if serviceCategoryExist == false && (serviceTemplateFieldExist == false || serviceTemplateID == common.ServiceTemplateIDNotSet) {
+		// set default service template id
+		defaultServiceCategory, err := m.clientSet.CoreService().Process().GetDefaultServiceCategory(params.Context, params.Header)
+		if err != nil {
+			blog.Errorf("create module failed, GetDefaultServiceCategory failed, err: %s, rid: %s", err.Error(), params.ReqID)
+			return nil, params.Err.Errorf(common.CCErrProcGetDefaultServiceCategoryFailed)
+		}
+		serviceCategoryID = defaultServiceCategory.ID
 	}
 	if serviceTemplateID != common.ServiceTemplateIDNotSet {
 		// 校验 serviceCategoryID 与 serviceTemplateID 对应
@@ -128,9 +139,6 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
 			return nil, params.Err.Error(common.CCErrProcServiceTemplateAndCategoryNotCoincide)
 		}
-		if serviceCategoryExist == false {
-			data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
-		}
 	} else {
 		// 检查 service category id 是否有效
 		serviceCategory, err := m.clientSet.CoreService().Process().GetServiceCategory(params.Context, params.Header, serviceCategoryID)
@@ -147,6 +155,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
 		}
 	}
+	data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
 
 	return m.inst.CreateInst(params, obj, data)
 }
@@ -179,16 +188,16 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 	return m.inst.DeleteInst(params, obj, innerCond, false)
 }
 
-func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []metadata.ModuleInst, err error) {
+func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []mapstr.MapStr, err error) {
 	// module table doesn't have metadata field
 	params.MetaData = nil
 	count, resultData, err := m.inst.FindInst(params, obj, cond, false)
 	if err != nil {
 		return 0, nil, err
 	}
-	moduleInstances := make([]metadata.ModuleInst, 0)
+	moduleInstances := make([]mapstr.MapStr, 0)
 	for _, item := range resultData {
-		moduleInstance := metadata.ModuleInst{}
+		moduleInstance := make(map[string]interface{})
 		if err := mapstr.DecodeFromMapStr(&moduleInstance, item.ToMapStr()); err != nil {
 			blog.Errorf("unmarshal module into struct failed, module: %+v, rid: %s", item, params.ReqID)
 			return 0, nil, err
@@ -220,9 +229,19 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 	if count > 1 {
 		return params.Err.CCErrorf(common.CCErrCommGetMultipleObject)
 	}
+	if len(moduleInstances) == 0 {
+		return params.Err.CCErrorf(common.CCErrCommNotFound)
+	}
 
-	moduleInstance := moduleInstances[0]
+	moduleMapStr := moduleInstances[0]
+	moduleInstance := metadata.ModuleInst{}
+	if err := moduleMapStr.MarshalJSONInto(&moduleInstance); err != nil {
+		blog.ErrorJSON("unmarshal db data into module failed, module: %s, err: %s, rid: %s", moduleMapStr, err.Error(), params.ReqID)
+		return params.Err.CCError(common.CCErrCommParseDBFailed)
+	}
+
 	if moduleInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+		// 检查并提示禁止修改服务分类
 		if val, ok := data[common.BKServiceCategoryIDField]; ok == true {
 			serviceCategoryID, err := util.GetInt64ByInterface(val)
 			if err != nil {
@@ -233,6 +252,7 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 			}
 		}
 
+		// 检查并提示禁止修改通过模板创建的模块名称
 		if val, ok := data[common.BKModuleNameField]; ok == true {
 			name := util.GetStrByInterface(val)
 			if len(name) == 0 {
@@ -242,27 +262,8 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 			}
 		}
 	}
-	updateItems := map[string]interface{}{}
-	if val, ok := data[common.BKModuleNameField]; ok == true {
-		updateItems[common.BKModuleNameField] = val
-	}
-	if val, ok := data[common.BKOperatorField]; ok == true {
-		updateItems[common.BKOperatorField] = val
-	}
-	if val, ok := data[common.BKBakOperatorField]; ok == true {
-		updateItems[common.BKBakOperatorField] = val
-	}
-	if val, ok := data[common.BKServiceCategoryIDField]; ok == true {
-		updateItems[common.BKServiceCategoryIDField] = val
-	}
-	if val, ok := data[common.BKModuleTypeField]; ok == true {
-		updateItems[common.BKModuleTypeField] = val
-	}
 
 	// module table don't have metadata field
 	params.MetaData = nil
-	if err := m.inst.UpdateInst(params, updateItems, obj, innerCond, -1); err != nil {
-		return err
-	}
-	return nil
+	return m.inst.UpdateInst(params, data, obj, innerCond, -1)
 }

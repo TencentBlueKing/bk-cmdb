@@ -61,7 +61,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 
 		innerIP, isOk := host[common.BKHostInnerIPField].(string)
 		if isOk == false || "" == innerIP {
-			errMsg = append(errMsg, lgc.ccLang.Languagef("host_import_innerip_empty", strconv.FormatInt(index, 10)))
+			errMsg = append(errMsg, lgc.ccLang.Languagef("host_import_innerip_empty", index))
 			continue
 		}
 
@@ -74,9 +74,14 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 			iSubArea = common.BKDefaultDirSubArea
 		}
 
+		iSubAreaVal, err := util.GetInt64ByInterface(iSubArea)
+		if err != nil || iSubAreaVal < 0 {
+			errMsg = append(errMsg, lgc.ccLang.Language("import_host_cloudID_invaild"))
+			continue
+		}
+
 		var intHostID int64
 		var existInDB bool
-		var err error
 
 		// we support update host info both base on hostID and innerIP, hostID has higher priority then innerIP
 		hostIDFromInput, bHostIDInInput := host[common.BKHostIDField]

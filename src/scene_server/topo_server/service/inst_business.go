@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -241,6 +242,32 @@ func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathPara
 	return result, nil
 }
 
+func (s *Service) GetBusinessBasicInfo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
+	}
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKAppNameField, common.BKAppIDField},
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+		},
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDApp, query)
+	if err != nil {
+		blog.Errorf("failed to get business by id, bizID: %s, err: %s, rid: %s", bizID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if len(result.Data.Info) == 0 {
+		blog.Errorf("get business by id not found, bizID: %s, rid: %s", bizID, params.ReqID)
+		err := params.Err.CCError(common.CCErrCommNotFound)
+		return nil, err
+	}
+	bizData := result.Data.Info[0]
+	return bizData, nil
+}
+
 // SearchBusiness search the business by condition
 func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
@@ -448,4 +475,64 @@ func (s *Service) GetInternalModule(params types.ContextParams, pathParams, quer
 	}
 
 	return result, nil
+}
+
+func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pathParams, queryparams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+	}
+
+	result, err := s.GetInternalModule(params, pathParams, queryparams, data)
+	if err != nil {
+		return result, err
+	}
+	innerAppTopo, ok := result.(*metadata.InnterAppTopo)
+	if ok == false || innerAppTopo == nil {
+		blog.ErrorJSON("GetInternalModuleWithStatistics failed, GetInternalModule return unexpected type: %s, rid: %s", innerAppTopo, params.ReqID)
+		return result, err
+	}
+	moduleIDArr := make([]int64, 0)
+	for _, item := range innerAppTopo.Module {
+		moduleIDArr = append(moduleIDArr, item.ModuleID)
+	}
+	listHostOption := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		SetIDArr:      []int64{innerAppTopo.SetID},
+		ModuleIDArr:   moduleIDArr,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	hostModuleRelations, e := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, listHostOption)
+	if e != nil {
+		blog.Errorf("GetInternalModuleWithStatistics failed, list host modules failed, option: %+v, err: %s, rid: %s", listHostOption, e.Error(), params.ReqID)
+		return nil, e
+	}
+	setHostIDs := make([]int64, 0)
+	moduleHostIDs := make(map[int64][]int64, 0)
+	for _, relation := range hostModuleRelations.Data.Info {
+		setHostIDs = append(setHostIDs, relation.HostID)
+		if _, ok := moduleHostIDs[relation.ModuleID]; ok == false {
+			moduleHostIDs[relation.ModuleID] = make([]int64, 0)
+		}
+		moduleHostIDs[relation.ModuleID] = append(moduleHostIDs[relation.ModuleID], relation.HostID)
+	}
+	set := mapstr.NewFromStruct(innerAppTopo, "field")
+	if err != nil {
+		blog.Errorf("GetInternalModuleWithStatistics failed, convert innerAppTopo to map failed, innerAppTopo: %+v, err: %s, rid: %s", innerAppTopo, e.Error(), params.ReqID)
+		return nil, e
+	}
+	set["host_count"] = len(util.IntArrayUnique(setHostIDs))
+	modules := make([]mapstr.MapStr, 0)
+	for _, module := range innerAppTopo.Module {
+		moduleItem := mapstr.NewFromStruct(module, "field")
+		moduleItem["host_count"] = 0
+		if hostIDs, ok := moduleHostIDs[module.ModuleID]; ok == true {
+			moduleItem["host_count"] = len(util.IntArrayUnique(hostIDs))
+		}
+		modules = append(modules, moduleItem)
+	}
+	set["module"] = modules
+	return set, nil
 }

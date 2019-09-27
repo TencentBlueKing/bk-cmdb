@@ -182,7 +182,7 @@ func (assoc *association) SetMainlineInstAssociation(params types.ContextParams,
 		}
 		err = assoc.authManager.RegisterInstancesByID(params.Context, params.Header, current.Object().ObjectID, instID)
 		if err != nil {
-			blog.Errorf("create mainline instance for object: %s, but register to auth center failed, err: %v, rid: %s", current.Object().ObjectID, err, params.ReqID)
+			blog.Errorf("create mainline instance for object: %s, but register to auth center failed, instID: %d, err: %v, rid: %s", current.Object().ObjectID, instID, err, params.ReqID)
 			return err
 		}
 
@@ -302,29 +302,31 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 		return e
 	}
 	// topoObjectID -> topoInstanceID -> []hostIDs
-	moduleHostCount := make(map[string]map[int64][]int64)
-	moduleHostCount[common.BKInnerObjIDApp] = make(map[int64][]int64)
-	moduleHostCount[common.BKInnerObjIDSet] = make(map[int64][]int64)
-	moduleHostCount[common.BKInnerObjIDModule] = make(map[int64][]int64)
+	customLevel := "custom_level"
+	hostCount := make(map[string]map[int64][]int64)
+	hostCount[common.BKInnerObjIDApp] = make(map[int64][]int64)
+	hostCount[common.BKInnerObjIDSet] = make(map[int64][]int64)
+	hostCount[common.BKInnerObjIDModule] = make(map[int64][]int64)
+	hostCount[customLevel] = make(map[int64][]int64)
 	for _, hostModule := range hostModules.Data.Info {
-		if _, exist := moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID]; exist == false {
-			moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = make([]int64, 0)
+		if _, exist := hostCount[common.BKInnerObjIDModule][hostModule.ModuleID]; exist == false {
+			hostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = make([]int64, 0)
 		}
-		moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = append(moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID], hostModule.HostID)
+		hostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = append(hostCount[common.BKInnerObjIDModule][hostModule.ModuleID], hostModule.HostID)
 
-		if _, exist := moduleHostCount[common.BKInnerObjIDSet][hostModule.SetID]; exist == false {
-			moduleHostCount[common.BKInnerObjIDSet][hostModule.SetID] = make([]int64, 0)
+		if _, exist := hostCount[common.BKInnerObjIDSet][hostModule.SetID]; exist == false {
+			hostCount[common.BKInnerObjIDSet][hostModule.SetID] = make([]int64, 0)
 		}
-		moduleHostCount[common.BKInnerObjIDSet][hostModule.SetID] = append(moduleHostCount[common.BKInnerObjIDSet][hostModule.SetID], hostModule.HostID)
+		hostCount[common.BKInnerObjIDSet][hostModule.SetID] = append(hostCount[common.BKInnerObjIDSet][hostModule.SetID], hostModule.HostID)
 
-		if _, exist := moduleHostCount[common.BKInnerObjIDApp][hostModule.AppID]; exist == false {
-			moduleHostCount[common.BKInnerObjIDApp][hostModule.AppID] = make([]int64, 0)
+		if _, exist := hostCount[common.BKInnerObjIDApp][hostModule.AppID]; exist == false {
+			hostCount[common.BKInnerObjIDApp][hostModule.AppID] = make([]int64, 0)
 		}
-		moduleHostCount[common.BKInnerObjIDApp][hostModule.AppID] = append(moduleHostCount[common.BKInnerObjIDApp][hostModule.AppID], hostModule.HostID)
+		hostCount[common.BKInnerObjIDApp][hostModule.AppID] = append(hostCount[common.BKInnerObjIDApp][hostModule.AppID], hostModule.HostID)
 	}
-	for _, objectID := range []string{common.BKInnerObjIDSet, common.BKInnerObjIDSet, common.BKInnerObjIDModule} {
-		for key := range moduleHostCount[objectID] {
-			moduleHostCount[objectID][key] = util.IntArrayUnique(moduleHostCount[objectID][key])
+	for _, objectID := range []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule} {
+		for key := range hostCount[objectID] {
+			hostCount[objectID][key] = util.IntArrayUnique(hostCount[objectID][key])
 		}
 	}
 
@@ -350,6 +352,7 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 		moduleServiceTemplateIDMap[moduleStruct.ModuleID] = moduleStruct.ServiceTemplateID
 	}
 
+	exactNodes := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule}
 	for _, tir := range parentInsts {
 		tir.DeepFirstTraverse(func(node *metadata.TopoInstRst) {
 			if len(node.Child) > 0 {
@@ -360,12 +363,24 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 				}
 				node.ServiceInstanceCount = subTreeSvcInstCount
 
+			} else if util.InStrArr(exactNodes, node.ObjID) == false && len(node.Child) > 0 {
 				// calculate host count
-				subTreeHostCount := int64(0)
+				subTreeHosts := make([]int64, 0)
 				for _, child := range node.Child {
-					subTreeHostCount += child.HostCount
+					childHosts := make([]int64, 0)
+					if util.InStrArr(exactNodes, child.ObjID) {
+						if _, exist := hostCount[child.ObjID][child.InstID]; exist == true {
+							childHosts = hostCount[child.ObjID][child.InstID]
+						}
+					} else {
+						if _, exist := hostCount[customLevel][child.InstID]; exist == true {
+							childHosts = hostCount[customLevel][child.InstID]
+						}
+					}
+					subTreeHosts = append(subTreeHosts, childHosts...)
 				}
-				node.HostCount = subTreeHostCount
+				hostCount[customLevel][node.InstID] = util.IntArrayUnique(subTreeHosts)
+				node.HostCount = int64(len(hostCount[customLevel][node.InstID]))
 			}
 			if node.ObjID == common.BKInnerObjIDModule {
 				if _, exist := moduleServiceInstanceCount[node.InstID]; exist == true {
@@ -375,11 +390,9 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 					node.ServiceTemplateID = id
 				}
 			}
-			if node.ObjID == common.BKInnerObjIDApp ||
-				node.ObjID == common.BKInnerObjIDSet ||
-				node.ObjID == common.BKInnerObjIDModule {
-				if _, exist := moduleHostCount[node.ObjID][node.InstID]; exist == true {
-					node.HostCount = int64(len(moduleHostCount[node.ObjID][node.InstID]))
+			if util.InStrArr(exactNodes, node.ObjID) {
+				if _, exist := hostCount[node.ObjID][node.InstID]; exist == true {
+					node.HostCount = int64(len(hostCount[node.ObjID][node.InstID]))
 				}
 			}
 		})

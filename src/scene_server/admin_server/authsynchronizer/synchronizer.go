@@ -20,6 +20,8 @@ import (
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
+	enableauth "configcenter/src/common/auth"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/handler"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
@@ -35,18 +37,25 @@ type AuthSynchronizer struct {
 	Workers     *[]Worker
 	WorkerQueue chan meta.WorkRequest
 	Producer    *Producer
+	Engine      *backbone.Engine
 
 	reg prometheus.Registerer
 }
 
 // NewSynchronizer new a synchronizer object
-func NewSynchronizer(ctx context.Context, authConfig *authcenter.AuthConfig, clientSet apimachinery.ClientSetInterface, reg prometheus.Registerer) *AuthSynchronizer {
-	return &AuthSynchronizer{ctx: ctx, AuthConfig: *authConfig, clientSet: clientSet, reg: reg}
+func NewSynchronizer(ctx context.Context, authConfig *authcenter.AuthConfig, clientSet apimachinery.ClientSetInterface, reg prometheus.Registerer, engine *backbone.Engine) *AuthSynchronizer {
+	return &AuthSynchronizer{
+		ctx:        ctx,
+		AuthConfig: *authConfig,
+		clientSet:  clientSet,
+		reg:        reg,
+		Engine:     engine,
+	}
 }
 
 // Run do start synchronize
 func (d *AuthSynchronizer) Run() error {
-	if d.AuthConfig.Enable == false {
+	if !enableauth.IsAuthed() {
 		blog.Info("authConfig is disabled, exit now")
 		return nil
 	}
@@ -76,7 +85,7 @@ func (d *AuthSynchronizer) Run() error {
 	d.Workers = &workers
 
 	// init producer
-	d.Producer = NewProducer(d.clientSet, authManager, d.WorkerQueue)
+	d.Producer = NewProducer(d.clientSet, authManager, d.WorkerQueue, d.Engine)
 	d.Producer.Start()
 	blog.Infof("auth synchronize started")
 	return nil
