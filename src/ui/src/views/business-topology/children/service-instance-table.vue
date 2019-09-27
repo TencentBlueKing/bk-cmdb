@@ -132,8 +132,6 @@
             :width="580"
             :mask-close="false"
             :esc-close="false"
-            @confirm="handleSubmitEditLable"
-            @cancel="handleCloseEditLable"
             @after-leave="handleSetEditBox">
             <div slot="header">
                 {{$t('编辑标签')}}
@@ -144,6 +142,10 @@
                     :default-list="editLabel.list">
                 </cmdb-edit-label>
             </template>
+            <div class="edit-label-dialog-footer" slot="footer">
+                <bk-button theme="primary" @click.stop="handleSubmitEditLable">{{$t('确定')}}</bk-button>
+                <bk-button theme="default" class="ml5" @click.stop="handleCloseEditLable">{{$t('取消')}}</bk-button>
+            </div>
         </bk-dialog>
     </div>
 </template>
@@ -577,6 +579,7 @@
                 color: #979ba5;
                 background-color: #fafbfd;
                 border-radius: 2px;
+                cursor: default;
                 &>span {
                     @include ellipsis;
                     display: inline-block;
@@ -605,6 +608,11 @@
             font-size: 24px;
             color: #444444;
             margin-top: -15px;
+        }
+        .edit-label-dialog-footer {
+            .bk-button {
+                min-width: 76px;
+            }
         }
     }
 </style>
