@@ -35,7 +35,7 @@
                                 <div class="property-value">
                                     <component class="form-component"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :disabled="type === 'update' && ['bk_func_name'].includes(property['bk_property_id']) || !values[property['bk_property_id']]['as_default_value']"
+                                        :disabled="getPropertyEditStatus(property)"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
@@ -221,6 +221,10 @@
         },
         methods: {
             ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
+            getPropertyEditStatus (property) {
+                return (this.type === 'update' && ['bk_func_name', 'bk_process_name'].includes(property['bk_property_id']))
+                    || !this.values[property['bk_property_id']]['as_default_value']
+            },
             changedValues () {
                 const changedValues = {}
                 if (!this.values['bind_ip']['value']) this.values['bind_ip']['value'] = ''
