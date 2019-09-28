@@ -7,7 +7,7 @@
             <li class="template-item fl clearfix"
                 v-for="(template, index) in templates"
                 :class="{
-                    'is-selected': selected.includes(template.id),
+                    'is-selected': localSelected.includes(template.id),
                     'is-middle': index % 3 === 1
                 }"
                 :key="template.id"
@@ -22,21 +22,25 @@
 <script>
     export default {
         name: 'serviceTemplateSelector',
+        props: {
+            selected: {
+                type: Array,
+                default () {
+                    return []
+                }
+            }
+        },
         data () {
             return {
                 visible: false,
                 templates: [],
-                selected: []
+                localSelected: [...this.selected]
             }
         },
         created () {
             this.getTemplates()
         },
         methods: {
-            show (selected) {
-                this.selected = selected
-                this.visible = true
-            },
             async getTemplates () {
                 try {
                     const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
@@ -52,15 +56,15 @@
                 }
             },
             handleClick (template) {
-                const index = this.selected.indexOf(template.id)
+                const index = this.localSelected.indexOf(template.id)
                 if (index > -1) {
-                    this.selected.splice(index, 1)
+                    this.localSelected.splice(index, 1)
                 } else {
-                    this.selected.push(template.id)
+                    this.localSelected.push(template.id)
                 }
             },
             getSelectedServices () {
-                return this.templates.filter(template => this.selected.includes(template.id))
+                return this.templates.filter(template => this.localSelected.includes(template.id))
             }
         }
     }
