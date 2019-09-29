@@ -225,10 +225,12 @@
                             requestId: 'getNextModelProperties'
                         }
                     })
-                    this.$store.commit('businessTopology/setProperties', {
-                        id: nextModelId,
-                        properties: properties
-                    })
+                    if (!['set', 'module'].includes(nextModelId)) {
+                        this.$store.commit('businessTopology/setProperties', {
+                            id: nextModelId,
+                            properties: properties
+                        })
+                    }
                     this.createInfo.properties = properties
                 }
             },

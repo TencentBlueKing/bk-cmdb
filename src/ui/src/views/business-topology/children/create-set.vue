@@ -122,10 +122,11 @@
                                 requestId: 'getSetTemplates'
                             }
                         })
-                        this.setTemplateList = data.info.map(template => ({ ...template.set_template }))
+                        const list = data.info.map(template => ({ ...template.set_template }))
+                        this.setTemplateList = list
                         this.$store.commit('businessTopology/setSetTemplate', {
                             id: this.business,
-                            templates: data.info
+                            templates: list
                         })
                     } catch (e) {
                         console.error(e)
@@ -139,6 +140,7 @@
                         // const nameList = this.setName.split('\n').filter(name => name)
                         this.$emit('submit', {
                             set_template_id: this.setTemplate,
+                            // sets: nameList.map(name => ({ bk_set_name: name }))
                             bk_set_name: this.setName
                         })
                     }
