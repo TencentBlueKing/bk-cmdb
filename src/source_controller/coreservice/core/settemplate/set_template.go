@@ -165,7 +165,6 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(filter).One(ctx.Context, &setTemplate); err != nil {
 		if p.dbProxy.IsNotFoundError(err) {
 			blog.Errorf("UpdateSetTemplate failed, set template not found, id: %d, rid: %s", setTemplateID, ctx.ReqID)
-
 			return setTemplate, ctx.Error.CCError(common.CCErrCommNotFound)
 		}
 
@@ -335,6 +334,9 @@ func (p *setTemplateOperation) GetSetTemplate(ctx core.ContextParams, bizID int6
 
 func (p *setTemplateOperation) ListSetTemplate(ctx core.ContextParams, bizID int64, option metadata.ListSetTemplateOption) (metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
 	result := metadata.MultipleSetTemplateResult{}
+	if option.Page.Limit > common.BKMaxPageSize && option.Page.Limit != common.BKNoLimit {
+		return result, ctx.Error.CCError(common.CCErrCommPageLimitIsExceeded)
+	}
 
 	filter := map[string]interface{}{
 		common.BKAppIDField:      bizID,
@@ -346,12 +348,12 @@ func (p *setTemplateOperation) ListSetTemplate(ctx core.ContextParams, bizID int
 		}
 	}
 	query := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(filter)
-	count, err := query.Count(ctx.Context)
+	total, err := query.Count(ctx.Context)
 	if err != nil {
-		blog.Errorf("ListSetTemplate failed, db count failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
+		blog.ErrorJSON("ListSetTemplate failed, db count failed, filter: %s, err: %s, rid: %s", filter, err.Error(), ctx.ReqID)
 		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
-	result.Count = int64(count)
+	result.Count = int64(total)
 
 	if len(option.Page.Sort) > 0 {
 		query = query.Sort(option.Page.Sort)
@@ -365,11 +367,7 @@ func (p *setTemplateOperation) ListSetTemplate(ctx core.ContextParams, bizID int
 
 	setTemplates := make([]metadata.SetTemplate, 0)
 	if err := query.All(ctx.Context, &setTemplates); err != nil {
-		if p.dbProxy.IsNotFoundError(err) {
-			blog.Errorf("GetSetTemplate failed, db select failed, not found, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
-			return result, ctx.Error.CCError(common.CCErrCommNotFound)
-		}
-		blog.Errorf("GetSetTemplate failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
+		blog.ErrorJSON("ListSetTemplate failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), ctx.ReqID)
 		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 

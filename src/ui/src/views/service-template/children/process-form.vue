@@ -20,7 +20,7 @@
                                 :key="propertyIndex">
                                 <div class="property-name clearfix">
                                     <bk-checkbox class="form-checkbox"
-                                        v-bk-tooltips="{ content: $t('纳入模板管理'), placement: 'top-start' }"
+                                        v-bk-tooltips="checkboxTips"
                                         v-if="property['isLocking'] !== undefined"
                                         v-model="values[property['bk_property_id']]['as_default_value']"
                                         @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
@@ -35,7 +35,7 @@
                                 <div class="property-value">
                                     <component class="form-component"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :disabled="type === 'update' && ['bk_func_name'].includes(property['bk_property_id']) || !values[property['bk_property_id']]['as_default_value']"
+                                        :disabled="getPropertyEditStatus(property)"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
@@ -173,6 +173,25 @@
                     return this.$OPERATION.C_SERVICE_TEMPLATE
                 }
                 return this.$OPERATION.U_SERVICE_TEMPLATE
+            },
+            checkboxTips () {
+                return {
+                    content: this.$t('纳入模板管理'),
+                    placement: 'top-start',
+                    offset: -2,
+                    popperOptions: {
+                        modifiers: {
+                            customArrowStyles: {
+                                enabled: true,
+                                order: 100,
+                                fn (data, options) {
+                                    Object.assign(data.arrowStyles, { left: 0 })
+                                    return data
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         watch: {
@@ -202,6 +221,10 @@
         },
         methods: {
             ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
+            getPropertyEditStatus (property) {
+                return (this.type === 'update' && ['bk_func_name', 'bk_process_name'].includes(property['bk_property_id']))
+                    || !this.values[property['bk_property_id']]['as_default_value']
+            },
             changedValues () {
                 const changedValues = {}
                 if (!this.values['bind_ip']['value']) this.values['bind_ip']['value'] = ''

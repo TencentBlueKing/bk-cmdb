@@ -1,11 +1,11 @@
 <template>
-    <div id="app" :bk-language="$i18n.locale" :class="{ 'no-breadcrumb': hideBreadcrumbs, 'main-full-screen': mainFullScreen }">
+    <div id="app" :bk-language="$i18n.locale">
         <div class="browser-tips" v-if="showBrowserTips">
             <span class="tips-text">{{$t('您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果')}}</span>
             <i class="tips-icon bk-icon icon-close-circle-shape" @click="showBrowserTips = false"></i>
         </div>
         <the-header></the-header>
-        <router-view class="views-layout"></router-view>
+        <router-view class="views-layout" v-bkloading="{ isLoading: isIndex && globalLoading }"></router-view>
         <the-permission-modal ref="permissionModal"></the-permission-modal>
         <cmdb-business-selector v-if="businessSelectorVisible" hidden
             @on-select="resolveBusinessSelectorPromise"
@@ -19,6 +19,7 @@
     import thePermissionModal from '@/components/modal/permission'
     // import { execMainScrollListener, execMainResizeListener } from '@/utils/main-scroller'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+    import { MENU_INDEX } from '@/dictionary/menu-symbol'
     import { mapGetters } from 'vuex'
     export default {
         name: 'app',
@@ -35,15 +36,10 @@
             }
         },
         computed: {
-            ...mapGetters(['globalLoading', 'businessSelectorVisible', 'mainFullScreen']),
+            ...mapGetters(['globalLoading', 'businessSelectorVisible']),
             ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey']),
-            hideBreadcrumbs () {
-                return (this.meta.layout || {}).hideBreadcrumbs
-            }
-        },
-        watch: {
-            $route (val) {
-                this.meta = this.$route.meta
+            isIndex () {
+                return this.$route.name === MENU_INDEX
             }
         },
         mounted () {
@@ -90,29 +86,5 @@
     }
     .views-layout{
         height: calc(100% - 58px);
-    }
-
-    // 主内容区全屏
-    .main-full-screen {
-        >>>.header-layout,
-        >>>.nav-layout {
-            display: none;
-        }
-        .views-layout {
-            height: 100%;
-        }
-    }
-
-    .no-breadcrumb {
-        >>>.breadcrumbs-layout {
-            display: none;
-        }
-        >>>.main-layout {
-            margin-top: 0
-        }
-        >>>.main-views {
-            height: 100%;
-            margin-top: 0;
-        }
     }
 </style>
