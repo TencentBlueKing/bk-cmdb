@@ -39,9 +39,14 @@ func (s *Service) BatchCreateSet(params types.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
-	batchBody := struct {
+	type BatchCreateSetRequest struct {
+		// shared fields
+		Metadata          metadata.Metadata `json:"metadata"`
+		BkSupplierAccount string            `json:"bk_supplier_account"`
+
 		Sets []map[string]interface{} `json:"sets"`
-	}{}
+	}
+	batchBody := BatchCreateSetRequest{}
 	if err := data.MarshalJSONInto(&batchBody); err != nil {
 		blog.Errorf("batch create set failed, parse request body failed, data: %+v, err: %s, rid: %s", data, err.Error(), params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
@@ -56,6 +61,14 @@ func (s *Service) BatchCreateSet(params types.ContextParams, pathParams, queryPa
 	var firstErr error
 	var errMsg string
 	for idx, set := range batchBody.Sets {
+		if _, ok := set[common.MetadataField]; ok == false {
+			set[common.MetadataField] = batchBody.Metadata
+		}
+		if _, ok := set[common.BkSupplierAccount]; ok == false {
+			set[common.BkSupplierAccount] = batchBody.BkSupplierAccount
+		}
+		set[common.BKAppIDField] = bizID
+
 		result, err := s.createSet(params, bizID, obj, set)
 		errMsg = ""
 		if err != nil {
