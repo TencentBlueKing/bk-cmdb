@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -88,8 +89,9 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	// 如果服务分类没有设置，则从服务模版中获取，如果服务模版也没有设置，则参数错误
 	// 有效参数参数形式:
 	// 1. serviceCategoryID > 0  && serviceTemplateID == 0
-	// 2. serviceCategoryID not set && serviceTemplateID > 0
+	// 2. serviceCategoryID unset && serviceTemplateID > 0
 	// 3. serviceCategoryID > 0 && serviceTemplateID > 0 && serviceTemplate.ServiceCategoryID == serviceCategoryID
+	// 4. serviceCategoryID unset && serviceTemplateID unset, then module create with default category
 	var serviceCategoryID int64
 	serviceCategoryIDIf, serviceCategoryExist := data.Get(common.BKServiceCategoryIDField)
 	if serviceCategoryExist == true {
@@ -99,14 +101,24 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		}
 		serviceCategoryID = scID
 	}
-
-	serviceTemplateIDIf, serviceTemplateExist := data.Get(common.BKServiceTemplateIDField)
-	serviceTemplateID, err := util.GetInt64ByInterface(serviceTemplateIDIf)
-	if err != nil {
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	var serviceTemplateID int64
+	var err error
+	serviceTemplateIDIf, serviceTemplateFieldExist := data.Get(common.BKServiceTemplateIDField)
+	if serviceTemplateFieldExist == true {
+		serviceTemplateID, err = util.GetInt64ByInterface(serviceTemplateIDIf)
+		if err != nil {
+			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
 	}
-	if serviceCategoryExist == false && (serviceTemplateExist == false || serviceTemplateID == common.ServiceTemplateIDNotSet) {
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	data.Set(common.BKServiceTemplateIDField, serviceTemplateID)
+	if serviceCategoryExist == false && (serviceTemplateFieldExist == false || serviceTemplateID == common.ServiceTemplateIDNotSet) {
+		// set default service template id
+		defaultServiceCategory, err := m.clientSet.CoreService().Process().GetDefaultServiceCategory(params.Context, params.Header)
+		if err != nil {
+			blog.Errorf("create module failed, GetDefaultServiceCategory failed, err: %s, rid: %s", err.Error(), params.ReqID)
+			return nil, params.Err.Errorf(common.CCErrProcGetDefaultServiceCategoryFailed)
+		}
+		serviceCategoryID = defaultServiceCategory.ID
 	}
 	if serviceTemplateID != common.ServiceTemplateIDNotSet {
 		// 校验 serviceCategoryID 与 serviceTemplateID 对应
@@ -126,9 +138,6 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
 			return nil, params.Err.Error(common.CCErrProcServiceTemplateAndCategoryNotCoincide)
 		}
-		if serviceCategoryExist == false {
-			data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
-		}
 	} else {
 		// 检查 service category id 是否有效
 		serviceCategory, err := m.clientSet.CoreService().Process().GetServiceCategory(params.Context, params.Header, serviceCategoryID)
@@ -145,8 +154,48 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
 		}
 	}
+	data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
 
-	return m.inst.CreateInst(params, obj, data)
+	inst, err := m.inst.CreateInst(params, obj, data)
+	if err != nil {
+		ccErr, ok := err.(errors.CCErrorCoder)
+		if ok == false {
+			return inst, err
+		}
+		if ccErr.GetCode() != common.CCErrCommDuplicateItem {
+			return inst, err
+		}
+
+		// 检测模块名重复并返回定制提示信息
+		moduleName, exist := data[common.BKModuleNameField]
+		if exist == false {
+			return inst, err
+		}
+		nameDuplicateFilter := &metadata.QueryCondition{
+			Limit: metadata.SearchLimit{
+				Limit: 1,
+			},
+			Condition: map[string]interface{}{
+				common.BKParentIDField:   setID,
+				common.BKAppIDField:      bizID,
+				common.BKModuleNameField: moduleName,
+			},
+		}
+		result, err := m.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, nameDuplicateFilter)
+		if err != nil {
+			blog.ErrorJSON("create module failed, find duplicated name modules failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), params.ReqID)
+			return nil, err
+		}
+		if result.Result == false || result.Code != 0 {
+			blog.ErrorJSON("create module failed, find duplicated name modules failed, result false, filter: %s, result: %s, err: %s, rid: %s", nameDuplicateFilter, result, err.Error(), params.ReqID)
+			return nil, err
+		}
+		if result.Data.Count > 0 {
+			blog.ErrorJSON("create module failed, module name duplicated, filter: %s, rid: %s", nameDuplicateFilter, params.ReqID)
+			return nil, params.Err.CCError(common.CCErrorTopoModuleNameDuplicated)
+		}
+	}
+	return inst, nil
 }
 
 func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setIDs, moduleIDS []int64) error {

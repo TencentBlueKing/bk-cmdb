@@ -49,27 +49,6 @@ func updateSystemProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	return db.Table(tablename).Update(ctx, condition, data)
 }
 
-func updateIcon(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	condition := map[string]interface{}{
-		"bk_obj_id": common.BKInnerObjIDTomcat,
-	}
-	data := map[string]interface{}{
-		"bk_obj_icon": "icon-cc-tomcat",
-	}
-	err = db.Table(common.BKTableNameObjDes).Update(ctx, condition, data)
-	if err != nil {
-		return err
-	}
-	condition = map[string]interface{}{
-		"bk_obj_id": common.BKInnerObjIDApache,
-	}
-	data = map[string]interface{}{
-		"bk_obj_icon": "icon-cc-apache",
-	}
-
-	return db.Table(common.BKTableNameObjDes).Update(ctx, condition, data)
-}
-
 func fixesProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	condition := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,

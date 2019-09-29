@@ -416,8 +416,9 @@ func (ps *parseStream) host() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveHostToBizFaultModule,
+					Type: meta.HostInstance,
+					// auth this resource in scene layer, as is host server
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -436,8 +437,9 @@ func (ps *parseStream) host() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveHostToBizIdleModule,
+					Type: meta.HostInstance,
+					// auth this resource in host server.
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -469,8 +471,10 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveResPoolHostToBizIdleModule,
+					Type: meta.HostInstance,
+					// Action: meta.MoveResPoolHostToBizIdleModule,
+					// auth this resource in scene layer
+					Action: meta.SkipAction,
 				},
 			},
 		}

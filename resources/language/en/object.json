@@ -10,8 +10,5 @@
     "object_bk_router": "router",
     "object_bk_load_balance": "load balance",
     "object_bk_firewall": "firewall",
-    "object_bk_weblogic": "weblogic",
-    "object_bk_tomcat": "tomcat",
-    "object_bk_apache": "apache",
     "": ""
 }
