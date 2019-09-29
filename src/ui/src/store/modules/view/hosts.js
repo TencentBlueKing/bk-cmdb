@@ -42,7 +42,7 @@ const mutations = {
         Object.assign(state.collection, updatedData)
     },
     deleteCollection (state, id) {
-        state.collectionList = state.collectionList.filter(collection => collection.id === id)
+        state.collectionList = state.collectionList.filter(collection => collection.id !== id)
     },
     clearFilter (state) {
         state.filterList = []

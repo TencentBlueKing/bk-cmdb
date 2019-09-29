@@ -33,14 +33,12 @@
             v-bkloading="{ isLoading: $loading('searchCustomQuery') }"
             :data="table.list"
             :pagination="table.pagination"
-            :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 229"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
-            @sort-change="handleSortChange"
-            @row-click="showUserAPIDetails">
+            @sort-change="handleSortChange">
             <!-- <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column> -->
-            <bk-table-column prop="name" :label="$t('查询名称')" class-name="is-highlight" sortable="custom" fixed></bk-table-column>
+            <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed></bk-table-column>
             <bk-table-column prop="id" label="ID" sortable="custom" fixed></bk-table-column>
             <bk-table-column prop="create_user" :label="$t('创建用户')" sortable="custom"></bk-table-column>
             <bk-table-column prop="create_time" :label="$t('创建时间')" sortable="custom">
@@ -108,13 +106,15 @@
         </bk-sideslider>
         
         <!-- eslint-disable vue/space-infix-ops -->
-        <v-preview ref="preview"
-            v-if="isPreviewShow"
-            :api-params="apiParams"
-            :attribute="object"
-            :table-header="previewHeader"
-            @close="isPreviewShow = false">
-        </v-preview>
+        <cmdb-main-inject inject-type="prepend" v-transfer-dom>
+            <v-preview ref="preview"
+                v-if="isPreviewShow"
+                :api-params="apiParams"
+                :attribute="object"
+                :table-header="previewHeader"
+                @close="isPreviewShow = false">
+            </v-preview>
+        </cmdb-main-inject>
         <!-- eslint-disable end -->
     </div>
 </template>
@@ -124,11 +124,13 @@
     import featureTips from '@/components/feature-tips/index'
     import vDefine from './define'
     import vPreview from './preview'
+    import cmdbMainInject from '@/components/layout/main-inject'
     export default {
         components: {
             featureTips,
             vDefine,
-            vPreview
+            vPreview,
+            cmdbMainInject
         },
         data () {
             return {
@@ -425,8 +427,7 @@
                 this.slider.title = this.$t('新建动态分组')
             },
             /* 显示自定义API详情 */
-            showUserAPIDetails (userAPI, event, column = {}) {
-                if (column.property === 'operation') return
+            showUserAPIDetails (userAPI) {
                 this.slider.isShow = true
                 this.slider.type = 'update'
                 this.slider.id = userAPI['id']

@@ -1,12 +1,10 @@
 <template>
     <div class="clearfix">
-        <dynamic-navigation class="main-navigation"
-            @business-change="handleBusinessChange">
-        </dynamic-navigation>
+        <dynamic-navigation class="main-navigation"></dynamic-navigation>
         <dynamic-breadcrumbs class="main-breadcrumbs"></dynamic-breadcrumbs>
         <div class="main-layout">
-            <div class="main-scroller" v-bkloading="{ isLoading: globalLoading }">
-                <router-view class="main-views" :name="view" :key="refreshKey" v-if="view"></router-view>
+            <div class="main-scroller" v-bkloading="{ isLoading: globalLoading }" ref="scroller">
+                <router-view class="main-views" :name="view"></router-view>
             </div>
         </div>
     </div>
@@ -16,6 +14,10 @@
     import { mapGetters } from 'vuex'
     import dynamicNavigation from './dynamic-navigation'
     import dynamicBreadcrumbs from './dynamic-breadcrumbs'
+    import {
+        addResizeListener,
+        removeResizeListener
+    } from '@/utils/resize-events'
     export default {
         components: {
             dynamicNavigation,
@@ -25,7 +27,7 @@
             return {
                 refreshKey: Date.now(),
                 meta: this.$route.meta,
-                ready: false
+                scrollerObserver: null
             }
         },
         computed: {
@@ -39,13 +41,31 @@
                 this.meta = this.$route.meta
             }
         },
+        mounted () {
+            addResizeListener(this.$refs.scroller, this.scrollerObserverHandler)
+            this.addScrollerObserver()
+        },
+        beforeDestory () {
+            removeResizeListener(this.$refs.scroller, this.scrollerObserverHandler)
+            this.scrollerObserver && this.scrollerObserver.disconnect()
+        },
         methods: {
-            handleBusinessChange () {
-                if (this.ready) {
-                    this.refreshKey = Date.now()
-                } else {
-                    this.ready = true
-                }
+            addScrollerObserver () {
+                this.scrollerObserver = new MutationObserver(this.scrollerObserverHandler)
+                this.scrollerObserver.observe(this.$refs.scroller, {
+                    attributes: true,
+                    childList: true,
+                    subtree: true
+                })
+            },
+            scrollerObserverHandler () {
+                this.$nextTick(() => {
+                    if (this.$refs.scroller) {
+                        this.$store.commit('setScrollerState', {
+                            scrollbar: this.$refs.scroller.scrollHeight > this.$refs.scroller.offsetHeight
+                        })
+                    }
+                })
             }
         }
     }
