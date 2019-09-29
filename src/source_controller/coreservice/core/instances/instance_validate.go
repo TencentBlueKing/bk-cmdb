@@ -69,19 +69,20 @@ func FetchBizIDFromInstance(objID string, instanceData mapstr.MapStr) (int64, er
 }
 
 func (m *instanceManager) validBizID(ctx core.ContextParams, bizID int64) error {
-	if bizID != 0 {
-		cond := map[string]interface{}{
-			common.BKAppIDField: bizID,
-		}
-		cnt, err := m.countInstance(ctx, common.BKInnerObjIDApp, cond)
-		if err != nil {
-			blog.Errorf("search instance biz error %v, rid: %s", err, ctx.ReqID)
-			return err
-		}
-		if cnt != 1 {
-			blog.Errorf("biz %d invalid, rid: %s", bizID, ctx.ReqID)
-			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
-		}
+	if bizID == 0 {
+		return nil
+	}
+	cond := map[string]interface{}{
+		common.BKAppIDField: bizID,
+	}
+	cnt, err := m.countInstance(ctx, common.BKInnerObjIDApp, cond)
+	if err != nil {
+		blog.Errorf("search instance biz error %v, rid: %s", err, ctx.ReqID)
+		return err
+	}
+	if cnt != 1 {
+		blog.Errorf("biz %d invalid, rid: %s", bizID, ctx.ReqID)
+		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
 	}
 	return nil
 }

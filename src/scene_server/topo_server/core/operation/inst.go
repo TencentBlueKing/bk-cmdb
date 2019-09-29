@@ -1029,6 +1029,7 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 }
 
 func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
+	// not allowed to update these fields, need to use specialized function
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.BKAppIDField)
 	data.Remove(metadata.BKMetadata)

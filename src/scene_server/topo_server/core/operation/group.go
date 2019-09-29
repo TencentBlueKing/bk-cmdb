@@ -148,6 +148,7 @@ func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond
 
 func (g *group) UpdateObjectAttributeGroup(params types.ContextParams, conds []metadata.PropertyGroupObjectAtt) error {
 	for _, cond := range conds {
+		// if the target group doesn't exist, don't change the original group
 		grpCond := condition.CreateCondition()
 		grpCond.Field(metadata.GroupFieldGroupID).Eq(cond.Data.PropertyGroupID)
 		grpCond.Field(metadata.GroupFieldObjectID).Eq(cond.Condition.ObjectID)
