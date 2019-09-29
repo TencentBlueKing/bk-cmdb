@@ -44,13 +44,14 @@ func (s *Service) AddUserCustomQuery(req *restful.Request, resp *restful.Respons
 
 	if "" == ucq.Info {
 		blog.Error("AddUserCustomQuery add user custom query info is required,input:%+v,rid:%s", ucq, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "info")})
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "info")})
 		return
 	}
+	// check if the info string matches the required structure
 	err := json.Unmarshal([]byte(ucq.Info), &meta.HostCommonSearch{})
 	if err != nil {
 		blog.Errorf("AddUserCustomQuery info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), ucq, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -100,10 +101,11 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 	if info, exists := params["info"]; exists {
 		info := info.(string)
 		if len(info) != 0 {
+			// check if the info string matches the required structure
 			err := json.Unmarshal([]byte(info), &meta.HostCommonSearch{})
 			if err != nil {
 				blog.Errorf("UpdateUserCustomQuery info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), params, srvData.rid)
-				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+				_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 				return
 			}
 		}
@@ -299,13 +301,13 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 	input.Page.Start, err = util.GetIntByInterface(req.PathParameter("start"))
 	if err != nil {
 		blog.Errorf("UserAPIResult start invalid, err: %v, appid:%s, id:%s, logID:%s", err.Error(), appID, ID, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "start")})
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "start")})
 		return
 	}
 	input.Page.Limit, err = util.GetIntByInterface(req.PathParameter("limit"))
 	if err != nil {
 		blog.Errorf("UserAPIResult limit invalid, err: %v, appid:%s, id:%s, logID:%s", err.Error(), appID, ID, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "limit")})
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "limit")})
 		return
 	}
 

@@ -166,6 +166,7 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 }
 
 func (cli *inst) UpdateInstance(filter condition.Condition, data mapstr.MapStr, nonInnerAttributes []model.AttributeInterface) error {
+	// not allowed to update these fields, need to use specialized function
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.BKAppIDField)
 	data.Remove(metadata.BKMetadata)

@@ -90,10 +90,11 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 	}
 
 	if param.Info != "" {
+		// check if the info string matches the required structure
 		err := json.Unmarshal([]byte(param.Info), &infoParam{})
 		if err != nil {
 			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), param.Info, srvData.rid)
-			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "info")})
+			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "info")})
 			return
 		}
 	}
@@ -101,7 +102,7 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 		err := json.Unmarshal([]byte(param.QueryParams), &queryParams{})
 		if err != nil {
 			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), param.QueryParams, srvData.rid)
-			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "query params")})
+			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "query params")})
 			return
 		}
 	}
@@ -147,24 +148,26 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	if info, exists := data["info"]; exists && info != "" {
+	if info, exists := data["info"]; exists {
 		info := info.(string)
 		if info != "" {
+			// check if the info string matches the required structure
 			err := json.Unmarshal([]byte(info), &infoParam{})
 			if err != nil {
 				blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), info, srvData.rid)
-				_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "info")})
+				_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "info")})
 				return
 			}
 		}
 	}
-	if queryParam, exists := data["query_params"]; exists && queryParam != "" {
+	if queryParam, exists := data["query_params"]; exists {
 		queryParam := queryParam.(string)
 		if queryParam != "" {
+			// check if the info string matches the required structure
 			err := json.Unmarshal([]byte(queryParam), &queryParams{})
 			if err != nil {
 				blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), queryParam, srvData.rid)
-				_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "query params")})
+				_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "query params")})
 				return
 			}
 		}
