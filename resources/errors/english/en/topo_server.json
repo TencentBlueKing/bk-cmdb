@@ -113,5 +113,6 @@
     "1101091": "update name field on module create by template forbidden",
     "1101092": "can not add required attribute field for a mainline model",
     "1101093": "line %d: bk_obj_id field conflict with url",
+    "1101094": "same name module already exist",
     "": "" 
 }
