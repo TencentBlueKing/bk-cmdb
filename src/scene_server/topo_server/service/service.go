@@ -223,12 +223,14 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
-					if err = json.Unmarshal(value, &mData); nil != err && len(value) != 0 {
+					jsonData := make(map[string]interface{})
+					if err = json.Unmarshal(value, &jsonData); nil != err && len(value) != 0 {
 						blog.Errorf("failed to unmarshal the data, error %s, rid: %s", err.Error(), rid)
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
 					}
+					mData = mapstr.MapStr(jsonData)
 				} else {
 					mData, err = act.HandlerParseOriginDataFunc(value)
 					if nil != err {
