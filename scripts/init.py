@@ -78,18 +78,21 @@ port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
+
 [discover-redis]
 host = $redis_host
 port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
+
 [netcollect-redis]
 host = $redis_host
 port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
+
 [redis]
 host = $redis_host
 port = $redis_port
@@ -119,6 +122,7 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
+
 [redis]
 host = $redis_host
 port = $redis_port
@@ -366,6 +370,39 @@ authscheme = $auth_scheme
         skip = '0'
     result = template.substitute(skip=skip, **context)
     with open(output + "webserver.conf", 'w') as tmp_file:
+        tmp_file.write(result)
+
+    # task.conf
+    taskserver_file_template_str = '''
+[mongodb]
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIdleConns = 1000
+mechanism = SCRAM-SHA-1
+enable = true
+
+[redis]
+host = $redis_host
+port = $redis_port
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+
+[task]
+name=sync-module
+
+[task-sync-module]
+addrs=http://127.0.0.1:60002
+path=/topo/v3/internal/task
+retry=1
+'''
+    template = FileTemplate(taskserver_file_template_str)
+    result = template.substitute(**context)
+    with open(output + "task.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
 
