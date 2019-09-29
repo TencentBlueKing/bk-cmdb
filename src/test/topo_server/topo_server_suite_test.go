@@ -13,6 +13,7 @@ import (
 var header = test.GetHeader()
 var clientSet = test.GetClientSet()
 var topoServerClient = clientSet.TopoServer()
+var procServerClient = clientSet.ProcServer()
 var apiServerClient = clientSet.ApiServer()
 
 func TestTopoServer(t *testing.T) {
