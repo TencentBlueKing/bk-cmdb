@@ -64,14 +64,28 @@
                 return allProperties
             },
             previewParams () {
-                const condition = this.$tools.clone(this.apiParams['info']['condition'])
-                const hostCondition = condition.find(({ bk_obj_id: objId }) => {
+                const conditions = this.$tools.clone(this.apiParams['info']['condition'])
+                const hostCondition = conditions.find(({ bk_obj_id: objId }) => {
                     return objId === 'host'
                 })
                 hostCondition['fields'] = this.previewFields
+                conditions.forEach(model => {
+                    const modelCondition = model.condition || []
+                    const newConditions = []
+                    if (modelCondition.length) {
+                        modelCondition.forEach(condition => {
+                            const value = condition.value
+                            if ((condition.operator === '$multilike' && value !== null && value !== undefined && String(value).length)
+                                || condition.operator !== '$multilike') {
+                                newConditions.push(condition)
+                            }
+                        })
+                    }
+                    model.condition = newConditions
+                })
                 const previewParams = {
                     'bk_biz_id': this.apiParams['bk_biz_id'],
-                    condition: condition,
+                    condition: conditions,
                     page: {
                         start: (this.table.pagination.current - 1) * this.table.pagination.limit,
                         limit: this.table.pagination.limit,
