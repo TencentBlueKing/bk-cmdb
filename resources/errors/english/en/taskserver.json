@@ -5,6 +5,7 @@
     "1117004": "The task task status is failed, the error return is not allowed to be empty",
     "1117005": "Task lock failed",
     "1117006": "Task unlock failed",
+    "1117007": "list tasks failed",
     
     "": ""
 }

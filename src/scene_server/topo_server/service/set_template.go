@@ -13,6 +13,7 @@
 package service
 
 import (
+	"net/http"
 	"strconv"
 
 	"configcenter/src/common"
@@ -329,11 +330,81 @@ func (s *Service) SyncSetTplToInst(params types.ContextParams, pathParams, query
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	err = s.Core.SetTemplateOperation().SyncSetTplToInst(params.Context, params.Header, bizID, setTemplateID, option)
+	// TODO: 可能还是会出现并发提交任务, 可通过前端防双击的方式限制绝大部分情况
+	setSyncStatus, err := s.getSetSyncStatus(params, option.SetIDs...)
 	if err != nil {
+		blog.Errorf("SyncSetTplToInst failed, getSetSyncStatus failed, setIDs: %+v, err: %s, rid: %s", option.SetIDs, err.Error(), params.ReqID)
+		return nil, err
+	}
+	for _, setID := range option.SetIDs {
+		setStatus, ok := setSyncStatus[setID]
+		if ok == false {
+			return nil, params.Err.CCError(common.CCErrTaskNotFound)
+		}
+		if setStatus == nil {
+			continue
+		}
+		if setStatus.Status.IsFinished() == false {
+			return nil, params.Err.CCError(common.CCErrorTopoSyncModuleTaskIsRunning)
+		}
+	}
+
+	if err := s.Core.SetTemplateOperation().SyncSetTplToInst(params.Context, params.Header, bizID, setTemplateID, option); err != nil {
 		blog.Errorf("SyncSetTplToInst failed, operation failed, bizID: %d, setTemplateID: %d, option: %+v err: %s, rid: %s", bizID, setTemplateID, option, err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+func (s *Service) GetSetSyncStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	option := metadata.SetSyncStatusOption{}
+	if err := mapstructure.Decode(data, &option); err != nil {
+		blog.Errorf("GetSetSyncStatus failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+	return s.getSetSyncStatus(params, option.SetIDs...)
+}
+
+func (s *Service) getSetSyncStatus(params types.ContextParams, setIDs ...int64) (map[int64]*metadata.APITaskDetail, error) {
+	// db.getCollection('cc_APITask').find({"detail.data.set.bk_set_id": 18}).sort({"create_time": -1}).limit(1)
+	setStatus := make(map[int64]*metadata.APITaskDetail)
+	for _, setID := range setIDs {
+		setStatus[setID] = nil
+		setRelatedTaskFilter := map[string]interface{}{
+			"detail.data.set.bk_set_id": setID,
+		}
+		listTaskOption := metadata.ListAPITaskRequest{
+			Condition: mapstr.MapStr(setRelatedTaskFilter),
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+		}
+
+		listResult, err := s.Engine.CoreAPI.TaskServer().Task().ListTask(params.Context, params.Header, common.SyncSetTaskName, &listTaskOption)
+		if err != nil {
+			blog.ErrorJSON("list set sync tasks failed, option: %s, rid: %s", listTaskOption, params.ReqID)
+			return setStatus, params.Err.CCError(common.CCErrTaskListTaskFail)
+		}
+		if listResult == nil || len(listResult.Data.Info) == 0 {
+			blog.InfoJSON("list set sync tasks result empty, option: %s, result: %s, rid: %s", listTaskOption, listTaskOption, params.ReqID)
+			continue
+		}
+		taskDetail := &listResult.Data.Info[0]
+		clearSetSyncTaskDetail(taskDetail)
+		setStatus[setID] = taskDetail
+	}
+	return setStatus, nil
+}
+
+func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
+	detail.Header = http.Header{}
+	for taskIdx := range detail.Detail {
+		subTaskDetail, ok := detail.Detail[taskIdx].Data.(map[string]interface{})
+		if ok == false {
+			blog.Warnf("clearSetSyncTaskDetail expect map[string]interface{}, got unexpected type, data: %+v", detail.Detail[taskIdx].Data)
+			detail.Detail[taskIdx].Data = nil
+		}
+		delete(subTaskDetail, "header")
+	}
 }

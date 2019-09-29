@@ -56,6 +56,16 @@ type APISubTaskDetail struct {
 // APITaskStatus task status type
 type APITaskStatus int64
 
+func (s APITaskStatus) IsFinished() bool {
+	if s == 200 {
+		return true
+	}
+	if s == 0 {
+		return false
+	}
+	return true
+}
+
 const (
 	// APITaskStatusNew new task ,waiting execute
 	APITaskStatusNew APITaskStatus = 0

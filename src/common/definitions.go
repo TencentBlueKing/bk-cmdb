@@ -1100,6 +1100,7 @@ const (
 	DeleteObject         = "delete object"
 	UpdateObject         = "update object"
 	OperationDescription = "op_desc"
+	SyncSetTaskName      = "sync-settemplate2set"
 )
 
 // 云同步

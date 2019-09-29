@@ -42,12 +42,12 @@ type setTemplate struct {
 }
 
 func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder) {
+	rid := util.GetHTTPCCRequestID(header)
+
 	ccError := util.GetDefaultCCError(header)
 	if ccError == nil {
 		return nil, errors.GlobalCCErrorNotInitialized
 	}
-
-	rid := util.GetHTTPCCRequestID(header)
 
 	serviceTemplates, err := st.client.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(ctx, header, bizID, setTemplateID)
 	if err != nil {
@@ -145,6 +145,8 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 }
 
 func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
+	rid := util.ExtractRequestUserFromContext(ctx)
+
 	diffOption := metadata.DiffSetTplWithInstOption{
 		SetIDs: option.SetIDs,
 	}
@@ -154,35 +156,46 @@ func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header,
 	}
 
 	for _, setDiff := range setDiffs {
-		blog.V(3).Infof("dispatch synchronize task on set [%s](%d)", setDiff.SetDetail.SetName, setDiff.SetID)
+		blog.V(3).Infof("dispatch synchronize task on set [%s](%d), rid: %s", setDiff.SetDetail.SetName, setDiff.SetID, rid)
+		tasks := make([]metadata.SyncModuleTask, 0)
 		for _, moduleDiff := range setDiff.ModuleDiffs {
 			task := metadata.SyncModuleTask{
 				Header:     header,
 				Set:        setDiff.SetDetail,
 				ModuleDiff: moduleDiff,
 			}
-			if err := st.DispatchTask4ModuleSync(ctx, task); err != nil {
-				return err
-			}
+			tasks = append(tasks, task)
+		}
+		taskDetail, err := st.DispatchTask4ModuleSync(ctx, header, tasks...)
+		if err != nil {
+			return err
+		}
+		if blog.V(3) {
+			blog.InfoJSON("dispatch synchronize task on set [%s](%s) success, result: %s, rid: %s", setDiff.SetDetail.SetName, setDiff.SetID, taskDetail, rid)
 		}
 	}
 	return nil
 }
 
-func (st *setTemplate) DispatchTask4ModuleSync(ctx context.Context, task metadata.SyncModuleTask) errors.CCErrorCoder {
-	rid := util.GetHTTPCCRequestID(task.Header)
-	blog.V(3).Infof("dispatch synchronize task on set [%s](%d)", task.Set.SetName, task.Set.SetID)
-	createTaskResult, err := st.client.TaskServer().Task().Create(ctx, task.Header, "sync-module", []interface{}{task})
+func (st *setTemplate) DispatchTask4ModuleSync(ctx context.Context, header http.Header, tasks ...metadata.SyncModuleTask) (metadata.APITaskDetail, errors.CCErrorCoder) {
+	taskDetail := metadata.APITaskDetail{}
+	rid := util.GetHTTPCCRequestID(header)
+	tasksData := make([]interface{}, 0)
+	for _, task := range tasks {
+		tasksData = append(tasksData, task)
+	}
+	createTaskResult, err := st.client.TaskServer().Task().Create(ctx, header, common.SyncSetTaskName, tasksData)
 	if err != nil {
-		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", task, err.Error(), rid)
-		return errors.CCHttpError
+		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", tasks, err.Error(), rid)
+		return taskDetail, errors.CCHttpError
 	}
 	if createTaskResult.Code != 0 || createTaskResult.Result == false {
-		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", task, err.Error(), rid)
-		return errors.NewCCError(createTaskResult.Code, createTaskResult.ErrMsg)
+		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", tasks, err.Error(), rid)
+		return taskDetail, errors.NewCCError(createTaskResult.Code, createTaskResult.ErrMsg)
 	}
-	blog.InfoJSON("dispatch synchronize task success, task: %s, create result: %s, rid: %s", task, createTaskResult, rid)
-	return nil
+	blog.InfoJSON("dispatch synchronize task success, task: %s, create result: %s, rid: %s", tasks, createTaskResult, rid)
+	taskDetail = createTaskResult.Data
+	return taskDetail, nil
 }
 
 // DiffServiceTemplateWithModules diff modules with template in one set
@@ -235,7 +248,7 @@ func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate,
 		template := svcTplMap[templateID]
 		moduleDiffs = append(moduleDiffs, metadata.SetModuleDiff{
 			ModuleID:            0,
-			ModuleName:          "",
+			ModuleName:          template.Name,
 			ServiceTemplateID:   templateID,
 			ServiceTemplateName: template.Name,
 			DiffType:            metadata.ModuleDiffAdd,

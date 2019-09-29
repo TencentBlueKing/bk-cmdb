@@ -393,9 +393,9 @@ pwd = $redis_pass
 database = 0
 
 [task]
-name=sync-module
+name=sync-settemplate2set
 
-[task-sync-module]
+[task-sync-settemplate2set]
 addrs=http://127.0.0.1:60002
 path=/topo/v3/internal/task
 retry=1

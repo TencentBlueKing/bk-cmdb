@@ -88,6 +88,10 @@ type SyncSetTplToInstOption struct {
 	SetIDs []int64 `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
 }
 
+type SetSyncStatusOption struct {
+	SetIDs []int64 `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
+}
+
 type SetModuleDiff struct {
 	ModuleID            int64  `json:"bk_module_id" mapstructure:"bk_module_id"`
 	ModuleName          string `json:"bk_module_name" mapstructure:"bk_module_name"`
