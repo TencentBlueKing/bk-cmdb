@@ -110,7 +110,6 @@ func (s *Service) initSet() {
 	s.addAction(http.MethodPost, "/set/{app_id}", s.CreateSet, nil)
 	s.addAction(http.MethodPost, "/set/{app_id}/batch", s.BatchCreateSet, nil)
 	s.addAction(http.MethodDelete, "/set/{app_id}/{set_id}", s.DeleteSet, nil)
-	s.addAction(http.MethodDelete, "/set/{app_id}/batch", s.DeleteSets, nil)
 	s.addAction(http.MethodPut, "/set/{app_id}/{set_id}", s.UpdateSet, nil)
 	s.addAction(http.MethodPost, "/set/search/{owner_id}/{app_id}", s.SearchSet, nil)
 
