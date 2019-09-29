@@ -132,7 +132,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 			return nil, err
 		}
 		if len(stResult.Info) == 0 {
-			blog.Errorf("create module failed, service template not found, filter: %+v, rid: %s", option, params.ReqID)
+			blog.ErrorJSON("create module failed, service template not found, filter: %s, rid: %s", option, params.ReqID)
 			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
 		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {

@@ -43,7 +43,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 			return ccErr
 		}
 		data := map[string]interface{}{
-			common.BKModuleNameField:        moduleDiff.ModuleName,
+			common.BKModuleNameField:        moduleDiff.ServiceTemplateName,
 			common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
 			common.BKServiceTemplateIDField: moduleDiff.ServiceTemplateID,
 			common.BKParentIDField:          set.SetID,
@@ -56,7 +56,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 			return err
 		}
 		if resp.Result == false || resp.Code != 0 {
-			blog.Errorf("DoModuleSyncTask failed, CreateModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
+			blog.ErrorJSON("DoModuleSyncTask failed, CreateModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
 			return errors.New(resp.Code, resp.ErrMsg)
 		}
 	case metadata.ModuleDiffChanged:
@@ -72,6 +72,8 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 			blog.Errorf("DoModuleSyncTask failed, UpdateModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
 			return errors.New(resp.Code, resp.ErrMsg)
 		}
+	case metadata.ModuleDiffUnchanged:
+		return nil
 	default:
 		blog.Errorf("DoModuleSyncTask failed, UpdateModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
 		return fmt.Errorf("unexpected diff type: %s", moduleDiff.DiffType)

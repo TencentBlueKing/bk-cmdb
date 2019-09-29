@@ -89,11 +89,11 @@ type SyncSetTplToInstOption struct {
 }
 
 type SetModuleDiff struct {
-	ModuleID            int64  `json:"bk_module_id"`
-	ModuleName          string `json:"bk_module_name"`
-	ServiceTemplateID   int64  `json:"service_template_id"`
-	ServiceTemplateName string `json:"service_template_name"`
-	DiffType            string `json:"diff_type"`
+	ModuleID            int64  `json:"bk_module_id" mapstructure:"bk_module_id"`
+	ModuleName          string `json:"bk_module_name" mapstructure:"bk_module_name"`
+	ServiceTemplateID   int64  `json:"service_template_id" mapstructure:"service_template_id"`
+	ServiceTemplateName string `json:"service_template_name" mapstructure:"service_template_name"`
+	DiffType            string `json:"diff_type" mapstructure:"diff_type"`
 }
 
 type SetDiff struct {

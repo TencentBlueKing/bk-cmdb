@@ -20,12 +20,12 @@ import (
 
 // SetInst contains partial fields of a real set
 type SetInst struct {
-	BizID         int64  `bson:"bk_biz_id" json:"bk_biz_id"`
-	SetID         int64  `bson:"bk_set_id" json:"bk_set_id"`
-	SetName       string `bson:"bk_set_name" json:"bk_set_name"`
-	SetStatus     string `bson:"bk_service_status" json:"bk_service_status"`
-	SetEnv        string `bson:"bk_set_env" json:"bk_set_env"`
-	SetTemplateID int64  `bson:"bk_template_id" json:"bk_template_id"`
+	BizID         int64  `bson:"bk_biz_id" json:"bk_biz_id" mapstructure:"bk_biz_id"`
+	SetID         int64  `bson:"bk_set_id" json:"bk_set_id" mapstructure:"bk_set_id"`
+	SetName       string `bson:"bk_set_name" json:"bk_set_name" mapstructure:"bk_set_name"`
+	SetStatus     string `bson:"bk_service_status" json:"bk_service_status" mapstructure:"bk_service_status"`
+	SetEnv        string `bson:"bk_set_env" json:"bk_set_env" mapstructure:"bk_set_env"`
+	SetTemplateID int64  `bson:"set_template_id" json:"set_template_id" mapstructure:"set_template_id"`
 }
 
 // ModuleInst contains partial fields of a real module
@@ -41,10 +41,10 @@ type ModuleInst struct {
 }
 
 type BizInst struct {
-	BizID           int64  `bson:"bk_biz_id"`
-	BizName         string `bson:"bk_biz_name"`
-	SupplierID      int64  `bson:"bk_supplier_id"`
-	SupplierAccount string `bson:"bk_supplier_account"`
+	BizID           int64  `bson:"bk_biz_id" mapstructure:"bk_biz_id"`
+	BizName         string `bson:"bk_biz_name" mapstructure:"bk_biz_name"`
+	SupplierID      int64  `bson:"bk_supplier_id" mapstructure:"bk_supplier_id"`
+	SupplierAccount string `bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 }
 
 type BizBasicInfo struct {
@@ -56,6 +56,7 @@ type CloudInst struct {
 	CloudID   int64  `bson:"bk_cloud_id"`
 	CloudName string `bson:"bk_cloud_name"`
 }
+
 type ProcessInst struct {
 	ProcessID       int64  `json:"bk_process_id" bson:"bk_process_id"`               // 进程名称
 	ProcessName     string `json:"bk_process_name" bson:"bk_process_name"`           // 进程名称

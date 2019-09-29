@@ -85,7 +85,11 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 		set := metadata.SetInst{}
 		if err := mapstructure.Decode(setInstance, &set); err != nil {
 			blog.Errorf("DiffSetTemplateWithInstances failed, decode set instance failed, set: %+v, err: %s, rid: %s", setInstance, err.Error(), rid)
-			return nil, ccError.CCError(common.CCErrCommDBSelectFailed)
+			return nil, ccError.CCError(common.CCErrCommJSONMarshalFailed)
+		}
+		if set.SetID == 0 {
+			blog.Errorf("DiffSetTemplateWithInstances failed, decode set instance result setID=0, data: %+v, err: %s, rid: %s", setInstance, err.Error(), rid)
+			return nil, ccError.CCError(common.CCErrCommJSONMarshalFailed)
 		}
 		setMap[set.SetID] = set
 	}
