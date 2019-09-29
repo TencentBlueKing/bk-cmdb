@@ -11,7 +11,10 @@
  */
 package metadata
 
-import "configcenter/src/framework/core/errors"
+import (
+	"configcenter/src/framework/core/errors"
+	"net/http"
+)
 
 type CreateSetTemplateOption struct {
 	Name               string  `field:"name" json:"name" bson:"name"`
@@ -97,6 +100,12 @@ type SetDiff struct {
 	ModuleDiffs []SetModuleDiff `json:"module_diffs"`
 	SetID       int64           `json:"bk_set_id"`
 	SetDetail   SetInst         `json:"set_detail"`
+}
+
+type SyncModuleTask struct {
+	Header     http.Header   `json:"header"`
+	Set        SetInst       `json:"set"`
+	ModuleDiff SetModuleDiff `json:"module_diff"`
 }
 
 var (

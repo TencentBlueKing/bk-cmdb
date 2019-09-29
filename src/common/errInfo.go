@@ -436,6 +436,7 @@ const (
 	CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl     = 1101093
 
 	CCErrorTopoModuleNameDuplicated = 1101094
+	CCErrorTopoSyncModuleTaskFailed = 1101095
 
 	// object controller 1102XXX
 

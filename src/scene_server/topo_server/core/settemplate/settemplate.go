@@ -141,7 +141,6 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 }
 
 func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
-	rid := util.GetHTTPCCRequestID(header)
 	diffOption := metadata.DiffSetTplWithInstOption{
 		SetIDs: option.SetIDs,
 	}
@@ -150,22 +149,35 @@ func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header,
 		return err
 	}
 
-	// TODO use queue to dispatch task
-	// run sync
 	for _, setDiff := range setDiffs {
-		blog.V(3).Infof("begin to run sync task on set [%s](%d)", setDiff.SetDetail.SetName, setDiff.SetID)
-		// TODO: deal with result
-		backendWorker := BackendWorker{
-			ClientSet: st.client,
-		}
+		blog.V(3).Infof("dispatch synchronize task on set [%s](%d)", setDiff.SetDetail.SetName, setDiff.SetID)
 		for _, moduleDiff := range setDiff.ModuleDiffs {
-			err := backendWorker.AsyncRunModuleSyncTask(header, setDiff.SetDetail, moduleDiff)
-			if err != nil {
-				blog.Errorf("AsyncRunSetSyncTask failed, err: %+v, rid: %s", err, rid)
-				continue
+			task := metadata.SyncModuleTask{
+				Header:     header,
+				Set:        setDiff.SetDetail,
+				ModuleDiff: moduleDiff,
+			}
+			if err := st.DispatchTask4ModuleSync(ctx, task); err != nil {
+				return err
 			}
 		}
 	}
+	return nil
+}
+
+func (st *setTemplate) DispatchTask4ModuleSync(ctx context.Context, task metadata.SyncModuleTask) errors.CCErrorCoder {
+	rid := util.GetHTTPCCRequestID(task.Header)
+	blog.V(3).Infof("dispatch synchronize task on set [%s](%d)", task.Set.SetName, task.Set.SetID)
+	createTaskResult, err := st.client.TaskServer().Task().Create(ctx, task.Header, "sync-module", []interface{}{task})
+	if err != nil {
+		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", task, err.Error(), rid)
+		return errors.CCHttpError
+	}
+	if createTaskResult.Code != 0 || createTaskResult.Result == false {
+		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", task, err.Error(), rid)
+		return errors.NewCCError(createTaskResult.Code, createTaskResult.ErrMsg)
+	}
+	blog.InfoJSON("dispatch synchronize task success, task: %s, create result: %s, rid: %s", task, createTaskResult, rid)
 	return nil
 }
 
