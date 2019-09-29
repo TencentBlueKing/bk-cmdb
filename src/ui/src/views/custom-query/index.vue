@@ -338,59 +338,61 @@
                     const param = paramsMap.find(({ bk_obj_id: objId }) => {
                         return objId === property.objId
                     })
-                    if (property.propertyType === 'singleasst' || property.propertyType === 'multiasst') {
-                        paramsMap.push({
-                            'bk_obj_id': property.asstObjId,
-                            fields: [],
-                            condition: [{
-                                field: specialObj.hasOwnProperty(property.asstObjId) ? specialObj[property.asstObjId] : 'bk_inst_name',
+                    if (property.value !== null && property.value !== undefined && String(property.value).length) {
+                        if (property.propertyType === 'singleasst' || property.propertyType === 'multiasst') {
+                            paramsMap.push({
+                                'bk_obj_id': property.asstObjId,
+                                fields: [],
+                                condition: [{
+                                    field: specialObj.hasOwnProperty(property.asstObjId) ? specialObj[property.asstObjId] : 'bk_inst_name',
+                                    operator: property.operator,
+                                    value: property.value
+                                }]
+                            })
+                        } else if (property.propertyType === 'time' || property.propertyType === 'date') {
+                            const value = property['value']
+                            param['condition'].push({
+                                field: property.propertyId,
+                                operator: value[0] === value[1] ? '$eq' : '$gte',
+                                value: value[0]
+                            })
+                            param['condition'].push({
+                                field: property.propertyId,
+                                operator: value[0] === value[1] ? '$eq' : '$lte',
+                                value: value[1]
+                            })
+                        } else if (property.propertyType === 'bool' && ['true', 'false'].includes(property.value)) {
+                            param['condition'].push({
+                                field: property.propertyId,
                                 operator: property.operator,
-                                value: property.value
-                            }]
-                        })
-                    } else if (property.propertyType === 'time' || property.propertyType === 'date') {
-                        const value = property['value']
-                        param['condition'].push({
-                            field: property.propertyId,
-                            operator: value[0] === value[1] ? '$eq' : '$gte',
-                            value: value[0]
-                        })
-                        param['condition'].push({
-                            field: property.propertyId,
-                            operator: value[0] === value[1] ? '$eq' : '$lte',
-                            value: value[1]
-                        })
-                    } else if (property.propertyType === 'bool' && ['true', 'false'].includes(property.value)) {
-                        param['condition'].push({
-                            field: property.propertyId,
-                            operator: property.operator,
-                            value: property.value === 'true'
-                        })
-                    } else if (property.operator === '$multilike') {
-                        param.condition.push({
-                            field: property.propertyId,
-                            operator: property.operator,
-                            value: property.value.split('\n').filter(str => str.trim().length).map(str => str.trim())
-                        })
-                    } else {
-                        let operator = property.operator
-                        let value = property.value
-                        // 多模块与多集群查询
-                        if (property.propertyId === 'bk_module_name' || property.propertyId === 'bk_set_name') {
-                            operator = operator === '$regex' ? '$in' : operator
-                            if (operator === '$in') {
-                                const arr = value.replace('，', ',').split(',')
-                                const isExist = arr.findIndex(val => {
-                                    return val === value
-                                }) > -1
-                                value = isExist ? arr : [...arr, value]
+                                value: property.value === 'true'
+                            })
+                        } else if (property.operator === '$multilike') {
+                            param.condition.push({
+                                field: property.propertyId,
+                                operator: property.operator,
+                                value: property.value.split('\n').filter(str => str.trim().length).map(str => str.trim())
+                            })
+                        } else {
+                            let operator = property.operator
+                            let value = property.value
+                            // 多模块与多集群查询
+                            if (property.propertyId === 'bk_module_name' || property.propertyId === 'bk_set_name') {
+                                operator = operator === '$regex' ? '$in' : operator
+                                if (operator === '$in') {
+                                    const arr = value.replace('，', ',').split(',')
+                                    const isExist = arr.findIndex(val => {
+                                        return val === value
+                                    }) > -1
+                                    value = isExist ? arr : [...arr, value]
+                                }
                             }
+                            param['condition'].push({
+                                field: property.propertyId,
+                                operator: operator,
+                                value: value
+                            })
                         }
-                        param['condition'].push({
-                            field: property.propertyId,
-                            operator: operator,
-                            value: value
-                        })
                     }
                 })
                 const params = {
