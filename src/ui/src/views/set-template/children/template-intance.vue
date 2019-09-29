@@ -76,6 +76,12 @@
 
 <script>
     export default {
+        props: {
+            templateId: {
+                type: Number,
+                required: true
+            }
+        },
         data () {
             return {
                 list: [],
@@ -109,7 +115,7 @@
             async getSetTemplateInstances () {
                 const data = await this.$store.dispatch('setTemplate/getSetTemplateInstances', {
                     bizId: this.business,
-                    setTemplateId: 1,
+                    setTemplateId: this.templateId,
                     params: {
                         limit: this.limit
                     },

@@ -5,7 +5,7 @@
             :active.sync="active">
             <bk-tab-panel name="setting" :label="$t('模板配置')"></bk-tab-panel>
             <bk-tab-panel name="instance" :label="$t('模板实例')">
-                <template-instance></template-instance>
+                <template-instance :template-id="templateId"></template-instance>
             </bk-tab-panel>
         </bk-tab>
     </div>
@@ -20,6 +20,11 @@
         data () {
             return {
                 active: 'setting'
+            }
+        },
+        computed: {
+            templateId () {
+                return this.$route.params.templateId || null
             }
         }
     }

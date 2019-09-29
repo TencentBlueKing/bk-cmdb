@@ -17,7 +17,7 @@ export default [{
     })
 }, {
     name: 'setTemplateInfo',
-    path: 'set/template/info',
+    path: 'set/template/info/:templateId',
     component: () => import('./children/template-info.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
