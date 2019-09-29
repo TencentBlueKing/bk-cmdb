@@ -1,6 +1,7 @@
 package settemplate
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -17,7 +18,7 @@ type BackendWorker struct {
 	ClientSet apimachinery.ClientSetInterface
 }
 
-func (bw BackendWorker) AsyncRunModuleSyncTask(header http.Header, set metadata.SetInst, moduleDiff metadata.SetModuleDiff) error {
+func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetInst, moduleDiff metadata.SetModuleDiff) error {
 	ctx := util.NewContextFromHTTPHeader(header)
 	rid := util.GetHTTPCCRequestID(header)
 
@@ -28,17 +29,17 @@ func (bw BackendWorker) AsyncRunModuleSyncTask(header http.Header, set metadata.
 	case metadata.ModuleDiffRemove:
 		resp, err := bw.ClientSet.TopoServer().Instance().DeleteModule(ctx, bizIDStr, setIDStr, moduleIDStr, header)
 		if err != nil {
-			blog.Errorf("AsyncRunSetSyncTask failed, DeleteModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
+			blog.Errorf("DoModuleSyncTask failed, DeleteModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
 			return err
 		}
 		if resp.Result == false || resp.Code != 0 {
-			blog.Errorf("AsyncRunSetSyncTask failed, DeleteModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
+			blog.Errorf("DoModuleSyncTask failed, DeleteModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
 			return errors.New(resp.Code, resp.ErrMsg)
 		}
 	case metadata.ModuleDiffAdd:
 		serviceTemplate, ccErr := bw.ClientSet.CoreService().Process().GetServiceTemplate(ctx, header, moduleDiff.ServiceTemplateID)
 		if ccErr != nil {
-			blog.Errorf("AsyncRunSetSyncTask failed, DeleteModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, ccErr.Error(), rid)
+			blog.Errorf("DoModuleSyncTask failed, DeleteModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, ccErr.Error(), rid)
 			return ccErr
 		}
 		data := map[string]interface{}{
@@ -51,11 +52,11 @@ func (bw BackendWorker) AsyncRunModuleSyncTask(header http.Header, set metadata.
 
 		resp, err := bw.ClientSet.TopoServer().Instance().CreateModule(ctx, bizIDStr, setIDStr, header, data)
 		if err != nil {
-			blog.Errorf("AsyncRunSetSyncTask failed, CreateModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
+			blog.Errorf("DoModuleSyncTask failed, CreateModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
 			return err
 		}
 		if resp.Result == false || resp.Code != 0 {
-			blog.Errorf("AsyncRunSetSyncTask failed, CreateModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
+			blog.Errorf("DoModuleSyncTask failed, CreateModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
 			return errors.New(resp.Code, resp.ErrMsg)
 		}
 	case metadata.ModuleDiffChanged:
@@ -64,13 +65,16 @@ func (bw BackendWorker) AsyncRunModuleSyncTask(header http.Header, set metadata.
 		})
 		resp, err := bw.ClientSet.TopoServer().Instance().UpdateModule(ctx, bizIDStr, setIDStr, moduleIDStr, header, data)
 		if err != nil {
-			blog.Errorf("AsyncRunSetSyncTask failed, UpdateModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
+			blog.Errorf("DoModuleSyncTask failed, UpdateModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
 			return err
 		}
 		if resp.Result == false || resp.Code != 0 {
-			blog.Errorf("AsyncRunSetSyncTask failed, UpdateModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
+			blog.Errorf("DoModuleSyncTask failed, UpdateModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
 			return errors.New(resp.Code, resp.ErrMsg)
 		}
+	default:
+		blog.Errorf("DoModuleSyncTask failed, UpdateModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
+		return fmt.Errorf("unexpected diff type: %s", moduleDiff.DiffType)
 	}
 	return nil
 }

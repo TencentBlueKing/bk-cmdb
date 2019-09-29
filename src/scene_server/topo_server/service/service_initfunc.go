@@ -231,4 +231,5 @@ func (s *Service) initService() {
 
 	s.initFind()
 	s.initSetTemplate()
+	s.initInternalTask()
 }
