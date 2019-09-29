@@ -21,9 +21,60 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
+	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
+
+func (s *Service) BatchCreateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("batch create set failed, parse app_id from url failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
+	}
+
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
+	if nil != err {
+		blog.Errorf("batch create set failed, get set model failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	batchBody := struct {
+		Sets []map[string]interface{} `json:"sets"`
+	}{}
+	if err := data.MarshalJSONInto(&batchBody); err != nil {
+		blog.Errorf("batch create set failed, parse request body failed, data: %+v, err: %s, rid: %s", data, err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	type OneSetCreateResult struct {
+		Index    int         `json:"index"`
+		Data     interface{} `json:"data"`
+		ErrorMsg string      `json:"error_message"`
+	}
+	batchCreateResult := make([]OneSetCreateResult, 0)
+	var firstErr error
+	var errMsg string
+	for idx, set := range batchBody.Sets {
+		result, err := s.createSet(params, bizID, obj, set)
+		errMsg = ""
+		if err != nil {
+			errMsg = err.Error()
+		}
+		if err != nil && firstErr == nil {
+			firstErr = err
+		}
+		if err != nil && blog.V(3) {
+			blog.InfoJSON("batch create set at index:%d failed, data: %s, err: %s, rid: %s", idx, set, err.Error(), params.ReqID)
+		}
+		batchCreateResult = append(batchCreateResult, OneSetCreateResult{
+			Index:    idx,
+			Data:     result,
+			ErrorMsg: errMsg,
+		})
+	}
+	return batchCreateResult, firstErr
+}
 
 // CreateSet create a new set
 func (s *Service) CreateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -39,7 +90,10 @@ func (s *Service) CreateSet(params types.ContextParams, pathParams, queryParams 
 		blog.Errorf("[api-set]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
+	return s.createSet(params, bizID, obj, data)
+}
 
+func (s *Service) createSet(params types.ContextParams, bizID int64, obj model.Object, data mapstr.MapStr) (interface{}, error) {
 	set, err := s.Core.SetOperation().CreateSet(params, obj, bizID, data)
 	if err != nil {
 		return nil, err

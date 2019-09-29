@@ -68,11 +68,11 @@
             }
         },
         watch: {
-            localSelected (localSelected) {
+            localSelected (localSelected, old) {
                 window.localStorage.setItem('selectedBusiness', localSelected)
                 this.setHeader()
                 this.$emit('input', localSelected)
-                this.$emit('on-select', localSelected)
+                this.$emit('on-select', localSelected, old)
                 this.$store.commit('objectBiz/setBizId', localSelected)
             },
             requireBusiness () {
@@ -106,7 +106,7 @@
             },
             async handleApplyPermission () {
                 try {
-                    const url = await this.$store.dispatch('auth/getSkipUrl', { permission: [] })
+                    const url = await this.$store.dispatch('auth/getSkipUrl', { params: [{}] })
                     window.open(url)
                 } catch (e) {
                     console.error(e)

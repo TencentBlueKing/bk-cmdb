@@ -642,6 +642,7 @@
                 @include scrollbar-y;
                 flex: 1;
                 height: 100%;
+                background-color: #ffffff;
                 .tab-pane {
                     font-size: 14px;
                     padding: 20px 20px 20px 38px;

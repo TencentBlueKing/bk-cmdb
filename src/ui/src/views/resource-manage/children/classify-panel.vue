@@ -8,7 +8,7 @@
                 :key="index"
                 :title="model['bk_obj_name']"
                 @click="redirect(model)">
-                <i :class="['model-icon','icon', model['bk_obj_icon']]"></i>
+                <i :class="['model-icon','icon', model['bk_obj_icon'], { 'nonpre-mode': !model['ispre'] }]"></i>
                 <span class="model-name">{{model['bk_obj_name']}}</span>
                 <i class="model-star bk-icon"
                     :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
@@ -191,7 +191,10 @@
             }
             .model-icon{
                 font-size: 16px;
-                color: #979BA5;
+                color: #798AAD;
+            }
+            .nonpre-mode {
+                color: #3A84FF !important;
             }
             .model-name{
                 max-width: calc(100% - 100px);
