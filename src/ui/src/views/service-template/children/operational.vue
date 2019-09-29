@@ -389,10 +389,14 @@
                 this.attribute.inst.edit = {}
             },
             handleUpdateProcess (template) {
-                this.slider.show = true
-                this.slider.title = template['bk_func_name']['value']
-                this.attribute.type = 'update'
-                this.attribute.inst.edit = template
+                try {
+                    this.slider.show = true
+                    this.slider.title = template['bk_func_name']['value']
+                    this.attribute.type = 'update'
+                    this.attribute.inst.edit = template
+                } catch (e) {
+                    console.error(e)
+                }
             },
             handleDeleteProcess (template) {
                 this.$bkInfo({
