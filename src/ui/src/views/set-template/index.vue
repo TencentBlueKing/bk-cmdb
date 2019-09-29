@@ -88,10 +88,21 @@
             },
             handleCreate () {
                 this.$router.push({
-                    name: 'createSetTemplate'
+                    name: 'setTemplateMode',
+                    params: {
+                        mode: 'create'
+                    }
                 })
             },
-            handleEdit (row) {},
+            handleEdit (row) {
+                this.$router.push({
+                    name: 'setTemplateMode',
+                    params: {
+                        mode: 'edit',
+                        templateId: row.id
+                    }
+                })
+            },
             handlePreview (row) {},
             handleDelete (row) {},
             handleFilterTemplate () {
