@@ -435,8 +435,9 @@ const (
 	CCErrTopoCanNotAddRequiredAttributeForMainlineModel    = 1101092
 	CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl     = 1101093
 
-	CCErrorTopoModuleNameDuplicated = 1101094
-	CCErrorTopoSyncModuleTaskFailed = 1101095
+	CCErrorTopoModuleNameDuplicated    = 1101094
+	CCErrorTopoSyncModuleTaskFailed    = 1101095
+	CCErrorTopoSyncModuleTaskIsRunning = 1101096
 
 	// object controller 1102XXX
 
@@ -791,6 +792,7 @@ const (
 	CCErrTaskErrResponseEmtpyFail = 1117004
 	CCErrTaskLockedTaskFail       = 1117005
 	CCErrTaskUnLockedTaskFail     = 1117006
+	CCErrTaskListTaskFail         = 1117007
 
 	/** TODO: 以下错误码需要改造 **/
 
