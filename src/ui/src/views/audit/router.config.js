@@ -1,7 +1,6 @@
 import { R_AUDIT } from '@/dictionary/auth'
 import { MENU_ANALYSIS_AUDIT } from '@/dictionary/menu-symbol'
 import Meta from '@/router/meta'
-import { MENU_ANALYSIS_AUDIT } from '@/dictionary/menu-symbol'
 
 export default {
     name: MENU_ANALYSIS_AUDIT,
