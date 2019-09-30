@@ -128,6 +128,11 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 		setModules[module.ParentID] = append(setModules[module.ParentID], module)
 	}
 
+	topoTree, ccErr := st.client.CoreService().Mainline().SearchMainlineInstanceTopo(ctx, header, bizID, false)
+	if ccErr != nil {
+		blog.Errorf("ListSetTplRelatedSetsWeb failed, bizID: %d, err: %s, rid: %s", bizID, ccErr.Error(), rid)
+		return nil, ccErr
+	}
 	// diff
 	setDiffs := make([]metadata.SetDiff, 0)
 	for setID, modules := range setModules {
@@ -139,6 +144,20 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 		if set, ok := setMap[setID]; ok == true {
 			setDiff.SetDetail = set
 		}
+
+		// add topo path info
+		setPath := topoTree.TraversalFindNode(common.BKInnerObjIDSet, setID)
+		topoPath := make([]metadata.TopoInstanceNodeSimplify, 0)
+		for _, pathNode := range setPath {
+			nodeSimplify := metadata.TopoInstanceNodeSimplify{
+				ObjectID:     pathNode.ObjectID,
+				InstanceID:   pathNode.InstanceID,
+				InstanceName: pathNode.InstanceName,
+			}
+			topoPath = append(topoPath, nodeSimplify)
+		}
+		setDiff.TopoPath = topoPath
+
 		setDiffs = append(setDiffs, setDiff)
 	}
 	return setDiffs, nil
@@ -160,9 +179,10 @@ func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header,
 		tasks := make([]metadata.SyncModuleTask, 0)
 		for _, moduleDiff := range setDiff.ModuleDiffs {
 			task := metadata.SyncModuleTask{
-				Header:     header,
-				Set:        setDiff.SetDetail,
-				ModuleDiff: moduleDiff,
+				Header:      header,
+				Set:         setDiff.SetDetail,
+				ModuleDiff:  moduleDiff,
+				SetTopoPath: setDiff.TopoPath,
 			}
 			tasks = append(tasks, task)
 		}

@@ -108,9 +108,10 @@ type SetDiff struct {
 }
 
 type SyncModuleTask struct {
-	Header     http.Header   `json:"header"`
-	Set        SetInst       `json:"set"`
-	ModuleDiff SetModuleDiff `json:"module_diff"`
+	Header      http.Header                `json:"header"`
+	Set         SetInst                    `json:"set"`
+	SetTopoPath []TopoInstanceNodeSimplify `json:"set_topo_path"`
+	ModuleDiff  SetModuleDiff              `json:"module_diff"`
 }
 
 var (
