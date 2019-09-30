@@ -78,7 +78,7 @@
     export default {
         props: {
             templateId: {
-                type: Number,
+                type: [Number, String],
                 required: true
             }
         },
@@ -137,20 +137,22 @@
             handleViewSync () {},
             handleSearch () {},
             handleSelectionChange (selection) {
-                this.checkedList = selection.map(item => item.id)
+                this.checkedList = selection.map(item => item.bk_set_id)
             },
             handlePageChange () {},
             handleSizeChange () {},
-            handleSelectable () {},
+            handleSelectable () {
+                return true
+            },
             handleBatchSync () {
                 this.$store.commit('setFeatures/setSyncIdMap', {
-                    id: `${this.business}_${1}`,
+                    id: `${this.business}_${this.templateId}`,
                     instancesId: this.checkedList
                 })
                 this.$router.push({
                     name: 'setSync',
                     params: {
-                        setTemplateId: 1
+                        setTemplateId: this.templateId
                     }
                 })
             },
