@@ -287,8 +287,8 @@ var _ = Describe("host abnormal test", func() {
 				Expect(rsp.Data.Count).To(Equal(1))
 			})
 
-			// it's no effect to use a noexist cloud_id
-			It("add host using api with large cloud_id", func() {
+			// 云区域ID不存在不会影响添加主机
+			It("add host using api with noexist cloud_id", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
@@ -303,7 +303,7 @@ var _ = Describe("host abnormal test", func() {
 				Expect(rsp.Result).To(Equal(true))
 			})
 
-			// if no bk_cloud_id is given, it would be the default value 0
+			// 如果云区域ID没有给出，默认是0
 			It("add host using api with no bk_cloud_id", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
@@ -1008,6 +1008,7 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
+		// 查询条件导致找不到主机，返回true，不会造成脏数据
 		It("move nonexist biz's module hosts to idle", func() {
 			input := &metadata.SetHostConfigParams{
 				ApplicationID: noExistID,
@@ -1016,9 +1017,10 @@ var _ = Describe("host abnormal test", func() {
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
+		// 查询条件导致找不到主机，返回true，不会造成脏数据
 		It("move nonexist module's hosts to idle", func() {
 			input := &metadata.SetHostConfigParams{
 				ApplicationID: bizId1,
@@ -1027,9 +1029,10 @@ var _ = Describe("host abnormal test", func() {
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
+		// 查询条件导致找不到主机，返回true，不会造成脏数据
 		It("move nonexist set's hosts to idle", func() {
 			input := &metadata.SetHostConfigParams{
 				ApplicationID: bizId1,
@@ -1038,9 +1041,10 @@ var _ = Describe("host abnormal test", func() {
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
+		// 查询条件导致找不到主机，返回true，不会造成脏数据
 		It("move unmatching set module relationship hosts to idle", func() {
 			input := &metadata.SetHostConfigParams{
 				ApplicationID: bizId1,
@@ -1049,7 +1053,7 @@ var _ = Describe("host abnormal test", func() {
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("move host whose set and module is 0 to idle", func() {
@@ -1115,8 +1119,7 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		// although the host noExistID cause the op result is false,the hostId1 will be transfered to fault moudle successfully
-		// so currently, the fault moudle has the host hostId1
+		// 虽然主机ID不存在导致返回结果为false，但正常的主机能被转移成功
 		It("transfer a nonexist host to fault module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
@@ -1514,7 +1517,6 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		// although the host 2.0.0 cause the op result is false,the host 2.0.0.3 will be synced to moduleId
 		It("sync host one invalid host", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
