@@ -210,7 +210,7 @@
         computed: {
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('objectBiz', ['authorizedBusiness', 'bizId']),
             ...mapGetters('objectModelClassify', ['getModelById']),
             columnsConfigKey () {
                 return `${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
@@ -247,6 +247,9 @@
         },
         async created () {
             try {
+                if (!this.authorizedBusiness.length) {
+                    this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+                }
                 this.setDynamicBreadcrumbs()
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
@@ -421,6 +424,7 @@
                             this.$success(this.$t('归档成功'))
                             this.getTableData()
                             this.$http.cancel('post_searchBusiness_$ne_disabled')
+                            this.$store.commit('objectBiz/deleteAuthorizedBusiness', inst.bk_biz_id)
                         })
                     }
                 })
@@ -438,15 +442,23 @@
                         this.handleCancel()
                         this.$success(this.$t('修改成功'))
                         this.$http.cancel('post_searchBusiness_$ne_disabled')
+                        this.$store.commit('objectBiz/updateAuthorizedBusiness', {
+                            bk_biz_id: originalValues['bk_biz_id'],
+                            bk_biz_name: values.bk_biz_name
+                        })
                     })
                 } else {
                     this.createBusiness({
                         params: values
-                    }).then(() => {
+                    }).then(data => {
                         this.handlePageChange(1)
                         this.handleCancel()
                         this.$success(this.$t('创建成功'))
                         this.$http.cancel('post_searchBusiness_$ne_disabled')
+                        this.$store.commit('objectBiz/addAuthorizedBusiness', {
+                            bk_biz_id: data.bk_biz_id,
+                            bk_biz_name: data.bk_biz_name
+                        })
                     })
                 }
             },
