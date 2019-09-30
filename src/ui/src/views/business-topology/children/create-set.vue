@@ -137,11 +137,14 @@
             handleCreateSet () {
                 this.$validator.validateAll().then(isValid => {
                     if (isValid) {
-                        // const nameList = this.setName.split('\n').filter(name => name)
+                        const nameList = this.setName.split('\n').filter(name => name)
+                        const sets = nameList.map(name => ({
+                            set_template_id: this.setTemplate,
+                            bk_set_name: name
+                        }))
                         this.$emit('submit', {
                             set_template_id: this.setTemplate,
-                            // sets: nameList.map(name => ({ bk_set_name: name }))
-                            bk_set_name: this.setName
+                            sets
                         })
                     }
                 })

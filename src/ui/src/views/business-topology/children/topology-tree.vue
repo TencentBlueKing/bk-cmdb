@@ -60,7 +60,7 @@
             <template v-else-if="createInfo.nextModelId === 'set'">
                 <create-set v-if="createInfo.visible"
                     :parent-node="createInfo.parentNode"
-                    @submit="handleCreateNode"
+                    @submit="handleCreateSetNode"
                     @cancel="handleCancelCreateNode">
                 </create-set>
             </template>
@@ -270,10 +270,44 @@
                     this.$refs.tree.addNode(nodeData, parentNode.id, 0)
                     this.$success(this.$t('新建成功'))
                     this.handleCancelCreateNode()
-
-                    if (nextModelId === 'set' && value.set_template_id) {
-                        await this.addModulesInSetTemplate(nodeData, data.bk_inst_id)
-                    }
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            async handleCreateSetNode (value) {
+                try {
+                    const parentNode = this.createInfo.parentNode
+                    const nextModel = this.mainLineModels.find(model => model.bk_obj_id === 'set')
+                    const formData = (value.sets || []).map(set => {
+                        return this.$injectMetadata({
+                            ...set,
+                            'bk_biz_id': this.business,
+                            'bk_parent_id': parentNode.data.bk_inst_id
+                        })
+                    })
+                    const data = await this.createSet(formData)
+                    data && data.forEach(set => {
+                        if (set.data) {
+                            const nodeData = {
+                                default: 0,
+                                child: [],
+                                bk_obj_name: nextModel.bk_obj_name,
+                                bk_obj_id: nextModel.bk_obj_id,
+                                service_instance_count: 0,
+                                service_template_id: value.service_template_id,
+                                bk_inst_id: set.data.bk_set_id,
+                                bk_inst_name: set.data.bk_set_name
+                            }
+                            this.$refs.tree.addNode(nodeData, parentNode.id, 0)
+                            if (value.set_template_id) {
+                                this.addModulesInSetTemplate(nodeData, set.data.bk_set_id)
+                            }
+                        } else {
+                            this.$error(set.error_message)
+                        }
+                    })
+                    this.$success(this.$t('新建成功'))
+                    this.handleCancelCreateNode()
                 } catch (e) {
                     console.error(e)
                 }
@@ -304,17 +338,21 @@
                 })
             },
             async createSet (value) {
-                const data = await this.$store.dispatch('objectSet/createSet', {
+                const data = await this.$store.dispatch('objectSet/createSetBatch', {
                     bizId: this.business,
                     params: {
-                        ...value,
-                        bk_supplier_account: this.supplierAccount
+                        sets: value.map(set => {
+                            return {
+                                ...set,
+                                bk_supplier_account: this.supplierAccount
+                            }
+                        })
+                    },
+                    config: {
+                        globalError: false
                     }
                 })
-                return {
-                    bk_inst_id: data.bk_set_id,
-                    bk_inst_name: data.bk_set_name
-                }
+                return data || []
             },
             async createModule (value) {
                 const data = await this.$store.dispatch('objectModule/createModule', {
