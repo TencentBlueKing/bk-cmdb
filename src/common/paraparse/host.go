@@ -85,7 +85,11 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 				}
 				fields = append(fields, mapstr.MapStr{i.Field: mapstr.MapStr{common.BKDBLIKE: mstr}})
 			}
-			output[common.BKDBOR] = fields
+			if len(fields) != 0 {
+			    // only when the fields is none empty, then the fields is valid.
+			    // a or operator can not have a empty value in mongodb.
+                output[common.BKDBOR] = fields
+            } 
 		default:
 			queryCondItem, ok := output[i.Field].(map[string]interface{})
 			if !ok {
