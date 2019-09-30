@@ -330,7 +330,7 @@ func (s *Service) SyncSetTplToInst(params types.ContextParams, pathParams, query
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	// TODO: 可能还是会出现并发提交任务, 可通过前端防双击的方式限制绝大部分情况
+	// NOTE: 如下处理不能杜绝所有发提交任务, 可通过前端防双击的方式限制绝大部分情况
 	setSyncStatus, err := s.getSetSyncStatus(params, option.SetIDs...)
 	if err != nil {
 		blog.Errorf("SyncSetTplToInst failed, getSetSyncStatus failed, setIDs: %+v, err: %s, rid: %s", option.SetIDs, err.Error(), params.ReqID)

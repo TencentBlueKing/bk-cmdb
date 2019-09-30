@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -31,10 +32,39 @@ func createSetTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Con
 		if err != nil {
 			return err
 		}
-		if !exists {
-			if err = db.CreateTable(tableName); err != nil && !db.IsDuplicatedError(err) {
-				return err
-			}
+		if exists == true {
+			continue
+		}
+
+		// add table
+		if err = db.CreateTable(tableName); err != nil && !db.IsDuplicatedError(err) {
+			return err
+		}
+	}
+
+	// list indexes
+	indices, err := db.Table(common.BKTableNameSetTemplate).Indexes(ctx)
+	if err != nil {
+		blog.ErrorJSON("list index for table: %s failed, err:%s", common.BKTableNameSetTemplate, err.Error())
+		return err
+	}
+	idxMap := make(map[string]bool)
+	for _, idx := range indices {
+		idxMap[idx.Name] = true
+	}
+
+	// check index exist and add
+	idxName := "idx_id"
+	if _, ok := idxMap[idxName]; ok == false {
+		index := dal.Index{
+			Keys:       map[string]int32{common.BKFieldID: 1},
+			Name:       idxName,
+			Unique:     true,
+			Background: true,
+		}
+		if err := db.Table(common.BKTableNameSetTemplate).CreateIndex(ctx, index); err != nil {
+			blog.ErrorJSON("add index for table: %s failed, index: %s, err:%s", common.BKTableNameSetTemplate, index, err.Error())
+			return err
 		}
 	}
 	return nil
