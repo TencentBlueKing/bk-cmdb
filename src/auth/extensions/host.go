@@ -509,7 +509,6 @@ func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Head
 	if am.Enabled() == false {
 		return nil
 	}
-
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, hosts: %+v, rid: %s", hostIDs, rid)
 		return nil
