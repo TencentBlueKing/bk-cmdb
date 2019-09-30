@@ -32,7 +32,7 @@
                     </span>
                 </div>
                 <bk-checkbox class="expand-all fr"
-                    v-if="isSingleSync"
+                    v-if="!isSingleSync"
                     v-model="expandAll"
                     @change="handleExpandAll">
                     {{$t('全部展开')}}
@@ -52,14 +52,14 @@
             <div class="footer">
                 <bk-button theme="primary" class="mr10" @click="handleConfirmSync">{{$t('确认同步')}}</bk-button>
                 <bk-button class="mr10">{{$t('取消')}}</bk-button>
-                <span v-if="isSingleSync">{{$tc('已选集群实例', setInstancesId.length, { count: setInstancesId.length })}}</span>
+                <span v-if="!isSingleSync">{{$tc('已选集群实例', setInstancesId.length, { count: setInstancesId.length })}}</span>
             </div>
         </template>
     </div>
 </template>
 
 <script>
-    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_SET_TEMPLATE, MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     import setInstance from './set-instance'
     export default {
         components: {
@@ -118,7 +118,7 @@
                         bizId: this.business,
                         setTemplateId: this.setTemplateId,
                         params: {
-                            bk_set_ids: [14]
+                            bk_set_ids: this.setInstancesId
                         },
                         config: {
                             requestId: 'diffTemplateAndInstances'
@@ -140,9 +140,6 @@
                     extCls: 'set-confirm-sync',
                     confirmFn: async () => {
                         try {
-                            this.$router.push({
-                                name: 'viewSync'
-                            })
                             await this.$store.dispatch('setSync/syncTemplateToInstances', {
                                 bizId: this.business,
                                 setTemplateId: this.setTemplateId,
@@ -153,7 +150,12 @@
                                     requestId: 'syncTemplateToInstances'
                                 }
                             })
-                            // this.$success(this.$t('同步成功'))
+                            this.$router.replace({
+                                name: 'viewSync',
+                                params: {
+                                    setTemplateId: this.setTemplateId
+                                }
+                            })
                         } catch (e) {
                             console.error(e)
                         }
@@ -173,7 +175,22 @@
                 this.diffList = this.diffList.filter(instance => instance.bk_set_id !== id)
             },
             handleGoback () {
-
+                const moduleId = this.$route.params['moduleId']
+                if (moduleId) {
+                    this.$router.replace({
+                        name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                        query: {
+                            module: moduleId
+                        }
+                    })
+                } else {
+                    this.$router.replace({
+                        name: 'setTemplateInfo',
+                        params: {
+                            templateId: this.setTemplateId
+                        }
+                    })
+                }
             }
         }
     }
