@@ -477,6 +477,7 @@ func (s *Service) SearchInstTopo(params types.ContextParams, pathParams, queryPa
 	return instItems, err
 }
 
+// 	SearchInstAssociation 2019-09-30 废弃接口
 func (s *Service) SearchInstAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	objID := pathParams("bk_obj_id")
