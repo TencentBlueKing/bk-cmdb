@@ -308,6 +308,27 @@ func (s *Service) DiffSetTplWithInst(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
+	topoTree, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(params.Context, params.Header, bizID, false)
+	if err != nil {
+		blog.Errorf("ListSetTplRelatedSetsWeb failed, bizID: %d, err: %s, rid: %s", bizID, err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	for index := range setDiffs {
+		set := setDiffs[index].SetDetail
+		setPath := topoTree.TraversalFindNode(common.BKInnerObjIDSet, set.SetID)
+		topoPath := make([]metadata.TopoInstanceNodeSimplify, 0)
+		for _, pathNode := range setPath {
+			nodeSimplify := metadata.TopoInstanceNodeSimplify{
+				ObjectID:     pathNode.ObjectID,
+				InstanceID:   pathNode.InstanceID,
+				InstanceName: pathNode.InstanceName,
+			}
+			topoPath = append(topoPath, nodeSimplify)
+		}
+		setDiffs[index].TopoPath = topoPath
+	}
+
 	return setDiffs, nil
 }
 
