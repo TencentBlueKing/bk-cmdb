@@ -296,6 +296,11 @@ func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.Res
 func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	// translate all parent layers
 	resourceIDs := make([]RscTypeAndID, 0)
+
+	if attribute.InstanceID == 0 {
+		return resourceIDs, nil
+	}
+
 	for _, layer := range attribute.Layers {
 		iamResourceType, err := ConvertResourceType(layer.Type, attribute.BusinessID)
 		if err != nil {
@@ -383,6 +388,9 @@ func processServiceInstanceResourceID(resourceType ResourceTypeID, attribute *me
 }
 
 func processTemplateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	if attribute.InstanceID == 0 {
+		return make([]RscTypeAndID, 0), nil
+	}
 	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,
@@ -392,6 +400,9 @@ func processTemplateResourceID(resourceType ResourceTypeID, attribute *meta.Reso
 }
 
 func processServiceCategoryResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	if attribute.InstanceID == 0 {
+		return make([]RscTypeAndID, 0), nil
+	}
 	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,
@@ -401,6 +412,9 @@ func processServiceCategoryResourceID(resourceType ResourceTypeID, attribute *me
 }
 
 func processServiceTemplateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	if attribute.InstanceID == 0 {
+		return make([]RscTypeAndID, 0), nil
+	}
 	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,
