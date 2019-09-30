@@ -18,8 +18,10 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 
 	"github.com/mitchellh/mapstructure"
@@ -261,11 +263,13 @@ func (s *Service) ListSetTplRelatedSetsWeb(params types.ContextParams, pathParam
 		return nil, err
 	}
 
+	setIDs := make([]int64, 0)
 	for index := range setInstanceResult.Info {
 		set := metadata.SetInst{}
 		if err := mapstr.DecodeFromMapStr(&set, setInstanceResult.Info[index]); err != nil {
 			return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
+		setIDs = append(setIDs, set.SetID)
 
 		setPath := topoTree.TraversalFindNode(common.BKInnerObjIDSet, set.SetID)
 		topoPath := make([]metadata.TopoInstanceNodeSimplify, 0)
@@ -278,6 +282,46 @@ func (s *Service) ListSetTplRelatedSetsWeb(params types.ContextParams, pathParam
 			topoPath = append(topoPath, nodeSimplify)
 		}
 		setInstanceResult.Info[index]["topo_path"] = topoPath
+	}
+
+	// fill with host count
+	filter := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		SetIDArr:      setIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	relations, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, filter)
+	if err != nil {
+		blog.ErrorJSON("SearchMainlineInstanceTopo failed, GetHostModuleRelation failed, filter: %s, err: %s, rid: %s", filter, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if relations.Result == false || relations.Code != 0 {
+		blog.ErrorJSON("SearchMainlineInstanceTopo failed, GetHostModuleRelation return false, filter: %s, result: %s, rid: %s", filter, relations, params.ReqID)
+		return nil, errors.NewCCError(relations.Code, relations.ErrMsg)
+	}
+	set2Hosts := make(map[int64][]int64)
+	for _, relation := range relations.Data.Info {
+		if _, ok := set2Hosts[relation.SetID]; ok == false {
+			set2Hosts[relation.SetID] = make([]int64, 0)
+		}
+		set2Hosts[relation.SetID] = append(set2Hosts[relation.SetID], relation.HostID)
+	}
+	for setID := range set2Hosts {
+		set2Hosts[setID] = util.IntArrayUnique(set2Hosts[setID])
+	}
+
+	for index := range setInstanceResult.Info {
+		set := metadata.SetInst{}
+		if err := mapstr.DecodeFromMapStr(&set, setInstanceResult.Info[index]); err != nil {
+			return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+		hostCount := 0
+		if _, ok := set2Hosts[set.SetID]; ok == true {
+			hostCount = len(set2Hosts[set.SetID])
+		}
+		setInstanceResult.Info[index]["host_count"] = hostCount
 	}
 
 	return setInstanceResult, nil

@@ -26,6 +26,6 @@ func (s *Service) initSetTemplate() {
 	s.addAction(http.MethodGet, "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates", s.ListSetTplRelatedSvcTpl, nil)
 	s.addAction(http.MethodPost, "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/sets/web", s.ListSetTplRelatedSetsWeb, nil)
 	s.addAction(http.MethodPost, "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/diff_with_instances", s.DiffSetTplWithInst, nil)
-	s.addAction(http.MethodPost, "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/sync_to_instances", s.SyncSetTplToInst, nil)
+	s.addAction(http.MethodPost, "/updatemany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/sync_to_instances", s.SyncSetTplToInst, nil)
 	s.addAction(http.MethodPost, "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/instances_sync_status", s.GetSetSyncStatus, nil)
 }
