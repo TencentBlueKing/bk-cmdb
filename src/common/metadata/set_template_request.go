@@ -101,9 +101,10 @@ type SetModuleDiff struct {
 }
 
 type SetDiff struct {
-	ModuleDiffs []SetModuleDiff `json:"module_diffs"`
-	SetID       int64           `json:"bk_set_id"`
-	SetDetail   SetInst         `json:"set_detail"`
+	ModuleDiffs []SetModuleDiff            `json:"module_diffs"`
+	SetID       int64                      `json:"bk_set_id"`
+	SetDetail   SetInst                    `json:"set_detail"`
+	TopoPath    []TopoInstanceNodeSimplify `json:"topo_path"`
 }
 
 type SyncModuleTask struct {
