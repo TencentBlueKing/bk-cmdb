@@ -57,13 +57,10 @@ type APISubTaskDetail struct {
 type APITaskStatus int64
 
 func (s APITaskStatus) IsFinished() bool {
-	if s == 200 {
+	if s == 200 || s == 500 {
 		return true
 	}
-	if s == 0 {
-		return false
-	}
-	return true
+	return false
 }
 
 const (
