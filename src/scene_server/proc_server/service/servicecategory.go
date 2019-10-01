@@ -50,15 +50,21 @@ func (ps *ProcServer) ListServiceCategory(ctx *rest.Contexts) {
 
 func (ps *ProcServer) listServiceCategory(ctx *rest.Contexts, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
-	meta := new(metadata.MetadataWrapper)
+	meta := &struct {
+		Metadata metadata.Metadata `json:"metadata"`
+		BizID    int64             `json:"bk_biz_id"`
+	}{}
 	if err := ctx.DecodeInto(meta); err != nil {
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
-
-	bizID, err := metadata.BizIDFromMetadata(meta.Metadata)
-	if err != nil {
-		blog.Errorf("get service category list failed, parse biz id from metadata failed, metadata: %+v, err: %+v, rid: %s", meta.Metadata, err, rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
+	bizID := meta.BizID
+	if bizID == 0 {
+		var err error
+		bizID, err = metadata.BizIDFromMetadata(meta.Metadata)
+		if err != nil {
+			blog.Errorf("get service category list failed, parse biz id from metadata failed, metadata: %+v, err: %+v, rid: %s", meta.Metadata, err, rid)
+			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
+		}
 	}
 
 	listOption := metadata.ListServiceCategoriesOption{
@@ -98,19 +104,27 @@ func (ps *ProcServer) listServiceCategory(ctx *rest.Contexts, withStatistics boo
 }
 
 func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
-	input := new(metadata.ServiceCategory)
+	input := new(metadata.CreateServiceCategoryOption)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service category, but get business id failed, err: %v", err)
-		return
+	bizID := input.BizID
+	if bizID == 0 {
+		_, err := metadata.BizIDFromMetadata(input.Metadata)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service category, but get business id failed, err: %v", err)
+			return
+		}
 	}
 
-	category, err := ps.CoreAPI.CoreService().Process().CreateServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input)
+	newCategory := &metadata.ServiceCategory{
+		BizID:    bizID,
+		Name:     input.Name,
+		ParentID: input.ParentID,
+	}
+	category, err := ps.CoreAPI.CoreService().Process().CreateServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, newCategory)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service category failed, err: %v", err)
 		return
@@ -132,12 +146,6 @@ func (ps *ProcServer) UpdateServiceCategory(ctx *rest.Contexts) {
 	input := new(metadata.ServiceCategory)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
-		return
-	}
-
-	_, err := metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update service category, but get business id failed, err: %v", err)
 		return
 	}
 
@@ -166,13 +174,6 @@ func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service category, but get business id failed, err: %v", err)
-		return
-	}
-	_ = bizID
-
 	/*
 		// generate iam resource
 		iamResources, err := ps.AuthManager.MakeResourcesByServiceCategoryIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.Delete, bizID, input.ID)
@@ -184,7 +185,7 @@ func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
 		}
 	*/
 
-	err = ps.CoreAPI.CoreService().Process().DeleteServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input.ID)
+	err := ps.CoreAPI.CoreService().Process().DeleteServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input.ID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete service category failed, err: %v", err)
 		return

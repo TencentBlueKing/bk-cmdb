@@ -23,9 +23,84 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/selector"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
+
+type ProcessInstanceRelation struct {
+	Metadata metadata.Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+
+	// unique field, 1:1 mapping with ProcessInstance.
+	ProcessID         int64 `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id"`
+	ServiceInstanceID int64 `field:"service_instance_id" json:"service_instance_id" bson:"service_instance_id"`
+
+	// ProcessTemplateID indicate which template are current process instantiate from.
+	ProcessTemplateID int64 `field:"process_template_id" json:"process_template_id" bson:"process_template_id"`
+
+	// redundant field for accelerating processes by HostID
+	HostID          int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
+	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+type ServiceTemplate struct {
+	Metadata metadata.Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+
+	ID int64 `field:"id" json:"id,omitempty" bson:"id"`
+	// name of this service, can not be empty
+	Name string `field:"name" json:"name,omitempty" bson:"name"`
+
+	// the class of this service, each field means a class label.
+	// now, the class must have two labels.
+	ServiceCategoryID int64 `field:"service_category_id" json:"service_category_id,omitempty" bson:"service_category_id"`
+
+	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
+	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
+	CreateTime      time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
+	LastTime        time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
+	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+}
+
+type ProcessTemplate struct {
+	Metadata metadata.Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+
+	ID          int64  `field:"id" json:"id,omitempty" bson:"id"`
+	ProcessName string `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name"`
+	// the service template's, which this process template belongs to.
+	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
+
+	// stores a process instance's data includes all the process's
+	// properties's value.
+	Property *metadata.ProcessProperty `field:"property" json:"property,omitempty" bson:"property"`
+
+	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
+	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
+	CreateTime      time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
+	LastTime        time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
+	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+}
+
+type ServiceInstance struct {
+	Metadata metadata.Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	ID       int64             `field:"id" json:"id,omitempty" bson:"id"`
+	Name     string            `field:"name" json:"name,omitempty" bson:"name"`
+	Labels   selector.Labels   `field:"labels" json:"labels,omitempty" bson:"labels"`
+
+	// the template id can not be updated, once the service is created.
+	// it can be 0 when the service is not created with a service template.
+	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
+	HostID            int64  `field:"bk_host_id" json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	InnerIP           string `field:"bk_host_innerip" json:"bk_host_innerip,omitempty" bson:"bk_host_innerip"`
+
+	// the module that this service belongs to.
+	ModuleID int64 `field:"bk_module_id" json:"bk_module_id,omitempty" bson:"bk_module_id"`
+
+	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
+	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
+	CreateTime      time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
+	LastTime        time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
+	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+}
 
 func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	categoryID, err := addDefaultCategory(ctx, db, conf)
@@ -36,7 +111,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		return fmt.Errorf("backupProcessBase failed: %v", err)
 	}
 
-	allmodules := []metadata.ModuleInst{}
+	allmodules := make([]metadata.ModuleInst, 0)
 	if err = db.Table(common.BKTableNameBaseModule).Find(condition.CreateCondition().
 		Field(common.BKDefaultField).NotGt(0).ToMapStr()).
 		All(ctx, &allmodules); err != nil {
@@ -56,31 +131,31 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	for bizID, bizModules := range biz2Module {
 		ownerID := common.BKDefaultOwnerID
 		for modulename, modules := range bizModules {
-		    if len(modules) == 0 {
-		        continue
-            }
+			if len(modules) == 0 {
+				continue
+			}
 			// modules would always more than 0, so would never panic here
 			if modules[0].SupplierAccount != "" {
 				ownerID = modules[0].SupplierAccount
 			}
 
-            processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: modulename}
-            processMappingInModule := []metadata.ProcessModule{}
-            if err = db.Table(common.BKTableNameProcModule).Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
-                return err
-            }
-            if len(processMappingInModule) <= 0 {
-                // this module does not bounded with a process, do not need to create service instance related info.
-                continue
-            }
-            
+			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: modulename}
+			processMappingInModule := make([]metadata.ProcessModule, 0)
+			if err = db.Table(common.BKTableNameProcModule).Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
+				return err
+			}
+			if len(processMappingInModule) <= 0 {
+				// this module does not bounded with a process, do not need to create service instance related info.
+				continue
+			}
+
 			// build service template
 			svcTemplateID, err := db.NextSequence(ctx, common.BKTableNameServiceTemplate)
 			if err != nil {
 				return err
 			}
-			serviceTemplate := metadata.ServiceTemplate{
-				Metadata:          metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
+			serviceTemplate := ServiceTemplate{
+				Metadata:          metadata.NewMetadata(bizID),
 				ID:                int64(svcTemplateID),
 				Name:              modulename,
 				ServiceCategoryID: categoryID,
@@ -105,13 +180,12 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 			if err = db.Table(common.BKTableNameBaseModule).Update(ctx, moduleFilter, moduleUpdateData); err != nil {
 				return err
 			}
-			
 
-			processIDInModule := []int64{}
+			processIDInModule := make([]int64, 0)
 			for _, mapping := range processMappingInModule {
 				processIDInModule = append(processIDInModule, mapping.ProcessID)
 			}
-			oldProcess := []metadata.Process{}
+			oldProcess := make([]metadata.Process, 0)
 			processBaseCond := condition.CreateCondition().Field(common.BKProcessIDField).In(processIDInModule).
 				Field(common.BKAppIDField).Eq(bizID).ToMapStr()
 			if err = db.Table(common.BKTableNameBaseProcess).Find(processBaseCond).All(ctx, &oldProcess); err != nil {
@@ -119,20 +193,20 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				return err
 			}
 			if len(oldProcess) <= 0 {
-			    // no process in this bounded module,
-			    // normally, this can not be happen.
+				// no process in this bounded module,
+				// normally, this can not be happen.
 				continue
 			}
 
-			inst2ProcessInstTemplate := map[int64]metadata.ProcessTemplate{}
+			inst2ProcessInstTemplate := map[int64]ProcessTemplate{}
 			for _, oldInst := range oldProcess {
 				procTemplateID, err := db.NextSequence(ctx, common.BKTableNameProcessTemplate)
 				if err != nil {
 					return err
 				}
 
-				procTemplate := metadata.ProcessTemplate{
-					Metadata:          metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
+				procTemplate := ProcessTemplate{
+					Metadata:          metadata.NewMetadata(bizID),
 					ID:                int64(procTemplateID),
 					ServiceTemplateID: serviceTemplate.ID,
 					Property:          procInstToProcTemplate(oldInst),
@@ -150,7 +224,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 
 			// build service instance
 			for _, module := range modules {
-				moduleHosts := []metadata.ModuleHost{}
+				moduleHosts := make([]metadata.ModuleHost, 0)
 				if err = db.Table(common.BKTableNameModuleHostConfig).Find(
 					condition.CreateCondition().Field(common.BKModuleIDField).Eq(module.ModuleID).ToMapStr(),
 				).All(ctx, &moduleHosts); err != nil {
@@ -162,8 +236,8 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 					if err != nil {
 						return err
 					}
-					srvInst := metadata.ServiceInstance{
-						Metadata:          metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
+					srvInst := ServiceInstance{
+						Metadata:          metadata.NewMetadata(bizID),
 						ID:                int64(srvInstID),
 						Name:              modulename,
 						ServiceTemplateID: serviceTemplate.ID,
@@ -189,6 +263,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 						}
 						inst.ProcessID = int64(procInstID)
 						inst.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+						inst.BusinessID = bizID
 						inst.CreateTime = time.Now()
 						inst.LastTime = time.Now()
 						if inst.BindIP != nil {
@@ -203,7 +278,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 						}
 
 						// build service instance relation
-						relateion := metadata.ProcessInstanceRelation{
+						relation := ProcessInstanceRelation{
 							Metadata:          metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
 							ProcessID:         inst.ProcessID,
 							ServiceInstanceID: srvInst.ID,
@@ -211,8 +286,8 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 							HostID:            moduleHost.HostID,
 							SupplierAccount:   ownerID,
 						}
-						blog.InfoJSON("relation: %s", relateion)
-						if err = db.Table(common.BKTableNameProcessInstanceRelation).Insert(ctx, relateion); err != nil {
+						blog.InfoJSON("relation: %s", relation)
+						if err = db.Table(common.BKTableNameProcessInstanceRelation).Insert(ctx, relation); err != nil {
 							return err
 						}
 					}
@@ -243,7 +318,7 @@ func backupProcessBase(ctx context.Context, db dal.RDB, conf *upgrader.Config) (
 	start := uint64(0)
 	limit := uint64(100)
 	for {
-		process := []mapstr.MapStr{}
+		process := make([]mapstr.MapStr, 0)
 		if err := db.Table(common.BKTableNameBaseProcess).Find(nil).Start(start).Limit(limit).
 			All(ctx, &process); err != nil {
 			return err
