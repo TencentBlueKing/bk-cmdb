@@ -23,29 +23,33 @@ import (
 
 // create a process template for a service template.
 func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
-	template := new(metadata.CreateProcessTemplateBatchInput)
-	if err := ctx.DecodeInto(template); err != nil {
+	input := new(metadata.CreateProcessTemplateBatchInput)
+	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(template.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create process template, but get business id failed, err: %v", err)
-		return
+	bizID := input.BizID
+	if bizID == 0 {
+		var err error
+		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create process template, but get business id failed, err: %v", err)
+			return
+		}
 	}
 
 	// authorize
-	if err := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, template.ServiceTemplateID); err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommCheckAuthorizeFailed, "authorize by service template id failed, id: %d, err: %+v", template.ServiceTemplateID, err)
+	if err := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, input.ServiceTemplateID); err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommCheckAuthorizeFailed, "authorize by service template id failed, id: %d, err: %+v", input.ServiceTemplateID, err)
 		return
 	}
 
 	ids := make([]int64, 0)
-	for _, process := range template.Processes {
+	for _, process := range input.Processes {
 		t := &metadata.ProcessTemplate{
-			Metadata:          template.Metadata,
-			ServiceTemplateID: template.ServiceTemplateID,
+			BizID:             bizID,
+			ServiceTemplateID: input.ServiceTemplateID,
 			Property:          process.Spec,
 		}
 
@@ -68,12 +72,16 @@ func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete process template: %v, but get business id failed, err: %v",
-			input.ProcessTemplates, err)
-		return
+	bizID := input.BizID
+	if bizID == 0 {
+		var err error
+		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete process template: %v, but get business id failed, err: %v", input.ProcessTemplates, err)
+			return
+		}
 	}
+	input.BizID = bizID
 
 	// authorize by service template
 	listOption := &metadata.ListProcessTemplatesOption{
@@ -113,12 +121,17 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update process template, but get business id failed, err: %v, input: %+v",
-			err, input)
-		return
+	bizID := input.BizID
+	if bizID == 0 {
+		var err error
+		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update process template, but get business id failed, err: %v, input: %+v",
+				err, input)
+			return
+		}
 	}
+	input.BizID = bizID
 
 	if input.ProcessProperty == nil || input.ProcessTemplateID <= 0 {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update process template, but get nil process template, input: %+v", input)
@@ -144,24 +157,38 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	template := metadata.ProcessTemplate{
+	updateParam := metadata.ProcessTemplate{
 		ID:       input.ProcessTemplateID,
-		Metadata: input.Metadata,
+		BizID:    bizID,
 		Property: input.ProcessProperty,
 	}
-	tmp, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplateID, &template)
+	template, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplateID, &updateParam)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcUpdateProcessTemplateFailed, "update process template: %v failed.", input)
 		return
 	}
-	ctx.RespEntity(tmp)
+	ctx.RespEntity(template)
 }
 
 func (ps *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
-	input := new(metadata.MetadataWrapper)
+	input := &struct {
+		Metadata metadata.Metadata `json:"metadata"`
+		BizID    int64             `json:"bk_biz_id"`
+	}{}
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
+	}
+
+	bizID := input.BizID
+	if bizID == 0 {
+		var err error
+		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get process template, but get business id failed, err: %v, input: %+v",
+				err, input)
+			return
+		}
 	}
 
 	templateID, err := strconv.ParseInt(ctx.Request.PathParameter("processTemplateID"), 10, 64)
@@ -170,19 +197,12 @@ func (ps *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	_, err = metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get process template, but get business id failed, err: %v, input: %+v",
-			err, input)
-		return
-	}
-
-	tmp, err := ps.CoreAPI.CoreService().Process().GetProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
+	template, err := ps.CoreAPI.CoreService().Process().GetProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get process template: %v failed, err: %v.", input, err)
 		return
 	}
-	ctx.RespEntity(tmp)
+	ctx.RespEntity(template)
 }
 
 func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
@@ -192,10 +212,14 @@ func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get process template, but get business id failed, err: %v, input: %+v", err, input)
-		return
+	bizID := input.BizID
+	if bizID == 0 {
+		var err error
+		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get process template, but get business id failed, err: %v, input: %+v", err, input)
+			return
+		}
 	}
 
 	option := &metadata.ListProcessTemplatesOption{
@@ -206,10 +230,10 @@ func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 	if input.ProcessTemplatesIDs != nil {
 		option.ProcessTemplateIDs = input.ProcessTemplatesIDs
 	}
-	tmp, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	template, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcGetProcessTemplateFailed, "get process template: %v failed", input)
 		return
 	}
-	ctx.RespEntity(tmp)
+	ctx.RespEntity(template)
 }

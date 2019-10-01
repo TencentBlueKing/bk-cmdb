@@ -33,12 +33,14 @@ type DeleteCategoryInput struct {
 
 type CreateProcessTemplateBatchInput struct {
 	Metadata          Metadata        `json:"metadata"`
+	BizID             int64           `json:"bk_biz_id"`
 	ServiceTemplateID int64           `json:"service_template_id"`
 	Processes         []ProcessDetail `json:"processes"`
 }
 
 type DeleteProcessTemplateBatchInput struct {
 	Metadata         Metadata `json:"metadata"`
+	BizID            int64    `json:"bk_biz_id"`
 	ProcessTemplates []int64  `json:"process_templates"`
 }
 
@@ -48,6 +50,7 @@ type ProcessDetail struct {
 
 type ListServiceTemplateInput struct {
 	Metadata Metadata `json:"metadata"`
+	BizID    int64    `json:"bk_biz_id"`
 	// this field can be empty, it a optional condition.
 	ServiceCategoryID int64    `json:"service_category_id,omitempty"`
 	Page              BasePage `json:"page"`
@@ -62,11 +65,13 @@ type ListServiceTemplateWithDetailResult struct {
 
 type DeleteServiceTemplatesInput struct {
 	Metadata          Metadata `json:"metadata"`
+	BizID             int64    `json:"bk_biz_id"`
 	ServiceTemplateID int64    `json:"service_template_id"`
 }
 
 type CreateServiceInstanceForServiceTemplateInput struct {
 	Metadata  Metadata                      `json:"metadata"`
+	BizID     int64                         `json:"bk_biz_id"`
 	Name      string                        `json:"name"`
 	ModuleID  int64                         `json:"bk_module_id"`
 	Instances []CreateServiceInstanceDetail `json:"instances"`
@@ -74,22 +79,26 @@ type CreateServiceInstanceForServiceTemplateInput struct {
 
 type CreateRawProcessInstanceInput struct {
 	Metadata          Metadata                `json:"metadata"`
+	BizID             int64                   `json:"bk_biz_id"`
 	ServiceInstanceID int64                   `json:"service_instance_Id"`
 	Processes         []ProcessInstanceDetail `json:"processes"`
 }
 
 type UpdateRawProcessInstanceInput struct {
 	Metadata  Metadata  `json:"metadata"`
+	BizID     int64     `json:"bk_biz_id"`
 	Processes []Process `json:"processes"`
 }
 
 type DeleteProcessInstanceInServiceInstanceInput struct {
 	Metadata           Metadata `json:"metadata"`
+	BizID              int64    `json:"bk_biz_id"`
 	ProcessInstanceIDs []int64  `json:"process_instance_ids"`
 }
 
 type GetServiceInstanceInModuleInput struct {
 	Metadata  Metadata           `json:"metadata"`
+	BizID     int64              `json:"bk_biz_id"`
 	ModuleID  int64              `json:"bk_module_id"`
 	Page      BasePage           `json:"page"`
 	SearchKey *string            `json:"search_key,omitempty"`
@@ -98,6 +107,7 @@ type GetServiceInstanceInModuleInput struct {
 
 type ListServiceInstanceDetailRequest struct {
 	Metadata           Metadata           `json:"metadata"`
+	BizID              int64              `json:"bk_biz_id"`
 	SetID              int64              `json:"bk_set_id"`
 	ModuleID           int64              `json:"bk_module_id"`
 	HostID             int64              `json:"bk_host_id"`
@@ -108,16 +118,24 @@ type ListServiceInstanceDetailRequest struct {
 
 type DiffModuleWithTemplateOption struct {
 	Metadata Metadata `json:"metadata"`
+	BizID    int64    `json:"bk_biz_id"`
 	ModuleID int64    `json:"bk_module_id"`
 }
 
 type DeleteServiceInstanceOption struct {
 	Metadata           Metadata `json:"metadata"`
+	BizID              int64    `json:"bk_biz_id"`
 	ServiceInstanceIDs []int64  `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
+}
+
+type CoreDeleteServiceInstanceOption struct {
+	BizID              int64   `json:"bk_biz_id"`
+	ServiceInstanceIDs []int64 `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
 }
 
 type FindServiceAndProcessInstanceOption struct {
 	Metadata          Metadata `json:"metadata" field:"metadata" bson:"metadata"`
+	BizID             int64    `json:"bk_biz_id" field:"bk_biz_id" bson:"bk_biz_id"`
 	ModuleID          int64    `json:"bk_module_id" field:"bk_module_id" bson:"bk_module_id"`
 	ServiceTemplateID int64    `json:"service_template_id" field:"service_template_id" bson:"service_template_id"`
 }
@@ -127,6 +145,7 @@ type FindServiceAndProcessInstanceOption struct {
 type ServiceProcessInstanceDifference struct {
 	ServiceInstanceID   int64             `json:"service_instance_id" field:"service_instance_id" bson:"service_instance_id"`
 	ServiceInstanceName string            `json:"service_instance_name" field:"service_instance_name" bson:"service_instance_name"`
+	BizID               int64             `json:"bk_biz_id" field:"bk_biz_id" bson:"bk_biz_id"`
 	HostID              int64             `json:"bk_host_id" field:"bk_host_id" bson:"bk_host_id"`
 	Differences         *DifferenceDetail `json:"differences" field:"differences" bson:"differences"`
 }
@@ -198,6 +217,7 @@ type ProcessInstanceDetail struct {
 
 type ListProcessTemplateWithServiceTemplateInput struct {
 	Metadata            Metadata `json:"metadata"`
+	BizID               int64    `json:"bk_biz_id"`
 	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
 	ServiceTemplateID   int64    `json:"service_template_id"`
 	Page                BasePage `json:"page" field:"page" bson:"page"`
@@ -205,11 +225,13 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 
 type SyncServiceInstanceByTemplateOption struct {
 	Metadata Metadata `json:"metadata"`
+	BizID    int64    `json:"bk_biz_id"`
 	ModuleID int64    `json:"bk_module_id"`
 }
 
 type ListServiceInstancesWithHostInput struct {
 	Metadata  Metadata           `json:"metadata"`
+	BizID     int64              `json:"bk_biz_id"`
 	HostID    int64              `json:"bk_host_id"`
 	SearchKey *string            `json:"search_key,omitempty"`
 	Selectors selector.Selectors `json:"selectors,omitempty"`
@@ -218,16 +240,19 @@ type ListServiceInstancesWithHostInput struct {
 
 type ListProcessInstancesOption struct {
 	Metadata          Metadata `json:"metadata"`
+	BizID             int64    `json:"bk_biz_id"`
 	ServiceInstanceID int64    `json:"service_instance_id"`
 }
 
 type RemoveTemplateBindingOnModuleOption struct {
 	Metadata Metadata `json:"metadata"`
+	BizID    int64    `json:"bk_biz_id"`
 	ModuleID int64    `json:"bk_module_id"`
 }
 
 type UpdateProcessTemplateInput struct {
 	Metadata          Metadata         `json:"metadata"`
+	BizID             int64            `json:"bk_biz_id"`
 	ProcessTemplateID int64            `json:"process_template_id"`
 	ProcessProperty   *ProcessProperty `json:"process_property"`
 }
@@ -341,7 +366,7 @@ type Process struct {
 }
 
 type ServiceCategory struct {
-	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
 	ID   int64  `field:"id" json:"id,omitempty" bson:"id"`
 	Name string `field:"name" json:"name,omitempty" bson:"name"`
@@ -377,7 +402,7 @@ type ServiceTemplateDetail struct {
 }
 
 type ServiceTemplate struct {
-	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
 	ID int64 `field:"id" json:"id,omitempty" bson:"id"`
 	// name of this service, can not be empty
@@ -407,9 +432,9 @@ func (st *ServiceTemplate) Validate() (field string, err error) {
 
 // this works for the process instance which is used for a template.
 type ProcessTemplate struct {
-	ID          int64    `field:"id" json:"id,omitempty" bson:"id"`
-	ProcessName string   `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name"`
-	Metadata    Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	ID          int64  `field:"id" json:"id,omitempty" bson:"id"`
+	ProcessName string `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name"`
+	BizID       int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	// the service template's, which this process template belongs to.
 	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
 
@@ -1108,10 +1133,10 @@ func (ti *PropertyProtocol) Validate() error {
 
 // ServiceInstance is a service, which created when a host binding with a service template.
 type ServiceInstance struct {
-	Metadata Metadata        `field:"metadata" json:"metadata" bson:"metadata"`
-	ID       int64           `field:"id" json:"id,omitempty" bson:"id"`
-	Name     string          `field:"name" json:"name,omitempty" bson:"name"`
-	Labels   selector.Labels `field:"labels" json:"labels,omitempty" bson:"labels"`
+	BizID  int64           `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	ID     int64           `field:"id" json:"id,omitempty" bson:"id"`
+	Name   string          `field:"name" json:"name,omitempty" bson:"name"`
+	Labels selector.Labels `field:"labels" json:"labels,omitempty" bson:"labels"`
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
@@ -1155,7 +1180,7 @@ type ServiceInstanceWithTopoPath struct {
 
 // ProcessInstanceRelation record which service instance and process template are current process binding, process identified by ProcessID
 type ProcessInstanceRelation struct {
-	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
 	// unique field, 1:1 mapping with ProcessInstance.
 	ProcessID         int64 `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id"`
@@ -1189,13 +1214,14 @@ type GetProc2ModuleOption struct {
 }
 
 type Proc2Module struct {
-	BizID           int    `json:"bk_biz_id"`
+	BizID           int64  `json:"bk_biz_id"`
 	ModuleName      string `json:"bk_module_name"`
-	ProcessID       int    `json:"bk_process_id"`
+	ProcessID       int64  `json:"bk_process_id"`
 	SupplierAccount string `json:"bk_supplier_account"`
 }
 
 type LabelAggregationOption struct {
 	Metadata Metadata `json:"metadata"`
+	BizID    int64    `json:"bk_biz_id"`
 	ModuleID *int64   `json:"bk_module_id" bson:"bk_module_id" field:"bk_module_id"`
 }

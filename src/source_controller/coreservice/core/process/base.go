@@ -42,14 +42,7 @@ func New(dbProxy dal.RDB, dependence OperationDependence) core.ProcessOperation 
 	return processOps
 }
 
-func (p *processOperation) validateBizID(ctx core.ContextParams, md metadata.Metadata) (int64, errors.CCErrorCoder) {
-	// extract biz id from metadata
-	bizID, err := metadata.BizIDFromMetadata(md)
-	if err != nil {
-		blog.Errorf("parse biz id from metadata failed, metadata: %+v, err: %+v, rid: %s", md, err, ctx.ReqID)
-		return 0, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
-	}
-
+func (p *processOperation) validateBizID(ctx core.ContextParams, bizID int64) (int64, errors.CCErrorCoder) {
 	// avoid unnecessary db query
 	if bizID == 0 {
 		return 0, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)

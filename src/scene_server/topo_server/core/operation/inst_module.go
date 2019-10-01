@@ -145,13 +145,8 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		if err != nil {
 			return nil, err
 		}
-		categoryBizID, parseErr := serviceCategory.Metadata.ParseBizID()
-		if parseErr != nil {
-			blog.ErrorJSON("create module failed, parse biz id from db data failed, data: %s, rid: %s", categoryBizID, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrCommParseDataFailed)
-		}
-		if categoryBizID != 0 && categoryBizID != bizID {
-			blog.V(3).Info("create module failed, service category and module belong to two business, categoryBizID: %d, bizID: %d, rid: %s", categoryBizID, bizID, params.ReqID)
+		if serviceCategory.BizID != 0 && serviceCategory.BizID != bizID {
+			blog.V(3).Info("create module failed, service category and module belong to two business, categoryBizID: %d, bizID: %d, rid: %s", serviceCategory.BizID, bizID, params.ReqID)
 			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
 		}
 	}

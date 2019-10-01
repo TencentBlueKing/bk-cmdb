@@ -13,8 +13,6 @@
 package process
 
 import (
-	"strconv"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -32,13 +30,13 @@ func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams,
 
 	var bizID int64
 	var err error
-	if bizID, err = p.validateBizID(ctx, relation.Metadata); err != nil {
+	if bizID, err = p.validateBizID(ctx, relation.BizID); err != nil {
 		blog.Errorf("CreateProcessInstanceRelation failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
 	// keep metadata clean
-	relation.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+	relation.BizID = bizID
 
 	// validate service category id field
 	_, err = p.GetServiceInstance(ctx, relation.ServiceInstanceID)
@@ -105,9 +103,9 @@ func (p *processOperation) UpdateProcessInstanceRelation(ctx core.ContextParams,
 }
 
 func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder) {
-	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
-	filter := map[string]interface{}{}
-	filter[common.MetadataField] = md.ToMapStr()
+	filter := map[string]interface{}{
+		common.BKAppIDField: option.BusinessID,
+	}
 
 	// filter with matching any sub category
 	if option.ServiceInstanceIDs != nil && len(option.ServiceInstanceIDs) > 0 {

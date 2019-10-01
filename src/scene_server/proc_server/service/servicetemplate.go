@@ -23,19 +23,29 @@ import (
 )
 
 func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
-	template := new(metadata.ServiceTemplate)
-	if err := ctx.DecodeInto(template); err != nil {
+	option := new(metadata.CreateServiceTemplateOption)
+	if err := ctx.DecodeInto(option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(template.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service template, but get business id failed, err: %v", err)
-		return
+	bizID := option.BizID
+	if bizID == 0 {
+		var err error
+		bizID, err = metadata.BizIDFromMetadata(option.Metadata)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service template, but get business id failed, err: %v", err)
+			return
+		}
 	}
 
-	tpl, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
+	newTemplate := &metadata.ServiceTemplate{
+		BizID:             bizID,
+		Name:              option.Name,
+		ServiceCategoryID: option.ServiceCategoryID,
+		SupplierAccount:   ctx.Kit.SupplierAccount,
+	}
+	tpl, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, newTemplate)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service template failed, err: %v", err)
 		return
@@ -58,13 +68,13 @@ func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
 		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v", common.BKServiceTemplateIDField, err)
 		return
 	}
-	temp, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
+	template, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get service template failed, err: %v", err)
 		return
 	}
 
-	ctx.RespEntity(temp)
+	ctx.RespEntity(template)
 }
 
 // GetServiceTemplateDetail return more info than GetServiceTemplate
@@ -75,29 +85,34 @@ func (ps *ProcServer) GetServiceTemplateDetail(ctx *rest.Contexts) {
 		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v", common.BKServiceTemplateIDField, err)
 		return
 	}
-	temp, err := ps.CoreAPI.CoreService().Process().GetServiceTemplateDetail(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
+	templateDetail, err := ps.CoreAPI.CoreService().Process().GetServiceTemplateDetail(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get service template failed, err: %v", err)
 		return
 	}
 
-	ctx.RespEntity(temp)
+	ctx.RespEntity(templateDetail)
 }
 
 func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
-	template := new(metadata.ServiceTemplate)
-	if err := ctx.DecodeInto(template); err != nil {
+	option := new(metadata.UpdateServiceTemplateOption)
+	if err := ctx.DecodeInto(option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(template.Metadata)
+	_, err := metadata.BizIDFromMetadata(option.Metadata)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update service template, but get business id failed, err: %v", err)
 		return
 	}
 
-	tpl, err := ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template.ID, template)
+	updateParam := &metadata.ServiceTemplate{
+		ID:                option.ID,
+		Name:              option.Name,
+		ServiceCategoryID: option.ServiceCategoryID,
+	}
+	tpl, err := ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, option.ID, updateParam)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "update service template failed, err: %v", err)
 		return
@@ -119,11 +134,14 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
-	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service template, but get business id failed, err: %v", err)
-		return
+	bizID := input.BizID
+	if bizID == 0 {
+		var err error
+		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service template, but get business id failed, err: %v", err)
+			return
+		}
 	}
 
 	if input.Page.Limit >= common.BKMaxPageLimit {
@@ -174,10 +192,14 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service template, but get business id failed, err: %v", err)
-		return
+	bizID := input.BizID
+	if bizID == 0 {
+		var err error
+		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service template, but get business id failed, err: %v", err)
+			return
+		}
 	}
 
 	if input.Page.Limit >= common.BKMaxPageLimit {
@@ -212,14 +234,14 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 		}
 	}
 
-	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
+	listResult, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, input: %+v", input)
 		return
 	}
 
 	details := make([]metadata.ListServiceTemplateWithDetailResult, 0)
-	for _, serviceTemplate := range temp.Info {
+	for _, serviceTemplate := range listResult.Info {
 		// process templates reference count
 		option := &metadata.ListProcessTemplatesOption{
 			BusinessID:        bizID,
@@ -264,7 +286,7 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 		})
 	}
 
-	ctx.RespEntityWithCount(int64(temp.Count), details)
+	ctx.RespEntityWithCount(int64(listResult.Count), details)
 }
 
 // a service template can be delete only when it is not be used any more,
@@ -276,10 +298,14 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service template, but get business id failed, err: %v", err)
-		return
+	bizID := input.BizID
+	if bizID == 0 {
+		var err error
+		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service template, but get business id failed, err: %v", err)
+			return
+		}
 	}
 
 	iamResources, err := ps.AuthManager.MakeResourcesByServiceTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.Delete, bizID, input.ServiceTemplateID)

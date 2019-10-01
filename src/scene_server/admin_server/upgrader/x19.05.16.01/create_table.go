@@ -29,13 +29,13 @@ func createServiceTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader
 		common.BKTableNameProcessInstanceRelation,
 	}
 
-	for _, tablename := range tables {
-		exists, err := db.HasTable(tablename)
+	for _, tableName := range tables {
+		exists, err := db.HasTable(tableName)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			if err = db.CreateTable(tablename); err != nil && !db.IsDuplicatedError(err) {
+			if err = db.CreateTable(tableName); err != nil && !db.IsDuplicatedError(err) {
 				return err
 			}
 		}
