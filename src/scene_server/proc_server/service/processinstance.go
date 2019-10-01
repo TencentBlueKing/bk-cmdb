@@ -205,7 +205,6 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 				return
 			}
 			process.BusinessID = bizID
-			process.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 			processBytes, err := json.Marshal(process)
 			if err != nil {
 				blog.Errorf("UpdateProcessInstances failed, json Marshal process failed, process: %+v, err: %+v, rid: %s", process, err, ctx.Kit.Rid)
