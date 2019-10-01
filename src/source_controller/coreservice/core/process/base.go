@@ -15,7 +15,6 @@ package process
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -49,9 +48,10 @@ func (p *processOperation) validateBizID(ctx core.ContextParams, bizID int64) (i
 	}
 
 	// check bizID valid
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	count, err := p.dbProxy.Table(common.BKTableNameBaseApp).Find(cond.ToMapStr()).Count(ctx.Context)
+	filter := map[string]interface{}{
+		common.BKAppIDField: bizID,
+	}
+	count, err := p.dbProxy.Table(common.BKTableNameBaseApp).Find(filter).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseApp, err, ctx.ReqID)
 		return 0, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -69,11 +69,11 @@ func (p *processOperation) validateModuleID(ctx core.ContextParams, moduleID int
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKModuleIDField).Eq(moduleID)
-
 	module := &metadata.ModuleInst{}
-	err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).One(ctx.Context, module)
+	filter := map[string]interface{}{
+		common.BKModuleIDField: moduleID,
+	}
+	err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(filter).One(ctx.Context, module)
 	if nil != err {
 		blog.Errorf("validateModuleID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseModule, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -89,12 +89,13 @@ func (p *processOperation) validateHostID(ctx core.ContextParams, hostID int64) 
 	}
 
 	// check bizID valid
+	filter := map[string]interface{}{
+		common.BKHostIDField: hostID,
+	}
 	host := &struct {
 		InnerIP string `field:"bk_host_innerip" json:"bk_host_innerip,omitempty" bson:"bk_host_innerip"`
 	}{}
-	cond := condition.CreateCondition()
-	cond.Field(common.BKHostIDField).Eq(hostID)
-	err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(cond.ToMapStr()).One(ctx.Context, host)
+	err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(filter).One(ctx.Context, host)
 	if nil != err {
 		blog.Errorf("validateHostID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseHost, err.Error(), ctx.ReqID)
 		return "", ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)

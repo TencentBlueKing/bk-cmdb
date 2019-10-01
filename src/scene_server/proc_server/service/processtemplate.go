@@ -30,9 +30,9 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create process template, but get business id failed, err: %v", err)
 			return
@@ -73,9 +73,9 @@ func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete process template: %v, but get business id failed, err: %v", input.ProcessTemplates, err)
 			return
@@ -122,9 +122,9 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update process template, but get business id failed, err: %v, input: %+v",
 				err, input)
@@ -213,9 +213,9 @@ func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get process template, but get business id failed, err: %v, input: %+v", err, input)
 			return

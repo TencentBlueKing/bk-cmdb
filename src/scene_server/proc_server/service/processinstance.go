@@ -50,9 +50,9 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 
 func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata.CreateRawProcessInstanceInput) ([]int64, errors.CCErrorCoder) {
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var e error
-		bizID, e = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, e = metadata.BizIDFromMetadata(*input.Metadata)
 		if e != nil {
 			blog.Errorf("create process instance with raw, parse biz id from metadata failed, err: %+v, rid: %s", e, ctx.Kit.Rid)
 			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
@@ -119,9 +119,9 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update process instance failed, parse business id failed, err: %+v", err)
 			return
@@ -416,9 +416,9 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete process instance in service instance failed, err: %v", err)
 			return
@@ -481,9 +481,9 @@ func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 		return
 	}
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var e error
-		bizID, e = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, e = metadata.BizIDFromMetadata(*input.Metadata)
 		if e != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list process instances with host, but parse biz id failed, err: %+v", e)
 			return
@@ -571,9 +571,9 @@ func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "remove template binding on module failed, parse business id failed, err: %+v", err)
 			return

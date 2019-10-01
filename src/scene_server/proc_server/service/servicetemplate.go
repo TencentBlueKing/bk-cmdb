@@ -30,9 +30,9 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 	}
 
 	bizID := option.BizID
-	if bizID == 0 {
+	if bizID == 0 && option.Metadata != nil {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(option.Metadata)
+		bizID, err = metadata.BizIDFromMetadata(*option.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service template, but get business id failed, err: %v", err)
 			return
@@ -101,10 +101,13 @@ func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(option.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update service template, but get business id failed, err: %v", err)
-		return
+	bizID := option.BizID
+	if bizID == 0 && option.Metadata != nil {
+		_, err := metadata.BizIDFromMetadata(*option.Metadata)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update service template, but get business id failed, err: %v", err)
+			return
+		}
 	}
 
 	updateParam := &metadata.ServiceTemplate{
@@ -135,9 +138,9 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		return
 	}
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service template, but get business id failed, err: %v", err)
 			return
@@ -193,9 +196,9 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service template, but get business id failed, err: %v", err)
 			return
@@ -299,9 +302,9 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 {
+	if bizID == 0 && input.Metadata != nil {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service template, but get business id failed, err: %v", err)
 			return

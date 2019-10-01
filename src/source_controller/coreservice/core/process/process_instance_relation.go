@@ -32,10 +32,9 @@ func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams,
 	var err error
 	if bizID, err = p.validateBizID(ctx, relation.BizID); err != nil {
 		blog.Errorf("CreateProcessInstanceRelation failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	// keep metadata clean
 	relation.BizID = bizID
 
 	// validate service category id field
@@ -51,7 +50,7 @@ func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams,
 		blog.Errorf("CreateProcessInstanceRelation failed, service instance id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_instance_id")
 	}
-	// TODO: asset bizID == category.Metadata.Label.bk_biz_id
+	// TODO: asset bizID == category.BizID
 
 	relation.SupplierAccount = ctx.SupplierAccount
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Insert(ctx.Context, &relation); nil != err {

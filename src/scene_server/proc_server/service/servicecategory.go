@@ -111,8 +111,9 @@ func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 {
-		_, err := metadata.BizIDFromMetadata(input.Metadata)
+	if bizID == 0 && input.Metadata != nil {
+		var err error
+		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service category, but get business id failed, err: %v", err)
 			return

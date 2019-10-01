@@ -66,7 +66,7 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
-		blog.Errorf("CreateServiceTemplate failed, category id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+		blog.Errorf("CreateServiceTemplate failed, service instance name duplicated, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDuplicateItem, common.BKFieldName)
 	}
 
