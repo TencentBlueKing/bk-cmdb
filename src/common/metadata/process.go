@@ -336,7 +336,6 @@ func (p ProtocolType) Validate() error {
 }
 
 type Process struct {
-	Metadata        Metadata      `field:"metadata" json:"metadata" bson:"metadata" structs:"metadata"`
 	ProcNum         *int64        `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num" structs:"proc_num"`
 	StopCmd         *string       `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd" structs:"stop_cmd"`
 	RestartCmd      *string       `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd" structs:"restart_cmd"`
@@ -473,7 +472,6 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 		LastTime:        now,
 		CreateTime:      now,
 		BusinessID:      bizID,
-		Metadata:        NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
 		SupplierAccount: supplierAccount,
 	}
 
