@@ -1278,6 +1278,9 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 	}
 	// create object's attribute group operation.
 	if ps.hitPattern(createObjectAttributeGroupLatestPattern, http.MethodPost) {
+		// 业务ID的解释
+		// case  0 ==> 创建公共的属性分组
+		// case ~0 ==> 创建业务私有的属性分组
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
@@ -1291,10 +1294,10 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelAttributeGroup,
-					Action: meta.Create,
+					Type:       meta.Model,
+					Action:     meta.Update,
+					InstanceID: model[0].ID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1313,6 +1316,9 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 
+		// 业务ID的解释
+		// case  0 ==> 仅查询公共的属性分组
+		// case ~0 ==> 查询业务私有的属性分组 + 公用属性分组
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
@@ -1321,8 +1327,9 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelAttributeGroup,
-					Action: meta.FindMany,
+					Type:       meta.Model,
+					Action:     meta.FindMany,
+					InstanceID: model[0].ID,
 				},
 				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
@@ -1332,10 +1339,6 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 
 	// update object's attribute group operation.
 	if ps.hitPattern(updateObjectAttributeGroupLatestPattern, http.MethodPut) {
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			blog.Warnf("get business id in metadata failed, err: %v", err)
-		}
 		groups, err := ps.getAttributeGroup(gjson.GetBytes(ps.RequestCtx.Body, "condition").Value())
 		if err != nil {
 			ps.err = err
@@ -1343,6 +1346,11 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 		}
 
 		for _, group := range groups {
+			bizID, err := metadata.BizIDFromMetadata(group.Metadata)
+			if err != nil {
+				blog.Warnf("get business id in metadata failed, err: %v", err)
+			}
+
 			model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: group.ObjectID})
 			if err != nil {
 				ps.err = err
@@ -1352,11 +1360,10 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 				meta.ResourceAttribute{
 					BusinessID: bizID,
 					Basic: meta.Basic{
-						Type:       meta.ModelAttributeGroup,
+						Type:       meta.Model,
 						Action:     meta.Update,
-						InstanceID: group.ID,
+						InstanceID: model[0].ID,
 					},
-					Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 				})
 		}
 		return ps
@@ -1375,15 +1382,15 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			blog.Warnf("get business id in metadata failed, err: %v", err)
-		}
-
 		groups, err := ps.getAttributeGroup(mapstr.MapStr{"id": groupID})
 		if err != nil {
 			ps.err = err
 			return ps
+		}
+
+		bizID, err := metadata.BizIDFromMetadata(groups[0].Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 
 		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: groups[0].ObjectID})
@@ -1395,11 +1402,10 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.ModelAttributeGroup,
-					Action:     meta.Delete,
-					InstanceID: groupID,
+					Type:       meta.Model,
+					Action:     meta.Update,
+					InstanceID: model[0].ID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
