@@ -1,1 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><style>.cls-1{fill:#231815;}.cls-2{fill:#fff;}</style></defs><title>画板 2 副本 2</title><g id="图层_8" data-name="图层 8"><path class="cls-1" d="M51.5,4h-39a2,2,0,0,0-2,2V58a2,2,0,0,0,2,2h39a2,2,0,0,0,2-2V6A2,2,0,0,0,51.5,4ZM32,49.62a4,4,0,1,1,4-4A4,4,0,0,1,32,49.62Z"/><rect class="cls-2" x="18.06" y="15.59" width="28" height="4"/><rect class="cls-2" x="18.06" y="26.59" width="28" height="4"/></g></svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="图层_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+     viewBox="0 0 64 64" style="enable-background:new 0 0 64 64;" xml:space="preserve">
+<style type="text/css">
+    .st0{fill:#231815;}
+</style>
+<path class="st0" d="M51.5,4h-39c-1.1,0-2,0.9-2,2v52c0,1.1,0.9,2,2,2h39c1.1,0,2-0.9,2-2V6C53.5,4.9,52.6,4,51.5,4z M32,49.6
+    c-2.2,0-4-1.8-4-4s1.8-4,4-4s4,1.8,4,4S34.2,49.6,32,49.6z M46.1,30.6h-28v-4h28V30.6z M46.1,19.6h-28v-4h28V19.6z"/>
+</svg>
