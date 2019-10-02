@@ -1231,7 +1231,7 @@
                     background: $cmdbBorderFocusColor;
                 }
                 &.built-in i {
-                    background: #868b97;
+                    background: #798aad;
                 }
                 i {
                     display: inline-block;
@@ -1371,7 +1371,7 @@
                 border: 1px solid $cmdbTableBorderColor;
                 border-radius: 50%;
                 &.is-public {
-                    color: #868b97;
+                    color: #798aad;
                 }
             }
             .info {
@@ -1488,7 +1488,6 @@
 
     .tippy-popper {
         transition: none!important;
-
     }
 
     .tippy-tooltip {
