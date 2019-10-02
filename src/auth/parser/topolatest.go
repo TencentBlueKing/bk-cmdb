@@ -1449,6 +1449,9 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 	// create object's attribute operation.
 	if ps.hitPattern(createObjectAttributeLatestPattern, http.MethodPost) {
+		// 注意业务ID是否为0表示创建两种不同的属性
+		// case 0: 创建公共属性，这种属性相比业务私有属性，所有业务都可见
+		// case ~0: 创建业务私有属性，业务私有属性，其它业务不可见
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
@@ -1463,10 +1466,10 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelAttribute,
-					Action: meta.Create,
+					Type:       meta.Model,
+					Action:     meta.Update,
+					InstanceID: model[0].ID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1497,7 +1500,8 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		// 对属性操作的鉴权，依赖于属性是公有属性，还是业务私有属性
+		bizID, err := metadata.BizIDFromMetadata(attr[0].Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1505,11 +1509,10 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.ModelAttribute,
-					Action:     meta.Delete,
-					InstanceID: attrID,
+					Type:       meta.Model,
+					InstanceID: model[0].ID,
+					Action:     meta.Update,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1533,14 +1536,14 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
 			return ps
 		}
-
 		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: attr[0].ObjectID})
 		if err != nil {
 			ps.err = err
 			return ps
 		}
 
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		// 对属性操作的鉴权，依赖于属性是公有属性，还是业务私有属性
+		bizID, err := metadata.BizIDFromMetadata(attr[0].Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1548,11 +1551,10 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.ModelAttribute,
+					Type:       meta.Model,
+					InstanceID: model[0].ID,
 					Action:     meta.Update,
-					InstanceID: attrID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1560,6 +1562,9 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 	// get object's attribute operation.
 	if ps.hitPattern(findObjectAttributeLatestPattern, http.MethodPost) {
+		// 注意：业务ID是否为0表示两种不同的操作
+		// case 0: 读取模型的公有属性
+		// case ~0: 读取业务私有属性+公有属性
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.V(5).Infof("get business id in metadata failed, err: %v", err)
@@ -1577,10 +1582,10 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 				meta.ResourceAttribute{
 					BusinessID: bizID,
 					Basic: meta.Basic{
-						Type:   meta.ModelAttribute,
-						Action: meta.FindMany,
+						Type:       meta.Model,
+						Action:     meta.FindMany,
+						InstanceID: model.ID,
 					},
-					Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 				})
 		}
 		return ps
