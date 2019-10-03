@@ -1095,8 +1095,15 @@ func (ps *parseStream) object() *parseStream {
 
 	// create common object operation.
 	if ps.hitPattern(createObjectPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("create object, but parse biz id failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.Create,
@@ -1111,19 +1118,22 @@ func (ps *parseStream) object() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("import object, but parse biz id failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
-					Action: meta.UpdateMany,
+					Action: meta.Create,
 				},
 			},
 		}
 		return ps
 	}
 
+	// 统计模型使用情况
 	if ps.hitPattern(objectStatistics, http.MethodGet) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1142,18 +1152,35 @@ func (ps *parseStream) object() *parseStream {
 			return ps
 		}
 
-		objID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
+		id, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("delete object, but got invalid object's id %s", ps.RequestCtx.Elements[3])
 			return ps
 		}
 
+		// extract bizID from model
+		filter := map[string]interface{}{
+			common.BKFieldID: id,
+		}
+		models, err := ps.getModel(filter)
+		if err != nil {
+			ps.err = fmt.Errorf("delete object, get model(id:%d) failed, err: %s", id, err.Error())
+			return ps
+		}
+		bizID, err := metadata.BizIDFromMetadata(models[0].Metadata)
+		if err != nil {
+			blog.ErrorJSON("delete object, but get business id in metadata failed, model: %s, err: %s", models, err.Error())
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Model,
 					Action:     meta.Delete,
-					InstanceID: objID,
+					InstanceID: id,
 				},
 			},
 		}
@@ -1167,18 +1194,35 @@ func (ps *parseStream) object() *parseStream {
 			return ps
 		}
 
-		objID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
+		id, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object, but got invalid object's id %s", ps.RequestCtx.Elements[3])
 			return ps
 		}
 
+		// extract bizID from model
+		filter := map[string]interface{}{
+			common.BKFieldID: id,
+		}
+		models, err := ps.getModel(filter)
+		if err != nil {
+			ps.err = fmt.Errorf("delete object, get model(id:%d) failed, err: %s", id, err.Error())
+			return ps
+		}
+		bizID, err := metadata.BizIDFromMetadata(models[0].Metadata)
+		if err != nil {
+			blog.ErrorJSON("delete object, but get business id in metadata failed, model: %s, err: %s", models, err.Error())
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Model,
 					Action:     meta.Update,
-					InstanceID: objID,
+					InstanceID: id,
 				},
 			},
 		}
@@ -1281,9 +1325,24 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 			ps.err = fmt.Errorf("delete object classification, but got invalid object's id %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
+		// extract bizID from model
+		filter := map[string]interface{}{
+			common.BKFieldID: classID,
+		}
+		classifications, err := ps.getClassification(filter)
+		if err != nil {
+			ps.err = fmt.Errorf("delete classification, get classification(id:%d) failed, err: %s", classID, err.Error())
+			return ps
+		}
+		bizID, err := metadata.BizIDFromMetadata(classifications[0].Metadata)
+		if err != nil {
+			blog.ErrorJSON("delete classification, but get business id in metadata failed, classification: %s, err: %s", classifications, err.Error())
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelClassification,
 					Action:     meta.Delete,
@@ -1307,8 +1366,23 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 			return ps
 		}
 
+		// extract bizID from model
+		filter := map[string]interface{}{
+			common.BKFieldID: classID,
+		}
+		classifications, err := ps.getClassification(filter)
+		if err != nil {
+			ps.err = fmt.Errorf("update classification, get classification(id:%d) failed, err: %s", classID, err.Error())
+			return ps
+		}
+		bizID, err := metadata.BizIDFromMetadata(classifications[0].Metadata)
+		if err != nil {
+			blog.ErrorJSON("update classification, but get business id in metadata failed, classification: %s, err: %s", classifications, err.Error())
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelClassification,
 					Action:     meta.Update,
@@ -1440,8 +1514,14 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 			return ps
 		}
 
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = fmt.Errorf("parse bizID from metadata failed, err: %s", err.Error())
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelAttributeGroup,
 					Action:     meta.Delete,
@@ -1458,8 +1538,14 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 			ps.err = errors.New("remove a object attribute away from a group, but got invalid uri")
 			return ps
 		}
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = fmt.Errorf("parse bizID from metadata failed, err: %s", err.Error())
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Delete,
