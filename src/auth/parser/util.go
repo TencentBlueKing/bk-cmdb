@@ -40,21 +40,25 @@ func (ps *parseStream) getPublicOrBizModelByObjectID(possibleBizID int64, object
 			},
 		}
 	}
+	return ps.getOneModel(filter)
+}
+
+func (ps *parseStream) getOneModel(cond mapstr.MapStr) (metadata.Object, error) {
 	model := metadata.Object{}
-	models, err := ps.getModel(filter)
+	models, err := ps.searchModels(cond)
 	if err != nil {
 		return model, err
 	}
 	if len(models) == 0 {
-		return model, fmt.Errorf("model biz:%d/objectID:%s not found", possibleBizID, objectID)
+		return model, fmt.Errorf("model [%+v] not found", cond)
 	}
-	if len(models) > 1 {
-		return model, fmt.Errorf("get multiple(%d) model with biz:%d/objectID:%s", len(models), possibleBizID, objectID)
+	if len(models) > 0 {
+		return model, fmt.Errorf("model [%+v] not found", cond)
 	}
 	return models[0], nil
 }
 
-func (ps *parseStream) getModel(cond mapstr.MapStr) ([]metadata.Object, error) {
+func (ps *parseStream) searchModels(cond mapstr.MapStr) ([]metadata.Object, error) {
 	model, err := ps.engine.CoreAPI.CoreService().Model().ReadModel(context.Background(), ps.RequestCtx.Header,
 		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
@@ -176,6 +180,21 @@ func (ps *parseStream) getInstAssociation(cond mapstr.MapStr) (metadata.InstAsst
 	return asst.Data.Info[0], nil
 }
 
+func (ps *parseStream) getOneClassification(cond mapstr.MapStr) (metadata.Classification, error) {
+	classification := metadata.Classification{}
+	classifications, err := ps.getClassification(cond)
+	if err != nil {
+		return classification, err
+	}
+	if len(classifications) <= 0 {
+		return classification, fmt.Errorf("classification [%+v] not found", cond)
+	}
+	if len(classifications) > 1 {
+		return classification, fmt.Errorf("get multiple classification with [%+v]", cond)
+	}
+	return classifications[0], nil
+}
+
 func (ps *parseStream) getClassification(cond mapstr.MapStr) ([]metadata.Classification, error) {
 	classificationResult, err := ps.engine.CoreAPI.CoreService().Model().ReadModelClassification(context.Background(), ps.RequestCtx.Header,
 		&metadata.QueryCondition{Condition: cond})
@@ -195,7 +214,7 @@ func (ps *parseStream) getClassification(cond mapstr.MapStr) ([]metadata.Classif
 
 func (ps *parseStream) getModelUnique(cond mapstr.MapStr) (metadata.ObjectUnique, error) {
 	unique := metadata.ObjectUnique{}
-	filter := &metadata.QueryCondition{Condition: cond}
+	filter := metadata.QueryCondition{Condition: cond}
 	modelUniqueResult, err := ps.engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(context.Background(), ps.RequestCtx.Header, filter)
 	if err != nil {
 		return unique, err
