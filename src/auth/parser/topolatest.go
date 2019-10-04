@@ -1351,10 +1351,10 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.Model,
-					Action:     meta.Update,
-					InstanceID: model.ID,
+					Type:   meta.ModelAttributeGroup,
+					Action: meta.Create,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1384,9 +1384,8 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.Model,
-					Action:     meta.FindMany,
-					InstanceID: model.ID,
+					Type:   meta.ModelAttributeGroup,
+					Action: meta.FindMany,
 				},
 				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
@@ -1408,7 +1407,10 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 				blog.Warnf("get business id in metadata failed, err: %v", err)
 			}
 
-			model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: group.ObjectID})
+			filter := mapstr.MapStr{
+				common.BKObjIDField: group.ObjectID,
+			}
+			model, err := ps.getOneModel(filter)
 			if err != nil {
 				ps.err = err
 				return ps
@@ -1417,10 +1419,11 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 				meta.ResourceAttribute{
 					BusinessID: bizID,
 					Basic: meta.Basic{
-						Type:       meta.Model,
+						Type:       meta.ModelAttributeGroup,
 						Action:     meta.Update,
-						InstanceID: model.ID,
+						InstanceID: group.ID,
 					},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 				})
 		}
 		return ps
@@ -1459,10 +1462,11 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.Model,
-					Action:     meta.Update,
-					InstanceID: model.ID,
+					Type:       meta.ModelAttributeGroup,
+					Action:     meta.Delete,
+					InstanceID: groupID,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1529,10 +1533,10 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.Model,
-					Action:     meta.Update,
-					InstanceID: model.ID,
+					Type:   meta.ModelAttribute,
+					Action: meta.Create,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1572,10 +1576,11 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.Model,
-					InstanceID: model.ID,
-					Action:     meta.Update,
+					Type:       meta.ModelAttribute,
+					Action:     meta.Delete,
+					InstanceID: attrID,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1614,10 +1619,11 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.Model,
-					InstanceID: model.ID,
+					Type:       meta.ModelAttribute,
 					Action:     meta.Update,
+					InstanceID: attrID,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1645,10 +1651,10 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 				meta.ResourceAttribute{
 					BusinessID: bizID,
 					Basic: meta.Basic{
-						Type:       meta.Model,
-						Action:     meta.FindMany,
-						InstanceID: model.ID,
+						Type:   meta.ModelAttribute,
+						Action: meta.FindMany,
 					},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 				})
 		}
 		return ps
