@@ -102,7 +102,6 @@ func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, r
 	if err != nil {
 		return fmt.Errorf("authentication failed, parse user info from header failed, err: %+v", err)
 	}
-
 	decisions, err := am.Authorize.AuthorizeBatch(ctx, commonInfo.User, resources...)
 	if err != nil {
 		return fmt.Errorf("authorize failed, err: %+v", err)
