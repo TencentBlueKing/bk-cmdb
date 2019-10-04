@@ -1100,9 +1100,8 @@ func (ps *parseStream) objectInstance() *parseStream {
 					},
 					Layers: []meta.Item{
 						{
-							Type:       meta.Model,
-							Name:       ps.RequestCtx.Elements[7],
-							InstanceID: model.ID,
+							Type: meta.Model,
+							Name: ps.RequestCtx.Elements[7],
 						},
 					},
 				},
