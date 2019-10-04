@@ -1091,6 +1091,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		}
 
 		for _, model := range models {
+			_ = model
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
 					BusinessID: bizID,
