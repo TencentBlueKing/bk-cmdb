@@ -1081,7 +1081,10 @@ func (ps *parseStream) objectInstance() *parseStream {
 		}
 		// TODO: parse these query condition
 		objectID := ps.RequestCtx.Elements[7]
-		models, err := ps.searchModels(mapstr.MapStr{common.BKObjIDField: objectID})
+		filter := mapstr.MapStr{
+			common.BKObjIDField: objectID,
+		}
+		models, err := ps.searchModels(filter)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1170,7 +1173,7 @@ func (ps *parseStream) object() *parseStream {
 		return ps
 	}
 
-	// create common object batch operation.
+	// batch create/update common object operation
 	if ps.hitPattern(createObjectBatchPattern, http.MethodPost) {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
@@ -1183,7 +1186,7 @@ func (ps *parseStream) object() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
-					Action: meta.Create,
+					Action: meta.UpdateMany,
 				},
 			},
 		}
