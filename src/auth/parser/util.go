@@ -52,7 +52,7 @@ func (ps *parseStream) getOneModel(cond mapstr.MapStr) (metadata.Object, error) 
 	if len(models) == 0 {
 		return model, fmt.Errorf("model [%+v] not found", cond)
 	}
-	if len(models) > 0 {
+	if len(models) > 1 {
 		return model, fmt.Errorf("model [%+v] not found", cond)
 	}
 	return models[0], nil

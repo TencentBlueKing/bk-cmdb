@@ -602,6 +602,7 @@ var (
 	updateObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/updatemany/instance/object/[^\s/]+/?$`)
 	deleteObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/deletemany/instance/object/[^\s/]+/?$`)
 	deleteObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/delete/instance/object/[^\s/]+/inst/[0-9]+/?$`)
+	// TODO remove it
 	findObjectInstanceSubTopologyLatestRegexp = regexp.MustCompile(`^/api/v3/find/insttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceTopologyLatestRegexp    = regexp.MustCompile(`^/api/v3/find/instassttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstancesLatestRegexp           = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/?$`)
@@ -987,9 +988,13 @@ const (
 )
 
 var (
-	deleteObjectLatestRegexp                = regexp.MustCompile(`^/api/v3/delete/object/[0-9]+/?$`)
-	updateObjectLatestRegexp                = regexp.MustCompile(`^/api/v3/update/object/[0-9]+/?$`)
-	findObjectTopologyGraphicLatestRegexp   = regexp.MustCompile(`^/api/v3/find/objecttopo/scope_type/[^\s/]+/scope_id/[^\s/]+/?$`)
+	deleteObjectLatestRegexp = regexp.MustCompile(`^/api/v3/delete/object/[0-9]+/?$`)
+	updateObjectLatestRegexp = regexp.MustCompile(`^/api/v3/update/object/[0-9]+/?$`)
+
+	// TODO remove it
+	// 获取模型拓扑图及位置信息-Web
+	findObjectTopologyGraphicLatestRegexp = regexp.MustCompile(`^/api/v3/find/objecttopo/scope_type/[^\s/]+/scope_id/[^\s/]+/?$`)
+	// 设置模型拓扑图及位置信息-Web
 	updateObjectTopologyGraphicLatestRegexp = regexp.MustCompile(`^/api/v3/update/objecttopo/scope_type/[^\s/]+/scope_id/[^\s/]+/?$`)
 )
 
@@ -1111,7 +1116,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 	}
 
 	// find object's topology operation.
-	if ps.hitPattern(findObjectTopologyLatestPattern, http.MethodPost) {
+	if ps.hitPattern(findObjectTopologyLatestPattern, http.MethodPut) {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("find object, but get business id in metadata failed, err: %v", err)
@@ -1167,8 +1172,9 @@ func (ps *parseStream) objectLatest() *parseStream {
 }
 
 const (
-	createObjectClassificationLatestPattern         = "/api/v3/create/objectclassification"
-	findObjectClassificationListLatestPattern       = "/api/v3/find/objectclassification"
+	createObjectClassificationLatestPattern   = "/api/v3/create/objectclassification"
+	findObjectClassificationListLatestPattern = "/api/v3/find/objectclassification"
+	// 查找模型分组及分组下的模型列表
 	findObjectsBelongsToClassificationLatestPattern = `/api/v3/find/classificationobject`
 )
 
@@ -1321,8 +1327,9 @@ const (
 )
 
 var (
-	findObjectAttributeGroupLatestRegexp     = regexp.MustCompile(`^/api/v3/find/objectattgroup/object/[^\s/]+/?$`)
-	deleteObjectAttributeGroupLatestRegexp   = regexp.MustCompile(`^/api/v3/delete/objectattgroup/[0-9]+/?$`)
+	findObjectAttributeGroupLatestRegexp   = regexp.MustCompile(`^/api/v3/find/objectattgroup/object/[^\s/]+/?$`)
+	deleteObjectAttributeGroupLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectattgroup/[0-9]+/?$`)
+	// TODO remove it, interface implementation not found
 	removeAttributeAwayFromGroupLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectattgroupasst/object/[^\s/]+/property/[^\s/]+/group/[^\s/]+/?$`)
 )
 
@@ -1672,8 +1679,10 @@ var (
 	deleteMainlineObjectLatestRegexp                       = regexp.MustCompile(`^/api/v3/delete/topomodelmainline/object/[^\s/]+/?$`)
 	findBusinessInstanceTopologyLatestRegexp               = regexp.MustCompile(`^/api/v3/find/topoinst/biz/[0-9]+/?$`)
 	findBusinessInstanceTopologyWithStatisticsLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst_with_statistics/biz/[0-9]+/?$`)
-	findMainineSubInstanceTopoLatestRegexp                 = regexp.MustCompile(`^/api/v3/topoinstchild/object/[^\s/]+/biz/[0-9]+/inst/[0-9]+/?$`)
-	findMainlineIdleFaultModuleLatestRegexp                = regexp.MustCompile(`^/api/v3/find/topointernal/biz/[0-9]+/?$`)
+	// TODO remove it, interface implementation not found
+	findMainlineSubInstanceTopoLatestRegexp = regexp.MustCompile(`^/api/v3/topoinstchild/object/[^\s/]+/biz/[0-9]+/inst/[0-9]+/?$`)
+	// TODO remove it, interface implementation not found
+	findMainlineIdleFaultModuleLatestRegexp = regexp.MustCompile(`^/api/v3/find/topointernal/biz/[0-9]+/?$`)
 )
 
 func (ps *parseStream) mainlineLatest() *parseStream {
@@ -1739,7 +1748,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 	}
 
 	// find mainline object instance's sub-instance topology operation.
-	if ps.hitRegexp(findMainineSubInstanceTopoLatestRegexp, http.MethodGet) {
+	if ps.hitRegexp(findMainlineSubInstanceTopoLatestRegexp, http.MethodGet) {
 		if len(ps.RequestCtx.Elements) != 9 {
 			ps.err = errors.New("find mainline object's sub instance topology, but got invalid url")
 			return ps
