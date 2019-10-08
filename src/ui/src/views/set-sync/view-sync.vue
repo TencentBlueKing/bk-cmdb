@@ -46,30 +46,12 @@
                     </span>
                 </template>
             </bk-table-column>
-            <!-- <infinite-loading slot="append" v-if="ready"
-                force-use-infinite-wrapper=".sync-table .bk-table-body-wrapper"
-                :distance="42"
-                :identifier="infiniteIdentifier"
-                @infinite="infiniteHandler">
-                <span slot="no-more"></span>
-                <span slot="no-results"></span>
-                <span slot="error"></span>
-                <div slot="spinner" style="height: 42px;"
-                    v-bkloading="{
-                        isLoading: $loading()
-                    }">
-                </div>
-            </infinite-loading> -->
         </bk-table>
     </div>
 </template>
 
 <script>
-    // import infiniteLoading from 'vue-infinite-loading'
     export default {
-        // components: {
-        //     infiniteLoading
-        // },
         data () {
             return {
                 ready: false,
@@ -165,46 +147,6 @@
                 } catch (e) {
                     console.error(e)
                     this.syncList = []
-                }
-            },
-            async getSyncList () {
-                const delay = (duration) => new Promise(resolve => setTimeout(() => {
-                    resolve()
-                }, duration))
-                await delay(1000)
-                const arr = []
-                for (let i = 0; i < 10; i++) {
-                    arr.push(...[
-                        {
-                            topo_path: '广东省厅 / 深圳区 / 正式环境集群',
-                            status: 0
-                        },
-                        {
-                            topo_path: '广东省厅 / 深圳区 / 正式环境集群',
-                            status: 1
-                        },
-                        {
-                            topo_path: '广东省厅 / 深圳区 / 正式环境集群',
-                            status: 2
-                        },
-                        {
-                            topo_path: '广东省厅 / 深圳区 / 正式环境集群',
-                            status: -1
-                        }
-                    ])
-                }
-                this.syncList.push(...arr)
-                this.ready = true
-            },
-            async infiniteHandler (infiniteState) {
-                try {
-                    await this.getSyncList()
-                    infiniteState.loaded()
-                    // if (!data) {
-                    //     infiniteState.complete()
-                    // }
-                } catch (e) {
-                    infiniteState.error()
                 }
             },
             handleFilterFail () {
