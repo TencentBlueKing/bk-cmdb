@@ -21,9 +21,23 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+type ServiceCategory struct {
+	Metadata metadata.Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+
+	ID   int64  `field:"id" json:"id,omitempty" bson:"id"`
+	Name string `field:"name" json:"name,omitempty" bson:"name"`
+
+	RootID          int64  `field:"bk_root_id" json:"bk_root_id,omitempty" bson:"bk_root_id"`
+	ParentID        int64  `field:"bk_parent_id" json:"bk_parent_id,omitempty" bson:"bk_parent_id"`
+	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+
+	// IsBuiltIn indicates internal system service category, which shouldn't be modified.
+	IsBuiltIn bool `field:"is_built_in" json:"is_built_in" bson:"is_built_in"`
+}
+
 func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) (int64, error) {
 
-	firstCategory := metadata.ServiceCategory{}
+	firstCategory := ServiceCategory{}
 	// insert first category
 	cond := metadata.BizLabelNotExist.Clone()
 	cond.Set(common.BKFieldName, common.DefaultServiceCategoryName)
@@ -35,13 +49,14 @@ func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 			return 0, err
 		}
 
-		firstCategory = metadata.ServiceCategory{
+		firstCategory = ServiceCategory{
 			ID:              int64(firstID),
 			Name:            common.DefaultServiceCategoryName,
 			RootID:          int64(firstID),
 			ParentID:        0,
 			SupplierAccount: "0",
 			IsBuiltIn:       true,
+			Metadata:        metadata.NewMetadata(0),
 		}
 		err = db.Table(common.BKTableNameServiceCategory).Insert(ctx, firstCategory)
 		if err != nil {
@@ -52,7 +67,7 @@ func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	}
 
 	// insert second category
-	secondCategory := metadata.ServiceCategory{}
+	secondCategory := ServiceCategory{}
 	cond = metadata.BizLabelNotExist.Clone()
 	cond.Set(common.BKFieldName, common.DefaultServiceCategoryName)
 	cond.Set(common.BKParentIDField, firstCategory.ID)
@@ -63,13 +78,14 @@ func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 			return 0, err
 		}
 
-		secondCategory = metadata.ServiceCategory{
+		secondCategory = ServiceCategory{
 			ID:              int64(secondID),
 			Name:            common.DefaultServiceCategoryName,
 			RootID:          int64(firstCategory.RootID),
 			ParentID:        int64(firstCategory.ID),
 			SupplierAccount: "0",
 			IsBuiltIn:       true,
+			Metadata:        metadata.NewMetadata(0),
 		}
 		err = db.Table(common.BKTableNameServiceCategory).Insert(ctx, secondCategory)
 		if err != nil {
