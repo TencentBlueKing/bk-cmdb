@@ -1746,11 +1746,12 @@ func (ps *parseStream) ObjectModule() *parseStream {
 }
 
 var (
-	createSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/?$`)
-	deleteSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+/?$`)
-	deleteManySetRegexp = regexp.MustCompile(`^/api/v3/set/[0-9]+/batch$`)
-	updateSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+/?$`)
-	findSetRegexp       = regexp.MustCompile(`^/api/v3/set/search/[^\s/]+/[0-9]+/?$`)
+	createSetRegexp      = regexp.MustCompile(`^/api/v3/set/[0-9]+/?$`)
+	batchCreateSetRegexp = regexp.MustCompile(`^/api/v3/set/[0-9]+/batch/?$`)
+	deleteSetRegexp      = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+/?$`)
+	deleteManySetRegexp  = regexp.MustCompile(`^/api/v3/set/[0-9]+/batch$`)
+	updateSetRegexp      = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+/?$`)
+	findSetRegexp        = regexp.MustCompile(`^/api/v3/set/search/[^\s/]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) ObjectSet() *parseStream {
@@ -1768,6 +1769,30 @@ func (ps *parseStream) ObjectSet() *parseStream {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("create set, but got invalid business id %s", ps.RequestCtx.Elements[3])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelSet,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	// batch create set
+	if ps.hitRegexp(batchCreateSetRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("batch create set, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("batch create set, but got invalid business id %s", ps.RequestCtx.Elements[3])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{

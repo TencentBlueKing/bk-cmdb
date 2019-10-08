@@ -9,7 +9,7 @@
         </template>
         <template v-else-if="isLatsetData">
             <div class="no-content">
-                <img src="../../assets/images/latset-data.png" alt="no-content">
+                <img src="../../assets/images/latest-data.png" alt="no-content">
                 <p>{{$t('最新数据')}}</p>
                 <bk-button theme="primary" @click="handleGoBackModule">{{$t('返回')}}</bk-button>
             </div>
@@ -642,6 +642,7 @@
                 @include scrollbar-y;
                 flex: 1;
                 height: 100%;
+                background-color: #ffffff;
                 .tab-pane {
                     font-size: 14px;
                     padding: 20px 20px 20px 38px;

@@ -21,7 +21,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -478,6 +477,11 @@ func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	if input.ServiceInstanceID == 0 {
+		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
+		ctx.RespAutoError(err)
+		return
+	}
 
 	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
@@ -502,11 +506,14 @@ func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 	for _, relation := range relationsResult.Info {
 		processIDs = append(processIDs, relation.ProcessID)
 	}
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKProcessIDField).In(processIDs)
-	reqParam := new(metadata.QueryCondition)
-	reqParam.Condition = cond.ToMapStr()
+	filter := map[string]interface{}{
+		common.BKProcessIDField: map[string]interface{}{
+			common.BKDBIN: processIDs,
+		},
+	}
+	reqParam := &metadata.QueryCondition{
+		Condition: filter,
+	}
 	processResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, reqParam)
 	if nil != err {
 		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list process instance property failed, bizID: %d, processIDs: %+v, err: %+v", bizID, processIDs, err)
@@ -518,10 +525,12 @@ func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 		processIDVal, exist := process.Get(common.BKProcessIDField)
 		if exist == false {
 			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "list process instance failed, parse bk_process_id from process property failed, field not exist, bizID: %d, processIDs: %+v", bizID, processIDs)
+			return
 		}
 		processID, err := util.GetInt64ByInterface(processIDVal)
 		if err != nil {
 			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "list process instance failed, parse bk_process_id from process property failed, parse field to int64 failed, bizID: %d, processIDs: %+v, process: %+v, err: %+v", bizID, processIDs, process, err)
+			return
 		}
 		processIDPropertyMap[processID] = process
 	}

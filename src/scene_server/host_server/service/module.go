@@ -141,7 +141,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, conf.HostID)
+		perm, err := s.AuthManager.GenMoveBizHostToResPoolNoPermissionResp(srvData.ctx, srvData.header, conf.HostID)
 		if err != nil {
 			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
@@ -271,7 +271,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 
 	}
 
-	// TODO hoffer host can not exist, not exist create
+	// TODO host can not exist, not exist create
 	// check authorization
 	hostIDArr := make([]int64, 0)
 	existNewAddHost := false

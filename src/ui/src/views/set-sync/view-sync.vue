@@ -4,15 +4,22 @@
             <i :class="['bk-icon', ...iconClass]"></i>
             <div class="right-content">
                 <div class="operations">
-                    <span>{{$t('正在同步中，请耐心等待…')}}</span>
+                    <span>{{$t('正在同步中请等待')}}</span>
+                    <!-- <span>{{$t('同步失败')}}</span>
+                    <span>{{$t('同步完成')}}</span> -->
                     <bk-button v-if="syncStatus === 2" theme="default">{{$t('返回列表')}}</bk-button>
                     <template v-else>
                         <bk-button theme="default">{{$t('失败重试')}}</bk-button>
-                        <bk-button theme="default">{{$t('关闭页面')}}</bk-button>
+                        <bk-button theme="default" @click="handleClose">{{$t('关闭页面')}}</bk-button>
                     </template>
                 </div>
                 <div class="sync-count">
-                    <p v-if="syncStatus === 2">{{$t('已同步10处，剩余5处')}}</p>
+                    <i18n v-if="syncStatus === 2"
+                        path="同步进度提示"
+                        tag="div">
+                        <span place="completedCount">10</span>
+                        <span place="remainingCount">5</span>
+                    </i18n>
                     <i18n v-else
                         path="同步数量提示"
                         tag="div">
@@ -28,19 +35,18 @@
             <bk-table-column prop="topo_path" :label="$t('拓扑结构')"></bk-table-column>
             <bk-table-column prop="status" :label="$t('状态')" width="400">
                 <template slot-scope="{ row }">
-                    <span v-if="row.status === 0" class="sync-status fail-status">
-                        <i class="bk-icon icon-cc-log-02"></i>
-                        {{$t('同步失败')}}
-                    </span>
-                    <span v-else-if="row.status === 1" style="color: #2DCB56;">{{$t('已完成')}}</span>
-                    <span v-else-if="row.status === 2" class="sync-status syncing-status">
+                    <span v-if="[200].includes(row.status)" style="color: #2DCB56;">{{$t('已完成')}}</span>
+                    <span v-else-if="[0, 1, 100].includes(row.status)" class="sync-status syncing-status">
                         <img src="../../assets/images/icon/loading.svg" alt="">
                         {{$t('同步中')}}
                     </span>
-                    <span v-else>--</span>
+                    <span v-else class="sync-status fail-status">
+                        <i class="bk-icon icon-cc-log-02"></i>
+                        {{$t('同步失败')}}
+                    </span>
                 </template>
             </bk-table-column>
-            <infinite-loading slot="append" v-if="ready"
+            <!-- <infinite-loading slot="append" v-if="ready"
                 force-use-infinite-wrapper=".sync-table .bk-table-body-wrapper"
                 :distance="42"
                 :identifier="infiniteIdentifier"
@@ -53,17 +59,17 @@
                         isLoading: $loading()
                     }">
                 </div>
-            </infinite-loading>
+            </infinite-loading> -->
         </bk-table>
     </div>
 </template>
 
 <script>
-    import infiniteLoading from 'vue-infinite-loading'
+    // import infiniteLoading from 'vue-infinite-loading'
     export default {
-        components: {
-            infiniteLoading
-        },
+        // components: {
+        //     infiniteLoading
+        // },
         data () {
             return {
                 ready: false,
@@ -78,6 +84,22 @@
             }
         },
         computed: {
+            business () {
+                return this.$store.getters['objectBiz/bizId']
+            },
+            setTemplateId () {
+                return this.$route.params['setTemplateId']
+            },
+            setInstancesId () {
+                const id = `${this.business}_${this.setTemplateId}`
+                let syncIdMap = this.$store.state.setFeatures.syncIdMap
+                const sessionSyncIdMap = sessionStorage.getItem('setSyncIdMap')
+                if (!Object.keys(syncIdMap).length && sessionSyncIdMap) {
+                    syncIdMap = JSON.parse(sessionSyncIdMap)
+                    this.$store.commit('setFeatures/resetSyncIdMap', syncIdMap)
+                }
+                return syncIdMap[id] || []
+            },
             iconClass () {
                 let classMap = []
                 switch (this.syncStatus) {
@@ -99,10 +121,52 @@
                 return this.$APP.height - 206
             }
         },
-        created () {
-            this.getSyncList()
+        async created () {
+            await this.getSyncStatus()
+            // this.polling()
         },
         methods: {
+            polling () {
+                let timer = null
+                try {
+                    timer = setInterval(async () => {
+                        await this.getSyncStatus()
+                    }, 5000)
+                } catch (e) {
+                    console.error(e)
+                    clearInterval(timer)
+                }
+            },
+            async getSyncStatus () {
+                try {
+                    const data = await this.$store.dispatch('setSync/getInstancesSyncStatus', {
+                        bizId: this.business,
+                        setTemplateId: this.setTemplateId,
+                        params: {
+                            bk_set_ids: this.setInstancesId
+                        },
+                        config: {
+                            requestId: 'getInstancesSyncStatus',
+                            cancelPrevious: true
+                        }
+                    })
+                    const moduleList = []
+                    if (data) {
+                        const sets = Object.keys(data).map(key => data[key]).filter(set => set)
+                        sets.forEach(set => {
+                            const modules = (set.detail || []).filter(module => {
+                                const moduleData = module.data
+                                return moduleData && moduleData.module_diff && moduleData.module_diff.diff_type !== 'unchanged'
+                            })
+                            moduleList.push(...modules)
+                        })
+                    }
+                    this.syncList = moduleList
+                } catch (e) {
+                    console.error(e)
+                    this.syncList = []
+                }
+            },
             async getSyncList () {
                 const delay = (duration) => new Promise(resolve => setTimeout(() => {
                     resolve()
@@ -148,6 +212,14 @@
             },
             handleFilterSuccess () {
 
+            },
+            handleClose () {
+                this.$router.replace({
+                    name: 'setTemplateInfo',
+                    params: {
+                        templateId: this.setTemplateId
+                    }
+                })
             }
         }
     }

@@ -1094,6 +1094,7 @@
     .topo-wrapper {
         position: relative;
         padding: 0;
+        border-top: 1px solid #DCDEE5;
         &.has-nav {
             .topo-nav {
                 display: block;
