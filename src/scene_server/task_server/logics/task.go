@@ -43,6 +43,7 @@ func (lgc *Logics) Create(ctx context.Context, input *metadata.CreateTaskRequest
 	dbTask.TaskID = getStrTaskID("id")
 	dbTask.Name = input.Name
 	dbTask.User = lgc.user
+	dbTask.Flag = input.Flag
 	dbTask.Header = getDBHTTPHeader(lgc.header)
 	dbTask.Status = metadata.APITaskStatusNew
 	dbTask.CreateTime = time.Now()

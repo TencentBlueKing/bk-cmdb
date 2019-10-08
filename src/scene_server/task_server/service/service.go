@@ -116,6 +116,27 @@ func (s *Service) addAPIService(web *restful.WebService) {
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta := metric.HealthMeta{IsHealthy: true}
 
+	// mongodb status
+	mongoItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityMongo}
+	if s.DB == nil {
+		mongoItem.IsHealthy = false
+		mongoItem.Message = "not connected"
+	} else if err := s.DB.Ping(); err != nil {
+		mongoItem.IsHealthy = false
+		mongoItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, mongoItem)
+
+	// redis status
+	redisItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityRedis}
+	if s.CacheDB == nil {
+		redisItem.IsHealthy = false
+		redisItem.Message = "not connected"
+	} else if err := s.CacheDB.Ping().Err(); err != nil {
+		redisItem.IsHealthy = false
+		redisItem.Message = err.Error()
+	}
+
 	// zk health status
 	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
 	if err := s.Engine.Ping(); err != nil {

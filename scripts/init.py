@@ -384,6 +384,22 @@ maxOpenConns = 3000
 maxIdleConns = 1000
 mechanism = SCRAM-SHA-1
 enable = true
+maxIDleConns = 1000
+mechanism = SCRAM-SHA-1
+[redis]
+host = $redis_host
+port = $redis_port
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+'''
+    template = FileTemplate(taskserver_file_template_str)
+    result = template.substitute(**context)
+    with open(output + "task.conf", 'w') as tmp_file:
+        tmp_file.write(result)
 
 [redis]
 host = $redis_host
