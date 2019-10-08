@@ -335,6 +335,31 @@ authscheme = $auth_scheme
     with open(output + "webserver.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
+    # task.conf
+    taskserver_file_template_str = '''
+[mongodb]
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+mechanism = SCRAM-SHA-1
+[redis]
+host = $redis_host
+port = $redis_port
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+'''
+    template = FileTemplate(taskserver_file_template_str)
+    result = template.substitute(**context)
+    with open(output + "task.conf", 'w') as tmp_file:
+        tmp_file.write(result)
 
 def update_start_script(rd_server, server_ports):
     list_dirs = os.walk(os.getcwd()+"/")
