@@ -16,8 +16,10 @@ import (
 	"regexp"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"github.com/tidwall/gjson"
 )
 
 type InstanceIDGetter func(request *RequestContext, re *regexp.Regexp) ([]int64, error)
@@ -53,10 +55,14 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 
 		var businessID int64
 		if item.RequiredBizInMetadata {
-			bizID, err := metadata.BizIDFromMetadata(request.Metadata)
-			if err != nil {
-				blog.Warnf("get business id in metadata failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
-				return nil, err
+			bizID := gjson.GetBytes(request.Body, common.BKAppIDField).Int()
+			if bizID == 0 {
+				var err error
+				bizID, err = metadata.BizIDFromMetadata(request.Metadata)
+				if err != nil {
+					blog.Warnf("get business id in metadata failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
+					return nil, err
+				}
 			}
 			businessID = bizID
 		}

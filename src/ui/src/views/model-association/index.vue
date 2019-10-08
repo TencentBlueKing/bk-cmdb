@@ -36,16 +36,12 @@
             :max-height="$APP.height - 229"
             :data="table.list"
             :pagination="table.pagination"
+            :row-style="{ cursor: 'pointer' }"
+            @row-click="handleShowDetails"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange">
-            <bk-table-column prop="bk_asst_id" :label="$t('唯一标识')" sortable="custom" class-name="is-highlight">
-                <template slot-scope="{ row }">
-                    <div style="cursor: pointer; padding: 10px 0;" @click.stop="handleShowDetails(row)">
-                        {{row['bk_asst_id']}}
-                    </div>
-                </template>
-            </bk-table-column>
+            <bk-table-column prop="bk_asst_id" :label="$t('唯一标识')" sortable="custom" class-name="is-highlight"></bk-table-column>
             <bk-table-column prop="bk_asst_name" :label="$t('名称')" sortable="custom">
                 <template slot-scope="{ row }">
                     {{row['bk_asst_name'] || '--'}}
@@ -56,6 +52,7 @@
             <bk-table-column prop="count" :label="$t('使用数')"></bk-table-column>
             <bk-table-column v-if="isAdminView"
                 fixed="right"
+                prop="operation"
                 :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <span class="text-primary disabled mr10"
@@ -275,7 +272,8 @@
                 this.slider.isShow = false
                 return true
             },
-            handleShowDetails (relation) {
+            handleShowDetails (relation, event, column = {}) {
+                if (column.property === 'operation') return
                 this.slider.title = this.$t('关联类型详情')
                 this.slider.relation = relation
                 this.slider.isReadOnly = true

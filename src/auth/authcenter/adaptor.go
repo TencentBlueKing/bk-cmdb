@@ -13,7 +13,6 @@
 package authcenter
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,8 +21,9 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
@@ -239,9 +239,7 @@ var ActionIDNameMap = map[ActionID]string{
 	Get:                    "查询",
 	Delete:                 "删除",
 	Archive:                "归档",
-	ModelTopologyOperation: "拓扑层级管理",
-	// TODO: delete this when upgrade to v3.5.x
-	BindModule: "绑定到模块",
+	ModelTopologyOperation: "编辑业务层级",
 }
 
 func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
@@ -273,10 +271,6 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 			return ModelTopologyOperation, nil
 		}
 	}
-
-	// if r.Basic.Type == meta.ModelModule || r.Basic.Type == meta.ModelSet || r.Basic.Type == meta.MainlineInstance {
-	// 	return ModelTopologyOperation, nil
-	// }
 
 	if r.Action == meta.Find || r.Action == meta.Update {
 		if r.Basic.Type == meta.ModelTopology {
@@ -350,8 +344,28 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	return Unknown, fmt.Errorf("unsupported action: %s", r.Action)
 }
 
+func GetBizNameByID(clientSet apimachinery.ClientSetInterface, header http.Header, bizID int64) (string, error) {
+	ctx := util.NewContextFromHTTPHeader(header)
+
+	result, err := clientSet.TopoServer().Instance().GetAppBasicInfo(ctx, header, bizID)
+	if err != nil {
+		return "", err
+	}
+	if result.Code == common.CCNoPermission {
+		return "", nil
+	}
+	if !result.Result {
+		return "", errors.New(result.ErrMsg)
+	}
+	bizName := result.Data.BizName
+	return bizName, nil
+}
+
 // TODO: add multiple language support
+// AdoptPermissions 用于鉴权没有通过时，根据鉴权的资源信息生成需要申请的权限信息
 func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
+	rid := util.GetHTTPCCRequestID(h)
+
 	ps := make([]metadata.Permission, 0)
 	bizIDMap := make(map[int64]string)
 	for _, r := range rs {
@@ -365,38 +379,12 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 			p.ScopeID = strconv.FormatInt(r.BusinessID, 10)
 			scopeName, exist := bizIDMap[r.BusinessID]
 			if !exist {
-				param := params.SearchParams{
-					Condition: map[string]interface{}{
-						common.BKAppIDField: r.BusinessID,
-					},
-				}
-
-				result, err := api.TopoServer().Instance().SearchApp(context.Background(), r.SupplierAccount, h, &param)
+				var err error
+				scopeName, err = GetBizNameByID(api, h, r.BusinessID)
 				if err != nil {
-					return nil, err
-				}
-				// if no permission to find business, return directly.
-				if result.Code == common.CCNoPermission {
-					return result.Permissions, nil
-				}
-				if !result.Result {
-					return nil, errors.New(result.ErrMsg)
-				}
-
-				if len(result.Data.Info) != 0 {
-					bizStr, yes := result.Data.Info[0]["bk_biz_name"]
-					if !yes {
-						// can not happen normally.
-						bizIDMap[r.BusinessID] = ""
-					}
-
-					name, ok := bizStr.(string)
-					if !ok {
-						// can not happen normal
-						bizIDMap[r.BusinessID] = ""
-					}
-					bizIDMap[r.BusinessID] = name
-					scopeName = name
+					blog.Errorf("AdoptPermissions failed, GetBizNameByID failed, bizID: %d, err: %s, rid: %s", r.BusinessID, err.Error(), rid)
+				} else {
+					bizIDMap[r.BusinessID] = scopeName
 				}
 			}
 			p.ScopeName = scopeName
