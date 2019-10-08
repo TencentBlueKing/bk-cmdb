@@ -158,6 +158,11 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("new config center failed, err: %v", err)
 	}
 
+	err = handleNotice(ctx, client.Client(), input.SrvInfo.Instance())
+	if err != nil {
+		return nil, fmt.Errorf("handle notice failed, err: %v", err)
+	}
+
 	return engine, nil
 }
 

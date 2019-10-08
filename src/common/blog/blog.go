@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
+	"configcenter/src/common/blog/glog"
 )
 
 // This is temporary until we agree on log dirs and put those into each cmd.
@@ -150,4 +150,12 @@ type errorFunc interface {
 }
 type stringFunc interface {
 	String() string
+}
+
+func SetV(level int32) {
+	glog.SetV(glog.Level(level))
+}
+
+func GetV() int32 {
+	return int32(glog.GetV())
 }
