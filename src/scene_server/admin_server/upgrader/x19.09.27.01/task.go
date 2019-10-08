@@ -54,6 +54,11 @@ func taskMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 			Name:       "idx_status_lastTime",
 			Background: true,
 		},
+		dal.Index{
+			Keys:       map[string]int32{"name": 1, "flag": 1, "create_time": 1},
+			Name:       "idx_name_flag_createTime",
+			Background: true,
+		},
 	}
 
 	for _, index := range indexArr {
