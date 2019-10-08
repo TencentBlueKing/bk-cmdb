@@ -327,29 +327,12 @@
                         fields: this.previewHeader
                     }
                 ]
-                const specialObj = {
-                    'host': 'bk_host_innerip',
-                    'biz': 'bk_biz_name',
-                    'plat': 'bk_cloud_name',
-                    'module': 'bk_module_name',
-                    'set': 'bk_set_name'
-                }
                 properties.forEach((property, index) => {
                     const param = paramsMap.find(({ bk_obj_id: objId }) => {
                         return objId === property.objId
                     })
                     if (property.value !== null && property.value !== undefined && String(property.value).length) {
-                        if (property.propertyType === 'singleasst' || property.propertyType === 'multiasst') {
-                            paramsMap.push({
-                                'bk_obj_id': property.asstObjId,
-                                fields: [],
-                                condition: [{
-                                    field: specialObj.hasOwnProperty(property.asstObjId) ? specialObj[property.asstObjId] : 'bk_inst_name',
-                                    operator: property.operator,
-                                    value: property.value
-                                }]
-                            })
-                        } else if (property.propertyType === 'time' || property.propertyType === 'date') {
+                        if (property.propertyType === 'time' || property.propertyType === 'date') {
                             const value = property['value']
                             param['condition'].push({
                                 field: property.propertyId,

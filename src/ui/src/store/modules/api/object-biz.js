@@ -9,7 +9,6 @@
  */
 
 import $http from '@/api'
-import Vue from 'vue'
 // import jsCookie from 'js-cookie'
 
 const state = {
@@ -133,20 +132,6 @@ const mutations = {
     },
     setAuthorizedBusiness (state, list) {
         state.authorizedBusiness = list
-    },
-    deleteAuthorizedBusiness (state, id) {
-        state.authorizedBusiness = state.authorizedBusiness.filter(business => business.bk_biz_id !== id)
-    },
-    addAuthorizedBusiness (state, business) {
-        if (business && business.bk_biz_id && business.bk_biz_name) {
-            state.authorizedBusiness.push(business)
-        }
-    },
-    updateAuthorizedBusiness (state, data) {
-        if (data && data.bk_biz_id && data.bk_biz_name) {
-            const curBusiness = state.authorizedBusiness.findIndex(business => business.bk_biz_id === data.bk_biz_id)
-            curBusiness > 0 && Vue.set(state.authorizedBusiness, curBusiness, data)
-        }
     }
 }
 
