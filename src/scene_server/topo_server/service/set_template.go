@@ -402,10 +402,49 @@ func (s *Service) SyncSetTplToInst(params types.ContextParams, pathParams, query
 }
 
 func (s *Service) GetSetSyncStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	setTemplateIDStr := pathParams(common.BKSetTemplateIDField)
+	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
 	option := metadata.SetSyncStatusOption{}
 	if err := mapstructure.Decode(data, &option); err != nil {
 		blog.Errorf("GetSetSyncStatus failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+	if option.SetIDs == nil {
+		filter := &metadata.QueryCondition{
+			Limit: metadata.SearchLimit{
+				Limit: common.BKNoLimit,
+			},
+			Condition: mapstr.MapStr(map[string]interface{}{
+				// common.BKAppIDField:         bizID,
+				common.MetadataField:        metadata.NewMetadata(bizID),
+				common.BKSetTemplateIDField: setTemplateID,
+			}),
+		}
+		setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, filter)
+		if err != nil {
+			blog.Errorf("GetSetSyncStatus failed, get template related set failed, err: %+v, rid: %s", err, params.ReqID)
+			return nil, err
+		}
+		setIDs := make([]int64, 0)
+		for _, inst := range setInstanceResult.Data.Info {
+			setID, err := inst.Int64(common.BKSetIDField)
+			if err != nil {
+				blog.Errorf("GetSetSyncStatus failed, get template related set failed, err: %+v, rid: %s", err, params.ReqID)
+				return nil, params.Err.CCError(common.CCErrCommParseDBFailed)
+			}
+			setIDs = append(setIDs, setID)
+		}
+		option.SetIDs = setIDs
 	}
 	return s.getSetSyncStatus(params, option.SetIDs...)
 }
