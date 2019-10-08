@@ -53,9 +53,9 @@ func (ps *parseStream) topology() *parseStream {
 }
 
 var (
-	createBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/?$`)
-	updateBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
-	deleteBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
+	createBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/?$`)
+	updateBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
+	// deleteBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
 	findBusinessRegexp               = regexp.MustCompile(`^/api/v3/biz/search/[^\s/]+/?$`)
 	findResourcePoolBusinessRegexp   = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/search/?$`)
 	createResourcePoolBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/?$`)
@@ -250,7 +250,7 @@ var (
 	deleteMainlineObjectRegexp                      = regexp.MustCompile(`^/api/v3/topo/model/mainline/owners/[^\s/]+/objectids/[^\s/]+/?$`)
 	findMainlineObjectTopoRegexp                    = regexp.MustCompile(`^/api/v3/topo/model/[^\s/]+/?$`)
 	findMainlineInstanceTopoRegexp                  = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
-	findMainineSubInstanceTopoRegexp                = regexp.MustCompile(`^/api/v3/topo/inst/child/[^\s/]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	findMainlineSubInstanceTopoRegexp               = regexp.MustCompile(`^/api/v3/topo/inst/child/[^\s/]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
 	findMainlineIdleFaultModuleRegexp               = regexp.MustCompile(`^/api/v3/topo/internal/[^\s/]+/[0-9]+/?$`)
 	findMainlineIdleFaultModuleWithStatisticsRegexp = regexp.MustCompile(`^/api/v3/topo/internal/[^\s/]+/[0-9]+/with_statistics/?$`)
 )
@@ -329,7 +329,7 @@ func (ps *parseStream) mainline() *parseStream {
 
 	// find mainline object instance's sub-instance topology operation.
 	// 获取主线节点的孩子节点列表
-	if ps.hitRegexp(findMainineSubInstanceTopoRegexp, http.MethodGet) {
+	if ps.hitRegexp(findMainlineSubInstanceTopoRegexp, http.MethodGet) {
 		if len(ps.RequestCtx.Elements) != 9 {
 			ps.err = errors.New("find mainline object's sub instance topology, but got invalid url")
 			return ps
@@ -2249,8 +2249,8 @@ func (ps *parseStream) objectUnique() *parseStream {
 }
 
 var (
-	searchAuditlog               = `/api/v3/audit/search`
-	searchInstanceAuditlogRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/audit/search/?$`)
+	searchAuditLog               = `/api/v3/audit/search`
+	searchInstanceAuditLogRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/audit/search/?$`)
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -2258,7 +2258,7 @@ func (ps *parseStream) audit() *parseStream {
 		return ps
 	}
 
-	if ps.hitPattern(searchAuditlog, http.MethodPost) {
+	if ps.hitPattern(searchAuditLog, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -2280,7 +2280,7 @@ func (ps *parseStream) instanceAudit() *parseStream {
 	}
 
 	// add object unique operation.
-	if ps.hitRegexp(searchInstanceAuditlogRegexp, http.MethodPost) {
+	if ps.hitRegexp(searchInstanceAuditLogRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -2298,7 +2298,7 @@ func (ps *parseStream) instanceAudit() *parseStream {
 
 var (
 	findPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/.*$`)
-	postPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/.*$`)
+	// postPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/.*$`)
 )
 
 func (ps *parseStream) privilege() *parseStream {
