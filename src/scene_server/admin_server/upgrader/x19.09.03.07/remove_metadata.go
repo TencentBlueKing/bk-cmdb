@@ -30,6 +30,8 @@ var tables = []string{
 	common.BKTableNameProcessTemplate,
 }
 
+const PageSize = 200
+
 // ,
 // common.BKTableNameProcessInstanceRelation,
 
@@ -52,7 +54,7 @@ func removeMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config, tabl
 	items := make([]MetaDataItem, 0)
 	start := uint64(0)
 	for {
-		if err := db.Table(tableName).Find(map[string]interface{}{}).Start(start).Limit(10).All(ctx, &items); err != nil {
+		if err := db.Table(tableName).Find(map[string]interface{}{}).Start(start).Limit(PageSize).All(ctx, &items); err != nil {
 			if db.IsNotFoundError(err) {
 				break
 			}
@@ -62,7 +64,7 @@ func removeMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config, tabl
 		if len(items) == 0 {
 			break
 		}
-		start += 10
+		start += PageSize
 		for _, item := range items {
 			if item.BizID != 0 {
 				continue
@@ -103,7 +105,7 @@ func RemoveMetadataProcess(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	items := make([]MetaDataItem, 0)
 	start := uint64(0)
 	for {
-		if err := db.Table(tableName).Find(map[string]interface{}{}).Start(start).Limit(10).All(ctx, &items); err != nil {
+		if err := db.Table(tableName).Find(map[string]interface{}{}).Start(start).Limit(PageSize).All(ctx, &items); err != nil {
 			if db.IsNotFoundError(err) {
 				break
 			}
@@ -113,7 +115,7 @@ func RemoveMetadataProcess(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		if len(items) == 0 {
 			break
 		}
-		start += 10
+		start += PageSize
 		for _, item := range items {
 			if item.BizID != 0 {
 				continue
@@ -157,7 +159,7 @@ func RemoveMetadataFromRelation(ctx context.Context, db dal.RDB, conf *upgrader.
 	items := make([]MetaDataItem, 0)
 	start := uint64(0)
 	for {
-		if err := db.Table(tableName).Find(map[string]interface{}{}).Start(start).Limit(10).All(ctx, &items); err != nil {
+		if err := db.Table(tableName).Find(map[string]interface{}{}).Start(start).Limit(PageSize).All(ctx, &items); err != nil {
 			if db.IsNotFoundError(err) {
 				break
 			}
@@ -167,7 +169,7 @@ func RemoveMetadataFromRelation(ctx context.Context, db dal.RDB, conf *upgrader.
 		if len(items) == 0 {
 			break
 		}
-		start += 10
+		start += PageSize
 		for _, item := range items {
 			if item.BizID != 0 {
 				continue
