@@ -13,9 +13,8 @@
 package zkclient
 
 import (
-	"errors"
-	//"bcs/bcs-common/common/blog"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -30,10 +29,22 @@ var (
 	ErrConnectionClosed = zk.ErrConnectionClosed
 )
 
-const (
-	AUTH_USER = "cc"
-	AUTH_PWD  = "3.0#bkcc"
+var (
+	AuthUser = new(authInfo)
+	AuthPwd  = new(authInfo)
 )
+
+type authInfo string
+
+func (a *authInfo) Set(val string) error {
+	if val == "" {
+		return errors.New("value need to be set")
+	}
+	*a = authInfo(val)
+	return nil
+}
+func (a *authInfo) Type() string   { return "string" }
+func (a *authInfo) String() string { return fmt.Sprintf("%s", *a) }
 
 type ZkLock struct {
 	zkHost []string
@@ -47,7 +58,7 @@ func NewZkLock(host []string) *ZkLock {
 		zkHost: host[:],
 		zkConn: nil,
 		zkLock: nil,
-		zkAcl:  zk.DigestACL(zk.PermAll, AUTH_USER, AUTH_PWD),
+		zkAcl:  zk.DigestACL(zk.PermAll, AuthUser.String(), AuthPwd.String()),
 	}
 	return &zlock
 }
@@ -64,7 +75,7 @@ func (zlock *ZkLock) LockEx(path string, sessionTimeOut time.Duration) error {
 		}
 
 		//auth
-		auth := AUTH_USER + ":" + AUTH_PWD
+		auth := AuthUser.String() + ":" + AuthPwd.String()
 		if err := conn.AddAuth("digest", []byte(auth)); err != nil {
 			conn.Close()
 			return err
@@ -108,7 +119,7 @@ func NewZkClient(host []string) *ZkClient {
 	c := ZkClient{
 		ZkHost: host[:],
 		ZkConn: nil,
-		zkAcl:  zk.DigestACL(zk.PermAll, AUTH_USER, AUTH_PWD),
+		zkAcl:  zk.DigestACL(zk.PermAll, AuthUser.String(), AuthPwd.String()),
 	}
 
 	return &c
@@ -129,7 +140,7 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 	}
 
 	// AddAuth
-	auth := AUTH_USER + ":" + AUTH_PWD
+	auth := AuthUser.String() + ":" + AuthPwd.String()
 	if err := c.AddAuth("digest", []byte(auth)); err != nil {
 		c.Close()
 		return err
@@ -165,7 +176,7 @@ func (z *ZkClient) Get(path string) (string, error) {
 }
 
 func (z *ZkClient) AddAuth() error {
-	auth := AUTH_USER + ":" + AUTH_PWD
+	auth := AuthUser.String() + ":" + AuthPwd.String()
 	return z.ZkConn.AddAuth("digest", []byte(auth))
 }
 

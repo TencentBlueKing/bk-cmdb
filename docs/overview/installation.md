@@ -235,7 +235,9 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 [root@SWEBVM000229 /data/cmdb]# python init.py
 
 	usage:
-	--discovery           <discovery>           the ZooKeeper server address, eg:127.0.0.1:2181
+	--discovery          <discovery>           the ZooKeeper server address, eg:127.0.0.1:2181
+    --zk_user            <zk_user>              the ZooKeeper user
+    --zk_pwd             <zk_pwd>               the ZooKeeper password
 	--database           <database>             the database name, default cmdb
 	--redis_ip           <redis_ip>             the redis ip, eg:127.0.0.1
 	--redis_port         <redis_port>           the redis port, default:6379
@@ -254,9 +256,11 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 
 **init.py 参数详解：**
 
-|ZooKeeper地址|用途说明|必填|默认值|
+|命令行选项|用途说明|必填|默认值|
 |---|---|---|---|
 |--discovery|服务发现组件，ZooKeeper 服务地址|是|无|
+|--zk_user|ZooKeeper用户名|是|无|
+|--zk_pwd|ZooKeeper密码|是|无|
 |--database|数据库名字|mongodb 中数据库名|否|cmdb|
 |--redis_ip|Redis监听的IP|是|无|
 |--redis_port|Redis监听的端口|否|6379|
@@ -285,6 +289,8 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 ``` shell
 python init.py  \
   --discovery          127.0.0.1:2181 \
+  --zk_user            cc \
+  --zk_pwd            cc \
   --database           cmdb \
   --redis_ip           127.0.0.1 \
   --redis_port         6379 \

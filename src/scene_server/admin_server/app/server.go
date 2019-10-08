@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+	"configcenter/src/common/zkclient"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/authsynchronizer"
 	"configcenter/src/scene_server/admin_server/configures"
@@ -153,10 +154,17 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Configures.Dir = current.ConfigMap["confs.dir"]
 
 		h.Config.Register.Address = current.ConfigMap["register-server.addrs"]
+		err := zkclient.AuthUser.Set(current.ConfigMap["register-server.usr"])
+		if err != nil {
+			blog.Fatalf("parse zk usr config error: %v, config: %+v", err, current.ConfigMap)
+		}
+		err = zkclient.AuthPwd.Set(current.ConfigMap["register-server.pwd"])
+		if err != nil {
+			blog.Fatalf("parse zk pwd config error: %v, config: %+v", err, current.ConfigMap)
+		}
 
 		h.Config.ProcSrvConfig.CCApiSrvAddr, _ = current.ConfigMap["procsrv.cc_api"]
 
-		var err error
 		h.Config.AuthCenter, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 		if err != nil && auth.IsAuthed() {
 			blog.Errorf("parse authcenter error: %v, config: %+v", err, current.ConfigMap)
