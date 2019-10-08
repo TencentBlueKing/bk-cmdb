@@ -125,7 +125,10 @@ func (s *Service) initInst() {
 	s.addAction(http.MethodPost, "/inst/search/owner/{owner_id}/object/{bk_obj_id}/detail", s.SearchInstAndAssociationDetail, nil)
 	s.addAction(http.MethodPost, "/inst/search/owner/{owner_id}/object/{bk_obj_id}", s.SearchInstByObject, nil)
 	s.addAction(http.MethodPost, "/inst/search/{owner_id}/{bk_obj_id}/{inst_id}", s.SearchInstByInstID, nil)
-	s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}", s.SearchInstAssociation, nil)
+	// 2019-09-30 废弃接口
+	//s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}", s.SearchInstAssociation, nil)
+	s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}/web", s.SearchInstAssociationUI, nil)
+
 }
 
 func (s *Service) initObjectAttribute() {
