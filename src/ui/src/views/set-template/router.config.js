@@ -26,9 +26,9 @@ export default [{
         }
     })
 }, {
-    name: 'createSetTemplate',
-    path: 'set/template/create',
-    component: () => import('./create.vue'),
+    name: 'setTemplateMode',
+    path: 'set/template/:mode/:templateId?',
+    component: () => import('./template.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {

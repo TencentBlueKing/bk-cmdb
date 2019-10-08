@@ -56,15 +56,6 @@
             serviceTemplateSelector,
             serviceTemplateInfo
         },
-        props: {
-            mode: {
-                type: String,
-                default: 'create',
-                validator (value) {
-                    return ['create', 'edit', 'view'].includes(value)
-                }
-            }
-        },
         data () {
             return {
                 templateName: this.$t('模板集群名称'),
@@ -80,20 +71,37 @@
                 }
             }
         },
-        watch: {
-            mode: {
-                immediate: true,
-                handler (value, oldValue) {
-                    if (value === 'create') {
-                        this.initMonitorTemplateName()
-                    }
-                }
+        computed: {
+            mode () {
+                return this.$route.params.mode
+            },
+            templateId () {
+                return this.$route.params.templateId
+            }
+        },
+        created () {
+            if (['create', 'edit'].includes(this.mode)) {
+                this.initMonitorTemplateName()
+            }
+            if (['edit', 'view'].includes(this.mode)) {
+                this.getSetTemplateServices()
             }
         },
         beforeDestory () {
             this.unwatch && this.unwatch()
         },
         methods: {
+            async getSetTemplateServices () {
+                try {
+                    this.services = await this.$store.dispatch('setTemplate/getSetTemplateServices', {
+                        bizId: this.$store.getters['objectBiz/bizId'],
+                        setTemplateId: this.templateId
+                    })
+                } catch (e) {
+                    console.error(e)
+                    this.services = []
+                }
+            },
             initMonitorTemplateName () {
                 this.unwatch = this.$watch(() => {
                     return this.$parent.templateName

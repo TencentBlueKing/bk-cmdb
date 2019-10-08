@@ -4,6 +4,7 @@
         <bk-table ref="table"
             v-bkloading="{ isLoading: $loading() }"
             :data="processes"
+            :show-header="!!processes.length"
             :max-height="300">
             <bk-table-column v-for="head in header"
                 :key="head.id"
@@ -56,7 +57,7 @@
                 this.$refs.table.doLayout()
             }, 0)
             this.getTitle()
-            this.getServiceProcesses()
+            // this.getServiceProcesses()
         },
         methods: {
             close () {

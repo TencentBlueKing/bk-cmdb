@@ -22,7 +22,7 @@ const actions = {
     getSingleSetTemplateInfo ({ commit }, { bizId, setTemplateId, config }) {
         return $http.get(`find/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}`, config)
     },
-    getServiceTemplateInSet ({ commit }, { bizId, setTemplateId }, config) {
+    getSetTemplateServices ({ commit }, { bizId, setTemplateId }, config) {
         return $http.get(`findmany/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}/service_templates`)
     },
     getSetTemplateInstances ({ commit }, { bizId, setTemplateId, params, config }) {
