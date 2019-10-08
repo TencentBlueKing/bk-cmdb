@@ -427,5 +427,11 @@ var bizOperatorRoleAuth = RoleWithAuthResources{
 			ResourceTypeID: BizProcessServiceInstance,
 			ActionID:       Delete,
 		},
+		// global resource related.
+		{
+			ScopeTypeID:    ScopeTypeIDSystem,
+			ResourceTypeID: SysBusinessInstance,
+			ActionID:       Get,
+		},
 	},
 }

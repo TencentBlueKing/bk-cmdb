@@ -44,7 +44,10 @@ const state = {
     title: null,
     businessSelectorVisible: false,
     businessSelectorPromise,
-    businessSelectorResolver
+    businessSelectorResolver,
+    scrollerState: {
+        scrollbar: false
+    }
 }
 
 const getters = {
@@ -70,7 +73,8 @@ const getters = {
     permission: state => state.permission,
     breadcrumbs: state => state.breadcrumbs,
     title: state => state.title,
-    businessSelectorVisible: state => state.businessSelectorVisible
+    businessSelectorVisible: state => state.businessSelectorVisible,
+    scrollerState: state => state.scrollerState
 }
 
 const actions = {
@@ -136,6 +140,9 @@ const mutations = {
     },
     resolveBusinessSelectorPromise (state, val) {
         state.businessSelectorResolver && state.businessSelectorResolver(val)
+    },
+    setScrollerState (state, scrollerState) {
+        Object.assign(state.scrollerState, scrollerState)
     }
 }
 

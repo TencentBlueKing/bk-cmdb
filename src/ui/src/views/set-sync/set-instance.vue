@@ -3,7 +3,7 @@
         <div class="title" @click="localExpand = !localExpand">
             <div class="left-info">
                 <i class="bk-icon icon-right-shape" :class="{ 'is-expand': localExpand }"></i>
-                <h2 class="path">广东省厅 / 深圳区 / 正式环境集群</h2>
+                <h2 class="path">{{topoPath}}</h2>
                 <span :class="['count', { 'is-read': hasRead }]">{{changeCount}}</span>
             </div>
             <i v-show="iconClose" class="bk-icon icon-close" @click.stop="handleClose"></i>
@@ -89,6 +89,14 @@
             },
             setDeatails () {
                 return this.instance.set_detail
+            },
+            topoPath () {
+                const path = this.instance.topo_path
+                if (path.length) {
+                    const topoPath = this.$tools.clone(path)
+                    return topoPath.reverse().map(path => path.InstanceName).join(' / ')
+                }
+                return '--'
             }
         },
         watch: {
@@ -100,7 +108,7 @@
         },
         methods: {
             handleClose () {
-                this.$emit('close')
+                this.$emit('close', this.instance.bk_set_id)
             }
         }
     }

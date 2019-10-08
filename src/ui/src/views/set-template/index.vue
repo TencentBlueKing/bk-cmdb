@@ -103,7 +103,14 @@
                     }
                 })
             },
-            handlePreview (row) {},
+            handlePreview (row) {
+                this.$router.push({
+                    name: 'setTemplateInfo',
+                    params: {
+                        templateId: row.id
+                    }
+                })
+            },
             handleDelete (row) {},
             handleFilterTemplate () {
                 const originList = this.$tools.clone(this.originList)
