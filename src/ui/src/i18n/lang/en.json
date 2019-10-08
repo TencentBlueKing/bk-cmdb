@@ -969,7 +969,6 @@
     "目标包含主机, 不允许删除": "Target contains host, not allowed to delete",
     "同步数量提示": "The instance module {successCount} has been successfully synchronized, failing {failCount}",
     "空集群模板实例提示": "No template instance, please go to {link} to add",
-    "同步任务进行中": "The synchronization task is in progress, {link}",
     "无集群模板更新信息": "Sorry, the corresponding cluster template update information could not be found.",
     "最新集群模板信息": "The cluster template is up to date and does not need to be updated.",
     "集群模板": "Set Template",
@@ -999,7 +998,15 @@
     "同步": "sync",
     "重试": "Retry",
     "同步人": "Sync personnel",
-    "批量同步集群模板实例提示": "You can sync multiple template instances in bulk",
     "应用数量": "Application count",
-    "服务模板选择器提示语": "You can select service template to add modules only which would extend service info from service template."
+    "服务模板选择器提示语": "You can select service template to add modules only which would extend service info from service template.",
+    "确定同步拓扑": "Determine the synchronization topology?",
+    "单个集群同步提示": "The '{name}' template will be synchronized, and the topology of the template will be updated to the selected cluster instance.",
+    "多个集群同步提示": "The '{name}' template will be batched to the selected {count} cluster instances, and the template topology will be updated to the selected cluster instance.",
+    "路径关键字": "path keyword",
+    "上次同步时间": "Last sync time",
+    "待同步": "Synchronizable",
+    "已同步": "Synced",
+    "集群拓扑": "Cluster topology",
+    "模板集群名称": "Template cluster name"
 }
