@@ -97,7 +97,6 @@ var _ = Describe("no service template test", func() {
 				rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(1199006))
 			})
 
 			It("create service category with empty name", func() {
@@ -109,7 +108,6 @@ var _ = Describe("no service template test", func() {
 				rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(1199006))
 			})
 
 			It("create service category with duplicate name", func() {
@@ -121,7 +119,6 @@ var _ = Describe("no service template test", func() {
 				rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(1113017))
 			})
 
 			It("search service category", func() {
@@ -174,7 +171,6 @@ var _ = Describe("no service template test", func() {
 				rsp, err := serviceClient.UpdateServiceCategory(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(1199006))
 			})
 
 			It("create service category with same parent", func() {
@@ -214,7 +210,6 @@ var _ = Describe("no service template test", func() {
 				rsp, err := serviceClient.UpdateServiceCategory(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(1113017))
 			})
 
 			It("delete service category with children", func() {
@@ -225,7 +220,6 @@ var _ = Describe("no service template test", func() {
 				rsp, err := serviceClient.DeleteServiceCategory(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(1199055))
 			})
 
 			It("create module without template using service category", func() {
@@ -269,7 +263,6 @@ var _ = Describe("no service template test", func() {
 				rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(1199019))
 			})
 
 			It("search module", func() {
@@ -294,7 +287,6 @@ var _ = Describe("no service template test", func() {
 				rsp, err := serviceClient.DeleteServiceCategory(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
-				Expect(rsp.Code).To(Equal(1199056))
 			})
 
 			It("search service category", func() {
@@ -364,7 +356,6 @@ var _ = Describe("no service template test", func() {
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(1101034))
 		})
 
 		It("create service instance with invalid host", func() {
@@ -380,7 +371,6 @@ var _ = Describe("no service template test", func() {
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(1113002))
 		})
 
 		// TODO: ADD TRANSACTION TO FIX THIS
@@ -405,10 +395,9 @@ var _ = Describe("no service template test", func() {
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(1199006))
 		})
 
-		It("search service instance", func() {
+		PIt("search service instance", func() {
 			input := map[string]interface{}{
 				"bk_module_id":      moduleId,
 				common.BKAppIDField: bizId,
@@ -583,7 +572,6 @@ var _ = Describe("no service template test", func() {
 			rsp, err := processClient.CreateProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(1113019))
 		})
 
 		It("create process instance with same bk_func_name and bk_start_param_regex", func() {
@@ -603,7 +591,6 @@ var _ = Describe("no service template test", func() {
 			rsp, err := processClient.CreateProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(1113020))
 		})
 
 		It("create process instance with empty name", func() {
@@ -621,7 +608,6 @@ var _ = Describe("no service template test", func() {
 			rsp, err := processClient.CreateProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(1199006))
 		})
 
 		It("search process instance", func() {
@@ -685,7 +671,6 @@ var _ = Describe("no service template test", func() {
 			rsp, err := processClient.UpdateProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(1113019))
 		})
 
 		It("udpate process instance with same bk_func_name and bk_start_param_regex", func() {
@@ -703,7 +688,6 @@ var _ = Describe("no service template test", func() {
 			rsp, err := processClient.UpdateProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(1113020))
 		})
 
 		It("udpate process instance with empty name", func() {
@@ -719,7 +703,6 @@ var _ = Describe("no service template test", func() {
 			rsp, err := processClient.UpdateProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-			Expect(rsp.Code).To(Equal(1199006))
 		})
 
 		It("search process instance", func() {
