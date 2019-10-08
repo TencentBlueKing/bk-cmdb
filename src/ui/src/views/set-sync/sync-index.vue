@@ -51,7 +51,7 @@
             </div>
             <div class="footer">
                 <bk-button theme="primary" class="mr10" @click="handleConfirmSync">{{$t('确认同步')}}</bk-button>
-                <bk-button class="mr10">{{$t('取消')}}</bk-button>
+                <bk-button class="mr10" @click="handleGoback">{{$t('取消')}}</bk-button>
                 <span v-if="!isSingleSync">{{$tc('已选集群实例', setInstancesId.length, { count: setInstancesId.length })}}</span>
             </div>
         </template>
@@ -70,7 +70,8 @@
                 expandAll: false,
                 diffList: [],
                 noInfo: false,
-                isLatestInfo: false
+                isLatestInfo: false,
+                templateName: ''
             }
         },
         computed: {
@@ -96,6 +97,7 @@
         },
         async created () {
             this.setBreadcrumbs()
+            await this.getSetTemplateInfo()
             await this.getDiffData()
         },
         methods: {
@@ -106,6 +108,17 @@
                 }, {
                     label: this.$t('同步集群模板')
                 }])
+            },
+            async getSetTemplateInfo () {
+                try {
+                    const info = await this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
+                        bizId: this.business,
+                        setTemplateId: this.setTemplateId
+                    })
+                    this.templateName = info.name
+                } catch (e) {
+                    console.error(e)
+                }
             },
             async getDiffData () {
                 try {
@@ -134,9 +147,10 @@
             handleConfirmSync () {
                 this.$bkInfo({
                     type: 'warning',
-                    title: '确定同步拓扑？',
-                    // subTitle: '即将同步拓扑模版【正式集群模版】，模版的拓扑结构将会更新到选中的集群实例中',
-                    subTitle: '即将批量同步拓扑模版【正式集群模版】到选中的20个集群实例中，模版的拓扑结构将会更新到选中的集群实例中',
+                    title: this.$t('确定同步拓扑'),
+                    subTitle: this.isSingleSync
+                        ? this.$tc('单个集群同步提示', 1, { name: this.templateName })
+                        : this.$tc('多个集群同步提示', 1, { name: this.templateName, count: this.setInstancesId.length }),
                     extCls: 'set-confirm-sync',
                     confirmFn: async () => {
                         try {
@@ -151,9 +165,10 @@
                                 }
                             })
                             this.$router.replace({
-                                name: 'viewSync',
+                                name: 'setTemplateInfo',
                                 params: {
-                                    setTemplateId: this.setTemplateId
+                                    templateId: this.setTemplateId,
+                                    active: 'instance'
                                 }
                             })
                         } catch (e) {
@@ -187,7 +202,8 @@
                     this.$router.replace({
                         name: 'setTemplateInfo',
                         params: {
-                            templateId: this.setTemplateId
+                            templateId: this.setTemplateId,
+                            active: 'instance'
                         }
                     })
                 }
