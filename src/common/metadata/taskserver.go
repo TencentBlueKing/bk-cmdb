@@ -23,6 +23,9 @@ type CreateTaskRequest struct {
 	// task name
 	Name string `json:"name"`
 
+	// flag task 任务标识，留给业务方做识别任务
+	Flag string `json:"flag"`
+
 	Data []interface{} `json:"data"`
 }
 
@@ -32,6 +35,8 @@ type APITaskDetail struct {
 	TaskID string `json:"task_id" bson:"task_id"`
 	// task name. 表示所在的任务队列
 	Name string `json:"name" bson:"name"`
+	// flag task 任务标识，留给业务方做识别任务
+	Flag string `json:"flag" bson:"flag"`
 	// task create user
 	User string `json:"user" bson:"user"`
 	//  http header
