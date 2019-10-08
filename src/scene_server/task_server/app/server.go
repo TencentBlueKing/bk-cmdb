@@ -138,9 +138,13 @@ func (h *TaskServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 			}
 		}
 
+		f := func() ([]string, error) {
+			addrs := strings.Split(current.ConfigMap[prefix+".addrs"], ",")
+			return addrs, nil
+		}
 		task := tasksvc.TaskInfo{
 			Name:  name,
-			Addr:  current.ConfigMap[prefix+".addrs"],
+			Addr:  f,
 			Path:  current.ConfigMap[prefix+".path"],
 			Retry: retry,
 		}
