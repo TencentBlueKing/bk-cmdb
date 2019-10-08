@@ -158,9 +158,12 @@ func (g *group) UpdateObjectAttributeGroup(params types.ContextParams, conds []m
 			return err
 		}
 		if len(grps) != 1 {
-			cond.Data.PropertyGroupID = ""
+			blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is group is invalid, rid: %s", cond, params.ReqID)
+			return params.Err.Errorf(common.CCErrCommParamsInvalid, metadata.GroupFieldGroupID)
 		}
+	}
 
+	for _, cond := range conds {
 		input := metadata.UpdateOption{
 			Condition: mapstr.NewFromStruct(cond.Condition, "json"),
 			Data:      mapstr.NewFromStruct(cond.Data, "json"),
