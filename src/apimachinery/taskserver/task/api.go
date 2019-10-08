@@ -21,7 +21,8 @@ import (
 )
 
 type TaskClientInterface interface {
-	Create(ctx context.Context, header http.Header, name string, data []interface{}) (resp *metadata.CreateTaskResponse, err error)
+	// Create  新加任务， name 任务名，flag:任务标识，留给业务方做识别任务, data 每一项任务需要的参数
+	Create(ctx context.Context, header http.Header, name, flag string, data []interface{}) (resp *metadata.CreateTaskResponse, err error)
 
 	ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error)
 
