@@ -184,12 +184,10 @@
         async created () {
             try {
                 this.setDynamicBreadcrumbs()
+                this.$store.dispatch('objectBiz/getAuthorizedBusiness')
                 await this.getProperties()
                 this.getHostList()
                 this.ready = true
-                if (!this.authorizedBusiness.length) {
-                    this.$store.dispatch('objectBiz/getAuthorizedBusiness')
-                }
             } catch (e) {
                 console.error(e)
             }

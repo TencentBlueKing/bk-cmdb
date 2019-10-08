@@ -184,10 +184,6 @@
                     this.$http.cancel('post_searchBusiness_$ne_disabled')
                     this.$success(this.$t('恢复业务成功'))
                     this.getTableData()
-                    this.$store.commit('objectBiz/addAuthorizedBusiness', {
-                        bk_biz_id: biz.bk_biz_id,
-                        bk_biz_name: `${biz.bk_biz_name}(recover)`
-                    })
                 })
             },
             handleSizeChange (size) {
