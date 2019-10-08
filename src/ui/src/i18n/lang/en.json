@@ -523,7 +523,7 @@
     "未分配主机": "Unassigned Hosts",
     "请勿选择已分配主机": "Please do not select assigned host",
     "快速查询": "Quick Search",
-    "导入提示": "Drag a file here or {clickUpload}{breakRow}You can only upload {allowType} files up to {maxSize}kb",
+    "导入提示": "Drag a file here or {clickUpload}{breakRow}You can only upload {allowType} files up to {maxSize}KB",
     "点击上传": "click upload",
     "下载模板": "Download Template",
     "隐藏属性": "Hidden Properties",
@@ -919,5 +919,8 @@
     "显示拓扑": "Display topology",
     "服务模板创建没进程提示": "The current template does not set process information, whether to confirm?",
     "创建成功无进程提示": "the process has not been added and the service instance cannot be created",
-    "目标包含主机, 不允许删除": "Target contains host, not allowed to delete"
+    "目标包含主机, 不允许删除": "Target contains host, not allowed to delete",
+    "提交": "Submit",
+    "事件订阅": "Event Subscription",
+    "资源目录": "Resource Sirectory"
 }

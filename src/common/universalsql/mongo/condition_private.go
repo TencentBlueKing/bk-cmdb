@@ -153,7 +153,7 @@ func parseAnd(targetCond *mongoCondition, embedName string, vals []mapstr.MapStr
 			for key, val := range andCond.embed {
 				andCond.Element(&Eq{Key: key, Val: val.ToMapStr()})
 			}
-			outputCond.and = append(outputCond.and, andCond.elements...)
+			outputCond.and = append(outputCond.and, andCond)
 		} else {
 			andCond.and = append(andCond.and, andCond.elements...)
 			andCond.elements = []universalsql.ConditionElement{}
@@ -184,7 +184,7 @@ func parseOr(targetCond *mongoCondition, embedName string, vals []mapstr.MapStr)
 			for key, val := range orCond.embed {
 				orCond.Element(&Eq{Key: key, Val: val.ToMapStr()})
 			}
-			outputCond.or = append(outputCond.or, orCond.elements...)
+			outputCond.or = append(outputCond.or, orCond)
 		} else {
 			orCond.or = append(orCond.or, orCond.elements...)
 			orCond.elements = []universalsql.ConditionElement{}

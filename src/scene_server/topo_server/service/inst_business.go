@@ -198,6 +198,7 @@ func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathPara
 		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
 		appList, err := s.AuthManager.Authorize.GetAnyAuthorizedBusinessList(params.Context, user)
 		if err != nil {
+			blog.Errorf("[api-biz] SearchReducedBusinessList failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
 		}
 
@@ -240,6 +241,32 @@ func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathPara
 	result.Set("count", cnt)
 	result.Set("info", datas)
 	return result, nil
+}
+
+func (s *Service) GetBusinessBasicInfo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
+	}
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKAppNameField, common.BKAppIDField},
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+		},
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDApp, query)
+	if err != nil {
+		blog.Errorf("failed to get business by id, bizID: %s, err: %s, rid: %s", bizID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if len(result.Data.Info) == 0 {
+		blog.Errorf("get business by id not found, bizID: %s, rid: %s", bizID, params.ReqID)
+		err := params.Err.CCError(common.CCErrCommNotFound)
+		return nil, err
+	}
+	bizData := result.Data.Info[0]
+	return bizData, nil
 }
 
 // SearchBusiness search the business by condition
@@ -320,6 +347,7 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
 		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(params.Context, user)
 		if err != nil {
+			blog.Errorf("[api-biz] SearchBusiness failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
 		}
 
@@ -385,6 +413,7 @@ func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams,
 		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
 		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(params.Context, user)
 		if err != nil {
+			blog.Errorf("[api-biz] SearchArchivedBusiness failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
 		}
 		// sort for prepare to find business with page.

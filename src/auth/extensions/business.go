@@ -37,9 +37,9 @@ func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Heade
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	cond := metadata.QueryCondition{}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(context.TODO(), header, common.BKInnerObjIDApp, &cond)
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
 	if err != nil {
-		blog.Errorf("list business failed, err: %v", err)
+		blog.Errorf("list business failed, err: %v, rid: %s", err, rid)
 		return nil, err
 	}
 
@@ -172,6 +172,8 @@ func (am *AuthManager) GenBusinessAuditNoPermissionResp(ctx context.Context, hea
 		return nil, errors.New("get business detail failed")
 	}
 	p.ScopeName = businesses[0].BKAppNameField
+    p.ResourceType = p.Resources[0][0].ResourceType
+    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
 }
@@ -315,7 +317,8 @@ func (am *AuthManager) GenBusinessNoPermissionResp(ctx context.Context, header h
 	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
 	p.ActionID = string(authcenter.Get)
 	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
-
+    p.ResourceType = string(authcenter.SysBusinessInstance)
+	p.ResourceTypeName = authcenter.ResourceTypeIDMap[authcenter.SysBusinessInstance]
 	p.Resources = [][]metadata.Resource{
 		{{
 			ResourceType:     string(authcenter.SysBusinessInstance),

@@ -64,10 +64,7 @@ func (am *AuthManager) collectServiceTemplateByIDs(ctx context.Context, header h
 func (am *AuthManager) extractBusinessIDFromServiceTemplate(templates ...metadata.ServiceTemplate) (int64, error) {
 	var businessID int64
 	for idx, template := range templates {
-		bizID, err := metadata.BizIDFromMetadata(template.Metadata)
-		if err != nil {
-			return 0, fmt.Errorf("parse business ID from service template failed, err: %+v", err)
-		}
+		bizID := template.BizID
 		// we should ignore metadata.LabelBusinessID field not found error
 		if idx > 0 && bizID != businessID {
 			return 0, fmt.Errorf("get multiple business ID from service templates")
@@ -135,6 +132,8 @@ func (am *AuthManager) GenServiceTemplateNoPermissionResp() *metadata.BaseResp {
 			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysSystemBase],
 		}},
 	}
+	p.ResourceType = p.Resources[0][0].ResourceType
+	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp

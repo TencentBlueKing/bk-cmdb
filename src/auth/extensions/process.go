@@ -13,19 +13,19 @@
 package extensions
 
 import (
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/framework/core/errors"
 	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/framework/core/errors"
 )
 
 /*
@@ -127,6 +127,8 @@ func (am *AuthManager) GenProcessNoPermissionResp(ctx context.Context, header ht
 		return nil, errors.New("get business detail failed")
 	}
 	p.ScopeName = businesses[0].BKAppNameField
+	p.ResourceType = p.Resources[0][0].ResourceType
+	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
 }

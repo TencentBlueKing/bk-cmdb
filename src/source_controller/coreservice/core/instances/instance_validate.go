@@ -13,8 +13,6 @@
 package instances
 
 import (
-	"strconv"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -211,7 +209,7 @@ func (m *instanceManager) validateModuleCreate(ctx core.ContextParams, instanceD
 	filter := map[string]interface{}{
 		common.BKFieldID:                svcTplID,
 		common.BKServiceCategoryIDField: svcCategoryID,
-		common.MetadataField:            metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
+		common.BKAppIDField:             bizID,
 	}
 	if err := m.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).One(ctx.Context, &tpl); err != nil {
 		return valid.errif.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)

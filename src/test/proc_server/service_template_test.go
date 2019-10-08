@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 
@@ -20,13 +21,9 @@ var _ = Describe("service template test", func() {
 	Describe("service template test", func() {
 		It("create service category", func() {
 			input := map[string]interface{}{
-				"bk_parent_id": 0,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
-				"name": "test10",
+				"bk_parent_id":      0,
+				common.BKAppIDField: bizId,
+				"name":              "test10",
 			}
 			rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -39,11 +36,7 @@ var _ = Describe("service template test", func() {
 
 		It("search service category", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -55,12 +48,8 @@ var _ = Describe("service template test", func() {
 		It("create service template", func() {
 			input := map[string]interface{}{
 				"service_category_id": categoryId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
-				"name": "st",
+				common.BKAppIDField:   bizId,
+				"name":                "st",
 			}
 			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -75,11 +64,7 @@ var _ = Describe("service template test", func() {
 
 		It("search service template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"service_category_id": categoryId,
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
@@ -95,12 +80,8 @@ var _ = Describe("service template test", func() {
 		It("create service template with empty name", func() {
 			input := map[string]interface{}{
 				"service_category_id": categoryId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
-				"name": "",
+				common.BKAppIDField:   bizId,
+				"name":                "",
 			}
 			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -110,12 +91,8 @@ var _ = Describe("service template test", func() {
 		It("create service template with invalid service category", func() {
 			input := map[string]interface{}{
 				"service_category_id": 12345,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
-				"name": "st1",
+				common.BKAppIDField:   bizId,
+				"name":                "st1",
 			}
 			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -124,11 +101,7 @@ var _ = Describe("service template test", func() {
 
 		It("search service template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"service_category_id": categoryId,
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
@@ -140,12 +113,8 @@ var _ = Describe("service template test", func() {
 
 		It("delete service category with template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
-				"id": categoryId,
+				common.BKAppIDField: bizId,
+				"id":                categoryId,
 			}
 			rsp, err := serviceClient.DeleteServiceCategory(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -154,11 +123,7 @@ var _ = Describe("service template test", func() {
 
 		It("search service category", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -276,11 +241,7 @@ var _ = Describe("service template test", func() {
 
 		It("delete service template with module", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"service_template_id": serviceTemplateId,
 			}
 			rsp, err := serviceClient.DeleteServiceTemplate(context.Background(), header, input)
@@ -290,11 +251,7 @@ var _ = Describe("service template test", func() {
 
 		It("search service template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"service_category_id": categoryId,
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
@@ -308,12 +265,8 @@ var _ = Describe("service template test", func() {
 	Describe("service instance test", func() {
 		It("create service instance with template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
-				"bk_module_id": moduleId,
+				common.BKAppIDField: bizId,
+				"bk_module_id":      moduleId,
 				"instances": []map[string]interface{}{
 					{
 						"bk_host_id": hostId1,
@@ -336,12 +289,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -353,12 +302,8 @@ var _ = Describe("service template test", func() {
 
 		It("clone service instance to source host", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
-				"bk_module_id": moduleId,
+				common.BKAppIDField: bizId,
+				"bk_module_id":      moduleId,
 				"instances": []map[string]interface{}{
 					{
 						"bk_host_id": hostId1,
@@ -380,12 +325,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -399,11 +340,7 @@ var _ = Describe("service template test", func() {
 		It("create process template", func() {
 			input := map[string]interface{}{
 				"service_template_id": serviceTemplateId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"processes": []map[string]interface{}{
 					{
 						"spec": map[string]interface{}{
@@ -431,11 +368,7 @@ var _ = Describe("service template test", func() {
 
 		It("search process template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"service_template_id": serviceTemplateId,
 			}
 			rsp, err := processClient.SearchProcessTemplate(context.Background(), header, input)
@@ -452,11 +385,7 @@ var _ = Describe("service template test", func() {
 		It("create process template with same name", func() {
 			input := map[string]interface{}{
 				"service_template_id": serviceTemplateId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"processes": []map[string]interface{}{
 					{
 						"spec": map[string]interface{}{
@@ -480,11 +409,7 @@ var _ = Describe("service template test", func() {
 		It("create process template with same bk_func_name and bk_start_param_regex", func() {
 			input := map[string]interface{}{
 				"service_template_id": serviceTemplateId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"processes": []map[string]interface{}{
 					{
 						"spec": map[string]interface{}{
@@ -512,11 +437,7 @@ var _ = Describe("service template test", func() {
 		It("create process template with empty name", func() {
 			input := map[string]interface{}{
 				"service_template_id": serviceTemplateId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"processes": []map[string]interface{}{
 					{
 						"spec": map[string]interface{}{
@@ -540,11 +461,7 @@ var _ = Describe("service template test", func() {
 		It("create process template with invalid service template", func() {
 			input := map[string]interface{}{
 				"service_template_id": 10000,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"processes": []map[string]interface{}{
 					{
 						"spec": map[string]interface{}{
@@ -567,11 +484,7 @@ var _ = Describe("service template test", func() {
 
 		It("search process template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"service_template_id": serviceTemplateId,
 			}
 			rsp, err := processClient.SearchProcessTemplate(context.Background(), header, input)
@@ -583,12 +496,8 @@ var _ = Describe("service template test", func() {
 
 		It("clone service instance to other host", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
-				"bk_module_id": moduleId,
+				common.BKAppIDField: bizId,
+				"bk_module_id":      moduleId,
 				"instances": []map[string]interface{}{
 					{
 						"bk_host_id": hostId2,
@@ -611,12 +520,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -630,17 +535,13 @@ var _ = Describe("service template test", func() {
 		It("search process instance", func() {
 			input := map[string]interface{}{
 				"service_instance_id": serviceId1,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 			}
 			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			j, err := json.Marshal(rsp.Data)
-			data := []metadata.ProcessInstance{}
+			data := make([]metadata.ProcessInstance, 0)
 			json.Unmarshal(j, &data)
 			Expect(len(data)).To(Equal(1))
 			Expect(data[0].Property["bk_process_name"]).To(Equal("p1"))
@@ -652,11 +553,7 @@ var _ = Describe("service template test", func() {
 
 		It("create process instance", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"service_instance_id": serviceId,
 				"processes": []map[string]interface{}{
 					{
@@ -674,11 +571,7 @@ var _ = Describe("service template test", func() {
 
 		It("udpate process instance", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField: bizId,
 				"processes": []map[string]interface{}{
 					{
 						"bk_func_name":         "p3",
@@ -696,17 +589,13 @@ var _ = Describe("service template test", func() {
 		It("search process instance", func() {
 			input := map[string]interface{}{
 				"service_instance_id": serviceId1,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 			}
 			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			j, err := json.Marshal(rsp.Data)
-			data := []metadata.ProcessInstance{}
+			data := make([]metadata.ProcessInstance, 0)
 			json.Unmarshal(j, &data)
 			Expect(len(data)).To(Equal(1))
 			Expect(data[0].Property["bk_process_name"]).To(Equal("p1"))
@@ -718,11 +607,7 @@ var _ = Describe("service template test", func() {
 		It("update process template", func() {
 			input := map[string]interface{}{
 				"process_template_id": processTemplateId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"process_property": map[string]interface{}{
 					"bk_func_name": map[string]interface{}{
 						"value":            "123",
@@ -749,11 +634,7 @@ var _ = Describe("service template test", func() {
 
 		It("search process template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"service_template_id": serviceTemplateId,
 			}
 			rsp, err := processClient.SearchProcessTemplate(context.Background(), header, input)
@@ -770,11 +651,7 @@ var _ = Describe("service template test", func() {
 	Describe("update template test", func() {
 		It("update service template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"id":                  serviceTemplateId,
 				"service_category_id": 2,
 				"name":                "abcdefg",
@@ -791,11 +668,7 @@ var _ = Describe("service template test", func() {
 
 		It("search service template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"service_category_id": 2,
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
@@ -810,11 +683,7 @@ var _ = Describe("service template test", func() {
 
 		It("update service template with invalid service category", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"id":                  serviceTemplateId,
 				"service_category_id": 100000,
 				"name":                "abcdefg",
@@ -826,11 +695,7 @@ var _ = Describe("service template test", func() {
 
 		It("search service template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"service_category_id": 2,
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
@@ -842,11 +707,7 @@ var _ = Describe("service template test", func() {
 
 		It("compare service instance and template after add and change process template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"bk_module_id":        moduleId,
 				"service_template_id": serviceTemplateId,
 			}
@@ -877,11 +738,7 @@ var _ = Describe("service template test", func() {
 
 		It("sync service instance and template after add and change process template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"bk_module_id":        moduleId,
 				"service_template_id": serviceTemplateId,
 			}
@@ -909,11 +766,7 @@ var _ = Describe("service template test", func() {
 		It("search process instance", func() {
 			input := map[string]interface{}{
 				"service_instance_id": serviceId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 			}
 			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -930,11 +783,7 @@ var _ = Describe("service template test", func() {
 
 		It("udpate process instance", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField: bizId,
 				"processes": []map[string]interface{}{
 					{
 						"bk_func_name":         "p3",
@@ -951,11 +800,7 @@ var _ = Describe("service template test", func() {
 
 		It("delete process instance", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField: bizId,
 				"process_instance_ids": []int64{
 					processId,
 				},
@@ -968,11 +813,7 @@ var _ = Describe("service template test", func() {
 		It("search process instance", func() {
 			input := map[string]interface{}{
 				"service_instance_id": serviceId1,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 			}
 			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -1021,12 +862,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -1080,12 +917,8 @@ var _ = Describe("service template test", func() {
 
 		It("search module service instances labels", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceFindLabels(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -1101,12 +934,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -1117,12 +946,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance without key", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key3",
@@ -1142,12 +967,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance without key with values", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key3",
@@ -1165,12 +986,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance exists key", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key3",
@@ -1190,12 +1007,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance exists key with values", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key3",
@@ -1213,12 +1026,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with equal key value", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key1",
@@ -1248,12 +1057,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with equal key zero value", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key1",
@@ -1268,12 +1073,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with equal key many values", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key1",
@@ -1292,12 +1093,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with not equal key value", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key1",
@@ -1327,12 +1124,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with not equal key zero value", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key1",
@@ -1347,12 +1140,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with not equal key many values", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key1",
@@ -1371,12 +1160,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with value in values", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key1",
@@ -1408,12 +1193,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with value in zero values", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key1",
@@ -1428,12 +1209,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with value not in values", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key3",
@@ -1465,12 +1242,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with value not in zero values", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key1",
@@ -1485,12 +1258,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with invalid operator", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key1",
@@ -1505,12 +1274,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with empty key", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "",
@@ -1525,12 +1290,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance with no matching data", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 				"selectors": []map[string]interface{}{
 					{
 						"key":      "key1",
@@ -1605,12 +1366,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -1629,11 +1386,7 @@ var _ = Describe("service template test", func() {
 	Describe("removal test", func() {
 		It("remove process template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField: bizId,
 				"process_templates": []int64{
 					processTemplateId,
 				},
@@ -1645,11 +1398,7 @@ var _ = Describe("service template test", func() {
 
 		It("search process template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"service_template_id": serviceTemplateId,
 			}
 			rsp, err := processClient.SearchProcessTemplate(context.Background(), header, input)
@@ -1661,11 +1410,7 @@ var _ = Describe("service template test", func() {
 
 		It("compare service instance and template after add and change process template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"bk_module_id":        moduleId,
 				"service_template_id": serviceTemplateId,
 			}
@@ -1687,11 +1432,7 @@ var _ = Describe("service template test", func() {
 
 		It("remove service instance with template with process", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField: bizId,
 				"service_instance_ids": []int64{
 					serviceId1,
 				},
@@ -1703,12 +1444,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -1722,11 +1459,7 @@ var _ = Describe("service template test", func() {
 
 		It("sync service instance and template after add and change process template", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 				"bk_module_id":        moduleId,
 				"service_template_id": serviceTemplateId,
 			}
@@ -1738,11 +1471,7 @@ var _ = Describe("service template test", func() {
 		It("search process instance", func() {
 			input := map[string]interface{}{
 				"service_instance_id": serviceId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField:   bizId,
 			}
 			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -1769,11 +1498,7 @@ var _ = Describe("service template test", func() {
 
 		It("remove service instance with template without process", func() {
 			input := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				common.BKAppIDField: bizId,
 				"service_instance_ids": []int64{
 					serviceId,
 				},
@@ -1785,12 +1510,8 @@ var _ = Describe("service template test", func() {
 
 		It("search service instance", func() {
 			input := map[string]interface{}{
-				"bk_module_id": moduleId,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": strconv.FormatInt(bizId, 10),
-					},
-				},
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())

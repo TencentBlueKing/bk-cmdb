@@ -160,7 +160,7 @@ func TestNewConditionFromMapStrFromCommonCondition(t *testing.T) {
 	target.Field("struct_arr").Eq([]tmpStruct{tmpStruct{A: 1}})
 
 	or := target.NewOR()
-	or.Item(mapstr.MapStr{"a": "b"})
+	or.Item(mapstr.MapStr{"a": "b", "b": "cc"})
 	or.Item(mapstr.MapStr{"b": "c"})
 	or.Array([]interface{}{mapstr.MapStr{"c": "b"}, mapstr.MapStr{"d": "b"}})
 	or.MapStrArr([]mapstr.MapStr{mapstr.MapStr{"e": "b"}, mapstr.MapStr{"f": "b"}})
@@ -206,4 +206,32 @@ func TestNewConditionFromMapStrFromCommonCondition(t *testing.T) {
 	json4, err := target1.ToMapStr().ToJSON()
 	require.NoError(t, err)
 	require.Equal(t, string(json3), string(json4))
+}
+
+func TestNewConditionFromMapStrFromCommonCondition1(t *testing.T) {
+
+	condMap := mapstr.New()
+
+	orMapARr := []mapstr.MapStr{mapstr.MapStr{"aa": 1, "cc": 2}, mapstr.MapStr{"aa": 1, "cc": 3}}
+	condMap.Set("$or", []mapstr.MapStr{
+		mapstr.MapStr{"a": 1, "b": 1},
+		mapstr.MapStr{"a": 1, "$or": orMapARr},
+	})
+
+	condMap.Set("$and", []mapstr.MapStr{
+		mapstr.MapStr{"a": 1, "b": 1},
+		mapstr.MapStr{"a": 1, "$or": orMapARr},
+	})
+	cond, err := mongo.NewConditionFromMapStr(condMap)
+	require.NoError(t, err)
+
+	condRawStr, err := condMap.ToJSON()
+	require.NoError(t, err)
+
+	conStr, err := cond.ToMapStr().ToJSON()
+
+	t.Logf("%s  %s", string(condRawStr), string(conStr))
+
+	require.Equal(t, string(condRawStr), string(conStr))
+
 }
