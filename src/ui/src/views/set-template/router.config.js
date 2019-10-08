@@ -18,11 +18,12 @@ export default [{
 }, {
     name: 'setTemplateInfo',
     path: 'set/template/info/:templateId',
-    component: () => import('./children/template-info.vue'),
+    component: () => import('./template-info.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            i18n: '模板信息'
+            i18n: '模板信息',
+            relative: MENU_BUSINESS_SET_TEMPLATE
         }
     })
 }, {
@@ -32,7 +33,6 @@ export default [{
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            i18n: '创建集群模板',
             relative: MENU_BUSINESS_SET_TEMPLATE
         }
     })

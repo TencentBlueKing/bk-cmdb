@@ -12,14 +12,14 @@
 </template>
 
 <script>
-    import templateInstance from './template-intance.vue'
+    import templateInstance from './children/template-intance.vue'
     export default {
         components: {
             templateInstance
         },
         data () {
             return {
-                active: 'setting'
+                active: this.$route.query.tab || 'setting'
             }
         },
         computed: {
