@@ -17,11 +17,11 @@ import (
 
 type TaskQueueConfig struct {
 	Name  string
-	Addrs []string
+	Addrs func() ([]string, error)
 }
 
 type TaskQueueConfigServ struct {
-	addrs map[string][]string
+	addrs map[string]func() ([]string, error)
 	sync.RWMutex
 }
 
@@ -31,10 +31,11 @@ type TaskQueueServDiscoveryInterace interface {
 
 var (
 	taskQueue = &TaskQueueConfigServ{
-		addrs: make(map[string][]string, 0),
+		addrs: make(map[string]func() ([]string, error), 0),
 	}
 )
 
+//  NewTaskServerConfigServ
 func NewTaskServerConfigServ(srvChan chan TaskQueueConfig) *TaskQueueConfigServ {
 	go func() {
 		if nil == srvChan {
@@ -44,6 +45,7 @@ func NewTaskServerConfigServ(srvChan chan TaskQueueConfig) *TaskQueueConfigServ 
 			config := <-srvChan
 			taskQueue.Lock()
 			taskQueue.addrs[config.Name] = config.Addrs
+
 			taskQueue.Unlock()
 		}
 	}()
@@ -51,11 +53,13 @@ func NewTaskServerConfigServ(srvChan chan TaskQueueConfig) *TaskQueueConfigServ 
 	return taskQueue
 }
 
-func UpdateTaskServerConfigServ(name string, addrs []string) {
+func UpdateTaskServerConfigServ(name string, f func() ([]string, error)) {
 	go func() {
 
 		taskQueue.Lock()
-		taskQueue.addrs[name] = addrs
+
+		taskQueue.addrs[name] = f
+
 		taskQueue.Unlock()
 
 	}()
@@ -81,6 +85,5 @@ func (s *taskQueueConfig) GetServers() ([]string, error) {
 	// mabye will deal some logics about server
 	taskQueue.RLock()
 	defer taskQueue.RUnlock()
-
-	return taskQueue.addrs[s.flag], nil
+	return taskQueue.addrs[s.flag]()
 }

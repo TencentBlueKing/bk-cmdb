@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
-	"strings"
 	"sync"
 	"time"
 
@@ -26,7 +25,9 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/types"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/task_server/taskconfig"
 )
 
 var (
@@ -35,7 +36,7 @@ var (
 
 type TaskInfo struct {
 	Name  string
-	Addr  string
+	Addr  func() ([]string, error)
 	Path  string
 	Retry int64
 }
@@ -49,8 +50,13 @@ type TaskQueue struct {
 
 func (s *Service) NewQueue(taskMap map[string]TaskInfo) *TaskQueue {
 	var taskArr []TaskInfo
+	codeTaskInfoMap := s.initCodeTaskConfig()
+	for name, taskInfo := range codeTaskInfoMap {
+		taskMap[name] = taskInfo
+	}
+
 	for _, taskItem := range taskMap {
-		taskUtil.UpdateTaskServerConfigServ(taskItem.Name, strings.Split(taskItem.Addr, ","))
+		taskUtil.UpdateTaskServerConfigServ(taskItem.Name, taskItem.Addr)
 		taskArr = append(taskArr, taskItem)
 	}
 
@@ -106,6 +112,7 @@ func (tq *TaskQueue) execute(ctx context.Context, task TaskInfo) {
 		canSleep := true
 		taskQueueInfoArr, err := tq.getWaitExectue(ctx, task.Name)
 		if err != nil {
+			blog.Errorf("exceute get wait execute task error. task name:%s, err:%s", task.Name, err.Error())
 			// select db error. sleep 10s
 			time.Sleep(time.Second * 10)
 			continue
@@ -138,6 +145,7 @@ func (tq *TaskQueue) executeTaskQueueItem(ctx context.Context, taskInfo TaskInfo
 	locked, err := tq.lockTask(ctx, taskQueueInfo.TaskID)
 	blog.Infof("start task %s", taskQueueInfo.TaskID)
 	if err != nil {
+		blog.Errorf("exceute task. lock error. task name:%s, taskID:%s, err:%s", taskInfo.Name, taskQueueInfo.TaskID, err.Error())
 		time.Sleep(time.Second)
 		return
 	}
@@ -152,7 +160,9 @@ func (tq *TaskQueue) executeTaskQueueItem(ctx context.Context, taskInfo TaskInfo
 		return
 	}
 	if !canExecute {
-		tq.unLockTask(ctx, taskQueueInfo.TaskID)
+		if err := tq.unLockTask(ctx, taskQueueInfo.TaskID); err != nil {
+			blog.Errorf("exceute task. task cann't execute. unlock error. task name:%s, taskID:%s, err:%s", taskInfo.Name, taskQueueInfo.TaskID, err.Error())
+		}
 		return
 	}
 	tq.executePush(ctx, taskInfo, &taskQueueInfo)
@@ -338,4 +348,35 @@ func (tq *TaskQueue) compensateDBExecute(ctx context.Context) {
 	if err != nil {
 		blog.ErrorJSON("update task to wait execute error:%s, cond:%s", err.Error(), cond.ToMapStr())
 	}
+}
+
+func (s *Service) initCodeTaskConfig() map[string]TaskInfo {
+	taskInfoMap := make(map[string]TaskInfo, 0)
+	codeTaskConfigArr := taskconfig.GetCodeTaskConfig()
+
+	for _, codeTaskConfig := range codeTaskConfigArr {
+		ti := TaskInfo{
+			Name:  codeTaskConfig.Name,
+			Retry: codeTaskConfig.Retry,
+			Path:  codeTaskConfig.Path,
+		}
+		switch codeTaskConfig.SvrType {
+		case types.CC_MODULE_APISERVER:
+			ti.Addr = s.Engine.Discovery().ApiServer().GetServers
+		case types.CC_MODULE_HOST:
+			ti.Addr = s.Engine.Discovery().HostServer().GetServers
+		case types.CC_MODULE_PROC:
+			ti.Addr = s.Engine.Discovery().ProcServer().GetServers
+		case types.CC_MODULE_TOPO:
+			ti.Addr = s.Engine.Discovery().TopoServer().GetServers
+		case types.CC_MODULE_TASK:
+			ti.Addr = s.Engine.Discovery().TaskServer().GetServers
+		default:
+			panicErr := fmt.Sprintf("task code init. task:%s, svrType:%s, not exist", ti.Name, codeTaskConfig.SvrType)
+			panic(panicErr)
+		}
+		taskInfoMap[ti.Name] = ti
+	}
+
+	return taskInfoMap
 }
