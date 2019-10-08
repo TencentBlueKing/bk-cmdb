@@ -60,6 +60,7 @@
             return {
                 templateName: this.$t('模板集群名称'),
                 services: [],
+                originalServices: [],
                 collapse: false,
                 selected: null,
                 unwatch: null,
@@ -77,6 +78,20 @@
             },
             templateId () {
                 return this.$route.params.templateId
+            },
+            hasChange () {
+                if (this.mode !== 'edit') {
+                    return false
+                }
+                return this.originalServices.some((service, index) => {
+                    const target = this.services[index]
+                    return (target && target.id !== service.id) || !target
+                })
+            }
+        },
+        watch: {
+            hasChange (value) {
+                this.$emit('service-change', value)
             }
         },
         created () {
@@ -97,9 +112,11 @@
                         bizId: this.$store.getters['objectBiz/bizId'],
                         setTemplateId: this.templateId
                     })
+                    this.originalServices = [...this.services]
                 } catch (e) {
                     console.error(e)
                     this.services = []
+                    this.originalServices = []
                 }
             },
             initMonitorTemplateName () {

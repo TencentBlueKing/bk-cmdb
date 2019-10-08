@@ -13,8 +13,8 @@ const actions = {
     updateSetTemplate ({ commit }, { bizId, setTemplateId, params, config }) {
         return $http.put(`update/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}`, params, config)
     },
-    deleteSetTemplate ({ commit }, { bizId, params, config }) {
-        return $http.delete(`deletemany/topo/set_template/bk_biz_id/${bizId}/`, params, config)
+    deleteSetTemplate ({ commit }, { bizId, config }) {
+        return $http.delete(`deletemany/topo/set_template/bk_biz_id/${bizId}`, config)
     },
     getSetTemplates ({ commit }, { bizId, params, config }) {
         return $http.post(`findmany/topo/set_template/bk_biz_id/${bizId}/web`, params, config)

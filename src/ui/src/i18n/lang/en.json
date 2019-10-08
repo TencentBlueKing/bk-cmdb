@@ -1001,5 +1001,9 @@
     "同步人": "Sync personnel",
     "批量同步集群模板实例提示": "You can sync multiple template instances in bulk",
     "应用数量": "Application count",
-    "服务模板选择器提示语": "You can select service template to add modules only which would extend service info from service template."
+    "服务模板选择器提示语": "You can select service template to add modules only which would extend service info from service template.",
+    "无服务模板提示": "There are no service templates, {link}",
+    "跳转添加": "Click to create",
+    "确认删除xx集群模板": "Confirm to delete set template {name}?",
+    "确认删除选中的集群模板": "Confirm to delete selected set template(s)"
 }
