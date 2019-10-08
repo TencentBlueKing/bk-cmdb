@@ -20,11 +20,13 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (t *task) Create(ctx context.Context, header http.Header, name string, data []interface{}) (resp *metadata.CreateTaskResponse, err error) {
+// Create  新加任务， name 任务名，flag:任务标识，留给业务方做识别任务, data 每一项任务需要的参数
+func (t *task) Create(ctx context.Context, header http.Header, name, flag string, data []interface{}) (resp *metadata.CreateTaskResponse, err error) {
 	resp = new(metadata.CreateTaskResponse)
 	subPath := "/task/create"
 	body := metadata.CreateTaskRequest{
 		Name: name,
+		Flag: flag,
 		Data: data,
 	}
 
