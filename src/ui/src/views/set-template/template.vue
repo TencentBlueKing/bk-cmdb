@@ -24,6 +24,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
     import cmdbSetTemplateTree from './children/template-tree.vue'
     export default {
         components: {
@@ -34,31 +35,82 @@
                 templateName: ''
             }
         },
+        computed: {
+            mode () {
+                return this.$route.params.mode
+            },
+            templateId () {
+                return this.$route.params.templateId
+            }
+        },
+        created () {
+            if (['edit', 'view'].includes(this.mode)) {
+                this.getSetTemplateInfo()
+            }
+        },
         methods: {
+            async getSetTemplateInfo () {
+                try {
+                    const info = await this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
+                        bizId: this.$store.getters['objectBiz/bizId'],
+                        setTemplateId: this.templateId
+                    })
+                    this.templateName = info.name
+                } catch (e) {
+                    console.error(e)
+                }
+            },
             async handleConfirm () {
                 try {
                     const validateResult = await this.$validator.validateAll()
                     if (!validateResult) {
                         return false
                     }
-                    const services = this.$refs.templateTree.services
-                    const bizId = this.$store.getters['objectBiz/bizId']
-                    await this.$store.dispatch('setTemplate/createSetTemplate', {
-                        bizId,
-                        params: {
-                            bk_biz_id: bizId,
-                            name: this.templateName,
-                            service_template_ids: services.map(template => template.id)
-                        },
-                        config: {
-                            requestId: 'createSetTemplate'
-                        }
-                    })
+                    if (this.mode === 'create') {
+                        await this.createSetTemplate()
+                    } else {
+                        await this.updateSetTemplate()
+                    }
                 } catch (e) {
                     console.error(e)
                 }
             },
-            handleCancel () {}
+            createSetTemplate () {
+                const services = this.$refs.templateTree.services
+                const bizId = this.$store.getters['objectBiz/bizId']
+                return this.$store.dispatch('setTemplate/createSetTemplate', {
+                    bizId,
+                    params: {
+                        bk_biz_id: bizId,
+                        name: this.templateName,
+                        service_template_ids: services.map(template => template.id)
+                    },
+                    config: {
+                        requestId: 'createSetTemplate'
+                    }
+                })
+            },
+            updateSetTemplate () {
+                const services = this.$refs.templateTree.services
+                const bizId = this.$store.getters['objectBiz/bizId']
+                return this.$store.dispatch('setTemplate/updateSetTemplate', {
+                    bizId,
+                    setTemplateId: this.templateId,
+                    params: {
+                        bk_biz_id: bizId,
+                        name: this.templateName,
+                        service_template_ids: services.map(template => template.id)
+                    },
+                    config: {
+                        requestId: 'updateSetTemplate'
+                    }
+                })
+            },
+            handleCancel () {
+                this.$router.push({
+                    name: MENU_BUSINESS_SET_TEMPLATE
+                })
+            }
         }
     }
 </script>
