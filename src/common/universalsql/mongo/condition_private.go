@@ -175,7 +175,6 @@ func parseOr(targetCond *mongoCondition, embedName string, vals []mapstr.MapStr)
 	for _, targetValMapStr := range vals {
 		orCond := newCondition()
 		orCond, err := parseConditionFromMapStr(orCond, "", targetValMapStr)
-
 		if nil != err {
 			return outputCond, err
 		}

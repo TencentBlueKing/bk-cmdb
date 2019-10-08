@@ -392,7 +392,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 
 	if exists {
 		blog.Errorf("[operation-obj] the object(%#v) is repeated, rid: %s", data, params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, obj.Object().ObjectName)
+		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, obj.Object().ObjectID+"/"+obj.Object().ObjectName)
 	}
 
 	err = obj.Create()
@@ -748,7 +748,7 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 	exists, err := obj.IsExists()
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to update the object(%#v), err: %s, rid: %s", data, err.Error(), params.ReqID)
-		return params.Err.New(common.CCErrTopoObjectCreateFailed, err.Error())
+		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())
 	}
 
 	if exists {
