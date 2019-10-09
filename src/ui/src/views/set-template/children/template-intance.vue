@@ -74,7 +74,7 @@
                     <template slot-scope="{ row }">
                         <bk-button v-if="row.details && statusMap.fail.includes(row.details.status)" text @click="handleRetry(row)">{{$t('重试')}}</bk-button>
                         <bk-button v-else text
-                            :disabled="row.details && statusMap.syncing.includes(row.details.status)"
+                            :disabled="getEditabledStatus(row)"
                             @click="handleSync(row)">
                             {{$t('同步')}}
                         </bk-button>
@@ -173,6 +173,9 @@
             clearInterval(this.timer)
         },
         methods: {
+            getEditabledStatus (row) {
+                return (row.details && this.statusMap.syncing.includes(row.details.status)) || !row.hasDiff
+            },
             getTopoPath (row) {
                 const topoPath = this.$tools.clone(row.topo_path)
                 if (topoPath.length) {
