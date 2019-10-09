@@ -159,6 +159,8 @@
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import { mapGetters, mapActions } from 'vuex'
     import memoize from 'lodash.memoize'
+    import debounce from 'lodash.debounce'
+    import throttle from 'lodash.throttle'
 
     // cytoscape实例，不能放到data中管理
     let cy = null
@@ -279,6 +281,9 @@
         destroyed () {
             cy = null
             eh = null
+
+            // 取消全屏
+            this.resizeFull(true)
         },
         methods: {
             ...mapActions('objectAssociation', [
@@ -305,10 +310,9 @@
             initNetwork () {
                 cy = window.cy = cytoscape({
                     container: this.$refs.topo,
-
                     autolock: true,
-
-                    minZoom: 0.5,
+                    zoom: 1,
+                    minZoom: 0.1,
                     maxZoom: 5,
                     wheelSensitivity: 0.5,
                     pixelRatio: 2,
@@ -449,7 +453,14 @@
                             }
                         },
                         {
-                            selector: 'edge[?twoway]', // 双箭头
+                            selector: 'edge[direction="none"]', // 无方向
+                            style: {
+                                'source-arrow-shape': 'none',
+                                'target-arrow-shape': 'none'
+                            }
+                        },
+                        {
+                            selector: 'edge[direction="bidirectional"]', // 双向
                             style: {
                                 'source-arrow-shape': 'triangle-backcurve',
                                 'source-arrow-color': '#c3cdd7'
@@ -541,9 +552,13 @@
                             cy.$(`node#${id}`).style('visibility', 'hidden').connectedEdges().style('visibility', 'hidden')
                         })
                     })
-                }).on('resize', (event) => {
-                    event.cy.fit()
-                }).on('mouseover', 'node.model', (event) => {
+                }).on('layoutstop', (event) => {
+                    this.fitMaxZoom(event.cy)
+                }).on('resize', debounce((event) => {
+                    const cy = event.cy
+                    cy.fit()
+                    this.fitMaxZoom(cy)
+                }, 500)).on('mouseover', 'node.model', throttle((event) => {
                     const node = event.target
                     const nodeData = node.data()
 
@@ -575,7 +590,7 @@
                         node.data('popover', popover)
                         popover.show()
                     }
-                }).on('mouseout', 'node.model', (event) => {
+                }, 160)).on('mouseout', 'node.model', throttle((event) => {
                     const node = event.target
                     node.removeClass('hover')
                     node.neighborhood().removeClass('hover')
@@ -586,7 +601,7 @@
                     }
 
                     this.topoTooltip.hoverNode = null
-                }).on('dragfreeon', 'node.model', (event) => {
+                }), 160).on('dragfreeon', 'node.model', (event) => {
                     const node = event.target
                     const nodeData = node.data()
                     const position = node.position()
@@ -682,8 +697,8 @@
                             type: nodeItem.node_type
                         },
                         position: {
-                            x: nodeItem.position.x,
-                            y: nodeItem.position.y
+                            x: nodeItem.position.x || 0,
+                            y: nodeItem.position.y || 0
                         },
                         group: 'nodes',
                         locked: false,
@@ -704,7 +719,7 @@
                                         label: asstName || asstId,
                                         source: nodeItem.bk_obj_id,
                                         target: asstItem.bk_obj_id,
-                                        twoway: direction === 'bidirectional',
+                                        direction,
                                         instId: asstItem['bk_inst_id']
                                     },
                                     group: 'edges',
@@ -794,8 +809,12 @@
                 nodeCollection.layout({
                     name: 'grid',
                     fit: false,
+                    padding: 30,
                     rows: rowTotal,
-                    boundingBox: { x1: extent.x1 + nodeGutter, y1: extent.y1 + nodeGutter, w: boundingBoxW, h: boundingBoxH }
+                    boundingBox: { x1: extent.x1 - boundingBoxW, y1: extent.y1 - boundingBoxH, w: boundingBoxW, h: boundingBoxH },
+                    stop: () => {
+                        cy.fit()
+                    }
                 }).run()
 
                 // 更新节点锁状态
@@ -1024,8 +1043,8 @@
                     target: params.bk_asst_obj_id
                 })
                 edge.data({
+                    direction,
                     label: asstName || asstId,
-                    twoway: direction === 'bidirectional',
                     instId: params.id
                 })
             },
@@ -1094,8 +1113,9 @@
             resizeFit () {
                 cy.fit()
             },
-            resizeFull () {
-                this.$store.commit('setLayoutStatus', { mainFullScreen: !this.mainFullScreen })
+            resizeFull (reset) {
+                const mainFullScreen = reset === true ? false : !this.mainFullScreen
+                this.$store.commit('setLayoutStatus', { mainFullScreen })
             },
             zoomIn () {
                 const zoom = cy.zoom()
@@ -1169,6 +1189,13 @@
                         }
                     })
                 }
+            },
+            fitMaxZoom (cy) {
+                const fitMaxZoom = 1
+                if (cy.zoom() > fitMaxZoom) {
+                    cy.zoom(fitMaxZoom)
+                    cy.center()
+                }
             }
         }
     }
@@ -1231,7 +1258,7 @@
                     background: $cmdbBorderFocusColor;
                 }
                 &.built-in i {
-                    background: #868b97;
+                    background: #798aad;
                 }
                 i {
                     display: inline-block;
@@ -1371,7 +1398,7 @@
                 border: 1px solid $cmdbTableBorderColor;
                 border-radius: 50%;
                 &.is-public {
-                    color: #868b97;
+                    color: #798aad;
                 }
             }
             .info {
@@ -1488,7 +1515,6 @@
 
     .tippy-popper {
         transition: none!important;
-
     }
 
     .tippy-tooltip {
