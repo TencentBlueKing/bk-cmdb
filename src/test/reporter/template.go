@@ -6,6 +6,32 @@ const (
 	<head>
 		<title>{{.Name}}</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<style type="text/css">
+		/* gridtable */
+			table.gridtable {
+				font-family: verdana,arial,sans-serif;
+				font-size:12px;
+				color:#333333;
+				border-width: 1px;
+				border-color: #666666;
+				border-collapse: collapse;
+			}
+			table.gridtable th {
+				border-width: 1px;
+				padding: 8px;
+				border-style: solid;
+				border-color: #666666;
+				background-color: #dedede;
+			}
+			table.gridtable td {
+				border-width: 1px;
+				padding: 8px;
+				border-style: solid;
+				border-color: #666666;
+				background-color: #ffffff;
+			}
+		/* /gridtable */
+		</style>
 	</head>
 	<body>
 		<div>
@@ -14,19 +40,23 @@ const (
 			<p><strong>Total Tests: </strong>{{.TotalNum}}</p>
 			<p><strong>Failed Tests: </strong>{{.FailedNum}}</p>
 		</div>
-		<table border="1" width="90%">
+		<table class="gridtable">
 			<tr>
 				<th>Name</th>
 				<th>State</th>
 				<th>RunTime</th>
 				<th>Detail</th>
 			</tr>
-			{{ range .TestCases }}
-				{{ if ne .State "Passed" }}
-					<tr style='color:red;'>
-				{{ else }}
-					<tr>
-				{{ end }}
+			{{ range .FailedTestCases }}
+			<tr style='color:red;'>
+				<td>{{.Name}}</td>
+				<td>{{.State}}</td>
+				<td>{{.RunTime}}s</td>
+				<td>{{.Detail}}</td>
+			</tr>
+			{{ end }}
+			{{ range .OtherTestCases }}
+			<tr>
 				<td>{{.Name}}</td>
 				<td>{{.State}}</td>
 				<td>{{.RunTime}}s</td>
@@ -91,11 +121,32 @@ const (
 			<td>{{.State}}</td>
 			<td>{{.TotalNum}}</td>
 			<td>{{.SuccessNum}}</td>
-			<td>{{.FailedNum}}</td>
+			<td>{{ if ne .State "Passed" }}<a href="#{{.Name}}">{{ end }}{{.FailedNum}}{{ if ne .State "Passed" }}</a>{{ end }}</td>
 			<td><a href='{{.Url}}'>html</a></td>
 		</tr>
-	</table>
-</body>
-</html>
+`
+
+	FailedTemplate = `
+	{{ if ne .State "Passed" }}
+	<div id="{{.Name}}">
+		<h3>{{.Name}}</h3>
+		<table class="gridtable">
+			<tr>
+				<th>Name</th>
+				<th>State</th>
+				<th>RunTime</th>
+				<th>Detail</th>
+			</tr>
+			{{ range .FailedTestCases }}
+			<tr style='color:red;'>
+				<td>{{.Name}}</td>
+				<td>{{.State}}</td>
+				<td>{{.RunTime}}s</td>
+				<td>{{.Detail}}</td>
+			</tr>
+			{{ end }}
+		</table>
+	</div>
+	{{ end }}
 `
 )

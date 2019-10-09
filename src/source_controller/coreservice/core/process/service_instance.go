@@ -14,7 +14,6 @@ package process
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -35,13 +34,12 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 
 	var bizID int64
 	var err error
-	if bizID, err = p.validateBizID(ctx, instance.Metadata); err != nil {
+	if bizID, err = p.validateBizID(ctx, instance.BizID); err != nil {
 		blog.Errorf("CreateServiceInstance failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
-	// keep metadata clean
-	instance.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+	instance.BizID = bizID
 
 	// validate module id field
 	module, err := p.validateModuleID(ctx, instance.ModuleID)
@@ -75,16 +73,9 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	instance.InnerIP = innerIP
 
 	// make sure biz id identical with service template
-	if serviceTemplate != nil {
-		serviceTemplateBizID, err := metadata.BizIDFromMetadata(serviceTemplate.Metadata)
-		if err != nil {
-			blog.Errorf("CreateServiceInstance failed, parse biz id from service template failed, code: %d, err: %+v, rid: %s", common.CCErrCommInternalServerError, err, ctx.ReqID)
-			return nil, ctx.Error.CCErrorf(common.CCErrCommParseBizIDFromMetadataInDBFailed)
-		}
-		if bizID != serviceTemplateBizID {
-			blog.Errorf("CreateServiceInstance failed, validation failed, input bizID:%d not equal service template bizID:%d, rid: %s", bizID, serviceTemplateBizID, ctx.ReqID)
-			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
-		}
+	if serviceTemplate != nil && serviceTemplate.BizID != bizID {
+		blog.Errorf("CreateServiceInstance failed, validation failed, input bizID:%d not equal service template bizID:%d, rid: %s", bizID, serviceTemplate.BizID, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
 	// check unique `template_id + module_id + host_id`
@@ -135,7 +126,6 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 			blog.Errorf("CreateServiceInstance failed, get process templates failed, listProcessTemplateOption: %+v, err: %+v, rid: %s", listProcessTemplateOption, ccErr, ctx.ReqID)
 			return nil, ccErr
 		}
-		bizMetadata := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 		for _, processTemplate := range listProcTplResult.Info {
 			processData := processTemplate.NewProcess(module.BizID, ctx.SupplierAccount)
 			process, ccErr := p.dependence.CreateProcessInstance(ctx, processData)
@@ -144,7 +134,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 				return nil, ccErr
 			}
 			relation := &metadata.ProcessInstanceRelation{
-				Metadata:          bizMetadata,
+				BizID:             bizID,
 				ProcessID:         process.ProcessID,
 				ServiceInstanceID: instance.ID,
 				ProcessTemplateID: processTemplate.ID,
@@ -222,9 +212,9 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 	if option.BusinessID == 0 {
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
-	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
 	filter := map[string]interface{}{
-		common.MetadataField: md.ToMapStr(),
+		common.BKAppIDField:      option.BusinessID,
+		common.BkSupplierAccount: ctx.SupplierAccount,
 	}
 
 	if option.ServiceTemplateID != 0 {
@@ -322,9 +312,8 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 		return result, nil
 	}
 
-	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
 	filter := map[string]interface{}{
-		common.MetadataField: md.ToMapStr(),
+		common.BKAppIDField: option.BusinessID,
 		common.BKModuleIDField: map[string]interface{}{
 			common.BKDBIN: targetModuleIDs,
 		},
@@ -657,10 +646,9 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 		return nil, nil
 	}
 
-	bizMetadata := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(module.BizID, 10))
 	now := time.Now()
 	serviceInstanceData := &metadata.ServiceInstance{
-		Metadata:          bizMetadata,
+		BizID:             module.BizID,
 		ServiceTemplateID: module.ServiceTemplateID,
 		HostID:            hostID,
 		ModuleID:          moduleID,

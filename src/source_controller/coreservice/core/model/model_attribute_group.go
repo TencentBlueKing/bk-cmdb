@@ -154,6 +154,31 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroup(ctx core.ContextParams, 
 	inputParam.Data.Remove(metadata.GroupFieldSupplierAccount)
 	inputParam.Data.Remove(metadata.GroupFieldIsPre)
 
+	if name, exists := inputParam.Data.Get("bk_group_name"); exists {
+		name := name.(string)
+		queryCond := metadata.QueryCondition{
+			Condition: cond.ToMapStr(),
+		}
+		resp, err := g.SearchModelAttributeGroupByCondition(ctx, queryCond)
+		if nil != err {
+			blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, name, err.Error())
+			return &metadata.UpdatedCount{}, err
+		}
+		for _, item := range resp.Info {
+			if item.GroupName == name {
+				continue
+			}
+			_, exists, err := g.groupNameIsExists(ctx, item.ObjectID, name, metadata.Metadata{Label: metadata.Label{}})
+			if nil != err {
+				blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, name, err.Error())
+				return &metadata.UpdatedCount{}, err
+			}
+			if exists {
+				blog.Errorf("request(%s): it is to failed to update the group name, because (%s) exists", ctx.ReqID, name)
+				return &metadata.UpdatedCount{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, name)
+			}
+		}
+	}
 	cnt, err := g.update(ctx, inputParam.Data, cond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to update the data (%s) by the condition (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
@@ -175,6 +200,32 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(ctx core.Cont
 	inputParam.Data.Remove(metadata.GroupFieldObjectID)
 	inputParam.Data.Remove(metadata.GroupFieldSupplierAccount)
 	inputParam.Data.Remove(metadata.GroupFieldIsPre)
+
+	if name, exists := inputParam.Data.Get("bk_group_name"); exists {
+		name := name.(string)
+		queryCond := metadata.QueryCondition{
+			Condition: cond.ToMapStr(),
+		}
+		resp, err := g.SearchModelAttributeGroupByCondition(ctx, queryCond)
+		if nil != err {
+			blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, name, err.Error())
+			return &metadata.UpdatedCount{}, err
+		}
+		for _, item := range resp.Info {
+			if item.GroupName == name {
+				continue
+			}
+			_, exists, err := g.groupNameIsExists(ctx, item.ObjectID, name, metadata.Metadata{Label: metadata.Label{}})
+			if nil != err {
+				blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, name, err.Error())
+				return &metadata.UpdatedCount{}, err
+			}
+			if exists {
+				blog.Errorf("request(%s): it is to failed to update the group name, because (%s) exists", ctx.ReqID, name)
+				return &metadata.UpdatedCount{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, name)
+			}
+		}
+	}
 
 	cnt, err := g.update(ctx, inputParam.Data, cond)
 	if nil != err {
@@ -262,9 +313,16 @@ func (g *modelAttributeGroup) DeleteModelAttributeGroupByCondition(ctx core.Cont
 		return &metadata.DeletedCount{}, err
 	}
 
-	grpIDS := []string{}
 	for _, grp := range grps {
-		grpIDS = append(grpIDS, grp.GroupID)
+		hasAttrs, err := g.hasAttributes(ctx, grp.ObjectID, []string{grp.GroupID})
+		if nil != err {
+			blog.Errorf("request(%s): it is failed to check whether the group(%s) has some attributes for the model(%s), error info is %s", ctx.ReqID, grp.GroupID, grp.ObjectID, err.Error())
+			return &metadata.DeletedCount{}, err
+		}
+		if hasAttrs {
+			blog.Errorf("request(%s): the group(%s) has some attributes, forbidden to delete", ctx.ReqID, grp.GroupID)
+			return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrCoreServiceModelAttributeGroupHasSomeAttributes)
+		}
 	}
 
 	cnt, err := g.delete(ctx, cond)

@@ -53,7 +53,8 @@
             :save-auth="$OPERATION.U_HOST"
             :transfer-resource-auth="$OPERATION.HOST_TO_RESOURCE"
             :columns-config-key="columnsConfigKey"
-            :columns-config-properties="columnsConfigProperties">
+            :columns-config-properties="columnsConfigProperties"
+            @update-host-count="hanldeUpdateHostCount">
         </cmdb-hosts-table>
     </div>
 </template>
@@ -252,6 +253,17 @@
             handleCloseTopologyTips () {
                 this.showTopologyTips = false
                 window.localStorage.setItem('showTopologyTips', false)
+            },
+            async hanldeUpdateHostCount () {
+                this.getHostCount()
+                const internal = await this.getInternalModules()
+                internal.module && internal.module.forEach(module => {
+                    const node = this.$refs.tree.getNodeById(`module-${module.bk_module_id}`)
+                    if (node) {
+                        const count = module.host_count
+                        this.$set(node.data, 'host_count', count > 999 ? '999+' : count)
+                    }
+                })
             }
         }
     }
