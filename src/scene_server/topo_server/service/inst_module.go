@@ -36,13 +36,13 @@ func (s *Service) CreateModule(params types.ContextParams, pathParams, queryPara
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-module] create module failed, failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
 	}
 
 	setID, err := strconv.ParseInt(pathParams("set_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-module] create module failed, failed to parse the set id, error info is %s, rid: %s", err.Error(), params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKSetIDField)
 	}
 
 	module, err := s.Core.ModuleOperation().CreateModule(params, obj, bizID, setID, data)

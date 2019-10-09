@@ -81,6 +81,7 @@ type AssociationOperationInterface interface {
 	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	SearchInstAssociation(params types.ContextParams, query *metadata.QueryInput) ([]metadata.InstAsst, error)
 	SearchInstAssociationList(params types.ContextParams, query *metadata.QueryCondition) ([]metadata.InstAsst, uint64, error)
+	SearchInstAssociationUIList(params types.ContextParams, objID string, query *metadata.QueryCondition) (result interface{}, asstCnt uint64, err error)
 	CheckBeAssociation(params types.ContextParams, obj model.Object, cond condition.Condition) error
 	CreateCommonInstAssociation(params types.ContextParams, data *metadata.InstAsst) error
 	DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error
@@ -981,4 +982,71 @@ func (assoc *association) SearchInstAssociationList(params types.ContextParams, 
 	}
 
 	return rsp.Data.Info, rsp.Data.Count, nil
+}
+
+// SearchInstAssociationUIList 与实例有关系的实例关系数据,以分页的方式返回
+func (assoc *association) SearchInstAssociationUIList(params types.ContextParams, objID string, query *metadata.QueryCondition) (result interface{}, asstCnt uint64, err error) {
+
+	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), params.Header, query)
+	if nil != err {
+		blog.Errorf("ReadInstAssociation http do error, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, 0, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rsp.Result {
+		blog.ErrorJSON("ReadInstAssociation http response error, query: %s, response: %s, rid: %s", query, rsp, params.ReqID)
+		return nil, 0, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	objIDInstIDMap := make(map[string][]int64, 0)
+	var objSrcAsstArr []metadata.InstAsst
+	var objDstAsstArr []metadata.InstAsst
+	for _, instAsst := range rsp.Data.Info {
+		objIDInstIDMap[instAsst.ObjectID] = append(objIDInstIDMap[instAsst.ObjectID], instAsst.InstID)
+		objIDInstIDMap[instAsst.AsstObjectID] = append(objIDInstIDMap[instAsst.AsstObjectID], instAsst.AsstInstID)
+		if instAsst.ObjectID == objID {
+			objSrcAsstArr = append(objSrcAsstArr, instAsst)
+		} else {
+			objDstAsstArr = append(objDstAsstArr, instAsst)
+
+		}
+	}
+
+	instInfo := make(map[string][]mapstr.MapStr, 0)
+	for instObjID, instIDArr := range objIDInstIDMap {
+		idField := metadata.GetInstIDFieldByObjID(instObjID)
+		cond := condition.CreateCondition()
+		cond.Field(idField).In(instIDArr)
+		input := &metadata.QueryCondition{
+			Condition: cond.ToMapStr(),
+			Limit: metadata.SearchLimit{
+				Offset: 0,
+				Limit:  common.BKNoLimit,
+			},
+			Fields: []string{metadata.GetInstNameFieldName(instObjID), idField},
+		}
+		instResp, err := assoc.clientSet.CoreService().Instance().
+			ReadInstance(context.Background(), params.Header, instObjID, input)
+		if err != nil {
+			blog.Errorf("ReadInstance http do error, err: %s, input:%s, rid: %s", err.Error(), input, params.ReqID)
+			return nil, 0, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		}
+		if !instResp.Result {
+			blog.ErrorJSON("ReadInstance http response error, query: %s, response: %s, rid: %s", query, rsp, params.ReqID)
+			return nil, 0, params.Err.New(rsp.Code, rsp.ErrMsg)
+		}
+		instInfo[instObjID] = instResp.Data.Info
+
+	}
+	instAsstMap := map[string][]metadata.InstAsst{
+		"src": objSrcAsstArr,
+		"dst": objDstAsstArr,
+	}
+
+	result = mapstr.MapStr{
+		"association": instAsstMap,
+		"instance":    instInfo,
+	}
+
+	return result, rsp.Data.Count, nil
 }

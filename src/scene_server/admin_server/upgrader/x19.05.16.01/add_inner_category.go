@@ -106,7 +106,7 @@ func addInnerCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 }
 
 func getOrCreateCategory(ctx context.Context, db dal.RDB, name string, parentID int64) (int64, error) {
-	category := metadata.ServiceCategory{}
+	category := ServiceCategory{}
 	filter := map[string]interface{}{
 		common.MetadataLabelBiz: mapstr.MapStr{common.BKDBExists: false},
 		common.BKFieldName:      name,
@@ -116,7 +116,6 @@ func getOrCreateCategory(ctx context.Context, db dal.RDB, name string, parentID 
 
 	if err != nil {
 		if db.IsNotFoundError(err) == false {
-
 			blog.Errorf("find service category failed, filter: %+v, err: %+v", filter, err)
 			return 0, err
 		}
@@ -145,13 +144,14 @@ func getOrCreateCategory(ctx context.Context, db dal.RDB, name string, parentID 
 			rootID = int64(categoryID)
 		}
 
-		category = metadata.ServiceCategory{
+		category = ServiceCategory{
 			ID:              int64(categoryID),
 			Name:            name,
 			RootID:          rootID,
 			ParentID:        parentID,
 			SupplierAccount: "0",
 			IsBuiltIn:       true,
+			Metadata:        metadata.NewMetadata(0),
 		}
 		err = db.Table(common.BKTableNameServiceCategory).Insert(ctx, category)
 		if err != nil {
