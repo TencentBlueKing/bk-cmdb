@@ -198,13 +198,17 @@ func (i *Identifier) findHostCloud(ctx core.ContextParams) error {
 
 // findHostServiceInst handle host service instance
 func (i *Identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64) error {
-	relationCond := condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
 	relations := make([]metadata.ProcessInstanceRelation, 0)
 
 	// query process id with host id
-	err := i.dbQuery.ExecQuery(ctx, common.BKTableNameProcessInstanceRelation, nil, relationCond.ToMapStr(), &relations)
+	relationFilter := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: hostIDs,
+		},
+	}
+	err := i.dbQuery.ExecQuery(ctx, common.BKTableNameProcessInstanceRelation, nil, relationFilter, &relations)
 	if err != nil {
-		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s, rid:%s", common.BKTableNameProcessInstanceRelation, relationCond.ToMapStr(), ctx.ReqID)
+		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s, rid:%s", common.BKTableNameProcessInstanceRelation, relationFilter, ctx.ReqID)
 		return err
 	}
 
@@ -221,23 +225,27 @@ func (i *Identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64
 	}
 
 	serviceInstInfos := make([]metadata.ServiceInstance, 0)
-	serviceInstCond := condition.CreateCondition().Field(common.BKFieldID).In(serviceInstIDs)
-	err = i.dbQuery.ExecQuery(ctx, common.BKTableNameServiceInstance, nil, serviceInstCond.ToMapStr(), &serviceInstInfos)
+	serviceInstFilter := map[string]interface{}{
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: serviceInstIDs,
+		},
+	}
+	err = i.dbQuery.ExecQuery(ctx, common.BKTableNameServiceInstance, nil, serviceInstFilter, &serviceInstInfos)
 	if err != nil {
-		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s, rid:%s", common.BKTableNameBaseProcess, serviceInstCond.ToMapStr(), ctx.ReqID)
+		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s, rid:%s", common.BKTableNameBaseProcess, serviceInstFilter, ctx.ReqID)
 		return err
 	}
 	blog.V(5).Infof("findHostServiceInst query service instance info. service instance id:%#v, info:%#v, rid;%s", serviceInstIDs, serviceInstInfos, ctx.ReqID)
 	// 服务实例与模块的关系
-	serviceInstModuleRealtion := make(map[int64][]int64, 0)
+	serviceInstModuleRelation := make(map[int64][]int64, 0)
 	for _, serviceInstInfo := range serviceInstInfos {
-		serviceInstModuleRealtion[serviceInstInfo.ID] = append(serviceInstModuleRealtion[serviceInstInfo.ID], serviceInstInfo.ModuleID)
+		serviceInstModuleRelation[serviceInstInfo.ID] = append(serviceInstModuleRelation[serviceInstInfo.ID], serviceInstInfo.ModuleID)
 	}
 
 	procModuleRelation := make(map[int64][]int64, 0)
 	for procID, serviceInstIDs := range procServiceInstMap {
 		for _, serviceInstID := range serviceInstIDs {
-			for _, moduleID := range serviceInstModuleRealtion[serviceInstID] {
+			for _, moduleID := range serviceInstModuleRelation[serviceInstID] {
 				procModuleRelation[procID] = append(procModuleRelation[procID], moduleID)
 			}
 		}

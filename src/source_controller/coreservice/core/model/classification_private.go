@@ -35,7 +35,7 @@ func (m *modelClassification) isExists(ctx core.ContextParams, classificationID 
 
 	origin = &metadata.Classification{}
 	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: ctx.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
 
 	// ATTETION: Currently only business dimension isolation is done,
