@@ -151,7 +151,7 @@ func (s *coreService) UpdateServiceInstance(params core.ContextParams, pathParam
 }
 
 func (s *coreService) DeleteServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	option := metadata.DeleteServiceInstanceOption{}
+	option := metadata.CoreDeleteServiceInstanceOption{}
 	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
 		blog.Errorf("DeleteServiceInstance failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
