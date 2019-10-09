@@ -13,7 +13,7 @@
 package backbone
 
 import (
-	"github.com/gin-gonic/gin/json"
+	"encoding/json"
 
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/registerdiscover"
