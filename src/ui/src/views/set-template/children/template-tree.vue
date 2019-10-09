@@ -83,6 +83,9 @@
                 if (this.mode !== 'edit') {
                     return false
                 }
+                if (this.originalServices.length !== this.services.length) {
+                    return true
+                }
                 return this.originalServices.some((service, index) => {
                     const target = this.services[index]
                     return (target && target.id !== service.id) || !target
