@@ -37,7 +37,9 @@
             },
             templateId () {
                 return this.$route.params.templateId
-            },
+            }
+        },
+        watch: {
             $route: {
                 immediate: true,
                 handler ($route) {
