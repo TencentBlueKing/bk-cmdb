@@ -11,26 +11,34 @@
                 <div class="fl">
                     <bk-button theme="primary" :disabled="!checkedList.length" @click="handleBatchSync">{{$t('批量同步')}}</bk-button>
                 </div>
-                <bk-input class="filter-item" right-icon="bk-icon icon-search"
-                    :placeholder="$t('路径关键字')"
-                    v-model="pathKeywords"
-                    @enter="handleSearch">
-                </bk-input>
-                <bk-select class="filter-item mr10"
-                    :clearable="false"
-                    v-model="filterKey">
-                    <bk-option v-for="option in filterList"
-                        :key="option.id"
-                        :id="option.id"
-                        :name="option.name">
-                    </bk-option>
-                </bk-select>
+                <div class="fr">
+                    <bk-select class="filter-item mr10"
+                        :clearable="false"
+                        v-model="filterKey">
+                        <bk-option v-for="option in filterList"
+                            :key="option.id"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
+                    <bk-input class="filter-item" right-icon="bk-icon icon-search"
+                        :placeholder="$t('路径关键字')"
+                        v-model="pathKeywords"
+                        @enter="handleSearch">
+                    </bk-input>
+                    <icon-button class="ml10"
+                        v-bk-tooltips="$t('同步历史')"
+                        icon="icon icon-cc-history"
+                        @click="routeToHistory">
+                    </icon-button>
+                </div>
             </div>
             <bk-table class="instance-table"
                 v-bkloading="{ isLoading: $loading('getSetTemplateInstances') }"
                 :data="displayList"
                 :pagination="pagination"
                 :max-height="$APP.height - 229"
+                @sort-change="handleSortChange"
                 @page-change="handlePageChange"
                 @page-limit-change="handleSizeChange"
                 @selection-change="handleSelectionChange">
@@ -48,6 +56,9 @@
                             <img class="svg-icon" src="../../../assets/images/icon/loading.svg" alt="">
                             {{$t('同步中')}}
                         </span>
+                        <span v-else-if="statusMap.success.includes(row.details.status) && row.hasDiff">
+                            {{$t('待同步')}}
+                        </span>
                         <span v-else-if="statusMap.success.includes(row.details.status)" class="sync-status success">
                             <i class="bk-icon icon-check-1"></i>
                             {{$t('已完成')}}
@@ -58,7 +69,7 @@
                         </span>
                     </template>
                 </bk-table-column>
-                <bk-table-column :label="$t('上次同步时间')" prop="sync_time">
+                <bk-table-column :label="$t('上次同步时间')" prop="sync_time" sortable="custom">
                     <template slot-scope="{ row }">
                         <span v-if="!row.details">--</span>
                         <span v-else>{{row.details.last_time ? $tools.formatTime(row.details.last_time, 'YYYY-MM-DD HH:mm') : '--'}}</span>
@@ -112,7 +123,8 @@
                     count: 0,
                     current: 1,
                     ...this.$tools.getDefaultPaginationConfig()
-                }
+                },
+                listSort: ''
             }
         },
         computed: {
@@ -165,9 +177,11 @@
         },
         async created () {
             await this.getSetTemplateInstances()
-            this.getSyncStatus()
-            this.getTemplateDiff()
-            this.polling()
+            if (this.list.length) {
+                this.getSyncStatus()
+                this.getTemplateDiff()
+                this.polling()
+            }
         },
         beforeDestroy () {
             clearInterval(this.timer)
@@ -188,7 +202,8 @@
                     bizId: this.business,
                     setTemplateId: this.templateId,
                     params: {
-                        limit: this.limit
+                        limit: this.limit,
+                        sort: this.listSort
                     },
                     config: {
                         requestId: 'getSetTemplateInstances'
@@ -240,8 +255,10 @@
             },
             polling () {
                 try {
-                    clearInterval(this.timer)
-                    this.timer = null
+                    if (this.timer) {
+                        clearInterval(this.timer)
+                        this.timer = null
+                    }
                     this.timer = setInterval(() => {
                         this.getSyncStatus()
                         this.getTemplateDiff()
@@ -258,6 +275,10 @@
             handleSearch () {},
             handleSelectionChange (selection) {
                 this.checkedList = selection.map(item => item.bk_set_id)
+            },
+            handleSortChange (sort) {
+                this.listSort = this.$tools.getSort(sort)
+                this.handlePageChange(1)
             },
             handlePageChange (current) {
                 if (this.timer === null) {
@@ -300,8 +321,30 @@
                     }
                 })
             },
-            handleRetry () {
-
+            async handleRetry (row) {
+                try {
+                    await this.$store.dispatch('setSync/syncTemplateToInstances', {
+                        bizId: this.business,
+                        setTemplateId: this.templateId,
+                        params: {
+                            bk_set_ids: [row.bk_set_id]
+                        },
+                        config: {
+                            requestId: 'syncTemplateToInstances'
+                        }
+                    })
+                    this.$success(this.$t('重试同步中'))
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            routeToHistory () {
+                this.$router.push({
+                    name: 'syncHistory',
+                    params: {
+                        templateId: this.templateId
+                    }
+                })
             }
         }
     }
@@ -327,7 +370,6 @@
             color: #63656E;
             .filter-item {
                 width: 230px;
-                float: right;
             }
             .icon-cc-updating {
                 color: #C4C6CC;

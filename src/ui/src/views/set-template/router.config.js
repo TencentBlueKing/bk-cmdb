@@ -26,4 +26,15 @@ export default [{
             relative: MENU_BUSINESS_SET_TEMPLATE
         }
     })
+}, {
+    name: 'syncHistory',
+    path: 'set/template/history/:templateId?',
+    component: () => import('./sync-history.vue'),
+    meta: new Meta({
+        owner: MENU_BUSINESS,
+        menu: {
+            i18n: '同步历史',
+            relative: MENU_BUSINESS_SET_TEMPLATE
+        }
+    })
 }]
