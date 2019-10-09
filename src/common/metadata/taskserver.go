@@ -67,6 +67,19 @@ func (s APITaskStatus) IsFinished() bool {
 	}
 	return false
 }
+func (s APITaskStatus) IsSuccessful() bool {
+	if s == 200 {
+		return true
+	}
+	return false
+}
+
+func (s APITaskStatus) IsFailure() bool {
+	if s == 500 {
+		return true
+	}
+	return false
+}
 
 const (
 	// APITaskStatusNew new task ,waiting execute

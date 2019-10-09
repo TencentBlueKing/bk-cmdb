@@ -13,18 +13,16 @@
 package service
 
 import (
-	"net/http"
 	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
-
-	"github.com/mitchellh/mapstructure"
 )
 
 func (s *Service) CreateSetTemplate(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
@@ -69,6 +67,32 @@ func (s *Service) UpdateSetTemplate(params types.ContextParams, pathParams, quer
 	if err != nil {
 		blog.Errorf("UpdateSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
 		return nil, err
+	}
+
+	filter := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKAppIDField:         bizID,
+			common.BKSetTemplateIDField: setTemplateID,
+		}),
+	}
+	setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, filter)
+	if err != nil {
+		blog.Errorf("UpdateSetTemplate failed, ListSetTplRelatedSets failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+	for _, item := range setInstanceResult.Data.Info {
+		set := metadata.SetInst{}
+		if err := mapstruct.Decode2Struct(item, &set); err != nil {
+			blog.ErrorJSON("UpdateSetTemplate failed, ListSetTplRelatedSets failed, set: %s, err: %s, rid: %s", item, err, params.ReqID)
+			return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+		}
+		if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(params, set.SetID); err != nil {
+			blog.Errorf("UpdateSetTemplate failed, UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", set.SetID, err, params.ReqID)
+			return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+		}
 	}
 	return setTemplate, nil
 }
@@ -341,7 +365,7 @@ func (s *Service) DiffSetTplWithInst(params types.ContextParams, pathParams, que
 	}
 
 	option := metadata.DiffSetTplWithInstOption{}
-	if err := mapstructure.Decode(data, &option); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("DiffSetTemplateWithInstances failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -369,7 +393,7 @@ func (s *Service) SyncSetTplToInst(params types.ContextParams, pathParams, query
 	}
 
 	option := metadata.SyncSetTplToInstOption{}
-	if err := mapstructure.Decode(data, &option); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("DiffSetTemplateWithInstances failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -393,7 +417,7 @@ func (s *Service) SyncSetTplToInst(params types.ContextParams, pathParams, query
 		}
 	}
 
-	if err := s.Core.SetTemplateOperation().SyncSetTplToInst(params.Context, params.Header, bizID, setTemplateID, option); err != nil {
+	if err := s.Core.SetTemplateOperation().SyncSetTplToInst(params, bizID, setTemplateID, option); err != nil {
 		blog.Errorf("SyncSetTplToInst failed, operation failed, bizID: %d, setTemplateID: %d, option: %+v err: %s, rid: %s", bizID, setTemplateID, option, err.Error(), params.ReqID)
 		return nil, err
 	}
@@ -415,7 +439,7 @@ func (s *Service) GetSetSyncStatus(params types.ContextParams, pathParams, query
 	}
 
 	option := metadata.SetSyncStatusOption{}
-	if err := mapstructure.Decode(data, &option); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("GetSetSyncStatus failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -453,42 +477,12 @@ func (s *Service) getSetSyncStatus(params types.ContextParams, setIDs ...int64) 
 	// db.getCollection('cc_APITask').find({"detail.data.set.bk_set_id": 18}).sort({"create_time": -1}).limit(1)
 	setStatus := make(map[int64]*metadata.APITaskDetail)
 	for _, setID := range setIDs {
-		setStatus[setID] = nil
-		setRelatedTaskFilter := map[string]interface{}{
-			"detail.data.set.bk_set_id": setID,
-		}
-		listTaskOption := metadata.ListAPITaskRequest{
-			Condition: mapstr.MapStr(setRelatedTaskFilter),
-			Page: metadata.BasePage{
-				Sort:  "-create_time",
-				Limit: common.BKNoLimit,
-			},
-		}
-
-		listResult, err := s.Engine.CoreAPI.TaskServer().Task().ListTask(params.Context, params.Header, common.SyncSetTaskName, &listTaskOption)
+		taskDetail, err := s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(params, setID)
 		if err != nil {
-			blog.ErrorJSON("list set sync tasks failed, option: %s, rid: %s", listTaskOption, params.ReqID)
-			return setStatus, params.Err.CCError(common.CCErrTaskListTaskFail)
+			blog.Errorf("getSetSyncStatus failed, GetLatestSyncTaskDetail failed, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
+			taskDetail = nil
 		}
-		if listResult == nil || len(listResult.Data.Info) == 0 {
-			blog.InfoJSON("list set sync tasks result empty, option: %s, result: %s, rid: %s", listTaskOption, listTaskOption, params.ReqID)
-			continue
-		}
-		taskDetail := &listResult.Data.Info[0]
-		clearSetSyncTaskDetail(taskDetail)
 		setStatus[setID] = taskDetail
 	}
 	return setStatus, nil
-}
-
-func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
-	detail.Header = http.Header{}
-	for taskIdx := range detail.Detail {
-		subTaskDetail, ok := detail.Detail[taskIdx].Data.(map[string]interface{})
-		if ok == false {
-			blog.Warnf("clearSetSyncTaskDetail expect map[string]interface{}, got unexpected type, data: %+v", detail.Detail[taskIdx].Data)
-			detail.Detail[taskIdx].Data = nil
-		}
-		delete(subTaskDetail, "header")
-	}
 }

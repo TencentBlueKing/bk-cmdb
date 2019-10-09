@@ -259,6 +259,7 @@ type SetTemplateOperation interface {
 	ListSetTemplate(ctx ContextParams, bizID int64, option metadata.ListSetTemplateOption) (metadata.MultipleSetTemplateResult, errors.CCErrorCoder)
 	ListSetServiceTemplateRelations(ctx ContextParams, bizID int64, setTemplateID int64) ([]metadata.SetServiceTemplateRelation, errors.CCErrorCoder)
 	ListSetTplRelatedSvcTpl(ctx ContextParams, bizID, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder)
+	UpdateSetTemplateSyncStatus(ctx ContextParams, setID int64, option metadata.SetTemplateSyncStatus) errors.CCErrorCoder
 }
 
 type core struct {
