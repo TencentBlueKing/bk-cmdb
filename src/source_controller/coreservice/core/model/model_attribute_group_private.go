@@ -72,7 +72,7 @@ func (g *modelAttributeGroup) hasAttributes(ctx core.ContextParams, objID string
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: ctx.SupplierAccount})
-	cond.Element(&mongo.In{Key: metadata.GroupFieldGroupID, Val: groupIDS})
+	cond.Element(&mongo.In{Key: metadata.AttributeFieldPropertyGroup, Val: groupIDS})
 
 	attrs, err := g.model.SearchModelAttributes(ctx, objID, metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
