@@ -45,18 +45,6 @@ const injectStatusComponents = (views, status = ['permission', 'error']) => {
             permission: statusPermission,
             error: statusError
         }
-        if (view.hasOwnProperty('props')) {
-            const props = view.props
-            view.props = {
-                permission: false,
-                error: false
-            }
-            if (['boolean', 'function'].includes(typeof props)) {
-                view.props.default = props
-            } else if (typeof props === 'object') {
-                Object.assign(view.props, props)
-            }
-        }
     })
     return views
 }

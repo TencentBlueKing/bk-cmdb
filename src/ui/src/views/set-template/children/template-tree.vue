@@ -13,7 +13,7 @@
                     :class="{ selected: selected === service.id }"
                     @click="handleChildClick(service)">
                     <i class="child-icon icon icon-cc-cube fl"></i>
-                    <span class="child-options fr">
+                    <span class="child-options fr" v-if="mode !== 'view'">
                         <i class="options-view icon icon-cc-show" @click="handleViewService(service)"></i>
                         <i class="options-delete icon icon-cc-tips-close" @click="handleDeleteService(index)"></i>
                     </span>
@@ -56,6 +56,8 @@
             serviceTemplateSelector,
             serviceTemplateInfo
         },
+        /* eslint-disable-next-line */
+        props: ['mode', 'templateId'],
         data () {
             return {
                 templateName: this.$t('模板集群名称'),
@@ -73,12 +75,6 @@
             }
         },
         computed: {
-            mode () {
-                return this.$route.params.mode
-            },
-            templateId () {
-                return this.$route.params.templateId
-            },
             hasChange () {
                 if (this.mode !== 'edit') {
                     return false
@@ -98,9 +94,7 @@
             }
         },
         created () {
-            if (['create', 'edit'].includes(this.mode)) {
-                this.initMonitorTemplateName()
-            }
+            this.initMonitorTemplateName()
             if (['edit', 'view'].includes(this.mode)) {
                 this.getSetTemplateServices()
             }
@@ -131,7 +125,7 @@
                     } else {
                         this.templateName = this.$t('模板集群名称')
                     }
-                })
+                }, { immediate: true })
             },
             handleCollapse () {
                 this.collapse = !this.collapse
@@ -181,7 +175,7 @@
     $highlightColor: #3A84FF;
     .template-tree {
         padding: 10px 0 10px 20px;
-        border: 1px dashed #C4C6CC;
+        border: 1px solid #C4C6CC;
         background-color: #fff;
     }
     .node-root {
