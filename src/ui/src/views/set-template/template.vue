@@ -34,6 +34,20 @@
         components: {
             cmdbSetTemplateTree
         },
+        props: {
+            mode: {
+                type: String,
+                required: true,
+                validator (value) {
+                    return ['create', 'edit', 'view'].includes(value)
+                }
+            },
+            templateId: {
+                validator (value) {
+                    return true
+                }
+            }
+        },
         data () {
             return {
                 templateName: '',
@@ -42,12 +56,6 @@
             }
         },
         computed: {
-            mode () {
-                return this.$route.params.mode
-            },
-            templateId () {
-                return this.$route.params.templateId
-            },
             hasChange () {
                 if (this.mode !== 'edit') {
                     return true

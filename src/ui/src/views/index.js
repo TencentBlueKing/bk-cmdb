@@ -38,19 +38,25 @@ const flatternViews = views => {
     return flatterned
 }
 
-const statusComponents = {
-    'permission': statusPermission,
-    'error': statusError
-}
-
 const injectStatusComponents = (views, status = ['permission', 'error']) => {
     views.forEach(view => {
         view.components = {
-            default: view.component
+            default: view.component,
+            permission: statusPermission,
+            error: statusError
         }
-        status.forEach(key => {
-            view.components[key] = statusComponents[key]
-        })
+        if (view.hasOwnProperty('props')) {
+            const props = view.props
+            view.props = {
+                permission: false,
+                error: false
+            }
+            if (['boolean', 'function'].includes(typeof props)) {
+                view.props.default = props
+            } else if (typeof props === 'object') {
+                Object.assign(view.props, props)
+            }
+        }
     })
     return views
 }
