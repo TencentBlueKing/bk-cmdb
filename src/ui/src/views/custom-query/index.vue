@@ -34,11 +34,13 @@
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 229"
+            :row-style="{ cursor: 'pointer' }"
+            @row-click="showUserAPIDetails"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange">
             <!-- <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column> -->
-            <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed></bk-table-column>
+            <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed class-name="is-highlight"></bk-table-column>
             <bk-table-column prop="id" label="ID" sortable="custom" fixed></bk-table-column>
             <bk-table-column prop="create_user" :label="$t('创建用户')" sortable="custom"></bk-table-column>
             <bk-table-column prop="create_time" :label="$t('创建时间')" sortable="custom">
