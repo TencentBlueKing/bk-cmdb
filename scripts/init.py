@@ -401,27 +401,6 @@ maxIDleConns = 1000
     with open(output + "task.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
-[redis]
-host = $redis_host
-port = $redis_port
-usr = $redis_user
-pwd = $redis_pass
-database = 0
-
-[task]
-name=sync-settemplate2set
-
-[task-sync-settemplate2set]
-addrs=http://127.0.0.1:60002
-path=/topo/v3/internal/task
-retry=1
-'''
-    template = FileTemplate(taskserver_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "task.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
-
 def update_start_script(rd_server, server_ports, enable_auth, log_level):
     list_dirs = os.walk(os.getcwd()+"/")
     for root, dirs, _ in list_dirs:
@@ -498,7 +477,8 @@ def main(argv):
         "cmdb_toposerver": 60002,
         "cmdb_webserver": 8083,
         "cmdb_synchronizeserver": 60010,
-        "cmdb_operationserver": 60011
+        "cmdb_operationserver": 60011,
+        "cmdb_taskserver": 60012
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
