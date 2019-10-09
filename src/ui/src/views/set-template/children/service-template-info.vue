@@ -57,7 +57,7 @@
                 this.$refs.table.doLayout()
             }, 0)
             this.getTitle()
-            // this.getServiceProcesses()
+            this.getServiceProcesses()
         },
         methods: {
             close () {

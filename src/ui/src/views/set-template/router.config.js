@@ -30,6 +30,7 @@ export default [{
     name: 'setTemplateMode',
     path: 'set/template/:mode/:templateId?',
     component: () => import('./template.vue'),
+    props: true,
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
