@@ -10,6 +10,7 @@
                 <i class="row-symbol required">*</i>
                 <bk-input class="row-content"
                     data-vv-name="name"
+                    font-size="large"
                     v-validate="'required|singlechar|length:20'"
                     v-model.trim="templateName"
                     :placeholder="$t('集群模板名称占位符')">
@@ -86,19 +87,17 @@
         },
         methods: {
             setBreadcrumbs () {
-                const titleMap = {
-                    create: this.$t('创建'),
-                    edit: this.$t('编辑'),
-                    view: this.$t('查看')
-                }
                 this.$store.commit('setBreadcrumbs', [{
                     label: this.$t('集群模板'),
                     route: {
                         name: MENU_BUSINESS_SET_TEMPLATE
                     }
                 }, {
-                    label: titleMap[this.mode]
+                    label: this.mode === 'create' ? this.$t('创建') : this.templateName
                 }])
+                if (this.mode !== 'create') {
+                    this.$store.commit('setTitle', this.templateName)
+                }
             },
             async getSetTemplateInfo () {
                 try {
@@ -108,6 +107,7 @@
                     })
                     this.templateName = info.name
                     this.originalTemplateName = info.name
+                    this.setBreadcrumbs()
                 } catch (e) {
                     console.error(e)
                 }
@@ -240,8 +240,8 @@
         .row-symbol {
             line-height: 32px;
             font-size: 14px;
-            width: 14px;
-            text-align: center;
+            width: 24px;
+            text-indent: 4px;
             font-style: normal;
             @include inlineBlock(top);
             &.required {
