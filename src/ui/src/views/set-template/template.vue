@@ -39,8 +39,15 @@
                 return this.$route.params.templateId
             }
         },
-        created () {
-            this.active = this.$route.query.tab || 'setting'
+        watch: {
+            $route: {
+                immediate: true,
+                handler ($route) {
+                    if ($route.query.tab) {
+                        this.active = $route.query.tab
+                    }
+                }
+            }
         }
     }
 </script>
