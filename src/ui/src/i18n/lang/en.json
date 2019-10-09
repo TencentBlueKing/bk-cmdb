@@ -1012,5 +1012,7 @@
     "无服务模板提示": "There are no service templates, {link}",
     "跳转添加": "Click to create",
     "确认删除xx集群模板": "Confirm to delete set template {name}?",
-    "确认删除选中的集群模板": "Confirm to delete selected set template(s)"
+    "确认删除选中的集群模板": "Confirm to delete selected set template(s)",
+    "添加服务模板": "Add service template",
+    "模板服务信息": "Template service information"
 }
