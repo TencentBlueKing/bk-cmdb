@@ -28,7 +28,7 @@
         },
         data () {
             return {
-                active: this.$route.query.tab || 'setting'
+                active: 'setting'
             }
         },
         computed: {
@@ -38,6 +38,9 @@
             templateId () {
                 return this.$route.params.templateId
             }
+        },
+        created () {
+            this.active = this.$route.query.tab || 'setting'
         }
     }
 </script>
