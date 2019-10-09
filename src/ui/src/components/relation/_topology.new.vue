@@ -49,6 +49,8 @@
     import cmdbTopoDetails from './_details.vue'
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import memoize from 'lodash.memoize'
+    import debounce from 'lodash.debounce'
+    import throttle from 'lodash.throttle'
 
     // cytoscape实例
     let cy = null
@@ -265,9 +267,12 @@
                 cy.on('layoutready', (event) => {
                     this.loadNodeImage()
                     event.cy.autolock(true)
-                }).on('resize', (event) => {
+                }).on('layoutstop', (event) => {
+                    this.fitMaxZoom(event.cy)
+                }).on('resize', debounce((event) => {
                     event.cy.fit()
-                }).on('mouseover', 'node', (event) => {
+                    this.fitMaxZoom(event.cy)
+                }, 500)).on('mouseover', 'node', throttle((event) => {
                     const node = event.target
                     const nodeData = node.data()
 
@@ -294,7 +299,7 @@
 
                     node.data('popover', popover)
                     popover.show()
-                }).on('mouseout', 'node', (event) => {
+                }, 160)).on('mouseout', 'node', throttle((event) => {
                     const node = event.target
                     node.removeClass('hover')
 
@@ -305,7 +310,7 @@
 
                     this.hoverNodeData = null
                     this.$refs.layout.style.cursor = 'default'
-                }).on('click', 'node', (event) => {
+                }, 160)).on('click', 'node', (event) => {
                     const node = event.target
 
                     if (node.data('loaded') !== true) {
@@ -578,6 +583,13 @@
             },
             toggleFullScreen (fullScreen) {
                 this.fullScreen = fullScreen
+            },
+            fitMaxZoom (cy) {
+                const fitMaxZoom = 1
+                if (cy.zoom() > fitMaxZoom) {
+                    cy.zoom(fitMaxZoom)
+                    cy.center()
+                }
             }
         }
     }
