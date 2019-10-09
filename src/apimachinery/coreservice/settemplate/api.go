@@ -228,3 +228,28 @@ func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.H
 
 	return ret.Data, nil
 }
+
+func (p *setTemplate) UpdateSetTemplateSyncStatus(ctx context.Context, header http.Header, setID int64, syncStatus metadata.SetTemplateSyncStatus) errors.CCErrorCoder {
+	ret := struct {
+		metadata.BaseResp
+	}{}
+	subPath := fmt.Sprintf("/update/topo/set_template_sync_status/bk_set_id/%d", setID)
+
+	err := p.client.Put().
+		WithContext(ctx).
+		Body(syncStatus).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("UpdateSetTemplateSyncStatus failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return nil
+}

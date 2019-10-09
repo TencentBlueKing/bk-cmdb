@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/mapstruct"
 	"strconv"
 
 	"configcenter/src/common"
@@ -205,4 +206,24 @@ func (s *coreService) ListSetTplRelatedSvcTpl(params core.ContextParams, pathPar
 		return nil, err
 	}
 	return serviceTemplates, nil
+}
+
+func (s *coreService) UpdateSetTemplateSyncStatus(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	setIDStr := pathParams(common.BKSetIDField)
+	setID, err := strconv.ParseInt(setIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
+	}
+
+	option := metadata.SetTemplateSyncStatus{}
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
+		blog.Errorf("UpdateSetTemplateSyncStatus failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	if err := s.core.SetTemplateOperation().UpdateSetTemplateSyncStatus(params, setID, option); err != nil {
+		blog.Errorf("UpdateSetTemplateSyncStatus failed, setID: %d, option: %+v, err: %+v, rid: %s", setID, option, err, params.ReqID)
+		return nil, err
+	}
+	return nil, nil
 }

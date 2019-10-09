@@ -12,7 +12,7 @@
 package metadata
 
 import (
-	"configcenter/src/framework/core/errors"
+	"errors"
 	"net/http"
 )
 
@@ -105,6 +105,17 @@ type SetDiff struct {
 	SetID       int64                      `json:"bk_set_id"`
 	SetDetail   SetInst                    `json:"set_detail"`
 	TopoPath    []TopoInstanceNodeSimplify `json:"topo_path"`
+	NeedSync    bool                       `json:"need_sync"`
+}
+
+func (sd *SetDiff) UpdateNeedSyncField() {
+	sd.NeedSync = false
+	for _, module := range sd.ModuleDiffs {
+		if module.DiffType != ModuleDiffUnchanged {
+			sd.NeedSync = true
+			break
+		}
+	}
 }
 
 type SyncModuleTask struct {
