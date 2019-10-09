@@ -165,10 +165,10 @@
                                 }
                             })
                             this.$router.replace({
-                                name: 'setTemplateInfo',
+                                name: 'setTemplateConfig',
                                 params: {
                                     templateId: this.setTemplateId,
-                                    active: 'instance'
+                                    mode: 'view'
                                 }
                             })
                         } catch (e) {
@@ -200,10 +200,10 @@
                     })
                 } else {
                     this.$router.replace({
-                        name: 'setTemplateInfo',
+                        name: 'setTemplateConfig',
                         params: {
                             templateId: this.setTemplateId,
-                            active: 'instance'
+                            mode: 'view'
                         }
                     })
                 }
