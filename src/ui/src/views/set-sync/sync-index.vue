@@ -169,6 +169,9 @@
                                 params: {
                                     templateId: this.setTemplateId,
                                     mode: 'view'
+                                },
+                                query: {
+                                    tab: 'instance'
                                 }
                             })
                         } catch (e) {
@@ -204,6 +207,9 @@
                         params: {
                             templateId: this.setTemplateId,
                             mode: 'view'
+                        },
+                        query: {
+                            tab: 'instance'
                         }
                     })
                 }
