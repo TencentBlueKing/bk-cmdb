@@ -34,7 +34,7 @@ export default [{
             authScope: 'global'
         },
         layout: {
-            hideBreadcrumbs: true
+            breadcrumbs: false
         }
     })
 }]

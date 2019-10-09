@@ -37,10 +37,15 @@
             },
             templateId () {
                 return this.$route.params.templateId
+            },
+            $route: {
+                immediate: true,
+                handler ($route) {
+                    if ($route.query.tab) {
+                        this.active = $route.query.tab
+                    }
+                }
             }
-        },
-        created () {
-            this.active = this.$route.query.tab || 'setting'
         }
     }
 </script>
