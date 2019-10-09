@@ -14,7 +14,9 @@
         </div>
         <bk-table class="template-table"
             :data="list"
-            @selection-change="handleSelectionChange">
+            :row-style="{ cursor: 'pointer' }"
+            @selection-change="handleSelectionChange"
+            @row-click="handleRowClick">
             <bk-table-column type="selection" width="50" :selectable="handleSelectable"></bk-table-column>
             <bk-table-column :label="$t('模板名称')" prop="name"></bk-table-column>
             <bk-table-column :label="$t('应用数量')" prop="set_instance_count"></bk-table-column>
@@ -49,17 +51,42 @@
                 </i18n>
             </template>
         </bk-table>
+        <bk-dialog
+            header-position="left"
+            :draggable="false"
+            :width="759"
+            :title="dialog.title"
+            v-model="dialog.visible"
+            @after-leave="handleDialogClose">
+            <component
+                :is="dialog.component"
+                v-bind="dialog.props">
+            </component>
+            <template slot="footer">
+                <bk-button @click="dialog.visible = false">{{$t('关闭')}}</bk-button>
+            </template>
+        </bk-dialog>
     </div>
 </template>
 
 <script>
+    import cmdbSetTemplateTree from './children/template-tree.vue'
     export default {
+        components: {
+            cmdbSetTemplateTree
+        },
         data () {
             return {
                 list: [],
                 originList: [],
                 searchName: '',
-                checkedIds: []
+                checkedIds: [],
+                dialog: {
+                    visible: false,
+                    title: '',
+                    component: null,
+                    props: {}
+                }
             }
         },
         computed: {
@@ -88,7 +115,7 @@
             },
             handleCreate () {
                 this.$router.push({
-                    name: 'setTemplateMode',
+                    name: 'setTemplateConfig',
                     params: {
                         mode: 'create'
                     }
@@ -96,7 +123,7 @@
             },
             handleEdit (row) {
                 this.$router.push({
-                    name: 'setTemplateMode',
+                    name: 'setTemplateConfig',
                     params: {
                         mode: 'edit',
                         templateId: row.id
@@ -104,12 +131,18 @@
                 })
             },
             handlePreview (row) {
-                this.$router.push({
-                    name: 'setTemplateInfo',
-                    params: {
-                        templateId: row.id
-                    }
-                })
+                this.dialog.props = {
+                    mode: 'view',
+                    templateId: row.id
+                }
+                this.dialog.title = row.name
+                this.dialog.component = 'cmdb-set-template-tree'
+                this.dialog.visible = true
+            },
+            handleDialogClose () {
+                this.dialog.props = {}
+                this.dialog.title = ''
+                this.dialog.component = null
             },
             async handleDelete (row) {
                 this.$bkInfo({
@@ -162,6 +195,18 @@
             },
             handleSelectionChange (selection) {
                 this.checkedIds = selection.map(item => item.id)
+            },
+            handleRowClick (row, event, column) {
+                if (!column.property) {
+                    return false
+                }
+                this.$router.push({
+                    name: 'setTemplateConfig',
+                    params: {
+                        mode: 'view',
+                        templateId: row.id
+                    }
+                })
             }
         }
     }

@@ -16,24 +16,13 @@ export default [{
         }
     })
 }, {
-    name: 'setTemplateInfo',
-    path: 'set/template/info/:templateId',
-    component: () => import('./template-info.vue'),
-    meta: new Meta({
-        owner: MENU_BUSINESS,
-        menu: {
-            i18n: '模板信息',
-            relative: MENU_BUSINESS_SET_TEMPLATE
-        }
-    })
-}, {
-    name: 'setTemplateMode',
+    name: 'setTemplateConfig',
     path: 'set/template/:mode/:templateId?',
     component: () => import('./template.vue'),
-    props: true,
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
+            i18n: '集群模板',
             relative: MENU_BUSINESS_SET_TEMPLATE
         }
     })
