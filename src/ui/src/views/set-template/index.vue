@@ -3,7 +3,7 @@
         <div class="options clearfix">
             <div class="fl">
                 <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
-                <bk-button theme="default" class="ml10" :disabled="!checkedIds.length">{{$t('批量删除')}}</bk-button>
+                <bk-button theme="default" class="ml10" :disabled="!checkedIds.length" @click="handleBatchDelete">{{$t('批量删除')}}</bk-button>
             </div>
             <div class="fr">
                 <bk-input :placeholder="$t('模板名称')"
@@ -111,7 +111,46 @@
                     }
                 })
             },
-            handleDelete (row) {},
+            async handleDelete (row) {
+                this.$bkInfo({
+                    title: this.$t('确认删除xx集群模板', { name: row.name }),
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('setTemplate/deleteSetTemplate', {
+                                bizId: this.$store.getters['objectBiz/bizId'],
+                                config: {
+                                    data: {
+                                        set_template_ids: [row.id]
+                                    }
+                                }
+                            })
+                            this.getSetTemplates()
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                })
+            },
+            async handleBatchDelete () {
+                this.$bkInfo({
+                    title: this.$t('确认删除选中的集群模板'),
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('setTemplate/deleteSetTemplate', {
+                                bizId: this.$store.getters['objectBiz/bizId'],
+                                config: {
+                                    data: {
+                                        set_template_ids: this.checkedIds
+                                    }
+                                }
+                            })
+                            this.getSetTemplates()
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                })
+            },
             handleFilterTemplate () {
                 const originList = this.$tools.clone(this.originList)
                 this.list = this.searchName
