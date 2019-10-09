@@ -82,12 +82,14 @@ func ParseBizID(data mapstr.MapStr) (int64, error) {
 	if !exist {
 		return 0, nil
 	}
-
 	metaValue, ok := metaInterface.(map[string]interface{})
 	if !ok {
 		return 0, nil
 	}
+	return ParseBizIDFromMetadata(metaValue)
+}
 
+func ParseBizIDFromMetadata(metaValue map[string]interface{}) (int64, error) {
 	labelInterface, exist := metaValue["label"]
 	if !exist {
 		return 0, nil

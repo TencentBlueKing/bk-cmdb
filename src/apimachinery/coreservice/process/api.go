@@ -506,7 +506,7 @@ func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, inst
 	return &ret.Data, nil
 }
 
-func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, option *metadata.DeleteServiceInstanceOption) errors.CCErrorCoder {
+func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, option *metadata.CoreDeleteServiceInstanceOption) errors.CCErrorCoder {
 	ret := new(metadata.OneServiceInstanceResult)
 	subPath := "/delete/process/service_instance"
 
