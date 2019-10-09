@@ -1,7 +1,7 @@
 <template>
     <div class="clearfix">
         <dynamic-navigation class="main-navigation"></dynamic-navigation>
-        <dynamic-breadcrumbs class="main-breadcrumbs"></dynamic-breadcrumbs>
+        <dynamic-breadcrumbs class="main-breadcrumbs" v-if="$route.meta.layout.breadcrumbs"></dynamic-breadcrumbs>
         <div class="main-layout">
             <div class="main-scroller" v-bkloading="{ isLoading: globalLoading }" ref="scroller">
                 <router-view class="main-views" :name="view"></router-view>
