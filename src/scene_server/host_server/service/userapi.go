@@ -42,6 +42,19 @@ func (s *Service) AddUserCustomQuery(req *restful.Request, resp *restful.Respons
 		return
 	}
 
+	if "" == ucq.Info {
+		blog.Error("AddUserCustomQuery add user custom query info is required,input:%+v,rid:%s", ucq, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "info")})
+		return
+	}
+	// check if the info string matches the required structure
+	err := json.Unmarshal([]byte(ucq.Info), &meta.HostCommonSearch{})
+	if err != nil {
+		blog.Errorf("AddUserCustomQuery info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), ucq, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
 	if 0 >= ucq.AppID {
 		blog.Error("AddUserCustomQuery add user custom query parameter ApplicationID is required,input:%+v,rid:%s", ucq, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)})
@@ -84,6 +97,20 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 
 	params["modify_user"] = srvData.user
 	params[common.LastTimeField] = time.Now().UTC()
+
+	if info, exists := params["info"]; exists {
+		info := info.(string)
+		if len(info) != 0 {
+			// check if the info string matches the required structure
+			err := json.Unmarshal([]byte(info), &meta.HostCommonSearch{})
+			if err != nil {
+				blog.Errorf("UpdateUserCustomQuery info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), params, srvData.rid)
+				_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+				return
+			}
+		}
+	}
+
 	bizID := req.PathParameter("bk_biz_id")
 	result, err := s.CoreAPI.CoreService().Host().UpdateUserConfig(srvData.ctx, bizID, req.PathParameter("id"), srvData.header, params)
 	if err != nil {
@@ -271,8 +298,18 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 		return
 	}
 
-	input.Page.Start, _ = util.GetIntByInterface(req.PathParameter("start"))
-	input.Page.Limit, _ = util.GetIntByInterface(req.PathParameter("limit"))
+	input.Page.Start, err = util.GetIntByInterface(req.PathParameter("start"))
+	if err != nil {
+		blog.Errorf("UserAPIResult start invalid, err: %v, appid:%s, id:%s, logID:%s", err.Error(), appID, ID, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "start")})
+		return
+	}
+	input.Page.Limit, err = util.GetIntByInterface(req.PathParameter("limit"))
+	if err != nil {
+		blog.Errorf("UserAPIResult limit invalid, err: %v, appid:%s, id:%s, logID:%s", err.Error(), appID, ID, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "limit")})
+		return
+	}
 
 	retData, err := srvData.lgc.SearchHost(srvData.ctx, &input, false)
 	if nil != err || (nil == err && !result.Result) {

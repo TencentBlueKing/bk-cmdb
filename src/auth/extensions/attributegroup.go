@@ -268,7 +268,14 @@ func (am *AuthManager) UpdateRegisteredModelAttributeGroup(ctx context.Context, 
 		return fmt.Errorf("update registered model attribute failed, err: %+v", err)
 	}
 
-	return am.Authorize.RegisterResource(ctx, resources...)
+	for _, resource := range resources {
+		err = am.Authorize.UpdateResource(ctx, &resource)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeGroupByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
