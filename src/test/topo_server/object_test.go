@@ -783,7 +783,19 @@ var _ = Describe("object test", func() {
 				j, err := json.Marshal(rsp.Data)
 				data := []metadata.Group{}
 				json.Unmarshal(j, &data)
-				Expect(data).To(ContainElement(group))
+				exist := false
+				for _, grp := range data {
+					if grp.ID == group.ID {
+						exist = true
+						Expect(grp.GroupID).To(Equal(group.GroupID))
+						Expect(grp.GroupName).To(Equal(group.GroupName))
+						Expect(grp.GroupIndex).To(Equal(group.GroupIndex))
+						Expect(grp.ObjectID).To(Equal(group.ObjectID))
+						Expect(grp.OwnerID).To(Equal(group.OwnerID))
+					}
+				}
+				Expect(exist).To(Equal(true))
+				Expect(j).NotTo(ContainSubstring("123"))
 			})
 		})
 
@@ -958,7 +970,7 @@ var _ = Describe("object test", func() {
 				Expect(data.ObjectID).To(Equal(input.ObjectID))
 				Expect(data.PropertyID).To(Equal(input.PropertyID))
 				Expect(data.PropertyName).To(Equal(input.PropertyName))
-				Expect(data.PropertyGroup).To(Equal("default"))
+				Expect(data.PropertyGroup).To(Equal("bizdefault"))
 				Expect(data.IsEditable).To(Equal(input.IsEditable))
 				Expect(data.PropertyType).To(Equal(input.PropertyType))
 				Expect(data.OwnerID).To(Equal(input.OwnerID))
@@ -1046,7 +1058,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := objectClient.UpdatePropertyGroupObjectAtt(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(false))
 			})
 
 			It("search object attribute", func() {
