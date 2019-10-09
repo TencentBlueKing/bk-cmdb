@@ -72,8 +72,8 @@ export function bool (value) {
     return '--'
 }
 
-export function enumeration (value, options = []) {
-    const option = options.find(option => option.id === value)
+export function enumeration (value, options) {
+    const option = (options || []).find(option => option.id === value)
     if (!option) {
         return '--'
     }
