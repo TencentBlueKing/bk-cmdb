@@ -59,17 +59,16 @@ func (s *Service) WebService() *restful.Container {
 	// init service actions
 	s.initService()
 
-	api := new(restful.WebService)
-	healthz := new(restful.WebService).Produces(restful.MIME_JSON)
-
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Error
 	}
 
+	api := new(restful.WebService)
 	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
-	innerActions := s.Actions()
+	healthz := new(restful.WebService).Produces(restful.MIME_JSON)
 
+	innerActions := s.Actions()
 	for _, actionItem := range innerActions {
 		action := api
 		if actionItem.Path == "/healthz" {

@@ -14,6 +14,7 @@ package settemplate
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/apimachinery"
@@ -163,6 +164,11 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	return setDiffs, nil
 }
 
+// GetSetTemplateSyncIndex 返回task_server中任务的检索值(flag)
+func GetSetTemplateSyncIndex(setID int64) string {
+	return fmt.Sprintf("set_template_sync:%d", setID)
+}
+
 func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
 	rid := util.ExtractRequestUserFromContext(ctx)
 
@@ -175,6 +181,7 @@ func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header,
 	}
 
 	for _, setDiff := range setDiffs {
+		indexKey := GetSetTemplateSyncIndex(setDiff.SetID)
 		blog.V(3).Infof("dispatch synchronize task on set [%s](%d), rid: %s", setDiff.SetDetail.SetName, setDiff.SetID, rid)
 		tasks := make([]metadata.SyncModuleTask, 0)
 		for _, moduleDiff := range setDiff.ModuleDiffs {
@@ -186,7 +193,7 @@ func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header,
 			}
 			tasks = append(tasks, task)
 		}
-		taskDetail, err := st.DispatchTask4ModuleSync(ctx, header, tasks...)
+		taskDetail, err := st.DispatchTask4ModuleSync(ctx, header, indexKey, tasks...)
 		if err != nil {
 			return err
 		}
@@ -197,14 +204,14 @@ func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header,
 	return nil
 }
 
-func (st *setTemplate) DispatchTask4ModuleSync(ctx context.Context, header http.Header, tasks ...metadata.SyncModuleTask) (metadata.APITaskDetail, errors.CCErrorCoder) {
+func (st *setTemplate) DispatchTask4ModuleSync(ctx context.Context, header http.Header, indexKey string, tasks ...metadata.SyncModuleTask) (metadata.APITaskDetail, errors.CCErrorCoder) {
 	taskDetail := metadata.APITaskDetail{}
 	rid := util.GetHTTPCCRequestID(header)
 	tasksData := make([]interface{}, 0)
 	for _, task := range tasks {
 		tasksData = append(tasksData, task)
 	}
-	createTaskResult, err := st.client.TaskServer().Task().Create(ctx, header, common.SyncSetTaskName, tasksData)
+	createTaskResult, err := st.client.TaskServer().Task().Create(ctx, header, indexKey, common.SyncSetTaskName, tasksData)
 	if err != nil {
 		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", tasks, err.Error(), rid)
 		return taskDetail, errors.CCHttpError

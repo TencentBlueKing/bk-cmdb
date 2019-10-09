@@ -51,6 +51,9 @@ type TaskQueue struct {
 func (s *Service) NewQueue(taskMap map[string]TaskInfo) *TaskQueue {
 	var taskArr []TaskInfo
 	codeTaskInfoMap := s.initCodeTaskConfig()
+	if taskMap == nil {
+		taskMap = make(map[string]TaskInfo)
+	}
 	for name, taskInfo := range codeTaskInfoMap {
 		taskMap[name] = taskInfo
 	}
