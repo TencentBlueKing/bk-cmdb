@@ -645,6 +645,10 @@ const (
 	// CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed Module does not exist or there are multiple built-in modules
 	CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed = 1110057
 	CCErrHostSearchNeedObjectInstIDErr                        = 1110058
+	CCErrHostSetNotExist                                      = 1110059
+	CCErrHostSetNotBelongBusinessErr                          = 1110060
+	CCErrHostModuleNotBelongBusinessErr                       = 1110061
+	CCErrHostModuleNotBelongSetErr                            = 1110062
 
 	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001

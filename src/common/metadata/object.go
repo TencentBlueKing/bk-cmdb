@@ -86,9 +86,8 @@ func GetInstIDFieldByObjID(objID string) string {
 
 }
 
-// GetInstNameFieldName get the inst name
-func (o *Object) GetInstNameFieldName() string {
-	switch o.ObjectID {
+func GetInstNameFieldName(objID string) string {
+	switch objID {
 	case common.BKInnerObjIDApp:
 		return common.BKAppNameField
 	case common.BKInnerObjIDSet:
@@ -104,6 +103,11 @@ func (o *Object) GetInstNameFieldName() string {
 	default:
 		return common.BKInstNameField
 	}
+}
+
+// GetInstNameFieldName get the inst name
+func (o *Object) GetInstNameFieldName() string {
+	return GetInstNameFieldName(o.ObjectID)
 }
 
 // GetObjectType get the object type

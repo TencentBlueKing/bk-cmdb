@@ -151,6 +151,9 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 			continue
 		}
 	}
+	if inputParam.Condition.Exists(metadata.BKMetadata) {
+		inputParam.Condition.Set(metadata.BKMetadata, instMedataData)
+	}
 
 	for _, origin := range origins {
 		instIDI := origin[instIDFieldName]

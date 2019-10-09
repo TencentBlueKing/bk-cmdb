@@ -51,7 +51,7 @@ type ProcessInterface interface {
 	GetServiceInstance(ctx context.Context, h http.Header, serviceInstanceID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	UpdateServiceInstance(ctx context.Context, h http.Header, serviceInstanceID int64, template *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
-	DeleteServiceInstance(ctx context.Context, h http.Header, option *metadata.DeleteServiceInstanceOption) errors.CCErrorCoder
+	DeleteServiceInstance(ctx context.Context, h http.Header, option *metadata.CoreDeleteServiceInstanceOption) errors.CCErrorCoder
 	GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.Header, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder)
 	ListServiceInstanceDetail(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder)
 
