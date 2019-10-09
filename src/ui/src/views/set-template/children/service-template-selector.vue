@@ -4,16 +4,26 @@
         <ul class="template-list clearfix"
             v-bkloading="{ isLoading: $loading('getServiceTemplate') }"
             :class="{ 'is-loading': $loading('getServiceTemplate') }">
-            <li class="template-item fl clearfix"
-                v-for="(template, index) in templates"
-                :class="{
-                    'is-selected': localSelected.includes(template.id),
-                    'is-middle': index % 3 === 1
-                }"
-                :key="template.id"
-                @click="handleClick(template)">
-                <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
-                <span class="template-name" :title="template.name">{{template.name}}</span>
+            <template v-if="templates.length">
+                <li class="template-item fl clearfix"
+                    v-for="(template, index) in templates"
+                    :class="{
+                        'is-selected': localSelected.includes(template.id),
+                        'is-middle': index % 3 === 1
+                    }"
+                    :key="template.id"
+                    @click="handleClick(template)">
+                    <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
+                    <span class="template-name" :title="template.name">{{template.name}}</span>
+                </li>
+            </template>
+            <li class="template-empty" v-else>
+                <div class="empty-content">
+                    <img class="empty-image" src="../../../assets/images/empty-content.png">
+                    <i18n class="empty-tips" path="无服务模板提示">
+                        <a class="empty-link" href="javascript:void(0)" place="link" @click="handleLinkClick">{{$t('跳转添加')}}</a>
+                    </i18n>
+                </div>
             </li>
         </ul>
     </section>
@@ -32,7 +42,6 @@
         },
         data () {
             return {
-                visible: false,
                 templates: [],
                 localSelected: [...this.selected]
             }
@@ -64,7 +73,12 @@
                 }
             },
             getSelectedServices () {
-                return this.templates.filter(template => this.localSelected.includes(template.id))
+                return this.localSelected.map(id => this.templates.find(template => template.id === id))
+            },
+            handleLinkClick () {
+                this.$router.push({
+                    name: 'operationalTemplate'
+                })
             }
         }
     }
@@ -112,6 +126,30 @@
                 background-color: #fff;
                 border-radius: 50%;
                 border: 1px solid #979BA5;
+            }
+        }
+    }
+    .template-empty {
+        height: 280px;
+        &:before {
+            content: "";
+            height: 100%;
+            width: 0;
+            @include inlineBlock;
+        }
+        .empty-content {
+            width: 100%;
+            @include inlineBlock;
+            .empty-image {
+                display: block;
+                margin: 0 auto;
+            }
+            .empty-tips {
+                display: block;
+                text-align: center;
+            }
+            .empty-link {
+                color: #3A84FF;
             }
         }
     }

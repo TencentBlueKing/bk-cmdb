@@ -1008,5 +1008,9 @@
     "待同步": "Synchronizable",
     "已同步": "Synced",
     "集群拓扑": "Cluster topology",
-    "模板集群名称": "Template cluster name"
+    "模板集群名称": "Template cluster name",
+    "无服务模板提示": "There are no service templates, {link}",
+    "跳转添加": "Click to create",
+    "确认删除xx集群模板": "Confirm to delete set template {name}?",
+    "确认删除选中的集群模板": "Confirm to delete selected set template(s)"
 }
