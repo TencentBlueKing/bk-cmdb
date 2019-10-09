@@ -15,6 +15,8 @@ var clientSet = test.GetClientSet()
 var topoServerClient = clientSet.TopoServer()
 var procServerClient = clientSet.ProcServer()
 var apiServerClient = clientSet.ApiServer()
+var instClient = topoServerClient.Instance()
+var objectClient = topoServerClient.Object()
 
 func TestTopoServer(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -22,7 +24,6 @@ func TestTopoServer(t *testing.T) {
 		reporter.NewHtmlReporter(test.GetReportDir()+"toposerver.html", test.GetReportUrl(), true),
 	}
 	RunSpecsWithDefaultAndCustomReporters(t, "TopoServer Suite", reporters)
-	RunSpecs(t, "TopoServer Suite")
 }
 
 var _ = BeforeSuite(func() {

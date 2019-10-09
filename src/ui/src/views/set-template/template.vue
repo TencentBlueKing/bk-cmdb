@@ -28,7 +28,7 @@
         },
         data () {
             return {
-                active: this.$route.query.tab || 'setting'
+                active: 'setting'
             }
         },
         computed: {
@@ -37,6 +37,16 @@
             },
             templateId () {
                 return this.$route.params.templateId
+            }
+        },
+        watch: {
+            $route: {
+                immediate: true,
+                handler ($route) {
+                    if ($route.query.tab) {
+                        this.active = $route.query.tab
+                    }
+                }
             }
         }
     }

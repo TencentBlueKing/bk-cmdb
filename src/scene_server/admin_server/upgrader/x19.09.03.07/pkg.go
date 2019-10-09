@@ -10,35 +10,35 @@
  * limitations under the License.
  */
 
-package x19_05_16_01
+package x19_09_03_07
 
 import (
 	"context"
 
-	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func createServiceTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tables := []string{
-		common.BKTableNameServiceCategory,
-		common.BKTableNameServiceTemplate,
-		common.BKTableNameServiceInstance,
-		common.BKTableNameProcessTemplate,
-		common.BKTableNameProcessInstanceRelation,
+func init() {
+	upgrader.RegistUpgrader("x19_09_03_07", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	if err := RemoveMetadata(ctx, db, conf); err != nil {
+		blog.Errorf("RemoveMetadata failed, err: %+v", err)
+		return err
 	}
 
-	for _, tableName := range tables {
-		exists, err := db.HasTable(tableName)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			if err = db.CreateTable(tableName); err != nil && !db.IsDuplicatedError(err) {
-				return err
-			}
-		}
+	if err := RemoveMetadataProcess(ctx, db, conf); err != nil {
+		blog.Errorf("RemoveMetadataProcess failed, err: %+v", err)
+		return err
 	}
+
+	if err := RemoveMetadataFromRelation(ctx, db, conf); err != nil {
+		blog.Errorf("RemoveMetadataProcess failed, err: %+v", err)
+		return err
+	}
+
 	return nil
 }

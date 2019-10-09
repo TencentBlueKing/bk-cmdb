@@ -30,12 +30,11 @@ import (
 )
 
 var (
-	instAsstQueue = make(chan []metadata.InstAsst, 1000)
 	limit         = uint64(2000)
-	closeChan     = make(chan bool, 100)
 )
 
 func removeDeletedInstAsst(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	instAsstQueue := make(chan []metadata.InstAsst, 1000)
 
 	assts := make([]*metadata.Association, 0)
 	if err := db.Table(common.BKTableNameObjAsst).Find(nil).All(ctx, &assts); err != nil {
