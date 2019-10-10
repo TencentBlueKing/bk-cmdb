@@ -74,8 +74,8 @@ type SetTemplateSyncStatus struct {
 	LastTime        Time   `field:"last_time" json:"last_time,omitempty" bson:"last_time" mapstructure:"last_time"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 
-	Status     SyncStatus `field:"status" json:"status" bson:"status" mapstructure:"status"`
-	SyncTaskID string     `field:"sync_task_id" json:"sync_task_id" bson:"sync_task_id" mapstructure:"sync_task_id"`
+	Status SyncStatus `field:"status" json:"status" bson:"status" mapstructure:"status"`
+	TaskID string     `field:"task_id" json:"task_id" bson:"task_id" mapstructure:"task_id"`
 }
 
 // GetSetTemplateSyncIndex 返回task_server中任务的检索值(flag)

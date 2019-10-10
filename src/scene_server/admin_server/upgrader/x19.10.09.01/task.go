@@ -42,11 +42,15 @@ func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrade
 		if tableName == common.BKTableNameSetTemplateSyncStatus {
 			setIDUnique = true
 		}
+		taskIDUnique := false
+		if tableName == common.BKTableNameSetTemplateSyncHistory {
+			taskIDUnique = true
+		}
 		indexArr := []dal.Index{
 			{
 				Keys:       map[string]int32{"task_id": 1},
 				Name:       "idx_taskID",
-				Unique:     true,
+				Unique:     taskIDUnique,
 				Background: true,
 			},
 			{

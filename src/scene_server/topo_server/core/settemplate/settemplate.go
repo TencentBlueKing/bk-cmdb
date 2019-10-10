@@ -13,7 +13,6 @@
 package settemplate
 
 import (
-	"configcenter/src/common/mapstruct"
 	"context"
 	"net/http"
 	"time"
@@ -23,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -231,7 +231,7 @@ func (st *setTemplate) DispatchTask4ModuleSync(ctx context.Context, header http.
 	for _, task := range tasks {
 		tasksData = append(tasksData, task)
 	}
-	createTaskResult, err := st.client.TaskServer().Task().Create(ctx, header, indexKey, common.SyncSetTaskName, tasksData)
+	createTaskResult, err := st.client.TaskServer().Task().Create(ctx, header, common.SyncSetTaskName, indexKey, tasksData)
 	if err != nil {
 		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", tasks, err.Error(), rid)
 		return taskDetail, errors.CCHttpError

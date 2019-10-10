@@ -33,12 +33,12 @@ func (p *setTemplateOperation) UpdateSetTemplateSyncStatus(ctx core.ContextParam
 		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
 	}
 
-	if len(option.SyncTaskID) == 0 {
+	if len(option.TaskID) == 0 {
 		return nil
 	}
 
 	historyFilter := map[string]interface{}{
-		"task_id": option.SyncTaskID,
+		common.BKTaskIDField: option.TaskID,
 	}
 	if err := p.dbProxy.Table(common.BKTableNameSetTemplateSyncHistory).Upsert(ctx.Context, historyFilter, option); err != nil {
 		blog.Errorf("UpdateSetTemplateSyncStatus failed, db upsert sync history failed, id: %d, option: %s, err: %s, rid: %s", setID, option, err.Error(), ctx.ReqID)
@@ -46,4 +46,50 @@ func (p *setTemplateOperation) UpdateSetTemplateSyncStatus(ctx core.ContextParam
 	}
 
 	return nil
+}
+
+func (p *setTemplateOperation) ListSetTemplateSyncStatus(ctx core.ContextParams, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
+	return p.listSetTemplateSyncStatus(ctx, option, common.BKTableNameSetTemplateSyncStatus)
+}
+
+func (p *setTemplateOperation) ListSetTemplateSyncHistory(ctx core.ContextParams, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
+	return p.listSetTemplateSyncStatus(ctx, option, common.BKTableNameSetTemplateSyncHistory)
+}
+
+func (p *setTemplateOperation) listSetTemplateSyncStatus(ctx core.ContextParams, option metadata.ListSetTemplateSyncStatusOption, tableName string) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
+	result := metadata.MultipleSetTemplateSyncStatus{
+		Count: 0,
+		Info:  make([]metadata.SetTemplateSyncStatus, 0),
+	}
+	if option.BizID == 0 {
+		return result, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
+	}
+	if option.SetTemplateID == 0 {
+		return result, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
+	filter := option.ToFilter()
+	querySet := p.dbProxy.Table(tableName).Find(filter)
+	total, err := querySet.Count(ctx.Context)
+	if err != nil {
+		blog.ErrorJSON("ListSetTemplateSyncStatus failed, db count failed, filter: %s, err: %s, rid: %s", filter, err.Error(), ctx.ReqID)
+		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	result.Count = int64(total)
+
+	if option.Page.Start != 0 {
+		querySet = querySet.Start(uint64(option.Page.Start))
+	}
+	if option.Page.Limit != 0 {
+		querySet = querySet.Limit(uint64(option.Page.Limit))
+	}
+	if len(option.Page.Sort) != 0 {
+		querySet = querySet.Sort(option.Page.Sort)
+	}
+	if err := querySet.All(ctx.Context, &result.Info); err != nil {
+		blog.ErrorJSON("ListSetTemplateSyncStatus failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), ctx.ReqID)
+		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return result, nil
 }

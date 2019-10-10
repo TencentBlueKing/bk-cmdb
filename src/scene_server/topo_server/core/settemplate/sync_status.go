@@ -13,13 +13,13 @@
 package settemplate
 
 import (
-	"configcenter/src/common/mapstruct"
 	"net/http"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -122,12 +122,12 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 		setSyncStatus.Creator = set.Creator
 		setSyncStatus.CreateTime = set.CreateTime
 		setSyncStatus.LastTime = set.LastTime
-		setSyncStatus.SyncTaskID = ""
+		setSyncStatus.TaskID = ""
 	} else {
 		setSyncStatus.Creator = detail.User
 		setSyncStatus.CreateTime = metadata.Time{Time: detail.CreateTime}
 		setSyncStatus.LastTime = metadata.Time{Time: detail.LastTime}
-		setSyncStatus.SyncTaskID = detail.TaskID
+		setSyncStatus.TaskID = detail.TaskID
 	}
 	err = st.client.CoreService().SetTemplate().UpdateSetTemplateSyncStatus(params.Context, params.Header, setID, setSyncStatus)
 	if err != nil {
