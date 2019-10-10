@@ -315,6 +315,7 @@
             },
             handleToggleBusiness (id, old) {
                 if (old) {
+                    window.location.hash = '#/business/host'
                     window.location.reload()
                 }
             }
