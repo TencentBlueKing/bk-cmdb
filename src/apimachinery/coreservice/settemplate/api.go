@@ -253,3 +253,55 @@ func (p *setTemplate) UpdateSetTemplateSyncStatus(ctx context.Context, header ht
 
 	return nil
 }
+
+func (p *setTemplate) ListSetTemplateSyncStatus(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data metadata.MultipleSetTemplateSyncStatus
+	}{}
+	subPath := fmt.Sprintf("/findmany/topo/set_template_sync_status/bk_biz_id/%d", bizID)
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("ListSetTemplateSyncStatus failed, http request failed, err: %+v", err)
+		return ret.Data, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}
+
+func (p *setTemplate) ListSetTemplateSyncHistory(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data metadata.MultipleSetTemplateSyncStatus
+	}{}
+	subPath := fmt.Sprintf("/findmany/topo/set_template_sync_history/bk_biz_id/%d", bizID)
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("ListSetTemplateSyncHistory failed, http request failed, err: %+v", err)
+		return ret.Data, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}
