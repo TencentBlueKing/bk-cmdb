@@ -306,6 +306,7 @@ type ListServiceTemplateOption struct {
 	ServiceCategoryID  *int64   `json:"service_category_id"`
 	ServiceTemplateIDs []int64  `json:"service_template_ids"`
 	Page               BasePage `json:"page,omitempty"`
+	Search             string   `json:"search"`
 }
 
 type OneServiceTemplateResult struct {
