@@ -15,6 +15,7 @@ package core
 import (
 	"fmt"
 
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/rpc"
@@ -32,6 +33,7 @@ type Core interface {
 type core struct {
 	txn     *session.Manager
 	session *session.Session
+	engine  *backbone.Engine
 	enable  bool
 }
 

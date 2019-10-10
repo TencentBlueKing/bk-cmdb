@@ -68,7 +68,7 @@ func (s *coreService) SetConfig(engin *backbone.Engine, db mongodb.Client, txnCf
 		core.ContextParams{
 			Context:  context.Background(),
 			ListenIP: s.listenIP,
-		}, txnCfg, db, s.listenIP)
+		}, txnCfg, db, s.listenIP, engin)
 	if err != nil {
 		return err
 	}
