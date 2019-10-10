@@ -54,6 +54,7 @@ type ListServiceTemplateInput struct {
 	// this field can be empty, it a optional condition.
 	ServiceCategoryID int64    `json:"service_category_id,omitempty"`
 	Page              BasePage `json:"page"`
+	Search            string   `json:"search"`
 }
 
 type ListServiceTemplateWithDetailResult struct {
