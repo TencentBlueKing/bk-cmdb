@@ -32,7 +32,7 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 	var err error
 	if bizID, err = p.validateBizID(ctx, category.BizID); err != nil {
 		blog.Errorf("CreateServiceCategory failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
 	category.BizID = bizID
@@ -42,7 +42,7 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 		parentCategory, err := p.GetServiceCategory(ctx, category.ParentID)
 		if err != nil {
 			blog.Errorf("CreateServiceCategory failed, parent id invalid, code: %d, category: %+v, err: %+v, rid: %s", common.CCErrCommParamsInvalid, category, err, ctx.ReqID)
-			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 		}
 		category.RootID = parentCategory.RootID
 	}
@@ -178,7 +178,11 @@ func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categor
 }
 
 func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
-	filter := metadata.NewPublicOrBizConditionByBizID(bizID)
+	filter := map[string]interface{}{
+		common.BKAppIDField: map[string]interface{}{
+			common.BKDBIN: []int64{bizID, 0},
+		},
+	}
 	categories := make([]metadata.ServiceCategory, 0)
 	sort := "name"
 	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).Sort(sort).All(ctx.Context, &categories); nil != err {

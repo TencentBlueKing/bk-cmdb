@@ -18,6 +18,9 @@ import (
 	"regexp"
 	"strings"
 
+	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
+
 	restful "github.com/emicklei/go-restful"
 )
 
@@ -26,23 +29,30 @@ type URLPath string
 
 // FilterChain url path filter
 func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
+
+	var serverType RequestType
+	var err error
 	switch {
 	case u.WithTopo(req):
-		return TopoType, nil
+		serverType = TopoType
 	case u.WithHost(req):
-		return HostType, nil
+		serverType = HostType
 	case u.WithProc(req):
-		return ProcType, nil
+		serverType = ProcType
 	case u.WithEvent(req):
-		return EventType, nil
+		serverType = EventType
 	case u.WithDataCollect(req):
-		return DataCollectType, nil
+		serverType = DataCollectType
 	default:
-		return UnknownType, errors.New("unknown requested with backend process")
+		serverType = UnknownType
+		err = errors.New("unknown requested with backend process")
 	}
+	blog.V(7).Infof("FilterChain match %s server, url: %s, rid: %s", serverType, req.Request.URL, rid)
+	return serverType, err
 }
 
-var topoURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set/.*)$", verbs))
+var topoURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set)/.*$", verbs))
 
 // WithTopo parse topo api's url
 func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
