@@ -8,50 +8,58 @@
             </div>
             <i v-show="iconClose" class="bk-icon icon-close" @click.stop="handleClose"></i>
         </div>
-        <div class="main clearfix" v-show="localExpand">
-            <div class="sync fl">
-                <h3>{{$t('同步前')}}</h3>
-                <div class="sync-main fl">
-                    <div class="sync-title" :class="{ 'is-expand': beforeSyncExpand }" @click.stop="beforeSyncExpand = !beforeSyncExpand">
-                        <i class="bk-icon icon-right-shape"></i>
-                        <i class="bk-icon icon-cc-nav-model-02"></i>
-                        <span class="set-name">{{setDeatails.bk_set_name}}</span>
-                    </div>
-                    <ul class="sync-info"
-                        v-show="beforeSyncExpand"
-                        v-for="_module in beforeChangeList"
-                        :key="_module.bk_module_id">
-                        <li class="mt20">
+        <cmdb-collapse-transition>
+            <div class="main clearfix" v-show="localExpand">
+                <div class="sync fl">
+                    <h3>{{$t('同步前')}}</h3>
+                    <div class="sync-main fl">
+                        <div class="sync-title" :class="{ 'is-expand': beforeSyncExpand }" @click.stop="beforeSyncExpand = !beforeSyncExpand">
+                            <i class="bk-icon icon-right-shape"></i>
                             <i class="bk-icon icon-cc-nav-model-02"></i>
-                            <span class="name">{{_module.bk_module_name}}</span>
-                        </li>
-                    </ul>
+                            <span class="set-name">{{setDeatails.bk_set_name}}</span>
+                        </div>
+                        <cmdb-collapse-transition>
+                            <div v-show="beforeSyncExpand">
+                                <ul class="sync-info"
+                                    v-for="_module in beforeChangeList"
+                                    :key="_module.bk_module_id">
+                                    <li class="mt20">
+                                        <i class="bk-icon icon-cc-nav-model-02"></i>
+                                        <span class="name">{{_module.bk_module_name}}</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </cmdb-collapse-transition>
+                    </div>
+                </div>
+                <div class="sync fl sync-after">
+                    <h3>{{$t('同步后')}}</h3>
+                    <div class="sync-main fl">
+                        <div class="sync-title" :class="{ 'is-expand': afterSyncExpand }" @click.stop="afterSyncExpand = !afterSyncExpand">
+                            <i class="bk-icon icon-right-shape"></i>
+                            <i class="bk-icon icon-cc-nav-model-02"></i>
+                            <span class="set-name">{{setDeatails.bk_set_name}}</span>
+                        </div>
+                        <cmdb-collapse-transition>
+                            <div v-show="afterSyncExpand">
+                                <ul class="sync-info"
+                                    v-for="_module in instance.module_diffs"
+                                    :key="_module.bk_module_id">
+                                    <li :class="['mt20', {
+                                        'has-delete': _module.diff_type === 'remove',
+                                        'has-changed': _module.diff_type === 'changed',
+                                        'new-add': _module.diff_type === 'add'
+                                    }]">
+                                        <i class="bk-icon icon-cc-nav-model-02"></i>
+                                        <span class="name">{{_module.bk_module_name}}</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </cmdb-collapse-transition>
+                    </div>
                 </div>
             </div>
-            <div class="sync fl sync-after">
-                <h3>{{$t('同步后')}}</h3>
-                <div class="sync-main fl">
-                    <div class="sync-title" :class="{ 'is-expand': afterSyncExpand }" @click.stop="afterSyncExpand = !afterSyncExpand">
-                        <i class="bk-icon icon-right-shape"></i>
-                        <i class="bk-icon icon-cc-nav-model-02"></i>
-                        <span class="set-name">{{setDeatails.bk_set_name}}</span>
-                    </div>
-                    <ul class="sync-info"
-                        v-show="afterSyncExpand"
-                        v-for="_module in instance.module_diffs"
-                        :key="_module.bk_module_id">
-                        <li :class="['mt20', {
-                            'has-delete': _module.diff_type === 'remove',
-                            'has-changed': _module.diff_type === 'changed',
-                            'new-add': _module.diff_type === 'add'
-                        }]">
-                            <i class="bk-icon icon-cc-nav-model-02"></i>
-                            <span class="name">{{_module.bk_module_name}}</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+        </cmdb-collapse-transition>
     </div>
 </template>
 
@@ -167,7 +175,7 @@
         }
     }
     .main {
-        margin: 14px 42px 26px;
+        padding: 14px 42px 26px;
     }
     .sync {
         min-width: 320px;

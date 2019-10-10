@@ -1014,5 +1014,12 @@
     "确认删除xx集群模板": "Confirm to delete set template {name}?",
     "确认删除选中的集群模板": "Confirm to delete selected set template(s)",
     "添加服务模板": "Add service template",
-    "模板服务信息": "Template service information"
+    "模板服务信息": "Template service information",
+    "同步实例": "Sync instance",
+    "创建集群模板": "Create cluster template",
+    "编辑集群模板": "Edit cluster template",
+    "集群模板信息": "Cluster template info",
+    "重试同步中": "Retry synchronization",
+    "重试失败": "Retry failed",
+    "查看": "View"
 }
