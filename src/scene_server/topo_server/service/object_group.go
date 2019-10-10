@@ -61,22 +61,14 @@ func (s *Service) UpdateObjectGroup(params types.ContextParams, pathParams, quer
 	if cond.Condition.ID != 0 {
 		searchCondition.Field(common.BKFieldID).Eq(cond.Condition.ID)
 	}
-	queryCond := metadata.QueryCondition{
-		Condition: searchCondition.ToMapStr(),
-	}
-	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKTableNamePropertyGroup, &queryCond)
+	result, err := s.Core.GroupOperation().FindObjectGroup(params, searchCondition)
 	if err != nil {
 		blog.Errorf("search attribute group by condition failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 	attributeGroups := make([]metadata.Group, 0)
-	for _, item := range result.Data.Info {
-		ag := metadata.Group{}
-		if _, err := ag.Parse(item); err != nil {
-			blog.Errorf("UpdateObjectGroup failed, parse condition from data failed, err: %+v, rid: %s", err, params.ReqID)
-			return nil, err
-		}
-		attributeGroups = append(attributeGroups, ag)
+	for _, item := range result {
+		attributeGroups = append(attributeGroups, item.Group())
 	}
 
 	// auth: register attribute group
@@ -96,14 +88,14 @@ func (s *Service) DeleteObjectGroup(params types.ContextParams, pathParams, quer
 
 	data.Remove(metadata.BKMetadata)
 
+	err = s.Core.GroupOperation().DeleteObjectGroup(params, gid)
+	if nil != err {
+		return nil, err
+	}
 	// auth: deregister attribute group
 	if err := s.AuthManager.DeregisterModelAttributeGroupByID(params.Context, params.Header, gid); err != nil {
 		blog.Errorf("delete object group failed, deregister attribute group to iam failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
-	}
-	err = s.Core.GroupOperation().DeleteObjectGroup(params, gid)
-	if nil != err {
-		return nil, err
 	}
 
 	return nil, nil
@@ -146,38 +138,7 @@ func (s *Service) UpdateObjectAttributeGroupProperty(params types.ContextParams,
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
 
 func (s *Service) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	data.Remove(metadata.BKMetadata)
-
-	// query attribute groups with given condition, so that update them to iam after updated
-	searchCondition := condition.CreateCondition()
-	searchCondition.Field(common.BKObjIDField).Eq(pathParams("bk_object_id"))
-	searchCondition.Field(common.BKPropertyIDField).Eq(pathParams("property_id"))
-	searchCondition.Field(common.BKPropertyGroupIDField).Eq(pathParams("group_id"))
-	queryCondition := metadata.QueryCondition{
-		Condition: searchCondition.ToMapStr(),
-	}
-	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKTableNamePropertyGroup, &queryCondition)
-	if err != nil {
-		blog.Errorf("search attribute group by condition failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
-	}
-	attributeGroups := make([]metadata.Group, 0)
-	for _, item := range result.Data.Info {
-		ag := metadata.Group{}
-		if _, err := ag.Parse(item); err != nil {
-			blog.Errorf("DeleteObjectAttributeGroup failed, parse condition from data failed, err: %+v, rid: %s", err, params.ReqID)
-			return nil, err
-		}
-		attributeGroups = append(attributeGroups, ag)
-	}
-
-	// auth: deregister attribute group
-	if err := s.AuthManager.DeregisterModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
-		blog.Errorf("delete object attribute group failed, deregister from iam failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
-	}
-
-	err = s.Core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
+	err := s.Core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
 	if nil != err {
 		return nil, err
 	}

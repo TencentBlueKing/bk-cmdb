@@ -13,7 +13,6 @@
 package process
 
 import (
-	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -34,13 +33,13 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 
 	var bizID int64
 	var err error
-	if bizID, err = p.validateBizID(ctx, template.Metadata); err != nil {
+	if bizID, err = p.validateBizID(ctx, template.BizID); err != nil {
 		blog.Errorf("CreateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
 	// keep metadata clean
-	template.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+	template.BizID = bizID
 
 	// validate service category id field
 	category, err := p.GetServiceCategory(ctx, template.ServiceCategoryID)
@@ -50,20 +49,15 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 	}
 
 	// make sure biz id identical with category
-	categoryBizID, err := metadata.BizIDFromMetadata(category.Metadata)
-	if err != nil {
-		blog.Errorf("CreateServiceTemplate failed, parse biz id from category failed, code: %d, err: %+v, rid: %s", common.CCErrCommInternalServerError, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParseBizIDFromMetadataInDBFailed)
-	}
 	// categoryBizID 0 and 1 is default category
-	if bizID != categoryBizID && categoryBizID != 0 {
-		blog.Errorf("CreateServiceTemplate failed, validation failed, input bizID:%d not equal category bizID:%d, rid: %s", bizID, categoryBizID, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+	if bizID != category.BizID && category.BizID != 0 {
+		blog.Errorf("CreateServiceTemplate failed, validation failed, input bizID:%d not equal category bizID:%d, rid: %s", bizID, category.BizID, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
 	// check name field unique under business
 	nameUniqueFilter := map[string]interface{}{
-		metadata.BKMetadata: metadata.NewMetadata(bizID),
+		common.BKAppIDField: bizID,
 		common.BKFieldName:  template.Name,
 	}
 	count, err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(nameUniqueFilter).Count(ctx)
@@ -72,7 +66,7 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
-		blog.Errorf("CreateServiceTemplate failed, category id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+		blog.Errorf("CreateServiceTemplate failed, service instance name duplicated, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDuplicateItem, common.BKFieldName)
 	}
 
@@ -126,25 +120,14 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 		// 允许模块的服务分类信息与模板的服务分类信息不一致，模块同步按钮会调整模块的分类信息, 详情见 issue #2927
 		template.ServiceCategoryID = input.ServiceCategoryID
 
-		bizID, e := metadata.BizIDFromMetadata(template.Metadata)
-		if e != nil {
-			blog.Errorf("UpdateServiceTemplate failed, parse biz id from metadata failed, code: %d, err: %+v, rid: %s", common.CCErrCommParseBizIDFromMetadataInDBFailed, e, ctx.ReqID)
-			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.CCErrCommParseBizIDFromMetadataInDBFailed)
-		}
-
 		// validate service category id field
 		category, err := p.GetServiceCategory(ctx, template.ServiceCategoryID)
 		if err != nil {
 			blog.Errorf("UpdateServiceTemplate failed, category id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
 		}
-		categoryBizID, e := metadata.BizIDFromMetadata(category.Metadata)
-		if e != nil {
-			blog.Errorf("UpdateServiceTemplate failed, parse biz id from metadata failed, code: %d, err: %+v, rid: %s", common.CCErrCommParseBizIDFromMetadataInDBFailed, err, ctx.ReqID)
-			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
-		}
-		if categoryBizID != 0 && categoryBizID != bizID {
-			blog.Errorf("UpdateServiceTemplate failed, category biz id and template not equal, code: %d, err: %+v, rid: %s", common.CCErrCommParseBizIDFromMetadataInDBFailed, err, ctx.ReqID)
+		if category.BizID != 0 && category.BizID != template.BizID {
+			blog.Errorf("UpdateServiceTemplate failed, category biz id and template not equal, err: %+v, rid: %s", err, ctx.ReqID)
 			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
 		}
 	}
@@ -165,9 +148,9 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 }
 
 func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, option metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
-	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
-	filter := map[string]interface{}{}
-	filter[common.MetadataField] = md.ToMapStr()
+	filter := map[string]interface{}{
+		common.BKAppIDField: option.BusinessID,
+	}
 
 	// filter with matching any sub category
 	if option.ServiceCategoryID != nil && *option.ServiceCategoryID > 0 {
