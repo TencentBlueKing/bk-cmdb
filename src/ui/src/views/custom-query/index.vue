@@ -34,11 +34,13 @@
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 229"
+            :row-style="{ cursor: 'pointer' }"
+            @row-click="showUserAPIDetails"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange">
             <!-- <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column> -->
-            <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed></bk-table-column>
+            <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed class-name="is-highlight"></bk-table-column>
             <bk-table-column prop="id" label="ID" sortable="custom" fixed></bk-table-column>
             <bk-table-column prop="create_user" :label="$t('创建用户')" sortable="custom"></bk-table-column>
             <bk-table-column prop="create_time" :label="$t('创建时间')" sortable="custom">
@@ -327,70 +329,55 @@
                         fields: this.previewHeader
                     }
                 ]
-                const specialObj = {
-                    'host': 'bk_host_innerip',
-                    'biz': 'bk_biz_name',
-                    'plat': 'bk_cloud_name',
-                    'module': 'bk_module_name',
-                    'set': 'bk_set_name'
-                }
                 properties.forEach((property, index) => {
                     const param = paramsMap.find(({ bk_obj_id: objId }) => {
                         return objId === property.objId
                     })
-                    if (property.propertyType === 'singleasst' || property.propertyType === 'multiasst') {
-                        paramsMap.push({
-                            'bk_obj_id': property.asstObjId,
-                            fields: [],
-                            condition: [{
-                                field: specialObj.hasOwnProperty(property.asstObjId) ? specialObj[property.asstObjId] : 'bk_inst_name',
+                    if (property.value !== null && property.value !== undefined && String(property.value).length) {
+                        if (property.propertyType === 'time' || property.propertyType === 'date') {
+                            const value = property['value']
+                            param['condition'].push({
+                                field: property.propertyId,
+                                operator: value[0] === value[1] ? '$eq' : '$gte',
+                                value: value[0]
+                            })
+                            param['condition'].push({
+                                field: property.propertyId,
+                                operator: value[0] === value[1] ? '$eq' : '$lte',
+                                value: value[1]
+                            })
+                        } else if (property.propertyType === 'bool' && ['true', 'false'].includes(property.value)) {
+                            param['condition'].push({
+                                field: property.propertyId,
                                 operator: property.operator,
-                                value: property.value
-                            }]
-                        })
-                    } else if (property.propertyType === 'time' || property.propertyType === 'date') {
-                        const value = property['value']
-                        param['condition'].push({
-                            field: property.propertyId,
-                            operator: value[0] === value[1] ? '$eq' : '$gte',
-                            value: value[0]
-                        })
-                        param['condition'].push({
-                            field: property.propertyId,
-                            operator: value[0] === value[1] ? '$eq' : '$lte',
-                            value: value[1]
-                        })
-                    } else if (property.propertyType === 'bool' && ['true', 'false'].includes(property.value)) {
-                        param['condition'].push({
-                            field: property.propertyId,
-                            operator: property.operator,
-                            value: property.value === 'true'
-                        })
-                    } else if (property.operator === '$multilike') {
-                        param.condition.push({
-                            field: property.propertyId,
-                            operator: property.operator,
-                            value: property.value.split('\n').filter(str => str.trim().length).map(str => str.trim())
-                        })
-                    } else {
-                        let operator = property.operator
-                        let value = property.value
-                        // 多模块与多集群查询
-                        if (property.propertyId === 'bk_module_name' || property.propertyId === 'bk_set_name') {
-                            operator = operator === '$regex' ? '$in' : operator
-                            if (operator === '$in') {
-                                const arr = value.replace('，', ',').split(',')
-                                const isExist = arr.findIndex(val => {
-                                    return val === value
-                                }) > -1
-                                value = isExist ? arr : [...arr, value]
+                                value: property.value === 'true'
+                            })
+                        } else if (property.operator === '$multilike') {
+                            param.condition.push({
+                                field: property.propertyId,
+                                operator: property.operator,
+                                value: property.value.split('\n').filter(str => str.trim().length).map(str => str.trim())
+                            })
+                        } else {
+                            let operator = property.operator
+                            let value = property.value
+                            // 多模块与多集群查询
+                            if (property.propertyId === 'bk_module_name' || property.propertyId === 'bk_set_name') {
+                                operator = operator === '$regex' ? '$in' : operator
+                                if (operator === '$in') {
+                                    const arr = value.replace('，', ',').split(',')
+                                    const isExist = arr.findIndex(val => {
+                                        return val === value
+                                    }) > -1
+                                    value = isExist ? arr : [...arr, value]
+                                }
                             }
+                            param['condition'].push({
+                                field: property.propertyId,
+                                operator: operator,
+                                value: value
+                            })
                         }
-                        param['condition'].push({
-                            field: property.propertyId,
-                            operator: operator,
-                            value: value
-                        })
                     }
                 })
                 const params = {

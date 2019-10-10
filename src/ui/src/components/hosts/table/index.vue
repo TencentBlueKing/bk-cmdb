@@ -668,6 +668,7 @@
                 })
             },
             handleTransferSuccess () {
+                this.$emit('update-host-count')
                 this.table.checked = []
                 this.transfer.show = false
                 this.getHostList()

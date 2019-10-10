@@ -8,9 +8,8 @@
 * input body：
 ```
 {
-    "info":"{\"biz\":{\"bk_biz_id\":12},\"exact\":0,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip\":[]}",
-    "query_params":"[{\"bk_biz_id\":12,\"bk_obj_id\":\"host\",\"field\":\"bk_agent_status\",\"operator\":\"$eq\",\"value\":\"正常\"},{\"bk_biz_id\":12,\"bk_obj_id\":\"host\",\"field\":\"CPUModule\",\"operator\":\"$regex\",\"value\":\"123\"},{\"bk_biz_id\":12,\"bk_obj_id\":\"biz\",\"field\":\"default\",\"operator\":\"$ne\",\"value\":1}]",
-    "is_default":2,
+    "info":"{\"biz\":{\"bk_biz_id\":12},\"exact_search\":false,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}",
+    "query_params":"[{\"bk_obj_id\":\"host\",\"field\":\"operator\",\"operator\":\"$eq\",\"value\":\"admin\"}]",
     "name":"my5"
 }
 ```
@@ -19,9 +18,8 @@
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
 | ---  | --- |---| --- | --- | ---|
-| info|json string|是|无| ip查询条件 |ip search parameters|
-| query_params|json string|是|无|通用查询条件 | common search query parameters|
-| is_default|int|是|无|1 默认，2 非默认| is default, 1 is default 2 is not|
+| info|json string|否|无| ip查询条件 |ip search parameters|
+| query_params|json string|否|无|通用查询条件 | common search query parameters|
 | name|string|是|无|收藏的名称|the name of favorites|
 
 info 参数说明：
@@ -29,9 +27,10 @@ info 参数说明：
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
 | ---  | --- |---| --- | --- | ---|
 | biz|object|是|无| 业务信息查询条件 |business info for search|
-| exact|int|是|无|是否精确查询 | is exeact search|
+| exact_search|bool|是|无|是否精确查询 | is exeact search|
 | bk_host_innerip|bool|是|无|true 或者false| true or false|
 | bk_host_outerip|bool|是|无|true 或者false|true or false|
+| ip_list|string数组|是|无|ip地址列表|ip address list
 
 biz 参数信息：
 
@@ -43,11 +42,10 @@ query_params 参数说明:
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
 | ---  | --- |---| --- | --- | ---|
-| bk_biz_id|int|是|无|业务ID |business ID |
 | bk_obj_id|string|是|无|对象ID | object ID|
 | field| string| 否| 无|对象的字段|field of object|
 | operator| string| 否| 无|操作符, $eq为相等，$neq为不等，$in为属于，$nin为不属于|$eq is equal,$in is belongs, $nin is not belong,$neq is not equal|
-| value| string| 否| 无|字段对应的值|the value of field|
+| value| object| 否| 无|字段对应的值|the value of field|
 
 
 * output
@@ -102,21 +100,21 @@ data 结构说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
 | ---  | --- |---| --- | --- | ---|
-| info|json string|是|无| ip查询条件 |ip search parameters|
-| query_params|json string|是|无|通用查询条件 | common search query parameters|
-| is_default|int|是|无|1 默认，2 非默认| is default, 1 is default 2 is not|
+| info|json string|否|无| ip查询条件 |ip search parameters|
+| query_params|json string|否|无|通用查询条件 | common search query parameters|
 | name|string|是|无|收藏的名称|the name of favorites|
 | id|string|是|无|收藏的主键|favorites primary key ID|
-| count|int|是|无|收藏次数|the time of favorites|
+| count|int|否|无|收藏次数|the time of favorites|
 
 info 参数说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
 | ---  | --- |---| --- | --- | ---|
-| biz|object|是|无| 业务信息查询条件 |biz info for search|
-| exact|int|是|无|是否精确查询 | is exeact search|
+| biz|object|是|无| 业务信息查询条件 |business info for search|
+| exact_search|bool|是|无|是否精确查询 | is exeact search|
 | bk_host_innerip|bool|是|无|true 或者false| true or false|
 | bk_host_outerip|bool|是|无|true 或者false|true or false|
+| ip_list|string数组|是|无|ip地址列表|ip address list
 
 biz 参数信息：
 
@@ -128,11 +126,10 @@ query_params 参数说明:
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
 | ---  | --- |---| --- | --- | ---|
-| bk_biz_id|int|是|无|业务ID |business ID |
 | bk_obj_id|string|是|无|对象ID | object ID|
 | field| string| 否| 无|对象的字段|field of object|
 | operator| string| 否| 无|操作符, $eq为相等，$neq为不等，$in为属于，$nin为不属于|$eq is equal,$in is belongs, $nin is not belong,$neq is not equal|
-| value| string| 否| 无|字段对应的值|the value of field|
+| value| object| 否| 无|字段对应的值|the value of field|
 
 
 * output

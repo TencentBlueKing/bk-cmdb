@@ -148,6 +148,22 @@ func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond
 
 func (g *group) UpdateObjectAttributeGroup(params types.ContextParams, conds []metadata.PropertyGroupObjectAtt) error {
 	for _, cond := range conds {
+		// if the target group doesn't exist, don't change the original group
+		grpCond := condition.CreateCondition()
+		grpCond.Field(metadata.GroupFieldGroupID).Eq(cond.Data.PropertyGroupID)
+		grpCond.Field(metadata.GroupFieldObjectID).Eq(cond.Condition.ObjectID)
+		grps, err := g.FindObjectGroup(params, grpCond)
+		if nil != err {
+			blog.Errorf("[operation-grp] failed to get the group  by the condition (%#v), error info is %s , rid: %s", cond, err.Error(), params.ReqID)
+			return err
+		}
+		if len(grps) != 1 {
+			blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is group is invalid, rid: %s", cond, params.ReqID)
+			return params.Err.Errorf(common.CCErrCommParamsInvalid, metadata.GroupFieldGroupID)
+		}
+	}
+
+	for _, cond := range conds {
 		input := metadata.UpdateOption{
 			Condition: mapstr.NewFromStruct(cond.Condition, "json"),
 			Data:      mapstr.NewFromStruct(cond.Data, "json"),
@@ -180,7 +196,7 @@ func (g *group) DeleteObjectAttributeGroup(params types.ContextParams, objID, pr
 		},
 	}
 
-	rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroup(context.Background(), params.Header, objID, input)
+	rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrs(context.Background(), params.Header, objID, &input)
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to set the group , error info is %s , rid: %s", err.Error(), params.ReqID)
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -196,7 +212,7 @@ func (g *group) DeleteObjectAttributeGroup(params types.ContextParams, objID, pr
 
 func (g *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error {
 
-	if(cond.Data.Index == nil && cond.Data.Name == nil){
+	if cond.Data.Index == nil && cond.Data.Name == nil {
 		return nil
 	}
 	input := metadata.UpdateOption{
