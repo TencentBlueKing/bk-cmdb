@@ -193,17 +193,17 @@ func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 func (o *QueryInput) convInterfaceToTime(val interface{}) (interface{}, error) {
 	switch val.(type) {
 	case string:
-		ts, err := timeparser.TimeParserInLocation(val.(string), time.UTC)
+		ts, err := timeparser.TimeParserInLocation(val.(string), time.Local)
 		if nil != err {
 			return nil, err
 		}
-		return ts.UTC(), nil
+		return ts.Local(), nil
 	default:
 		ts, err := util.GetInt64ByInterface(val)
 		if nil != err {
 			return 0, err
 		}
-		t := time.Unix(ts, 0).UTC()
+		t := time.Unix(ts, 0).Local()
 		return t, nil
 	}
 
