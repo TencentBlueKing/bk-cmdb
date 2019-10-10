@@ -435,7 +435,9 @@ const (
 	CCErrTopoCanNotAddRequiredAttributeForMainlineModel    = 1101092
 	CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl     = 1101093
 
-	CCErrorTopoModuleNameDuplicated = 1101094
+	CCErrorTopoModuleNameDuplicated    = 1101094
+	CCErrorTopoSyncModuleTaskFailed    = 1101095
+	CCErrorTopoSyncModuleTaskIsRunning = 1101096
 
 	// object controller 1102XXX
 
@@ -782,6 +784,19 @@ const (
 	CCErrOperationUpdateChartPositionFail = 1116008
 	CCErrCloudSyncDeleteSyncTaskFail      = 1116011
 	CCErrCloudSyncUpdateSyncTaskFail      = 1116012
+
+	// task_server 1117xxx
+	// CCErrTaskNotFound task not found
+	CCErrTaskNotFound = 1117001
+	// CCErrTaskSubTaskNotFound sub task not found
+	CCErrTaskSubTaskNotFound = 1117002
+	// CCErrTaskStatusNotAllowChangeTo task not allow status change to xx
+	CCErrTaskStatusNotAllowChangeTo = 1117003
+	// CCErrTaskErrResponseEmtpyFail error response empty
+	CCErrTaskErrResponseEmtpyFail = 1117004
+	CCErrTaskLockedTaskFail       = 1117005
+	CCErrTaskUnLockedTaskFail     = 1117006
+	CCErrTaskListTaskFail         = 1117007
 
 	/** TODO: 以下错误码需要改造 **/
 

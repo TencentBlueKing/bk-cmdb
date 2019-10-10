@@ -39,6 +39,8 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 		return DataCollectType, nil
 	case u.WithOperation(req):
 		return OperationType, nil
+	case u.WithTask(req):
+		return TaskType, nil
 	default:
 		return UnknownType, errors.New("unknown requested with backend process")
 	}
@@ -282,6 +284,26 @@ func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
 
 	switch {
 	case strings.Contains(string(*u), "/operation/"):
+		from, to, isHit = rootPath, statisticsRoot, true
+
+	default:
+		isHit = false
+	}
+
+	if isHit {
+		u.revise(req, from, to)
+		return true
+	}
+	return false
+}
+
+// WithTask transform task server  url
+func (u *URLPath) WithTask(req *restful.Request) (isHit bool) {
+	statisticsRoot := "/task/v3"
+	from, to := rootPath, statisticsRoot
+
+	switch {
+	case strings.Contains(string(*u), "/task/"):
 		from, to, isHit = rootPath, statisticsRoot, true
 
 	default:

@@ -51,6 +51,7 @@ func (p *setTemplateOperation) ValidateBusinessID(ctx core.ContextParams, bizID 
 	}
 	return nil
 }
+
 func (p *setTemplateOperation) ValidateServiceTemplateIDs(ctx core.ContextParams, bizID int64, serviceTemplateIDs ...int64) ([]int64, errors.CCErrorCoder) {
 	serviceTemplateIDs = util.IntArrayUnique(serviceTemplateIDs)
 	filter := map[string]interface{}{

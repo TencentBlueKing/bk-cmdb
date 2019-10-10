@@ -15,20 +15,24 @@ package settemplate
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"github.com/mitchellh/mapstructure"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 type SetTemplate interface {
 	DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder)
-	SyncSetTplToInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
+	SyncSetTplToInst(params types.ContextParams, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
+	UpdateSetSyncStatus(params types.ContextParams, setID int64) (metadata.SetTemplateSyncStatus, errors.CCErrorCoder)
+	GetLatestSyncTaskDetail(params types.ContextParams, setID int64) (*metadata.APITaskDetail, errors.CCErrorCoder)
 }
 
 func NewSetTemplate(client apimachinery.ClientSetInterface) SetTemplate {
@@ -42,12 +46,12 @@ type setTemplate struct {
 }
 
 func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder) {
+	rid := util.GetHTTPCCRequestID(header)
+
 	ccError := util.GetDefaultCCError(header)
 	if ccError == nil {
 		return nil, errors.GlobalCCErrorNotInitialized
 	}
-
-	rid := util.GetHTTPCCRequestID(header)
 
 	serviceTemplates, err := st.client.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(ctx, header, bizID, setTemplateID)
 	if err != nil {
@@ -83,9 +87,13 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	setMap := make(map[int64]metadata.SetInst)
 	for _, setInstance := range setInstResult.Data.Info {
 		set := metadata.SetInst{}
-		if err := mapstructure.Decode(setInstance, &set); err != nil {
+		if err := mapstruct.Decode2Struct(setInstance, &set); err != nil {
 			blog.Errorf("DiffSetTemplateWithInstances failed, decode set instance failed, set: %+v, err: %s, rid: %s", setInstance, err.Error(), rid)
-			return nil, ccError.CCError(common.CCErrCommDBSelectFailed)
+			return nil, ccError.CCError(common.CCErrCommJSONMarshalFailed)
+		}
+		if set.SetID == 0 {
+			blog.Errorf("DiffSetTemplateWithInstances failed, decode set instance result setID=0, data: %+v, err: %s, rid: %s", setInstance, err.Error(), rid)
+			return nil, ccError.CCError(common.CCErrCommJSONMarshalFailed)
 		}
 		setMap[set.SetID] = set
 	}
@@ -114,7 +122,7 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	}
 	for _, moduleInstance := range modulesInstResult.Data.Info {
 		module := metadata.ModuleInst{}
-		if err := mapstructure.Decode(moduleInstance, &module); err != nil {
+		if err := mapstruct.Decode2Struct(moduleInstance, &module); err != nil {
 			blog.Errorf("DiffSetTemplateWithInstances failed, decode module instance failed, module: %+v, err: %s, rid: %s", moduleInstance, err.Error(), rid)
 			return nil, ccError.CCError(common.CCErrCommDBSelectFailed)
 		}
@@ -124,6 +132,11 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 		setModules[module.ParentID] = append(setModules[module.ParentID], module)
 	}
 
+	topoTree, ccErr := st.client.CoreService().Mainline().SearchMainlineInstanceTopo(ctx, header, bizID, false)
+	if ccErr != nil {
+		blog.Errorf("ListSetTplRelatedSetsWeb failed, bizID: %d, err: %s, rid: %s", bizID, ccErr.Error(), rid)
+		return nil, ccErr
+	}
 	// diff
 	setDiffs := make([]metadata.SetDiff, 0)
 	for setID, modules := range setModules {
@@ -135,38 +148,101 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 		if set, ok := setMap[setID]; ok == true {
 			setDiff.SetDetail = set
 		}
+
+		// add topo path info
+		setPath := topoTree.TraversalFindNode(common.BKInnerObjIDSet, setID)
+		topoPath := make([]metadata.TopoInstanceNodeSimplify, 0)
+		for _, pathNode := range setPath {
+			nodeSimplify := metadata.TopoInstanceNodeSimplify{
+				ObjectID:     pathNode.ObjectID,
+				InstanceID:   pathNode.InstanceID,
+				InstanceName: pathNode.InstanceName,
+			}
+			topoPath = append(topoPath, nodeSimplify)
+		}
+		setDiff.TopoPath = topoPath
+		setDiff.UpdateNeedSyncField()
 		setDiffs = append(setDiffs, setDiff)
 	}
 	return setDiffs, nil
 }
 
-func (st *setTemplate) SyncSetTplToInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
-	rid := util.GetHTTPCCRequestID(header)
+func (st *setTemplate) SyncSetTplToInst(params types.ContextParams, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
+	rid := util.GetHTTPCCRequestID(params.Header)
+
 	diffOption := metadata.DiffSetTplWithInstOption{
 		SetIDs: option.SetIDs,
 	}
-	setDiffs, err := st.DiffSetTplWithInst(ctx, header, bizID, setTemplateID, diffOption)
+	setDiffs, err := st.DiffSetTplWithInst(params.Context, params.Header, bizID, setTemplateID, diffOption)
 	if err != nil {
 		return err
 	}
 
-	// TODO use queue to dispatch task
-	// run sync
 	for _, setDiff := range setDiffs {
-		blog.V(3).Infof("begin to run sync task on set [%s](%d)", setDiff.SetDetail.SetName, setDiff.SetID)
-		// TODO: deal with result
-		backendWorker := BackendWorker{
-			ClientSet: st.client,
-		}
+		indexKey := metadata.GetSetTemplateSyncIndex(setDiff.SetID)
+		blog.V(3).Infof("dispatch synchronize task on set [%s](%d), rid: %s", setDiff.SetDetail.SetName, setDiff.SetID, rid)
+		tasks := make([]metadata.SyncModuleTask, 0)
 		for _, moduleDiff := range setDiff.ModuleDiffs {
-			err := backendWorker.AsyncRunModuleSyncTask(header, setDiff.SetDetail, moduleDiff)
-			if err != nil {
-				blog.Errorf("AsyncRunSetSyncTask failed, err: %+v, rid: %s", err, rid)
-				continue
+			task := metadata.SyncModuleTask{
+				Header:      params.Header,
+				Set:         setDiff.SetDetail,
+				ModuleDiff:  moduleDiff,
+				SetTopoPath: setDiff.TopoPath,
 			}
+			tasks = append(tasks, task)
 		}
+		taskDetail, err := st.DispatchTask4ModuleSync(params.Context, params.Header, indexKey, tasks...)
+		if err != nil {
+			return err
+		}
+		if blog.V(3) {
+			blog.InfoJSON("dispatch synchronize task on set [%s](%s) success, result: %s, rid: %s", setDiff.SetDetail.SetName, setDiff.SetID, taskDetail, rid)
+		}
+
+		// 定时更新 SetTemplateSyncStatus 状态，优化加载
+		go func() {
+			ticker := time.NewTicker(5 * time.Second)
+			timeoutTimer := time.NewTimer(time.Minute)
+			for {
+				select {
+				case <-timeoutTimer.C:
+					blog.Errorf("poll UpdateSetSyncStatus timeout, setID: %d", setDiff.SetID)
+					return
+				case <-ticker.C:
+					setSyncStatus, err := st.UpdateSetSyncStatus(params, setDiff.SetID)
+					if err != nil {
+						blog.Errorf("UpdateSetSyncStatus failed, setID: %d, err: %s", setDiff.SetID, err.Error())
+						return
+					}
+					if setSyncStatus.Status.IsFinished() == true {
+						return
+					}
+				}
+			}
+		}()
 	}
 	return nil
+}
+
+func (st *setTemplate) DispatchTask4ModuleSync(ctx context.Context, header http.Header, indexKey string, tasks ...metadata.SyncModuleTask) (metadata.APITaskDetail, errors.CCErrorCoder) {
+	taskDetail := metadata.APITaskDetail{}
+	rid := util.GetHTTPCCRequestID(header)
+	tasksData := make([]interface{}, 0)
+	for _, task := range tasks {
+		tasksData = append(tasksData, task)
+	}
+	createTaskResult, err := st.client.TaskServer().Task().Create(ctx, header, common.SyncSetTaskName, indexKey, tasksData)
+	if err != nil {
+		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", tasks, err.Error(), rid)
+		return taskDetail, errors.CCHttpError
+	}
+	if createTaskResult.Code != 0 || createTaskResult.Result == false {
+		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", tasks, err.Error(), rid)
+		return taskDetail, errors.NewCCError(createTaskResult.Code, createTaskResult.ErrMsg)
+	}
+	blog.InfoJSON("dispatch synchronize task success, task: %s, create result: %s, rid: %s", tasks, createTaskResult, rid)
+	taskDetail = createTaskResult.Data
+	return taskDetail, nil
 }
 
 // DiffServiceTemplateWithModules diff modules with template in one set
@@ -219,7 +295,7 @@ func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate,
 		template := svcTplMap[templateID]
 		moduleDiffs = append(moduleDiffs, metadata.SetModuleDiff{
 			ModuleID:            0,
-			ModuleName:          "",
+			ModuleName:          template.Name,
 			ServiceTemplateID:   templateID,
 			ServiceTemplateName: template.Name,
 			DiffType:            metadata.ModuleDiffAdd,

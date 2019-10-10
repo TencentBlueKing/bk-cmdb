@@ -13,13 +13,16 @@
 package metadata
 
 import (
-	"database/sql/driver"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
+	"database/sql/driver"
+
 	"github.com/coccyx/timeparser"
+	"github.com/mitchellh/mapstructure"
 	"github.com/rentiansheng/bk_bson/bson"
 	"github.com/rentiansheng/bk_bson/bson/bsontype"
 	"github.com/rentiansheng/bk_bson/x/bsonx"
@@ -160,4 +163,42 @@ type tmptime struct {
 // Now retruns now
 func Now() Time {
 	return Time{time.Now().UTC()}
+}
+
+var local = Now()
+
+func StringToTimeDurationHookFunc() mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if f.Kind() != reflect.String {
+			return data, nil
+		}
+		if t != reflect.TypeOf(local) {
+			return data, nil
+		}
+
+		// Convert it by parsing
+		parsed, err := time.ParseInLocation(`"2006-01-02 15:04:05"`, data.(string), time.UTC)
+		if err == nil {
+			return Time{parsed}, nil
+		}
+
+		parsed, err = time.Parse(time.RFC3339, strings.Trim(data.(string), "\""))
+		if err == nil {
+			return Time{parsed}, nil
+		}
+
+		parsed, err = timeparser.TimeParser(strings.Trim(data.(string), "\""))
+		if err == nil {
+			return Time{parsed}, nil
+		}
+
+		timestamp, err := strconv.ParseInt(fmt.Sprintf("%s", data), 10, 64)
+		if err == nil {
+			return Time{time.Unix(timestamp, 0)}, nil
+		}
+		return nil, err
+	}
 }
