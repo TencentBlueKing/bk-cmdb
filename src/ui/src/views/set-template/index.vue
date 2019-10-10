@@ -18,7 +18,7 @@
             @selection-change="handleSelectionChange"
             @row-click="handleRowClick">
             <bk-table-column type="selection" width="50" :selectable="handleSelectable"></bk-table-column>
-            <bk-table-column :label="$t('模板名称')" prop="name"></bk-table-column>
+            <bk-table-column :label="$t('模板名称')" prop="name" class-name="is-highlight"></bk-table-column>
             <bk-table-column :label="$t('应用数量')" prop="set_instance_count"></bk-table-column>
             <bk-table-column :label="$t('修改人')" prop="modifier"></bk-table-column>
             <bk-table-column :label="$t('修改时间')" prop="last_time">
