@@ -208,9 +208,8 @@ func (manager *TransferManager) TransferToNormalModule(ctx core.ContextParams, i
 // 如果主机不在参数指定的模块中，操作失败
 func (manager *TransferManager) RemoveFromModule(ctx core.ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error) {
 	hostConfigFilter := map[string]interface{}{
-		common.BKHostIDField:   input.HostID,
-		common.BKModuleIDField: input.ModuleID,
-		common.BKAppIDField:    input.ApplicationID,
+		common.BKHostIDField: input.HostID,
+		common.BKAppIDField:  input.ApplicationID,
 	}
 	hostConfigs := make([]metadata.ModuleHost, 0)
 	if err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(ctx.Context, &hostConfigs); err != nil {
