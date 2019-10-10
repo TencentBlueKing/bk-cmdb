@@ -7,6 +7,7 @@ import (
 
 	"configcenter/src/common"
 	params "configcenter/src/common/paraparse"
+	"configcenter/src/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,6 +18,7 @@ var _ = Describe("business test", func() {
 	var bizIdInt int64
 
 	It("create business bk_biz_name = 'eereeede'", func() {
+		test.ClearDatabase()
 		input := map[string]interface{}{
 			"life_cycle":        "2",
 			"language":          "1",

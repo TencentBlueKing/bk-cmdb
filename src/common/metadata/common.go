@@ -15,6 +15,7 @@ package metadata
 import (
 	"fmt"
 	"time"
+	"encoding/json"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
@@ -22,7 +23,6 @@ import (
 	"configcenter/src/common/util"
 
 	"github.com/coccyx/timeparser"
-	"github.com/gin-gonic/gin/json"
 )
 
 const defaultError = "{\"result\": false, \"bk_error_code\": 1199000, \"bk_error_msg\": %s}"
