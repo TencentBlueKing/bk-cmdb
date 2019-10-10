@@ -45,6 +45,7 @@
             </button>
         </div>
         <bk-sideslider
+            v-transfer-dom
             :width="800"
             :title="`${$t('添加进程')}(${name})`"
             :is-show.sync="processForm.show"

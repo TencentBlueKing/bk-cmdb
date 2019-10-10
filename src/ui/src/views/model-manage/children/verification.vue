@@ -53,11 +53,11 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :width="450"
             :title="slider.title"
             :is-show.sync="slider.isShow">
             <the-verification-detail
-                class="slider-content"
                 slot="content"
                 v-if="slider.isShow"
                 :is-read-only="isReadOnly || slider.isReadOnly"
@@ -219,7 +219,7 @@
 
 <style lang="scss" scoped>
     .verification-layout {
-        padding: 20px 0;
+        padding: 20px;
     }
     .verification-table {
         margin: 14px 0 0 0;

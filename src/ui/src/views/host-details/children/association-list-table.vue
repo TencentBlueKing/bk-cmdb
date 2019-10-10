@@ -11,11 +11,11 @@
             <div class="info-pagination fr" v-show="pagination.count">
                 <span class="pagination-info">{{getPaginationInfo()}}</span>
                 <span class="pagination-toggle">
-                    <i class="pagination-icon bk-icon icon-angle-left"
+                    <i class="pagination-icon bk-icon icon-cc-arrow-down left"
                         :class="{ disabled: pagination.current === 1 }"
                         @click="togglePage(-1)">
                     </i>
-                    <i class="pagination-icon bk-icon icon-angle-right"
+                    <i class="pagination-icon bk-icon icon-cc-arrow-down right"
                         :class="{ disabled: pagination.current === totalPage }"
                         @click="togglePage(1)">
                     </i>
@@ -59,7 +59,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { RESOURCE_HOST } from '../router.config.js'
+    import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
     export default {
         name: 'cmdb-host-association-list-table',
         props: {
@@ -101,7 +101,7 @@
                 'targetInstances'
             ]),
             updateAuth () {
-                const isResourceHost = this.$route.name === RESOURCE_HOST
+                const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
                 if (isResourceHost) {
                     return this.$OPERATION.U_RESOURCE_HOST
                 }
@@ -413,14 +413,20 @@
     .info-pagination {
         color: #8b8d95;
         .pagination-toggle {
+            margin-left: 10px;
             .pagination-icon {
-                transform: scale(.5);
-                font-size: 20px;
+                font-size: 14px;
                 color: #979BA5;
                 cursor: pointer;
                 &.disabled {
                     color: #C4C6CC;
                     cursor: not-allowed;
+                }
+                &.left {
+                    transform: rotate(90deg);
+                }
+                &.right {
+                    transform: rotate(-90deg);
                 }
             }
         }

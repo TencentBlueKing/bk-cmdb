@@ -19,7 +19,7 @@
             <bk-tab-panel name="status" :label="$t('实时状态')">
                 <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
             </bk-tab-panel>
-            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="!isAdminView">
+            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="business > -1">
                 <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
             </bk-tab-panel>
             <bk-tab-panel name="history" :label="$t('变更记录')">
@@ -30,13 +30,17 @@
 </template>
 
 <script>
-    import { mapState, mapGetters } from 'vuex'
+    import { mapState } from 'vuex'
     import cmdbHostInfo from './children/info.vue'
     import cmdbHostAssociation from './children/association.vue'
     import cmdbHostProperty from './children/property.vue'
     import cmdbHostStatus from './children/status.vue'
     import cmdbHostHistory from './children/history.vue'
     import cmdbHostService from './children/service-list.vue'
+    import {
+        MENU_BUSINESS_HOST_MANAGEMENT,
+        MENU_RESOURCE_HOST
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             cmdbHostInfo,
@@ -53,7 +57,6 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView']),
             ...mapState('hostDetails', ['info']),
             id () {
                 return parseInt(this.$route.params.id)
@@ -70,7 +73,7 @@
             info (info) {
                 const hostList = info.host.bk_host_innerip.split(',')
                 const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
-                this.$store.commit('setHeaderTitle', `${this.$t('主机详情')}(${host})`)
+                this.setBreadcrumbs(host)
             },
             id () {
                 this.getData()
@@ -88,6 +91,17 @@
             this.getData()
         },
         methods: {
+            setBreadcrumbs (ip) {
+                const isFromBusiness = this.$route.query.from === 'business'
+                this.$store.commit('setBreadcrumbs', [{
+                    label: isFromBusiness ? this.$t('业务主机') : this.$t('主机'),
+                    route: {
+                        name: isFromBusiness ? MENU_BUSINESS_HOST_MANAGEMENT : MENU_RESOURCE_HOST
+                    }
+                }, {
+                    label: ip
+                }])
+            },
             getData () {
                 this.getProperties()
                 this.getPropertyGroups()
@@ -160,8 +174,7 @@
 
 <style lang="scss" scoped>
     .details-layout {
-        padding: 0;
-        height: 100%;
+        overflow: hidden;
         .details-tab {
             height: calc(100% - var(--infoHeight)) !important;
             min-height: 400px;

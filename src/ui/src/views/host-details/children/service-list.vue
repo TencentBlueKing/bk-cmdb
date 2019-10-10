@@ -40,6 +40,7 @@
                     ref="popoverCheckView"
                     :always="true"
                     :width="224"
+                    :tippy-options="{ zIndex: 999 }"
                     theme="check-view-color"
                     placement="bottom-end">
                     <div slot="content" class="popover-main">
@@ -48,9 +49,11 @@
                     </div>
                     <div class="options-check-view">
                         <i :class="['icon-cc-label', 'view-btn', 'pr10', { 'active': currentView === 'label' }]"
+                            :title="$t('显示标签')"
                             @click="checkView('label')"></i>
                         <span class="dividing-line"></span>
                         <i :class="['icon-cc-instance-path', 'view-btn', 'pl10', { 'active': currentView === 'path' }]"
+                            :title="$t('显示拓扑')"
                             @click="checkView('path')"></i>
                     </div>
                 </bk-popover>
@@ -64,6 +67,7 @@
                 :instance="instance"
                 :expanded="index === 0"
                 :current-view="currentView"
+                @show-process-details="handleShowProcessDetails"
                 @delete-instance="handleDeleteInstance"
                 @check-change="handleCheckChange">
             </service-instance-table>
@@ -71,7 +75,7 @@
         <bk-table v-if="!instances.length" :data="[]" class="mb10">
             <div slot="empty" class="empty-text">
                 <img src="../../../assets/images/empty-content.png" alt="">
-                <p>暂无服务实例，<span @click="handleGoAddInstance">跳转服务拓扑添加</span></p>
+                <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去服务拓扑添加')}}</span></p>
             </div>
         </bk-table>
         <bk-pagination v-if="instances.length"
@@ -84,10 +88,24 @@
             @change="handlePageChange"
             @limit-change="handleSizeChange">
         </bk-pagination>
+
+        <bk-sideslider
+            v-transfer-dom
+            :width="640"
+            :title="$t('进程详情')"
+            :is-show.sync="showDetails">
+            <cmdb-details slot="content" v-if="showDetails"
+                :show-options="false"
+                :inst="processInst"
+                :properties="properties"
+                :property-groups="propertyGroups">
+            </cmdb-details>
+        </bk-sideslider>
     </div>
 </template>
 
 <script>
+    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     import { mapState } from 'vuex'
     import serviceInstanceTable from './service-instance-table.vue'
     export default {
@@ -102,14 +120,21 @@
                         id: 0
                     },
                     {
-                        name: this.$t('标签'),
+                        name: `${this.$t('标签')}(value)`,
                         id: 1,
-                        multiable: true,
                         children: [{
                             id: '',
                             name: ''
                         }],
                         conditions: []
+                    },
+                    {
+                        name: `${this.$t('标签')}(key)`,
+                        id: 2,
+                        children: [{
+                            id: '',
+                            name: ''
+                        }]
                     }
                 ],
                 searchSelectData: [],
@@ -125,7 +150,11 @@
                 instances: [],
                 currentView: 'label',
                 checkViewTipsStatus: this.$store.getters['featureTipsParams'].hostServiceInstanceCheckView,
-                historyLabels: {}
+                historyLabels: {},
+                propertyGroups: [],
+                properties: [],
+                showDetails: false,
+                processInst: {}
             }
         },
         computed: {
@@ -135,6 +164,8 @@
             }
         },
         created () {
+            this.getProcessProperties()
+            this.getProcessPropertyGroups()
             this.getHostSeriveInstances()
             this.getHistoryLabel()
         },
@@ -146,29 +177,44 @@
             }
         },
         methods: {
+            async getProcessProperties () {
+                try {
+                    const action = 'objectModelProperty/searchObjectAttribute'
+                    this.properties = await this.$store.dispatch(action, {
+                        params: {
+                            bk_obj_id: 'process',
+                            bk_supplier_account: this.$store.getters.supplierAccount
+                        },
+                        config: {
+                            requestId: 'get_service_process_properties',
+                            fromCache: true
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                    this.properties = []
+                }
+            },
+            async getProcessPropertyGroups () {
+                try {
+                    const action = 'objectModelFieldGroup/searchGroup'
+                    this.propertyGroups = await this.$store.dispatch(action, {
+                        objId: 'process',
+                        params: {},
+                        config: {
+                            requestId: 'get_service_process_property_groups',
+                            fromCache: true
+                        }
+                    })
+                } catch (e) {
+                    this.propertyGroups = []
+                    console.error(e)
+                }
+            },
             async getHostSeriveInstances () {
                 try {
                     const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
                         || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
-                    const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
-                    const submitLabel = {}
-                    labels.forEach(label => {
-                        const conditionId = label.condition.id
-                        if (!submitLabel[conditionId]) {
-                            submitLabel[conditionId] = [label.values[0].id]
-                        } else {
-                            if (submitLabel[conditionId].indexOf(label.values[0].id) < 0) {
-                                submitLabel[conditionId].push(label.values[0].id)
-                            }
-                        }
-                    })
-                    const selectors = Object.keys(submitLabel).map(key => {
-                        return {
-                            key: key,
-                            operator: 'in',
-                            values: submitLabel[key]
-                        }
-                    })
                     const data = await this.$store.dispatch('serviceInstance/getHostServiceInstances', {
                         params: this.$injectMetadata({
                             page: {
@@ -179,7 +225,7 @@
                             search_key: searchKey
                                 ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
                                 : '',
-                            selectors: selectors
+                            selectors: this.getSelectorParams()
                         })
                     })
                     this.checked = []
@@ -193,6 +239,48 @@
                     this.pagination.count = 0
                 }
             },
+            getSelectorParams () {
+                try {
+                    const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
+                    const labelsKey = this.searchSelectData.filter(item => item.id === 2 && item.hasOwnProperty('values'))
+                    const submitLabel = {}
+                    const submitLabelKey = {}
+                    labels.forEach(label => {
+                        const conditionId = label.condition.id
+                        if (!submitLabel[conditionId]) {
+                            submitLabel[conditionId] = [label.values[0].id]
+                        } else {
+                            if (submitLabel[conditionId].indexOf(label.values[0].id) < 0) {
+                                submitLabel[conditionId].push(label.values[0].id)
+                            }
+                        }
+                    })
+                    labelsKey.forEach(label => {
+                        const id = label.values[0].id
+                        if (!submitLabelKey[id]) {
+                            submitLabelKey[id] = id
+                        }
+                    })
+                    const selectors = Object.keys(submitLabel).map(key => {
+                        return {
+                            key: key,
+                            operator: 'in',
+                            values: submitLabel[key]
+                        }
+                    })
+                    const selectorsKey = Object.keys(submitLabelKey).map(key => {
+                        return {
+                            key: key,
+                            operator: 'exists',
+                            values: []
+                        }
+                    })
+                    return selectors.concat(selectorsKey)
+                } catch (e) {
+                    console.error(e)
+                    return []
+                }
+            },
             async getHistoryLabel () {
                 const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
                     params: this.$injectMetadata({}),
@@ -201,14 +289,28 @@
                         cancelPrevious: true
                     }
                 })
-                const keys = Object.keys(historyLabels).map(key => {
+                this.historyLabels = historyLabels
+                const keys = Object.keys(historyLabels)
+                const valueOption = keys.map(key => {
                     return {
                         name: key + ' : ',
                         id: key
                     }
                 })
-                this.historyLabels = historyLabels
-                this.$set(this.searchSelect[1], 'conditions', keys)
+                const keyOption = keys.map(key => {
+                    return {
+                        name: key,
+                        id: key
+                    }
+                })
+                if (!valueOption.length) {
+                    this.$set(this.searchSelect[1], 'disabled', true)
+                }
+                if (!keyOption.length) {
+                    this.$set(this.searchSelect[2], 'disabled', true)
+                }
+                this.$set(this.searchSelect[1], 'conditions', valueOption)
+                this.$set(this.searchSelect[2], 'children', keyOption)
             },
             handleDeleteInstance (id) {
                 const filterInstances = this.instances.filter(instance => instance.id !== id)
@@ -325,8 +427,12 @@
             },
             handleGoAddInstance () {
                 this.$router.replace({
-                    name: 'topology'
+                    name: MENU_BUSINESS_SERVICE_TOPOLOGY
                 })
+            },
+            handleShowProcessDetails (inst) {
+                this.showDetails = true
+                this.processInst = inst
             }
         }
     }
@@ -414,7 +520,7 @@
 <style lang="scss">
     .check-view-color-theme {
         padding: 10px !important;
-        background-color: #699df4;
+        background-color: #699df4 !important;
         .tippy-arrow {
             border-bottom-color: #699df4 !important;
         }

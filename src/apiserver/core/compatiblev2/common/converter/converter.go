@@ -555,7 +555,7 @@ func ResToV2ForHostDataList(result bool, message string, data interface{}) (comm
 		return nil, err
 	}
 	convFields := []string{common.BKAppNameField, common.BKModuleNameField, common.BKBakOperatorField, common.BKSetNameField, common.BKOperatorField, common.BKSetIDField, common.BKAppIDField, common.BKModuleIDField}
-	var ret = common.KvMap{}
+	ret := make(map[string]interface{})
 
 	if "" != resDataV3 {
 		resDataArrV3, ok := resDataV3.([]interface{})

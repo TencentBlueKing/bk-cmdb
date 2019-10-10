@@ -15,11 +15,17 @@
             expand-icon="bk-icon icon-down-shape"
             collapse-icon="bk-icon icon-right-shape"
             @select-change="handleSelectChange">
-            <div class="node-info clearfix" slot-scope="{ node, data }">
-                <i :class="['node-model-icon fl', { 'is-selected': node.selected }, { 'is-template': isTemplate(node) }]">{{modelIconMap[data.bk_obj_id]}}</i>
+            <div class="node-info clearfix" :class="{ 'is-selected': node.selected }" slot-scope="{ node, data }">
+                <i class="node-model-icon fl"
+                    :class="{
+                        'is-selected': node.selected,
+                        'is-template': isTemplate(node),
+                        'is-leaf-icon': node.isLeaf
+                    }">
+                    {{modelIconMap[data.bk_obj_id]}}
+                </i>
                 <span v-if="showCreate(node, data)"
-                    class="fr"
-                    style="display: inline-block; font-size: 0;"
+                    class="info-create-trigger fr"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.C_TOPO),
                         auth: [$OPERATION.C_TOPO]
@@ -31,9 +37,9 @@
                         {{$t('新建')}}
                     </bk-button>
                 </span>
+                <span class="instance-num fr">{{data.service_instance_count}}</span>
                 <div class="info-content">
                     <span class="node-name">{{data.bk_inst_name}}</span>
-                    <span class="instance-num">{{data.service_instance_count}}</span>
                 </div>
             </div>
         </bk-big-tree>
@@ -118,8 +124,14 @@
             this.treeData = data
             this.mainLine = mainLine
             this.$nextTick(() => {
+                this.setDefaultState(data)
+            })
+        },
+        methods: {
+            setDefaultState (data) {
                 this.$refs.tree.setData(data)
-                const businessNodeId = this.idGenerator(data[0])
+                const businessData = data[0]
+                const businessNodeId = this.idGenerator(businessData)
                 const queryModule = parseInt(this.$route.query.module)
                 let defaultNodeId = businessNodeId
                 if (!isNaN(queryModule)) {
@@ -128,12 +140,12 @@
                     if (node) {
                         defaultNodeId = nodeId
                     }
+                } else if (Array.isArray(businessData.child) && businessData.child.length) {
+                    defaultNodeId = this.idGenerator(businessData.child[0])
                 }
                 this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
                 this.$refs.tree.setExpanded(defaultNodeId)
-            })
-        },
-        methods: {
+            },
             getTopologyData () {
                 return this.$store.dispatch('objectMainLineModule/getInstTopo', {
                     bizId: this.business,
@@ -179,7 +191,7 @@
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
-                return node.selected && !isModule && !this.isBlueKing
+                return !isModule && !this.isBlueKing
             },
             isTemplate (node) {
                 return node.data.service_template_id
@@ -313,6 +325,15 @@
         }
     }
     .node-info {
+        &:hover,
+        &.is-selected {
+            .info-create-trigger {
+                display: inline-block;
+                & ~ .instance-num {
+                    display: none;
+                }
+            }
+        }
         .node-model-icon {
             width: 22px;
             height: 22px;
@@ -330,15 +351,33 @@
             &.is-selected {
                 background-color: #3a84ff;
             }
+            &.is-leaf-icon {
+                margin-left: 2px;
+            }
+        }
+        .info-create-trigger {
+            display: none;
+            font-size: 0;
         }
         .node-button {
             height: 24px;
             padding: 0 6px;
-            margin: 0 10px 0 4px;
+            margin: 0 20px 0 4px;
             line-height: 22px;
             border-radius: 4px;
             font-size: 12px;
             min-width: auto;
+        }
+        .instance-num {
+            margin: 9px 20px 9px 5px;
+            padding: 0 5px;
+            height: 18px;
+            line-height: 17px;
+            border-radius: 2px;
+            background-color: #f0f1f5;
+            color: #979ba5;
+            font-size: 12px;
+            text-align: center;
         }
         .info-content {
             display: flex;
@@ -348,17 +387,6 @@
             .node-name {
                 @include ellipsis;
                 margin-right: 8px;
-            }
-            .instance-num {
-                margin-right: 5px;
-                padding: 0 5px;
-                height: 18px;
-                line-height: 17px;
-                border-radius: 2px;
-                background-color: #f0f1f5;
-                color: #979ba5;
-                font-size: 12px;
-                text-align: center;
             }
         }
     }

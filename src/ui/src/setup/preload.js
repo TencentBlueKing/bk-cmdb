@@ -21,7 +21,7 @@ export function getViewAuth (app) {
         const meta = route.meta || {}
         const auth = meta.auth || {}
         if (auth.view) {
-            viewAuthorities.push(auth.view)
+            viewAuthorities.push(...Object.values(auth.view))
         }
     })
     return app.$store.dispatch('auth/getAuth', {
@@ -70,18 +70,9 @@ export function getUserList (app) {
 }
 
 export default async function (app) {
-    try {
-        await Promise.all([
-            getAdminEntranceAuth(app),
-            getAuthorizedBusiness(app)
-        ])
-    } catch (e) {
-        console.error(e)
-    }
     return Promise.all([
         getViewAuth(app),
         getClassifications(app),
-        getUserCustom(app),
-        getUserList(app)
+        getUserCustom(app)
     ])
 }

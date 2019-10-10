@@ -10,6 +10,7 @@ pushd $(pwd) > /dev/null
             if [ -f $target_makefile_path ];then
                 pushd $(pwd) > /dev/null
                     cd $(dirname $target_makefile_path)
+		    echo "enter directory: " $(pwd)
                     if [ "$1" = "debug" ];then
                         export ISDEBUG=true
                     fi

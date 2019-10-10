@@ -192,8 +192,10 @@ func (cli MapStr) String(key string) (string, error) {
 	switch t := cli[key].(type) {
 	case nil:
 		return "", nil
-	default:
-		return fmt.Sprintf("%v", t), nil
+	case float32:
+		return strconv.FormatFloat(float64(t),'f',-1,32), nil
+	case float64:
+		return strconv.FormatFloat(float64(t),'f',-1,64), nil
 	case map[string]interface{}, []interface{}:
 		rest, err := json.Marshal(t)
 		if nil != err {
@@ -204,6 +206,8 @@ func (cli MapStr) String(key string) (string, error) {
 		return t.String(), nil
 	case string:
 		return t, nil
+	default:
+		return fmt.Sprintf("%v", t), nil
 	}
 }
 
@@ -304,6 +308,10 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 			switch childType := item.(type) {
 			case map[string]interface{}:
 				items = append(items, childType)
+			case MapStr:
+				items = append(items, childType)
+			default:
+				return nil, fmt.Errorf("the value of the key(%s) is not a valid type,value:%+v", key, t)
 			}
 		}
 		return items, nil

@@ -48,6 +48,7 @@
                     <i class="options-split"></i>
                     <bk-select class="options-collection"
                         v-model="scope"
+                        font-size="14"
                         :clearable="false">
                         <bk-option id="all" :name="$t('全部主机')"></bk-option>
                         <bk-option :id="0" :name="$t('已分配主机')"></bk-option>
@@ -55,17 +56,22 @@
                     </bk-select>
                 </div>
                 <div class="fr">
-                    <bk-select class="options-collection"
+                    <bk-select class="options-collection bgc-white"
                         v-if="showCollection"
                         ref="collectionSelector"
                         v-model="selectedCollection"
+                        font-size="14"
                         :loading="$loading('searchCollection')"
                         :placeholder="$t('请选择收藏条件')"
-                        @change="handleSelectCollection">
+                        @selected="handleCollectionSelect"
+                        @clear="handleCollectionClear"
+                        @toggle="handleCollectionToggle">
                         <bk-option v-for="collection in collectionList"
                             :key="collection.id"
                             :id="collection.id"
                             :name="collection.name">
+                            <span>{{collection.name}}</span>
+                            <i class="bk-icon icon-close" @click.stop="handleDeleteCollection(collection)"></i>
                         </bk-option>
                         <div slot="extension">
                             <a href="javascript:void(0)" class="collection-create" @click="handleCreateCollection">
@@ -79,24 +85,25 @@
                         :properties="filterProperties"
                         :show-scope="showScope">
                     </cmdb-host-filter>
-                    <bk-button class="options-button icon-btn ml10"
-                        icon="icon-cc-setting"
+                    <icon-button class="ml10"
+                        icon="icon icon-cc-setting"
                         v-bk-tooltips.top="$t('列表显示属性配置')"
                         @click="handleColumnConfigClick">
-                    </bk-button>
-                    <bk-button class="options-button icon-btn ml10" v-if="showHistory"
+                    </icon-button>
+                    <icon-button class="ml10" v-if="showHistory"
                         v-bk-tooltips="$t('查看删除历史')"
-                        icon="icon-cc-history"
+                        icon="icon icon-cc-history"
                         @click="routeToHistory">
-                    </bk-button>
+                    </icon-button>
                 </div>
             </div>
         </div>
-        <bk-table class="hosts-table"
-            v-bkloading="{ isLoading: $loading() }"
+        <bk-table class="hosts-table bkc-white"
+            v-bkloading="{ isLoading: $loading(['searchHosts', 'batchSearchProperties', 'post_searchGroup_host']) }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 150"
+            :row-style="{ cursor: 'pointer' }"
+            :max-height="$APP.height - 190"
             @selection-change="handleSelectionChange"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"
@@ -111,11 +118,12 @@
                 :fixed="column.id === 'bk_host_innerip'"
                 :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type) }}
+                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option')) | addUnit(getPropertyValue(column.objId, column.id, 'unit')) }}
                 </template>
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="slider.show"
             :title="slider.title"
             :width="800"
@@ -134,6 +142,7 @@
             </bk-tab>
         </bk-sideslider>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="columnsConfig.show"
             :width="600"
             :title="$t('列表显示属性配置')">
@@ -177,6 +186,12 @@
     import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
     import hostValueFilter from '@/filters/host'
+    import {
+        MENU_BUSINESS,
+        MENU_BUSINESS_HOST_DETAILS,
+        MENU_RESOURCE_HOST_DETAILS,
+        MENU_RESOURCE_BUSINESS_HOST_DETAILS
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -184,7 +199,13 @@
             cmdbHostFilter
         },
         filters: {
-            hostValueFilter
+            hostValueFilter,
+            addUnit (value, unit) {
+                if (value === '--' || !unit) {
+                    return value
+                }
+                return value + unit
+            }
         },
         props: {
             columnsConfigProperties: {
@@ -237,18 +258,16 @@
                 propertyGroups: [],
                 table: {
                     checked: [],
-                    header: [],
+                    header: Array(8).fill({}),
                     list: [],
                     pagination: {
                         current: 1,
-                        limit: 10,
                         count: 0,
-                        limitList: [10, 50, 100, 500]
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
-                    exportUrl: `${window.API_HOST}hosts/export`,
-                    tableMinusHeight: 200
+                    exportUrl: `${window.API_HOST}hosts/export`
                 },
                 filter: {
                     business: '',
@@ -278,7 +297,7 @@
                     show: false
                 },
                 selectedCollection: '',
-                scope: 'all'
+                scope: 1
             }
         },
         computed: {
@@ -344,6 +363,14 @@
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('hostUpdate', ['updateHost']),
             ...mapActions('hostSearch', ['searchHost', 'searchHostByInnerip']),
+            getPropertyValue (modelId, propertyId, field) {
+                const model = this.properties[modelId]
+                if (!model) {
+                    return ''
+                }
+                const curProperty = model.find(property => property.bk_property_id === propertyId)
+                return curProperty ? curProperty[field] : ''
+            },
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
@@ -351,8 +378,7 @@
                         bk_supplier_account: this.supplierAccount
                     }, { inject: this.$route.name !== 'resource' }),
                     config: {
-                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
-                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
+                        requestId: 'batchSearchProperties'
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {
@@ -366,7 +392,6 @@
                     objId: 'host',
                     params: this.$injectMetadata(),
                     config: {
-                        fromCache: true,
                         requestId: 'post_searchGroup_host'
                     }
                 }).then(groups => {
@@ -387,43 +412,66 @@
                     console.error(e)
                 }
             },
-            handleSelectCollection (value) {
-                if (value) {
-                    const collection = this.collectionList.find(collection => collection.id === value)
-                    try {
-                        const filterList = JSON.parse(collection.query_params).map(condition => {
-                            return {
-                                bk_obj_id: condition.bk_obj_id,
-                                bk_property_id: condition.field,
-                                operator: condition.operator,
-                                value: condition.value
-                            }
-                        })
-                        const info = JSON.parse(collection.info)
-                        const filterIP = {
-                            text: info.ip_list.join('\n'),
-                            exact: info.exact_search,
-                            inner: info.bk_host_innerip,
-                            outer: info.bk_host_outerip
-                        }
-                        this.$store.commit('hosts/setFilterList', filterList)
-                        this.$store.commit('hosts/setFilterIP', filterIP)
-                        this.$store.commit('hosts/setCollection', collection)
-                        setTimeout(() => {
-                            this.$refs.hostFilter.handleSearch(false)
-                        }, 0)
-                    } catch (e) {
-                        this.$error(this.$t('应用收藏条件失败，转换数据错误'))
-                        console.error(e.message)
-                    }
-                } else {
-                    this.$refs.hostFilter.handleReset()
-                    const key = this.$route.meta.filterPropertyKey
-                    const customData = this.$store.getters['userCustom/getCustomData'](key, [])
-                    this.$store.commit('hosts/setFilterList', customData)
+            handleCollectionToggle (isOpen) {
+                if (isOpen) {
+                    this.$refs.hostFilter.$refs.filterPopper.instance.hide()
                 }
             },
+            async handleDeleteCollection (collection) {
+                try {
+                    await this.$store.dispatch('hostFavorites/deleteFavorites', {
+                        id: collection.id,
+                        config: {
+                            requestId: 'deleteFavorites'
+                        }
+                    })
+                    this.$success(this.$t('删除成功'))
+                    this.selectedCollection = ''
+                    this.$store.commit('hosts/deleteCollection', collection.id)
+                    this.handleCollectionClear()
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleCollectionSelect (value) {
+                const collection = this.collectionList.find(collection => collection.id === value)
+                try {
+                    const filterList = JSON.parse(collection.query_params).map(condition => {
+                        return {
+                            bk_obj_id: condition.bk_obj_id,
+                            bk_property_id: condition.field,
+                            operator: condition.operator,
+                            value: condition.value
+                        }
+                    })
+                    const info = JSON.parse(collection.info)
+                    const filterIP = {
+                        text: info.ip_list.join('\n'),
+                        exact: info.exact_search,
+                        inner: info.bk_host_innerip,
+                        outer: info.bk_host_outerip
+                    }
+                    this.$store.commit('hosts/setFilterList', filterList)
+                    this.$store.commit('hosts/setFilterIP', filterIP)
+                    this.$store.commit('hosts/setCollection', collection)
+                    setTimeout(() => {
+                        this.$refs.hostFilter.handleSearch(false)
+                    }, 0)
+                } catch (e) {
+                    this.$error(this.$t('应用收藏条件失败，转换数据错误'))
+                    console.error(e.message)
+                }
+            },
+            handleCollectionClear () {
+                this.$store.commit('hosts/clearFilter')
+                this.$refs.hostFilter.handleReset()
+                this.$refs.hostFilter.$refs.filterPopper.instance.hide()
+                const key = this.$route.meta.filterPropertyKey
+                const customData = this.$store.getters['userCustom/getCustomData'](key, [])
+                this.$store.commit('hosts/setFilterList', customData)
+            },
             handleCreateCollection () {
+                this.$store.commit('hosts/clearFilter')
                 this.selectedCollection = ''
                 this.$refs.collectionSelector.close()
                 this.$refs.hostFilter.handleToggleFilter()
@@ -479,6 +527,9 @@
                 })
             },
             injectScope (params) {
+                if (!this.showScope) {
+                    return params
+                }
                 const biz = params.condition.find(condition => condition.bk_obj_id === 'biz')
                 if (this.scope === 'all') {
                     biz.condition = biz.condition.filter(condition => condition.field !== 'default')
@@ -543,25 +594,36 @@
             },
             handleRowClick (item) {
                 const business = item.biz[0]
-                if (!business.default) {
+                if (this.$route.meta.owner === MENU_BUSINESS) {
                     this.$router.push({
-                        name: 'businessHostDetails',
+                        name: MENU_BUSINESS_HOST_DETAILS,
                         params: {
                             business: business.bk_biz_id,
                             id: item.host.bk_host_id
                         },
                         query: {
-                            from: this.$route.fullPath
+                            from: 'business'
                         }
                     })
-                } else {
+                } else if (business.default) {
                     this.$router.push({
-                        name: 'resourceHostDetails',
+                        name: MENU_RESOURCE_HOST_DETAILS,
                         params: {
                             id: item.host.bk_host_id
                         },
                         query: {
-                            from: this.$route.fullPath
+                            from: 'resource'
+                        }
+                    })
+                } else {
+                    this.$router.push({
+                        name: MENU_RESOURCE_BUSINESS_HOST_DETAILS,
+                        params: {
+                            business: business.bk_biz_id,
+                            id: item.host.bk_host_id
+                        },
+                        query: {
+                            from: 'resource'
                         }
                     })
                 }
@@ -606,6 +668,7 @@
                 })
             },
             handleTransferSuccess () {
+                this.$emit('update-host-count')
                 this.table.checked = []
                 this.transfer.show = false
                 this.getHostList()
@@ -641,9 +704,6 @@
                     name: 'history',
                     params: {
                         objId: 'host'
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },
@@ -690,9 +750,6 @@
             &:first-child {
                 margin-left: 0;
             }
-            &:hover{
-                z-index: 1;
-            }
         }
     }
     .hosts-table {
@@ -713,6 +770,26 @@
     }
     .options-collection {
         width: 200px;
+    }
+    /deep/ .bk-option-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        &:hover {
+            .icon-close {
+                display: inline-block;
+            }
+        }
+        .icon-close {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 1px;
+            color: #979BA5;
+            display: none;
+            &:hover {
+                color: #3a84ff;
+            }
+        }
     }
     .collection-create {
         display: inline-block;

@@ -5,10 +5,10 @@
             :handler-offset="3"
             :min="200"
             :max="480">
-            <cmdb-topology-tree></cmdb-topology-tree>
+            <cmdb-topology-tree ref="topologyTree"></cmdb-topology-tree>
         </cmdb-resize-layout>
         <div class="tab-layout">
-            <bk-tab :active="active" type="unborder-card">
+            <bk-tab :active="active" type="unborder-card" v-if="!isBusinessNode">
                 <bk-tab-panel name="serviceInstances"
                     :label="$t('服务实例')"
                     :visible="isModuleNode">
@@ -18,6 +18,28 @@
                     <cmdb-service-node-info></cmdb-service-node-info>
                 </bk-tab-panel>
             </bk-tab>
+            <div class="business-node-view" v-else>
+                <img class="node-view-img" src="../../assets/images/add-node.png" width="103"
+                    :style="{
+                        'margin-top': ($APP.height - 120) * 0.2 + 'px'
+                    }">
+                <i18n class="node-view-handler"
+                    v-if="!selectedNode.children.length"
+                    path="未添加节点提示">
+                    <a class="node-view-link" href="javascript:void(0)" place="link"
+                        @click="handleAddNode">
+                        {{$t('添加节点')}}
+                    </a>
+                </i18n>
+                <i18n class="node-view-handler"
+                    v-else
+                    path="已添加节点提示">
+                    <a class="node-view-link" href="javascript:void(0)" place="link" style="margin-left: -2px"
+                        @click="handleAddNode">
+                        {{$t('添加节点')}}
+                    </a>
+                </i18n>
+            </div>
         </div>
     </div>
 </template>
@@ -43,6 +65,9 @@
             },
             isModuleNode () {
                 return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
+            },
+            isBusinessNode () {
+                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'biz'
             }
         },
         watch: {
@@ -56,25 +81,29 @@
         },
         beforeDestroy () {
             this.$store.commit('businessTopology/resetState')
+        },
+        methods: {
+            handleAddNode () {
+                this.$refs.topologyTree.showCreateDialog(this.selectedNode)
+            }
         }
     }
 </script>
 
 <style lang="scss" scoped>
     .info-layout {
-        min-width: 1200px;
-        height: 100%;
         padding: 0;
+        border-top: 1px solid $cmdbLayoutBorderColor;
     }
     .tree-layout {
         width: 280px;
         height: 100%;
-        padding: 20px 0;
+        padding: 10px 0;
         border-right: 1px solid #dcdee5;
     }
     .tab-layout {
         height: 100%;
-        overflow: hidden;
+        @include scrollbar-x;
         .bk-tab {
             height: 100%;
         }
@@ -85,9 +114,21 @@
         /deep/ .bk-tab-section {
             height: calc(100% - 42px);
             padding-top: 14px;
+            min-width: 826px;
         }
         /deep/ .bk-tab-content {
             height: 100%;
+        }
+    }
+    .business-node-view {
+        text-align: center;
+        font-size: 14px;
+        .node-view-img {
+            display: block;
+            margin: 0 auto 5px;
+        }
+        .node-view-link {
+            color: #3A84FF;
         }
     }
 </style>

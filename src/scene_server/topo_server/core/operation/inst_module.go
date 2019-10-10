@@ -14,6 +14,7 @@ package operation
 
 import (
 	"context"
+	"strconv"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -78,6 +79,38 @@ func (m *module) hasHost(params types.ContextParams, bizID int64, setIDs, module
 	return 0 != len(rsp.Data.Info), nil
 }
 
+func (m *module) validBizSetID(params types.ContextParams, bizID int64, setID int64) error {
+	cond := condition.CreateCondition()
+	cond.Field(common.BKSetIDField).Eq(setID)
+	or := cond.NewOR()
+	or.Item(mapstr.MapStr{common.BKAppIDField: bizID})
+	meta := metadata.Metadata{
+		Label: map[string]string{
+			common.BKAppIDField: strconv.FormatInt(bizID, 10),
+		},
+	}
+	or.Item(mapstr.MapStr{metadata.BKMetadata: meta})
+
+	query := &metadata.QueryInput{}
+	query.Condition = cond.ToMapStr()
+	query.Limit = common.BKNoLimit
+
+	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, common.BKInnerObjIDSet, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !rsp.Result {
+		blog.Errorf("[operation-inst] faild to read the object(%s) inst by the condition(%#v), err: %s, rid: %s", common.BKInnerObjIDSet, cond, rsp.ErrMsg, params.ReqID)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+	if rsp.Data.Count > 0 {
+		return nil
+	}
+
+	return params.Err.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField+"/"+common.BKSetIDField)
+}
+
 func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizID, setID int64, data mapstr.MapStr) (inst.Inst, error) {
 
 	data.Set(common.BKSetIDField, setID)
@@ -86,12 +119,17 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		data.Set(common.BKDefaultField, 0)
 	}
 
+	if err := m.validBizSetID(params, bizID, setID); err != nil {
+		return nil, err
+	}
+
 	// validate service category id and service template id
 	// 如果服务分类没有设置，则从服务模版中获取，如果服务模版也没有设置，则参数错误
 	// 有效参数参数形式:
 	// 1. serviceCategoryID > 0  && serviceTemplateID == 0
-	// 2. serviceCategoryID not set && serviceTemplateID > 0
+	// 2. serviceCategoryID unset && serviceTemplateID > 0
 	// 3. serviceCategoryID > 0 && serviceTemplateID > 0 && serviceTemplate.ServiceCategoryID == serviceCategoryID
+	// 4. serviceCategoryID unset && serviceTemplateID unset, then module create with default category
 	var serviceCategoryID int64
 	serviceCategoryIDIf, serviceCategoryExist := data.Get(common.BKServiceCategoryIDField)
 	if serviceCategoryExist == true {
@@ -101,14 +139,24 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		}
 		serviceCategoryID = scID
 	}
-
-	serviceTemplateIDIf, serviceTemplateExist := data.Get(common.BKServiceTemplateIDField)
-	serviceTemplateID, err := util.GetInt64ByInterface(serviceTemplateIDIf)
-	if err != nil {
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	var serviceTemplateID int64
+	var err error
+	serviceTemplateIDIf, serviceTemplateFieldExist := data.Get(common.BKServiceTemplateIDField)
+	if serviceTemplateFieldExist == true {
+		serviceTemplateID, err = util.GetInt64ByInterface(serviceTemplateIDIf)
+		if err != nil {
+			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
 	}
-	if serviceCategoryExist == false && (serviceTemplateExist == false || serviceTemplateID == common.ServiceTemplateIDNotSet) {
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	data.Set(common.BKServiceTemplateIDField, serviceTemplateID)
+	if serviceCategoryExist == false && (serviceTemplateFieldExist == false || serviceTemplateID == common.ServiceTemplateIDNotSet) {
+		// set default service template id
+		defaultServiceCategory, err := m.clientSet.CoreService().Process().GetDefaultServiceCategory(params.Context, params.Header)
+		if err != nil {
+			blog.Errorf("create module failed, GetDefaultServiceCategory failed, err: %s, rid: %s", err.Error(), params.ReqID)
+			return nil, params.Err.Errorf(common.CCErrProcGetDefaultServiceCategoryFailed)
+		}
+		serviceCategoryID = defaultServiceCategory.ID
 	}
 	if serviceTemplateID != common.ServiceTemplateIDNotSet {
 		// 校验 serviceCategoryID 与 serviceTemplateID 对应
@@ -128,25 +176,18 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
 			return nil, params.Err.Error(common.CCErrProcServiceTemplateAndCategoryNotCoincide)
 		}
-		if serviceCategoryExist == false {
-			data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
-		}
 	} else {
 		// 检查 service category id 是否有效
 		serviceCategory, err := m.clientSet.CoreService().Process().GetServiceCategory(params.Context, params.Header, serviceCategoryID)
 		if err != nil {
 			return nil, err
 		}
-		categoryBizID, parseErr := serviceCategory.Metadata.ParseBizID()
-		if parseErr != nil {
-			blog.ErrorJSON("create module failed, parse biz id from db data failed, data: %s, rid: %s", categoryBizID, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrCommParseDataFailed)
-		}
-		if categoryBizID != 0 && categoryBizID != bizID {
-			blog.V(3).Info("create module failed, service category and module belong to two business, categoryBizID: %d, bizID: %d, rid: %s", categoryBizID, bizID, params.ReqID)
+		if serviceCategory.BizID != 0 && serviceCategory.BizID != bizID {
+			blog.V(3).Info("create module failed, service category and module belong to two business, categoryBizID: %d, bizID: %d, rid: %s", serviceCategory.BizID, bizID, params.ReqID)
 			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
 		}
 	}
+	data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
 
 	return m.inst.CreateInst(params, obj, data)
 }
@@ -256,5 +297,6 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 
 	// module table don't have metadata field
 	params.MetaData = nil
+	data.Remove(common.BKSetIDField)
 	return m.inst.UpdateInst(params, data, obj, innerCond, -1)
 }

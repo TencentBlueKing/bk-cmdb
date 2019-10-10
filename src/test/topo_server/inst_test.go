@@ -3,6 +3,7 @@ package topo_server_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"configcenter/src/common/metadata"
@@ -14,7 +15,363 @@ import (
 
 var _ = Describe("inst test", func() {
 	var instId, instId1 int64
-	instClient := topoServerClient.Instance()
+	var propertyID1, propertyID2, uniqueID uint64
+
+	It("create object bk_classification_id = 'bk_middleware' and bk_obj_id='cc_test'", func() {
+		test.ClearDatabase()
+		input := metadata.Object{
+			ObjCls:     "bk_middleware",
+			ObjIcon:    "icon-cc-business",
+			ObjectID:   "cc_test",
+			ObjectName: "cc_test",
+			OwnerID:    "0",
+			Creator:    "admin",
+		}
+		rsp, err := objectClient.CreateObject(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It("create object attribute bk_obj_id='cc_test' and bk_property_id='test_sglchar' and bk_property_name='test_sglchar'", func() {
+		input := &metadata.ObjAttDes{
+			Attribute: metadata.Attribute{
+				ObjectID:     "cc_test",
+				PropertyID:   "test_sglchar",
+				PropertyName: "test_sglchar",
+				IsEditable:   false,
+				PropertyType: "singlechar",
+				Option:       "a+b*",
+				IsRequired:   true,
+			},
+		}
+		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		propertyID1 = uint64(rsp.Data.(map[string]interface{})["id"].(float64))
+	})
+
+	It("create object attribute bk_obj_id='cc_test' and bk_property_id='test_unique' and bk_property_name='test_unique'", func() {
+		input := &metadata.ObjAttDes{
+			Attribute: metadata.Attribute{
+				ObjectID:     "cc_test",
+				PropertyID:   "test_unique",
+				PropertyName: "test_unique",
+				IsEditable:   true,
+				PropertyType: "singlechar",
+				IsRequired:   false,
+			},
+		}
+		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		propertyID2 = uint64(rsp.Data.(map[string]interface{})["id"].(float64))
+	})
+
+	It("create object attribute bk_obj_id='cc_test' same bk_property_id", func() {
+		input := &metadata.ObjAttDes{
+			Attribute: metadata.Attribute{
+				ObjectID:     "cc_test",
+				PropertyID:   "test_unique",
+				PropertyName: "test_unique1",
+				IsEditable:   true,
+				PropertyType: "singlechar",
+				IsRequired:   false,
+			},
+		}
+		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("create object attribute bk_obj_id='cc_test' same bk_property_name", func() {
+		input := &metadata.ObjAttDes{
+			Attribute: metadata.Attribute{
+				ObjectID:     "cc_test",
+				PropertyID:   "test_unique1",
+				PropertyName: "test_unique",
+				IsEditable:   true,
+				PropertyType: "singlechar",
+				IsRequired:   false,
+			},
+		}
+		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("create object attribute bk_obj_id='cc_test' invalid bk_property_id", func() {
+		input := &metadata.ObjAttDes{
+			Attribute: metadata.Attribute{
+				ObjectID:     "cc_test",
+				PropertyID:   "~!#$%^&*()+{}|[]<>",
+				PropertyName: "test_unique2",
+				IsEditable:   true,
+				PropertyType: "singlechar",
+				IsRequired:   false,
+			},
+		}
+		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("create object attribute bk_obj_id='cc_test' invalid bk_property_name", func() {
+		input := &metadata.ObjAttDes{
+			Attribute: metadata.Attribute{
+				ObjectID:     "cc_test",
+				PropertyID:   "test_unique2",
+				PropertyName: "~!#$%^&*()+{}|[]<>",
+				IsEditable:   true,
+				PropertyType: "singlechar",
+				IsRequired:   false,
+			},
+		}
+		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("create object attribute invalid bk_obj_id", func() {
+		input := &metadata.ObjAttDes{
+			Attribute: metadata.Attribute{
+				ObjectID:     "abcdefg",
+				PropertyID:   "test",
+				PropertyName: "test",
+				IsEditable:   true,
+				PropertyType: "singlechar",
+				IsRequired:   false,
+			},
+		}
+		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("create inst bk_obj_id='cc_test'", func() {
+		input := map[string]interface{}{
+			"test_sglchar": "ab",
+			"bk_inst_name": "wejeidjew",
+			"test_unique":  "1234",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("wejeidjew"))
+		Expect(rsp.Data["test_sglchar"].(string)).To(Equal("ab"))
+		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("cc_test"))
+		Expect(rsp.Data["test_unique"].(string)).To(Equal("1234"))
+	})
+
+	It("create inst nonexist attribute", func() {
+		input := map[string]interface{}{
+			"test_sglchar": "ab",
+			"bk_inst_name": "wejeidjew123",
+			"test_unique":  "1234567",
+			"test_123":     "123456",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data.Exists("test_123")).To(Equal(false))
+	})
+
+	It("create inst with metadata", func() {
+		metadata := map[string]interface{}{
+			"label": map[string]interface{}{
+				"bk_biz_id": "2",
+			},
+		}
+		input := map[string]interface{}{
+			"test_sglchar": "abbb",
+			"bk_inst_name": "wejeidjew1",
+			"test_unique":  "12345678",
+			"metadata":     metadata,
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data["metadata"].(map[string]interface{})).To(Equal(metadata))
+	})
+
+	It("create inst with metadata more key", func() {
+		metadata := map[string]interface{}{
+			"label": map[string]interface{}{
+				"bk_biz_id": "2",
+			},
+			"key": "1",
+		}
+		input := map[string]interface{}{
+			"test_sglchar": "abbb",
+			"bk_inst_name": "wejeidjew2",
+			"test_unique":  "123456789",
+			"metadata":     metadata,
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		meta := map[string]interface{}{
+			"label": map[string]interface{}{
+				"bk_biz_id": "2",
+			},
+		}
+		Expect(rsp.Data["metadata"].(map[string]interface{})).To(Equal(meta))
+	})
+
+	It("create inst with metadata label more key", func() {
+		metadata := map[string]interface{}{
+			"label": map[string]interface{}{
+				"bk_biz_id": "2",
+				"key":       "1",
+			},
+		}
+		input := map[string]interface{}{
+			"test_sglchar": "abbb",
+			"bk_inst_name": "wejeidjew3",
+			"test_unique":  "1234567890",
+			"metadata":     metadata,
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		meta := map[string]interface{}{
+			"label": map[string]interface{}{
+				"bk_biz_id": "2",
+			},
+		}
+		Expect(rsp.Data["metadata"].(map[string]interface{})).To(Equal(meta))
+	})
+
+	It("create inst missing required field", func() {
+		input := map[string]interface{}{
+			"bk_inst_name": "wejeidjew4",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("create object attribute unique", func() {
+		input := &metadata.CreateUniqueRequest{
+			MustCheck: false,
+			Keys: []metadata.UniqueKey{
+				metadata.UniqueKey{
+					Kind: "property",
+					ID:   propertyID1,
+				},
+				metadata.UniqueKey{
+					Kind: "property",
+					ID:   propertyID2,
+				},
+			},
+		}
+		rsp, err := objectClient.CreateObjectUnique(context.Background(), "cc_test", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		uniqueID = uint64(rsp.Data.(map[string]interface{})["id"].(float64))
+	})
+
+	It("create object attribute unique with duplicate inst", func() {
+		input := &metadata.CreateUniqueRequest{
+			MustCheck: false,
+			Keys: []metadata.UniqueKey{
+				metadata.UniqueKey{
+					Kind: "property",
+					ID:   propertyID1,
+				},
+			},
+		}
+		rsp, err := objectClient.CreateObjectUnique(context.Background(), "cc_test", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("search object attribute unique", func() {
+		rsp, err := objectClient.SearchObjectUnique(context.Background(), "cc_test", header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		j, err := json.Marshal(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", uniqueID)))
+		Expect(j).To(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID1)))
+		Expect(j).To(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID2)))
+	})
+
+	It("create inst duplicate unique attribute", func() {
+		input := map[string]interface{}{
+			"test_sglchar": "ab",
+			"bk_inst_name": "wejeidjew10",
+			"test_unique":  "1234",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("update object attribute unique", func() {
+		input := &metadata.UpdateUniqueRequest{
+			Keys: []metadata.UniqueKey{
+				metadata.UniqueKey{
+					Kind: "property",
+					ID:   propertyID2,
+				},
+			},
+		}
+		rsp, err := objectClient.UpdateObjectUnique(context.Background(), "cc_test", header, uniqueID, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It("update object attribute unique duplicate inst", func() {
+		input := &metadata.UpdateUniqueRequest{
+			Keys: []metadata.UniqueKey{
+				metadata.UniqueKey{
+					Kind: "property",
+					ID:   propertyID1,
+				},
+			},
+		}
+		rsp, err := objectClient.UpdateObjectUnique(context.Background(), "cc_test", header, uniqueID, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("search object attribute unique", func() {
+		rsp, err := objectClient.SearchObjectUnique(context.Background(), "cc_test", header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		j, err := json.Marshal(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", uniqueID)))
+		Expect(j).To(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID2)))
+	})
+
+	It("delete object attribute unique", func() {
+		rsp, err := objectClient.DeleteObjectUnique(context.Background(), "cc_test", header, uniqueID)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It("search object attribute unique", func() {
+		rsp, err := objectClient.SearchObjectUnique(context.Background(), "cc_test", header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		j, err := json.Marshal(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"id\":%d", uniqueID)))
+		Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID1)))
+		Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID2)))
+	})
+
+	It("create inst duplicate once unique attribute", func() {
+		input := map[string]interface{}{
+			"test_sglchar": "ab",
+			"bk_inst_name": "wejeidjew10",
+			"test_unique":  "1234",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
 
 	It("create inst bk_obj_id='bk_switch'", func() {
 		test.ClearDatabase()
@@ -49,11 +406,50 @@ var _ = Describe("inst test", func() {
 		instId1 = int64(rsp.Data["bk_inst_id"].(float64))
 	})
 
+	It("create inst invalid bk_obj_id", func() {
+		input := map[string]interface{}{
+			"bk_asset_id":  "3456",
+			"bk_inst_name": "1234567",
+			"bk_sn":        "1234",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "abcdefg", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
 	It("create inst invalid bk_inst_name", func() {
 		input := map[string]interface{}{
-			"bk_asset_id":  "234",
+			"bk_asset_id":  "345",
 			"bk_inst_name": "~!@#$%^&*()_+-=",
 			"bk_sn":        "1234",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_switch", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("create inst bk_obj_id='bk_switch' duplicate bk_asset_id", func() {
+		input := map[string]interface{}{
+			"bk_asset_id":  "234",
+			"bk_inst_name": "abcdefg",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_switch", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("create inst bk_obj_id='bk_switch' missing bk_inst_name", func() {
+		input := map[string]interface{}{
+			"bk_asset_id": "456",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_switch", header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("create inst bk_obj_id='bk_switch' missing bk_asset_id", func() {
+		input := map[string]interface{}{
+			"bk_inst_name": "456",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_switch", header, input)
 		Expect(err).NotTo(HaveOccurred())
@@ -78,10 +474,34 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
+	It("update inst invalid instId", func() {
+		input := map[string]interface{}{
+			"bk_inst_name": "aaa",
+		}
+		rsp, err := instClient.UpdateInst(context.Background(), "0", "bk_switch", int64(1000), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("update inst with unmatch object", func() {
+		input := map[string]interface{}{
+			"bk_inst_name": "123",
+		}
+		rsp, err := instClient.UpdateInst(context.Background(), "0", "cc_test", instId, header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
 	It("delete inst", func() {
 		rsp, err := instClient.DeleteInst(context.Background(), "0", "bk_switch", instId1, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It("delete inst with unmatch object", func() {
+		rsp, err := instClient.DeleteInst(context.Background(), "0", "cc_test", instId, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
 	})
 
 	It("search inst", func() {
