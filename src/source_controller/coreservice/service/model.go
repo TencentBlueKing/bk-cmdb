@@ -200,7 +200,15 @@ func (s *coreService) GetModelStatistics(params core.ContextParams, pathParams, 
 		return nil, err
 	}
 
-	bizCount, err := s.db.Table(common.BKTableNameBaseApp).Find(filter).Count(params.Context)
+	appFilter := map[string]interface{}{
+		common.BKDefaultField: map[string]interface{}{
+			common.BKDBNE: 1,
+		},
+		common.BKDataStatusField: map[string]interface{}{
+			common.BKDBNE: common.DataStatusDisabled,
+		},
+	}
+	bizCount, err := s.db.Table(common.BKTableNameBaseApp).Find(appFilter).Count(params.Context)
 	if err != nil {
 		blog.Errorf("GetModelStatistics failed, count application model instances failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
