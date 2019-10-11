@@ -80,7 +80,8 @@ type CountSetTplInstItem struct {
 }
 
 type ListSetByTemplateOption struct {
-	Page BasePage `json:"page"`
+	Page   BasePage `json:"page"`
+	SetIDs []int64  `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
 }
 
 type DiffSetTplWithInstOption struct {

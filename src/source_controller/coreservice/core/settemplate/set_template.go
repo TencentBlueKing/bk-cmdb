@@ -13,7 +13,6 @@
 package settemplate
 
 import (
-	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -58,7 +57,7 @@ func (p *setTemplateOperation) ValidateServiceTemplateIDs(ctx core.ContextParams
 		common.BKFieldID: map[string]interface{}{
 			common.BKDBIN: serviceTemplateIDs,
 		},
-		metadata.MetadataBizField: strconv.FormatInt(bizID, 10),
+		common.BKAppIDField: bizID,
 	}
 	count, err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Count(ctx.Context)
 	if err != nil {
