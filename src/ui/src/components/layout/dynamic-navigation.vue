@@ -184,6 +184,20 @@
                         }
                     }
                     return relativeActiveName
+                } else if (!relative && !this.hasExactActive) {
+                    const name = this.$route.name
+                    const isActive = this.currentMenus.some(menu => {
+                        if (menu.hasOwnProperty('route')) {
+                            return menu.route.name === name
+                        } else if (menu.submenu && menu.submenu.length) {
+                            return menu.submenu.some(submenu => submenu.route.name === name)
+                        }
+                        return false
+                    })
+                    if (isActive) {
+                        return name
+                    }
+                    return null
                 }
                 return null
             }
