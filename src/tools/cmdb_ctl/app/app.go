@@ -33,6 +33,7 @@ func Run() error {
 
 	config.Conf.AddFlags(rootCmd)
 	rootCmd.AddCommand(cmd.NewLogCommand())
+	rootCmd.AddCommand(cmd.NewExitCommand())
 
 	return rootCmd.Execute()
 }

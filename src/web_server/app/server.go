@@ -38,7 +38,7 @@ type WebServer struct {
 	Config options.Config
 }
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
@@ -120,14 +120,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 	}
 
-	done, err := backbone.StartServer(ctx, engine, service.WebService(), false)
+	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), false)
 	if err != nil {
 		return err
 	}
 
 	select {
 	case <-ctx.Done():
-	case <-done:
 	}
 
 	return nil

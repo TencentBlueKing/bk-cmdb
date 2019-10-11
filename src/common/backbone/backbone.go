@@ -166,7 +166,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	return engine, nil
 }
 
-func StartServer(ctx context.Context, e *Engine, HTTPHandler http.Handler,  pprofEnabled bool) (<-chan struct{},error) {
+func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTPHandler http.Handler, pprofEnabled bool) error {
 	e.server = Server{
 		ListenAddr:   e.srvInfo.IP,
 		ListenPort:   e.srvInfo.Port,
@@ -175,7 +175,7 @@ func StartServer(ctx context.Context, e *Engine, HTTPHandler http.Handler,  ppro
 		PProfEnabled: pprofEnabled,
 	}
 
-	return ListenAndServe(e.server)
+	return ListenAndServe(e.server, e.SvcDisc, cancel)
 }
 
 func New(c *Config, disc ServiceRegisterInterface) (*Engine, error) {

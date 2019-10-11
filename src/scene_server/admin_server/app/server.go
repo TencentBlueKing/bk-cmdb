@@ -38,7 +38,7 @@ import (
 	"configcenter/src/storage/dal/mongo/remote"
 )
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -116,14 +116,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 		break
 	}
-	done, err := backbone.StartServer(ctx, engine, service.WebService(), true)
+	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
 	if err != nil {
 		return err
 	}
 
 	select {
 	case <-ctx.Done():
-	case <-done:
 	}
 	blog.V(0).Info("process stopped")
 	return nil

@@ -30,7 +30,7 @@ import (
 	"configcenter/src/common/ssl"
 )
 
-func ListenAndServe(c Server) (<-chan struct{}, error) {
+func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.CancelFunc) error {
 	handler := c.Handler
 	if c.PProfEnabled {
 		rootMux := http.NewServeMux()
@@ -42,20 +42,24 @@ func ListenAndServe(c Server) (<-chan struct{}, error) {
 		Addr:    net.JoinHostPort(c.ListenAddr, strconv.FormatUint(uint64(c.ListenPort), 10)),
 		Handler: handler,
 	}
-	done := make(chan struct{}, 1)
 	exit := make(chan os.Signal, 1)
-	signal.Notify(exit, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	signal.Notify(exit, syscall.SIGTERM)
 	go func() {
 		select {
 		case sig := <-exit:
 			blog.Infof("receive signal %v, begin to shutdown", sig)
+			svcDisc.Cancel()
+			if err := svcDisc.ClearRegisterPath(); err != nil {
+				break
+			}
 			server.SetKeepAlivesEnabled(false)
 			err := server.Shutdown(context.Background())
 			if err != nil {
 				blog.Errorf("Could not gracefully shutdown the server: %v \n", err)
+				break
 			}
 			blog.Info("server shutdown done")
-			close(done)
+			cancel()
 		}
 	}()
 
@@ -66,16 +70,16 @@ func ListenAndServe(c Server) (<-chan struct{}, error) {
 				blog.Fatalf("listen and serve failed, err: %v", err)
 			}
 		}()
-		return done, nil
+		return nil
 	}
 
 	ca, err := ioutil.ReadFile(c.TLS.CAFile)
 	if nil != err {
-		return done, fmt.Errorf("read server tls file failed. err:%v", err)
+		return fmt.Errorf("read server tls file failed. err:%v", err)
 	}
 
 	if false == x509.NewCertPool().AppendCertsFromPEM(ca) {
-		return done, errors.New("append cert from pem failed")
+		return errors.New("append cert from pem failed")
 	}
 
 	tlsC, err := ssl.ServerTslConfVerityClient(c.TLS.CAFile,
@@ -83,7 +87,7 @@ func ListenAndServe(c Server) (<-chan struct{}, error) {
 		c.TLS.KeyFile,
 		c.TLS.Password)
 	if err != nil {
-		return done, fmt.Errorf("generate tls config failed. err: %v", err)
+		return fmt.Errorf("generate tls config failed. err: %v", err)
 	}
 	tlsC.BuildNameToCertificate()
 
@@ -95,5 +99,5 @@ func ListenAndServe(c Server) (<-chan struct{}, error) {
 		}
 	}()
 
-	return done, nil
+	return nil
 }
