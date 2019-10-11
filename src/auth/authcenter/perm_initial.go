@@ -433,5 +433,10 @@ var bizOperatorRoleAuth = RoleWithAuthResources{
 			ResourceTypeID: SysBusinessInstance,
 			ActionID:       Get,
 		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizSetTemplate,
+			ActionID:       Create,
+		},
 	},
 }
