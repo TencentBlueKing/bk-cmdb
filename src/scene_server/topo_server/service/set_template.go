@@ -257,12 +257,10 @@ func (s *Service) ListSetTplRelatedSets(params types.ContextParams, pathParams, 
 		}
 	}
 	qc := &metadata.QueryCondition{
-		Fields: nil,
 		Limit: metadata.SearchLimit{
 			Offset: int64(option.Page.Start),
 			Limit:  int64(option.Page.Limit),
 		},
-		SortArr:   nil,
 		Condition: filter,
 	}
 	setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, qc)
