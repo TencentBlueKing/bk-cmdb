@@ -83,8 +83,10 @@
         watch: {
             list () {
                 this.$nextTick(() => {
-                    const [firstAssociationListTable] = this.$refs.associationListTable
-                    firstAssociationListTable && (firstAssociationListTable.expanded = true)
+                    if (this.$refs.associationListTable) {
+                        const [firstAssociationListTable] = this.$refs.associationListTable
+                        firstAssociationListTable && (firstAssociationListTable.expanded = true)
+                    }
                 })
             }
         },
