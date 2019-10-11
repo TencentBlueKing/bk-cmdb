@@ -4,6 +4,7 @@
             <bk-checkbox class="options-checkall"
                 :size="16"
                 v-model="isCheckAll"
+                :disabled="!instances.length"
                 :title="$t('全选本页')"
                 @change="handleCheckALL">
             </bk-checkbox>
@@ -21,6 +22,7 @@
             <div class="option-right fr">
                 <bk-checkbox class="options-checkbox"
                     :size="16"
+                    :disabled="!instances.length"
                     v-model="isExpandAll"
                     @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('全部展开')}}</span>
