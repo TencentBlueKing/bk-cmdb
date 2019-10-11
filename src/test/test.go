@@ -14,6 +14,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/zkclient"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/test/run"
 
@@ -28,14 +29,16 @@ var reportUrl string
 var reportDir string
 
 type TestConfig struct {
-	ZkAddr         string
+	ZkConf         *zkclient.ZkConf
 	Concurrent     int
 	SustainSeconds int
 	MongoURI       string
 }
 
 func init() {
-	flag.StringVar(&tConfig.ZkAddr, "zk-addr", "127.0.0.1:2181", "zk discovery addresses, comma separated.")
+	flag.StringVar(&tConfig.ZkConf.ZkAddr, "zkaddr", "127.0.0.1:2181", "The zookeeper server address, comma separated")
+	flag.StringVar(&tConfig.ZkConf.ZkUser, "zkuser", "", "The zookeeper auth user")
+	flag.StringVar(&tConfig.ZkConf.ZkPwd, "zkpwd", "", "The zookeeper auth password")
 	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load test.")
 	flag.IntVar(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")
 	flag.StringVar(&tConfig.MongoURI, "mongo-addr", "mongodb://127.0.0.1:27017/cmdb", "mongodb URI")
@@ -50,7 +53,7 @@ func init() {
 	fmt.Println("before suit")
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
-	client := zk.NewZkClient(tConfig.ZkAddr, 5*time.Second)
+	client := zk.NewZkClient(tConfig.ZkConf, 5*time.Second)
 	Expect(client.Start()).Should(BeNil())
 	Expect(client.Ping()).Should(BeNil())
 	disc, err := discovery.NewServiceDiscovery(client)

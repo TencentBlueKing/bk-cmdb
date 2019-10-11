@@ -30,6 +30,7 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/metrics"
 	"configcenter/src/common/types"
+	"configcenter/src/common/zkclient"
 )
 
 // connect svcManager retry connect time
@@ -40,27 +41,26 @@ const maxRetry = 200
 type BackboneParameter struct {
 	// ConfigUpdate handle process config change
 	ConfigUpdate cc.ProcHandlerFunc
-
-	// service component addr
-	Regdiscv string
+	// zookeeper config
+	ZkConf *zkclient.ZkConf
 	// config path
 	ConfigPath string
 	// http server parameter
 	SrvInfo *types.ServerInfo
 }
 
-func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
+func newSvcManagerClient(ctx context.Context, zkConf *zkclient.ZkConf) (*zk.ZkClient, error) {
 	var err error
 	for retry := 0; retry < maxRetry; retry++ {
-		client := zk.NewZkClient(svcManagerAddr, 5*time.Second)
+		client := zk.NewZkClient(zkConf, 5*time.Second)
 		if err = client.Start(); err != nil {
-			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
+			blog.Errorf("connect regdiscv [%s] failed: %v", zkConf.ZkAddr, err)
 			time.Sleep(time.Second * 2)
 			continue
 		}
 
 		if err = client.Ping(); err != nil {
-			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
+			blog.Errorf("connect regdiscv [%s] failed: %v", zkConf.ZkAddr, err)
 			time.Sleep(time.Second * 2)
 			continue
 		}
@@ -89,8 +89,14 @@ func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discove
 }
 
 func validateParameter(input *BackboneParameter) error {
-	if input.Regdiscv == "" {
-		return fmt.Errorf("regdiscv can not be emtpy")
+	if input.ZkConf.ZkAddr == "" {
+		return fmt.Errorf("zkaddr can not be emtpy")
+	}
+	if input.ZkConf.ZkUser == "" {
+		return fmt.Errorf("zkuser can not be emtpy")
+	}
+	if input.ZkConf.ZkPwd == "" {
+		return fmt.Errorf("zkpwd can not be emtpy")
 	}
 	if input.SrvInfo.IP == "" {
 		return fmt.Errorf("addrport ip can not be emtpy")
@@ -114,13 +120,13 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	metricService := metrics.NewService(metrics.Config{ProcessName: common.GetIdentification(), ProcessInstance: input.SrvInfo.Instance()})
 
 	common.SetServerInfo(input.SrvInfo)
-	client, err := newSvcManagerClient(ctx, input.Regdiscv)
+	client, err := newSvcManagerClient(ctx, input.ZkConf)
 	if err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.ZkConf.ZkAddr, err)
 	}
 	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
 	if err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.ZkConf.ZkAddr, err)
 	}
 	disc, err := NewServiceRegister(client)
 	if err != nil {

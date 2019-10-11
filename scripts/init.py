@@ -169,16 +169,6 @@ enable = $auth_enabled
 
     # migrate.conf
     migrate_file_template_str = '''
-[config-server]
-addrs = $rd_server
-usr =
-pwd =
-
-[register-server]
-addrs = $rd_server
-usr =
-pwd =
-
 [mongodb]
 host =$mongo_host
 usr = $mongo_user
@@ -383,7 +373,7 @@ authscheme = $auth_scheme
         tmp_file.write(result)
 
 
-def update_start_script(rd_server, server_ports, enable_auth, log_level):
+def update_start_script(rd_server, zk_user, zk_pwd, server_ports, enable_auth, log_level):
     list_dirs = os.walk(os.getcwd()+"/")
     for root, dirs, _ in list_dirs:
         for d in dirs:
@@ -401,16 +391,14 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level):
             # Read in the file
             with open(root+d + "/template.sh.start", 'r') as template_file:
                 filedata = template_file.read()
+                extend_flag = ' --zkuser=%s --zkpwd=%s' % (zk_user, zk_pwd)
                 # Replace the target string
                 filedata = filedata.replace('cmdb-name-placeholder', d)
                 filedata = filedata.replace('cmdb-port-placeholder', str(server_ports.get(d, 9999)))
                 if d == "cmdb_adminserver":
-                    filedata = filedata.replace('rd_server_placeholder', "configures/migrate.conf")
-                    filedata = filedata.replace('regdiscv', "config")
-                else:
-                    filedata = filedata.replace('rd_server_placeholder', rd_server)
+                    extend_flag += ' --config=configures/migrate.conf'
+                filedata = filedata.replace('rd_server_placeholder', rd_server)
 
-                extend_flag = ''
                 if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver', 'cmdb_toposerver']:
                     extend_flag += ' --enable-auth=%s ' % enable_auth
                 filedata = filedata.replace('extend_flag_placeholder', extend_flag)
@@ -462,7 +450,7 @@ def main(argv):
         "cmdb_operationserver": 60011
     }
     arr = [
-        "help", "discovery=", "database=", "redis_ip=", "redis_port=",
+        "help", "zk_user=", "zk_pwd=", "discovery=", "database=", "redis_ip=", "redis_port=",
         "redis_user=", "redis_pass=", "mongo_ip=", "mongo_port=",
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=",
         "blueking_paas_url=", "listen_port=", "es_url=", "auth_address=",
@@ -472,6 +460,8 @@ def main(argv):
     usage = '''
     usage:
       --discovery          <discovery>            the ZooKeeper server address, eg:127.0.0.1:2181
+      --zk_user            <zk_user>              the ZooKeeper user
+      --zk_pwd             <zk_pwd>               the ZooKeeper password
       --database           <database>             the database name, default cmdb
       --redis_ip           <redis_ip>             the redis ip, eg:127.0.0.1
       --redis_port         <redis_port>           the redis port, default:6379
@@ -496,6 +486,8 @@ def main(argv):
     demo:
     python init.py  \\
       --discovery          127.0.0.1:2181 \\
+      --zk_user            cc \\
+      --zk_pwd             cc \\
       --database           cmdb \\
       --redis_ip           127.0.0.1 \\
       --redis_port         6379 \\
@@ -535,6 +527,12 @@ def main(argv):
         elif opt in ("-d", "--discovery"):
             rd_server = arg
             print('rd_server:', rd_server)
+        elif opt in ("--zk_user"):
+            zk_user = arg
+            print('zk_user:', zk_user)
+        elif opt in ("--zk_pwd"):
+            zk_pwd = arg
+            print('zk_pwd:', zk_pwd)
         elif opt in ("-D", "--database"):
             db_name = arg
             print('database:', db_name)
@@ -595,6 +593,12 @@ def main(argv):
 
     if 0 == len(rd_server):
         print('please input the ZooKeeper address, eg:127.0.0.1:2181')
+        sys.exit()
+    if 0 == len(zk_user):
+        print('please input the ZooKeeper user')
+        sys.exit()
+    if 0 == len(zk_pwd):
+        print('please input the ZooKeeper password')
         sys.exit()
     if 0 == len(db_name):
         print('please input the database name, eg:cmdb')
@@ -682,7 +686,7 @@ def main(argv):
         log_level=log_level,
         **auth
     )
-    update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level)
+    update_start_script(rd_server, zk_user, zk_pwd, server_ports, auth['auth_enabled'], log_level)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
 
 

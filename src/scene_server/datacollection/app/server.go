@@ -56,7 +56,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: process.onHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		Regdiscv:     op.ServConf.RegDiscover,
+		ZkConf:       op.ServConf.ZkConf,
 		SrvInfo:      svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)

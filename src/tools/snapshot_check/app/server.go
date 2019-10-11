@@ -22,7 +22,7 @@ import (
 
 func Run(ctx context.Context, op *options.ServerOption) error {
 
-	srv := service.NewService(op.ServConf.RegDiscover, op.ServConf.DefaultAppID)
+	srv := service.NewService(op.ServConf.ZkConf, op.ServConf.DefaultAppID)
 
 	if op.ServConf.TriggerInterval < 10 {
 		op.ServConf.TriggerInterval = 10

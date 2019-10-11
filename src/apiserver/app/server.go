@@ -51,7 +51,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: apiSvr.onApiServerConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		Regdiscv:     op.ServConf.RegDiscover,
+		ZkConf:       op.ServConf.ZkConf,
 		SrvInfo:      svrInfo,
 	}
 

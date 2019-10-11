@@ -55,7 +55,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: process.onHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		Regdiscv:     process.Config.Register.Address,
+		ZkConf:       op.ServConf.ZkConf,
 		SrvInfo:      svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)
@@ -151,8 +151,6 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Errors.Res = current.ConfigMap["errors.res"]
 		h.Config.Language.Res = current.ConfigMap["language.res"]
 		h.Config.Configures.Dir = current.ConfigMap["confs.dir"]
-
-		h.Config.Register.Address = current.ConfigMap["register-server.addrs"]
 
 		h.Config.ProcSrvConfig.CCApiSrvAddr, _ = current.ConfigMap["procsrv.cc_api"]
 

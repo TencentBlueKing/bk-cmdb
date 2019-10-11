@@ -44,7 +44,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "parse arguments failed, %v\n", err)
 		os.Exit(1)
 	}
-	util.InitFlags()
+	util.InitFlags(op.ServConf.ZkConf)
 
 	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "run app failed, %v\n", err)

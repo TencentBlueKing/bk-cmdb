@@ -15,7 +15,6 @@ package zk
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"configcenter/src/common/zkclient"
@@ -30,10 +29,9 @@ type ZkClient struct {
 }
 
 // NewZkClient create a object of ZkClient
-func NewZkClient(zkAddress string, timeOut time.Duration) *ZkClient {
-	zkAddresses := strings.Split(zkAddress, ",")
+func NewZkClient(zkConf *zkclient.ZkConf, timeOut time.Duration) *ZkClient {
 	return &ZkClient{
-		zkCli:          zkclient.NewZkClient(zkAddresses),
+		zkCli:          zkclient.NewZkClient(zkConf),
 		sessionTimeOut: timeOut,
 	}
 }

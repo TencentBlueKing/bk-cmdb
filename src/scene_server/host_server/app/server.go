@@ -46,7 +46,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	hostSrv := new(HostServer)
 
 	input := &backbone.BackboneParameter{
-		Regdiscv:     op.ServConf.RegDiscover,
+		ZkConf:       op.ServConf.ZkConf,
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: hostSrv.onHostConfigUpdate,
 		SrvInfo:      svrInfo,

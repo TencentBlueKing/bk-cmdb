@@ -42,7 +42,7 @@ func main() {
 
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
-	util.InitFlags()
+	util.InitFlags(op.ServConf.ZkConf)
 
 	if mock {
 		if err := sigMock(collector); err != nil {

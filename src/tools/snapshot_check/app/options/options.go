@@ -13,6 +13,8 @@
 package options
 
 import (
+	"configcenter/src/common/zkclient"
+
 	"github.com/spf13/pflag"
 )
 
@@ -24,21 +26,19 @@ type ServerOption struct {
 // NewServerOption create a ServerOption object
 func NewServerOption() *ServerOption {
 	s := ServerOption{
-		ServConf: Config{},
-	}
+		ServConf: Config{ZkConf: &zkclient.ZkConf{}}}
 
 	return &s
 }
 
 // AddFlags add flags
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 	s.ServConf.DefaultAppID = *fs.Int("appID", 2, "blueking business id. e.g: 2")
 	s.ServConf.TriggerInterval = *fs.Int("interval", 10, "blueking business id. e.g: 2")
 }
 
 type Config struct {
-	RegDiscover     string
+	ZkConf          *zkclient.ZkConf
 	DefaultAppID    int
 	TriggerInterval int
 }

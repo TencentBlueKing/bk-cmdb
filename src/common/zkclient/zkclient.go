@@ -13,9 +13,8 @@
 package zkclient
 
 import (
-	"errors"
-	//"bcs/bcs-common/common/blog"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -30,24 +29,25 @@ var (
 	ErrConnectionClosed = zk.ErrConnectionClosed
 )
 
-const (
-	AUTH_USER = "cc"
-	AUTH_PWD  = "3.0#bkcc"
-)
+type ZkConf struct {
+	ZkAddr string
+	ZkUser string
+	ZkPwd  string
+}
 
 type ZkLock struct {
-	zkHost []string
+	zkConf *ZkConf
 	zkConn *zk.Conn
 	zkAcl  []zk.ACL
 	zkLock *zk.Lock
 }
 
-func NewZkLock(host []string) *ZkLock {
+func NewZkLock(zkConf *ZkConf) *ZkLock {
 	zlock := ZkLock{
-		zkHost: host[:],
+		zkConf: zkConf,
 		zkConn: nil,
 		zkLock: nil,
-		zkAcl:  zk.DigestACL(zk.PermAll, AUTH_USER, AUTH_PWD),
+		zkAcl:  zk.DigestACL(zk.PermAll, zkConf.ZkUser, zkConf.ZkPwd),
 	}
 	return &zlock
 }
@@ -58,13 +58,14 @@ func (zlock *ZkLock) Lock(path string) error {
 
 func (zlock *ZkLock) LockEx(path string, sessionTimeOut time.Duration) error {
 	if zlock.zkConn == nil {
-		conn, _, connErr := zk.Connect(zlock.zkHost, sessionTimeOut)
+		zkHost := strings.Split(zlock.zkConf.ZkAddr, ",")
+		conn, _, connErr := zk.Connect(zkHost, sessionTimeOut)
 		if connErr != nil {
 			return connErr
 		}
 
 		//auth
-		auth := AUTH_USER + ":" + AUTH_PWD
+		auth := zlock.zkConf.ZkUser + ":" + zlock.zkConf.ZkPwd
 		if err := conn.AddAuth("digest", []byte(auth)); err != nil {
 			conn.Close()
 			return err
@@ -99,16 +100,16 @@ func (zlock *ZkLock) UnLock() error {
 }
 
 type ZkClient struct {
-	ZkHost []string
+	zkConf *ZkConf
 	ZkConn *zk.Conn
 	zkAcl  []zk.ACL
 }
 
-func NewZkClient(host []string) *ZkClient {
+func NewZkClient(zkConf *ZkConf) *ZkClient {
 	c := ZkClient{
-		ZkHost: host[:],
+		zkConf: zkConf,
 		ZkConn: nil,
-		zkAcl:  zk.DigestACL(zk.PermAll, AUTH_USER, AUTH_PWD),
+		zkAcl:  zk.DigestACL(zk.PermAll, zkConf.ZkUser, zkConf.ZkPwd),
 	}
 
 	return &c
@@ -123,13 +124,14 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 		z.Close()
 	}
 
-	c, _, err := zk.Connect(z.ZkHost, sessionTimeOut)
+	zkHost := strings.Split(z.zkConf.ZkAddr, ",")
+	c, _, err := zk.Connect(zkHost, sessionTimeOut)
 	if err != nil {
 		return err
 	}
 
 	// AddAuth
-	auth := AUTH_USER + ":" + AUTH_PWD
+	auth := z.zkConf.ZkUser + ":" + z.zkConf.ZkPwd
 	if err := c.AddAuth("digest", []byte(auth)); err != nil {
 		c.Close()
 		return err
@@ -165,7 +167,7 @@ func (z *ZkClient) Get(path string) (string, error) {
 }
 
 func (z *ZkClient) AddAuth() error {
-	auth := AUTH_USER + ":" + AUTH_PWD
+	auth := z.zkConf.ZkUser + ":" + z.zkConf.ZkPwd
 	return z.ZkConn.AddAuth("digest", []byte(auth))
 }
 

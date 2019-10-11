@@ -13,28 +13,29 @@
 package service
 
 import (
-	"configcenter/src/common"
 	"fmt"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
+	"configcenter/src/common/zkclient"
 	ccRedis "configcenter/src/storage/dal/redis"
 
 	"gopkg.in/redis.v5"
 )
 
 type Service struct {
-	regdiscv        string
+	zkConf          *zkclient.ZkConf
 	strDefaultAppID string
 	config          map[string]string
 }
 
-func NewService(regdiscv string, defaultAppID int) *Service {
+func NewService(zkConf *zkclient.ZkConf, defaultAppID int) *Service {
 	return &Service{
-		regdiscv:        regdiscv,
+		zkConf:          zkConf,
 		strDefaultAppID: fmt.Sprintf("%d", defaultAppID),
 	}
 }
@@ -77,36 +78,36 @@ func (s *Service) triggerTicker(interval int) {
 }
 
 func (s *Service) checkRegdiscv() error {
-	client := zk.NewZkClient(s.regdiscv, 5*time.Second)
+	client := zk.NewZkClient(s.zkConf, 5*time.Second)
 	if err := client.Start(); err != nil {
-		return fmt.Errorf("connect regdiscv [%s] failed: %v", s.regdiscv, err)
+		return fmt.Errorf("connect regdiscv [%s] failed: %v", s.zkConf.ZkAddr, err)
 	}
 	return nil
 }
 
 func (s *Service) checkConf() error {
-	client := zk.NewZkClient(s.regdiscv, 5*time.Second)
+	client := zk.NewZkClient(s.zkConf, 5*time.Second)
 	if err := client.Start(); err != nil {
-		return fmt.Errorf("connect regdiscv [%s] failed: %v", s.regdiscv, err)
+		return fmt.Errorf("connect regdiscv [%s] failed: %v", s.zkConf.ZkAddr, err)
 	}
 	if err := client.Ping(); err != nil {
-		return fmt.Errorf("ping regdiscv [%s] failed: %v", s.regdiscv, err)
+		return fmt.Errorf("ping regdiscv [%s] failed: %v", s.zkConf.ZkAddr, err)
 	}
 
 	path := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CC_MODULE_DATACOLLECTION)
 	strConf, err := client.Client().Get(path)
 	if err != nil {
-		return fmt.Errorf("get path [%s] from regdiscv [%s] failed: %v", path, s.regdiscv, err)
+		return fmt.Errorf("get path [%s] from regdiscv [%s] failed: %v", path, s.zkConf.ZkAddr, err)
 	}
 
 	procConf, err := configcenter.ParseConfigWithData([]byte(strConf))
 	if err != nil {
-		return fmt.Errorf("get path [%s] from regdiscv [%s]  parse config failed: %v", path, s.regdiscv, err)
+		return fmt.Errorf("get path [%s] from regdiscv [%s]  parse config failed: %v", path, s.zkConf.ZkAddr, err)
 	}
 
 	s.config = procConf.ConfigMap
 	if len(s.config) == 0 {
-		return fmt.Errorf("get path [%s] from regdiscv [%s]  parse config empty", path, s.regdiscv)
+		return fmt.Errorf("get path [%s] from regdiscv [%s]  parse config empty", path, s.zkConf.ZkAddr)
 	}
 
 	return nil

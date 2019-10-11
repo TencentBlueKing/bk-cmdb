@@ -18,6 +18,8 @@ import (
 	"strings"
 
 	"configcenter/src/common/version"
+	"configcenter/src/common/zkclient"
+
 	"github.com/spf13/pflag"
 )
 
@@ -29,21 +31,28 @@ func WordSepNormalizeFunc(f *pflag.FlagSet, name string) pflag.NormalizedName {
 	return pflag.NormalizedName(name)
 }
 
+type CommonFlagConfig struct {
+	version bool
+}
+
 // AddCommonFlags add common flags that is needed by all modules
-func AddCommonFlags(cmdline *pflag.FlagSet) *bool {
-	version := cmdline.Bool("version", false, "show version information")
-	return version
+func AddCommonFlags(cmdline *pflag.FlagSet, zkConf *zkclient.ZkConf, flagConf *CommonFlagConfig) {
+	cmdline.BoolVar(&flagConf.version, "version", false, "show version information")
+	cmdline.StringVar(&zkConf.ZkAddr, "zkaddr", "", "The zookeeper server address, e.g: 127.0.0.1:2181")
+	cmdline.StringVar(&zkConf.ZkUser, "zkuser", "", "The zookeeper auth user")
+	cmdline.StringVar(&zkConf.ZkPwd, "zkpwd", "", "The zookeeper auth password")
 }
 
 // InitFlags normalizes and parses the command line flags
-func InitFlags() {
+func InitFlags(zkConf *zkclient.ZkConf) {
 	pflag.CommandLine.SetNormalizeFunc(WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
-	ver := AddCommonFlags(pflag.CommandLine)
+	flagConf := new(CommonFlagConfig)
+	AddCommonFlags(pflag.CommandLine, zkConf, flagConf)
 	pflag.Parse()
 
 	// add handler if flag include --version/-v
-	if *ver {
+	if flagConf.version {
 		version.ShowVersion()
 		os.Exit(0)
 	}

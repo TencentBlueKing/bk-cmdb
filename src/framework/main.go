@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
+	"configcenter/src/common/zkclient"
 	"configcenter/src/framework/api"
 	"configcenter/src/framework/core/config"
 	"configcenter/src/framework/core/discovery"
@@ -49,7 +50,9 @@ func main() {
 
 	opt := &option.Options{AppName: APPNAME}
 	opt.AddFlags(pflag.CommandLine)
-	util.InitFlags()
+
+	zkConf := new(zkclient.ZkConf)
+	util.InitFlags(zkConf)
 
 	blog.InitLogs()
 
@@ -78,14 +81,14 @@ func main() {
 		return
 	}
 
-	if "" != opt.Regdiscv {
-		disClient := zk.NewZkClient(opt.Regdiscv, 5*time.Second)
+	if "" != zkConf.ZkAddr {
+		disClient := zk.NewZkClient(zkConf, 5*time.Second)
 		if err := disClient.Start(); err != nil {
-			log.Errorf("connect regdiscv [%s] failed: %v", opt.Regdiscv, err)
+			log.Errorf("connect regdiscv [%s] failed: %v", zkConf.ZkAddr, err)
 			return
 		}
 		if err := disClient.Ping(); err != nil {
-			log.Errorf("connect regdiscv [%s] failed: %v", opt.Regdiscv, err)
+			log.Errorf("connect regdiscv [%s] failed: %v", zkConf.ZkAddr, err)
 			return
 		}
 		rd := discovery.NewRegDiscover(APPNAME, disClient, server.GetAddr(), server.GetPort(), false)

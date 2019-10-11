@@ -38,7 +38,7 @@ func main() {
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
 
-	util.InitFlags()
+	util.InitFlags(op.ServConf.ZkConf)
 
 	if err := common.SavePid(); err != nil {
 		blog.Errorf("fail to save pid: err:%s", err.Error())

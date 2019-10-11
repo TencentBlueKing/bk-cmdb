@@ -39,7 +39,7 @@ func main() {
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
 
-	util.InitFlags()
+	util.InitFlags(op.ServConf.ZkConf)
 
 	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "run app failed, %v\n", err)

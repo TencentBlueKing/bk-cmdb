@@ -85,7 +85,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	server.Service = new(service.Service)
 
 	input := &backbone.BackboneParameter{
-		Regdiscv:     op.ServConf.RegDiscover,
+		ZkConf:       op.ServConf.ZkConf,
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: server.onTopoConfigUpdate,
 		SrvInfo:      svrInfo,
