@@ -19,7 +19,7 @@
             <bk-tab-panel name="status" :label="$t('实时状态')">
                 <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
             </bk-tab-panel>
-            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="business > -1">
+            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="!isAdminView">
                 <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
             </bk-tab-panel>
             <bk-tab-panel name="history" :label="$t('变更记录')">
@@ -30,7 +30,7 @@
 </template>
 
 <script>
-    import { mapState } from 'vuex'
+    import { mapState, mapGetters } from 'vuex'
     import cmdbHostInfo from './children/info.vue'
     import cmdbHostAssociation from './children/association.vue'
     import cmdbHostProperty from './children/property.vue'
@@ -58,6 +58,7 @@
         },
         computed: {
             ...mapState('hostDetails', ['info']),
+            ...mapGetters(['isAdminView']),
             id () {
                 return parseInt(this.$route.params.id)
             },
