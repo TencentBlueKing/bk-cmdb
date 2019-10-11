@@ -150,11 +150,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		break
 	}
 
-	blog.InfoJSON("process started with info %s", svrInfo)
-	if err := backbone.StartServer(ctx, engine, service.WebService(), true); err != nil {
+	done, err := backbone.StartServer(ctx, engine, service.WebService(), true)
+	if err != nil {
 		return err
 	}
-	<-ctx.Done()
+	select {
+	case <-ctx.Done():
+	case <-done:
+	}
 	blog.V(0).Info("process stopped")
 	return nil
 }

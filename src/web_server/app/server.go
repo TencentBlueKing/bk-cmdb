@@ -120,11 +120,17 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 	}
 
-	if err := backbone.StartServer(ctx, engine, service.WebService(), false); err != nil {
+	done, err := backbone.StartServer(ctx, engine, service.WebService(), false)
+	if err != nil {
 		return err
 	}
 
-	select {}
+	select {
+	case <-ctx.Done():
+	case <-done:
+	}
+
+	return nil
 }
 
 func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {

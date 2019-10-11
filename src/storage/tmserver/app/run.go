@@ -78,12 +78,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	tmServer.engin = engine
 	handler := restful.NewContainer().Add(coreService.WebService())
-	if err := backbone.StartServer(ctx, engine, handler, true); err != nil {
+	done, err := backbone.StartServer(ctx, engine, handler, true)
+	if err != nil {
 		return err
 	}
 	// waiting to exit
 	select {
 	case <-ctx.Done():
+	case <-done:
 	case err = <-errCh:
 		blog.V(3).Infof("distribution routine stoped %s", err.Error())
 	}

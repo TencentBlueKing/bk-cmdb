@@ -13,6 +13,7 @@
 package backbone
 
 import (
+	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -20,13 +21,16 @@ import (
 	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
 )
 
-func ListenAndServe(c Server) error {
+func ListenAndServe(c Server) (<-chan struct{}, error) {
 	handler := c.Handler
 	if c.PProfEnabled {
 		rootMux := http.NewServeMux()
@@ -38,24 +42,40 @@ func ListenAndServe(c Server) error {
 		Addr:    net.JoinHostPort(c.ListenAddr, strconv.FormatUint(uint64(c.ListenPort), 10)),
 		Handler: handler,
 	}
+	done := make(chan struct{}, 1)
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	go func() {
+		select {
+		case sig := <-exit:
+			blog.Infof("receive signal %v, begin to shutdown", sig)
+			server.SetKeepAlivesEnabled(false)
+			err := server.Shutdown(context.Background())
+			if err != nil {
+				blog.Errorf("Could not gracefully shutdown the server: %v \n", err)
+			}
+			blog.Info("server shutdown done")
+			close(done)
+		}
+	}()
 
 	if len(c.TLS.CertFile) == 0 && len(c.TLS.KeyFile) == 0 {
 		blog.Infof("start insecure server on %s:%d", c.ListenAddr, c.ListenPort)
 		go func() {
-			if err := server.ListenAndServe(); err != nil {
+			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				blog.Fatalf("listen and serve failed, err: %v", err)
 			}
 		}()
-		return nil
+		return done, nil
 	}
 
 	ca, err := ioutil.ReadFile(c.TLS.CAFile)
 	if nil != err {
-		return fmt.Errorf("read server tls file failed. err:%v", err)
+		return done, fmt.Errorf("read server tls file failed. err:%v", err)
 	}
 
 	if false == x509.NewCertPool().AppendCertsFromPEM(ca) {
-		return errors.New("append cert from pem failed")
+		return done, errors.New("append cert from pem failed")
 	}
 
 	tlsC, err := ssl.ServerTslConfVerityClient(c.TLS.CAFile,
@@ -63,17 +83,17 @@ func ListenAndServe(c Server) error {
 		c.TLS.KeyFile,
 		c.TLS.Password)
 	if err != nil {
-		return fmt.Errorf("generate tls config failed. err: %v", err)
+		return done, fmt.Errorf("generate tls config failed. err: %v", err)
 	}
 	tlsC.BuildNameToCertificate()
 
 	server.TLSConfig = tlsC
 	blog.Infof("start secure server on %s:%d", c.ListenAddr, c.ListenPort)
 	go func() {
-		if err := server.ListenAndServe(); err != nil {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			blog.Fatalf("listen and serve failed, err: %v", err)
 		}
 	}()
 
-	return nil
+	return done, nil
 }

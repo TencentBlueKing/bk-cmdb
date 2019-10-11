@@ -42,8 +42,8 @@ type Service struct {
 }
 
 func NewService(zkaddr string, addrport string) (*Service, error) {
-	if zkaddr == "" || addrport == "" {
-		return nil, errors.New("zkaddr and addrport must set via flag or environment variable")
+	if zkaddr == "" {
+		return nil, errors.New("zkaddr must set via flag or environment variable")
 	}
 	service := &Service{
 		ZkCli:    zkclient.NewZkClient(strings.Split(zkaddr, ",")),

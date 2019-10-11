@@ -15,8 +15,11 @@ package registerdiscover
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"sort"
 	"strconv"
+	"syscall"
 	"time"
 
 	"configcenter/src/common/backbone/service_mange/zk"
@@ -98,10 +101,15 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 				// contune retry watch node
 				continue
 			}
-
+			exit := make(chan os.Signal, 1)
+			signal.Notify(exit, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 			select {
 			case <-watchCtx.Done():
 				blog.Infof("watch register node(%s) done, now exist service register.\n", path)
+				_ = zkRD.zkcli.Del(registerPath, -1)
+				return
+			case sig := <-exit:
+				blog.Infof("receive signal %v, watch register node(%s) done, now exist service register.\n", sig, path)
 				_ = zkRD.zkcli.Del(registerPath, -1)
 				return
 			case e := <-watchEvn:

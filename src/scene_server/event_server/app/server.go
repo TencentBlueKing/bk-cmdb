@@ -117,11 +117,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		break
 	}
-	if err := backbone.StartServer(ctx, engine, service.WebService(), true); err != nil {
+	done, err := backbone.StartServer(ctx, engine, service.WebService(), true)
+	if err != nil {
 		return err
 	}
 	select {
 	case <-ctx.Done():
+	case <-done:
 	case err = <-errCh:
 		blog.V(3).Infof("distribution routine stopped, err: %v", err)
 	}
