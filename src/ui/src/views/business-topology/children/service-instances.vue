@@ -331,6 +331,9 @@
             },
             bindIp (value) {
                 this.$refs.processForm.values.bind_ip = value
+            },
+            checked () {
+                this.isCheckAll = (this.checked.length === this.instances.length) && this.checked.length !== 0
             }
         },
         async created () {

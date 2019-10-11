@@ -278,6 +278,7 @@
     "缩小": "Zoom Out",
     "请填写模型名": "Please fill in the model name",
     "下划线，数字，英文小写的组合": "Underline, number, combination of English lowercase",
+    "请填写英文开头，下划线，数字，英文小写的组合": "underline, numbers, and lowercase letter and start with a letter",
     "导出": "Export",
     "导入": "Import",
     "下划线/数字/字母": "Underline/Number/Lowercase Letter",
@@ -922,5 +923,8 @@
     "目标包含主机, 不允许删除": "Target contains host, not allowed to delete",
     "提交": "Submit",
     "事件订阅": "Event Subscription",
-    "资源目录": "Resource Sirectory"
+    "资源目录": "Resource Sirectory",
+    "进程详情": "Progress details",
+    "克隆服务实例": "Clone service instance",
+    "当前模型暂未定义可用关联": "The current model does not yet define an available association"
 }
