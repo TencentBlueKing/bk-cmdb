@@ -14,6 +14,7 @@ package model
 
 import (
 	"regexp"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -148,6 +149,7 @@ func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribut
 	if common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
 		return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
 	} else if attribute.PropertyName != "" {
+		attribute.PropertyName = strings.TrimSpace(attribute.PropertyName)
 		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, attribute.PropertyName)
 		if nil != err || !match {
 			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyName)
@@ -158,6 +160,7 @@ func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribut
 		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(attribute.Placeholder) {
 			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)
 		}
+		attribute.Placeholder = strings.TrimSpace(attribute.Placeholder)
 		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, attribute.Placeholder)
 		if nil != err || !match {
 			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHoler)
@@ -168,6 +171,7 @@ func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribut
 		if common.AttributeUnitMaxLength < utf8.RuneCountInString(attribute.Unit) {
 			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_uint"), common.AttributeUnitMaxLength)
 		}
+		attribute.Unit = strings.TrimSpace(attribute.Unit)
 		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, attribute.Unit)
 		if nil != err || !match {
 			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldUnit)

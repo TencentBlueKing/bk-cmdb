@@ -44,7 +44,8 @@ func main() {
 		blog.Errorf("fail to save pid. err: %s", err.Error())
 	}
 
-	if err := app.Run(context.Background(), op); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := app.Run(ctx, cancel, op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		blog.CloseLogs()
 		os.Exit(1)

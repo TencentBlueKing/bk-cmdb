@@ -38,7 +38,7 @@ import (
 	"configcenter/src/storage/rpc"
 )
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -117,7 +117,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		break
 	}
-	if err := backbone.StartServer(ctx, engine, service.WebService(), true); err != nil {
+	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
+	if err != nil {
 		return err
 	}
 	select {
