@@ -247,19 +247,25 @@ func (s *Service) ListSetTplRelatedSets(params types.ContextParams, pathParams, 
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	filter := &metadata.QueryCondition{
+	filter := map[string]interface{}{
+		common.BKAppIDField:         bizID,
+		common.BKSetTemplateIDField: setTemplateID,
+	}
+	if option.SetIDs != nil {
+		filter[common.BKSetIDField] = map[string]interface{}{
+			common.BKDBIN: option.SetIDs,
+		}
+	}
+	qc := &metadata.QueryCondition{
 		Fields: nil,
 		Limit: metadata.SearchLimit{
 			Offset: int64(option.Page.Start),
 			Limit:  int64(option.Page.Limit),
 		},
-		SortArr: nil,
-		Condition: mapstr.MapStr(map[string]interface{}{
-			common.BKAppIDField:         bizID,
-			common.BKSetTemplateIDField: setTemplateID,
-		}),
+		SortArr:   nil,
+		Condition: filter,
 	}
-	setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, filter)
+	setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, qc)
 	if err != nil {
 		blog.Errorf("ListSetTplRelatedSetsWeb failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
@@ -425,6 +431,7 @@ func (s *Service) SyncSetTplToInst(params types.ContextParams, pathParams, query
 	return nil, nil
 }
 
+// Deprecated: replace with ListSetTemplateSyncStatus
 func (s *Service) GetSetSyncStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
 	bizIDStr := pathParams(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
