@@ -163,6 +163,11 @@
                 return this.info.host || {}
             }
         },
+        watch: {
+            checked () {
+                this.isCheckAll = (this.checked.length === this.instances.length) && this.checked.length !== 0
+            }
+        },
         created () {
             this.getProcessProperties()
             this.getProcessPropertyGroups()
@@ -228,6 +233,10 @@
                             selectors: this.getSelectorParams()
                         })
                     })
+                    if (data.count && !data.info.length) {
+                        this.pagination.current -= 1
+                        this.getHostSeriveInstances()
+                    }
                     this.checked = []
                     this.isCheckAll = false
                     this.isExpandAll = false
@@ -313,12 +322,7 @@
                 this.$set(this.searchSelect[2], 'children', keyOption)
             },
             handleDeleteInstance (id) {
-                const filterInstances = this.instances.filter(instance => instance.id !== id)
-                if (!filterInstances.length && this.pagination.current > 1) {
-                    this.pagination.current -= 1
-                    this.getHostSeriveInstances()
-                }
-                this.instances = filterInstances
+                this.getHostSeriveInstances()
             },
             handleCheckALL (checked) {
                 this.searchSelectData = []
@@ -352,12 +356,8 @@
                                     requestId: 'batchDeleteServiceInstance'
                                 }
                             })
-                            const filterInstances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
-                            if (!filterInstances.length && this.pagination.current > 1) {
-                                this.pagination.current -= 1
-                                this.getHostSeriveInstances()
-                            }
-                            this.instances = filterInstances
+                            this.$success(this.$t('删除成功'))
+                            this.getHostSeriveInstances()
                             this.checked = []
                         } catch (e) {
                             console.error(e)
