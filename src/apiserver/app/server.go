@@ -34,7 +34,7 @@ import (
 )
 
 // Run main loop function
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -83,14 +83,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	apiSvr.Core = engine
 
-	done, err := backbone.StartServer(ctx, engine, ctnr, false)
+	err = backbone.StartServer(ctx, cancel, engine, ctnr, false)
 	if err != nil {
 		return err
 	}
 
 	select {
 	case <-ctx.Done():
-	case <-done:
 	}
 	return nil
 }

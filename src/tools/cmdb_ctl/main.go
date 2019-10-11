@@ -24,7 +24,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	if err := app.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "process stopped by %v\n", err)
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 }

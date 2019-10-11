@@ -46,7 +46,8 @@ func main() {
 	}
 	util.InitFlags()
 
-	if err := app.Run(context.Background(), op); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := app.Run(ctx, cancel, op); err != nil {
 		fmt.Fprintf(os.Stderr, "run app failed, %v\n", err)
 		blog.Errorf("process stopped by %v", err)
 		blog.CloseLogs()

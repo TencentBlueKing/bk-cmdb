@@ -72,7 +72,7 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 }
 
 // Run main function
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -138,13 +138,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Config:      server.Config,
 	}
 
-	done, err := backbone.StartServer(ctx, engine, server.Service.WebService(), true)
+	err = backbone.StartServer(ctx, cancel, engine, server.Service.WebService(), true)
 	if err != nil {
 		return err
 	}
 	select {
 	case <-ctx.Done():
-	case <-done:
 	}
 	return nil
 }

@@ -23,11 +23,11 @@ import (
 	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/tmserver/service"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 )
 
 // Run main goroute
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -78,14 +78,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	tmServer.engin = engine
 	handler := restful.NewContainer().Add(coreService.WebService())
-	done, err := backbone.StartServer(ctx, engine, handler, true)
+	err = backbone.StartServer(ctx, cancel, engine, handler, true)
 	if err != nil {
 		return err
 	}
 	// waiting to exit
 	select {
 	case <-ctx.Done():
-	case <-done:
 	case err = <-errCh:
 		blog.V(3).Infof("distribution routine stoped %s", err.Error())
 	}

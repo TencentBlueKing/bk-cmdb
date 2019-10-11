@@ -15,11 +15,8 @@ package registerdiscover
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
 	"sort"
 	"strconv"
-	"syscall"
 	"time"
 
 	"configcenter/src/common/backbone/service_mange/zk"
@@ -35,6 +32,7 @@ type ZkRegDiscv struct {
 	cancel         context.CancelFunc
 	rootCxt        context.Context
 	sessionTimeOut time.Duration
+	registerPath   string
 }
 
 // NewZkRegDiscv create a object of ZkRegDiscv
@@ -52,8 +50,6 @@ func NewZkRegDiscv(client *zk.ZkClient) *ZkRegDiscv {
 func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 	blog.Infof("register server and watch it. path(%s), data(%s)", path, string(data))
 	go func() {
-		var registerPath string
-
 		watchCtx := zkRD.rootCxt
 		for {
 
@@ -61,17 +57,17 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 			var err error
 			var nodeExist bool
 
-			if registerPath == "" {
+			if zkRD.registerPath == "" {
 				nodeExist = false
 			} else {
-				nodeExist, _, watchEvn, err = zkRD.zkcli.ExistW(registerPath)
+				nodeExist, _, watchEvn, err = zkRD.zkcli.ExistW(zkRD.registerPath)
 				if err != nil {
-					blog.Errorf("fail to watch register node(%s), err:%s\n", registerPath, err.Error())
+					blog.Errorf("fail to watch register node(%s), err:%s\n", zkRD.registerPath, err.Error())
 					switch err {
 					case gozk.ErrClosing, gozk.ErrConnectionClosed:
 						// connect has closed. retry conntect
 						if conErr := zkRD.zkcli.Connect(); conErr != nil {
-							blog.Errorf("fail to watch register node(%s), reason: connect closed. retry connect err:%s\n", registerPath, conErr.Error())
+							blog.Errorf("fail to watch register node(%s), reason: connect closed. retry connect err:%s\n", zkRD.registerPath, conErr.Error())
 						} else {
 							// connected sucess, retry
 							continue
@@ -85,7 +81,7 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 						nodeExist = false
 					default:
 						// clear register path, so that it can register to a new path
-						zkRD.zkcli.Del(registerPath, -1)
+						zkRD.zkcli.Del(zkRD.registerPath, -1)
 						// err still exists, waiting 1s. avoid too quick retry.
 						time.Sleep(time.Second * 1)
 						continue
@@ -94,23 +90,16 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 			}
 
 			if !nodeExist {
-				registerPath, err = zkRD.zkcli.CreateEphAndSeqEx(path, data)
+				zkRD.registerPath, err = zkRD.zkcli.CreateEphAndSeqEx(path, data)
 				if err != nil {
 					blog.Errorf("fail to register server node(%s). err:%s", path, err.Error())
 				}
 				// contune retry watch node
 				continue
 			}
-			exit := make(chan os.Signal, 1)
-			signal.Notify(exit, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 			select {
 			case <-watchCtx.Done():
 				blog.Infof("watch register node(%s) done, now exist service register.\n", path)
-				_ = zkRD.zkcli.Del(registerPath, -1)
-				return
-			case sig := <-exit:
-				blog.Infof("receive signal %v, watch register node(%s) done, now exist service register.\n", sig, path)
-				_ = zkRD.zkcli.Del(registerPath, -1)
 				return
 			case e := <-watchEvn:
 				blog.Infof("watch register node(%s) exist changed, event(%v)\n", path, e)
@@ -260,4 +249,14 @@ func (zkRD *ZkRegDiscv) sortNode(nodes []string) []string {
 	}
 
 	return children
+}
+
+// Cancel to stop server register and discover
+func (zkRD *ZkRegDiscv) Cancel() {
+	zkRD.cancel()
+}
+
+// ClearRegisterPath to delete server register path from zk
+func (zkRD *ZkRegDiscv) ClearRegisterPath() error {
+	return zkRD.zkcli.Del(zkRD.registerPath, -1)
 }

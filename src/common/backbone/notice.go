@@ -78,14 +78,18 @@ func (handler *noticeHandler) handleLogNotice(ctx context.Context) error {
 				}
 				dat, err := handler.client.Get(logVPath)
 				if err != nil {
+					blog.Errorf("fail to get node(%s), err:%s\n", logVPath, err.Error())
 					continue
 				}
 				err = json.Unmarshal([]byte(dat), &data)
-				if err == nil {
-					blog.SetV(data["v"])
+				if err != nil {
+					blog.Errorf("fail to unmarshal data(%v), err:%s\n", dat, err.Error())
+					continue
 				}
+				blog.SetV(data["v"])
 			case <-ctx.Done():
 				blog.Warnf("log watch stopped because of context done.")
+				_ = handler.client.Del(logVPath, -1)
 				return
 			}
 		}
