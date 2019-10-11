@@ -352,6 +352,7 @@ func (valid *validator) validChar(ctx context.Context, val interface{}, key stri
 			return nil
 		}
 
+		value = strings.TrimSpace(value)
 		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
 		if nil != err || !match {
 			blog.Errorf(`params "%s" not match singlechar regexp, rid:  %s`, val, rid)
