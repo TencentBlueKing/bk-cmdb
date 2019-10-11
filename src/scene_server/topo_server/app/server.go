@@ -138,11 +138,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Config:      server.Config,
 	}
 
-	if err := backbone.StartServer(ctx, engine, server.Service.WebService(), true); err != nil {
+	done, err := backbone.StartServer(ctx, engine, server.Service.WebService(), true)
+	if err != nil {
 		return err
 	}
 	select {
 	case <-ctx.Done():
+	case <-done:
 	}
 	return nil
 }

@@ -14,6 +14,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -53,7 +54,10 @@ type logService struct {
 	service *config.Service
 }
 
-func newLogService(zkaddr string, addrport string) (*logService,error) {
+func newLogService(zkaddr string, addrport string) (*logService, error) {
+	if addrport == "" {
+		return nil, errors.New("addrport must set via flag or environment variable")
+	}
 	service, err := config.NewService(zkaddr, addrport)
 	if err != nil {
 		return nil, err
@@ -98,6 +102,9 @@ func (s *logService) setV(v int32) error {
 		}
 		logVPath := fmt.Sprintf("%s/%s/%s/v", types.CC_SERVNOTICE_BASEPATH, "log", addr)
 		logVData, err := s.service.ZkCli.Get(logVPath)
+		if err != nil {
+			return err
+		}
 		data := make(map[string]int32)
 		err = json.Unmarshal([]byte(logVData), &data)
 		if err != nil {
@@ -124,6 +131,9 @@ func (s *logService) setDefault() error {
 		}
 		logVPath := fmt.Sprintf("%s/%s/%s/v", types.CC_SERVNOTICE_BASEPATH, "log", addr)
 		logVData, err := s.service.ZkCli.Get(logVPath)
+		if err != nil {
+			return err
+		}
 		data := make(map[string]int32)
 		err = json.Unmarshal([]byte(logVData), &data)
 		if err != nil {

@@ -90,13 +90,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	hostSrv.Core = engine
 	hostSrv.Service = service
 
-	if err := backbone.StartServer(ctx, engine, service.WebService(), true); err != nil {
+	done, err := backbone.StartServer(ctx, engine, service.WebService(), true)
+	if err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)
 		return err
 	}
 
 	go hostSrv.Service.InitBackground()
-	select {}
+	select {
+	case <-done:
+	case <-ctx.Done():
+	}
+	return nil
 }
 
 type HostServer struct {

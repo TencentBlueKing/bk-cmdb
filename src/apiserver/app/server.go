@@ -83,12 +83,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	apiSvr.Core = engine
 
-	if err := backbone.StartServer(ctx, engine, ctnr, false); err != nil {
+	done, err := backbone.StartServer(ctx, engine, ctnr, false)
+	if err != nil {
 		return err
 	}
 
 	select {
 	case <-ctx.Done():
+	case <-done:
 	}
 	return nil
 }

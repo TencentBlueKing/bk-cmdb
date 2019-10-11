@@ -104,11 +104,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Engine: procSvr.Engine,
 	}
 
-	if err := backbone.StartServer(ctx, engine, procSvr.WebService(), true); err != nil {
+	done, err := backbone.StartServer(ctx, engine, procSvr.WebService(), true)
+	if err != nil {
 		return err
 	}
 
 	select {
+	case <-done:
 	case <-ctx.Done():
 		blog.Infof("process will exit!")
 	}
