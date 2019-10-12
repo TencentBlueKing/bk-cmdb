@@ -90,6 +90,8 @@ func (handler *noticeHandler) handleLogNotice(ctx context.Context) error {
 			case <-ctx.Done():
 				blog.Warnf("log watch stopped because of context done.")
 				_ = handler.client.Del(logVPath, -1)
+				logPath := fmt.Sprintf("%s/%s/%s", types.CC_SERVNOTICE_BASEPATH, "log", handler.addrport)
+				_ = handler.client.Del(logPath, -1)
 				return
 			}
 		}
