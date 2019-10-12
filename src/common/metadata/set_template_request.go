@@ -20,8 +20,8 @@ import (
 )
 
 type CreateSetTemplateOption struct {
-	Name               string  `field:"name" json:"name" bson:"name"`
-	ServiceTemplateIDs []int64 `field:"service_template_ids" json:"service_template_ids" bson:"service_template_ids"`
+	Name               string  `field:"name" json:"name" bson:"name" mapstructure:"name"`
+	ServiceTemplateIDs []int64 `field:"service_template_ids" json:"service_template_ids" bson:"service_template_ids" mapstructure:"service_template_ids"`
 }
 
 type UpdateSetTemplateOption struct {
