@@ -109,6 +109,9 @@ const (
 
 	BKTableNameSetTemplate                = "cc_SetTemplate"
 	BKTableNameSetServiceTemplateRelation = "cc_SetServiceTemplateRelation"
+	BKTableNameAPITask                    = "cc_APITask"
+	BKTableNameSetTemplateSyncStatus      = "cc_SetTemplateSyncStatus"
+	BKTableNameSetTemplateSyncHistory     = "cc_SetTemplateSyncHistory"
 )
 
 // AllTables alltables
