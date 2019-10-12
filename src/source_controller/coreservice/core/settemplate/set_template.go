@@ -13,7 +13,6 @@
 package settemplate
 
 import (
-	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -58,7 +57,7 @@ func (p *setTemplateOperation) ValidateServiceTemplateIDs(ctx core.ContextParams
 		common.BKFieldID: map[string]interface{}{
 			common.BKDBIN: serviceTemplateIDs,
 		},
-		metadata.MetadataBizField: strconv.FormatInt(bizID, 10),
+		common.BKAppIDField: bizID,
 	}
 	count, err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Count(ctx.Context)
 	if err != nil {
@@ -66,7 +65,7 @@ func (p *setTemplateOperation) ValidateServiceTemplateIDs(ctx core.ContextParams
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count != uint64(len(serviceTemplateIDs)) {
-		blog.Errorf("validate service template failed, some id invalid, bizID: %d, serviceTemplateIDs: %+v, rid: %s", bizID, serviceTemplateIDs)
+		blog.Errorf("validate service template failed, some id invalid, bizID: %d, serviceTemplateIDs: %+v, rid: %s", bizID, serviceTemplateIDs, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_template_ids")
 	}
 	return serviceTemplateIDs, nil
@@ -101,6 +100,8 @@ func (p *setTemplateOperation) CreateSetTemplate(ctx core.ContextParams, bizID i
 			return setTemplate, err
 		}
 		option.ServiceTemplateIDs = serviceTemplateIDs
+	} else {
+		option.ServiceTemplateIDs = make([]int64, 0)
 	}
 
 	// name unique validate
