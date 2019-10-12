@@ -25,7 +25,10 @@ const actions = {
     getSetTemplateServices ({ commit }, { bizId, setTemplateId }, config) {
         return $http.get(`findmany/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}/service_templates`)
     },
-    getSetTemplateInstances ({ commit }, { bizId, setTemplateId, params, config }) {
+    getSetInstancesWithStatus ({ commit }, { bizId, params, config }) {
+        return $http.post(`findmany/topo/set_template_sync_status/bk_biz_id/${bizId}`, params, config)
+    },
+    getSetInstancesWithTopo ({ commit }, { bizId, setTemplateId, params, config }) {
         return $http.post(`findmany/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}/sets/web`, params, config)
     }
 }

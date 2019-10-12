@@ -30,7 +30,7 @@
             <div class="form-item">
                 <label>
                     {{$t('集群名称')}}
-                    <span>（{{$t('使用模板需要重命名模板的集群名称')}}）</span>
+                    <span>（{{$t('集群模板创建重命名提示')}}）</span>
                 </label>
                 <bk-input class="form-textarea"
                     type="textarea"
@@ -38,7 +38,7 @@
                     v-validate="'required|singlechar|setNameMap|length:256'"
                     v-model="setName"
                     :rows="rows"
-                    :placeholder="$t('请输入集群名称，同时创建多个集群，换行分隔')"
+                    :placeholder="$t('集群多个创建提示')"
                     @keydown="handleKeydown">
                 </bk-input>
                 <span class="form-error" v-if="errors.has('setName')">{{errors.first('setName')}}</span>
@@ -56,6 +56,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         props: {
             parentNode: {
@@ -122,7 +123,7 @@
                                 requestId: 'getSetTemplates'
                             }
                         })
-                        const list = data.info.map(template => ({ ...template.set_template }))
+                        const list = (data.info || []).map(template => ({ ...template.set_template }))
                         this.setTemplateList = list
                         this.$store.commit('businessTopology/setSetTemplate', {
                             id: this.business,
@@ -150,7 +151,9 @@
                 })
             },
             handleAddTemplate () {
-
+                this.$router.replace({
+                    name: MENU_BUSINESS_SET_TEMPLATE
+                })
             },
             handleCancel () {
                 this.$emit('cancel')
