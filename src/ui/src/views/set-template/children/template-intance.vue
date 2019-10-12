@@ -28,13 +28,7 @@
                     </icon-button>
                 </div>
             </div>
-            <div class="instance-empty" v-if="!list.length">
-                <img src="../../../assets/images/empty-content.png" alt="">
-                <i18n path="空集群模板实例提示" tag="div">
-                    <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
-                </i18n>
-            </div>
-            <bk-table class="instance-table" v-else
+            <bk-table class="instance-table"
                 v-bkloading="{ isLoading: $loading('getSetInstanceData') }"
                 :data="displayList"
                 :pagination="pagination"
@@ -91,6 +85,12 @@
                         </bk-button>
                     </template>
                 </bk-table-column>
+                <template slot="empty">
+                    <img src="../../../assets/images/empty-content.png" alt="">
+                    <i18n path="空集群模板实例提示" tag="div">
+                        <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
+                    </i18n>
+                </template>
             </bk-table>
         </div>
     </div>
@@ -164,7 +164,7 @@
                     }
                 })
             },
-            params () {
+            searchParams () {
                 const params = {
                     set_template_id: Number(this.templateId),
                     page: {
@@ -194,7 +194,12 @@
             getTopoPath (row) {
                 const topoPath = this.$tools.clone(row.topo_path)
                 if (topoPath.length) {
-                    return topoPath.reverse().map(path => path.InstanceName).join(' / ')
+                    const setIndex = topoPath.findIndex(path => path.ObjectID === 'set')
+                    if (setIndex > -1) {
+                        topoPath.splice(setIndex, 1)
+                    }
+                    const sortPath = topoPath.sort((prev, next) => prev.InstanceID - next.InstanceID)
+                    return sortPath.map(path => path.InstanceName).join(' / ')
                 }
                 return '--'
             },
@@ -203,21 +208,19 @@
                 this.pagination.count = data.count
                 this.list = data.info || []
             },
-            // async getSetInstancesWithStatus () {
-            //     const data = await this.$store.dispatch('setTemplate/getSetInstancesWithStatus', {
-            //         bizId: this.business,
-            //         params: this.params,
-            //         config: {
-            //             requestId: 'getSetInstancesWithStatus'
-            //         }
-            //     })
-            //     this.pagination.count = data.count
-            //     this.list = data.info || []
-            // },
-            getSetInstancesWithStatus (requestId) {
+            async updateStatusData () {
+                const data = await this.getSetInstancesWithStatus('updateStatusData', {
+                    bk_set_ids: this.setsId
+                })
+                this.list = data.info || []
+            },
+            getSetInstancesWithStatus (requestId, otherParams) {
                 return this.$store.dispatch('setTemplate/getSetInstancesWithStatus', {
                     bizId: this.business,
-                    params: this.params,
+                    params: {
+                        ...this.searchParams,
+                        ...(otherParams || {})
+                    },
                     config: {
                         requestId
                     }
@@ -276,7 +279,7 @@
                         this.timer = null
                     }
                     this.timer = setInterval(async () => {
-                        await this.getSetInstancesWithStatus()
+                        await this.updateStatusData()
                     }, 10000)
                 } catch (e) {
                     console.error(e)
