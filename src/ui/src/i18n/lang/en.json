@@ -1024,5 +1024,6 @@
     "同步集群": "Sync Set",
     "从集群模板创建": "Create from set template",
     "集群模板创建重命名提示": "Using template requires renaming the set name of the template",
-    "集群多个创建提示": "Please enter the set name and create multiple sets at the same time, line breaks"
+    "集群多个创建提示": "Please enter the set name and create multiple sets at the same time, line breaks",
+    "同步时间": "Sync time"
 }
