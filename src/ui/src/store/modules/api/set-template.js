@@ -30,6 +30,9 @@ const actions = {
     },
     getSetInstancesWithTopo ({ commit }, { bizId, setTemplateId, params, config }) {
         return $http.post(`findmany/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}/sets/web`, params, config)
+    },
+    getSyncHistory ({ commit }, { bizId, params, config }) {
+        return $http.post(`findmany/topo/set_template_sync_history/bk_biz_id/${bizId}`, params, config)
     }
 }
 
