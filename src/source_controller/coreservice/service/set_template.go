@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/mapstruct"
 	"strconv"
 
 	"configcenter/src/common"
@@ -205,4 +206,68 @@ func (s *coreService) ListSetTplRelatedSvcTpl(params core.ContextParams, pathPar
 		return nil, err
 	}
 	return serviceTemplates, nil
+}
+
+func (s *coreService) UpdateSetTemplateSyncStatus(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	setIDStr := pathParams(common.BKSetIDField)
+	setID, err := strconv.ParseInt(setIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
+	}
+
+	option := metadata.SetTemplateSyncStatus{}
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
+		blog.Errorf("UpdateSetTemplateSyncStatus failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	if err := s.core.SetTemplateOperation().UpdateSetTemplateSyncStatus(params, setID, option); err != nil {
+		blog.Errorf("UpdateSetTemplateSyncStatus failed, setID: %d, option: %+v, err: %+v, rid: %s", setID, option, err, params.ReqID)
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (s *coreService) ListSetTemplateSyncStatus(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.ListSetTemplateSyncStatusOption{}
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
+		blog.Errorf("ListSetTemplateSyncStatus failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+	option.BizID = bizID
+
+	result, err := s.core.SetTemplateOperation().ListSetTemplateSyncStatus(params, option)
+	if err != nil {
+		blog.Errorf("ListSetTemplateSyncStatus failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *coreService) ListSetTemplateSyncHistory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.ListSetTemplateSyncStatusOption{}
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
+		blog.Errorf("ListSetTemplateSyncHistory failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+	option.BizID = bizID
+
+	result, err := s.core.SetTemplateOperation().ListSetTemplateSyncHistory(params, option)
+	if err != nil {
+		blog.Errorf("ListSetTemplateSyncHistory failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
+		return nil, err
+	}
+	return result, nil
 }
