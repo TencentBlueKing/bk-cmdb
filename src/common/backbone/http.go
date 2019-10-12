@@ -28,6 +28,7 @@ import (
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
+	"configcenter/src/common/zkclient"
 )
 
 func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.CancelFunc) error {
@@ -45,21 +46,23 @@ func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.C
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, syscall.SIGTERM)
 	go func() {
-		select {
-		case sig := <-exit:
-			blog.Infof("receive signal %v, begin to shutdown", sig)
-			svcDisc.Cancel()
-			if err := svcDisc.ClearRegisterPath(); err != nil {
-				break
+		for {
+			select {
+			case sig := <-exit:
+				blog.Infof("receive signal %v, begin to shutdown", sig)
+				svcDisc.Cancel()
+				if err := svcDisc.ClearRegisterPath(); err != nil && err != zkclient.ErrNoNode {
+					break
+				}
+				server.SetKeepAlivesEnabled(false)
+				err := server.Shutdown(context.Background())
+				if err != nil {
+					blog.Fatalf("Could not gracefully shutdown the server: %v \n", err)
+				}
+				blog.Info("server shutdown done")
+				cancel()
+				return
 			}
-			server.SetKeepAlivesEnabled(false)
-			err := server.Shutdown(context.Background())
-			if err != nil {
-				blog.Errorf("Could not gracefully shutdown the server: %v \n", err)
-				break
-			}
-			blog.Info("server shutdown done")
-			cancel()
 		}
 	}()
 
