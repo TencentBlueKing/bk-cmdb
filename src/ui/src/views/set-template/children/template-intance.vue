@@ -9,7 +9,7 @@
                     <bk-select class="filter-item mr10"
                         :clearable="false"
                         v-model="statusFilter"
-                        @selected="handleFilter">
+                        @selected="handleFilter(1)">
                         <bk-option v-for="option in filterList"
                             :key="option.id"
                             :id="option.id"
@@ -18,8 +18,7 @@
                     </bk-select>
                     <bk-input class="filter-item" right-icon="bk-icon icon-search"
                         :placeholder="$t('集群名称')"
-                        v-model="filterName"
-                        @enter="handleFilter">
+                        @enter="handleSearch">
                     </bk-input>
                     <icon-button class="ml10"
                         v-bk-tooltips="$t('同步历史')"
@@ -65,7 +64,7 @@
                         <span v-else>--</span>
                     </template>
                 </bk-table-column>
-                <bk-table-column :label="$t('上次同步时间')" prop="sync_time" sortable="custom">
+                <bk-table-column :label="$t('上次同步时间')" prop="last_time" sortable="custom">
                     <template slot-scope="{ row }">
                         <span>{{row.last_time ? $tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm:ss') : '--'}}</span>
                     </template>
@@ -79,7 +78,7 @@
                     <template slot-scope="{ row }">
                         <bk-button v-if="row.status === 'failure'" text @click="handleRetry(row)">{{$t('重试')}}</bk-button>
                         <bk-button v-else text
-                            :disabled="row.status === 'syncing'"
+                            :disabled="['syncing', 'finished'].includes(row.status)"
                             @click="handleSync(row)">
                             {{$t('同步')}}
                         </bk-button>
@@ -118,7 +117,7 @@
                     current: 1,
                     ...this.$tools.getDefaultPaginationConfig()
                 },
-                listSort: 'sync_time'
+                listSort: 'last_time'
             }
         },
         computed: {
@@ -180,10 +179,20 @@
                 return params
             }
         },
+        watch: {
+            list () {
+                if (!this.list.length) {
+                    clearInterval(this.timer)
+                    this.timer = null
+                } else if (!this.timer) {
+                    this.polling()
+                }
+            }
+        },
         async created () {
             await this.getData()
             if (this.list.length) {
-                this.getSetInstancesWithTopo()
+                this.setsId.length && this.getSetInstancesWithTopo()
                 this.polling()
             }
         },
@@ -211,10 +220,12 @@
             async updateStatusData () {
                 const data = await this.getSetInstancesWithStatus('updateStatusData', {
                     bk_set_ids: this.setsId
+                }, {
+                    globalError: false
                 })
                 this.list = data.info || []
             },
-            getSetInstancesWithStatus (requestId, otherParams) {
+            getSetInstancesWithStatus (requestId, otherParams, config) {
                 return this.$store.dispatch('setTemplate/getSetInstancesWithStatus', {
                     bizId: this.business,
                     params: {
@@ -222,7 +233,9 @@
                         ...(otherParams || {})
                     },
                     config: {
-                        requestId
+                        requestId,
+                        cancelPrevious: true,
+                        ...(config || {})
                     }
                 })
             },
@@ -239,47 +252,23 @@
                             bk_set_ids: this.setsId
                         },
                         config: {
-                            requestId: 'getSetInstancesWithTopo',
-                            cancelPrevious: true
+                            requestId: 'getSetInstancesWithTopo'
                         }
                     })
                     this.listWithTopo = data.info || []
                 } catch (e) {
                     console.error(e)
-                    clearInterval(this.timer)
-                    this.timer = null
                     this.listWithTopo = []
                 }
             },
-            // async getTemplateDiff () {
-            //     try {
-            //         const data = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
-            //             bizId: this.business,
-            //             setTemplateId: this.templateId,
-            //             params: {
-            //                 bk_set_ids: this.setsId
-            //             },
-            //             config: {
-            //                 requestId: 'diffTemplateAndInstances',
-            //                 cancelPrevious: true
-            //             }
-            //         })
-            //         this.diffList = data || []
-            //     } catch (e) {
-            //         console.error(e)
-            //         clearInterval(this.timer)
-            //         this.timer = null
-            //         this.diffList = []
-            //     }
-            // },
             polling () {
                 try {
                     if (this.timer) {
                         clearInterval(this.timer)
                         this.timer = null
                     }
-                    this.timer = setInterval(async () => {
-                        await this.updateStatusData()
+                    this.timer = setInterval(() => {
+                        this.updateStatusData()
                     }, 10000)
                 } catch (e) {
                     console.error(e)
@@ -293,7 +282,7 @@
             async handleFilter (current = 1) {
                 this.pagination.current = current
                 await this.getData()
-                this.getSetInstancesWithTopo()
+                this.setsId.length && this.getSetInstancesWithTopo()
             },
             handleSelectionChange (selection) {
                 this.checkedList = selection.map(item => item.bk_set_id)
@@ -303,17 +292,18 @@
                 this.handleFilter()
             },
             handlePageChange (current) {
-                if (this.timer === null) {
-                    this.polling()
-                }
                 this.handleFilter(current)
             },
             handleSizeChange (size) {
                 this.pagination.limit = size
                 this.handlePageChange(1)
             },
+            handleSearch (name) {
+                this.filterName = name
+                this.handleFilter(1)
+            },
             handleSelectable (row) {
-                return row.status === 'syncing'
+                return !['syncing', 'finished'].includes(row.status)
             },
             handleBatchSync () {
                 this.$store.commit('setFeatures/setSyncIdMap', {
@@ -351,6 +341,7 @@
                             requestId: 'syncTemplateToInstances'
                         }
                     })
+                    row.status = 'syncing'
                     this.$success(this.$t('重试同步中'))
                 } catch (e) {
                     console.error(e)
