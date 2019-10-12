@@ -3,7 +3,7 @@
         <div class="options clearfix">
             <div class="fl">
                 <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
-                <bk-button theme="default" class="ml10" :disabled="!checkedIds.length">{{$t('批量删除')}}</bk-button>
+                <bk-button theme="default" class="ml10" :disabled="!checkedIds.length" @click="handleBatchDelete">{{$t('批量删除')}}</bk-button>
             </div>
             <div class="fr">
                 <bk-input :placeholder="$t('模板名称')"
@@ -14,9 +14,11 @@
         </div>
         <bk-table class="template-table"
             :data="list"
-            @selection-change="handleSelectionChange">
+            :row-style="{ cursor: 'pointer' }"
+            @selection-change="handleSelectionChange"
+            @row-click="handleRowClick">
             <bk-table-column type="selection" width="50" :selectable="handleSelectable"></bk-table-column>
-            <bk-table-column :label="$t('模板名称')" prop="name"></bk-table-column>
+            <bk-table-column :label="$t('模板名称')" prop="name" class-name="is-highlight"></bk-table-column>
             <bk-table-column :label="$t('应用数量')" prop="set_instance_count"></bk-table-column>
             <bk-table-column :label="$t('修改人')" prop="modifier"></bk-table-column>
             <bk-table-column :label="$t('修改时间')" prop="last_time">
@@ -49,17 +51,42 @@
                 </i18n>
             </template>
         </bk-table>
+        <bk-dialog
+            header-position="left"
+            :draggable="false"
+            :width="759"
+            :title="dialog.title"
+            v-model="dialog.visible"
+            @after-leave="handleDialogClose">
+            <component
+                :is="dialog.component"
+                v-bind="dialog.props">
+            </component>
+            <template slot="footer">
+                <bk-button @click="dialog.visible = false">{{$t('关闭')}}</bk-button>
+            </template>
+        </bk-dialog>
     </div>
 </template>
 
 <script>
+    import cmdbSetTemplateTree from './children/template-tree.vue'
     export default {
+        components: {
+            cmdbSetTemplateTree
+        },
         data () {
             return {
                 list: [],
                 originList: [],
                 searchName: '',
-                checkedIds: []
+                checkedIds: [],
+                dialog: {
+                    visible: false,
+                    title: '',
+                    component: null,
+                    props: {}
+                }
             }
         },
         computed: {
@@ -86,10 +113,77 @@
                 this.list = list
                 this.originList = list
             },
-            handleCreate () {},
-            handleEdit (row) {},
-            handlePreview (row) {},
-            handleDelete (row) {},
+            handleCreate () {
+                this.$router.push({
+                    name: 'setTemplateConfig',
+                    params: {
+                        mode: 'create'
+                    }
+                })
+            },
+            handleEdit (row) {
+                this.$router.push({
+                    name: 'setTemplateConfig',
+                    params: {
+                        mode: 'edit',
+                        templateId: row.id
+                    }
+                })
+            },
+            handlePreview (row) {
+                this.dialog.props = {
+                    mode: 'view',
+                    templateId: row.id
+                }
+                this.dialog.title = row.name
+                this.dialog.component = 'cmdb-set-template-tree'
+                this.dialog.visible = true
+            },
+            handleDialogClose () {
+                this.dialog.props = {}
+                this.dialog.title = ''
+                this.dialog.component = null
+            },
+            async handleDelete (row) {
+                this.$bkInfo({
+                    title: this.$t('确认删除xx集群模板', { name: row.name }),
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('setTemplate/deleteSetTemplate', {
+                                bizId: this.$store.getters['objectBiz/bizId'],
+                                config: {
+                                    data: {
+                                        set_template_ids: [row.id]
+                                    }
+                                }
+                            })
+                            this.getSetTemplates()
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                })
+            },
+            async handleBatchDelete () {
+                this.$bkInfo({
+                    title: this.$t('确认删除选中的集群模板'),
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('setTemplate/deleteSetTemplate', {
+                                bizId: this.$store.getters['objectBiz/bizId'],
+                                config: {
+                                    data: {
+                                        set_template_ids: this.checkedIds
+                                    }
+                                }
+                            })
+                            this.getSetTemplates()
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                })
+            },
             handleFilterTemplate () {
                 const originList = this.$tools.clone(this.originList)
                 this.list = this.searchName
@@ -101,6 +195,18 @@
             },
             handleSelectionChange (selection) {
                 this.checkedIds = selection.map(item => item.id)
+            },
+            handleRowClick (row, event, column) {
+                if (!column.property) {
+                    return false
+                }
+                this.$router.push({
+                    name: 'setTemplateConfig',
+                    params: {
+                        mode: 'view',
+                        templateId: row.id
+                    }
+                })
             }
         }
     }

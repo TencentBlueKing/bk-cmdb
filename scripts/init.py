@@ -78,18 +78,21 @@ port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
+
 [discover-redis]
 host = $redis_host
 port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
+
 [netcollect-redis]
 host = $redis_host
 port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
+
 [redis]
 host = $redis_host
 port = $redis_port
@@ -119,6 +122,7 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
+
 [redis]
 host = $redis_host
 port = $redis_port
@@ -368,6 +372,34 @@ authscheme = $auth_scheme
     with open(output + "webserver.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
+    # task.conf
+    taskserver_file_template_str = '''
+[mongodb]
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIdleConns = 1000
+mechanism = SCRAM-SHA-1
+enable = true
+maxIDleConns = 1000
+mechanism = SCRAM-SHA-1
+[redis]
+host = $redis_host
+port = $redis_port
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+'''
+    template = FileTemplate(taskserver_file_template_str)
+    result = template.substitute(**context)
+    with open(output + "task.conf", 'w') as tmp_file:
+        tmp_file.write(result)
 
 def update_start_script(rd_server, server_ports, enable_auth, log_level):
     list_dirs = os.walk(os.getcwd()+"/")
@@ -445,7 +477,8 @@ def main(argv):
         "cmdb_toposerver": 60002,
         "cmdb_webserver": 8083,
         "cmdb_synchronizeserver": 60010,
-        "cmdb_operationserver": 60011
+        "cmdb_operationserver": 60011,
+        "cmdb_taskserver": 60012
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",

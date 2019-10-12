@@ -42,6 +42,7 @@ const (
 	// CC_MODULE_SYNCHRONZESERVER multiple cmdb synchronize data server
 	CC_MODULE_SYNCHRONZESERVER = "sync"
 	CC_MODULE_OPERATION        = "operation"
+	CC_MODULE_TASK             = "task"
 )
 
 // AllModule all cc module
@@ -58,6 +59,7 @@ var AllModule = map[string]bool{
 	CC_MODULE_CORESERVICE:      true,
 	CC_MODULE_SYNCHRONZESERVER: true,
 	CC_MODULE_OPERATION:        true,
+	CC_MODULE_TASK:             true,
 }
 
 // cc functionality define

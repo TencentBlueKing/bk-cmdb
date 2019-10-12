@@ -640,12 +640,7 @@
                 return Promise.resolve(data.property)
             },
             handleDeleteInstance (id) {
-                const filterInstances = this.instances.filter(instance => instance.id !== id)
-                if (!filterInstances.length && this.pagination.current > 1) {
-                    this.pagination.current -= 1
-                    this.getServiceInstances()
-                }
-                this.instances = filterInstances
+                this.getServiceInstances()
             },
             async handleSaveProcess (values, changedValues, instance) {
                 try {
@@ -779,12 +774,7 @@
                                 node.data.service_instance_count = node.data.service_instance_count - deleteNum
                             })
                             this.$success(this.$t('删除成功'))
-                            const filterInstances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
-                            if (!filterInstances.length && this.pagination.current > 1) {
-                                this.pagination.current -= 1
-                                this.getServiceInstances()
-                            }
-                            this.instances = filterInstances
+                            this.getServiceInstances()
                             this.checked = []
                         } catch (e) {
                             console.error(e)

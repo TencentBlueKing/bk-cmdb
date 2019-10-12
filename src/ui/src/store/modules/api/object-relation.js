@@ -34,6 +34,10 @@ const actions = {
         return $http.post(`find/instassttopo/object/${objId}/inst/${instId}`, params, config)
     },
 
+    getInstRelationTopo ({ commit, state, dispatch, rootGetters }, { objId, instId, params, config }) {
+        return $http.post(`/findmany/inst/association/object/${objId}/inst_id/${instId}/offset/0/limit/200/web`, params, config)
+    },
+
     updateInstRelation ({ commit, state, dispatch, rootGetters }, { params, config }) {
         const updateParams = getUpdateParams(params)
         let promise

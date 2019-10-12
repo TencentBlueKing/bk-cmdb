@@ -257,7 +257,7 @@
                 const group = this.geSetTemplateGroup()
                 return [{
                     bk_property_id: '__set_template_name__',
-                    bk_property_name: this.$t('集群模板名称：'),
+                    bk_property_name: this.$t('集群模板名称'),
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 1,
                     bk_isapi: false,
@@ -655,11 +655,15 @@
                 }
             },
             handleSyncSetTemplate () {
+                this.$store.commit('setFeatures/setSyncIdMap', {
+                    id: `${this.business}_${this.instance.set_template_id}`,
+                    instancesId: [this.instance.bk_set_id]
+                })
                 this.$router.push({
                     name: 'setSync',
                     params: {
-                        templateId: this.instance.service_template_id,
-                        setIds: [this.instance.bk_set_id]
+                        setTemplateId: this.instance.set_template_id,
+                        moduleId: this.selectedNode.data.bk_inst_id
                     }
                 })
             },
@@ -676,7 +680,8 @@
                 this.$router.push({
                     name: MENU_BUSINESS_SET_TEMPLATE,
                     params: {
-                        templateId: this.instance.service_template_id
+                        templateId: this.instance.service_template_id,
+                        moduleId: this.selectedNode.data.bk_inst_id
                     }
                 })
             }

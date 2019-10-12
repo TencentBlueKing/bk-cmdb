@@ -16,23 +16,24 @@ export default [{
         }
     })
 }, {
-    name: 'setTemplateInfo',
-    path: 'set/template/info',
-    component: () => import('./children/template-info.vue'),
+    name: 'setTemplateConfig',
+    path: 'set/template/:mode/:templateId?',
+    component: () => import('./template.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            i18n: '模板信息'
+            i18n: '集群模板',
+            relative: MENU_BUSINESS_SET_TEMPLATE
         }
     })
 }, {
-    name: 'createSetTemplate',
-    path: 'set/template/create',
-    component: () => import('./create.vue'),
+    name: 'syncHistory',
+    path: 'set/template/history/:templateId?',
+    component: () => import('./sync-history.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            i18n: '创建集群模板',
+            i18n: '同步历史',
             relative: MENU_BUSINESS_SET_TEMPLATE
         }
     })

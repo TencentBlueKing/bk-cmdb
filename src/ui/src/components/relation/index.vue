@@ -34,7 +34,8 @@
 </template>
 
 <script>
-    import cmdbRelationTopology from './_topology.vue'
+    // import cmdbRelationTopology from './_topology.vue'
+    import cmdbRelationTopology from './_topology.new.vue'
     import cmdbRelationUpdate from './_update.vue'
     export default {
         components: {

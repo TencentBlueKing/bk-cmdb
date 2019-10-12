@@ -266,6 +266,11 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 	}
 
+	// TODO: confirm this.
+	if r.Action == meta.Execute && r.Basic.Type == meta.DynamicGrouping {
+		return Get, nil
+	}
+
 	if r.Action == meta.Find || r.Action == meta.Delete || r.Action == meta.Create {
 		if r.Basic.Type == meta.MainlineModel {
 			return ModelTopologyOperation, nil
