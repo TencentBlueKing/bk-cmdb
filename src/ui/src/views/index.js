@@ -38,19 +38,13 @@ const flatternViews = views => {
     return flatterned
 }
 
-const statusComponents = {
-    'permission': statusPermission,
-    'error': statusError
-}
-
 const injectStatusComponents = (views, status = ['permission', 'error']) => {
     views.forEach(view => {
         view.components = {
-            default: view.component
+            default: view.component,
+            permission: statusPermission,
+            error: statusError
         }
-        status.forEach(key => {
-            view.components[key] = statusComponents[key]
-        })
     })
     return views
 }

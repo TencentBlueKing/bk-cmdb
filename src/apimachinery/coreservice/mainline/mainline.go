@@ -17,12 +17,13 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
 type MainlineClientInterface interface {
-	SearchMainlineModelTopo(ctx context.Context, h http.Header, withDetail bool) (resp *metadata.TopoModelNode, err error)
-	SearchMainlineInstanceTopo(ctx context.Context, h http.Header, bkBizID int64, withDetail bool) (resp *metadata.TopoInstanceNode, err error)
+	SearchMainlineModelTopo(ctx context.Context, h http.Header, withDetail bool) (*metadata.TopoModelNode, errors.CCErrorCoder)
+	SearchMainlineInstanceTopo(ctx context.Context, h http.Header, bkBizID int64, withDetail bool) (resp *metadata.TopoInstanceNode, err errors.CCErrorCoder)
 }
 
 func NewMainlineClientInterface(client rest.ClientInterface) MainlineClientInterface {

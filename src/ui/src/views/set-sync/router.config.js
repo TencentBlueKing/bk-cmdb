@@ -3,7 +3,7 @@ import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
 
 export default [{
     name: 'setSync',
-    path: 'set/sync',
+    path: 'set/sync/:setTemplateId',
     component: () => import('./sync-index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
@@ -13,7 +13,7 @@ export default [{
     })
 }, {
     name: 'viewSync',
-    path: 'set/sync/view',
+    path: 'set/sync/view/:setTemplateId',
     component: () => import('./view-sync.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,

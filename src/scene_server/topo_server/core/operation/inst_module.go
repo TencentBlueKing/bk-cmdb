@@ -13,6 +13,9 @@
 package operation
 
 import (
+	"context"
+	"strconv"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -77,12 +80,48 @@ func (m *module) hasHost(params types.ContextParams, bizID int64, setIDs, module
 	return 0 != len(rsp.Data.Info), nil
 }
 
+func (m *module) validBizSetID(params types.ContextParams, bizID int64, setID int64) error {
+	cond := condition.CreateCondition()
+	cond.Field(common.BKSetIDField).Eq(setID)
+	or := cond.NewOR()
+	or.Item(mapstr.MapStr{common.BKAppIDField: bizID})
+	meta := metadata.Metadata{
+		Label: map[string]string{
+			common.BKAppIDField: strconv.FormatInt(bizID, 10),
+		},
+	}
+	or.Item(mapstr.MapStr{metadata.BKMetadata: meta})
+
+	query := &metadata.QueryInput{}
+	query.Condition = cond.ToMapStr()
+	query.Limit = common.BKNoLimit
+
+	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, common.BKInnerObjIDSet, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !rsp.Result {
+		blog.Errorf("[operation-inst] faild to read the object(%s) inst by the condition(%#v), err: %s, rid: %s", common.BKInnerObjIDSet, cond, rsp.ErrMsg, params.ReqID)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+	if rsp.Data.Count > 0 {
+		return nil
+	}
+
+	return params.Err.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField+"/"+common.BKSetIDField)
+}
+
 func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizID, setID int64, data mapstr.MapStr) (inst.Inst, error) {
 
 	data.Set(common.BKSetIDField, setID)
 	data.Set(common.BKAppIDField, bizID)
 	if !data.Exists(common.BKDefaultField) {
 		data.Set(common.BKDefaultField, 0)
+	}
+
+	if err := m.validBizSetID(params, bizID, setID); err != nil {
+		return nil, err
 	}
 
 	// validate service category id and service template id
@@ -132,7 +171,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 			return nil, err
 		}
 		if len(stResult.Info) == 0 {
-			blog.Errorf("create module failed, service template not found, filter: %+v, rid: %s", option, params.ReqID)
+			blog.ErrorJSON("create module failed, service template not found, filter: %s, rid: %s", option, params.ReqID)
 			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
 		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
@@ -144,13 +183,8 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		if err != nil {
 			return nil, err
 		}
-		categoryBizID, parseErr := serviceCategory.Metadata.ParseBizID()
-		if parseErr != nil {
-			blog.ErrorJSON("create module failed, parse biz id from db data failed, data: %s, rid: %s", categoryBizID, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrCommParseDataFailed)
-		}
-		if categoryBizID != 0 && categoryBizID != bizID {
-			blog.V(3).Info("create module failed, service category and module belong to two business, categoryBizID: %d, bizID: %d, rid: %s", categoryBizID, bizID, params.ReqID)
+		if serviceCategory.BizID != 0 && serviceCategory.BizID != bizID {
+			blog.V(3).Info("create module failed, service category and module belong to two business, categoryBizID: %d, bizID: %d, rid: %s", serviceCategory.BizID, bizID, params.ReqID)
 			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
 		}
 	}
@@ -303,5 +337,6 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 
 	// module table don't have metadata field
 	params.MetaData = nil
+	data.Remove(common.BKSetIDField)
 	return m.inst.UpdateInst(params, data, obj, innerCond, -1)
 }

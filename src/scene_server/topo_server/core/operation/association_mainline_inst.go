@@ -353,6 +353,7 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 	}
 
 	exactNodes := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule}
+	// fill service instances
 	for _, tir := range parentInsts {
 		tir.DeepFirstTraverse(func(node *metadata.TopoInstRst) {
 			if len(node.Child) > 0 {
@@ -362,25 +363,6 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 					subTreeSvcInstCount += child.ServiceInstanceCount
 				}
 				node.ServiceInstanceCount = subTreeSvcInstCount
-
-			} else if util.InStrArr(exactNodes, node.ObjID) == false && len(node.Child) > 0 {
-				// calculate host count
-				subTreeHosts := make([]int64, 0)
-				for _, child := range node.Child {
-					childHosts := make([]int64, 0)
-					if util.InStrArr(exactNodes, child.ObjID) {
-						if _, exist := hostCount[child.ObjID][child.InstID]; exist == true {
-							childHosts = hostCount[child.ObjID][child.InstID]
-						}
-					} else {
-						if _, exist := hostCount[customLevel][child.InstID]; exist == true {
-							childHosts = hostCount[customLevel][child.InstID]
-						}
-					}
-					subTreeHosts = append(subTreeHosts, childHosts...)
-				}
-				hostCount[customLevel][node.InstID] = util.IntArrayUnique(subTreeHosts)
-				node.HostCount = int64(len(hostCount[customLevel][node.InstID]))
 			}
 			if node.ObjID == common.BKInnerObjIDModule {
 				if _, exist := moduleServiceInstanceCount[node.InstID]; exist == true {
@@ -390,11 +372,39 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 					node.ServiceTemplateID = id
 				}
 			}
+		})
+	}
+	// fill hosts
+	for _, tir := range parentInsts {
+		tir.DeepFirstTraverse(func(node *metadata.TopoInstRst) {
 			if util.InStrArr(exactNodes, node.ObjID) {
 				if _, exist := hostCount[node.ObjID][node.InstID]; exist == true {
 					node.HostCount = int64(len(hostCount[node.ObjID][node.InstID]))
 				}
+				return
 			}
+
+			if len(node.Child) == 0 {
+				return
+			}
+
+			// calculate host count
+			subTreeHosts := make([]int64, 0)
+			for _, child := range node.Child {
+				childHosts := make([]int64, 0)
+				if util.InStrArr(exactNodes, child.ObjID) {
+					if _, exist := hostCount[child.ObjID][child.InstID]; exist == true {
+						childHosts = hostCount[child.ObjID][child.InstID]
+					}
+				} else {
+					if _, exist := hostCount[customLevel][child.InstID]; exist == true {
+						childHosts = hostCount[customLevel][child.InstID]
+					}
+				}
+				subTreeHosts = append(subTreeHosts, childHosts...)
+			}
+			hostCount[customLevel][node.InstID] = util.IntArrayUnique(subTreeHosts)
+			node.HostCount = int64(len(hostCount[customLevel][node.InstID]))
 		})
 	}
 	return nil

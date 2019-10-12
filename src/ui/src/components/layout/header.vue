@@ -181,8 +181,8 @@
 
 <style>
     .tippy-tooltip.header-info-popover-theme {
-        padding: 0;
+        padding: 0 !important;
         overflow: hidden;
-        border-radius: 2px;
+        border-radius: 2px !important;
     }
 </style>

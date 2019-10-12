@@ -1,7 +1,9 @@
 package reporter
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"text/template"
@@ -18,14 +20,15 @@ type HtmlReporter struct {
 }
 
 type HtmlTestSuite struct {
-	TestCases  []HtmlTestCase
-	Name       string
-	TotalNum   int
-	FailedNum  int
-	SuccessNum int
-	State      string
-	RunTime    float64
-	Url        string
+	FailedTestCases []HtmlTestCase
+	OtherTestCases  []HtmlTestCase
+	Name            string
+	TotalNum        int
+	FailedNum       int
+	SuccessNum      int
+	State           string
+	RunTime         float64
+	Url             string
 }
 
 type HtmlTestCase struct {
@@ -47,8 +50,9 @@ func NewHtmlReporter(filename string, reportUrl string, generateSummary bool) *H
 
 func (reporter *HtmlReporter) SpecSuiteWillBegin(ginkgoConfig config.GinkgoConfigType, summary *types.SuiteSummary) {
 	reporter.suite = HtmlTestSuite{
-		Name:      summary.SuiteDescription,
-		TestCases: []HtmlTestCase{},
+		Name:            summary.SuiteDescription,
+		FailedTestCases: []HtmlTestCase{},
+		OtherTestCases:  []HtmlTestCase{},
 	}
 	reporter.suite.Url = reporter.reportUrl + reporter.filename
 	dir = reporter.filename[:strings.LastIndex(reporter.filename, "/")]
@@ -74,14 +78,13 @@ func (reporter *HtmlReporter) handleSetupSummary(name string, setupSummary *type
 		RunTime: setupSummary.RunTime.Seconds(),
 		State:   reporter.transformState(setupSummary.State),
 	}
-	var detail string
-	if setupSummary.State == types.SpecStatePassed {
-		detail = setupSummary.CapturedOutput
+	if setupSummary.State == types.SpecStateFailed {
+		testCase.Detail = fmt.Sprintf("%s<br><br>%s", setupSummary.Failure.Location.String(), setupSummary.Failure.Message)
+		reporter.suite.FailedTestCases = append(reporter.suite.FailedTestCases, testCase)
 	} else {
-		detail = fmt.Sprintf("%s<br><br>%s", setupSummary.Failure.Location.String(), setupSummary.Failure.Message)
+		testCase.Detail = setupSummary.CapturedOutput
+		reporter.suite.OtherTestCases = append(reporter.suite.OtherTestCases, testCase)
 	}
-	testCase.Detail = detail
-	reporter.suite.TestCases = append(reporter.suite.TestCases, testCase)
 }
 
 func (reporter *HtmlReporter) transformState(state types.SpecState) string {
@@ -111,14 +114,13 @@ func (reporter *HtmlReporter) SpecDidComplete(specSummary *types.SpecSummary) {
 		RunTime: specSummary.RunTime.Seconds(),
 		State:   reporter.transformState(specSummary.State),
 	}
-	var detail string
-	if specSummary.State == types.SpecStatePassed {
-		detail = specSummary.CapturedOutput
+	if specSummary.State == types.SpecStateFailed {
+		testCase.Detail = fmt.Sprintf("%s<br><br>%s", specSummary.Failure.Location.String(), specSummary.Failure.Message)
+		reporter.suite.FailedTestCases = append(reporter.suite.FailedTestCases, testCase)
 	} else {
-		detail = fmt.Sprintf("%s<br><br>%s", specSummary.Failure.Location.String(), specSummary.Failure.Message)
+		testCase.Detail = specSummary.CapturedOutput
+		reporter.suite.OtherTestCases = append(reporter.suite.OtherTestCases, testCase)
 	}
-	testCase.Detail = detail
-	reporter.suite.TestCases = append(reporter.suite.TestCases, testCase)
 }
 
 func (reporter *HtmlReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
@@ -151,12 +153,12 @@ func (reporter *HtmlReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 }
 
 func (reporter *HtmlReporter) generateSummaryHtml() {
+	var buf bytes.Buffer
 	if _, err := os.Stat(dir + "/summary.html"); err != nil && os.IsNotExist(err) {
 		summary, err := os.Create(dir + "/summary.html")
 		if err != nil {
 			fmt.Printf("Failed to create summary Html report file\n\t%s", err.Error())
 		}
-		defer summary.Close()
 		temp, err := template.New("SummaryHtmlTemplate").Parse(SummaryHtmlTemplate)
 		if nil != err {
 			fmt.Printf("Failed to parse summary Html template\n\t%s", err.Error())
@@ -165,20 +167,40 @@ func (reporter *HtmlReporter) generateSummaryHtml() {
 		if err != nil {
 			fmt.Printf("Failed to generate summary Html report file\n\t%s", err.Error())
 		}
+		summary.Close()
 	}
 
-	summary, err := os.OpenFile(dir+"/summary.html", os.O_RDWR, 0666)
+	summary, err := ioutil.ReadFile(dir + "/summary.html")
 	if err != nil {
 		fmt.Printf("Failed to open summary Html report file\n\t%s", err.Error())
 	}
-	defer summary.Close()
-	summary.Seek(-26, 2)
+
+	sum := string(summary)
+	index := strings.Index(sum, "</table>")
 	temp, err := template.New("SummaryTemplate").Parse(SummaryTemplate)
 	if nil != err {
 		fmt.Printf("Failed to parse summary Html template\n\t%s", err.Error())
 	}
-	err = temp.Execute(summary, reporter.suite)
+	err = temp.Execute(&buf, reporter.suite)
 	if err != nil {
 		fmt.Printf("Failed to generate summary Html report file\n\t%s", err.Error())
+	}
+	sum = sum[:index] + buf.String() + sum[index:]
+	buf.Reset()
+
+	index = strings.Index(sum, "</body>")
+	temp, err = template.New("FailedTemplate").Parse(FailedTemplate)
+	if nil != err {
+		fmt.Printf("Failed to parse summary Html template\n\t%s", err.Error())
+	}
+	err = temp.Execute(&buf, reporter.suite)
+	if err != nil {
+		fmt.Printf("Failed to generate summary Html report file\n\t%s", err.Error())
+	}
+	sum = sum[:index] + buf.String() + sum[index:]
+
+	err = ioutil.WriteFile(dir+"/summary.html", []byte(sum), 0666)
+	if err != nil {
+		fmt.Printf("Failed to write summary Html report file\n\t%s", err.Error())
 	}
 }
