@@ -28,7 +28,7 @@ export default [{
     })
 }, {
     name: 'syncHistory',
-    path: 'set/template/history/:templateId?',
+    path: 'set/instance/history/:templateId?',
     component: () => import('./sync-history.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
