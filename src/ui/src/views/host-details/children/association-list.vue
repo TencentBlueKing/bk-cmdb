@@ -142,7 +142,7 @@
             },
             getAssociation (condition) {
                 return this.$store.dispatch('objectAssociation/searchObjectAssociation', {
-                    params: this.$injectMetadata({ condition }),
+                    params: { condition },
                     config: {
                         requestId: 'getAssociation'
                     }
@@ -167,7 +167,7 @@
                 const [root] = await this.$store.dispatch('objectRelation/getInstRelation', {
                     objId: 'host',
                     instId: this.id,
-                    params: this.$injectMetadata(),
+                    params: {},
                     config: {
                         requestId: 'getInstRelation'
                     }
