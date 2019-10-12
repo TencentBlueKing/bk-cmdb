@@ -2,7 +2,18 @@
     <div class="template-layout">
         <div class="options clearfix">
             <div class="fl">
-                <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
+                <span class="fl" v-cursor="{
+                    active: !$isAuthorized($OPERATION.C_SET_TEMPLATE),
+                    auth: [$OPERATION.C_SET_TEMPLATE]
+                }">
+                    <bk-button
+                        theme="primary"
+                        @click="handleCreate"
+                        :disabled="!$isAuthorized($OPERATION.C_SET_TEMPLATE)"
+                    >
+                        {{$t('新建')}}
+                    </bk-button>
+                </span>
                 <bk-button theme="default" class="ml10" :disabled="!checkedIds.length" @click="handleBatchDelete">{{$t('批量删除')}}</bk-button>
             </div>
             <div class="fr">
@@ -28,7 +39,19 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" width="180">
                 <template slot-scope="{ row }">
-                    <bk-button text @click="handleEdit(row)">{{$t('编辑')}}</bk-button>
+                    <span
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
+                            auth: [$OPERATION.U_SET_TEMPLATE]
+                        }">
+                        <bk-button
+                            text
+                            @click="handleEdit(row)"
+                            :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE)"
+                        >
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </span>
                     <bk-button text class="ml15" @click="handlePreview(row)">{{$t('预览')}}</bk-button>
                     <span class="text-primary ml15"
                         style="color: #dcdee5 !important; cursor: not-allowed;"
@@ -36,18 +59,36 @@
                         v-bk-tooltips.top="$t('不可删除')">
                         {{$t('删除')}}
                     </span>
-                    <bk-button text class="ml15"
-                        v-else
-                        :disabled="!!row.set_instance_count"
-                        @click="handleDelete(row)">
-                        {{$t('删除')}}
-                    </bk-button>
+                    <span v-else
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.D_SET_TEMPLATE),
+                            auth: [$OPERATION.D_SET_TEMPLATE]
+                        }">
+                        <bk-button text class="ml15"
+                            :disabled="!$isAuthorized($OPERATION.D_SET_TEMPLATE)"
+                            @click="handleDelete(row)">
+                            {{$t('删除')}}
+                        </bk-button>
+                    </span>
                 </template>
             </bk-table-column>
             <template slot="empty">
                 <i class="bk-table-empty-icon bk-icon icon-empty"></i>
                 <i18n path="空集群模板提示" tag="div">
-                    <bk-button text @click="handleCreate" place="link">{{$t('立即创建')}}</bk-button>
+                    <span
+                        place="link"
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_SET_TEMPLATE),
+                            auth: [$OPERATION.C_SET_TEMPLATE]
+                        }">
+                        <bk-button
+                            text
+                            @click="handleCreate"
+                            :disabled="!$isAuthorized($OPERATION.C_SET_TEMPLATE)"
+                        >
+                            {{$t('立即创建')}}
+                        </bk-button>
+                    </span>
                 </i18n>
             </template>
         </bk-table>
