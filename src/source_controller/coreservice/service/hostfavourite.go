@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 
 	"github.com/rs/xid"
@@ -33,20 +32,25 @@ func (s *coreService) AddHostFavourite(params core.ContextParams, pathParams, qu
 		blog.Errorf("add host favourite, but decode body failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
-	query := common.KvMap{"user": user, "name": paras.Name}
-	query = util.SetModOwner(query, params.SupplierAccount)
-	db := s.db.Clone()
-	rowCount, err := db.Table(common.BKTableNameHostFavorite).Find(query).Count(params.Context)
+
+	// check duplicate
+	query := map[string]interface{}{
+		"user":                user,
+		"name":                paras.Name,
+		common.BKAppIDField:   paras.BizID,
+		common.BKOwnerIDField: params.SupplierAccount,
+	}
+	rowCount, err := s.db.Table(common.BKTableNameHostFavorite).Find(query).Count(params.Context)
 	if err != nil {
 		blog.Errorf("query host favorites fail, err: %v, params:%v, rid: %s", err, query, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteQueryFail)
 	}
-
-	if 0 != rowCount {
+	if rowCount > 0 {
 		blog.Errorf("AddHostFavourite fail, name duplicated, params:%v, rid: %s", query, params.ReqID)
 		return nil, params.Error.CCErrorf(common.CCErrCommDuplicateItem, paras.Name)
 	}
 
+	// insert
 	id := xid.New().String()
 	fav := meta.FavouriteMeta{
 		ID:          id,
@@ -54,11 +58,11 @@ func (s *coreService) AddHostFavourite(params core.ContextParams, pathParams, qu
 		Name:        paras.Name,
 		Count:       1,
 		User:        user,
-		IsDefault:   paras.IsDefault,
 		QueryParams: paras.QueryParams,
 		OwnerID:     params.SupplierAccount,
 		CreateTime:  time.Now().UTC(),
 		UpdateTime:  time.Now().UTC(),
+		BizID:       paras.BizID,
 	}
 	err = s.db.Table(common.BKTableNameHostFavorite).Insert(params.Context, fav)
 	if err != nil {
@@ -79,38 +83,60 @@ func (s *coreService) UpdateHostFavouriteByID(params core.ContextParams, pathPar
 	}
 	fav.UpdateTime = time.Now().UTC()
 
-	query := common.KvMap{"user": user, "id": id}
-	query = util.SetModOwner(query, params.SupplierAccount)
-	rowCount, err := s.db.Table(common.BKTableNameHostFavorite).Find(query).Count(params.Context)
+	// check exist
+	query := map[string]interface{}{
+		"user":                user,
+		"id":                  id,
+		common.BKOwnerIDField: params.SupplierAccount,
+	}
+	dbData := make([]meta.FavouriteMeta, 0)
+	err := s.db.Table(common.BKTableNameHostFavorite).Find(query).All(params.Context, &dbData)
 	if nil != err {
 		blog.Errorf("update host favorites with id[%s], but query failed, err: %v, params:%v, rid: %s", id, err, query, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteQueryFail)
 	}
-
-	if 1 != rowCount {
-		blog.V(5).Infof("update host favorites with id[%s], but favorites not exists, params:%v, rid: %s", id, query, params.ReqID)
+	if len(dbData) != 1 {
+		blog.V(5).Infof("update host favorites with id[%s], but favorites found: %+v, params:%v, rid: %s", id, dbData, query, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteUpdateFail)
 	}
+	hostFavourite := dbData[0]
 
+	// check name duplicate before update name field
 	if len(fav.Name) != 0 {
-		dupParams := make(map[string]interface{})
-		dupParams["name"] = fav.Name
-		dupParams[common.BKUser] = user
-		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: id}
-		dupParams = util.SetModOwner(dupParams, params.SupplierAccount)
-		rowCount, err := s.db.Table(common.BKTableNameHostFavorite).Find(dupParams).Count(params.Context)
-		if nil != err {
-			blog.Errorf("query user api validate name duplicate fail, err: %v, params:%v, rid: %s", err, dupParams, params.ReqID)
+		dupFilter := map[string]interface{}{
+			"name":                fav.Name,
+			common.BKUser:         user,
+			common.BKFieldID:      common.KvMap{common.BKDBNE: id},
+			common.BKOwnerIDField: params.SupplierAccount,
+			common.BKAppIDField:   fav.BizID,
+		}
+		rowCount, err := s.db.Table(common.BKTableNameHostFavorite).Find(dupFilter).Count(params.Context)
+		if err != nil {
+			blog.Errorf("query user api validate name duplicate fail, err: %v, params:%v, rid: %s", err, dupFilter, params.ReqID)
 			return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
 		}
-		if 0 < rowCount {
-			blog.Errorf("host user api  name duplicate , params:%v, rid: %s", dupParams, params.ReqID)
+		if rowCount > 0 {
+			blog.Errorf("host user api  name duplicate , params:%v, rid: %s", dupFilter, params.ReqID)
 			return nil, params.Error.CCErrorf(common.CCErrCommDuplicateItem, "")
 		}
 	}
-	err = s.db.Table(common.BKTableNameHostFavorite).Update(params.Context, query, fav)
-	if nil != err {
-		blog.Errorf("update host favorites fail, err: %v, params:%v, rid: %s", err, query, params.ReqID)
+
+	// 只有部分字段能更新
+	hostFavourite.UpdateTime = time.Now().UTC()
+	hostFavourite.Count = fav.Count
+	if len(fav.Name) > 0 {
+		hostFavourite.Name = fav.Name
+	}
+	if len(fav.Info) > 0 {
+		hostFavourite.Info = fav.Info
+	}
+	if len(fav.QueryParams) > 0 {
+		hostFavourite.QueryParams = fav.QueryParams
+	}
+
+	// do update host favorite
+	if err = s.db.Table(common.BKTableNameHostFavorite).Update(params.Context, query, fav); err != nil {
+		blog.Errorf("update host favorite failed, err: %v, params:%v, rid: %s", err, query, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteUpdateFail)
 	}
 
@@ -121,70 +147,76 @@ func (s *coreService) DeleteHostFavouriteByID(params core.ContextParams, pathPar
 	id := pathParams("id")
 	user := pathParams("user")
 
-	query := common.KvMap{"user": user, "id": id}
-	query = util.SetModOwner(query, params.SupplierAccount)
+	query := map[string]interface{}{
+		"user":                user,
+		"id":                  id,
+		common.BKOwnerIDField: params.SupplierAccount,
+	}
 	rowCount, err := s.db.Table(common.BKTableNameHostFavorite).Find(query).Count(params.Context)
 	if nil != err {
 		blog.Errorf("delete host favorites with id[%s], but query failed, err: %v, params:%v, rid: %s", id, err, query, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteDeleteFail)
 	}
 
-	if 1 != rowCount {
-		blog.V(5).Infof("delete host favorites with id[%s], but favorites not exists, params:%v, rid: %s", id, query, params.ReqID)
+	if rowCount != 1 {
+		blog.V(5).Infof("delete host favorites with id[%s], but favorites match: %d, params:%v, rid: %s", id, rowCount, query, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteDeleteFail)
 	}
 
-	err = s.db.Table(common.BKTableNameHostFavorite).Delete(params.Context, query)
-	if nil != err {
+	if err = s.db.Table(common.BKTableNameHostFavorite).Delete(params.Context, query); err != nil {
 		blog.Errorf("delete host favorites with id[%s] failed, err: %v, params:%v, rid: %s", id, err, query, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteDeleteFail)
 	}
+
 	blog.V(5).Infof("delete host favorites with id[%s] success, info: %v, rid: %s", err, query, params.ReqID)
 	return nil, nil
 }
 
-func (s *coreService) GetHostFavourites(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) ListHostFavourites(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	dat := new(meta.ObjQueryInput)
 	if err := data.MarshalJSONInto(dat); err != nil {
 		blog.Errorf("get host favourite, but decode body failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
+	// construct get condition
 	condition := make(map[string]interface{})
 	if nil != dat.Condition {
 		condition = dat.Condition.(map[string]interface{})
 	}
+	condition["user"] = pathParams("user")
+	condition[common.BKOwnerIDField] = params.SupplierAccount
 
+	// read fields and page
 	fieldArr := []string{"id", "info", "query_params", "name", "is_default", common.CreateTimeField, "count"}
 	if "" != dat.Fields {
 		fieldArr = strings.Split(dat.Fields, ",")
 	}
-
 	skip, limit, sort := dat.Start, dat.Limit, dat.Sort
-	if 0 == limit {
+	if limit == 0 {
 		limit = 20
 	}
-
-	if "" == sort {
+	if len(sort) == 0 {
 		sort = common.CreateTimeField
 	}
 
-	condition["user"] = pathParams("user")
-	condition = util.SetModOwner(condition, params.SupplierAccount)
-	result := make([]map[string]interface{}, 0)
+	resultData := make([]map[string]interface{}, 0)
 	count, err := s.db.Table(common.BKTableNameHostFavorite).Find(condition).Count(params.Context)
 	if err != nil {
 		blog.Errorf("get host favorites failed,input:%+v error:%v, rid: %s", dat, err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteQueryFail)
 	}
 
-	err = s.db.Table(common.BKTableNameHostFavorite).Find(condition).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).Sort(sort).All(params.Context, &result)
-	if err != nil {
+	if err = s.db.Table(common.BKTableNameHostFavorite).Find(condition).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).Sort(sort).All(params.Context, &resultData); err != nil {
 		blog.Errorf("get host favorites failed,input:%+v error:%v, rid: %s", dat, err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteQueryFail)
 	}
 
-	return meta.FavoriteResult{Count: count, Info: result}, nil
+	result := meta.FavoriteResult{
+		Count: count,
+		Info:  resultData,
+	}
+	return result, nil
 
 }
 
@@ -196,8 +228,11 @@ func (s *coreService) GetHostFavouriteByID(params core.ContextParams, pathParams
 		return nil, params.Error.CCError(common.CCErrCommParamsNeedSet)
 	}
 
-	query := common.KvMap{"user": user, "id": ID}
-	query = util.SetModOwner(query, params.SupplierAccount)
+	query := common.KvMap{
+		"user":                user,
+		"id":                  ID,
+		common.BKOwnerIDField: params.SupplierAccount,
+	}
 	result := new(meta.FavouriteMeta)
 	err := s.db.Table(common.BKTableNameHostFavorite).Find(query).One(params.Context, result)
 	if err != nil && !s.db.IsNotFoundError(err) {
