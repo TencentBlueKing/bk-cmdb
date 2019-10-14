@@ -241,7 +241,7 @@
             handleFilterTemplate () {
                 const originList = this.$tools.clone(this.originList)
                 this.list = this.searchName
-                    ? originList.filter(template => template.name.indexOf(this.searchName) > 0)
+                    ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
                     : originList
             },
             handleSelectable (row) {
