@@ -91,11 +91,14 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/add").To(s.AddHost))
 	// api.Route(api.POST("/host/add/agent").To(s.AddHostFromAgent))
 	api.Route(api.POST("/hosts/sync/new/host").To(s.NewHostSyncAppTopo))
-	api.Route(api.POST("hosts/favorites/search").To(s.GetHostFavourites))
-	api.Route(api.POST("hosts/favorites").To(s.AddHostFavourite))
-	api.Route(api.PUT("hosts/favorites/{id}").To(s.UpdateHostFavouriteByID))
-	api.Route(api.DELETE("hosts/favorites/{id}").To(s.DeleteHostFavouriteByID))
+
+	// host favorites
+	api.Route(api.POST("/hosts/favorites/search").To(s.ListHostFavourites))
+	api.Route(api.POST("/hosts/favorites").To(s.AddHostFavourite))
+	api.Route(api.PUT("/hosts/favorites/{id}").To(s.UpdateHostFavouriteByID))
+	api.Route(api.DELETE("/hosts/favorites/{id}").To(s.DeleteHostFavouriteByID))
 	api.Route(api.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
+
 	api.Route(api.POST("/hosts/modules").To(s.TransferHostModule))
 	api.Route(api.POST("/hosts/modules/idle").To(s.MoveHost2EmptyModule))
 	api.Route(api.POST("/hosts/modules/fault").To(s.MoveHost2FaultModule))

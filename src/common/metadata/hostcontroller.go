@@ -172,9 +172,11 @@ type FavouriteParms struct {
 	Name        string `json:"name,omitempty"`
 	IsDefault   int    `json:"is_default,omitempty"`
 	Count       int    `json:"count,omitempty"`
+	BizID       int64  `json:"bk_biz_id"`
 }
 
 type FavouriteMeta struct {
+	BizID       int64     `json:"bk_biz_id" bson:"bk_biz_id"`
 	ID          string    `json:"id,omitempty" bson:"id,omitempty"`
 	Info        string    `json:"info,omitempty" bson:"info,omitempty"`
 	Name        string    `json:"name,omitempty" bson:"name,omitempty"`
