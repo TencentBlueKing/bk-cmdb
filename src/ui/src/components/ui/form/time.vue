@@ -1,10 +1,12 @@
 <template>
-    <bk-date-picker style="width: 100%"
+    <bk-date-picker class="cmdb-time"
         v-model="time"
         type="datetime"
         transfer
+        editable
         :clearable="clearable"
-        :disabled="disabled">
+        :disabled="disabled"
+        :placeholder="placeholder">
     </bk-date-picker>
 </template>
 
@@ -23,6 +25,10 @@
             clearable: {
                 type: Boolean,
                 default: true
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -58,3 +64,9 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .cmdb-time {
+        width: 100%;
+    }
+</style>

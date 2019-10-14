@@ -1,14 +1,13 @@
-import * as OPERATION from '@/dictionary/auth'
-
-const OPERATION_KEYS = Object.keys(OPERATION)
 export default {
     computed: {
         $OPERATION () {
-            const { authScope, operation } = this.$route.meta.auth
-            const operationMap = {}
-            operation.forEach(auth => {
-                const key = OPERATION_KEYS.find(key => OPERATION[key] === auth)
-                operationMap[key] = `${auth}.${authScope}`
+            const { authScope, operation, view } = this.$route.meta.auth
+            const operationMap = {
+                ...operation,
+                ...view
+            }
+            Object.keys(operationMap).forEach(key => {
+                operationMap[key] = `${operationMap[key]}.${authScope}`
             })
             return operationMap
         }

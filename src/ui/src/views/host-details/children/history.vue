@@ -17,6 +17,8 @@
             v-bkloading="{ isLoading: $loading('getHostAuditLog') }"
             :data="history"
             :pagination="pagination"
+            :max-height="$APP.height - 325"
+            :row-style="{ cursor: 'pointer' }"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
@@ -30,6 +32,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="details.show"
             :width="800"
             :title="$t('操作详情')">

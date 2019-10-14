@@ -23,17 +23,24 @@
                         {{$t('导入主机')}}
                     </bk-button>
                 </span>
-                <cmdb-selector class="options-business-selector"
+                <bk-select class="options-business-selector"
                     v-if="isAdminView"
-                    :placeholder="$t('分配到业务空闲机池')"
+                    :font-size="14"
+                    :popover-width="180"
+                    :searchable="authorizedBusiness.length > 7"
                     :disabled="!table.checked.length"
-                    :list="authorizedBusiness"
-                    :auto-select="false"
-                    setting-key="bk_biz_id"
-                    display-key="bk_biz_name"
+                    :placeholder="$t('分配到')"
                     v-model="assignBusiness"
-                    @on-selected="handleAssignHosts">
-                </cmdb-selector>
+                    @selected="handleAssignHosts">
+                    <bk-button class="select-btn" slot="trigger" :disabled="!table.checked.length">
+                        {{$t('分配到')}}
+                    </bk-button>
+                    <bk-option v-for="option in authorizedBusiness"
+                        :key="option.bk_biz_id"
+                        :id="option.bk_biz_id"
+                        :name="option.bk_biz_name">
+                    </bk-option>
+                </bk-select>
                 <cmdb-clipboard-selector class="options-clipboard"
                     :list="clipboardList"
                     :disabled="!table.checked.length"
@@ -46,6 +53,7 @@
             </template>
         </cmdb-hosts-table>
         <bk-sideslider
+            v-transfer-dom
             :is-show.sync="importInst.show"
             :width="800"
             :title="$t('批量导入')">
@@ -80,6 +88,7 @@
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbImport from '@/components/import/import'
     import cmdbButtonGroup from '@/components/ui/other/button-group'
+    import { MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     export default {
         components: {
             cmdbHostsTable,
@@ -174,7 +183,8 @@
         },
         async created () {
             try {
-                this.$store.dispatch('userCustom/setRencentlyData', { id: 'resource' })
+                this.setDynamicBreadcrumbs()
+                this.$store.dispatch('objectBiz/getAuthorizedBusiness')
                 await this.getProperties()
                 this.getHostList()
                 this.ready = true
@@ -191,6 +201,16 @@
             ...mapActions('hostDelete', ['deleteHost']),
             ...mapActions('hostRelation', ['transferResourcehostToIdleModule']),
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
+            setDynamicBreadcrumbs () {
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('资源目录'),
+                    route: {
+                        name: MENU_RESOURCE_MANAGEMENT
+                    }
+                }, {
+                    label: this.$t('主机')
+                }])
+            },
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
@@ -227,7 +247,11 @@
                 }
                 return params
             },
-            handleAssignHosts (businessId, business) {
+            handleAssignHosts (businessId, option) {
+                const business = {
+                    bk_biz_id: businessId,
+                    bk_biz_name: option.name
+                }
                 if (!businessId) return
                 if (this.hasSelectAssignedHost()) {
                     this.$error(this.$t('请勿选择已分配主机'))
@@ -388,12 +412,11 @@
 
 <style lang="scss" scoped>
     .resource-layout{
-        height: 100%;
         padding: 0;
         overflow: hidden;
         .resource-main{
             height: 100%;
-            padding: 20px;
+            padding: 0 20px;
             overflow: hidden;
         }
         .resource-filter{
@@ -441,7 +464,16 @@
         display: inline-block;
         vertical-align: middle;
         margin: 0 10px 0 0;
-        width: 180px;
+        .select-btn {
+            display: block;
+            height: 30px;
+            border: none;
+        }
+        /deep/ {
+            &::before {
+                display: none;
+            }
+        }
     }
     .automatic-import{
         padding:40px 30px 0 30px;

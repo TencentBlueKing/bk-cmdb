@@ -20,11 +20,13 @@
                                 :key="propertyIndex">
                                 <div class="property-name clearfix">
                                     <bk-checkbox class="form-checkbox"
-                                        v-bk-tooltips="$t('纳入模板管理')"
+                                        v-bk-tooltips="checkboxTips"
                                         v-if="property['isLocking'] !== undefined"
-                                        v-model="values[property['bk_property_id']]['as_default_value']">
+                                        v-model="values[property['bk_property_id']]['as_default_value']"
+                                        @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
+                                        <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                     </bk-checkbox>
-                                    <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                    <span v-else class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                     <i class="property-name-tooltips icon-cc-tips"
                                         v-if="property['placeholder']"
                                         v-bk-tooltips="htmlEncode(property['placeholder'])">
@@ -33,11 +35,12 @@
                                 <div class="property-value">
                                     <component class="form-component"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :disabled="type === 'update' && ['bk_func_name'].includes(property['bk_property_id']) || !values[property['bk_property_id']]['as_default_value']"
+                                        :disabled="getPropertyEditStatus(property)"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
+                                        :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]['value']">
                                     </component>
@@ -55,11 +58,11 @@
             <slot name="form-options">
                 <span style="display: inline-block"
                     v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE),
-                        auth: [$OPERATION.C_SERVICE_TEMPLATE]
+                        active: !$isAuthorized(auth),
+                        auth: [auth]
                     }">
                     <bk-button class="button-save" theme="primary"
-                        :disabled="saveDisabled || $loading() || !$isAuthorized($OPERATION.C_SERVICE_TEMPLATE)"
+                        :disabled="saveDisabled || $loading() || !$isAuthorized(auth)"
                         @click="handleSave">
                         {{$t('保存')}}
                     </bk-button>
@@ -144,10 +147,7 @@
                     bk_func_name: ''
                 },
                 refrenceValues: {},
-                scrollbar: false,
-                groupState: {
-                    none: true
-                }
+                scrollbar: false
             }
         },
         computed: {
@@ -167,6 +167,31 @@
                     return filterProperties
                 })
                 return properties
+            },
+            auth () {
+                if (this.isCreatedService) {
+                    return this.$OPERATION.C_SERVICE_TEMPLATE
+                }
+                return this.$OPERATION.U_SERVICE_TEMPLATE
+            },
+            checkboxTips () {
+                return {
+                    content: this.$t('纳入模板管理'),
+                    placement: 'top-start',
+                    offset: -2,
+                    popperOptions: {
+                        modifiers: {
+                            customArrowStyles: {
+                                enabled: true,
+                                order: 100,
+                                fn (data, options) {
+                                    Object.assign(data.arrowStyles, { left: 0 })
+                                    return data
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         watch: {
@@ -196,6 +221,10 @@
         },
         methods: {
             ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
+            getPropertyEditStatus (property) {
+                return (this.type === 'update' && ['bk_func_name', 'bk_process_name'].includes(property['bk_property_id']))
+                    || !this.values[property['bk_property_id']]['as_default_value']
+            },
             changedValues () {
                 const changedValues = {}
                 if (!this.values['bind_ip']['value']) this.values['bind_ip']['value'] = ''
@@ -306,6 +335,7 @@
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {
                     rules[propertyType] = true
+                    rules.length = propertyType === 'singlechar' ? 256 : 2000
                 }
                 if (propertyType === 'float') {
                     rules['float'] = true
@@ -364,6 +394,20 @@
                 } else {
                     this.$emit('on-cancel')
                 }
+            },
+            handleResetValue (status, property) {
+                if (!status) {
+                    const type = property['bk_property_type']
+                    if (['enum'].includes(type)) {
+                        const option = property['option']
+                        const defaultValue = option[0]['id'] ? option[0]['id'] : ''
+                        this.values[property['bk_property_id']]['value'] = defaultValue
+                    } else if (['bool'].includes(type)) {
+                        this.values[property['bk_property_id']]['value'] = false
+                    } else {
+                        this.values[property['bk_property_id']]['value'] = ''
+                    }
+                }
             }
         }
     }
@@ -407,7 +451,7 @@
             }
             .property-name{
                 display: block;
-                margin: 6px 0 9px;
+                margin: 6px 0 10px;
                 color: $cmdbTextColor;
                 line-height: 16px;
                 font-size: 0;
@@ -415,9 +459,8 @@
             .property-name-text{
                 position: relative;
                 display: inline-block;
-                max-width: calc(100% - 20px);
-                padding: 0 14px 0 0;
                 vertical-align: middle;
+                padding: 0 14px 0 0;
                 font-size: 14px;
                 @include ellipsis;
                 &.required:after{
@@ -438,13 +481,17 @@
                 color: #c3cdd7;
             }
             .property-value{
-                height: 36px;
-                line-height: 36px;
+                height: 32px;
+                line-height: 32px;
                 font-size: 12px;
                 position: relative;
+                /deep/ .control-append-group {
+                    .bk-input-text {
+                        flex: 1;
+                    }
+                }
             }
             .form-checkbox {
-                margin: 0 6px 0 0;
                 outline: 0;
             }
         }

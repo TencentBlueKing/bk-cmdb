@@ -293,12 +293,13 @@ func (s *Service) SearchAssociationInst(params types.ContextParams, pathParams, 
 	ret, err := s.Core.AssociationOperation().SearchInst(params, request)
 	if err != nil {
 		return nil, err
-	} else if ret.Code != 0 {
+	} 
+	
+	if  ret.Code != 0 {
 		return nil, params.Err.New(ret.Code, ret.ErrMsg)
-	} else {
-		return ret.Data, nil
-
-	}
+	} 
+	
+	return ret.Data, nil
 }
 
 func (s *Service) CreateAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {

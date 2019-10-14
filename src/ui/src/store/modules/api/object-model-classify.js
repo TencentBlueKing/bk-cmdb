@@ -112,6 +112,10 @@ const actions = {
             commit('setClassificationsObjects', data)
             return data
         })
+    },
+
+    getClassificationsObjectStatistics ({ state }, { config }) {
+        return $http.get('object/statistics', config)
     }
 }
 

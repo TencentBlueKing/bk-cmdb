@@ -1,22 +1,17 @@
 import Meta from '@/router/meta'
-import { NAV_INDEX } from '@/dictionary/menu'
-
-const path = '/index'
+import { MENU_INDEX } from '@/dictionary/menu-symbol'
 
 export default [{
-    name: 'index',
-    path: path,
+    name: MENU_INDEX,
+    path: '/index',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            id: NAV_INDEX,
-            i18n: '首页',
-            path: path
+            i18n: '首页'
         },
         auth: {
             view: null
-        },
-        i18nTitle: '首页'
+        }
     })
 }, {
     name: 'search',

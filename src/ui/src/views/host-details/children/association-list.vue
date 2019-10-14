@@ -83,8 +83,10 @@
         watch: {
             list () {
                 this.$nextTick(() => {
-                    const [firstAssociationListTable] = this.$refs.associationListTable
-                    firstAssociationListTable && (firstAssociationListTable.expanded = true)
+                    if (this.$refs.associationListTable) {
+                        const [firstAssociationListTable] = this.$refs.associationListTable
+                        firstAssociationListTable && (firstAssociationListTable.expanded = true)
+                    }
                 })
             }
         },
@@ -140,7 +142,7 @@
             },
             getAssociation (condition) {
                 return this.$store.dispatch('objectAssociation/searchObjectAssociation', {
-                    params: this.$injectMetadata({ condition }),
+                    params: { condition },
                     config: {
                         requestId: 'getAssociation'
                     }
@@ -165,7 +167,7 @@
                 const [root] = await this.$store.dispatch('objectRelation/getInstRelation', {
                     objId: 'host',
                     instId: this.id,
-                    params: this.$injectMetadata(),
+                    params: {},
                     config: {
                         requestId: 'getInstRelation'
                     }

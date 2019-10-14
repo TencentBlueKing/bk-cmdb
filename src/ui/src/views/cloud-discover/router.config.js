@@ -14,7 +14,7 @@ export const OPERATION = {
     D_CLOUD_DISCOVER
 }
 
-const path = '/cloud-discover'
+const path = 'cloud-discover'
 
 export default {
     name: 'cloudDiscover',
@@ -22,20 +22,12 @@ export default {
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            id: 'cloudDiscover',
-            i18n: '云资源发现',
-            path: path,
-            order: 4,
-            parent: NAV_BUSINESS_RESOURCE,
-            adminView: false
+            i18n: '云资源发现'
         },
         auth: {
-            operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'global'
-            }
+            operation: OPERATION,
+            authScope: 'global'
         },
-        requireBusiness: true,
-        i18nTitle: '云资源发现'
+        requireBusiness: true
     })
 }

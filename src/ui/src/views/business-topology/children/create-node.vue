@@ -2,7 +2,11 @@
     <div class="node-create-layout">
         <h2 class="node-create-title">{{title}}</h2>
         <div class="node-create-path">{{$t('添加节点已选择')}}：{{topoPath}}</div>
-        <div class="node-create-form">
+        <div class="node-create-form"
+            :style="{
+                'max-height': Math.min($APP.height - 400, 400) + 'px',
+                'padding-bottom': formPaddingBottom
+            }">
             <div v-for="(property, index) in sortedProperties"
                 :class="['form-group', { 'form-group-flex': sortedProperties.length === 1 || property['bk_property_type'] === 'longchar' }]"
                 :key="index">
@@ -16,6 +20,7 @@
                     :data-vv-name="property['bk_property_id']"
                     :data-vv-as="property['bk_property_name']"
                     :options="property.option || []"
+                    :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                     v-validate="getValidateRules(property)"
                     v-model.trim="values[property['bk_property_id']]">
                 </component>
@@ -24,6 +29,7 @@
                         :data-vv-name="property['bk_property_id']"
                         :data-vv-as="property['bk_property_name']"
                         :options="property.option || []"
+                        :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                         v-validate="getValidateRules(property)"
                         v-model.trim="values[property['bk_property_id']]">
                     </bk-input>
@@ -68,12 +74,15 @@
             sortedProperties () {
                 const sortedProperties = this.properties.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
                 sortedProperties.sort((propertyA, propertyB) => {
-                    return this.$tools.getPropertyPriority(propertyA) - this.$tools.getPropertyPriority(propertyB)
+                    return propertyA['bk_property_index'] - propertyB['bk_property_index']
                 })
                 return sortedProperties
             },
             title () {
                 return this.nextModelId === 'set' ? this.$t('新建集群') : this.$t('新建节点')
+            },
+            formPaddingBottom () {
+                return this.nextModelId === 'set' ? '20px' : '52px'
             }
         },
         watch: {
@@ -112,6 +121,7 @@
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {
                     rules[propertyType] = true
+                    rules.length = propertyType === 'singlechar' ? 256 : 2000
                 }
                 if (propertyType === 'int') {
                     rules['numeric'] = true
@@ -148,8 +158,7 @@
         font-size: 12px;
     }
     .node-create-form {
-        max-height: 400px;
-        padding: 0 26px 52px;
+        padding: 0 26px;
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;

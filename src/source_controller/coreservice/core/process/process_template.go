@@ -13,7 +13,6 @@
 package process
 
 import (
-	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -38,13 +37,12 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 
 	var bizID int64
 	var err error
-	if bizID, err = p.validateBizID(ctx, template.Metadata); err != nil {
+	if bizID, err = p.validateBizID(ctx, template.BizID); err != nil {
 		blog.Errorf("CreateProcessTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	// keep metadata clean
-	template.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+	template.BizID = bizID
 
 	// validate service template id field
 	serviceTemplate, err := p.GetServiceTemplate(ctx, template.ServiceTemplateID)
@@ -54,14 +52,9 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 	}
 
 	// make sure biz id identical with service template
-	serviceTemplateBizID, err := metadata.BizIDFromMetadata(serviceTemplate.Metadata)
-	if err != nil {
-		blog.Errorf("CreateProcessTemplate failed, parse biz id from service template failed, code: %d, err: %+v, rid: %s", common.CCErrCommInternalServerError, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParseBizIDFromMetadataInDBFailed)
-	}
-	if bizID != serviceTemplateBizID {
-		blog.Errorf("CreateProcessTemplate failed, validation failed, input bizID:%d not equal service template bizID:%d, rid: %s", bizID, serviceTemplateBizID, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+	if bizID != serviceTemplate.BizID {
+		blog.Errorf("CreateProcessTemplate failed, validation failed, input bizID:%d not equal service template bizID:%d, rid: %s", bizID, serviceTemplate.BizID, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
 	if err := p.processNameUniqueValidate(ctx, &template); err != nil {
@@ -198,9 +191,9 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 }
 
 func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, option metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder) {
-	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
-	filter := map[string]interface{}{}
-	filter[common.MetadataField] = md.ToMapStr()
+	filter := map[string]interface{}{
+		common.BKAppIDField: option.BusinessID,
+	}
 
 	if option.ServiceTemplateID != 0 {
 		filter[common.BKServiceTemplateIDField] = option.ServiceTemplateID

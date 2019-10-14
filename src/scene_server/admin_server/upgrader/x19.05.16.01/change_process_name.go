@@ -64,7 +64,7 @@ func changeProcessName(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		return err
 	}
 
-	uniques := []metadata.ObjectUnique{}
+	uniques := make([]metadata.ObjectUnique, 0)
 	if err := db.Table(common.BKTableNameObjUnique).Find(condition.CreateCondition().
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDProc).
 		ToMapStr()).All(ctx, &uniques); err != nil {

@@ -19,7 +19,7 @@ const timeFormatter = (value, format = 'YYYY-MM-DD HH:mm:ss') => {
 }
 
 const numericFormatter = value => {
-    if (isNaN(value)) {
+    if (isNaN(value) || value === null) {
         return '--'
     }
     return value
@@ -72,8 +72,8 @@ export function bool (value) {
     return '--'
 }
 
-export function enumeration (value, options = []) {
-    const option = options.find(option => option.id === value)
+export function enumeration (value, options) {
+    const option = (options || []).find(option => option.id === value)
     if (!option) {
         return '--'
     }
@@ -104,9 +104,9 @@ const formatterMap = {
     enum: enumeration
 }
 
-export default function formatter (value, type) {
+export default function formatter (value, type, options) {
     if (formatterMap.hasOwnProperty(type)) {
-        return formatterMap[type](value)
+        return formatterMap[type](value, options)
     }
     return value
 }

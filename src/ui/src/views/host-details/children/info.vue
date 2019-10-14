@@ -109,6 +109,8 @@
     .info {
         padding: 11px 24px 2px;
         background:rgba(235, 244, 255, .6);
+        border-top: 1px solid #dcdee5;
+        border-bottom: 1px solid #dcdee5;
     }
     .info-basic {
         font-size: 0;

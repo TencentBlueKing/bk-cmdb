@@ -2,25 +2,25 @@
     <bk-dialog
         ext-cls="error-content-dialog"
         v-model="isModalShow"
-        width="600"
+        width="740"
         :z-index="2400"
+        :close-icon="false"
         :mask-close="false"
         @cancel="onCloseDialog">
         <div class="permission-content">
             <div class="permission-header">
                 <span class="title-icon">
-                    <img src="../../assets/images/lock-closed.svg" class="locked-icon" alt="locked-icon" />
+                    <img src="../../assets/images/lock-closed02.svg" class="locked-icon" alt="locked-icon" />
                 </span>
                 <h3>{{i18n.permissionTitle}}</h3>
             </div>
-            <bk-table
+            <bk-table ref="table"
                 :data="list"
-                :max-height="180"
-                :border="true">
+                :max-height="193">
                 <bk-table-column prop="scope" :label="$t('资源所属')"></bk-table-column>
                 <bk-table-column prop="resource" :label="$t('资源')">
                     <template slot-scope="{ row }">
-                        <div class="resource-list" v-html="row.resource"></div>
+                        <div v-html="row.resource"></div>
                     </template>
                 </bk-table-column>
                 <bk-table-column prop="action" :label="$t('需要申请的权限')"></bk-table-column>
@@ -53,6 +53,15 @@
                     noData: this.$t('无数据'),
                     apply: this.$t('去申请'),
                     cancel: this.$t('取消')
+                }
+            }
+        },
+        watch: {
+            isModalShow (val) {
+                if (val) {
+                    setTimeout(() => {
+                        this.$refs.table.doLayout()
+                    }, 0)
                 }
             }
         },
@@ -127,20 +136,17 @@
     .permission-content {
         margin-top: -26px;
         .permission-header {
+            padding-top: 34px;
             text-align: center;
             .locked-icon {
-                height: 60px;
+                height: 66px;
             }
             h3 {
-                margin: 10px 0 30px;
-                color: #979ba5;
+                margin: 6px 0 30px;
+                color: #63656e;
                 font-size: 24px;
+                font-weight: normal;
             }
         }
-    }
-    .resource-list {
-        padding: 12px 0;
-        word-break: break-all;
-        white-space: normal;
     }
 </style>

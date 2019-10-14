@@ -70,10 +70,7 @@ func (am *AuthManager) collectServiceCategoryByIDs(ctx context.Context, header h
 func (am *AuthManager) extractBusinessIDFromServiceCategory(categories ...metadata.ServiceCategory) (int64, error) {
 	var businessID int64
 	for idx, category := range categories {
-		bizID, err := metadata.BizIDFromMetadata(category.Metadata)
-		if err != nil {
-			return 0, fmt.Errorf("parse business ID from service category failed, err: %+v", err)
-		}
+		bizID := category.BizID
 		// we should ignore metadata.LabelBusinessID field not found error
 		if idx > 0 && bizID != businessID {
 			return 0, fmt.Errorf("get multiple business ID from service category")
@@ -141,8 +138,8 @@ func (am *AuthManager) GenServiceCategoryNoPermissionResp() *metadata.BaseResp {
 			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysSystemBase],
 		}},
 	}
-    p.ResourceType = p.Resources[0][0].ResourceType
-    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
+	p.ResourceType = p.Resources[0][0].ResourceType
+	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp

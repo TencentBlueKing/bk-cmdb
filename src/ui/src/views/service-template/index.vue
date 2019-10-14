@@ -1,5 +1,5 @@
 <template>
-    <div class="template-wrapper" ref="templateWrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="template-wrapper" ref="templateWrapper">
         <feature-tips
             :feature-name="'serviceTemplate'"
             :show-tips="showFeatureTips"
@@ -22,6 +22,7 @@
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
+                    font-size="14"
                     :placeholder="$t('所有一级分类')"
                     :auto-select="false"
                     :allow-clear="true"
@@ -31,6 +32,7 @@
                 </cmdb-selector>
                 <cmdb-selector
                     class="fl"
+                    font-size="14px"
                     :placeholder="$t('所有二级分类')"
                     :auto-select="false"
                     :allow-clear="true"
@@ -43,8 +45,9 @@
                     class="filter-search fl"
                     :placeholder="$t('模板名称搜索')"
                     :right-icon="'bk-icon icon-search'"
+                    font-size="large"
                     v-model.trim="filter.templateName"
-                    @enter="searchByTemplateName">
+                    @enter="getTableData">
                 </bk-input>
             </div>
         </div>
@@ -52,7 +55,7 @@
             v-bkloading="{ isLoading: $loading('get_proc_service_template') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 210"
+            :max-height="$APP.height - 229"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
             <bk-table-column prop="name" :label="$t('模板名称')"></bk-table-column>
@@ -125,7 +128,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        limit: 10
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-last_time',
                     sort: '-id'
@@ -146,6 +149,7 @@
                     : this.maincategoryId ? this.maincategoryId : 0
                 return {
                     service_category_id: id,
+                    search: this.filter.templateName,
                     page: {
                         start: (this.table.pagination.current - 1) * this.table.pagination.limit,
                         limit: this.table.pagination.limit,
@@ -210,11 +214,6 @@
                 this.mainList = this.classificationList.filter(classification => !classification['bk_parent_id'])
                 this.allSecondaryList = this.classificationList.filter(classification => classification['bk_parent_id'])
             },
-            searchByTemplateName () {
-                const reg = new RegExp(this.filter.templateName, 'gi')
-                const filterList = this.table.allList.filter(template => reg.test(template['name']))
-                this.table.list = this.filter.templateName ? filterList : this.table.allList
-            },
             handleSelect (id, data) {
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
                 this.filter.secondaryClassification = ''
@@ -230,16 +229,13 @@
                     name: 'operationalTemplate',
                     params: {
                         templateId: id
-                    },
-                    query: {
-                        from: this.$route.fullPath
                     }
                 })
             },
             deleteTemplate (template) {
                 this.$bkInfo({
-                    title: this.$t('确认删除模版'),
-                    subTitle: this.$tc('即将删除服务模版', name, { name: template.name }),
+                    title: this.$t('确认删除模板'),
+                    subTitle: this.$tc('即将删除服务模板', name, { name: template.name }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({
@@ -276,6 +272,7 @@
 
 <style lang="scss" scoped>
     .template-wrapper {
+        padding: 0 20px;
         .filter-text {
             .bk-select {
                 width: 184px;

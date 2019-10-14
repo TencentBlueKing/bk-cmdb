@@ -16,7 +16,7 @@ def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v, redis_user_v,
         redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v,
         cc_url_v, paas_url_v, full_text_search, es_url_v, auth_address, auth_app_code,
-        auth_app_secret, auth_enabled, auth_scheme
+        auth_app_secret, auth_enabled, auth_scheme, log_level
 ):
     output = os.getcwd() + "/cmdb_adminserver/configures/"
     context = dict(
@@ -48,6 +48,10 @@ def generate_config_file(
 
     # apiserver.conf
     apiserver_file_template_str = '''
+[auth]
+address = $auth_address
+appCode = $auth_app_code
+appSecret = $auth_app_secret
     '''
 
     template = FileTemplate(apiserver_file_template_str)
@@ -66,6 +70,7 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIdleConns = 1000
 mechanism = SCRAM-SHA-1
+enable = true
 
 [snap-redis]
 host = $redis_host
@@ -94,6 +99,11 @@ port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
+
+[auth]
+address = $auth_address
+appCode = $auth_app_code
+appSecret = $auth_app_secret
 '''
 
     template = FileTemplate(datacollection_file_template_str)
@@ -182,10 +192,8 @@ enable=true
 
 [confs]
 dir = $configures_dir
-
 [errors]
 res = conf/errors
-
 [language]
 res = conf/language
 
@@ -193,7 +201,6 @@ res = conf/language
 address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
-enable = $auth_enabled
 enableSync = false
     '''
 
@@ -213,6 +220,7 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
+enable = true
 
 [redis]
 host = $redis_host
@@ -239,10 +247,42 @@ usr = $redis_user
 pwd = $redis_pass
 port = $redis_port
 database = 0
+
+[auth]
+address = $auth_address
+appCode = $auth_app_code
+appSecret = $auth_app_secret
+
+[mongodb]
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+enable = true
 '''
     template = FileTemplate(proc_file_template_str)
     result = template.substitute(**context)
     with open(output + "proc.conf", 'w') as tmp_file:
+        tmp_file.write(result)
+
+    # operation.conf
+    operation_file_template_str = '''
+[mongodb]
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+enable = true
+'''
+    template = FileTemplate(operation_file_template_str)
+    result = template.substitute(**context)
+    with open(output + "operation.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
     # txc.conf
@@ -287,6 +327,7 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
+enable = true
 
 [level]
 businessTopoMax = 7
@@ -295,7 +336,6 @@ businessTopoMax = 7
 address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
-enable = $auth_enabled
 
 [es]
 full_text_search = $full_text_search
@@ -311,10 +351,9 @@ url=$es_url
     webserver_file_template_str = '''
 [api]
 version = v3
-
 [session]
 name = cc3
-skip = 1
+skip = $skip
 defaultlanguage = zh-cn
 host = $redis_host
 port = $redis_port
@@ -336,12 +375,15 @@ agent_app_url = ${agent_url}/console/?app=bk_agent_setup
 authscheme = $auth_scheme
 '''
     template = FileTemplate(webserver_file_template_str)
-    result = template.substitute(**context)
+    skip = '1'
+    if auth_enabled == "true":
+        skip = '0'
+    result = template.substitute(skip=skip, **context)
     with open(output + "webserver.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
 
-def update_start_script(rd_server, server_ports):
+def update_start_script(rd_server, server_ports, enable_auth, log_level):
     list_dirs = os.walk(os.getcwd()+"/")
     for root, dirs, _ in list_dirs:
         for d in dirs:
@@ -352,7 +394,7 @@ def update_start_script(rd_server, server_ports):
                 if os.path.exists(root+d+"/init_db.sh"):
                     shutil.copy(root + d + "/init_db.sh", os.getcwd() + "/init_db.sh")
 
-            target_file = root+d + "/start.sh"
+            target_file = root + d + "/start.sh"
             if not os.path.exists(target_file) or not os.path.exists(root+d + "/template.sh.start"):
                 continue
 
@@ -361,12 +403,19 @@ def update_start_script(rd_server, server_ports):
                 filedata = template_file.read()
                 # Replace the target string
                 filedata = filedata.replace('cmdb-name-placeholder', d)
-                filedata = filedata.replace('cmdb-port-placeholder', str(server_ports[d]))
-                if d != "cmdb_adminserver":
-                    filedata = filedata.replace('rd_server_placeholer', rd_server)
-                else:
-                    filedata = filedata.replace('rd_server_placeholer', "configures/migrate.conf")
+                filedata = filedata.replace('cmdb-port-placeholder', str(server_ports.get(d, 9999)))
+                if d == "cmdb_adminserver":
+                    filedata = filedata.replace('rd_server_placeholder', "configures/migrate.conf")
                     filedata = filedata.replace('regdiscv', "config")
+                else:
+                    filedata = filedata.replace('rd_server_placeholder', rd_server)
+
+                extend_flag = ''
+                if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver', 'cmdb_toposerver']:
+                    extend_flag += ' --enable-auth=%s ' % enable_auth
+                filedata = filedata.replace('extend_flag_placeholder', extend_flag)
+
+                filedata = filedata.replace('log_level_placeholder', log_level)
 
                 # Write the file out again
                 with open(target_file, 'w') as new_file:
@@ -395,7 +444,8 @@ def main(argv):
         "auth_app_secret": "",
     }
     full_text_search = 'off'
-    es_url='http://127.0.0.1:9200'
+    es_url = 'http://127.0.0.1:9200'
+    log_level = '3'
 
     server_ports = {
         "cmdb_adminserver": 60004,
@@ -408,7 +458,8 @@ def main(argv):
         "cmdb_tmserver": 60008,
         "cmdb_toposerver": 60002,
         "cmdb_webserver": 8083,
-        "cmdb_synchronizeserver": 60010
+        "cmdb_synchronizeserver": 60010,
+        "cmdb_operationserver": 60011
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
@@ -416,7 +467,7 @@ def main(argv):
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=",
         "blueking_paas_url=", "listen_port=", "es_url=", "auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
-        "auth_scheme=", "full_text_search="
+        "auth_scheme=", "full_text_search=", "log_level="
     ]
     usage = '''
     usage:
@@ -439,9 +490,34 @@ def main(argv):
       --auth_app_secret    <auth_app_secret>      app code for iam
       --full_text_search   <full_text_search>     full text search on or off
       --es_url             <es_url>               the es listen url, see in es dir config/elasticsearch.yml, (network.host, http.port), default: http://127.0.0.1:9200
+      --log_level          <log_level>            log level to start cmdb process, default: 3
+
+
+    demo:
+    python init.py  \\
+      --discovery          127.0.0.1:2181 \\
+      --database           cmdb \\
+      --redis_ip           127.0.0.1 \\
+      --redis_port         6379 \\
+      --redis_pass         1111 \\
+      --mongo_ip           127.0.0.1 \\
+      --mongo_port         27017 \\
+      --mongo_user         cc \\
+      --mongo_pass         cc \\
+      --blueking_cmdb_url  http://127.0.0.1:8080/ \\
+      --blueking_paas_url  http://paas.domain.com \\
+      --listen_port        8080 \\
+      --auth_scheme        internal \\
+      --auth_enabled       false \\
+      --auth_address       https://iam.domain.com/ \\
+      --auth_app_code      bk_cmdb \\
+      --auth_app_secret    xxxxxxx \\
+      --full_text_search   off \\
+      --es_url             http://127.0.0.1:9200 \\
+      --log_level          3
     '''
     try:
-        opts, _ = getopt.getopt(argv, "hd:D:r:p:x:s:m:P:X:S:u:U:a:l:es", arr)
+        opts, _ = getopt.getopt(argv, "hd:D:r:p:x:s:m:P:X:S:u:U:a:l:es:v", arr)
 
     except getopt.GetoptError as e:
         print("\n \t", e.msg)
@@ -454,7 +530,7 @@ def main(argv):
 
     for opt, arg in opts:
         if opt in ('-h', '--help'):
-            print('init.py --discovery <discovery> --database <database>  --redis_ip <redis_ip> --redis_port <redis_port> --redis_pass <redis_pass> --mongo_ip <mongo_ip> --mongo_port <mongo_port> --mongo_user <mongo_user> --mongo_pass <mongo_pass> --blueking_cmdb_url <blueking_cmdb_url> --blueking_paas_url <blueking_paas_url> --listen_port <listen_port> --es_url <es_url>')
+            print(usage)
             sys.exit()
         elif opt in ("-d", "--discovery"):
             rd_server = arg
@@ -513,6 +589,9 @@ def main(argv):
         elif opt in("-es","--es_url",):
             es_url = arg
             print('es_url:', es_url)
+        elif opt in("-v","--log_level",):
+            log_level = arg
+            print('log_level:', log_level)
 
     if 0 == len(rd_server):
         print('please input the ZooKeeper address, eg:127.0.0.1:2181')
@@ -580,10 +659,30 @@ def main(argv):
             print("auth_app_secret can't be empty when iam auth enabled")
             sys.exit()
 
-    generate_config_file(rd_server, db_name, redis_ip, redis_port, redis_user,
-                         redis_pass, mongo_ip, mongo_port, mongo_user,
-                         mongo_pass, cc_url, paas_url, full_text_search, es_url, **auth)
-    update_start_script(rd_server, server_ports)
+    availableLogLevel = [str(i) for i in range(0, 10)]
+    if log_level not in availableLogLevel:
+        print("available log_level value are: %s" %  availableLogLevel)
+        sys.exit()
+
+    generate_config_file(
+        rd_server_v=rd_server,
+        db_name_v=db_name,
+        redis_ip_v=redis_ip,
+        redis_port_v=redis_port,
+        redis_user_v=redis_user,
+        redis_pass_v=redis_pass,
+        mongo_ip_v=mongo_ip,
+        mongo_port_v=mongo_port,
+        mongo_user_v=mongo_user,
+        mongo_pass_v=mongo_pass,
+        cc_url_v=cc_url,
+        paas_url_v=paas_url,
+        full_text_search=full_text_search,
+        es_url_v=es_url,
+        log_level=log_level,
+        **auth
+    )
+    update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
 
 

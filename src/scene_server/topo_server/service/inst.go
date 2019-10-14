@@ -476,3 +476,98 @@ func (s *Service) SearchInstTopo(params types.ContextParams, pathParams, queryPa
 
 	return instItems, err
 }
+
+// Deprecated 2019-09-30 废弃接口
+func (s *Service) SearchInstAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	objID := pathParams("bk_obj_id")
+	instID, err := strconv.ParseInt(pathParams("id"), 10, 64)
+	if err != nil {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
+	}
+	start, err := strconv.ParseInt(pathParams("start"), 10, 64)
+	if err != nil {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "start")
+	}
+	limit, err := strconv.ParseInt(pathParams("limit"), 10, 64)
+	if err != nil {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "limit")
+	}
+
+	cond := condition.CreateCondition()
+	condOR := cond.NewOR()
+	condOR.Item(map[string]interface{}{common.BKObjIDField: objID, common.BKInstIDField: instID})
+	condOR.Item(map[string]interface{}{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: instID})
+	input := &metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+		Limit: metadata.SearchLimit{
+			Limit:  limit,
+			Offset: start,
+		},
+	}
+
+	if input.IsIllegal() {
+		blog.ErrorJSON("parse page illegal, input:%s,rid:%s", input, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommPageLimitIsExceeded)
+	}
+
+	blog.V(5).Infof("input:%#v, rid:%s", input, params.ReqID)
+	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationList(params, input)
+	if err != nil {
+		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"info":  infos,
+		"count": cnt,
+		"page":  input.Limit,
+	}, err
+}
+
+func (s *Service) SearchInstAssociationUI(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	objID := pathParams("bk_obj_id")
+	instID, err := strconv.ParseInt(pathParams("id"), 10, 64)
+	if err != nil {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
+	}
+	start, err := strconv.ParseInt(pathParams("start"), 10, 64)
+	if err != nil {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "start")
+	}
+	limit, err := strconv.ParseInt(pathParams("limit"), 10, 64)
+	if err != nil {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "limit")
+	}
+
+	cond := condition.CreateCondition()
+	condOR := cond.NewOR()
+	condOR.Item(map[string]interface{}{common.BKObjIDField: objID, common.BKInstIDField: instID})
+	condOR.Item(map[string]interface{}{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: instID})
+	input := &metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+		Limit: metadata.SearchLimit{
+			Limit:  limit,
+			Offset: start,
+		},
+	}
+
+	if input.IsIllegal() {
+		blog.ErrorJSON("parse page illegal, input:%s,rid:%s", input, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommPageLimitIsExceeded)
+	}
+
+	blog.V(5).Infof("input:%#v, rid:%s", input, params.ReqID)
+	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationUIList(params, objID, input)
+	if err != nil {
+		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"data":              infos,
+		"association_count": cnt,
+		"page":              input.Limit,
+	}, err
+}

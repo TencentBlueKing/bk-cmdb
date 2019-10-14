@@ -8,7 +8,7 @@
                     v-if="$groupedProperties[groupIndex].length">
                     <cmdb-collapse
                         :label="group['bk_group_name']"
-                        :collapse.sync="collapseStatus[group['bk_group_id']]">
+                        :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list clearfix">
                             <li class="property-item clearfix fl"
                                 v-for="(property, propertyIndex) in $groupedProperties[groupIndex]"
@@ -18,7 +18,7 @@
                                 <slot :name="property['bk_property_id']">
                                     <span class="property-value clearfix fl" v-if="property.unit">
                                         <span class="property-value-text fl">{{getValue(property)}}</span>
-                                        <span class="property-value-unit fl">{{property.unit}}</span>
+                                        <span class="property-value-unit fl" v-if="getValue(property) !== '--'">{{property.unit}}</span>
                                     </span>
                                     <span class="property-value fl" v-else>{{getValue(property)}}</span>
                                 </slot>
@@ -103,9 +103,6 @@
         },
         data () {
             return {
-                collapseStatus: {
-                    none: true
-                },
                 scrollbar: false
             }
         },
@@ -130,8 +127,8 @@
             },
             handleToggleGroup (group) {
                 const groupId = group['bk_group_id']
-                const collapse = !!this.collapseStatus[groupId]
-                this.$set(this.collapseStatus, groupId, !collapse)
+                const collapse = !!this.groupState[groupId]
+                this.$set(this.groupState, groupId, !collapse)
             },
             getTitle (inst, property) {
                 return `${property['bk_property_name']}: ${inst[property['bk_property_id']] || '--'} ${property.unit}`

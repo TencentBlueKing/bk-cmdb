@@ -1,9 +1,22 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package host_server_test
 
 import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -14,9 +27,15 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var (
+	noExistID    int64  = 99999
+	noExistID1   int64  = 99998
+	noExistIDStr string = "99999"
+)
+var bizId, bizId1, setId, setId1, moduleId, moduleId1, moduleId2, idleModuleId, faultModuleId int64
+var hostId, hostId1, hostId2, hostId3, hostId4 int64
+
 var _ = Describe("host abnormal test", func() {
-	var bizId, bizId1, setId, setId1, moduleId, moduleId1, moduleId2, idleModuleId, faultModuleId int64
-	var hostId, hostId1, hostId2, hostId3 int64
 
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'Christina'", func() {
@@ -52,9 +71,9 @@ var _ = Describe("host abnormal test", func() {
 		It("create set", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":         "test",
-				"bk_parent_id":        bizId1,
+				"bk_parent_id":        bizId,
 				"bk_supplier_account": "0",
-				"bk_biz_id":           bizId1,
+				"bk_biz_id":           bizId,
 				"bk_service_status":   "1",
 				"bk_set_env":          "3",
 			}
@@ -67,13 +86,13 @@ var _ = Describe("host abnormal test", func() {
 		It("create set", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":         "test",
-				"bk_parent_id":        bizId,
+				"bk_parent_id":        bizId1,
 				"bk_supplier_account": "0",
-				"bk_biz_id":           bizId,
+				"bk_biz_id":           bizId1,
 				"bk_service_status":   "1",
 				"bk_set_env":          "3",
 			}
-			rsp, err := instClient.CreateSet(context.Background(), strconv.FormatInt(bizId, 10), header, input)
+			rsp, err := instClient.CreateSet(context.Background(), strconv.FormatInt(bizId1, 10), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			setId1 = int64(rsp.Data["bk_set_id"].(float64))
@@ -112,14 +131,14 @@ var _ = Describe("host abnormal test", func() {
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
+			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId1, 10), strconv.FormatInt(setId1, 10), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			moduleId2 = int64(rsp.Data["bk_module_id"].(float64))
 		})
 
 		It("get instance topo", func() {
-			rsp, err := instClient.GetInternalModule(context.Background(), "0", strconv.FormatInt(bizId, 10), header)
+			rsp, err := instClient.GetInternalModule(context.Background(), "0", strconv.FormatInt(bizId1, 10), header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.SetName).To(Equal("空闲机池"))
@@ -130,10 +149,31 @@ var _ = Describe("host abnormal test", func() {
 	})
 
 	Describe("add host test", func() {
+
+		//清空数据
+		BeforeEach(func() {
+			clearData()
+		})
+
 		Describe("add host using api test", func() {
-			It("add host using api with large biz_id", func() {
+			//测试用例运行后，主机数量应为0
+			AfterEach(func() {
+				// 查询业务下的主机
+				input := &params.HostCommonSearch{
+					AppID: int(bizId),
+					Page: params.PageInfo{
+						Sort: "bk_host_id",
+					},
+				}
+				rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Data.Count).To(Equal(0))
+			})
+
+			It("add host using api with noexist biz_id", func() {
 				input := map[string]interface{}{
-					"bk_biz_id": 1000,
+					"bk_biz_id": noExistID,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "2.0.0.1",
@@ -151,23 +191,8 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": "test",
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.2",
+							"bk_host_innerip": "2.0.0.1",
 							"bk_cloud_id":     0,
-						},
-					},
-				}
-				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
-			})
-
-			It("add host using api with large cloud_id", func() {
-				input := map[string]interface{}{
-					"bk_biz_id": bizId,
-					"host_info": map[string]interface{}{
-						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.3",
-							"bk_cloud_id":     100,
 						},
 					},
 				}
@@ -181,23 +206,8 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.4",
+							"bk_host_innerip": "2.0.0.1",
 							"bk_cloud_id":     -1,
-						},
-					},
-				}
-				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
-			})
-
-			It("add host using api with invalid bk_host_innerip", func() {
-				input := map[string]interface{}{
-					"bk_biz_id": bizId,
-					"host_info": map[string]interface{}{
-						"4": map[string]interface{}{
-							"bk_host_innerip": "0.0.0.1",
-							"bk_cloud_id":     0,
 						},
 					},
 				}
@@ -259,18 +269,53 @@ var _ = Describe("host abnormal test", func() {
 				Expect(rsp.Result).To(Equal(false))
 			})
 
-			It("add host using api with no bk_cloud_id", func() {
+		})
+
+		Describe("add host using api test2", func() {
+			//测试用例运行后，主机数量应为1
+			AfterEach(func() {
+				// 查询业务下的主机
+				input := &params.HostCommonSearch{
+					AppID: int(bizId),
+					Page: params.PageInfo{
+						Sort: "bk_host_id",
+					},
+				}
+				rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Data.Count).To(Equal(1))
+			})
+
+			// 云区域ID不存在不会影响添加主机
+			It("add host using api with noexist cloud_id", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.5",
+							"bk_host_innerip": "2.0.0.1",
+							"bk_cloud_id":     noExistID,
 						},
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(true))
+			})
+
+			// 如果云区域ID没有给出，默认是0
+			It("add host using api with no bk_cloud_id", func() {
+				input := map[string]interface{}{
+					"bk_biz_id": bizId,
+					"host_info": map[string]interface{}{
+						"4": map[string]interface{}{
+							"bk_host_innerip": "2.0.0.1",
+						},
+					},
+				}
+				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
 			})
 
 			It("add host using api to biz", func() {
@@ -278,7 +323,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.6",
+							"bk_host_innerip": "2.0.0.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -293,7 +338,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.6",
+							"bk_host_innerip": "2.0.0.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -301,8 +346,14 @@ var _ = Describe("host abnormal test", func() {
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
-			})
 
+				rsp, err = hostServerClient.AddHost(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+			})
+		})
+
+		Describe("add host using api test3", func() {
 			It("add host using api to biz multiple ip", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
@@ -321,82 +372,30 @@ var _ = Describe("host abnormal test", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 			})
-
-			It("search biz host", func() {
-				input := &params.HostCommonSearch{
-					AppID: int(bizId),
-					Page: params.PageInfo{
-						Sort: "bk_host_id",
-					},
-				}
-				rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
-				data := rsp.Data.Info[0]["host"].(map[string]interface{})
-				hostId = int64(data["bk_host_id"].(float64))
-				data = rsp.Data.Info[1]["host"].(map[string]interface{})
-				hostId2 = int64(data["bk_host_id"].(float64))
-				Expect(rsp.Data.Count).To(Equal(3))
-			})
-
-			It("create object attribute for host", func() {
-				input := &metadata.ObjAttDes{
-					Attribute: metadata.Attribute{
-						OwnerID:       "0",
-						ObjectID:      "host",
-						PropertyID:    "a",
-						PropertyName:  "a",
-						PropertyGroup: "default",
-						IsEditable:    true,
-						PropertyType:  "singleasst",
-					},
-				}
-				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
-			})
-
-			It("update host using created attr", func() {
-				input := map[string]interface{}{
-					"bk_host_id": fmt.Sprintf("%v", hostId),
-					"a":          "2",
-				}
-				rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
-			})
-
-			It("update host using delete attr", func() {
-				input := map[string]interface{}{
-					"bk_host_id": fmt.Sprintf("%v", hostId),
-					"a":          "",
-				}
-				rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
-			})
-
-			It("search biz host", func() {
-				input := &params.HostCommonSearch{
-					AppID: int(bizId),
-					Page: params.PageInfo{
-						Sort: "bk_host_id",
-					},
-				}
-				rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
-				Expect(rsp.Data.Count).To(Equal(3))
-			})
 		})
 
 		Describe("add host using excel test", func() {
-			It("add host using excel with large biz_id", func() {
+			//测试用例运行后，主机数量应为0
+			AfterEach(func() {
+				// 查询业务下的主机
+				input := &params.HostCommonSearch{
+					AppID: int(bizId),
+					Page: params.PageInfo{
+						Sort: "bk_host_id",
+					},
+				}
+				rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Data.Count).To(Equal(0))
+			})
+
+			It("add host using excel with noexist biz_id", func() {
 				input := map[string]interface{}{
-					"bk_biz_id": 1000,
+					"bk_biz_id": noExistID,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.7",
+							"bk_host_innerip": "2.0.0.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -412,24 +411,8 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": "test",
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.8",
+							"bk_host_innerip": "2.0.0.1",
 							"bk_cloud_id":     0,
-						},
-					},
-					"input_type": "excel",
-				}
-				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
-			})
-
-			It("add host using excel with large cloud_id", func() {
-				input := map[string]interface{}{
-					"bk_biz_id": bizId1,
-					"host_info": map[string]interface{}{
-						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.9",
-							"bk_cloud_id":     100,
 						},
 					},
 					"input_type": "excel",
@@ -441,10 +424,10 @@ var _ = Describe("host abnormal test", func() {
 
 			It("add host using excel with invalid cloud_id", func() {
 				input := map[string]interface{}{
-					"bk_biz_id": bizId1,
+					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.10",
+							"bk_host_innerip": "2.0.0.1",
 							"bk_cloud_id":     -1,
 						},
 					},
@@ -457,23 +440,7 @@ var _ = Describe("host abnormal test", func() {
 
 			It("add host using excel with invalid bk_host_innerip", func() {
 				input := map[string]interface{}{
-					"bk_biz_id": bizId1,
-					"host_info": map[string]interface{}{
-						"4": map[string]interface{}{
-							"bk_host_innerip": "0.0.0.1",
-							"bk_cloud_id":     0,
-						},
-					},
-					"input_type": "excel",
-				}
-				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
-			})
-
-			It("add host using excel with invalid bk_host_innerip", func() {
-				input := map[string]interface{}{
-					"bk_biz_id": bizId1,
+					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "333.0.0.1",
@@ -489,7 +456,7 @@ var _ = Describe("host abnormal test", func() {
 
 			It("add host using excel with invalid bk_host_innerip", func() {
 				input := map[string]interface{}{
-					"bk_biz_id": bizId1,
+					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "2.0.0.e",
@@ -505,7 +472,7 @@ var _ = Describe("host abnormal test", func() {
 
 			It("add host using excel with no host_info", func() {
 				input := map[string]interface{}{
-					"bk_biz_id":  bizId1,
+					"bk_biz_id":  bizId,
 					"input_type": "excel",
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
@@ -515,7 +482,7 @@ var _ = Describe("host abnormal test", func() {
 
 			It("add host using excel with no bk_host_innerip", func() {
 				input := map[string]interface{}{
-					"bk_biz_id": bizId1,
+					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_cloud_id": 0,
@@ -528,27 +495,61 @@ var _ = Describe("host abnormal test", func() {
 				Expect(rsp.Result).To(Equal(false))
 			})
 
-			It("add host using excel with no bk_cloud_id", func() {
+		})
+
+		Describe("add host using excel test2", func() {
+			//测试用例运行后，主机数量应为1
+			AfterEach(func() {
+				// 查询业务下的主机
+				input := &params.HostCommonSearch{
+					AppID: int(bizId),
+					Page: params.PageInfo{
+						Sort: "bk_host_id",
+					},
+				}
+				rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Data.Count).To(Equal(1))
+			})
+
+			It("add host using excel with noexist cloud_id", func() {
 				input := map[string]interface{}{
-					"bk_biz_id": bizId1,
+					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.11",
+							"bk_host_innerip": "2.0.0.1",
+							"bk_cloud_id":     noExistID,
 						},
 					},
 					"input_type": "excel",
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(true))
+			})
+
+			It("add host using excel with no bk_cloud_id", func() {
+				input := map[string]interface{}{
+					"bk_biz_id": bizId,
+					"host_info": map[string]interface{}{
+						"4": map[string]interface{}{
+							"bk_host_innerip": "2.0.0.1",
+						},
+					},
+					"input_type": "excel",
+				}
+				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
 			})
 
 			It("add host using excel to biz", func() {
 				input := map[string]interface{}{
-					"bk_biz_id": bizId1,
+					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.12",
+							"bk_host_innerip": "2.0.0.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -561,10 +562,10 @@ var _ = Describe("host abnormal test", func() {
 
 			It("add host using excel to biz twice", func() {
 				input := map[string]interface{}{
-					"bk_biz_id": bizId1,
+					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.12",
+							"bk_host_innerip": "2.0.0.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -572,39 +573,34 @@ var _ = Describe("host abnormal test", func() {
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
-			})
 
-			It("search biz host", func() {
-				input := &params.HostCommonSearch{
-					AppID: int(bizId1),
-					Page: params.PageInfo{
-						Sort: "bk_host_id",
-					},
-				}
-				rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+				rsp, err = hostServerClient.AddHost(context.Background(), header, input)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
-				data := rsp.Data.Info[0]["host"].(map[string]interface{})
-				hostId3 = int64(data["bk_host_id"].(float64))
-				Expect(rsp.Data.Count).To(Equal(1))
 			})
 		})
 	})
 
 	Describe("search host test", func() {
+
+		// 准备数据
+		JustBeforeEach(func() {
+			prepareData()
+		})
+
 		It("search host using invalid bk_host_id", func() {
 			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", "eceer", header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("search host using large bk_host_id", func() {
-			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", "1000", header)
+		It("search host using noexist bk_host_id", func() {
+			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", noExistIDStr, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("search biz host using large biz id", func() {
+		It("search biz host using noexist biz id", func() {
 			input := &params.HostCommonSearch{
 				Page: params.PageInfo{
 					Sort: "bk_host_id",
@@ -616,7 +612,7 @@ var _ = Describe("host abnormal test", func() {
 							map[string]interface{}{
 								"field":    "bk_biz_id",
 								"operator": "$eq",
-								"value":    100,
+								"value":    noExistID,
 							},
 						},
 						Fields: []string{},
@@ -652,9 +648,9 @@ var _ = Describe("host abnormal test", func() {
 				AppID: int(bizId),
 				Ip: params.IPInfo{
 					Data: []string{
-						"2.0.0.6",
+						"2.0.0.1",
 						"2.0.0",
-						"2.0.0.13",
+						"2.0.0.2",
 					},
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
@@ -671,53 +667,22 @@ var _ = Describe("host abnormal test", func() {
 	})
 
 	Describe("transfer host test", func() {
-		It("add host to resource", func() {
-			input := map[string]interface{}{
-				"host_info": map[string]interface{}{
-					"4": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.15",
-						"bk_cloud_id":     0,
-					},
-				},
-			}
-			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+
+		// 清空数据
+		BeforeEach(func() {
+			clearData()
 		})
 
-		It("search resource host", func() {
-			input := &params.HostCommonSearch{
-				AppID: -1,
-				Condition: []params.SearchCondition{
-					params.SearchCondition{
-						ObjectID: "biz",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "default",
-								"operator": "$eq",
-								"value":    1,
-							},
-						},
-						Fields: []string{},
-					},
-				},
-				Page: params.PageInfo{
-					Sort: "bk_host_id",
-				},
-			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			hostId1 = int64(data["bk_host_id"].(float64))
-			Expect(rsp.Data.Count).To(Equal(1))
+		// 准备数据
+		JustBeforeEach(func() {
+			prepareData()
 		})
 
 		It("transfer resourcehost to nonexist biz's idlemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
-				ApplicationID: 1000,
+				ApplicationID: noExistID,
 				HostID: []int64{
-					hostId1,
+					hostId4,
 				},
 			}
 			rsp, err := hostServerClient.AssignHostToApp(context.Background(), header, input)
@@ -757,12 +722,12 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("transfer resourcehost to idlemodule invalid host ids", func() {
+		It("transfer resourcehost to idlemodule noexist host ids", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
 				HostID: []int64{
-					hostId1,
-					1000,
+					hostId4,
+					noExistID,
 				},
 			}
 			rsp, err := hostServerClient.AssignHostToApp(context.Background(), header, input)
@@ -772,12 +737,12 @@ var _ = Describe("host abnormal test", func() {
 
 		It("transfer host to other biz's module", func() {
 			input := map[string]interface{}{
-				"bk_biz_id": bizId,
+				"bk_biz_id": bizId1,
 				"bk_host_id": []int64{
 					hostId2,
 				},
 				"bk_module_id": []int64{
-					moduleId,
+					moduleId1,
 				},
 				"is_increment": false,
 			}
@@ -793,7 +758,7 @@ var _ = Describe("host abnormal test", func() {
 					hostId2,
 				},
 				"bk_module_id": []int64{
-					1000,
+					noExistID,
 				},
 				"is_increment": false,
 			}
@@ -806,10 +771,10 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"bk_biz_id": bizId1,
 				"bk_host_id": []int64{
-					1000,
+					noExistID,
 				},
 				"bk_module_id": []int64{
-					moduleId,
+					moduleId2,
 				},
 				"is_increment": false,
 			}
@@ -822,11 +787,11 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"bk_biz_id": bizId1,
 				"bk_host_id": []int64{
-					1000,
-					2000,
+					noExistID,
+					noExistID,
 				},
 				"bk_module_id": []int64{
-					moduleId,
+					moduleId2,
 				},
 				"is_increment": false,
 			}
@@ -841,7 +806,7 @@ var _ = Describe("host abnormal test", func() {
 					hostId3,
 				},
 				"bk_module_id": []int64{
-					moduleId,
+					moduleId2,
 				},
 				"is_increment": false,
 			}
@@ -854,7 +819,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"bk_biz_id": bizId1,
 				"bk_module_id": []int64{
-					moduleId,
+					moduleId2,
 				},
 				"is_increment": false,
 			}
@@ -876,11 +841,12 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
+		// 可以不传is_increment，默认为false
 		It("transfer host to module less is_increment", func() {
 			input := map[string]interface{}{
 				"bk_biz_id": bizId1,
 				"bk_module_id": []int64{
-					moduleId,
+					moduleId2,
 				},
 				"bk_host_id": []int64{
 					hostId3,
@@ -888,42 +854,28 @@ var _ = Describe("host abnormal test", func() {
 			}
 			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("transfer multiple hosts with a nonexist host to module", func() {
 			input := map[string]interface{}{
 				"bk_biz_id": bizId1,
 				"bk_host_id": []int64{
-					hostId3,
-					2000,
+					hostId1,
+					noExistID,
 				},
 				"bk_module_id": []int64{
-					moduleId,
+					moduleId2,
 				},
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-		})
 
-		It("search biz host", func() {
-			input := &params.HostCommonSearch{
+			// 查看转移后的模块主机数量,上面即使有不存在的hostid，正确的hostid也能被成功转移
+			input1 := &params.HostCommonSearch{
 				AppID: int(bizId1),
-				Page: params.PageInfo{
-					Sort: "bk_host_id",
-				},
-			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(1))
-		})
-
-		It("search module host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
 				Condition: []params.SearchCondition{
 					params.SearchCondition{
 						ObjectID: "module",
@@ -931,7 +883,7 @@ var _ = Describe("host abnormal test", func() {
 							map[string]interface{}{
 								"field":    "bk_module_id",
 								"operator": "$eq",
-								"value":    moduleId,
+								"value":    moduleId2,
 							},
 						},
 						Fields: []string{},
@@ -941,22 +893,11 @@ var _ = Describe("host abnormal test", func() {
 					Sort: "bk_host_id",
 				},
 			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			rsp1, err := hostServerClient.SearchHost(context.Background(), header, input1)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(0))
-		})
+			Expect(rsp1.Result).To(Equal(true))
+			Expect(rsp1.Data.Count).To(Equal(1))
 
-		It("transfer resourcehost to idlemodule", func() {
-			input := &metadata.DefaultModuleHostConfigParams{
-				ApplicationID: bizId1,
-				HostID: []int64{
-					hostId1,
-				},
-			}
-			rsp, err := hostServerClient.AssignHostToApp(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("transfer multiple host to module", func() {
@@ -967,18 +908,17 @@ var _ = Describe("host abnormal test", func() {
 					hostId1,
 				},
 				"bk_module_id": []int64{
-					moduleId,
+					moduleId2,
 				},
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-		})
 
-		It("search module host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
+			// 查看转移后的模块主机数量
+			input1 := &params.HostCommonSearch{
+				AppID: int(bizId1),
 				Condition: []params.SearchCondition{
 					params.SearchCondition{
 						ObjectID: "module",
@@ -986,7 +926,7 @@ var _ = Describe("host abnormal test", func() {
 							map[string]interface{}{
 								"field":    "bk_module_id",
 								"operator": "$eq",
-								"value":    moduleId,
+								"value":    moduleId2,
 							},
 						},
 						Fields: []string{},
@@ -996,15 +936,56 @@ var _ = Describe("host abnormal test", func() {
 					Sort: "bk_host_id",
 				},
 			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			rsp1, err := hostServerClient.SearchHost(context.Background(), header, input1)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(2))
+			Expect(rsp1.Result).To(Equal(true))
+			Expect(rsp1.Data.Count).To(Equal(2))
+		})
+
+		It("transfer multiple host to noexist module in a biz", func() {
+			input := map[string]interface{}{
+				"bk_biz_id": bizId1,
+				"bk_host_id": []int64{
+					hostId3,
+					hostId1,
+				},
+				"bk_module_id": []int64{
+					moduleId1,
+				},
+				"is_increment": false,
+			}
+			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+
+			input1 := &params.HostCommonSearch{
+				AppID: int(bizId1),
+				Condition: []params.SearchCondition{
+					params.SearchCondition{
+						ObjectID: "module",
+						Condition: []interface{}{
+							map[string]interface{}{
+								"field":    "bk_module_id",
+								"operator": "$eq",
+								"value":    moduleId1,
+							},
+						},
+						Fields: []string{},
+					},
+				},
+				Page: params.PageInfo{
+					Sort: "bk_host_id",
+				},
+			}
+			rsp1, err := hostServerClient.SearchHost(context.Background(), header, input1)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp1.Result).To(Equal(true))
+			Expect(rsp1.Data.Count).To(Equal(0))
 		})
 
 		It("transfer host to idle module nonexist biz", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
-				ApplicationID: 1000,
+				ApplicationID: noExistID,
 				HostID: []int64{
 					hostId1,
 				},
@@ -1016,10 +997,10 @@ var _ = Describe("host abnormal test", func() {
 
 		It("transfer host to idle module one nonexist host", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
-				ApplicationID: 1000,
+				ApplicationID: bizId1,
 				HostID: []int64{
 					hostId1,
-					1000,
+					noExistID,
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
@@ -1027,51 +1008,44 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
+		// 查询条件导致找不到主机，返回true，不会造成脏数据
 		It("move nonexist biz's module hosts to idle", func() {
 			input := &metadata.SetHostConfigParams{
-				ApplicationID: 1000,
+				ApplicationID: noExistID,
 				SetID:         setId,
 				ModuleID:      moduleId,
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
+		// 查询条件导致找不到主机，返回true，不会造成脏数据
 		It("move nonexist module's hosts to idle", func() {
 			input := &metadata.SetHostConfigParams{
 				ApplicationID: bizId1,
 				SetID:         setId,
-				ModuleID:      1000,
+				ModuleID:      noExistID,
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
-		It("move nonexist set's module hosts to idle", func() {
+		// 查询条件导致找不到主机，返回true，不会造成脏数据
+		It("move nonexist set's hosts to idle", func() {
 			input := &metadata.SetHostConfigParams{
 				ApplicationID: bizId1,
-				SetID:         1000,
+				SetID:         noExistID,
 				ModuleID:      moduleId,
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
-		It("move nonexist biz's module hosts to idle", func() {
-			input := &metadata.SetHostConfigParams{
-				ApplicationID: 1000,
-				SetID:         setId,
-				ModuleID:      moduleId,
-			}
-			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
-
-		It("move unmatching set module hosts to idle", func() {
+		// 查询条件导致找不到主机，返回true，不会造成脏数据
+		It("move unmatching set module relationship hosts to idle", func() {
 			input := &metadata.SetHostConfigParams{
 				ApplicationID: bizId1,
 				SetID:         setId1,
@@ -1079,42 +1053,16 @@ var _ = Describe("host abnormal test", func() {
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
-		It("move unmatching set module hosts to idle", func() {
+		It("move host whose set and module is 0 to idle", func() {
 			input := &metadata.SetHostConfigParams{
 				ApplicationID: bizId1,
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-		})
-
-		It("search module host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
-					params.SearchCondition{
-						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    moduleId,
-							},
-						},
-						Fields: []string{},
-					},
-				},
-				Page: params.PageInfo{
-					Sort: "bk_host_id",
-				},
-			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(2))
 		})
 
 		It("transfer host to idle module less hostid", func() {
@@ -1149,7 +1097,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("transfer host to nonexist biz's fault module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
-				ApplicationID: 1000,
+				ApplicationID: noExistID,
 				HostID: []int64{
 					hostId1,
 				},
@@ -1163,7 +1111,7 @@ var _ = Describe("host abnormal test", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
 				HostID: []int64{
-					1000,
+					noExistID,
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
@@ -1171,17 +1119,39 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
+		// 虽然主机ID不存在导致返回结果为false，但正常的主机能被转移成功
 		It("transfer a nonexist host to fault module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
 				HostID: []int64{
 					hostId1,
-					1000,
+					noExistID,
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
+
+			input1 := &params.HostCommonSearch{
+				AppID: int(bizId1),
+				Condition: []params.SearchCondition{
+					params.SearchCondition{
+						ObjectID: "module",
+						Condition: []interface{}{
+							map[string]interface{}{
+								"field":    "bk_module_id",
+								"operator": "$eq",
+								"value":    faultModuleId,
+							},
+						},
+						Fields: []string{},
+					},
+				},
+			}
+			rsp1, err := hostServerClient.SearchHost(context.Background(), header, input1)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp1.Result).To(Equal(true))
+			Expect(rsp1.Data.Count).To(Equal(1))
 		})
 
 		It("transfer host to fault module less hostid", func() {
@@ -1204,29 +1174,6 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("search fault host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId1),
-				Condition: []params.SearchCondition{
-					params.SearchCondition{
-						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    faultModuleId,
-							},
-						},
-						Fields: []string{},
-					},
-				},
-			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(0))
-		})
-
 		It("transfer multiple hosts to fault module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
@@ -1238,10 +1185,8 @@ var _ = Describe("host abnormal test", func() {
 			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-		})
 
-		It("search fault host", func() {
-			input := &params.HostCommonSearch{
+			input1 := &params.HostCommonSearch{
 				AppID: int(bizId1),
 				Condition: []params.SearchCondition{
 					params.SearchCondition{
@@ -1257,36 +1202,11 @@ var _ = Describe("host abnormal test", func() {
 					},
 				},
 			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			rsp1, err := hostServerClient.SearchHost(context.Background(), header, input1)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(2))
-		})
+			Expect(rsp1.Result).To(Equal(true))
+			Expect(rsp1.Data.Count).To(Equal(2))
 
-		It("search module host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId1),
-				Condition: []params.SearchCondition{
-					params.SearchCondition{
-						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    moduleId,
-							},
-						},
-						Fields: []string{},
-					},
-				},
-				Page: params.PageInfo{
-					Sort: "bk_host_id",
-				},
-			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(0))
 		})
 
 		It("transfer unmatching biz host to resourcemodule", func() {
@@ -1303,7 +1223,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("transfer nonexist biz host to resourcemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
-				ApplicationID: 100,
+				ApplicationID: noExistID,
 				HostID: []int64{
 					hostId,
 				},
@@ -1318,7 +1238,7 @@ var _ = Describe("host abnormal test", func() {
 				ApplicationID: bizId,
 				HostID: []int64{
 					hostId,
-					1000,
+					noExistID,
 				},
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
@@ -1335,7 +1255,7 @@ var _ = Describe("host abnormal test", func() {
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("transfer host to resourcemodule less hostid", func() {
@@ -1369,11 +1289,9 @@ var _ = Describe("host abnormal test", func() {
 			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-		})
 
-		It("search idle host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
+			input1 := &params.HostCommonSearch{
+				AppID: int(bizId1),
 				Condition: []params.SearchCondition{
 					params.SearchCondition{
 						ObjectID: "module",
@@ -1388,10 +1306,10 @@ var _ = Describe("host abnormal test", func() {
 					},
 				},
 			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			rsp1, err := hostServerClient.SearchHost(context.Background(), header, input1)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(2))
+			Expect(rsp1.Result).To(Equal(true))
+			Expect(rsp1.Data.Count).To(Equal(2))
 		})
 
 		It("transfer multiple hosts to resource module", func() {
@@ -1405,10 +1323,8 @@ var _ = Describe("host abnormal test", func() {
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-		})
 
-		It("search resource host", func() {
-			input := &params.HostCommonSearch{
+			input1 := &params.HostCommonSearch{
 				AppID: -1,
 				Condition: []params.SearchCondition{
 					params.SearchCondition{
@@ -1427,10 +1343,23 @@ var _ = Describe("host abnormal test", func() {
 					Sort: "bk_host_id",
 				},
 			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			rsp1, err := hostServerClient.SearchHost(context.Background(), header, input1)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(2))
+			Expect(rsp1.Result).To(Equal(true))
+			Expect(rsp1.Data.Count).To(Equal(3))
+		})
+	})
+
+	Describe("sync host test", func() {
+
+		// 清空数据
+		BeforeEach(func() {
+			clearData()
+		})
+
+		// 准备数据
+		JustBeforeEach(func() {
+			prepareData()
 		})
 
 		It("sync host less biz", func() {
@@ -1522,7 +1451,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_module_id": []int64{
 					moduleId,
 				},
-				"bk_biz_id": 1000,
+				"bk_biz_id": noExistID,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -1538,7 +1467,7 @@ var _ = Describe("host abnormal test", func() {
 					},
 				},
 				"bk_module_id": []int64{
-					1000,
+					noExistID,
 				},
 				"bk_biz_id": bizId,
 			}
@@ -1557,7 +1486,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 				"bk_module_id": []int64{
 					moduleId,
-					1000,
+					noExistID,
 				},
 				"bk_biz_id": bizId,
 			}
@@ -1592,7 +1521,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.21",
+						"bk_host_innerip": "2.0.0.3",
 						"bk_cloud_id":     0,
 					},
 					"1": map[string]interface{}{
@@ -1614,7 +1543,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.21",
+						"bk_host_innerip": "2.0.0.5",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1656,11 +1585,11 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.22",
+						"bk_host_innerip": "2.0.0.8",
 						"bk_cloud_id":     0,
 					},
 					"1": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.23",
+						"bk_host_innerip": "2.0.0.9",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1673,30 +1602,9 @@ var _ = Describe("host abnormal test", func() {
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-		})
 
-		It("sync host multiple module in different biz", func() {
-			input := map[string]interface{}{
-				"host_info": map[string]interface{}{
-					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.30",
-						"bk_cloud_id":     0,
-					},
-				},
-				"bk_module_id": []int64{
-					moduleId,
-					moduleId2,
-				},
-				"bk_biz_id": bizId,
-			}
-			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
-
-		It("search module host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId1),
+			input1 := &params.HostCommonSearch{
+				AppID: int(bizId),
 				Condition: []params.SearchCondition{
 					params.SearchCondition{
 						ObjectID: "module",
@@ -1711,39 +1619,35 @@ var _ = Describe("host abnormal test", func() {
 					},
 				},
 			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			rsp1, err := hostServerClient.SearchHost(context.Background(), header, input1)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(2))
+			Expect(rsp1.Result).To(Equal(true))
+			Expect(rsp1.Data.Count).To(Equal(2))
 		})
 
-		It("search module host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
-					params.SearchCondition{
-						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    moduleId1,
-							},
-						},
-						Fields: []string{},
+		PIt("sync host multiple module in different biz", func() {
+			input := map[string]interface{}{
+				"host_info": map[string]interface{}{
+					"0": map[string]interface{}{
+						"bk_host_innerip": "2.0.0.7",
+						"bk_cloud_id":     0,
 					},
 				},
+				"bk_module_id": []int64{
+					moduleId,
+					moduleId2,
+				},
+				"bk_biz_id": bizId,
 			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(2))
+			Expect(rsp.Result).To(Equal(false))
 		})
 
 		It("clone host less biz", func() {
 			input := &metadata.CloneHostPropertyParams{
-				OrgIP:   "2.0.0.22",
-				DstIP:   "2.0.0.24",
+				OrgIP:   "2.0.0.1",
+				DstIP:   "2.0.0.2",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1754,7 +1658,7 @@ var _ = Describe("host abnormal test", func() {
 		It("clone host less srcip", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
-				DstIP:   "2.0.0.25",
+				DstIP:   "2.0.0.2",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1765,7 +1669,7 @@ var _ = Describe("host abnormal test", func() {
 		It("clone host less dstip", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
-				OrgIP:   "2.0.0.22",
+				OrgIP:   "2.0.0.1",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1775,9 +1679,9 @@ var _ = Describe("host abnormal test", func() {
 
 		It("clone host invalid biz", func() {
 			input := &metadata.CloneHostPropertyParams{
-				AppID:   1000,
-				OrgIP:   "2.0.0.22",
-				DstIP:   "2.0.0.26",
+				AppID:   noExistID,
+				OrgIP:   "2.0.0.1",
+				DstIP:   "2.0.0.2",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1787,9 +1691,9 @@ var _ = Describe("host abnormal test", func() {
 
 		It("clone host invalid srcip", func() {
 			input := &metadata.CloneHostPropertyParams{
-				AppID:   1000,
+				AppID:   bizId,
 				OrgIP:   "2.0.0",
-				DstIP:   "2.0.0.27",
+				DstIP:   "2.0.0.2",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1799,8 +1703,8 @@ var _ = Describe("host abnormal test", func() {
 
 		It("clone host invalid dstip", func() {
 			input := &metadata.CloneHostPropertyParams{
-				AppID:   1000,
-				OrgIP:   "2.0.0.22",
+				AppID:   bizId,
+				OrgIP:   "2.0.0.1",
 				DstIP:   "2.0.0",
 				CloudID: 0,
 			}
@@ -1812,40 +1716,28 @@ var _ = Describe("host abnormal test", func() {
 		It("clone host exist dstip", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
-				OrgIP:   "2.0.0.22",
-				DstIP:   "2.0.0.23",
+				OrgIP:   "2.0.0.1",
+				DstIP:   "2.0.0.2",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
-
-		It("search module host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
-					params.SearchCondition{
-						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    moduleId1,
-							},
-						},
-						Fields: []string{},
-					},
-				},
-			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(2))
 		})
 	})
 
 	Describe("batch operate host", func() {
+
+		// 清空数据
+		BeforeEach(func() {
+			clearData()
+		})
+
+		// 准备数据
+		JustBeforeEach(func() {
+			prepareData()
+		})
+
 		It("update host less hostid", func() {
 			input := map[string]interface{}{
 				"bk_host_name": "update_host_name",
@@ -1875,9 +1767,11 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
+		// although the host noExistID cause the op result is false,the hostId1's bk_host_name will be updated successfully
+		// so currently, the hostId1's bk_host_name is update_host_name
 		It("update host one nonexist hostid", func() {
 			input := map[string]interface{}{
-				"bk_host_id":   fmt.Sprintf("%v,%v", hostId1, 100),
+				"bk_host_id":   fmt.Sprintf("%v,%v", hostId1, noExistID),
 				"bk_host_name": "update_host_name",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
@@ -1893,7 +1787,17 @@ var _ = Describe("host abnormal test", func() {
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
+
+			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId1, 10), header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp1.Result).To(Equal(true))
+			for _, data := range rsp1.Data {
+				if data.PropertyID == "bk_host_name" {
+					Expect(data.PropertyValue).To(Equal("update_host_name"))
+					break
+				}
+			}
 		})
 
 		It("update host one invalid attr value", func() {
@@ -1906,76 +1810,241 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("get host base info", func() {
-			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId1, 10), header)
+		It("create object attribute for host", func() {
+			input := &metadata.ObjAttDes{
+				Attribute: metadata.Attribute{
+					OwnerID:       "0",
+					ObjectID:      "host",
+					PropertyID:    "a",
+					PropertyName:  "a",
+					PropertyGroup: "default",
+					IsEditable:    true,
+					PropertyType:  "singleasst",
+				},
+			}
+			rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			for _, data := range rsp.Data {
-				if data.PropertyID == "bk_host_name" {
-					Expect(data.PropertyValue).To(Equal(""))
-					break
-				}
-			}
 		})
 
-		It("delete host less bk_host_id", func() {
+		It("update host using created attr", func() {
 			input := map[string]interface{}{
-				"bk_supplier_account": "0",
+				"bk_host_id": fmt.Sprintf("%v", hostId),
+				"a":          "2",
 			}
-			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
+			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
-		It("delete host less bk_supplier_account", func() {
+		It("update host using delete attr", func() {
 			input := map[string]interface{}{
-				"bk_host_id": fmt.Sprintf("%v,%v", hostId1, hostId3),
+				"bk_host_id": fmt.Sprintf("%v", hostId),
+				"a":          "",
 			}
-			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
+			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
-		It("delete host empty bk_host_id", func() {
-			input := map[string]interface{}{
-				"bk_host_id":          "",
-				"bk_supplier_account": "0",
-			}
-			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
-
+		// one host format check is unpass ,lead to all the host fail to delete
 		It("delete host one invalid bk_host_id", func() {
 			input := map[string]interface{}{
-				"bk_host_id":          fmt.Sprintf("%v,abc", hostId1),
-				"bk_supplier_account": "0",
+				"bk_host_id": fmt.Sprintf("%v,abc", hostId4),
 			}
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
+
+			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId4, 10), header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp1.Result).To(Equal(true))
 		})
 
+		// although the noexist host noExistID case the result is false, but the right host hostId3 will be deleted
 		It("delete host one nonexist bk_host_id", func() {
 			input := map[string]interface{}{
-				"bk_host_id":          fmt.Sprintf("%v,%v", hostId3, 100),
-				"bk_supplier_account": "0",
+				"bk_host_id": fmt.Sprintf("%v,%v", hostId4, noExistID),
 			}
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
-		})
 
-		It("get host base info", func() {
-			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId1, 10), header)
+			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId4, 10), header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-		})
-
-		It("get host base info", func() {
-			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId3, 10), header)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp1.Result).To(Equal(false))
 		})
 	})
 })
+
+// 初始化数据，为后续的操作做准备
+func prepareData() {
+	// 在业务bizId中加入主机
+	input := map[string]interface{}{
+		"bk_biz_id": bizId,
+		"host_info": map[string]interface{}{
+			"4": map[string]interface{}{
+				"bk_host_innerip": "2.0.0.1",
+				"bk_cloud_id":     0,
+			},
+			"5": map[string]interface{}{
+				"bk_host_innerip": "2.0.0.2",
+				"bk_cloud_id":     0,
+			},
+		},
+	}
+	rsp, err := hostServerClient.AddHost(context.Background(), header, input)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(rsp.Result).To(Equal(true))
+
+	input1 := &params.HostCommonSearch{
+		AppID: int(bizId),
+		Page: params.PageInfo{
+			Sort: "bk_host_id",
+		},
+	}
+	rsp1, err := hostServerClient.SearchHost(context.Background(), header, input1)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(rsp1.Result).To(Equal(true))
+	Expect(rsp1.Data.Count).To(Equal(2))
+	hostId = int64(rsp1.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"].(float64))
+	hostId2 = int64(rsp1.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"].(float64))
+
+	// 在业务bizId1中加入主机
+	input2 := map[string]interface{}{
+		"bk_biz_id": bizId1,
+		"host_info": map[string]interface{}{
+			"4": map[string]interface{}{
+				"bk_host_innerip": "2.0.0.3",
+				"bk_cloud_id":     0,
+			},
+			"5": map[string]interface{}{
+				"bk_host_innerip": "2.0.0.4",
+				"bk_cloud_id":     0,
+			},
+		},
+	}
+	rsp2, err := hostServerClient.AddHost(context.Background(), header, input2)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(rsp2.Result).To(Equal(true))
+
+	input3 := &params.HostCommonSearch{
+		AppID: int(bizId1),
+		Page: params.PageInfo{
+			Sort: "bk_host_id",
+		},
+	}
+	rsp3, err := hostServerClient.SearchHost(context.Background(), header, input3)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(rsp3.Result).To(Equal(true))
+	Expect(rsp3.Data.Count).To(Equal(2))
+	hostId1 = int64(rsp3.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"].(float64))
+	hostId3 = int64(rsp3.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"].(float64))
+
+	//在资源池中加入主机
+	input4 := map[string]interface{}{
+		"host_info": map[string]interface{}{
+			"4": map[string]interface{}{
+				"bk_host_innerip": "2.0.0.5",
+				"bk_cloud_id":     0,
+			},
+		},
+	}
+	rs4, err := hostServerClient.AddHost(context.Background(), header, input4)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(rs4.Result).To(Equal(true))
+
+	//查看资源池中的主机数量
+	input5 := &params.HostCommonSearch{
+		AppID: -1,
+		Condition: []params.SearchCondition{
+			params.SearchCondition{
+				ObjectID: "biz",
+				Condition: []interface{}{
+					map[string]interface{}{
+						"field":    "default",
+						"operator": "$eq",
+						"value":    1,
+					},
+				},
+				Fields: []string{},
+			},
+		},
+		Page: params.PageInfo{
+			Sort: "bk_host_id",
+		},
+	}
+	rsp5, err := hostServerClient.SearchHost(context.Background(), header, input5)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(rsp5.Result).To(Equal(true))
+	data := rsp5.Data.Info[0]["host"].(map[string]interface{})
+	hostId4 = int64(data["bk_host_id"].(float64))
+	Expect(rsp5.Data.Count).To(Equal(1))
+}
+
+// 清除所有数据，保证测试用例之间互不干扰
+func clearData() {
+	// 业务包括两个自建的业务和资源池
+	bizIds := []int64{bizId, bizId1, -1}
+	for _, bizId := range bizIds {
+		//获取业务下的所有主机
+		input := &params.HostCommonSearch{
+			AppID: int(bizId),
+			Page: params.PageInfo{
+				Sort: "bk_host_id",
+			},
+		}
+		rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		hostIds := []int64{}
+		hostIds2 := []string{}
+		for _, hostInfo := range rsp.Data.Info {
+			hostIds = append(hostIds, int64(hostInfo["host"].(map[string]interface{})["bk_host_id"].(float64)))
+			hostIds2 = append(hostIds2, fmt.Sprintf("%d", int64(hostInfo["host"].(map[string]interface{})["bk_host_id"].(float64))))
+		}
+
+		if len(hostIds) > 0 {
+			if bizId != -1 {
+				// 将业务下的主机全部转到该业务下的空闲模块
+				input1 := &metadata.DefaultModuleHostConfigParams{
+					ApplicationID: bizId,
+					HostID:        hostIds,
+				}
+				rsp1, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input1)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp1.Result).To(Equal(true))
+
+				// 将业务下的空闲模块主机全部转到资源池
+				input2 := &metadata.DefaultModuleHostConfigParams{
+					ApplicationID: bizId,
+					HostID:        hostIds,
+				}
+				rsp2, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input2)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp2.Result).To(Equal(true))
+			}
+			// 删除资源池里的主机
+			input4 := map[string]interface{}{
+				"bk_host_id": strings.Join(hostIds2, ","),
+			}
+			//By(fmt.Sprintf("*********DeleteHostBatch bid:%v, input4:%+v*******", bizId, input4))
+			rsp4, err := hostServerClient.DeleteHostBatch(context.Background(), header, input4)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp4.Result).To(Equal(true))
+		}
+
+		// 查询业务下的主机
+		input3 := &params.HostCommonSearch{
+			AppID: int(bizId),
+			Page: params.PageInfo{
+				Sort: "bk_host_id",
+			},
+		}
+		rsp3, err := hostServerClient.SearchHost(context.Background(), header, input3)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp3.Result).To(Equal(true))
+		//By(fmt.Sprintf("*********bid:%v, data:%+v*******", bizId, rsp3.Data))
+		Expect(rsp3.Data.Count).To(Equal(0))
+	}
+}

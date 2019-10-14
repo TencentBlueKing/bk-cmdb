@@ -767,15 +767,15 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	// get host in set
-	var condition meta.HostModuleRelationRequest
-	hostIDArr := make([]int64, 0)
-
 	if 0 == data.SetID && 0 == data.ModuleID {
 		blog.Errorf("MoveSetHost2IdleModule bk_set_id and bk_module_id cannot be empty at the same time,input:%#v,rid:%s", data, util.GetHTTPCCRequestID(header))
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
 		return
 	}
+
+	// get host in set
+	var condition meta.HostModuleRelationRequest
+	hostIDArr := make([]int64, 0)
 
 	if 0 != data.SetID {
 		condition.SetIDArr = []int64{data.SetID}

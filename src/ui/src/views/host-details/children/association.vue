@@ -2,7 +2,7 @@
     <div class="association">
         <div class="options clearfix">
             <div class="fl" v-show="activeView === viewName.list">
-                <span class="inline-block-middle" v-if="hasAssociation"
+                <span class="inline-block-middle mr10" v-if="hasAssociation"
                     v-cursor="{
                         active: !$isAuthorized(updateAuth),
                         auth: [updateAuth]
@@ -10,6 +10,11 @@
                     <bk-button theme="primary" class="options-button"
                         :disabled="!$isAuthorized(updateAuth)"
                         @click="showCreate = true">
+                        {{$t('新增关联')}}
+                    </bk-button>
+                </span>
+                <span class="inline-block-middle mr10" v-else v-bk-tooltips="$t('当前模型暂未定义可用关联')">
+                    <bk-button theme="primary" class="options-button" disabled>
                         {{$t('新增关联')}}
                     </bk-button>
                 </span>
@@ -36,7 +41,7 @@
         <div class="association-view">
             <component :is="activeView"></component>
         </div>
-        <bk-sideslider :is-show.sync="showCreate" :width="800" :title="$t('新增关联')">
+        <bk-sideslider v-transfer-dom :is-show.sync="showCreate" :width="800" :title="$t('新增关联')">
             <cmdb-host-association-create slot="content" v-if="showCreate"></cmdb-host-association-create>
         </bk-sideslider>
     </div>
@@ -46,7 +51,7 @@
     import cmdbHostAssociationList from './association-list.vue'
     import cmdbHostAssociationGraphics from './association-graphics.vue'
     import cmdbHostAssociationCreate from './association-create.vue'
-    import { RESOURCE_HOST } from '../router.config.js'
+    import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
     export default {
         name: 'cmdb-host-association',
         components: {
@@ -66,7 +71,7 @@
         },
         computed: {
             updateAuth () {
-                const isResourceHost = this.$route.name === RESOURCE_HOST
+                const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
                 if (isResourceHost) {
                     return this.$OPERATION.U_RESOURCE_HOST
                 }
@@ -96,6 +101,7 @@
         height: 100%;
         .association-view {
             height: calc(100% - 62px);
+            @include scrollbar-y;
         }
     }
     .options {
@@ -103,7 +109,6 @@
         font-size: 0;
         .options-button {
             height: 32px;
-            margin: 0 11px 0 0;
             line-height: 30px;
             font-size: 14px;
             &.options-button-view {

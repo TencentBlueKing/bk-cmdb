@@ -198,6 +198,7 @@ func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathPara
 		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
 		appList, err := s.AuthManager.Authorize.GetAnyAuthorizedBusinessList(params.Context, user)
 		if err != nil {
+			blog.Errorf("[api-biz] SearchReducedBusinessList failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
 		}
 
@@ -346,6 +347,7 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
 		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(params.Context, user)
 		if err != nil {
+			blog.Errorf("[api-biz] SearchBusiness failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
 		}
 
@@ -411,6 +413,7 @@ func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams,
 		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
 		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(params.Context, user)
 		if err != nil {
+			blog.Errorf("[api-biz] SearchArchivedBusiness failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
 		}
 		// sort for prepare to find business with page.
@@ -475,4 +478,64 @@ func (s *Service) GetInternalModule(params types.ContextParams, pathParams, quer
 	}
 
 	return result, nil
+}
+
+func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pathParams, queryparams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+	}
+
+	result, err := s.GetInternalModule(params, pathParams, queryparams, data)
+	if err != nil {
+		return result, err
+	}
+	innerAppTopo, ok := result.(*metadata.InnterAppTopo)
+	if ok == false || innerAppTopo == nil {
+		blog.ErrorJSON("GetInternalModuleWithStatistics failed, GetInternalModule return unexpected type: %s, rid: %s", innerAppTopo, params.ReqID)
+		return result, err
+	}
+	moduleIDArr := make([]int64, 0)
+	for _, item := range innerAppTopo.Module {
+		moduleIDArr = append(moduleIDArr, item.ModuleID)
+	}
+	listHostOption := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		SetIDArr:      []int64{innerAppTopo.SetID},
+		ModuleIDArr:   moduleIDArr,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	hostModuleRelations, e := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, listHostOption)
+	if e != nil {
+		blog.Errorf("GetInternalModuleWithStatistics failed, list host modules failed, option: %+v, err: %s, rid: %s", listHostOption, e.Error(), params.ReqID)
+		return nil, e
+	}
+	setHostIDs := make([]int64, 0)
+	moduleHostIDs := make(map[int64][]int64, 0)
+	for _, relation := range hostModuleRelations.Data.Info {
+		setHostIDs = append(setHostIDs, relation.HostID)
+		if _, ok := moduleHostIDs[relation.ModuleID]; ok == false {
+			moduleHostIDs[relation.ModuleID] = make([]int64, 0)
+		}
+		moduleHostIDs[relation.ModuleID] = append(moduleHostIDs[relation.ModuleID], relation.HostID)
+	}
+	set := mapstr.NewFromStruct(innerAppTopo, "field")
+	if err != nil {
+		blog.Errorf("GetInternalModuleWithStatistics failed, convert innerAppTopo to map failed, innerAppTopo: %+v, err: %s, rid: %s", innerAppTopo, e.Error(), params.ReqID)
+		return nil, e
+	}
+	set["host_count"] = len(util.IntArrayUnique(setHostIDs))
+	modules := make([]mapstr.MapStr, 0)
+	for _, module := range innerAppTopo.Module {
+		moduleItem := mapstr.NewFromStruct(module, "field")
+		moduleItem["host_count"] = 0
+		if hostIDs, ok := moduleHostIDs[module.ModuleID]; ok == true {
+			moduleItem["host_count"] = len(util.IntArrayUnique(hostIDs))
+		}
+		modules = append(modules, moduleItem)
+	}
+	set["module"] = modules
+	return set, nil
 }

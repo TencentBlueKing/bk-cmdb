@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -37,7 +38,7 @@ import (
 	"configcenter/src/storage/dal/mongo/remote"
 )
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -96,7 +97,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		process.Service.SetDB(db)
 		process.Service.SetApiSrvAddr(process.Config.ProcSrvConfig.CCApiSrvAddr)
 
-		if process.Config.AuthCenter.Enable {
+		if auth.IsAuthed() {
 			blog.Info("enable auth center access.")
 			authCli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter, engine.Metric().Registry())
 			if err != nil {
@@ -115,11 +116,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 		break
 	}
-	if err := backbone.StartServer(ctx, engine, service.WebService(), true); err != nil {
+	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
+	if err != nil {
 		return err
 	}
 
-	<-ctx.Done()
+	select {
+	case <-ctx.Done():
+	}
 	blog.V(0).Info("process stopped")
 	return nil
 }
@@ -157,7 +161,7 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 
 		var err error
 		h.Config.AuthCenter, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-		if err != nil && h.Config.AuthCenter.Enable {
+		if err != nil && auth.IsAuthed() {
 			blog.Errorf("parse authcenter error: %v, config: %+v", err, current.ConfigMap)
 		}
 	}
