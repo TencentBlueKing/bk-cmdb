@@ -403,7 +403,9 @@
                 try {
                     const data = await this.$store.dispatch('hostFavorites/searchFavorites', {
                         params: {
-                            bk_biz_id: this.filter.business
+                            condition: {
+                                bk_biz_id: this.filter.business
+                            }
                         },
                         config: {
                             requestId: 'searchCollection'
