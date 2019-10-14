@@ -3,22 +3,24 @@
         <div class="userapi-preview" v-click-outside="closePreview">
             <h3 class="preview-title">{{$t('预览查询')}}</h3>
             <i class="bk-icon icon-close" @click="closePreview"></i>
-            <bk-table
-                v-bkloading="{ isLoading: $loading('searchHost') }"
-                :data="table.list"
-                :pagination="table.pagination"
-                :max-height="$APP.height - 220"
-                @page-change="handlePageChange"
-                @page-limit-change="handleSizeChange"
-                @sort-change="handleSortChange">
-                <bk-table-column v-for="column in table.header"
-                    sortable="custom"
-                    :key="column.id"
-                    :prop="column.id"
-                    :label="column.name">
-                    <template slot-scope="{ row }">{{getHostCellText(column.property, row)}}</template>
-                </bk-table-column>
-            </bk-table>
+            <div class="preview-table">
+                <bk-table
+                    v-bkloading="{ isLoading: $loading('searchHost') }"
+                    :data="table.list"
+                    :pagination="table.pagination"
+                    :max-height="379"
+                    @page-change="handlePageChange"
+                    @page-limit-change="handleSizeChange"
+                    @sort-change="handleSortChange">
+                    <bk-table-column v-for="column in table.header"
+                        sortable="custom"
+                        :key="column.id"
+                        :prop="column.id"
+                        :label="column.name">
+                        <template slot-scope="{ row }">{{getHostCellText(column.property, row)}}</template>
+                    </bk-table-column>
+                </bk-table>
+            </div>
         </div>
     </div>
 </template>
@@ -62,14 +64,28 @@
                 return allProperties
             },
             previewParams () {
-                const condition = this.$tools.clone(this.apiParams['info']['condition'])
-                const hostCondition = condition.find(({ bk_obj_id: objId }) => {
+                const conditions = this.$tools.clone(this.apiParams['info']['condition'])
+                const hostCondition = conditions.find(({ bk_obj_id: objId }) => {
                     return objId === 'host'
                 })
                 hostCondition['fields'] = this.previewFields
+                conditions.forEach(model => {
+                    const modelCondition = model.condition || []
+                    const newConditions = []
+                    if (modelCondition.length) {
+                        modelCondition.forEach(condition => {
+                            const value = condition.value
+                            if ((condition.operator === '$multilike' && value !== null && value !== undefined && String(value).length)
+                                || condition.operator !== '$multilike') {
+                                newConditions.push(condition)
+                            }
+                        })
+                    }
+                    model.condition = newConditions
+                })
                 const previewParams = {
                     'bk_biz_id': this.apiParams['bk_biz_id'],
-                    condition: condition,
+                    condition: conditions,
                     page: {
                         start: (this.table.pagination.current - 1) * this.table.pagination.limit,
                         limit: this.table.pagination.limit,
@@ -180,14 +196,14 @@
         left: 0;
         width: 100%;
         height: 100%;
-        z-index: 99;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 9999;
         .userapi-preview {
             position: absolute;
-            max-width: 80%;
-            min-width: 50%;
+            width: 880px;
             max-height: 80%;
             min-height: 300px;
-            margin: 0 auto;
+            margin: 20px auto;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -195,10 +211,9 @@
             box-shadow: 0 0 8px 4px rgba(0, 0, 0, 0.1);
             border-radius: 2px;
             .preview-title {
-                padding-left: 24px;
-                line-height: 68px;
-                font-size: 20px;
-                color: #333948;
+                padding: 15px 0 15px 24px;
+                font-size: 24px;
+                color: #444444;
                 font-weight: normal;
             }
             .icon-close {
@@ -206,8 +221,12 @@
                 top: 12px;
                 right: 12px;
                 cursor: pointer;
-                font-size: 12px;
+                font-size: 14px;
+                font-weight: bold;
             }
+        }
+        .preview-table {
+            padding: 0 20px 20px;
         }
     }
 </style>

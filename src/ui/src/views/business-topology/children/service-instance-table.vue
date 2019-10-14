@@ -127,13 +127,13 @@
                 </span>
             </template>
         </bk-table>
-        <bk-dialog class="bk-dialog-no-padding"
+        <bk-dialog class="bk-dialog-no-padding edit-label-dialog"
             v-model="editLabel.show"
             :width="580"
-            @confirm="handleSubmitEditLable"
-            @cancel="handleCloseEditLable"
+            :mask-close="false"
+            :esc-close="false"
             @after-leave="handleSetEditBox">
-            <div slot="header" style="text-align: left;">
+            <div slot="header">
                 {{$t('编辑标签')}}
             </div>
             <template v-if="editLabel.visiable">
@@ -142,6 +142,10 @@
                     :default-list="editLabel.list">
                 </cmdb-edit-label>
             </template>
+            <div class="edit-label-dialog-footer" slot="footer">
+                <bk-button theme="primary" @click.stop="handleSubmitEditLable">{{$t('确定')}}</bk-button>
+                <bk-button theme="default" class="ml5" @click.stop="handleCloseEditLable">{{$t('取消')}}</bk-button>
+            </div>
         </bk-dialog>
     </div>
 </template>
@@ -336,16 +340,10 @@
                     params: {
                         instanceId: this.instance.id,
                         hostId: this.instance.bk_host_id,
-                        setId: this.module.bk_set_id,
+                        setId: this.currentNode.parent.data.bk_inst_id,
                         moduleId: this.module.bk_module_id
                     },
                     query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.module.bk_module_id
-                            }
-                        },
                         title: this.instance.name
                     }
                 })
@@ -382,14 +380,6 @@
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.instance.service_template_id
-                    },
-                    query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.module.bk_module_id
-                            }
-                        }
                     }
                 })
             },
@@ -450,6 +440,7 @@
                     }
                     if (status && status.bk_error_msg === 'success') {
                         this.$success(this.$t('保存成功'))
+                        this.$parent.handleCheckALL(false)
                         this.$parent.filter = ''
                         this.$parent.getServiceInstances()
                         this.$parent.getHistoryLabel()
@@ -588,6 +579,7 @@
                 color: #979ba5;
                 background-color: #fafbfd;
                 border-radius: 2px;
+                cursor: default;
                 &>span {
                     @include ellipsis;
                     display: inline-block;
@@ -607,6 +599,19 @@
                 &:hover {
                     background-color: #e1ecff;
                 }
+            }
+        }
+    }
+    .edit-label-dialog {
+        /deep/ .bk-dialog-header {
+            text-align: left !important;
+            font-size: 24px;
+            color: #444444;
+            margin-top: -15px;
+        }
+        .edit-label-dialog-footer {
+            .bk-button {
+                min-width: 76px;
             }
         }
     }

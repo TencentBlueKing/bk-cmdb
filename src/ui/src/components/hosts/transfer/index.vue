@@ -3,7 +3,7 @@
         <div class="columns-layout fl">
             <div class="business-layout">
                 <label class="business-label">{{$t('业务')}}</label>
-                <cmdb-business-selector class="business-selector" v-model="businessId" :disabled="true">
+                <cmdb-business-selector class="business-selector" v-model="businessId" disabled>
                 </cmdb-business-selector>
             </div>
             <div class="tree-layout">

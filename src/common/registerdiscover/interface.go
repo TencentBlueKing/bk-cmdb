@@ -23,4 +23,8 @@ type RegDiscvServer interface {
 	GetServNodes(key string) ([]string, error)
 	// discover server from the register-discover service platform
 	Discover(key string) (<-chan *DiscoverEvent, error)
+	// Cancel to stop server register and discover
+	Cancel()
+	// ClearRegisterPath to delete server register path from zk
+	ClearRegisterPath() error
 }

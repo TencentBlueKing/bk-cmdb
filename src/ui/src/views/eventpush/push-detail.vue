@@ -4,16 +4,16 @@
             <ul class="event-form">
                 <li class="form-item">
                     <label for="" class="label-name">
-                        {{$t('推送名称')}}<span class="color-danger">*</span>
+                        {{$t('订阅名称')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
-                        <bk-input type="text" class="cmdb-form-input" :placeholder="$t('请输入推送名称')"
+                        <bk-input type="text" class="cmdb-form-input" :placeholder="$t('请输入订阅名称')"
                             maxlength="20"
                             v-model.trim="tempEventData['subscription_name']"
-                            :data-vv-name="$t('推送名称')"
+                            :data-vv-name="$t('订阅名称')"
                             v-validate="'required'">
                         </bk-input>
-                        <span v-show="errors.has($t('推送名称'))" class="color-danger">{{ errors.first($t('推送名称')) }}</span>
+                        <span v-show="errors.has($t('订阅名称'))" class="color-danger">{{ errors.first($t('订阅名称')) }}</span>
                     </div>
                 </li>
                 <li class="form-item">
@@ -513,7 +513,7 @@
         }
         .detail-box{
             padding: 20px 30px;
-            height: calc(100% - 63px);
+            height: calc(100% - 51px);
             overflow-y: auto;
             @include scrollbar;
         }
@@ -713,13 +713,12 @@
             }
         }
         .footer{
-            height: 63px;
-            line-height: 63px;
-            background: #f9f9f9;
+            padding: 9px 20px;
+            border-top: 1px solid $cmdbBorderColor;
+            background-color: #fafbfd;
             font-size: 0;
-            padding-left: 130px;
             .btn{
-                margin-right: 11px;
+                margin-right: 10px;
             }
         }
     }

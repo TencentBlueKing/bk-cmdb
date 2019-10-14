@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -37,7 +38,7 @@ import (
 	"configcenter/src/storage/rpc"
 )
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -104,7 +105,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
 		}
 		process.Service.SetAuth(authCli)
-		blog.Infof("enable auth center: %v", process.Config.Auth.Enable)
+		blog.Infof("enable auth center: %v", auth.IsAuthed())
 
 		go func() {
 			errCh <- distribution.SubscribeChannel(subCli)
@@ -116,7 +117,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		break
 	}
-	if err := backbone.StartServer(ctx, engine, service.WebService(), true); err != nil {
+	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
+	if err != nil {
 		return err
 	}
 	select {

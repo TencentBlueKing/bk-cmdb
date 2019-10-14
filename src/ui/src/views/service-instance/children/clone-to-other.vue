@@ -48,6 +48,7 @@
 <script>
     import hostSelector from '@/components/ui/selector/host.vue'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
+    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     export default {
         name: 'clone-to-other',
         components: {
@@ -123,7 +124,7 @@
             },
             handleBackToModule () {
                 this.$router.replace({
-                    name: 'topology',
+                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
                     query: {
                         module: this.moduleId
                     }

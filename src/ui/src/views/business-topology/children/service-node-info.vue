@@ -145,17 +145,23 @@
             }
         },
         watch: {
-            modelId (modelId) {
-                if (modelId) {
-                    this.type = 'details'
-                    this.init()
+            modelId: {
+                immediate: true,
+                handler (modelId) {
+                    if (modelId) {
+                        this.type = 'details'
+                        this.init()
+                    }
                 }
             },
-            async selectedNode (node) {
-                if (node) {
-                    this.type = 'details'
-                    await this.getInstance()
-                    this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
+            selectedNode: {
+                immediate: true,
+                async handler (node) {
+                    if (node) {
+                        this.type = 'details'
+                        await this.getInstance()
+                        this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
+                    }
                 }
             }
         },
@@ -476,13 +482,14 @@
             handleCancel () {
                 this.type = 'details'
             },
-            handleDelete () {
+            async handleDelete () {
+                const count = await this.getSelectedNodeHostCount()
+                if (count) {
+                    this.$error(this.$t('目标包含主机, 不允许删除'))
+                    return
+                }
                 this.$bkInfo({
                     title: `${this.$t('确定删除')} ${this.selectedNode.name}?`,
-                    subTitle: this.modelId === 'module'
-                        ? this.$t('删除模块提示')
-                        : this.$t('下属层级都会被删除，请先转移其下所有的主机'),
-                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         const promiseMap = {
                             set: this.deleteSetInstance,
@@ -567,17 +574,58 @@
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
-                        templateId: this.instance.service_template_id
-                    },
-                    query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.instance.bk_module_id
-                            }
-                        }
+                        templateId: this.instance.service_template_id,
+                        moduleId: this.selectedNode.data.bk_inst_id
                     }
                 })
+            },
+            async getSelectedNodeHostCount () {
+                const defaultModel = ['biz', 'set', 'module', 'host', 'object']
+                const modelInstKey = {
+                    biz: 'bk_biz_id',
+                    set: 'bk_set_id',
+                    module: 'bk_module_id',
+                    host: 'bk_host_id',
+                    object: 'bk_inst_id'
+                }
+                const conditionParams = {
+                    condition: defaultModel.map(model => {
+                        return {
+                            bk_obj_id: model,
+                            condition: [],
+                            fields: []
+                        }
+                    })
+                }
+                const selectedNode = this.selectedNode
+                const selectedModel = defaultModel.includes(selectedNode.data.bk_obj_id) ? selectedNode.data.bk_obj_id : 'object'
+                const selectedModelCondition = conditionParams.condition.find(model => model.bk_obj_id === selectedModel)
+                selectedModelCondition.condition.push({
+                    field: modelInstKey[selectedModel],
+                    operator: '$eq',
+                    value: selectedNode.data.bk_inst_id
+                })
+                const data = await this.$store.dispatch('hostSearch/searchHost', {
+                    params: {
+                        ...conditionParams,
+                        bk_biz_id: this.business,
+                        ip: {
+                            flag: 'bk_host_innerip|bk_host_outer',
+                            exact: 0,
+                            data: []
+                        },
+                        page: {
+                            start: 0,
+                            limit: 1,
+                            sort: ''
+                        }
+                    },
+                    config: {
+                        requestId: 'searchHosts',
+                        cancelPrevious: true
+                    }
+                })
+                return data && data.count
             }
         }
     }

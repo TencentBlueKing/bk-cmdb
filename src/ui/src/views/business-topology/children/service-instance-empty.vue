@@ -6,8 +6,28 @@
                 <p class="empty-text">{{$t('模板未定义进程', { template: (moduleNode || {}).name })}}</p>
                 <p class="empty-tips">{{$t('模板未定义进程提示')}}</p>
                 <div class="empty-options">
-                    <bk-button class="empty-button" theme="primary" @click="goToTemplate">{{$t('跳转模板添加进程')}}</bk-button>
-                    <bk-button class="empty-button" theme="default" @click="handleAddHost">{{$t('添加主机')}}</bk-button>
+                    <span style="display: inline-block;"
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_SERVICE_TEMPLATE),
+                            auth: [$OPERATION.U_SERVICE_TEMPLATE]
+                        }">
+                        <bk-button class="empty-button" theme="primary"
+                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_TEMPLATE)"
+                            @click="goToTemplate">
+                            {{$t('跳转模板添加进程')}}
+                        </bk-button>
+                    </span>
+                    <span style="display: inline-block;"
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
+                            auth: [$OPERATION.C_SERVICE_INSTANCE]
+                        }">
+                        <bk-button class="empty-button" theme="default"
+                            :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                            @click="handleAddHost">
+                            {{$t('添加主机')}}
+                        </bk-button>
+                    </span>
                 </div>
             </div>
             <div class="empty-content" v-else-if="!isSearching"
@@ -117,15 +137,8 @@
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
-                        templateId: this.moduleInstance.service_template_id
-                    },
-                    query: {
-                        from: {
-                            name: this.$route.name,
-                            query: {
-                                module: this.moduleInstance.bk_module_id
-                            }
-                        }
+                        templateId: this.moduleInstance.service_template_id,
+                        moduleId: this.moduleNode.data.bk_inst_id
                     }
                 })
             },
@@ -182,12 +195,6 @@
                             setId: this.moduleNode.parent.data.bk_inst_id
                         },
                         query: {
-                            from: {
-                                name: this.$route.name,
-                                query: {
-                                    module: this.moduleInstance.bk_module_id
-                                }
-                            },
                             title: this.moduleNode.name
                         }
                     })
@@ -215,6 +222,7 @@
             line-height: 29px;
             font-size: 22px;
             color: #63656E;
+            word-break: break-word;
         }
         .empty-tips {
             margin-top: 10px;

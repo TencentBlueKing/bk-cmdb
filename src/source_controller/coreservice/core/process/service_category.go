@@ -13,8 +13,6 @@
 package process
 
 import (
-	"strconv"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -32,20 +30,19 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 
 	var bizID int64
 	var err error
-	if bizID, err = p.validateBizID(ctx, category.Metadata); err != nil {
+	if bizID, err = p.validateBizID(ctx, category.BizID); err != nil {
 		blog.Errorf("CreateServiceCategory failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	// keep metadata clean
-	category.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+	category.BizID = bizID
 
 	category.RootID = 0
 	if category.ParentID > 0 {
 		parentCategory, err := p.GetServiceCategory(ctx, category.ParentID)
 		if err != nil {
 			blog.Errorf("CreateServiceCategory failed, parent id invalid, code: %d, category: %+v, err: %+v, rid: %s", common.CCErrCommParamsInvalid, category, err, ctx.ReqID)
-			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 		}
 		category.RootID = parentCategory.RootID
 	}
@@ -55,10 +52,9 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 	filter := map[string]interface{}{
 		common.BKParentIDField: category.ParentID,
 		"name":                 category.Name,
-	}
-	bizFilter := metadata.PublicAndBizCondition(category.Metadata)
-	for key, value := range bizFilter {
-		filter[key] = value
+		common.BKAppIDField: map[string]interface{}{
+			common.BKDBIN: []int64{0, category.BizID},
+		},
 	}
 	if count, err = p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).Count(ctx); nil != err {
 		blog.Errorf("CreateServiceCategory failed, mongodb query failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceCategory, filter, err, ctx.ReqID)
@@ -118,9 +114,7 @@ func (p *processOperation) GetDefaultServiceCategory(ctx core.ContextParams) (*m
 		common.BKParentIDField: map[string]interface{}{
 			common.BKDBNE: 0,
 		},
-		common.MetadataLabelBiz: map[string]interface{}{
-			common.BKDBExists: false,
-		},
+		common.BKAppIDField: 0,
 	}
 	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).One(ctx.Context, &category); nil != err {
 		blog.Errorf("GetDefaultServiceCategory failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceCategory, filter, err, ctx.ReqID)
@@ -160,10 +154,9 @@ func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categor
 		common.BKFieldID: map[string]interface{}{
 			common.BKDBNE: categoryID,
 		},
-	}
-	bizFilter := metadata.PublicAndBizCondition(category.Metadata)
-	for key, value := range bizFilter {
-		uniqueFilter[key] = value
+		common.BKAppIDField: map[string]interface{}{
+			common.BKDBIN: []int64{0, category.BizID},
+		},
 	}
 	count, e := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(uniqueFilter).Count(ctx)
 	if e != nil {
@@ -185,7 +178,11 @@ func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categor
 }
 
 func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
-	filter := metadata.NewPublicOrBizConditionByBizID(bizID)
+	filter := map[string]interface{}{
+		common.BKAppIDField: map[string]interface{}{
+			common.BKDBIN: []int64{bizID, 0},
+		},
+	}
 	categories := make([]metadata.ServiceCategory, 0)
 	sort := "name"
 	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).Sort(sort).All(ctx.Context, &categories); nil != err {
@@ -203,10 +200,7 @@ func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID i
 			common.BKServiceCategoryIDField: map[string]interface{}{
 				common.BKDBIN: categoryIDs,
 			},
-		}
-		if bizID != 0 {
-			md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
-			templateFilter[common.MetadataField] = md
+			common.BKAppIDField: bizID,
 		}
 		serviceTemplates := make([]metadata.ServiceTemplate, 0)
 		if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(templateFilter).All(ctx.Context, &serviceTemplates); nil != err {

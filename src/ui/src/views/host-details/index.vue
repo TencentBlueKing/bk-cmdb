@@ -37,6 +37,10 @@
     import cmdbHostStatus from './children/status.vue'
     import cmdbHostHistory from './children/history.vue'
     import cmdbHostService from './children/service-list.vue'
+    import {
+        MENU_BUSINESS_HOST_MANAGEMENT,
+        MENU_RESOURCE_HOST
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             cmdbHostInfo,
@@ -53,8 +57,8 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView']),
             ...mapState('hostDetails', ['info']),
+            ...mapGetters(['isAdminView']),
             id () {
                 return parseInt(this.$route.params.id)
             },
@@ -70,7 +74,7 @@
             info (info) {
                 const hostList = info.host.bk_host_innerip.split(',')
                 const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
-                this.$store.commit('setHeaderTitle', `${this.$t('主机详情')}(${host})`)
+                this.setBreadcrumbs(host)
             },
             id () {
                 this.getData()
@@ -88,6 +92,17 @@
             this.getData()
         },
         methods: {
+            setBreadcrumbs (ip) {
+                const isFromBusiness = this.$route.query.from === 'business'
+                this.$store.commit('setBreadcrumbs', [{
+                    label: isFromBusiness ? this.$t('业务主机') : this.$t('主机'),
+                    route: {
+                        name: isFromBusiness ? MENU_BUSINESS_HOST_MANAGEMENT : MENU_RESOURCE_HOST
+                    }
+                }, {
+                    label: ip
+                }])
+            },
             getData () {
                 this.getProperties()
                 this.getPropertyGroups()
@@ -160,8 +175,7 @@
 
 <style lang="scss" scoped>
     .details-layout {
-        padding: 0;
-        height: 100%;
+        overflow: hidden;
         .details-tab {
             height: calc(100% - var(--infoHeight)) !important;
             min-height: 400px;

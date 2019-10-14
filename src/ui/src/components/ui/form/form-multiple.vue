@@ -31,9 +31,11 @@
                                     <component class="form-component"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
+                                        :unit="property['unit']"
                                         :disabled="!editable[property['bk_property_id']]"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
+                                        :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]">
                                     </component>
@@ -273,7 +275,7 @@
             font-size: 12px;
             .property-name{
                 display: block;
-                margin: 6px 0 9px;
+                margin: 6px 0 10px;
                 color: $cmdbTextColor;
                 font-size: 0;
                 line-height: 18px;
@@ -307,10 +309,15 @@
                 color: #c3cdd7;
             }
             .property-value{
-                height: 36px;
-                line-height: 36px;
-                font-size: 12px;
+                height: 32px;
+                line-height: 32px;
+                font-size: 0;
                 position: relative;
+                /deep/ .control-append-group {
+                    .bk-input-text {
+                        flex: 1;
+                    }
+                }
             }
         }
     }

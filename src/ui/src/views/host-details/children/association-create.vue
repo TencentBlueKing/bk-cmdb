@@ -222,10 +222,10 @@
             ...mapActions('hostSearch', ['searchHost']),
             getAsstObjProperties () {
                 return this.searchObjectAttribute({
-                    params: this.$injectMetadata({
+                    params: {
                         'bk_obj_id': this.currentAsstObj,
                         'bk_supplier_account': this.supplierAccount
-                    }),
+                    },
                     config: {
                         requestId: `post_searchObjectAttribute_${this.currentAsstObj}`
                     }
@@ -277,22 +277,22 @@
             getObjAssociation () {
                 return Promise.all([
                     this.searchObjectAssociation({
-                        params: this.$injectMetadata({
+                        params: {
                             condition: {
                                 'bk_obj_id': this.objId
                             }
-                        }),
+                        },
                         config: {
                             requestId: 'getSourceAssocaition',
                             fromCache: true
                         }
                     }),
                     this.searchObjectAssociation({
-                        params: this.$injectMetadata({
+                        params: {
                             condition: {
                                 'bk_asst_obj_id': this.objId
                             }
-                        }),
+                        },
                         config: {
                             requestId: 'getTargetAssocaition',
                             fromCache: true
@@ -356,7 +356,7 @@
                 const option = this.currentOption
                 const isSource = this.isSource
                 return this.searchInstAssociation({
-                    params: this.$injectMetadata({
+                    params: {
                         condition: {
                             'bk_asst_id': option['bk_asst_id'],
                             'bk_obj_asst_id': option['bk_obj_asst_id'],
@@ -364,7 +364,7 @@
                             'bk_asst_obj_id': isSource ? option['bk_asst_obj_id'] : this.objId,
                             [`${isSource ? 'bk_inst_id' : 'bk_asst_inst_id'}`]: this.instId
                         }
-                    })
+                    }
                 }).then(data => {
                     this.existInstAssociation = data || []
                 })
@@ -404,11 +404,11 @@
             },
             createAssociation (instId) {
                 return this.createInstAssociation({
-                    params: this.$injectMetadata({
+                    params: {
                         'bk_obj_asst_id': this.currentOption['bk_obj_asst_id'],
                         'bk_inst_id': this.isSource ? this.instId : instId,
                         'bk_asst_inst_id': this.isSource ? instId : this.instId
-                    })
+                    }
                 })
             },
             deleteAssociation (instId) {
@@ -421,9 +421,9 @@
                 return this.deleteInstAssociation({
                     id: (instAssociation || {}).id,
                     config: {
-                        data: this.$injectMetadata({}, {
+                        data: {
                             inject: !!this.$tools.getMetadataBiz(instAssociation)
-                        })
+                        }
                     }
                 })
             },
@@ -524,7 +524,7 @@
             getObjInstance (objId, config) {
                 return this.searchInst({
                     objId: objId,
-                    params: this.$injectMetadata(this.getObjParams()),
+                    params: this.getObjParams(),
                     config
                 })
             },

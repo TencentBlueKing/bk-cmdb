@@ -308,6 +308,10 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 			switch childType := item.(type) {
 			case map[string]interface{}:
 				items = append(items, childType)
+			case MapStr:
+				items = append(items, childType)
+			default:
+				return nil, fmt.Errorf("the value of the key(%s) is not a valid type,value:%+v", key, t)
 			}
 		}
 		return items, nil

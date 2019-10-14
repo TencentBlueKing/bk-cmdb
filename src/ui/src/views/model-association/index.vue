@@ -1,5 +1,5 @@
 <template>
-    <div class="relation-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="relation-wrapper">
         <feature-tips
             :feature-name="'association'"
             :show-tips="showFeatureTips"
@@ -26,24 +26,22 @@
                     v-model.trim="searchText"
                     :right-icon="'bk-icon icon-search'"
                     :placeholder="$t('请输入关联类型名称')"
+                    font-size="large"
                     @enter="searchRelation(true)">
                 </bk-input>
             </label>
         </p>
         <bk-table
             v-bkloading="{ isLoading: $loading('searchAssociationType') }"
+            :max-height="$APP.height - 229"
             :data="table.list"
             :pagination="table.pagination"
+            :row-style="{ cursor: 'pointer' }"
+            @row-click="handleShowDetails"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange">
-            <bk-table-column prop="bk_asst_id" :label="$t('唯一标识')" sortable="custom" class-name="is-highlight">
-                <template slot-scope="{ row }">
-                    <div style="cursor: pointer; padding: 10px 0;" @click.stop="handleShowDetails(row)">
-                        {{row['bk_asst_id']}}
-                    </div>
-                </template>
-            </bk-table-column>
+            <bk-table-column prop="bk_asst_id" :label="$t('唯一标识')" sortable="custom" class-name="is-highlight"></bk-table-column>
             <bk-table-column prop="bk_asst_name" :label="$t('名称')" sortable="custom">
                 <template slot-scope="{ row }">
                     {{row['bk_asst_name'] || '--'}}
@@ -54,6 +52,7 @@
             <bk-table-column prop="count" :label="$t('使用数')"></bk-table-column>
             <bk-table-column v-if="isAdminView"
                 fixed="right"
+                prop="operation"
                 :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <span class="text-primary disabled mr10"
@@ -86,6 +85,7 @@
             </bk-table-column>
         </bk-table>
         <bk-sideslider
+            v-transfer-dom
             class="relation-slider"
             :width="450"
             :title="slider.title"
@@ -94,7 +94,7 @@
             <the-relation
                 ref="relationForm"
                 slot="content"
-                class="slider-content"
+                class="model-slider-content"
                 v-if="slider.isShow"
                 :is-edit="slider.isEdit"
                 :is-read-only="slider.isReadOnly"
@@ -131,7 +131,7 @@
                     pagination: {
                         count: 0,
                         current: 1,
-                        limit: 10
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-ispre',
                     sort: '-ispre'
@@ -272,7 +272,8 @@
                 this.slider.isShow = false
                 return true
             },
-            handleShowDetails (relation) {
+            handleShowDetails (relation, event, column = {}) {
+                if (column.property === 'operation') return
                 this.slider.title = this.$t('关联类型详情')
                 this.slider.relation = relation
                 this.slider.isReadOnly = true
@@ -284,6 +285,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .relation-wrapper {
+        padding: 0 20px;
+    }
     .operation-box {
         margin: 0 0 14px 0;
         font-size: 0;

@@ -34,7 +34,7 @@ import (
 )
 
 // Run main loop function
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -72,9 +72,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new authorize failed, err: %v", err)
 	}
-	blog.Infof("enable authcenter: %v", authConf.Enable)
+	blog.Infof("enable authcenter: %v", authorize.Enabled())
 
-	svc.SetConfig(authConf.Enable, engine, client, engine.Discovery(), authorize)
+	svc.SetConfig(engine, client, engine.Discovery(), authorize)
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
@@ -83,7 +83,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	apiSvr.Core = engine
 
-	if err := backbone.StartServer(ctx, engine, ctnr, false); err != nil {
+	err = backbone.StartServer(ctx, cancel, engine, ctnr, false)
+	if err != nil {
 		return err
 	}
 

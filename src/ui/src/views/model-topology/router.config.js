@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
+import { MENU_MODEL_TOPOLOGY } from '@/dictionary/menu-symbol'
 
 import { SYSTEM_MODEL_GRAPHICS } from '@/dictionary/auth'
 
@@ -7,28 +7,17 @@ export const OPERATION = {
     SYSTEM_MODEL_GRAPHICS
 }
 
-const path = '/model/topology'
-
 export default {
-    name: 'modelTopology',
-    path: path,
+    name: MENU_MODEL_TOPOLOGY,
+    path: 'all/topology',
     component: () => import('./index.old.vue'),
     meta: new Meta({
         menu: {
-            id: 'modelTopology',
-            i18n: '模型拓扑',
-            path: path,
-            order: 2,
-            parent: NAV_MODEL_MANAGEMENT,
-            businessView: false
+            i18n: '模型关系'
         },
         auth: {
-            operation: Object.values(OPERATION),
-            setAuthScope () {
-                this.authScope = 'global'
-            }
-        },
-        i18nTitle: '模型拓扑'
-            
+            operation: OPERATION,
+            authScope: 'global'
+        }
     })
 }

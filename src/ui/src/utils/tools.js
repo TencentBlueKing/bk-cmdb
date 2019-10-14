@@ -1,4 +1,5 @@
 import moment from 'moment'
+import GET_VALUE from 'get-value'
 
 /**
  * 拍平列表
@@ -9,7 +10,7 @@ import moment from 'moment'
 
 export function getFullName (names) {
     if (!names) return ''
-    const userList = window.CMDB_USER_LIST // set in setup/preload.js
+    const userList = window.CMDB_USER_LIST || [] // set in setup/preload.js
     const enNames = String(names).split(',')
     const fullNames = enNames.map(enName => {
         const user = userList.find(user => user['english_name'] === enName)
@@ -302,6 +303,7 @@ export function getValidateRules (property) {
     }
     if (['singlechar', 'longchar'].includes(propertyType)) {
         rules[propertyType] = true
+        rules.length = propertyType === 'singlechar' ? 256 : 2000
     }
     if (propertyType === 'float') {
         rules['float'] = true
@@ -321,6 +323,32 @@ export function getSort (sort) {
     return prop
 }
 
+export function getValue () {
+    return GET_VALUE(...arguments)
+}
+
+export function transformHostSearchParams (params) {
+    const transformedParams = clone(params)
+    const conditions = transformedParams.condition
+    conditions.forEach(item => {
+        item.condition.forEach(field => {
+            const operator = field.operator
+            const value = field.value
+            if (['$in', '$multilike'].includes(operator) && !Array.isArray(value)) {
+                field.value = value.split('\n').filter(str => str.trim().length).map(str => str.trim())
+            }
+        })
+    })
+    return transformedParams
+}
+
+const defaultPaginationConfig = window.innerHeight > 750
+    ? { limit: 20, 'limit-list': [20, 50, 100, 500] }
+    : { limit: 10, 'limit-list': [10, 50, 100, 500] }
+export function getDefaultPaginationConfig () {
+    return { ...defaultPaginationConfig }
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -338,5 +366,8 @@ export default {
     getInstFormValues,
     getMetadataBiz,
     getValidateRules,
-    getSort
+    getSort,
+    getValue,
+    transformHostSearchParams,
+    getDefaultPaginationConfig
 }
