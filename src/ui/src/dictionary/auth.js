@@ -117,6 +117,7 @@ export const R_SERVICE_INSTANCE = 'processServiceInstance.findMany'
 export const C_SET_TEMPLATE = 'setTemplate.create'
 export const U_SET_TEMPLATE = 'setTemplate.update'
 export const D_SET_TEMPLATE = 'setTemplate.delete'
+export const R_SET_TEMPLATE = 'setTemplate.findMany'
 
 export const STATIC_BUSINESS_MODE = [
     C_MODEL,
