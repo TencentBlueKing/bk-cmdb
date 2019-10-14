@@ -3,7 +3,17 @@
         <div class="instance-main">
             <div class="options clearfix">
                 <div class="fl">
-                    <bk-button theme="primary" :disabled="!checkedList.length" @click="handleBatchSync">{{$t('批量同步')}}</bk-button>
+                    <span style="display: inlink-block;"
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
+                            auth: [$OPERATION.U_SET_TEMPLATE]
+                        }">
+                        <bk-button theme="primary"
+                            :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE) || !checkedList.length"
+                            @click="handleBatchSync">
+                            {{$t('批量同步')}}
+                        </bk-button>
+                    </span>
                 </div>
                 <div class="fr">
                     <bk-select class="filter-item mr10"
@@ -76,12 +86,22 @@
                 </bk-table-column>
                 <bk-table-column :label="$t('操作')" width="180">
                     <template slot-scope="{ row }">
-                        <bk-button v-if="row.status === 'failure'" text @click="handleRetry(row)">{{$t('重试')}}</bk-button>
-                        <bk-button v-else text
-                            :disabled="['syncing', 'finished'].includes(row.status)"
-                            @click="handleSync(row)">
-                            {{$t('同步')}}
-                        </bk-button>
+                        <span style="display: inlink-block;"
+                            v-cursor="{
+                                active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
+                                auth: [$OPERATION.U_SET_TEMPLATE]
+                            }">
+                            <bk-button v-if="row.status === 'failure'" text
+                                :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE)"
+                                @click="handleRetry(row)">
+                                {{$t('重试')}}
+                            </bk-button>
+                            <bk-button v-else text
+                                :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE) || ['syncing', 'finished'].includes(row.status)"
+                                @click="handleSync(row)">
+                                {{$t('同步')}}
+                            </bk-button>
+                        </span>
                     </template>
                 </bk-table-column>
                 <template slot="empty">

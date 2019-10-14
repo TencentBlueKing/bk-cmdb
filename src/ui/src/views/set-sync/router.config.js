@@ -3,15 +3,13 @@ import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
 import {
     C_SET_TEMPLATE,
     U_SET_TEMPLATE,
-    D_SET_TEMPLATE,
-    R_SET_TEMPLATE
+    D_SET_TEMPLATE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
     C_SET_TEMPLATE,
     U_SET_TEMPLATE,
-    D_SET_TEMPLATE,
-    R_SET_TEMPLATE
+    D_SET_TEMPLATE
 }
 
 export default [{
