@@ -74,8 +74,8 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 	if parameter.Page.Limit == 0 {
 		parameter.Page.Limit = common.BKMaxPageSize
 	}
-	if parameter.Page.Limit > common.BKMaxPageSize {
-		blog.Errorf("ListBizHosts failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageSize, srvData.rid)
+	if parameter.Page.Limit > common.BKMaxPageLimit {
+		blog.Errorf("ListBizHosts failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageLimit, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -115,8 +115,8 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 	if parameter.Page.Limit == 0 {
 		parameter.Page.Limit = common.BKMaxPageSize
 	}
-	if parameter.Page.Limit > common.BKMaxPageSize {
-		blog.Errorf("ListHostsWithNoBiz failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageSize, srvData.rid)
+	if parameter.Page.Limit > common.BKMaxPageLimit {
+		blog.Errorf("ListHostsWithNoBiz failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageLimit, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
