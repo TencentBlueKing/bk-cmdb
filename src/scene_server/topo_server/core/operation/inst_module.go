@@ -190,46 +190,48 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	}
 	data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
 
-	inst, err := m.inst.CreateInst(params, obj, data)
-	if err != nil {
-		ccErr, ok := err.(errors.CCErrorCoder)
-		if ok == false {
-			return inst, err
-		}
-		if ccErr.GetCode() != common.CCErrCommDuplicateItem {
-			return inst, err
-		}
-
-		// 检测模块名重复并返回定制提示信息
-		moduleName, exist := data[common.BKModuleNameField]
-		if exist == false {
-			return inst, err
-		}
-		nameDuplicateFilter := &metadata.QueryCondition{
-			Limit: metadata.SearchLimit{
-				Limit: 1,
-			},
-			Condition: map[string]interface{}{
-				common.BKParentIDField:   setID,
-				common.BKAppIDField:      bizID,
-				common.BKModuleNameField: moduleName,
-			},
-		}
-		result, err := m.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, nameDuplicateFilter)
-		if err != nil {
-			blog.ErrorJSON("create module failed, find duplicated name modules failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), params.ReqID)
-			return nil, err
-		}
-		if result.Result == false || result.Code != 0 {
-			blog.ErrorJSON("create module failed, find duplicated name modules failed, result false, filter: %s, result: %s, err: %s, rid: %s", nameDuplicateFilter, result, err.Error(), params.ReqID)
-			return nil, err
-		}
-		if result.Data.Count > 0 {
-			blog.ErrorJSON("create module failed, module name duplicated, filter: %s, rid: %s", nameDuplicateFilter, params.ReqID)
-			return nil, params.Err.CCError(common.CCErrorTopoModuleNameDuplicated)
-		}
+	inst, createErr := m.inst.CreateInst(params, obj, data)
+	if createErr == nil {
+		return inst, nil
 	}
-	return inst, nil
+
+	ccErr, ok := createErr.(errors.CCErrorCoder)
+	if ok == false {
+		return inst, createErr
+	}
+	if ccErr.GetCode() != common.CCErrCommDuplicateItem {
+		return inst, createErr
+	}
+
+	// 检测模块名重复并返回定制提示信息
+	moduleName, exist := data[common.BKModuleNameField]
+	if exist == false {
+		return inst, createErr
+	}
+	nameDuplicateFilter := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: 1,
+		},
+		Condition: map[string]interface{}{
+			common.BKParentIDField:   setID,
+			common.BKAppIDField:      bizID,
+			common.BKModuleNameField: moduleName,
+		},
+	}
+	result, err := m.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, nameDuplicateFilter)
+	if err != nil {
+		blog.ErrorJSON("create module failed, find duplicated name modules failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if result.Result == false || result.Code != 0 {
+		blog.ErrorJSON("create module failed, find duplicated name modules failed, result false, filter: %s, result: %s, err: %s, rid: %s", nameDuplicateFilter, result, err.Error(), params.ReqID)
+		return nil, errors.New(result.Code, result.ErrMsg)
+	}
+	if result.Data.Count > 0 {
+		blog.ErrorJSON("create module failed, module name duplicated, filter: %s, rid: %s", nameDuplicateFilter, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrorTopoModuleNameDuplicated)
+	}
+	return inst, createErr
 }
 
 func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setIDs, moduleIDS []int64) error {
