@@ -70,7 +70,7 @@
                             :key="collection.id"
                             :id="collection.id"
                             :name="collection.name">
-                            <span>{{collection.name}}</span>
+                            <span class="collection-name" :title="collection.name">{{collection.name}}</span>
                             <i class="bk-icon icon-close" @click.stop="handleDeleteCollection(collection)"></i>
                         </bk-option>
                         <div slot="extension">
@@ -402,7 +402,11 @@
             async getCollectionList () {
                 try {
                     const data = await this.$store.dispatch('hostFavorites/searchFavorites', {
-                        params: {},
+                        params: {
+                            condition: {
+                                bk_biz_id: this.$store.getters['objectBiz/bizId']
+                            }
+                        },
                         config: {
                             requestId: 'searchCollection'
                         }
@@ -769,12 +773,16 @@
         height: 540px;
     }
     .options-collection {
-        width: 200px;
+        width: 280px;
     }
     /deep/ .bk-option-content {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        .collection-name {
+            @include ellipsis;
+            flex: 1;
+        }
         &:hover {
             .icon-close {
                 display: inline-block;
