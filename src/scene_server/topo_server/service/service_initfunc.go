@@ -56,7 +56,7 @@ func (s *Service) initAssociation() {
 	s.addAction(http.MethodPost, "/inst/association/topo/search/owner/{owner_id}/object/{bk_obj_id}/inst/{inst_id}", s.SearchInstTopo, nil)
 
 	// ATTENTION: the following methods is not recommended
-	s.addAction(http.MethodPost, "/inst/search/topo/owner/{owner_id}/object/{bk_object_id}/inst/{inst_id}", s.SearchInstChildTopo, nil)
+	s.addAction(http.MethodPost, "/inst/search/topo/owner/{owner_id}/object/{bk_obj_id}/inst/{inst_id}", s.SearchInstChildTopo, nil)
 	s.addAction(http.MethodPost, "/inst/association/action/{bk_obj_id}/import", s.ImportInstanceAssociation, nil)
 
 }
@@ -110,7 +110,6 @@ func (s *Service) initSet() {
 	s.addAction(http.MethodPost, "/set/{app_id}", s.CreateSet, nil)
 	s.addAction(http.MethodPost, "/set/{app_id}/batch", s.BatchCreateSet, nil)
 	s.addAction(http.MethodDelete, "/set/{app_id}/{set_id}", s.DeleteSet, nil)
-	s.addAction(http.MethodDelete, "/set/{app_id}/batch", s.DeleteSets, nil)
 	s.addAction(http.MethodPut, "/set/{app_id}/{set_id}", s.UpdateSet, nil)
 	s.addAction(http.MethodPost, "/set/search/{owner_id}/{app_id}", s.SearchSet, nil)
 
@@ -235,4 +234,5 @@ func (s *Service) initService() {
 
 	s.initFind()
 	s.initSetTemplate()
+	s.initInternalTask()
 }

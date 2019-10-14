@@ -1,12 +1,6 @@
 <template>
     <div class="template-instance-layout">
-        <div class="instance-empty" v-if="!list.length">
-            <img src="../../../assets/images/empty-content.png" alt="">
-            <i18n path="空集群模板实例提示" tag="div">
-                <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
-            </i18n>
-        </div>
-        <div class="instance-main" v-else>
+        <div class="instance-main">
             <div class="options clearfix">
                 <div class="fl">
                     <bk-button theme="primary" :disabled="!checkedList.length" @click="handleBatchSync">{{$t('批量同步')}}</bk-button>
@@ -14,7 +8,8 @@
                 <div class="fr">
                     <bk-select class="filter-item mr10"
                         :clearable="false"
-                        v-model="filterKey">
+                        v-model="statusFilter"
+                        @selected="handleFilter(1)">
                         <bk-option v-for="option in filterList"
                             :key="option.id"
                             :id="option.id"
@@ -22,8 +17,7 @@
                         </bk-option>
                     </bk-select>
                     <bk-input class="filter-item" right-icon="bk-icon icon-search"
-                        :placeholder="$t('路径关键字')"
-                        v-model="pathKeywords"
+                        :placeholder="$t('集群名称')"
                         @enter="handleSearch">
                     </bk-input>
                     <icon-button class="ml10"
@@ -34,7 +28,7 @@
                 </div>
             </div>
             <bk-table class="instance-table"
-                v-bkloading="{ isLoading: $loading('getSetTemplateInstances') }"
+                v-bkloading="{ isLoading: $loading('getSetInstanceData') }"
                 :data="displayList"
                 :pagination="pagination"
                 :max-height="$APP.height - 229"
@@ -43,6 +37,7 @@
                 @page-limit-change="handleSizeChange"
                 @selection-change="handleSelectionChange">
                 <bk-table-column type="selection" width="50" :selectable="handleSelectable"></bk-table-column>
+                <bk-table-column :label="$t('集群名称')" prop="bk_set_name"></bk-table-column>
                 <bk-table-column :label="$t('拓扑结构')" prop="topo_path">
                     <template slot-scope="{ row }">
                         <span>{{getTopoPath(row)}}</span>
@@ -51,46 +46,50 @@
                 <bk-table-column :label="$t('主机数量')" prop="host_count"></bk-table-column>
                 <bk-table-column :label="$t('状态')" prop="status">
                     <template slot-scope="{ row }">
-                        <span v-if="!row.details">--</span>
-                        <span v-else-if="statusMap.syncing.includes(row.details.status)" class="sync-status">
+                        <span v-if="row.status === 'syncing'" class="sync-status">
                             <img class="svg-icon" src="../../../assets/images/icon/loading.svg" alt="">
                             {{$t('同步中')}}
                         </span>
-                        <span v-else-if="statusMap.success.includes(row.details.status) && row.hasDiff">
+                        <span v-else-if="row.status === 'waiting'">
                             {{$t('待同步')}}
                         </span>
-                        <span v-else-if="statusMap.success.includes(row.details.status)" class="sync-status success">
+                        <span v-else-if="row.status === 'finished'" class="sync-status success">
                             <i class="bk-icon icon-check-1"></i>
-                            {{$t('已完成')}}
+                            {{$t('已同步')}}
                         </span>
-                        <span v-else class="sync-status fail">
+                        <span v-else-if="row.status === 'failure'" class="sync-status fail">
                             <i class="bk-icon icon-cc-log-02 "></i>
                             {{$t('同步失败')}}
                         </span>
+                        <span v-else>--</span>
                     </template>
                 </bk-table-column>
-                <bk-table-column :label="$t('上次同步时间')" prop="sync_time" sortable="custom">
+                <bk-table-column :label="$t('上次同步时间')" prop="last_time" sortable="custom">
                     <template slot-scope="{ row }">
-                        <span v-if="!row.details">--</span>
-                        <span v-else>{{row.details.last_time ? $tools.formatTime(row.details.last_time, 'YYYY-MM-DD HH:mm') : '--'}}</span>
+                        <span>{{row.last_time ? $tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm:ss') : '--'}}</span>
                     </template>
                 </bk-table-column>
                 <bk-table-column :label="$t('同步人')" prop="sync_user">
                     <template slot-scope="{ row }">
-                        <span v-if="!row.details">--</span>
-                        <span v-else>{{row.details.user || '--'}}</span>
+                        <span>{{row.creator || '--'}}</span>
                     </template>
                 </bk-table-column>
                 <bk-table-column :label="$t('操作')" width="180">
                     <template slot-scope="{ row }">
-                        <bk-button v-if="row.details && statusMap.fail.includes(row.details.status)" text @click="handleRetry(row)">{{$t('重试')}}</bk-button>
+                        <bk-button v-if="row.status === 'failure'" text @click="handleRetry(row)">{{$t('重试')}}</bk-button>
                         <bk-button v-else text
-                            :disabled="getEditabledStatus(row)"
+                            :disabled="['syncing', 'finished'].includes(row.status)"
                             @click="handleSync(row)">
                             {{$t('同步')}}
                         </bk-button>
                     </template>
                 </bk-table-column>
+                <template slot="empty">
+                    <img src="../../../assets/images/empty-content.png" alt="">
+                    <i18n path="空集群模板实例提示" tag="div">
+                        <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
+                    </i18n>
+                </template>
             </bk-table>
         </div>
     </div>
@@ -108,50 +107,38 @@
         data () {
             return {
                 timer: null,
-                statusMap: {
-                    syncing: [0, 1, 100],
-                    success: [200],
-                    fail: [500]
-                },
                 list: [],
-                diffList: [],
-                syncMap: {},
+                listWithTopo: [],
                 checkedList: [],
-                filterKey: -1,
-                pathKeywords: '',
+                statusFilter: 'all',
+                filterName: '',
                 pagination: {
                     count: 0,
                     current: 1,
                     ...this.$tools.getDefaultPaginationConfig()
                 },
-                listSort: ''
+                listSort: 'last_time'
             }
         },
         computed: {
             business () {
                 return this.$store.state.objectBiz.bizId
             },
-            limit () {
-                return {
-                    start: this.pagination.limit * (this.pagination.current - 1),
-                    limit: this.pagination.limit
-                }
-            },
             filterList () {
                 return [{
-                    id: -1,
+                    id: 'all',
                     name: this.$t('全部')
                 }, {
-                    id: 0,
+                    id: 'waiting',
                     name: this.$t('待同步')
                 }, {
-                    id: 1,
+                    id: 'syncing',
                     name: this.$t('同步中')
                 }, {
-                    id: 2,
+                    id: 'failure',
                     name: this.$t('同步失败')
                 }, {
-                    id: 3,
+                    id: 'finished',
                     name: this.$t('已同步')
                 }]
             },
@@ -161,25 +148,51 @@
             displayList () {
                 const list = this.$tools.clone(this.list)
                 return list.map(item => {
-                    let hasDiff = false
-                    const diff = this.diffList.find(diff => diff.bk_set_id === item.bk_set_id)
-                    if (diff) {
-                        const diffModules = (diff.module_diffs || []).filter(module => module.diff_type !== 'unchanged')
-                        hasDiff = !!diffModules.length
+                    const otherParams = {
+                        topo_path: [],
+                        host_count: 0
+                    }
+                    const setInfo = this.listWithTopo.find(set => set.bk_set_id === item.bk_set_id)
+                    if (setInfo) {
+                        otherParams.topo_path = setInfo.topo_path || []
+                        otherParams.host_count = setInfo.host_count || 0
                     }
                     return {
-                        hasDiff,
                         ...item,
-                        details: this.syncMap[item.bk_set_id] ? this.syncMap[item.bk_set_id] : null
+                        ...otherParams
                     }
                 })
+            },
+            searchParams () {
+                const params = {
+                    set_template_id: Number(this.templateId),
+                    page: {
+                        start: this.pagination.limit * (this.pagination.current - 1),
+                        limit: this.pagination.limit,
+                        sort: this.listSort
+                    }
+                }
+                if (this.statusFilter !== 'all') {
+                    params.status = this.statusFilter
+                }
+                this.filterName && (params.search = this.filterName)
+                return params
+            }
+        },
+        watch: {
+            list () {
+                if (!this.list.length) {
+                    clearInterval(this.timer)
+                    this.timer = null
+                } else if (!this.timer) {
+                    this.polling()
+                }
             }
         },
         async created () {
-            await this.getSetTemplateInstances()
+            await this.getData()
             if (this.list.length) {
-                this.getSyncStatus()
-                this.getTemplateDiff()
+                this.setsId.length && this.getSetInstancesWithTopo()
                 this.polling()
             }
         },
@@ -187,70 +200,65 @@
             clearInterval(this.timer)
         },
         methods: {
-            getEditabledStatus (row) {
-                return (row.details && this.statusMap.syncing.includes(row.details.status)) || !row.hasDiff
-            },
             getTopoPath (row) {
                 const topoPath = this.$tools.clone(row.topo_path)
                 if (topoPath.length) {
-                    return topoPath.reverse().map(path => path.InstanceName).join(' / ')
+                    const setIndex = topoPath.findIndex(path => path.ObjectID === 'set')
+                    if (setIndex > -1) {
+                        topoPath.splice(setIndex, 1)
+                    }
+                    const sortPath = topoPath.sort((prev, next) => prev.InstanceID - next.InstanceID)
+                    return sortPath.map(path => path.InstanceName).join(' / ')
                 }
                 return '--'
             },
-            async getSetTemplateInstances () {
-                const data = await this.$store.dispatch('setTemplate/getSetTemplateInstances', {
-                    bizId: this.business,
-                    setTemplateId: this.templateId,
-                    params: {
-                        limit: this.limit,
-                        sort: this.listSort
-                    },
-                    config: {
-                        requestId: 'getSetTemplateInstances'
-                    }
-                })
+            async getData () {
+                const data = await this.getSetInstancesWithStatus('getSetInstanceData')
                 this.pagination.count = data.count
                 this.list = data.info || []
             },
-            async getSyncStatus () {
-                try {
-                    const data = await this.$store.dispatch('setSync/getInstancesSyncStatus', {
-                        bizId: this.business,
-                        setTemplateId: this.templateId,
-                        params: {
-                            bk_set_ids: this.setsId
-                        },
-                        config: {
-                            requestId: 'getInstancesSyncStatus',
-                            cancelPrevious: true
-                        }
-                    })
-                    this.syncMap = data || {}
-                } catch (e) {
-                    console.error(e)
-                    clearInterval(this.timer)
-                    this.timer = null
-                    this.syncMap = {}
-                }
+            async updateStatusData () {
+                const data = await this.getSetInstancesWithStatus('updateStatusData', {
+                    bk_set_ids: this.setsId
+                }, {
+                    globalError: false
+                })
+                this.list = data.info || []
             },
-            async getTemplateDiff () {
+            getSetInstancesWithStatus (requestId, otherParams, config) {
+                return this.$store.dispatch('setTemplate/getSetInstancesWithStatus', {
+                    bizId: this.business,
+                    params: {
+                        ...this.searchParams,
+                        ...(otherParams || {})
+                    },
+                    config: {
+                        requestId,
+                        cancelPrevious: true,
+                        ...(config || {})
+                    }
+                })
+            },
+            async getSetInstancesWithTopo () {
                 try {
-                    const data = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
+                    const data = await this.$store.dispatch('setTemplate/getSetInstancesWithTopo', {
                         bizId: this.business,
                         setTemplateId: this.templateId,
                         params: {
+                            limit: {
+                                start: 0,
+                                limit: this.pagination.limit
+                            },
                             bk_set_ids: this.setsId
                         },
                         config: {
-                            requestId: 'diffTemplateAndInstances'
+                            requestId: 'getSetInstancesWithTopo'
                         }
                     })
-                    this.diffList = data || []
+                    this.listWithTopo = data.info || []
                 } catch (e) {
                     console.error(e)
-                    clearInterval(this.timer)
-                    this.timer = null
-                    this.diffList = []
+                    this.listWithTopo = []
                 }
             },
             polling () {
@@ -260,8 +268,7 @@
                         this.timer = null
                     }
                     this.timer = setInterval(() => {
-                        this.getSyncStatus()
-                        this.getTemplateDiff()
+                        this.updateStatusData()
                     }, 10000)
                 } catch (e) {
                     console.error(e)
@@ -272,30 +279,31 @@
             handleLinkServiceTopo () {
                 this.$router.push({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
             },
-            handleSearch () {},
+            async handleFilter (current = 1) {
+                this.pagination.current = current
+                await this.getData()
+                this.setsId.length && this.getSetInstancesWithTopo()
+            },
             handleSelectionChange (selection) {
                 this.checkedList = selection.map(item => item.bk_set_id)
             },
             handleSortChange (sort) {
                 this.listSort = this.$tools.getSort(sort)
-                this.handlePageChange(1)
+                this.handleFilter()
             },
             handlePageChange (current) {
-                if (this.timer === null) {
-                    this.polling()
-                }
-                this.pagination.current = current
-                this.getSetTemplateInstances()
+                this.handleFilter(current)
             },
             handleSizeChange (size) {
                 this.pagination.limit = size
                 this.handlePageChange(1)
             },
+            handleSearch (name) {
+                this.filterName = name
+                this.handleFilter(1)
+            },
             handleSelectable (row) {
-                if (row.details && this.statusMap.syncing.includes(row.details.status)) {
-                    return false
-                }
-                return row.hasDiff
+                return !['syncing', 'finished'].includes(row.status)
             },
             handleBatchSync () {
                 this.$store.commit('setFeatures/setSyncIdMap', {
@@ -333,6 +341,7 @@
                             requestId: 'syncTemplateToInstances'
                         }
                     })
+                    row.status = 'syncing'
                     this.$success(this.$t('重试同步中'))
                 } catch (e) {
                     console.error(e)

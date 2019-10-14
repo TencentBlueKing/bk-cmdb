@@ -39,6 +39,7 @@ type DiscoveryInterface interface {
 	GseProcServer() Interface
 	CoreService() Interface
 	OperationServer() Interface
+	TaskServer() Interface
 	ServiceManageInterface
 }
 
@@ -131,6 +132,10 @@ func (d *discover) TMServer() Interface {
 
 func (d *discover) OperationServer() Interface {
 	return d.servers[types.CC_MODULE_OPERATION]
+}
+
+func (d *discover) TaskServer() Interface {
+	return d.servers[types.CC_MODULE_TASK]
 }
 
 // IsMaster check whether current is master

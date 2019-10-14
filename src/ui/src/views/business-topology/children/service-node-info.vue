@@ -257,7 +257,7 @@
                 const group = this.geSetTemplateGroup()
                 return [{
                     bk_property_id: '__set_template_name__',
-                    bk_property_name: this.$t('模板名称'),
+                    bk_property_name: this.$t('集群模板名称'),
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 1,
                     bk_isapi: false,
