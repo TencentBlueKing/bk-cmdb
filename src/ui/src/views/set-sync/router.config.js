@@ -1,5 +1,18 @@
 import Meta from '@/router/meta'
 import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+import {
+    C_SET_TEMPLATE,
+    U_SET_TEMPLATE,
+    D_SET_TEMPLATE,
+    R_SET_TEMPLATE
+} from '@/dictionary/auth'
+
+export const OPERATION = {
+    C_SET_TEMPLATE,
+    U_SET_TEMPLATE,
+    D_SET_TEMPLATE,
+    R_SET_TEMPLATE
+}
 
 export default [{
     name: 'setSync',
@@ -9,16 +22,10 @@ export default [{
         owner: MENU_BUSINESS,
         menu: {
             i18n: '同步集群模板'
-        }
-    })
-}, {
-    name: 'viewSync',
-    path: 'set/sync/view/:setTemplateId',
-    component: () => import('./view-sync.vue'),
-    meta: new Meta({
-        owner: MENU_BUSINESS,
-        menu: {
-            i18n: '查看同步'
+        },
+        auth: {
+            operation: OPERATION,
+            authScope: 'business'
         }
     })
 }]

@@ -50,7 +50,18 @@
                 </set-instance>
             </div>
             <div class="footer">
-                <bk-button theme="primary" class="mr10" @click="handleConfirmSync">{{$t('确认同步')}}</bk-button>
+                <span style="display: inlink-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
+                        auth: [$OPERATION.U_SET_TEMPLATE]
+                    }">
+                    <bk-button class="mr10"
+                        theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE)"
+                        @click="handleConfirmSync">
+                        {{$t('确认同步')}}
+                    </bk-button>
+                </span>
                 <bk-button class="mr10" @click="handleGoback">{{$t('取消')}}</bk-button>
                 <span v-if="!isSingleSync">{{$tc('已选集群实例', setInstancesId.length, { count: setInstancesId.length })}}</span>
             </div>
