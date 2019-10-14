@@ -404,7 +404,7 @@
                     const data = await this.$store.dispatch('hostFavorites/searchFavorites', {
                         params: {
                             condition: {
-                                bk_biz_id: this.filter.business
+                                bk_biz_id: this.$store.getters['objectBiz/bizId']
                             }
                         },
                         config: {
