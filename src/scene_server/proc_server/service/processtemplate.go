@@ -138,7 +138,6 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	// authorize
 	listOption := &metadata.ListProcessTemplatesOption{
 		BusinessID:         bizID,
 		ProcessTemplateIDs: []int64{input.ProcessTemplateID},

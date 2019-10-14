@@ -142,7 +142,7 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/create/hosts/favorites/{user}", s.AddHostFavourite, nil)
 	s.addAction(http.MethodPut, "/update/hosts/favorites/{user}/{id}", s.UpdateHostFavouriteByID, nil)
 	s.addAction(http.MethodDelete, "/delete/hosts/favorites/{user}/{id}", s.DeleteHostFavouriteByID, nil)
-	s.addAction(http.MethodPost, "/findmany/hosts/favorites/search/{user}", s.GetHostFavourites, nil)
+	s.addAction(http.MethodPost, "/findmany/hosts/favorites/search/{user}", s.ListHostFavourites, nil)
 	s.addAction(http.MethodGet, "/find/hosts/favorites/search/{user}/{id}", s.GetHostFavouriteByID, nil)
 
 	s.addAction(http.MethodPost, "/findmany/meta/hosts/modules/search", s.GetHostModulesIDs, nil)
