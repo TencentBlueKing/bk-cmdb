@@ -49,7 +49,8 @@
 
 <script>
     import cmdbHostAssociationList from './association-list.vue'
-    import cmdbHostAssociationGraphics from './association-graphics.vue'
+    // import cmdbHostAssociationGraphics from './association-graphics.vue'
+    import cmdbHostAssociationGraphics from './association-graphics.new.vue'
     import cmdbHostAssociationCreate from './association-create.vue'
     import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
     export default {
