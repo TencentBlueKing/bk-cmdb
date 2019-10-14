@@ -34,32 +34,28 @@ import (
 var (
 	InstanceAssociationAuditHeaders = []metadata.Header{
 		{
+			PropertyName: "association kind",
+			PropertyID:   common.AssociationKindIDField,
+		},
+		{
+			PropertyName: "association instance id",
+			PropertyID:   common.BKAsstInstIDField,
+		},
+		{
+			PropertyName: "association model id",
+			PropertyID:   common.BKAsstObjIDField,
+		},
+		{
+			PropertyName: "instance id",
+			PropertyID:   common.BKInstIDField,
+		},
+		{
+			PropertyName: "association id",
+			PropertyID:   common.AssociationObjAsstIDField,
+		},
+		{
 			PropertyName: common.AssociationKindIDField,
-			PropertyID:   "association kind",
-		},
-		{
-			PropertyName: common.BKAsstInstIDField,
-			PropertyID:   "association instance id",
-		},
-		{
-			PropertyName: common.BKAsstObjIDField,
-			PropertyID:   "association model id",
-		},
-		{
-			PropertyName: common.BKInstIDField,
-			PropertyID:   "instance id",
-		},
-		{
-			PropertyName: common.AssociationObjAsstIDField,
-			PropertyID:   "association id",
-		},
-		{
-			PropertyName: common.BKObjIDField,
-			PropertyID:   "model id",
-		},
-		{
-			PropertyName: "name",
-			PropertyID:   "association name",
+			PropertyID:   "name",
 		},
 	}
 )
