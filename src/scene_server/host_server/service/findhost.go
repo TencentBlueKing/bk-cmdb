@@ -71,6 +71,14 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	if parameter.Page.Limit == 0 {
+		parameter.Page.Limit = common.BKMaxPageSize
+	}
+	if parameter.Page.Limit > common.BKMaxPageSize {
+		blog.Errorf("ListBizHosts failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageSize, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
 	option := meta.ListHosts{
 		BizID:              bizID,
 		SetIDs:             parameter.SetIDs,
@@ -99,11 +107,19 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 
 	parameter := &meta.ListHostsWithNoBizParameter{}
 	if err := json.NewDecoder(req.Request.Body).Decode(parameter); err != nil {
-		blog.Errorf("ListHostByTopoNode failed, decode body failed, err: %#v, rid:%s", err, srvData.rid)
+		blog.Errorf("ListHostsWithNoBiz failed, decode body failed, err: %#v, rid:%s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
+	if parameter.Page.Limit == 0 {
+		parameter.Page.Limit = common.BKMaxPageSize
+	}
+	if parameter.Page.Limit > common.BKMaxPageSize {
+		blog.Errorf("ListHostsWithNoBiz failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageSize, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
 	option := meta.ListHosts{
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Page:               parameter.Page,
