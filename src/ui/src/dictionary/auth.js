@@ -196,7 +196,8 @@ export const RESOURCE_TYPE_NAME = {
     processServiceTemplate: '服务模板',
     processServiceInstance: '服务实例',
     mainlineInstance: '服务拓扑',
-    operationStatistic: '运营统计'
+    operationStatistic: '运营统计',
+    setTemplate: '集群模板'
 }
 
 export const RESOURCE_ACTION_NAME = {
