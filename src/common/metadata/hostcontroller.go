@@ -182,7 +182,6 @@ type FavouriteMeta struct {
 	Name        string    `json:"name,omitempty" bson:"name,omitempty"`
 	Count       int       `json:"count,omitempty" bson:"count,omitempty"`
 	User        string    `json:"user,omitempty" bson:"user,omitempty"`
-	IsDefault   int       `json:"is_default,omitempty" bson:"is_default,omitempty"`
 	OwnerID     string    `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"`
 	QueryParams string    `json:"query_params,omitempty" bson:"query_params,omitempty"`
 	CreateTime  time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
