@@ -4,6 +4,19 @@ import {
     MENU_BUSINESS_SERVICE,
     MENU_BUSINESS_SET_TEMPLATE
 } from '@/dictionary/menu-symbol'
+
+import {
+    C_SET_TEMPLATE,
+    U_SET_TEMPLATE,
+    D_SET_TEMPLATE
+} from '@/dictionary/auth'
+
+export const OPERATION = {
+    C_SET_TEMPLATE,
+    U_SET_TEMPLATE,
+    D_SET_TEMPLATE
+}
+
 export default [{
     name: MENU_BUSINESS_SET_TEMPLATE,
     path: 'set/template',
@@ -13,6 +26,10 @@ export default [{
         menu: {
             i18n: '集群模板',
             parent: MENU_BUSINESS_SERVICE
+        },
+        auth: {
+            operation: OPERATION,
+            authScope: 'business'
         }
     })
 }, {
@@ -24,6 +41,10 @@ export default [{
         menu: {
             i18n: '集群模板',
             relative: MENU_BUSINESS_SET_TEMPLATE
+        },
+        auth: {
+            operation: OPERATION,
+            authScope: 'business'
         }
     })
 }, {
@@ -35,6 +56,10 @@ export default [{
         menu: {
             i18n: '同步历史',
             relative: MENU_BUSINESS_SET_TEMPLATE
+        },
+        auth: {
+            operation: OPERATION,
+            authScope: 'business'
         }
     })
 }]

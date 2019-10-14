@@ -8,13 +8,25 @@
                 }">
                     <bk-button
                         theme="primary"
-                        @click="handleCreate"
                         :disabled="!$isAuthorized($OPERATION.C_SET_TEMPLATE)"
+                        @click="handleCreate"
                     >
                         {{$t('新建')}}
                     </bk-button>
                 </span>
-                <bk-button theme="default" class="ml10" :disabled="!checkedIds.length" @click="handleBatchDelete">{{$t('批量删除')}}</bk-button>
+                <span class="fl" v-cursor="{
+                    active: !$isAuthorized($OPERATION.D_SET_TEMPLATE),
+                    auth: [$OPERATION.D_SET_TEMPLATE]
+                }">
+                    <bk-button
+                        theme="default"
+                        class="ml10"
+                        :disabled="!checkedIds.length || !$isAuthorized($OPERATION.D_SET_TEMPLATE)"
+                        @click="handleBatchDelete"
+                    >
+                        {{$t('批量删除')}}
+                    </bk-button>
+                </span>
             </div>
             <div class="fr">
                 <bk-input :placeholder="$t('模板名称')"
@@ -46,8 +58,8 @@
                         }">
                         <bk-button
                             text
-                            @click="handleEdit(row)"
                             :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE)"
+                            @click="handleEdit(row)"
                         >
                             {{$t('编辑')}}
                         </bk-button>
@@ -66,7 +78,8 @@
                         }">
                         <bk-button text class="ml15"
                             :disabled="!$isAuthorized($OPERATION.D_SET_TEMPLATE)"
-                            @click="handleDelete(row)">
+                            @click="handleDelete(row)"
+                        >
                             {{$t('删除')}}
                         </bk-button>
                     </span>
@@ -83,8 +96,8 @@
                         }">
                         <bk-button
                             text
-                            @click="handleCreate"
                             :disabled="!$isAuthorized($OPERATION.C_SET_TEMPLATE)"
+                            @click="handleCreate"
                         >
                             {{$t('立即创建')}}
                         </bk-button>
@@ -228,7 +241,7 @@
             handleFilterTemplate () {
                 const originList = this.$tools.clone(this.originList)
                 this.list = this.searchName
-                    ? originList.filter(template => template.name.indexOf(this.searchName) > 0)
+                    ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
                     : originList
             },
             handleSelectable (row) {

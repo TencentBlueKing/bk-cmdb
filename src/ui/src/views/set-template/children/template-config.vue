@@ -30,7 +30,7 @@
         </div>
         <div class="template-options">
             <template v-if="isViewMode">
-                <span
+                <span style="display: inline-block;"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
                         auth: [$OPERATION.U_SET_TEMPLATE]
@@ -46,7 +46,7 @@
                 </span>
             </template>
             <template v-else>
-                <span
+                <span style="display: inline-block;"
                     v-cursor="{
                         active: !$isAuthorized($OPERATION[mode === 'create' ? 'C_SET_TEMPLATE' : 'U_SET_TEMPLATE']),
                         auth: [$OPERATION[mode === 'create' ? 'C_SET_TEMPLATE' : 'U_SET_TEMPLATE']]
