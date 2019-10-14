@@ -17,11 +17,12 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
-
-	"github.com/mitchellh/mapstructure"
 )
 
 func (s *Service) CreateSetTemplate(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
@@ -66,6 +67,32 @@ func (s *Service) UpdateSetTemplate(params types.ContextParams, pathParams, quer
 	if err != nil {
 		blog.Errorf("UpdateSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
 		return nil, err
+	}
+
+	filter := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKAppIDField:         bizID,
+			common.BKSetTemplateIDField: setTemplateID,
+		}),
+	}
+	setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, filter)
+	if err != nil {
+		blog.Errorf("UpdateSetTemplate failed, ListSetTplRelatedSets failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+	for _, item := range setInstanceResult.Data.Info {
+		set := metadata.SetInst{}
+		if err := mapstruct.Decode2Struct(item, &set); err != nil {
+			blog.ErrorJSON("UpdateSetTemplate failed, ListSetTplRelatedSets failed, set: %s, err: %s, rid: %s", item, err, params.ReqID)
+			return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+		}
+		if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(params, set.SetID); err != nil {
+			blog.Errorf("UpdateSetTemplate failed, UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", set.SetID, err, params.ReqID)
+			return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+		}
 	}
 	return setTemplate, nil
 }
@@ -260,11 +287,13 @@ func (s *Service) ListSetTplRelatedSetsWeb(params types.ContextParams, pathParam
 		return nil, err
 	}
 
+	setIDs := make([]int64, 0)
 	for index := range setInstanceResult.Info {
 		set := metadata.SetInst{}
 		if err := mapstr.DecodeFromMapStr(&set, setInstanceResult.Info[index]); err != nil {
 			return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
+		setIDs = append(setIDs, set.SetID)
 
 		setPath := topoTree.TraversalFindNode(common.BKInnerObjIDSet, set.SetID)
 		topoPath := make([]metadata.TopoInstanceNodeSimplify, 0)
@@ -277,6 +306,46 @@ func (s *Service) ListSetTplRelatedSetsWeb(params types.ContextParams, pathParam
 			topoPath = append(topoPath, nodeSimplify)
 		}
 		setInstanceResult.Info[index]["topo_path"] = topoPath
+	}
+
+	// fill with host count
+	filter := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		SetIDArr:      setIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	relations, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, filter)
+	if err != nil {
+		blog.ErrorJSON("SearchMainlineInstanceTopo failed, GetHostModuleRelation failed, filter: %s, err: %s, rid: %s", filter, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if relations.Result == false || relations.Code != 0 {
+		blog.ErrorJSON("SearchMainlineInstanceTopo failed, GetHostModuleRelation return false, filter: %s, result: %s, rid: %s", filter, relations, params.ReqID)
+		return nil, errors.NewCCError(relations.Code, relations.ErrMsg)
+	}
+	set2Hosts := make(map[int64][]int64)
+	for _, relation := range relations.Data.Info {
+		if _, ok := set2Hosts[relation.SetID]; ok == false {
+			set2Hosts[relation.SetID] = make([]int64, 0)
+		}
+		set2Hosts[relation.SetID] = append(set2Hosts[relation.SetID], relation.HostID)
+	}
+	for setID := range set2Hosts {
+		set2Hosts[setID] = util.IntArrayUnique(set2Hosts[setID])
+	}
+
+	for index := range setInstanceResult.Info {
+		set := metadata.SetInst{}
+		if err := mapstr.DecodeFromMapStr(&set, setInstanceResult.Info[index]); err != nil {
+			return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+		hostCount := 0
+		if _, ok := set2Hosts[set.SetID]; ok == true {
+			hostCount = len(set2Hosts[set.SetID])
+		}
+		setInstanceResult.Info[index]["host_count"] = hostCount
 	}
 
 	return setInstanceResult, nil
@@ -296,7 +365,7 @@ func (s *Service) DiffSetTplWithInst(params types.ContextParams, pathParams, que
 	}
 
 	option := metadata.DiffSetTplWithInstOption{}
-	if err := mapstructure.Decode(data, &option); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("DiffSetTemplateWithInstances failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -324,16 +393,138 @@ func (s *Service) SyncSetTplToInst(params types.ContextParams, pathParams, query
 	}
 
 	option := metadata.SyncSetTplToInstOption{}
-	if err := mapstructure.Decode(data, &option); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("DiffSetTemplateWithInstances failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	err = s.Core.SetTemplateOperation().SyncSetTplToInst(params.Context, params.Header, bizID, setTemplateID, option)
+	// NOTE: 如下处理不能杜绝所有发提交任务, 可通过前端防双击的方式限制绝大部分情况
+	setSyncStatus, err := s.getSetSyncStatus(params, option.SetIDs...)
 	if err != nil {
+		blog.Errorf("SyncSetTplToInst failed, getSetSyncStatus failed, setIDs: %+v, err: %s, rid: %s", option.SetIDs, err.Error(), params.ReqID)
+		return nil, err
+	}
+	for _, setID := range option.SetIDs {
+		setStatus, ok := setSyncStatus[setID]
+		if ok == false {
+			return nil, params.Err.CCError(common.CCErrTaskNotFound)
+		}
+		if setStatus == nil {
+			continue
+		}
+		if setStatus.Status.IsFinished() == false {
+			return nil, params.Err.CCError(common.CCErrorTopoSyncModuleTaskIsRunning)
+		}
+	}
+
+	if err := s.Core.SetTemplateOperation().SyncSetTplToInst(params, bizID, setTemplateID, option); err != nil {
 		blog.Errorf("SyncSetTplToInst failed, operation failed, bizID: %d, setTemplateID: %d, option: %+v err: %s, rid: %s", bizID, setTemplateID, option, err.Error(), params.ReqID)
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+func (s *Service) GetSetSyncStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	setTemplateIDStr := pathParams(common.BKSetTemplateIDField)
+	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
+	option := metadata.SetSyncStatusOption{}
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
+		blog.Errorf("GetSetSyncStatus failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+	if option.SetIDs == nil {
+		filter := &metadata.QueryCondition{
+			Limit: metadata.SearchLimit{
+				Limit: common.BKNoLimit,
+			},
+			Condition: mapstr.MapStr(map[string]interface{}{
+				// common.BKAppIDField:         bizID,
+				common.MetadataField:        metadata.NewMetadata(bizID),
+				common.BKSetTemplateIDField: setTemplateID,
+			}),
+		}
+		setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, filter)
+		if err != nil {
+			blog.Errorf("GetSetSyncStatus failed, get template related set failed, err: %+v, rid: %s", err, params.ReqID)
+			return nil, err
+		}
+		setIDs := make([]int64, 0)
+		for _, inst := range setInstanceResult.Data.Info {
+			setID, err := inst.Int64(common.BKSetIDField)
+			if err != nil {
+				blog.Errorf("GetSetSyncStatus failed, get template related set failed, err: %+v, rid: %s", err, params.ReqID)
+				return nil, params.Err.CCError(common.CCErrCommParseDBFailed)
+			}
+			setIDs = append(setIDs, setID)
+		}
+		option.SetIDs = setIDs
+	}
+	return s.getSetSyncStatus(params, option.SetIDs...)
+}
+
+func (s *Service) getSetSyncStatus(params types.ContextParams, setIDs ...int64) (map[int64]*metadata.APITaskDetail, error) {
+	// db.getCollection('cc_APITask').find({"detail.data.set.bk_set_id": 18}).sort({"create_time": -1}).limit(1)
+	setStatus := make(map[int64]*metadata.APITaskDetail)
+	for _, setID := range setIDs {
+		taskDetail, err := s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(params, setID)
+		if err != nil {
+			blog.Errorf("getSetSyncStatus failed, GetLatestSyncTaskDetail failed, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
+			taskDetail = nil
+		}
+		setStatus[setID] = taskDetail
+	}
+	return setStatus, nil
+}
+
+func (s *Service) ListSetTemplateSyncHistory(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.ListSetTemplateSyncStatusOption{}
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
+		blog.Errorf("ListSetTemplateSyncHistory failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	result, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTemplateSyncHistory(params.Context, params.Header, bizID, option)
+	if err != nil {
+		blog.ErrorJSON("ListSetTemplateSyncHistory failed, core service search failed, option: %s, err: %s, rid: %s", option, err.Error(), params.ReqID)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *Service) ListSetTemplateSyncStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.ListSetTemplateSyncStatusOption{}
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
+		blog.Errorf("ListSetTemplateSyncStatus failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	result, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTemplateSyncStatus(params.Context, params.Header, bizID, option)
+	if err != nil {
+		blog.ErrorJSON("ListSetTemplateSyncStatus failed, core service search failed, option: %s, err: %s, rid: %s", option, err.Error(), params.ReqID)
+		return nil, err
+	}
+	return result, nil
 }
