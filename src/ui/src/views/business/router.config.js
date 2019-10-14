@@ -34,11 +34,12 @@ export default [{
     })
 }, {
     name: MENU_RESOURCE_BUSINESS_HISTORY,
-    path: 'history/biz',
+    path: 'business/history',
     component: () => import('./archived.vue'),
     meta: new Meta({
         menu: {
-            i18n: '已归档业务'
+            i18n: '已归档业务',
+            relative: MENU_RESOURCE_MANAGEMENT
         },
         auth: {
             view: { BUSINESS_ARCHIVE },

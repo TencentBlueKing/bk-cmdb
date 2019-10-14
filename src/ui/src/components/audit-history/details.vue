@@ -15,7 +15,6 @@
                 </div>
             </div>
             <bk-table
-                v-bkloading="{ isLoading: $loading(`post_searchObjectAttribute_${objId}`) }"
                 :data="displayList"
                 :width="width || 700"
                 :max-height="$APP.height - 300"
@@ -47,7 +46,7 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapGetters } from 'vuex'
     export default {
         props: {
             details: Object,
@@ -57,7 +56,6 @@
         },
         data () {
             return {
-                attribute: [],
                 isShowAllFields: false,
                 informations: [{
                     label: this.$t('操作账号'),
@@ -88,9 +86,6 @@
         },
         computed: {
             ...mapGetters('objectBiz', ['authorizedBusiness']),
-            objId () {
-                return this.details ? this.details['op_target'] : null
-            },
             options () {
                 const biz = {}
                 this.authorizedBusiness.forEach(({ bk_biz_id: bkBizId, bk_biz_name: bkBizName }) => {
@@ -109,13 +104,13 @@
             },
             tableList () {
                 const list = []
-                const attribute = (this.attribute || []).filter(({ bk_isapi: bkIsapi }) => !bkIsapi)
-                if (this.details['op_type'] !== 100) {
+                const attribute = this.details.content.header
+                if (this.details.op_type !== 100) {
                     attribute.forEach(property => {
                         const preData = this.getCellValue(property, 'pre_data')
                         const curData = this.getCellValue(property, 'cur_data')
                         list.push({
-                            'bk_property_name': property['bk_property_name'],
+                            'bk_property_name': property.bk_property_name,
                             'pre_data': preData,
                             'cur_data': curData
                         })
@@ -154,57 +149,20 @@
                 return this.tableList.length !== this.changedList.length && this.changedList.length > 0
             }
         },
-        watch: {
-            objId (objId) {
-                if (objId) {
-                    this.getObjAttribute()
-                }
-            }
-        },
-        created () {
-            this.getObjAttribute()
-        },
         mounted () {
             this.isShowAllFields = this.details.op_type === 1 || this.details.op_type === 3
         },
         methods: {
-            ...mapActions('objectModelProperty', [
-                'searchObjectAttribute'
-            ]),
             toggleFields () {
                 this.isShowAllFields = !this.isShowAllFields
             },
-            async getObjAttribute () {
-                const res = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({
-                        bk_obj_id: this.objId
-                    }),
-                    config: {
-                        requestId: `post_searchObjectAttribute_${this.objId}`,
-                        fromCache: true
-                    }
-                })
-                this.attribute = res
-            },
             getCellValue (property, type) {
                 const data = this.details.content[type]
+                let value
                 if (data) {
-                    const {
-                        bk_property_id: bkPropertyId,
-                        bk_property_type: bkPropertyType,
-                        // bk_property_name: bkPropertyName,
-                        option
-                    } = property
-                    let value = data[bkPropertyId]
-                    if (bkPropertyType === 'enum' && Array.isArray(option)) {
-                        const targetOption = option.find(({ id }) => id === value)
-                        value = targetOption ? targetOption.name : ''
-                    } else if (bkPropertyType === 'date' || bkPropertyType === 'time') {
-                        value = this.$tools.formatTime(value, bkPropertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
-                    }
-                    return value === '' ? null : value
+                    value = data[property.bk_property_id]
                 }
-                return null
+                return [undefined, null, ''].includes(value) ? '--' : value
             },
             hasChanged (item) {
                 if ([2, 100].includes(this.details['op_type'])) {
