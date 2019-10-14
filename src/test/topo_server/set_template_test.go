@@ -57,11 +57,7 @@ var _ = Describe("create normal set template test", func() {
 	var serviceTemplateID int64
 	It("create service template", func() {
 		data := map[string]interface{}{
-			"metadata": map[string]interface{}{
-				"label": map[string]interface{}{
-					"bk_biz_id": strconv.FormatInt(bizID, 10),
-				},
-			},
+			"bk_biz_id":           bizID,
 			"name":                "svcTpl1",
 			"service_category_id": 1,
 		}
@@ -91,11 +87,7 @@ var _ = Describe("create normal set template test", func() {
 	var serviceTemplateID2 int64
 	It("create service template 2", func() {
 		data := map[string]interface{}{
-			"metadata": map[string]interface{}{
-				"label": map[string]interface{}{
-					"bk_biz_id": strconv.FormatInt(bizID, 10),
-				},
-			},
+			"bk_biz_id":           bizID,
 			"name":                "svcTpl2",
 			"service_category_id": 1,
 		}
@@ -110,11 +102,7 @@ var _ = Describe("create normal set template test", func() {
 	var serviceTemplateID3 int64
 	It("create service template 3", func() {
 		data := map[string]interface{}{
-			"metadata": map[string]interface{}{
-				"label": map[string]interface{}{
-					"bk_biz_id": strconv.FormatInt(bizID, 10),
-				},
-			},
+			"bk_biz_id":           bizID,
 			"name":                "svcTpl3",
 			"service_category_id": 1,
 		}
@@ -214,11 +202,7 @@ var _ = Describe("create normal set template test", func() {
 	var serviceTemplateID4 int64
 	It("create service template 4", func() {
 		data := map[string]interface{}{
-			"metadata": map[string]interface{}{
-				"label": map[string]interface{}{
-					"bk_biz_id": strconv.FormatInt(bizID, 10),
-				},
-			},
+			"bk_biz_id":           bizID,
 			"name":                "svcTpl4",
 			"service_category_id": 1,
 		}
@@ -227,7 +211,7 @@ var _ = Describe("create normal set template test", func() {
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data[common.BKFieldID]).To(Not(Equal(int64(0))))
 		Expect(rsp.Data[common.BKFieldName]).To(Equal("svcTpl4"))
-		serviceTemplateID3, err = util.GetInt64ByInterface(rsp.Data[common.BKFieldID])
+		serviceTemplateID4, err = util.GetInt64ByInterface(rsp.Data[common.BKFieldID])
 		Expect(err).To(BeNil())
 	})
 
@@ -251,7 +235,7 @@ var _ = Describe("create normal set template test", func() {
 		Expect(setDiffs).To(HaveLen(1))
 		setDiff := setDiffs[0]
 		Expect(setDiff.SetID).To(Equal(setID))
-		Expect(setDiff.ModuleDiffs).To(HaveLen(2))
+		Expect(setDiff.ModuleDiffs).To(HaveLen(3))
 		m := MatchFields(IgnoreMissing|IgnoreExtras, Fields{
 			"DiffType": Equal(metadata.ModuleDiffAdd),
 		})
