@@ -49,7 +49,7 @@
                 </div>
                 <div class="filter-group"
                     v-for="(filterItem, index) in filterCondition"
-                    :key="index">
+                    :key="filterItem.bk_property_id">
                     <label class="filter-label">{{getFilterLabel(filterItem)}}</label>
                     <div class="filter-condition">
                         <filter-operator class="filter-operator"

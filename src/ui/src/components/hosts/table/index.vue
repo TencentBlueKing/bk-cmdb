@@ -704,12 +704,7 @@
                 this.$emit('on-quick-search', property, value, operator)
             },
             routeToHistory () {
-                this.$router.push({
-                    name: 'history',
-                    params: {
-                        objId: 'host'
-                    }
-                })
+                this.$router.push({ name: 'hostHistory' })
             },
             handleColumnConfigClick () {
                 this.$refs.hostFilter.$refs.filterPopper.instance.hide()
