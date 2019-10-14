@@ -42,7 +42,7 @@ type SetTemplateResult struct {
 }
 
 type DeleteSetTemplateOption struct {
-	SetTemplateIDs []int64 `field:"set_template_ids" json:"set_template_ids" bson:"set_template_ids"`
+	SetTemplateIDs []int64 `field:"set_template_ids" json:"set_template_ids" bson:"set_template_ids" mapstructure:"set_template_ids"`
 }
 
 type ListSetTemplateOption struct {
