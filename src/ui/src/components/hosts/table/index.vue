@@ -402,7 +402,9 @@
             async getCollectionList () {
                 try {
                     const data = await this.$store.dispatch('hostFavorites/searchFavorites', {
-                        params: {},
+                        params: {
+                            bk_biz_id: this.filter.business
+                        },
                         config: {
                             requestId: 'searchCollection'
                         }
