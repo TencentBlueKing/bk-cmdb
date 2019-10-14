@@ -58,7 +58,6 @@ func (s *coreService) AddHostFavourite(params core.ContextParams, pathParams, qu
 		Name:        paras.Name,
 		Count:       1,
 		User:        user,
-		IsDefault:   paras.IsDefault,
 		QueryParams: paras.QueryParams,
 		OwnerID:     params.SupplierAccount,
 		CreateTime:  time.Now().UTC(),
@@ -90,15 +89,17 @@ func (s *coreService) UpdateHostFavouriteByID(params core.ContextParams, pathPar
 		"id":                  id,
 		common.BKOwnerIDField: params.SupplierAccount,
 	}
-	rowCount, err := s.db.Table(common.BKTableNameHostFavorite).Find(query).Count(params.Context)
+	dbData := make([]meta.FavouriteMeta, 0)
+	err := s.db.Table(common.BKTableNameHostFavorite).Find(query).All(params.Context, &dbData)
 	if nil != err {
 		blog.Errorf("update host favorites with id[%s], but query failed, err: %v, params:%v, rid: %s", id, err, query, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteQueryFail)
 	}
-	if rowCount != 1 {
-		blog.V(5).Infof("update host favorites with id[%s], but favorites match: %d, params:%v, rid: %s", id, rowCount, query, params.ReqID)
+	if len(dbData) != 1 {
+		blog.V(5).Infof("update host favorites with id[%s], but favorites found: %+v, params:%v, rid: %s", id, dbData, query, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteUpdateFail)
 	}
+	hostFavourite := dbData[0]
 
 	// check name duplicate before update name field
 	if len(fav.Name) != 0 {
@@ -120,8 +121,20 @@ func (s *coreService) UpdateHostFavouriteByID(params core.ContextParams, pathPar
 		}
 	}
 
+	// 只有部分字段能更新
+	hostFavourite.UpdateTime = time.Now().UTC()
+	hostFavourite.Count = fav.Count
+	if len(fav.Name) > 0 {
+		hostFavourite.Name = fav.Name
+	}
+	if len(fav.Info) > 0 {
+		hostFavourite.Info = fav.Info
+	}
+	if len(fav.QueryParams) > 0 {
+		hostFavourite.QueryParams = fav.QueryParams
+	}
+
 	// do update host favorite
-	// TODO: filter out updating bk_biz_id field
 	if err = s.db.Table(common.BKTableNameHostFavorite).Update(params.Context, query, fav); err != nil {
 		blog.Errorf("update host favorite failed, err: %v, params:%v, rid: %s", err, query, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostFavouriteUpdateFail)
