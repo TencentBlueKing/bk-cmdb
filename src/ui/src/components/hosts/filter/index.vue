@@ -332,6 +332,7 @@
             },
             getCollectionParams () {
                 return {
+                    bk_biz_id: this.$store.getters['objectBiz/bizId'],
                     name: this.collectionName,
                     info: JSON.stringify({
                         exact_search: this.ip.exact,
