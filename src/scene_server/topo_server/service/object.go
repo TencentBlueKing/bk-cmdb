@@ -68,10 +68,11 @@ func (s *Service) SearchObjectTopo(params types.ContextParams, pathParams, query
 
 // UpdateObject update the object
 func (s *Service) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
+	idStr := pathParams(common.BKFieldID)
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "object id")
+		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKFieldID)
 	}
 	err = s.Core.ObjectOperation().UpdateObject(params, data, id)
 	return nil, err
@@ -79,12 +80,11 @@ func (s *Service) UpdateObject(params types.ContextParams, pathParams, queryPara
 
 // DeleteObject delete the object
 func (s *Service) DeleteObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	paramPath := mapstr.MapStr{}
-	paramPath.Set("id", pathParams("id"))
-	id, err := paramPath.Int64("id")
+	idStr := pathParams(common.BKFieldID)
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
-		return nil, err
+		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), params.ReqID)
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
 	}
 
 	cond := condition.CreateCondition()
