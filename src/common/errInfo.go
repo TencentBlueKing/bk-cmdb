@@ -200,6 +200,7 @@ const (
 	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
 	CCErrCommValExceedMaxFailed                              = 1199073
 	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199074
+	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
