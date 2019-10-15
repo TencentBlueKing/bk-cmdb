@@ -8,13 +8,15 @@ import {
 import {
     C_SET_TEMPLATE,
     U_SET_TEMPLATE,
-    D_SET_TEMPLATE
+    D_SET_TEMPLATE,
+    U_TOPO
 } from '@/dictionary/auth'
 
 export const OPERATION = {
     C_SET_TEMPLATE,
     U_SET_TEMPLATE,
-    D_SET_TEMPLATE
+    D_SET_TEMPLATE,
+    U_TOPO
 }
 
 export default [{
