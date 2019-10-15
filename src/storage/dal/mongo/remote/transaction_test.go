@@ -14,38 +14,47 @@ package remote
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 )
 
-func getTMServer() []string {
-	ips := strings.TrimSpace(os.Getenv("tmserver_ips"))
-	if ips == "" {
-		panic("env tmserver_ips require")
+var engine *backbone.Engine
+
+func init() {
+	svrInfo := &types.ServerInfo{
+		IP:       "127.0.0.1",
+		Port:     60008,
+		HostName: "",
+		Scheme:   "http",
+		Pid:      os.Getpid(),
 	}
-
-	return strings.Split(ips, ",")
-}
-
-func getServerFunc() ([]string, error) {
-	return getTMServer(), nil
-}
-
-func TestTransactionQuery(t *testing.T) {
-	NewWithDiscover(getServerFunc)
+	input := &backbone.BackboneParameter{
+		ConfigPath:   "",
+		Regdiscv:     "127.0.0.1:2181",
+		SrvInfo:      svrInfo,
+		ConfigUpdate: func(previous, current cc.ProcessConfig) {},
+	}
+	fmt.Printf("backboneParameter:%#v\n", input)
+	fmt.Printf("SrvInfo:%#v, ConfigPath:%#v\n", input.SrvInfo, input.ConfigPath)
+	var err error
+	engine, err = backbone.NewBackbone(context.Background(), input)
+	fmt.Printf("err:%#v\n", err)
 }
 
 func TestTransaction(t *testing.T) {
 
-	db, err := NewWithDiscover(getServerFunc)
+	db, err := NewWithDiscover(engine)
 	require.NoError(t, err)
 
 	header := http.Header{}
@@ -142,7 +151,7 @@ func TestTransaction(t *testing.T) {
 }
 
 func TestInsertCommit(t *testing.T) {
-	db, err := NewWithDiscover(getServerFunc)
+	db, err := NewWithDiscover(engine)
 	require.NoError(t, err)
 
 	header := http.Header{}
@@ -173,7 +182,7 @@ func TestInsertCommit(t *testing.T) {
 }
 
 func TestInsertAbort(t *testing.T) {
-	db, err := NewWithDiscover(getServerFunc)
+	db, err := NewWithDiscover(engine)
 	require.NoError(t, err)
 
 	header := http.Header{}
