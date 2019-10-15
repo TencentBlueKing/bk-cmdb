@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
@@ -309,7 +310,7 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 
 	moduleMapStr := moduleInstances[0]
 	moduleInstance := metadata.ModuleInst{}
-	if err := moduleMapStr.MarshalJSONInto(&moduleInstance); err != nil {
+	if err := mapstruct.Decode2Struct(moduleMapStr, &moduleInstance); err != nil {
 		blog.ErrorJSON("unmarshal db data into module failed, module: %s, err: %s, rid: %s", moduleMapStr, err.Error(), params.ReqID)
 		return params.Err.CCError(common.CCErrCommParseDBFailed)
 	}
