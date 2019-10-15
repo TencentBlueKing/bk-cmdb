@@ -42,6 +42,17 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 		return nil, err
 	}
 
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("CreateInst failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
+		return nil, err
+	}
+	if isMainline == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+	}
+
 	if data.Exists("BatchInfo") {
 		/*
 		   BatchInfo data format:
@@ -113,7 +124,7 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 
 	// forbidden create inner model instance with common api
 	if common.IsInnerModel(objID) == true {
-		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		blog.V(5).Infof("DeleteInsts failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
 	}
 
@@ -121,6 +132,17 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
 		return nil, err
+	}
+
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("DeleteInsts failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
+		return nil, err
+	}
+	if isMainline == true {
+		blog.V(5).Infof("DeleteInsts failed, delete %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
 	}
 
 	deleteCondition := &operation.OpCondition{}
@@ -163,6 +185,17 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 		return nil, err
 	}
 
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("DeleteInst failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
+		return nil, err
+	}
+	if isMainline == true {
+		blog.V(5).Infof("DeleteInst failed, delete %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+	}
+
 	// auth: deregister resources
 	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, obj.GetObjectID(), instID); err != nil {
 		blog.Errorf("delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", instID, err, params.ReqID)
@@ -178,7 +211,7 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 
 	// forbidden create inner model instance with common api
 	if common.IsInnerModel(objID) == true {
-		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
 	}
 
@@ -206,6 +239,17 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
 		return nil, err
+	}
+
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("UpdateInsts failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
+		return nil, err
+	}
+	if isMainline == true {
+		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
 	}
 
 	instanceIDs := make([]int64, 0)
@@ -253,6 +297,17 @@ func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", objID, err.Error(), params.ReqID)
 		return nil, err
+	}
+
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("UpdateInsts failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
+		return nil, err
+	}
+	if isMainline == true {
+		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
 	}
 
 	// this is a special logic for mainline object instance.
