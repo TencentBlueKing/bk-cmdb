@@ -87,7 +87,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 	return s.inst.CreateInst(params, obj, data)
 }
 
-func (s *set) DeleteSet(params types.ContextParams, obj model.Object, bizID int64, setIDS []int64) error {
+func (s *set) DeleteSet(params types.ContextParams, setModel model.Object, bizID int64, setIDS []int64) error {
 
 	setCond := condition.CreateCondition()
 
@@ -122,7 +122,7 @@ func (s *set) DeleteSet(params types.ContextParams, obj model.Object, bizID int6
 	}
 
 	// clear the sets
-	return s.inst.DeleteInst(params, obj, setCond, false)
+	return s.inst.DeleteInst(params, setModel, setCond, false)
 }
 
 func (s *set) FindSet(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {
