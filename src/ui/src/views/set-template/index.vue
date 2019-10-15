@@ -67,7 +67,7 @@
                     <bk-button text class="ml15" @click="handlePreview(row)">{{$t('预览')}}</bk-button>
                     <span class="text-primary ml15"
                         style="color: #dcdee5 !important; cursor: not-allowed;"
-                        v-if="row.set_instance_count"
+                        v-if="row.set_instance_count && $isAuthorized($OPERATION.D_SET_TEMPLATE)"
                         v-bk-tooltips.top="$t('不可删除')">
                         {{$t('删除')}}
                     </span>
