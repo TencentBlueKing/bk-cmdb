@@ -200,18 +200,18 @@ func (st *setTemplate) SyncSetTplToInst(params types.ContextParams, bizID int64,
 		}
 
 		// 定时更新 SetTemplateSyncStatus 状态，优化加载
-		go func() {
+		go func(setID int64) {
 			ticker := time.NewTicker(5 * time.Second)
-			timeoutTimer := time.NewTimer(time.Minute)
+			timeoutTimer := time.NewTimer(5 * time.Minute)
 			for {
 				select {
 				case <-timeoutTimer.C:
-					blog.Errorf("poll UpdateSetSyncStatus timeout, setID: %d", setDiff.SetID)
+					blog.Errorf("poll UpdateSetSyncStatus timeout, setID: %d", setID)
 					return
 				case <-ticker.C:
-					setSyncStatus, err := st.UpdateSetSyncStatus(params, setDiff.SetID)
+					setSyncStatus, err := st.UpdateSetSyncStatus(params, setID)
 					if err != nil {
-						blog.Errorf("UpdateSetSyncStatus failed, setID: %d, err: %s", setDiff.SetID, err.Error())
+						blog.Errorf("UpdateSetSyncStatus failed, setID: %d, err: %s", setID, err.Error())
 						return
 					}
 					if setSyncStatus.Status.IsFinished() == true {
@@ -219,7 +219,7 @@ func (st *setTemplate) SyncSetTplToInst(params types.ContextParams, bizID int64,
 					}
 				}
 			}
-		}()
+		}(setDiff.SetID)
 	}
 	return nil
 }
