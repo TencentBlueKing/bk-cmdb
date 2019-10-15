@@ -241,6 +241,11 @@
             },
             async updateStatusData () {
                 const data = await this.getSetInstancesWithStatus('updateStatusData', {
+                    page: {
+                        start: 0,
+                        limit: this.pagination.limit,
+                        sort: this.listSort
+                    },
                     bk_set_ids: this.setsId
                 }, {
                     globalError: false
