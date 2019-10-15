@@ -65,7 +65,7 @@ func (p *setTemplateOperation) ValidateServiceTemplateIDs(ctx core.ContextParams
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count != uint64(len(serviceTemplateIDs)) {
-		blog.Errorf("validate service template failed, some id invalid, bizID: %d, serviceTemplateIDs: %+v, rid: %s", bizID, serviceTemplateIDs)
+		blog.Errorf("validate service template failed, some id invalid, bizID: %d, serviceTemplateIDs: %+v, rid: %s", bizID, serviceTemplateIDs, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_template_ids")
 	}
 	return serviceTemplateIDs, nil
@@ -100,6 +100,8 @@ func (p *setTemplateOperation) CreateSetTemplate(ctx core.ContextParams, bizID i
 			return setTemplate, err
 		}
 		option.ServiceTemplateIDs = serviceTemplateIDs
+	} else {
+		option.ServiceTemplateIDs = make([]int64, 0)
 	}
 
 	// name unique validate

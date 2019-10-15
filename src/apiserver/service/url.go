@@ -118,6 +118,7 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.Contains(string(*u), "/objectattgroupproperty"):
 		from, to, isHit = rootPath, topoRoot, true
 
+	// TODO remove it
 	case strings.Contains(string(*u), "/objectattgroupasst"):
 		from, to, isHit = rootPath, topoRoot, true
 
