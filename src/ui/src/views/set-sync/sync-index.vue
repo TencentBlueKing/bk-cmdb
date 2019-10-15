@@ -148,7 +148,11 @@
                             requestId: 'diffTemplateAndInstances'
                         }
                     })
-                    this.isLatestInfo = !this.diffList.length
+                    const changeList = this.diffList.filter(set => {
+                        const moduleDiffs = set.module_diffs
+                        return moduleDiffs && moduleDiffs.filter(module => module.diff_type !== 'unchanged').length
+                    })
+                    this.isLatestInfo = !changeList.length
                     this.noInfo = false
                 } catch (e) {
                     console.error(e)
