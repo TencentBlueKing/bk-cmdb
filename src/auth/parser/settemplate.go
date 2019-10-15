@@ -60,7 +60,6 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		ResourceType:          meta.SetTemplate,
 		ResourceAction:        meta.Delete,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
-			// TODO
 			data := &struct {
 				SetTemplateIDs []int64 `json:"set_template_ids" mapstructure:"set_template_ids"`
 			}{}
@@ -135,7 +134,16 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:            http.MethodPost,
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ModelSet,
-		ResourceAction:        meta.Update,
+		ResourceAction:        meta.UpdateMany,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			data := &struct {
+				SetIDs []int64 `json:"bk_set_ids" mapstructure:"bk_set_ids"`
+			}{}
+			if err := json.Unmarshal(request.Body, data); err != nil {
+				return nil, fmt.Errorf("unmarshal failed, err: %+v", err)
+			}
+			return data.SetIDs, nil
+		},
 	}, {
 		Name:                  "GetSetSyncStatusRegex",
 		Description:           "获取集群同步状态",
