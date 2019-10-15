@@ -273,6 +273,9 @@
             &.row-view-content {
                 font-size: 14px;
             }
+            /deep/ .bk-form-input {
+                line-height: 32px;
+            }
         }
         .row-error {
             position: absolute;

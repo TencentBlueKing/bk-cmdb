@@ -38,10 +38,11 @@
                 </div>
             </div>
             <bk-table class="instance-table"
+                ref="instanceTable"
                 v-bkloading="{ isLoading: $loading('getSetInstanceData') }"
                 :data="displayList"
                 :pagination="pagination"
-                :max-height="$APP.height - 229"
+                :max-height="$APP.height - 249"
                 @sort-change="handleSortChange"
                 @page-change="handlePageChange"
                 @page-limit-change="handleSizeChange"
@@ -244,7 +245,16 @@
                 }, {
                     globalError: false
                 })
+                const backupList = this.$tools.clone(this.checkedList)
                 this.list = data.info || []
+                const table = this.$refs.instanceTable
+                if (table) {
+                    this.$nextTick(() => {
+                        this.displayList.forEach(row => {
+                            table.toggleRowSelection(row, backupList.includes(row.bk_set_id))
+                        })
+                    })
+                }
             },
             getSetInstancesWithStatus (requestId, otherParams, config) {
                 return this.$store.dispatch('setTemplate/getSetInstancesWithStatus', {
