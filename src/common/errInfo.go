@@ -198,7 +198,8 @@ const (
 	CCErrGetNoAuthSkipURLFailed  = 1199072
 
 	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
-	CCErrCommValExceedMaxFailed = 1199073
+	CCErrCommValExceedMaxFailed                              = 1199073
+	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199074
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998

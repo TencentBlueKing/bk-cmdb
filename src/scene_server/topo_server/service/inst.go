@@ -28,8 +28,14 @@ import (
 
 // CreateInst create a new inst
 func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	objID := pathParams("bk_obj_id")
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+	}
+
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("failed to search the inst, %s, rid: %s", err.Error(), params.ReqID)
@@ -103,8 +109,15 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 }
 
 func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	objID := pathParams("bk_obj_id")
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, pathParams("bk_obj_id"))
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+	}
+
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
 		return nil, err
@@ -126,6 +139,13 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 
 // DeleteInst delete the inst
 func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	objID := pathParams("bk_obj_id")
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+	}
 
 	if "batch" == pathParams("inst_id") {
 		return s.DeleteInsts(params, pathParams, queryParams, data)
@@ -137,7 +157,7 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "inst id")
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, pathParams("bk_obj_id"))
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
 		return nil, err
@@ -155,6 +175,12 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 
 func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objID := pathParams("bk_obj_id")
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+	}
 
 	updateCondition := &operation.OpCondition{}
 	if err := data.MarshalJSONInto(updateCondition); nil != err {
@@ -205,12 +231,18 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 
 // UpdateInst update the inst
 func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	objID := pathParams("bk_obj_id")
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+	}
 
 	if "batch" == pathParams("inst_id") {
 		return s.UpdateInsts(params, pathParams, queryParams, data)
 	}
 
-	objID := pathParams("bk_obj_id")
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s, rid: %s", err.Error(), params.ReqID)
@@ -219,7 +251,7 @@ func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", objID, err.Error(), params.ReqID)
 		return nil, err
 	}
 
