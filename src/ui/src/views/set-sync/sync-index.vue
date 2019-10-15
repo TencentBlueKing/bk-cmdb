@@ -52,12 +52,12 @@
             <div class="footer">
                 <span style="display: inlink-block;"
                     v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
-                        auth: [$OPERATION.U_SET_TEMPLATE]
+                        active: !$isAuthorized($OPERATION.U_TOPO),
+                        auth: [$OPERATION.U_TOPO]
                     }">
                     <bk-button class="mr10"
                         theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE)"
+                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
                         @click="handleConfirmSync">
                         {{$t('确认同步')}}
                     </bk-button>

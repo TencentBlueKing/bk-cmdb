@@ -5,11 +5,11 @@
                 <div class="fl">
                     <span style="display: inlink-block;"
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
-                            auth: [$OPERATION.U_SET_TEMPLATE]
+                            active: !$isAuthorized($OPERATION.U_TOPO),
+                            auth: [$OPERATION.U_TOPO]
                         }">
                         <bk-button theme="primary"
-                            :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE) || !checkedList.length"
+                            :disabled="!$isAuthorized($OPERATION.U_TOPO) || !checkedList.length"
                             @click="handleBatchSync">
                             {{$t('批量同步')}}
                         </bk-button>
@@ -60,15 +60,16 @@
                             <img class="svg-icon" src="../../../assets/images/icon/loading.svg" alt="">
                             {{$t('同步中')}}
                         </span>
-                        <span v-else-if="row.status === 'waiting'">
+                        <span v-else-if="row.status === 'waiting'" class="sync-status">
+                            <i class="status-circle waiting"></i>
                             {{$t('待同步')}}
                         </span>
-                        <span v-else-if="row.status === 'finished'" class="sync-status success">
-                            <i class="bk-icon icon-check-1"></i>
+                        <span v-else-if="row.status === 'finished'" class="sync-status">
+                            <i class="status-circle success"></i>
                             {{$t('已同步')}}
                         </span>
-                        <span v-else-if="row.status === 'failure'" class="sync-status fail">
-                            <i class="bk-icon icon-cc-log-02 "></i>
+                        <span v-else-if="row.status === 'failure'" class="sync-status">
+                            <i class="status-circle fail"></i>
                             {{$t('同步失败')}}
                         </span>
                         <span v-else>--</span>
@@ -88,16 +89,16 @@
                     <template slot-scope="{ row }">
                         <span style="display: inlink-block;"
                             v-cursor="{
-                                active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
-                                auth: [$OPERATION.U_SET_TEMPLATE]
+                                active: !$isAuthorized($OPERATION.U_TOPO),
+                                auth: [$OPERATION.U_TOPO]
                             }">
                             <bk-button v-if="row.status === 'failure'" text
-                                :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE)"
+                                :disabled="!$isAuthorized($OPERATION.U_TOPO)"
                                 @click="handleRetry(row)">
                                 {{$t('重试')}}
                             </bk-button>
                             <bk-button v-else text
-                                :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE) || ['syncing', 'finished'].includes(row.status)"
+                                :disabled="!$isAuthorized($OPERATION.U_TOPO) || ['syncing', 'finished'].includes(row.status)"
                                 @click="handleSync(row)">
                                 {{$t('同步')}}
                             </bk-button>
@@ -407,22 +408,26 @@
         .instance-table {
             .sync-status {
                 color: #63656E;
-                .bk-icon {
-                    margin-top: -2px;
+                .status-circle {
+                    display: inline-block;
+                    width: 8px;
+                    height: 8px;
+                    margin-right: 4px;
+                    border-radius: 50%;
+                    &.waiting {
+                        background-color: #3A84FF;
+                    }
+                    &.success {
+                        background-color: #2DCB56;
+                    }
+                    &.fail {
+                        background-color: #EA3536;
+                    }
                 }
                 .svg-icon {
                     @include inlineBlock;
                     margin-top: -4px;
                     width: 16px;
-                }
-                &.fail {
-                    color: #EA3536;
-                    .bk-icon {
-                        color: #63656E;
-                    }
-                }
-                &.success {
-                    color: #2DCB56;
                 }
             }
         }
