@@ -192,7 +192,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	return m.inst.CreateInst(params, obj, data)
 }
 
-func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setIDs, moduleIDS []int64) error {
+func (m *module) DeleteModule(params types.ContextParams, moduleModel model.Object, bizID int64, setIDs, moduleIDS []int64) error {
 
 	exists, err := m.hasHost(params, bizID, setIDs, moduleIDS)
 	if nil != err {
@@ -217,7 +217,7 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 
 	// module table doesn't have metadata field
 	params.MetaData = nil
-	return m.inst.DeleteInst(params, obj, innerCond, false)
+	return m.inst.DeleteInst(params, moduleModel, innerCond, false)
 }
 
 func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []mapstr.MapStr, err error) {

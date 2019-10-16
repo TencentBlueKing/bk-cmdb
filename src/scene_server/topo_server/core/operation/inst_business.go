@@ -265,7 +265,7 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 		return err
 	}
 
-	bizObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDApp)
+	bizModel, err := b.obj.FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), params.ReqID)
 		return err
@@ -279,7 +279,7 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 	innerCond := condition.CreateCondition()
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
-	return b.inst.DeleteInst(params, bizObj, innerCond, true)
+	return b.inst.DeleteInst(params, bizModel, innerCond, true)
 }
 
 func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error) {
@@ -313,9 +313,9 @@ func (b *business) GetInternalModule(params types.ContextParams, obj model.Objec
 	}
 
 	// search modules
-    cond = condition.CreateCondition()
-    cond.Field(common.BKAppIDField).Eq(bizID)
-    cond.Field(common.BKDefaultField).NotEq(0)
+	cond = condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(bizID)
+	cond.Field(common.BKDefaultField).NotEq(0)
 
 	moduleObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {

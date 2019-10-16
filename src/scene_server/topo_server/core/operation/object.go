@@ -492,7 +492,12 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 	return obj, nil
 }
 
+// CanDelete return nil only when:
+// 1. not inner model
+// 2. model has no instances
+// 3. model has no association with other model
 func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) error {
+	// step 1. ensure not inner model
 	if common.IsInnerModel(targetObj.GetObjectID()) {
 		return params.Err.Error(common.CCErrTopoForbiddenToDeleteModelFailed)
 	}
@@ -503,6 +508,7 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 		cond.Field(common.BKObjIDField).Eq(tObject.ObjectID)
 	}
 
+	// step 2. ensure model has no instances
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
 	findInstResponse, err := o.inst.FindOriginInst(params, targetObj, query)
@@ -515,6 +521,7 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 		return params.Err.Errorf(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete, tObject.ObjectID)
 	}
 
+	// step 3. ensure model has no association with other model
 	or := make([]interface{}, 0)
 	or = append(or, mapstr.MapStr{common.BKObjIDField: tObject.ObjectID})
 	or = append(or, mapstr.MapStr{common.AssociatedObjectIDField: tObject.ObjectID})
