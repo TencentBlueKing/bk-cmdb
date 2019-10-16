@@ -38,8 +38,8 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 	}
 
 	for _, unique := range uniqueAttr {
-		// retrive unique value
-		uniquekeys := map[string]bool{}
+		// retrieve unique value
+		uniqueKeys := map[string]bool{}
 		for _, key := range unique.Keys {
 			switch key.Kind {
 			case metadata.UniqueKeyKindProperty:
@@ -48,7 +48,7 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v, rid: %s", valid.objID, key.ID, ctx.ReqID)
 					return valid.errif.Errorf(common.CCErrTopoObjectPropertyNotFound, key.ID)
 				}
-				uniquekeys[property.PropertyID] = true
+				uniqueKeys[property.PropertyID] = true
 			default:
 				blog.Errorf("[validCreateUnique] find [%s] property [%d] unique kind invalid [%d], rid: %s", valid.objID, key.ID, key.Kind, ctx.ReqID)
 				return valid.errif.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
@@ -58,7 +58,7 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 		cond := mongo.NewCondition()
 
 		anyEmpty := false
-		for key := range uniquekeys {
+		for key := range uniqueKeys {
 			val, ok := instanceData[key]
 			if !ok || isEmpty(val) {
 				anyEmpty = true
@@ -76,8 +76,8 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 			cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: valid.objID})
 		}
 
-		isExsit, bizID := instMedataData.Label.Get(common.BKAppIDField)
-		if isExsit {
+		isExist, bizID := instMedataData.Label.Get(common.BKAppIDField)
+		if isExist {
 			_, metaCond := cond.Embed(metadata.BKMetadata)
 			_, lableCond := metaCond.Embed(metadata.BKLabel)
 			lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
@@ -91,9 +91,9 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 		}
 
 		if 0 < result.Count {
-			blog.Errorf("[validCreateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s, rid: %s", cond.ToMapStr(), uniquekeys, valid.objID, ctx.ReqID)
+			blog.Errorf("[validCreateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s, rid: %s", cond.ToMapStr(), uniqueKeys, valid.objID, ctx.ReqID)
 			propertyNames := []string{}
-			for key := range uniquekeys {
+			for key := range uniqueKeys {
 				propertyNames = append(propertyNames, util.FirstNotEmptyString(ctx.Lang.Language(valid.objID+"_property_"+key), valid.propertys[key].PropertyName, key))
 			}
 
@@ -161,7 +161,7 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData m
 			continue
 		}
 
-		// only search data not in diable status
+		// only search data not in disable status
 		cond.Element(&mongo.Neq{Key: common.BKDataStatusField, Val: common.DataStatusDisabled})
 		if common.GetObjByType(valid.objID) == common.BKInnerObjIDObject {
 			cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: valid.objID})
