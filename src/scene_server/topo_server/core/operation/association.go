@@ -1065,6 +1065,10 @@ func (assoc *association) SearchInstAssociationSingleObjectInstInfo(params types
 	// association count
 	cnt = rsp.Data.Count
 
+	if cnt == 0 {
+		return nil, 0, nil
+	}
+
 	var objIDInstIDArr []int64
 
 	for _, instAsst := range rsp.Data.Info {
