@@ -614,7 +614,7 @@ func (s *Service) SearchInstAssociation(params types.ContextParams, pathParams, 
 
 func (s *Service) SearchInstAssociationUI(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	objID := pathParams("bk_obj_id")
+	objID := pathParams(common.BKObjIDField)
 	instID, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
@@ -656,5 +656,66 @@ func (s *Service) SearchInstAssociationUI(params types.ContextParams, pathParams
 		"data":              infos,
 		"association_count": cnt,
 		"page":              input.Limit,
+	}, err
+}
+
+// SearchInstAssociationWithOtherObject  要求根据实例信息（实例的模型ID，实例ID）和模型ID（关联关系中的源，目的模型ID） 返回实例关联或者被关联模型实例得数据。
+func (s *Service) SearchInstAssociationWithOtherObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	reqParams := &metadata.RequestInstAssociationObjectID{}
+	if err := data.MarshalJSONInto(reqParams); nil != err {
+		blog.Errorf("SearchInstAssociationWithOtherObject failed to parse the data and the condition, the input (%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	if reqParams.Condition.ObjectID == "" {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
+	}
+	if reqParams.Condition.InstID == 0 {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKInstIDField)
+	}
+	if reqParams.Condition.AssociationObjectID == "" {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, "association_obj_id")
+	}
+
+	cond := condition.CreateCondition()
+	if reqParams.Condition.IsTargetObject {
+		// 作为目标模型
+		cond.Field(common.BKAsstObjIDField).Eq(reqParams.Condition.ObjectID)
+		cond.Field(common.BKAsstInstIDField).Eq(reqParams.Condition.InstID)
+		cond.Field(common.BKObjIDField).Eq(reqParams.Condition.AssociationObjectID)
+	} else {
+		// 作为源模型
+		cond.Field(common.BKObjIDField).Eq(reqParams.Condition.ObjectID)
+		cond.Field(common.BKInstIDField).Eq(reqParams.Condition.InstID)
+		cond.Field(common.BKAsstObjIDField).Eq(reqParams.Condition.AssociationObjectID)
+	}
+
+	sortArr := metadata.NewSearchSortParse().String(reqParams.Page.Sort).ToSearchSortArr()
+	input := &metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+		Limit: metadata.SearchLimit{
+			Limit:  int64(reqParams.Page.Limit),
+			Offset: int64(reqParams.Page.Start),
+		},
+		SortArr: sortArr,
+	}
+
+	if input.IsIllegal() {
+		blog.ErrorJSON("parse page illegal, input:%s,rid:%s", input, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommPageLimitIsExceeded)
+	}
+
+	blog.V(5).Infof("input:%#v, rid:%s", input, params.ReqID)
+	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationSingleObjectInstInfo(params, reqParams.Condition.AssociationObjectID, input)
+	if err != nil {
+		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"info":  infos,
+		"count": cnt,
+		"page":  input.Limit,
 	}, err
 }
