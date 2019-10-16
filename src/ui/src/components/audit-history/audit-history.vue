@@ -14,7 +14,7 @@
                     :palceholder="$t('操作账号')">
                 </cmdb-form-objuser>
             </div>
-            <bk-button class="fr" theme="primary" @click="refresh(true)">{{$t('查询')}}</bk-button>
+            <bk-button class="fl ml10" theme="primary" @click="refresh(true)">{{$t('查询')}}</bk-button>
         </div>
         <bk-table
             v-bkloading="{ isLoading: $loading('getUserOperationLog') }"
@@ -190,6 +190,7 @@
     }
     .history-options{
         padding: 20px 0 14px;
+        font-size: 14px;
         .options-group{
             white-space: nowrap;
             margin-right: 16px;
