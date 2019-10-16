@@ -104,20 +104,6 @@ func (m *model) DeleteModelClassification(ctx context.Context, h http.Header, in
 	return
 }
 
-func (m *model) DeleteModelClassificationCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
-	resp = new(metadata.DeletedOptionResult)
-	subPath := "/delete/model/classification/cascade"
-
-	err = m.client.Delete().
-		WithContext(ctx).
-		Body(input).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
 func (m *model) ReadModelClassification(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelClassifitionResult, err error) {
 	resp = new(metadata.ReadModelClassifitionResult)
 	subPath := "/read/model/classification"

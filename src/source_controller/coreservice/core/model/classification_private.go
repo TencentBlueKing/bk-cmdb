@@ -78,11 +78,3 @@ func (m *modelClassification) hasModel(ctx core.ContextParams, cond universalsql
 	exists = 0 != cnt
 	return cnt, exists, err
 }
-
-func (m *modelClassification) cascadeDeleteModel(ctx core.ContextParams, classificationIDS []string) (uint64, error) {
-
-	deleteCond := mongo.NewCondition()
-	deleteCond.Element(&mongo.In{Key: metadata.ModelFieldObjCls, Val: classificationIDS})
-	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
-	return m.model.cascadeDelete(ctx, deleteCond)
-}

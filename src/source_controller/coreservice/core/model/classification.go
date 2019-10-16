@@ -276,38 +276,6 @@ func (m *modelClassification) DeleteModelClassification(ctx core.ContextParams, 
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
-func (m *modelClassification) CascadeDeleteModeClassification(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-
-	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return &metadata.DeletedCount{}, err
-	}
-
-	classificationItems, err := m.search(ctx, deleteCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to search some classifications by the condition (%#v) , error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return &metadata.DeletedCount{}, err
-	}
-
-	classificationIDS := []string{}
-	for _, item := range classificationItems {
-		classificationIDS = append(classificationIDS, item.ClassificationID)
-	}
-
-	if _, err := m.cascadeDeleteModel(ctx, classificationIDS); nil != err {
-		blog.Error("request(%s): it is failed to cascade delete some models by the classificationIDS (%#v), error info is %s", ctx.ReqID, classificationIDS, err.Error())
-		return &metadata.DeletedCount{}, err
-	}
-
-	if _, err := m.delete(ctx, deleteCond); nil != err {
-		blog.Errorf("request(%s): it is failed to delete some classifications by the condition (%#v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
-		return &metadata.DeletedCount{}, err
-	}
-
-	return &metadata.DeletedCount{Count: uint64(len(classificationItems))}, nil
-}
-
 func (m *modelClassification) SearchModelClassification(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelClassificationDataResult, error) {
 
 	dataResult := &metadata.QueryModelClassificationDataResult{

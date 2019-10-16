@@ -182,33 +182,6 @@ func TestDeleteModelClassification(t *testing.T) {
 	return
 }
 
-func TestDeleteModelClassificationCascade(t *testing.T) {
-	mockAPI := NewMockApiMachinery()
-
-	t.Log("test with struct mock do output")
-	var resp metadata.DeletedOptionResult
-
-	err := json.Unmarshal([]byte(getDeletedResult()), &resp)
-	if err != nil {
-		t.Error("get response data error")
-		return
-	}
-
-	mockAPI.MockDo(resp).CoreService().Model().DeleteModelClassificationCascade(nil, nil, &metadata.DeleteOption{})
-	rtn, err := mockAPI.CoreService().Model().DeleteModelClassificationCascade(nil, nil, &metadata.DeleteOption{})
-	if err != nil {
-		t.Errorf("get  core service delete model classification cascade result failed, err: %v", err)
-		return
-	}
-
-	if !reflect.DeepEqual(*rtn, resp) {
-		t.Error("test with struct mock do output.")
-		return
-	}
-	t.Log("test with struct mock do output success.")
-	return
-}
-
 func TestReadModelClassification(t *testing.T) {
 	mockAPI := NewMockApiMachinery()
 
