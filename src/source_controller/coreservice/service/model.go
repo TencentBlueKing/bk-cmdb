@@ -40,7 +40,7 @@ func (s *coreService) CreateOneModelClassification(params core.ContextParams, pa
 	return s.core.ModelOperation().CreateOneModelClassification(params, inputData)
 }
 
-func (s *coreService) SetOneModelClassificaition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SetOneModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.SetOneModelClassification{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
@@ -50,7 +50,7 @@ func (s *coreService) SetOneModelClassificaition(params core.ContextParams, path
 	return s.core.ModelOperation().SetOneModelClassification(params, inputData)
 }
 
-func (s *coreService) SetManyModelClassificaiton(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SetManyModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputDatas := metadata.SetManyModelClassification{}
 	if err := data.MarshalJSONInto(&inputDatas); nil != err {

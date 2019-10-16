@@ -19,8 +19,8 @@ import (
 func (s *coreService) initModelClassification() {
 	s.addAction(http.MethodPost, "/create/model/classification", s.CreateOneModelClassification, nil)
 	s.addAction(http.MethodPost, "/createmany/model/classification", s.CreateManyModelClassification, nil)
-	s.addAction(http.MethodPost, "/setmany/model/classification", s.SetManyModelClassificaiton, nil)
-	s.addAction(http.MethodPost, "/set/model/classification", s.SetOneModelClassificaition, nil)
+	s.addAction(http.MethodPost, "/setmany/model/classification", s.SetManyModelClassification, nil)
+	s.addAction(http.MethodPost, "/set/model/classification", s.SetOneModelClassification, nil)
 	s.addAction(http.MethodPut, "/update/model/classification", s.UpdateModelClassification, nil)
 	s.addAction(http.MethodDelete, "/delete/model/classification", s.DeleteModelClassification, nil)
 	s.addAction(http.MethodPost, "/read/model/classification", s.SearchModelClassification, nil)

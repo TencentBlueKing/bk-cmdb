@@ -27,13 +27,13 @@ func (m *modelAttribute) isExists(ctx core.ContextParams, objID, propertyID stri
 	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldPropertyID, Val: propertyID})
 	cond.Element(&mongo.Eq{Key: common.BKOIDField, Val: objID})
 
-	// ATTETION: Currently only business dimension isolation is done,
+	// ATTENTION: Currently only business dimension isolation is done,
 	//           and there may be isolation requirements for other dimensions in the future.
-	isExsit, bizID := meta.Label.Get(common.BKAppIDField)
-	if isExsit {
+	isExist, bizID := meta.Label.Get(common.BKAppIDField)
+	if isExist {
 		_, metaCond := cond.Embed(metadata.BKMetadata)
-		_, lableCond := metaCond.Embed(metadata.BKLabel)
-		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+		_, labelCond := metaCond.Embed(metadata.BKLabel)
+		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
 
 	condMap := util.SetModOwner(cond.ToMapStr(), ctx.SupplierAccount)
@@ -41,7 +41,7 @@ func (m *modelAttribute) isExists(ctx core.ContextParams, objID, propertyID stri
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).One(ctx, oneAttribute)
 	blog.V(5).Infof("isExists cond:%#v, rid:%s", condMap, ctx.ReqID)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
-		blog.Errorf("request(%s): database findone operation is failed, error info is %s", ctx.ReqID, err.Error())
+		blog.Errorf("request(%s): database findOne operation is failed, error info is %s", ctx.ReqID, err.Error())
 		return oneAttribute, false, err
 	}
 	return oneAttribute, !m.dbProxy.IsNotFoundError(err), nil
