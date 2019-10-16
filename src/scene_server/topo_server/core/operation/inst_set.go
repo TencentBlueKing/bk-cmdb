@@ -141,6 +141,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 			common.BKParentIDField:          setID,
 			common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
 			common.BKAppIDField:             bizID,
+			common.MetadataField:            metadata.NewMetadata(bizID),
 		}
 		_, err := s.module.CreateModule(params, moduleObj, bizID, setID, createModuleParam)
 		if err != nil {
