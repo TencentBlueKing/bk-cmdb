@@ -87,8 +87,7 @@ func (s *Service) DeleteObject(params types.ContextParams, pathParams, queryPara
 		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
 	}
 
-	cond := condition.CreateCondition()
-	err = s.Core.ObjectOperation().DeleteObject(params, id, cond, true)
+	err = s.Core.ObjectOperation().DeleteObject(params, id, true)
 	return nil, err
 }
 

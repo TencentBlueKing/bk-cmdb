@@ -19,11 +19,10 @@ import (
 func (s *coreService) initModelClassification() {
 	s.addAction(http.MethodPost, "/create/model/classification", s.CreateOneModelClassification, nil)
 	s.addAction(http.MethodPost, "/createmany/model/classification", s.CreateManyModelClassification, nil)
-	s.addAction(http.MethodPost, "/setmany/model/classification", s.SetManyModelClassificaiton, nil)
-	s.addAction(http.MethodPost, "/set/model/classification", s.SetOneModelClassificaition, nil)
+	s.addAction(http.MethodPost, "/setmany/model/classification", s.SetManyModelClassification, nil)
+	s.addAction(http.MethodPost, "/set/model/classification", s.SetOneModelClassification, nil)
 	s.addAction(http.MethodPut, "/update/model/classification", s.UpdateModelClassification, nil)
 	s.addAction(http.MethodDelete, "/delete/model/classification", s.DeleteModelClassification, nil)
-	s.addAction(http.MethodDelete, "/delete/model/classification/cascade", s.CascadeDeleteModelClassification, nil)
 	s.addAction(http.MethodPost, "/read/model/classification", s.SearchModelClassification, nil)
 }
 
@@ -32,7 +31,7 @@ func (s *coreService) initModel() {
 	s.addAction(http.MethodPost, "/set/model", s.SetModel, nil)
 	s.addAction(http.MethodPut, "/update/model", s.UpdateModel, nil)
 	s.addAction(http.MethodDelete, "/delete/model", s.DeleteModel, nil)
-	s.addAction(http.MethodDelete, "/delete/model/cascade", s.CascadeDeleteModel, nil)
+	s.addAction(http.MethodDelete, "/delete/model/{id}/cascade", s.CascadeDeleteModel, nil)
 	s.addAction(http.MethodPost, "/read/model", s.SearchModel, nil)
 	s.addAction(http.MethodGet, "/read/model/statistics", s.GetModelStatistics, nil)
 
