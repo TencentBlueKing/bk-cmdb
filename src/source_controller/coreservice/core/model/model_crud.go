@@ -13,7 +13,6 @@
 package model
 
 import (
-	"configcenter/src/common/util"
 	"time"
 
 	"configcenter/src/common"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -125,7 +125,7 @@ func (m *modelManager) update(ctx core.ContextParams, data mapstr.MapStr, cond u
 
 func (m *modelManager) search(ctx core.ContextParams, cond universalsql.Condition) ([]metadata.Object, error) {
 
-	dataResult := []metadata.Object{}
+	dataResult := make([]metadata.Object, 0)
 	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(ctx, &dataResult); nil != err {
 		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
 		return dataResult, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -136,7 +136,7 @@ func (m *modelManager) search(ctx core.ContextParams, cond universalsql.Conditio
 
 func (m *modelManager) searchReturnMapStr(ctx core.ContextParams, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 
-	dataResult := []mapstr.MapStr{}
+	dataResult := make([]mapstr.MapStr, 0)
 	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(ctx, &dataResult); nil != err {
 		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
 		return dataResult, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -174,7 +174,7 @@ func (m *modelManager) cascadeDelete(ctx core.ContextParams, cond universalsql.C
 	}
 
 	// 按照bk_obj_id删除的时候。业务下私有模型bk_obj_id相同。将会出现bug
-	targetObjIDS := []string{}
+	targetObjIDS := make([]string, 0)
 	for _, modelItem := range modelItems {
 		targetObjIDS = append(targetObjIDS, modelItem.ObjectID)
 	}
@@ -192,22 +192,22 @@ func (m *modelManager) cascadeDelete(ctx core.ContextParams, cond universalsql.C
 
 	// delete model property group
 	if err := m.dbProxy.Table(common.BKTableNamePropertyGroup).Delete(ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete mdoel attribute group error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
+		blog.ErrorJSON("delete model attribute group error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
 		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	// delete model property attribute
 	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Delete(ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete mdoel attribute error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
+		blog.ErrorJSON("delete model attribute error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
 		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	// delete model unique
 	if err := m.dbProxy.Table(common.BKTableNameObjUnique).Delete(ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete mdoel unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
+		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
 		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	// delete model
 	if err := m.dbProxy.Table(common.BKTableNameObjDes).Delete(ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete mdoel unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
+		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
 		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 

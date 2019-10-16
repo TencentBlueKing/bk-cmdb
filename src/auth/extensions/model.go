@@ -296,6 +296,7 @@ func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, head
 
 	return am.UpdateRegisteredObjects(ctx, header, businessID, objects...)
 }
+
 func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
 	if am.Enabled() == false {
 		return nil
@@ -336,4 +337,23 @@ func (am *AuthManager) DeregisterMainlineModelByObjectID(ctx context.Context, he
 		return fmt.Errorf("deregister mainline model failed, get model by id failed, err: %+v", err)
 	}
 	return am.DeregisterObject(ctx, header, objects...)
+}
+
+func (am *AuthManager) MakeResourcesByObjectIDs(ctx context.Context, header http.Header, businessID int64, objectIDs ...string) ([]meta.ResourceAttribute, error) {
+	if am.Enabled() == false {
+		return nil, nil
+	}
+
+	if len(objectIDs) == 0 {
+		return nil, nil
+	}
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectIDs...)
+	if err != nil {
+		return nil, fmt.Errorf("deregister mainline model failed, get model by id failed, err: %+v", err)
+	}
+	resources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
+	if err != nil {
+		return nil, fmt.Errorf("make auth resource by models failed, err: %+v", err)
+	}
+	return resources, nil
 }

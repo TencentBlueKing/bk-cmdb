@@ -41,7 +41,7 @@ type ObjectOperationInterface interface {
 	FindObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error)
 	CreateObject(params types.ContextParams, isMainline bool, data mapstr.MapStr) (model.Object, error)
 	CanDelete(params types.ContextParams, targetObj model.Object) error
-	DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error
+	DeleteObject(params types.ContextParams, id int64, needCheckInst bool) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
 	FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error)
 	// Deprecated: not allowed to use anymore.
@@ -548,46 +548,54 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 	return nil
 }
 
-func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error {
-
-	if 0 < id {
-		cond = condition.CreateCondition()
-		cond.Field(metadata.ModelFieldID).Eq(id)
+// DeleteObject delete model by id
+func (o *object) DeleteObject(params types.ContextParams, id int64, needCheckInst bool) error {
+	if id <= 0 {
+		return params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
 	}
+
+	// get model by id
+	cond := condition.CreateCondition()
+	cond.Field(metadata.ModelFieldID).Eq(id)
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) err: %s, rid: %s", cond, err.Error(), params.ReqID)
 		return err
 	}
+	// shouldn't return 404 error here, legacy implements just ignore not found error
+	if len(objs) == 0 {
+		blog.V(3).Infof("[operation-obj] object not found, condition: %v, err: %s, rid: %s", cond, err.Error(), params.ReqID)
+		return nil
+	}
+	if len(objs) > 1 {
+		return params.Err.CCError(common.CCErrCommGetMultipleObject)
+	}
+	obj := objs[0]
+	object := obj.Object()
 
-	// auth: check authorization
-	objects := make([]metadata.Object, 0)
-	for _, obj := range objs {
-		objects = append(objects, obj.Object())
+	// check whether it can be deleted
+	if needCheckInst {
+		if err := o.CanDelete(params, obj); nil != err {
+			return err
+		}
 	}
 
-	for _, obj := range objs {
-		// check if is can be deleted
-		if needCheckInst {
-			if err := o.CanDelete(params, obj); nil != err {
-				return err
-			}
-		}
-
-		rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
-		if nil != err {
-			blog.Errorf("[operation-obj] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
-			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !rsp.Result {
-			blog.Errorf("[operation-obj] failed to delete the object by the condition(%#v) or the id(%d), rid: %s", cond.ToMapStr(), id, params.ReqID)
-			return params.Err.New(rsp.Code, rsp.ErrMsg)
-		}
-
+	deleteCondition := &metadata.DeleteOption{
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(params.Context, params.Header, deleteCondition)
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !rsp.Result {
+		blog.Errorf("[operation-obj] failed to delete the object by the id(%d), rid: %s", id, params.ReqID)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// auth: deregister models
-	if err := o.authManager.DeregisterObject(params.Context, params.Header, objects...); err != nil {
+	if err := o.authManager.DeregisterObject(params.Context, params.Header, object); err != nil {
+		blog.ErrorJSON("DeleteObject success, but deregister object from iam failed, objects: %s, err: %s, rid: %s", object, err.Error(), params.ReqID)
 		return params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
 	}
 

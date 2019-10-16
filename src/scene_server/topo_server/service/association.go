@@ -64,14 +64,13 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 
 // DeleteMainLineObject delete a object int the main line topo
 func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	tx, err := s.Txn.Start(context.Background())
+	tx, err := s.Txn.Start(params.Context)
 	if err != nil {
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 	}
 	params.Header = tx.TxnInfo().IntoHeader(params.Header)
 	objID := pathParams("bk_obj_id")
 
-	// auth: deregister mainline object
 	var bizID int64
 	if params.MetaData != nil {
 		bizID, err = metadata.BizIDFromMetadata(*params.MetaData)
@@ -80,14 +79,15 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 			return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 		}
 	}
-	if err := s.AuthManager.DeregisterMainlineModelByObjectID(params.Context, params.Header, bizID, objID); err != nil {
-		blog.Errorf("delete mainline association failed, deregister mainline model failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+
+	// auth: collection iam resource before it really be deleted
+	iamResources, err := s.AuthManager.MakeResourcesByObjectIDs(params.Context, params.Header, bizID, objID)
+	if err != nil {
+		blog.Errorf("parse business id from request failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrTopoObjectDeleteFailed)
 	}
 
-	err = s.Core.AssociationOperation().DeleteMainlineAssociation(params, objID)
-
-	if err != nil {
+	if err = s.Core.AssociationOperation().DeleteMainlineAssociation(params, objID); err != nil {
 		if txErr := tx.Abort(context.Background()); txErr != nil {
 			blog.Errorf("[api-asst] abort transaction failed; %v, rid: %s", err, params.ReqID)
 			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
@@ -97,6 +97,13 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 		}
 	}
+
+	// auth: do deregister
+	if err := s.AuthManager.Authorize.DeregisterResource(params.Context, iamResources...); err != nil {
+		blog.Errorf("delete mainline association success, but deregister mainline model failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
+
 	return nil, err
 }
 
@@ -293,12 +300,12 @@ func (s *Service) SearchAssociationInst(params types.ContextParams, pathParams, 
 	ret, err := s.Core.AssociationOperation().SearchInst(params, request)
 	if err != nil {
 		return nil, err
-	} 
-	
-	if  ret.Code != 0 {
+	}
+
+	if ret.Code != 0 {
 		return nil, params.Err.New(ret.Code, ret.ErrMsg)
-	} 
-	
+	}
+
 	return ret.Data, nil
 }
 
