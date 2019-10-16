@@ -347,9 +347,6 @@
                                 bk_supplier_account: this.supplierAccount
                             }
                         })
-                    },
-                    config: {
-                        globalError: false
                     }
                 })
                 return data || []

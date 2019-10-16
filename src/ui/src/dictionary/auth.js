@@ -113,6 +113,11 @@ export const U_SERVICE_INSTANCE = 'processServiceInstance.update'
 export const D_SERVICE_INSTANCE = 'processServiceInstance.delete'
 export const R_SERVICE_INSTANCE = 'processServiceInstance.findMany'
 
+// 集群模板
+export const C_SET_TEMPLATE = 'setTemplate.create'
+export const U_SET_TEMPLATE = 'setTemplate.update'
+export const D_SET_TEMPLATE = 'setTemplate.delete'
+
 export const STATIC_BUSINESS_MODE = [
     C_MODEL,
     R_MODEL,
@@ -133,7 +138,7 @@ export const STATIC_BUSINESS_MODE = [
     PROCESS_BIND_MODULE,
     PROCESS_UNBIND_MODULE,
     PROCESS_SEARCH_MODULE,
-    
+
     C_HOST,
     U_HOST,
     D_HOST,
@@ -157,7 +162,11 @@ export const STATIC_BUSINESS_MODE = [
     C_TOPO,
     U_TOPO,
     D_TOPO,
-    R_TOPO
+    R_TOPO,
+
+    C_SET_TEMPLATE,
+    U_SET_TEMPLATE,
+    D_SET_TEMPLATE
 ]
 
 export const DYNAMIC_BUSINESS_MODE = [
@@ -187,7 +196,8 @@ export const RESOURCE_TYPE_NAME = {
     processServiceTemplate: '服务模板',
     processServiceInstance: '服务实例',
     mainlineInstance: '服务拓扑',
-    operationStatistic: '运营统计'
+    operationStatistic: '运营统计',
+    setTemplate: '集群模板'
 }
 
 export const RESOURCE_ACTION_NAME = {

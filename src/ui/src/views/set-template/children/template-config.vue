@@ -30,17 +30,33 @@
         </div>
         <div class="template-options">
             <template v-if="isViewMode">
-                <bk-button class="options-confirm" theme="primary"
-                    @click="handleEdit">
-                    {{$t('编辑')}}
-                </bk-button>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
+                        auth: [$OPERATION.U_SET_TEMPLATE]
+                    }">
+                    <bk-button
+                        class="options-confirm"
+                        theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE)"
+                        @click="handleEdit"
+                    >
+                        {{$t('编辑')}}
+                    </bk-button>
+                </span>
             </template>
             <template v-else>
-                <bk-button class="options-confirm" theme="primary"
-                    :disabled="!hasChange"
-                    @click="handleConfirm">
-                    {{$t('确定')}}
-                </bk-button>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION[mode === 'create' ? 'C_SET_TEMPLATE' : 'U_SET_TEMPLATE']),
+                        auth: [$OPERATION[mode === 'create' ? 'C_SET_TEMPLATE' : 'U_SET_TEMPLATE']]
+                    }">
+                    <bk-button class="options-confirm" theme="primary"
+                        :disabled="!$isAuthorized($OPERATION[mode === 'create' ? 'C_SET_TEMPLATE' : 'U_SET_TEMPLATE']) || !hasChange"
+                        @click="handleConfirm">
+                        {{$t('确定')}}
+                    </bk-button>
+                </span>
                 <bk-button class="options-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </template>
         </div>
@@ -256,6 +272,9 @@
             @include inlineBlock(top);
             &.row-view-content {
                 font-size: 14px;
+            }
+            /deep/ .bk-form-input {
+                line-height: 32px;
             }
         }
         .row-error {

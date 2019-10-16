@@ -1002,7 +1002,6 @@
     "确定同步拓扑": "Determine the synchronization topology?",
     "单个集群同步提示": "The '{name}' template will be synchronized, and the topology of the template will be updated to the selected set instance.",
     "多个集群同步提示": "The '{name}' template will be batched to the selected {count} set instances, and the template topology will be updated to the selected set instance.",
-    "路径关键字": "path keyword",
     "上次同步时间": "Last sync time",
     "待同步": "Synchronizable",
     "已同步": "Synced",
@@ -1022,5 +1021,9 @@
     "重试失败": "Retry failed",
     "查看": "View",
     "集群模板名称": "Set template name",
-    "同步集群": "Sync Set"
+    "同步集群": "Sync Set",
+    "从集群模板创建": "Create from set template",
+    "集群模板创建重命名提示": "Using template requires renaming the set name of the template",
+    "集群多个创建提示": "Please enter the set name and create multiple sets at the same time, line breaks",
+    "同步时间": "Sync time"
 }
