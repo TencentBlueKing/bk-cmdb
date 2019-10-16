@@ -195,16 +195,19 @@ func (m *modelManager) cascadeDelete(ctx core.ContextParams, cond universalsql.C
 		blog.ErrorJSON("delete model attribute group error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
 		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
+
 	// delete model property attribute
 	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Delete(ctx, delCondMap); err != nil {
 		blog.ErrorJSON("delete model attribute error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
 		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
+
 	// delete model unique
 	if err := m.dbProxy.Table(common.BKTableNameObjUnique).Delete(ctx, delCondMap); err != nil {
 		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
 		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
+
 	// delete model
 	if err := m.dbProxy.Table(common.BKTableNameObjDes).Delete(ctx, delCondMap); err != nil {
 		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
@@ -212,10 +215,12 @@ func (m *modelManager) cascadeDelete(ctx core.ContextParams, cond universalsql.C
 	}
 
 	return uint64(len(targetObjIDS)), nil
-
 }
 
-// canCascadeDelete 判断是否可以删除, 判断模型是否可以删除，是否包含实例，是否有关联关系
+// canCascadeDelete 判断是否可以删除
+// 1. 检查是否内置模型
+// 2. 是否包含实例
+// 3. 是否有关联关系
 func (m *modelManager) canCascadeDelete(ctx core.ContextParams, targetObjIDS []string) (err error) {
 	// notice inner model not can delete
 	for _, objID := range targetObjIDS {
@@ -223,25 +228,33 @@ func (m *modelManager) canCascadeDelete(ctx core.ContextParams, targetObjIDS []s
 			return ctx.Error.Errorf(common.CCErrCoreServiceNotAllowDeleteErr, m.modelAttribute.getLangObjID(ctx, objID))
 		}
 	}
+
 	// has instance
-	instCond := mongo.NewCondition()
-	instCond.Element(mongo.Field(common.BKObjIDField).In(targetObjIDS))
-	condInstMap := util.SetQueryOwner(instCond.ToMapStr(), ctx.SupplierAccount)
-	cnt, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(condInstMap).Count(ctx)
+	instanceFilter := map[string]interface{}{
+		common.BKObjIDField: map[string]interface{}{
+			common.BKDBIN: targetObjIDS,
+		},
+		common.BkSupplierAccount: ctx.SupplierAccount,
+	}
+	cnt, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(instanceFilter).Count(ctx)
 	if err != nil {
-		blog.ErrorJSON("canCascadeDelete  count model instance count error. err:%s, cond:%s, rid:%s", err.Error(), condInstMap, ctx.ReqID)
+		blog.ErrorJSON("canCascadeDelete failed, count model instance failed, error. cond:%s, err:%s, rid:%s", instanceFilter, err.Error(), ctx.ReqID)
 		return ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	if cnt > 0 {
 		return ctx.Error.Error(common.CCErrCoreServiceModelHasInstanceErr)
 	}
+
 	// has model association, 不检查关联关系的是否有实例化。
 	asstCond := mongo.NewCondition()
-	asstCond.Or(mongo.Field(common.BKObjIDField).In(targetObjIDS), mongo.Field(common.BKAsstObjIDField).In(targetObjIDS))
+	asstCond.Or(
+		mongo.Field(common.BKObjIDField).In(targetObjIDS),
+		mongo.Field(common.BKAsstObjIDField).In(targetObjIDS),
+	)
 	asstCondMap := util.SetQueryOwner(asstCond.ToMapStr(), ctx.SupplierAccount)
 	cnt, err = m.dbProxy.Table(common.BKTableNameObjAsst).Find(asstCondMap).Count(ctx)
 	if err != nil {
-		blog.ErrorJSON("canCascadeDelete  count model association count error. err:%s, cond:%s, rid:%s", err.Error(), condInstMap, ctx.ReqID)
+		blog.ErrorJSON("canCascadeDelete failed, count model association failed, cond:%s, err:%s, rid:%s", asstCondMap, err.Error(), ctx.ReqID)
 		return ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	if cnt > 0 {

@@ -144,11 +144,16 @@ func (s *coreService) DeleteModel(params core.ContextParams, pathParams, queryPa
 
 func (s *coreService) CascadeDeleteModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
+	idStr := pathParams(common.BKFieldID)
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
+	}
 	inputData := metadata.DeleteOption{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.ModelOperation().CascadeDeleteModel(params, inputData)
+	return s.core.ModelOperation().CascadeDeleteModel(params, id)
 }
 
 func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {

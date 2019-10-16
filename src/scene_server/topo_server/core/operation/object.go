@@ -580,10 +580,8 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, needCheckIns
 		}
 	}
 
-	deleteCondition := &metadata.DeleteOption{
-		Condition: cond.ToMapStr(),
-	}
-	rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(params.Context, params.Header, deleteCondition)
+	// DeleteModelCascade 将会删除模型/模型属性/属性分组/唯一校验
+	rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(params.Context, params.Header, id)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to request the object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
