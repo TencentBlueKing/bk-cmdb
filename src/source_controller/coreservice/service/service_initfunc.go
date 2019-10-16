@@ -23,7 +23,6 @@ func (s *coreService) initModelClassification() {
 	s.addAction(http.MethodPost, "/set/model/classification", s.SetOneModelClassificaition, nil)
 	s.addAction(http.MethodPut, "/update/model/classification", s.UpdateModelClassification, nil)
 	s.addAction(http.MethodDelete, "/delete/model/classification", s.DeleteModelClassification, nil)
-	s.addAction(http.MethodDelete, "/delete/model/classification/cascade", s.CascadeDeleteModelClassification, nil)
 	s.addAction(http.MethodPost, "/read/model/classification", s.SearchModelClassification, nil)
 }
 
