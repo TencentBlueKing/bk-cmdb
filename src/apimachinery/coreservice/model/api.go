@@ -188,13 +188,12 @@ func (m *model) DeleteModel(ctx context.Context, h http.Header, input *metadata.
 	return
 }
 
-func (m *model) DeleteModelCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
+func (m *model) DeleteModelCascade(ctx context.Context, h http.Header, modelID int64) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
-	subPath := "/delete/model/cascade"
+	subPath := fmt.Sprintf("/delete/model/%d/cascade", modelID)
 
 	err = m.client.Delete().
 		WithContext(ctx).
-		Body(input).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

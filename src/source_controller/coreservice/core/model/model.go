@@ -273,18 +273,17 @@ func (m *modelManager) DeleteModel(ctx core.ContextParams, inputParam metadata.D
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
-func (m *modelManager) CascadeDeleteModel(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+// CascadeDeleteModel 将会删除模型/模型属性/属性分组/唯一校验
+func (m *modelManager) CascadeDeleteModel(ctx core.ContextParams, modelID int64) (*metadata.DeletedCount, error) {
+
+	deleteCond := mongo.NewCondition()
+	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
+	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldID, Val: modelID})
 
 	// read all models by the deletion condition
-	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommParamsInvalid, err.Error())
-	}
-
 	cnt, err := m.cascadeDelete(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to cascade delete some models by the condition (%#v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
+		blog.ErrorJSON("CascadeDeleteModel failed, cascadeDelete failed, condition: %s, err: %s, rid: %s", deleteCond.ToMapStr(), err.Error(), ctx.ReqID)
 		return &metadata.DeletedCount{}, err
 	}
 	return &metadata.DeletedCount{Count: cnt}, err

@@ -356,8 +356,8 @@ func TestDeleteModelCascade(t *testing.T) {
 		return
 	}
 
-	mockAPI.MockDo(resp).CoreService().Model().DeleteModelCascade(nil, nil, &metadata.DeleteOption{})
-	rtn, err := mockAPI.CoreService().Model().DeleteModelCascade(nil, nil, &metadata.DeleteOption{})
+	mockAPI.MockDo(resp).CoreService().Model().DeleteModelCascade(nil, nil, 0)
+	rtn, err := mockAPI.CoreService().Model().DeleteModelCascade(nil, nil, 0)
 	if err != nil {
 		t.Errorf("get  core service delete model cascade result failed, err: %v", err)
 		return

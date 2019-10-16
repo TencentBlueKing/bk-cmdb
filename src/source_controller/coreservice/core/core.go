@@ -74,7 +74,7 @@ type ModelOperation interface {
 	SetModel(ctx ContextParams, inputParam metadata.SetModel) (*metadata.SetDataResult, error)
 	UpdateModel(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	CascadeDeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
+	CascadeDeleteModel(ctx ContextParams, modelID int64) (*metadata.DeletedCount, error)
 	SearchModel(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error)
 	SearchModelWithAttribute(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelWithAttributeDataResult, error)
 }
