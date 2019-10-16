@@ -178,7 +178,7 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-                            params: this.$injectMetadata()
+                            params: this.$injectMetadata({}, { injectBizId: true })
                         })
                         const templates = data.info.map(item => item.service_template)
                         this.templateList = templates
@@ -199,7 +199,7 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                            params: this.$injectMetadata()
+                            params: this.$injectMetadata({}, { injectBizId: true })
                         })
                         const categories = this.collectServiceCategories(data.info)
                         this.firstClassList = categories

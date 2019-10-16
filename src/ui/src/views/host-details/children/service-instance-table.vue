@@ -202,7 +202,7 @@
                     this.list = await this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
                         params: this.$injectMetadata({
                             service_instance_id: this.instance.id
-                        }),
+                        }, { injectBizId: true }),
                         config: {
                             requestId: this.requestId.processList
                         }
@@ -240,7 +240,7 @@
                                 config: {
                                     data: this.$injectMetadata({
                                         service_instance_ids: [this.instance.id]
-                                    }),
+                                    }, { injectBizId: true }),
                                     requestId: this.requestId.deleteProcess
                                 }
                             })

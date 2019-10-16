@@ -233,7 +233,7 @@
                                 ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
                                 : '',
                             selectors: this.getSelectorParams()
-                        })
+                        }, { injectBizId: true })
                     })
                     if (data.count && !data.info.length) {
                         this.pagination.current -= 1
@@ -294,7 +294,7 @@
             },
             async getHistoryLabel () {
                 const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
-                    params: this.$injectMetadata({}),
+                    params: this.$injectMetadata({}, { injectBizId: true }),
                     config: {
                         requestId: 'getHistoryLabel',
                         cancelPrevious: true
@@ -354,7 +354,7 @@
                                 config: {
                                     data: this.$injectMetadata({
                                         service_instance_ids: serviceInstanceIds
-                                    }),
+                                    }, { injectBizId: true }),
                                     requestId: 'batchDeleteServiceInstance'
                                 }
                             })

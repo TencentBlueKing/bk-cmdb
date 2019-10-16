@@ -290,7 +290,7 @@
             },
             getCategory () {
                 this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                    params: this.$injectMetadata({})
+                    params: this.$injectMetadata({}, { injectBizId: true })
                 }).then(data => {
                     this.categoryList = data.info
                 })
@@ -333,7 +333,7 @@
                         params: this.$injectMetadata({
                             bk_module_id: Number(this.routerParams.moduleId),
                             service_template_id: this.serviceTemplateId
-                        })
+                        }, { injectBizId: true })
                     }).then(async res => {
                         const differen = {
                             added: res.added,
@@ -377,7 +377,7 @@
                             start: (this.pagination.current - 1) * this.pagination.size,
                             limit: this.pagination.size
                         }
-                    }),
+                    }, { injectBizId: true }),
                     config: {
                         requestId: 'getModuleServiceInstances',
                         cancelPrevious: true
@@ -462,7 +462,7 @@
                         const result = await this.getBatchProcessTemplate({
                             params: this.$injectMetadata({
                                 service_template_id: instance['service_instance']['service_template_id']
-                            })
+                            }, { injectBizId: true })
                         })
                         const processProperties = result.info.find(process => process['id'] === processId)['property']
                         const instanceDetails = {}
@@ -489,7 +489,7 @@
                         service_template_id: this.serviceTemplateId,
                         bk_module_id: Number(this.routerParams.moduleId),
                         service_instances: this.instanceIds
-                    })
+                    }, { injectBizId: true })
                 }).then(() => {
                     this.$success(this.$t('同步成功'))
                     this.handleGoBackModule()
