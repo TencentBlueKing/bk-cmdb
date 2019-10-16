@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth/meta"
 	"strconv"
 
 	"configcenter/src/common"
@@ -42,6 +43,12 @@ func (s *Service) CreateSetTemplate(params types.ContextParams, pathParams, quer
 		blog.Errorf("CreateSetTemplate failed, core service create failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
 		return nil, err
 	}
+
+	if err := s.AuthManager.RegisterSetTemplates(params.Context, params.Header, setTemplate); err != nil {
+		blog.Errorf("CreateSetTemplate failed, RegisterSetTemplates failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrCommRegistResourceToIAMFailed)
+	}
+
 	return setTemplate, nil
 }
 
@@ -94,6 +101,11 @@ func (s *Service) UpdateSetTemplate(params types.ContextParams, pathParams, quer
 			return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 		}
 	}
+
+	if err := s.AuthManager.UpdateRegisteredSetTemplates(params.Context, params.Header, setTemplate); err != nil {
+		blog.Errorf("UpdateSetTemplate failed, UpdateRegisteredSetTemplates failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrCommRegistResourceToIAMFailed)
+	}
 	return setTemplate, nil
 }
 
@@ -109,10 +121,22 @@ func (s *Service) DeleteSetTemplate(params types.ContextParams, pathParams, quer
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
+	iamResource, err := s.AuthManager.MakeResourcesBySetTemplateIDs(params.Context, params.Header, meta.EmptyAction, bizID, option.SetTemplateIDs...)
+	if err != nil {
+		blog.ErrorJSON("DeleteSetTemplate failed, MakeResourcesBySetTemplateIDs failed, bizID: %d, option: %s, err: %s, rid: %s", bizID, option, err, params.ReqID)
+		return nil, err
+	}
+
 	if err := s.Engine.CoreAPI.CoreService().SetTemplate().DeleteSetTemplate(params.Context, params.Header, bizID, option); err != nil {
 		blog.Errorf("DeleteSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
 		return nil, err
 	}
+
+	if err := s.AuthManager.Authorize.DeregisterResource(params.Context, iamResource...); err != nil {
+		blog.Errorf("DeleteSetTemplate failed, DeregisterResource failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
+
 	return nil, nil
 }
 
@@ -247,19 +271,23 @@ func (s *Service) ListSetTplRelatedSets(params types.ContextParams, pathParams, 
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	filter := &metadata.QueryCondition{
-		Fields: nil,
+	filter := map[string]interface{}{
+		common.BKAppIDField:         bizID,
+		common.BKSetTemplateIDField: setTemplateID,
+	}
+	if option.SetIDs != nil {
+		filter[common.BKSetIDField] = map[string]interface{}{
+			common.BKDBIN: option.SetIDs,
+		}
+	}
+	qc := &metadata.QueryCondition{
 		Limit: metadata.SearchLimit{
 			Offset: int64(option.Page.Start),
 			Limit:  int64(option.Page.Limit),
 		},
-		SortArr: nil,
-		Condition: mapstr.MapStr(map[string]interface{}{
-			common.BKAppIDField:         bizID,
-			common.BKSetTemplateIDField: setTemplateID,
-		}),
+		Condition: filter,
 	}
-	setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, filter)
+	setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, qc)
 	if err != nil {
 		blog.Errorf("ListSetTplRelatedSetsWeb failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
@@ -425,6 +453,7 @@ func (s *Service) SyncSetTplToInst(params types.ContextParams, pathParams, query
 	return nil, nil
 }
 
+// Deprecated: replace with ListSetTemplateSyncStatus
 func (s *Service) GetSetSyncStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
 	bizIDStr := pathParams(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)

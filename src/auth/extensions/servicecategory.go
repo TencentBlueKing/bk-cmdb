@@ -125,23 +125,24 @@ func (am *AuthManager) AuthorizeByServiceCategoryID(ctx context.Context, header 
 }
 
 func (am *AuthManager) GenServiceCategoryNoPermissionResp() *metadata.BaseResp {
-	var p metadata.Permission
-	p.SystemID = authcenter.SystemIDCMDB
-	p.SystemName = authcenter.SystemNameCMDB
-	p.ScopeType = authcenter.ScopeTypeIDSystem
-	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
-	p.ActionID = string(authcenter.ModelTopologyOperation)
-	p.ActionName = authcenter.ActionIDNameMap[authcenter.ModelTopologyOperation]
-	p.Resources = [][]metadata.Resource{
-		{{
-			ResourceType:     string(authcenter.SysSystemBase),
-			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysSystemBase],
-		}},
+	permission := metadata.Permission{
+		SystemID:      authcenter.SystemIDCMDB,
+		SystemName:    authcenter.SystemNameCMDB,
+		ScopeType:     authcenter.ScopeTypeIDSystem,
+		ScopeTypeName: authcenter.ScopeTypeIDSystemName,
+		ActionID:      string(authcenter.ModelTopologyOperation),
+		ActionName:    authcenter.ActionIDNameMap[authcenter.ModelTopologyOperation],
+		Resources: [][]metadata.Resource{
+			{{
+				ResourceType:     string(authcenter.SysSystemBase),
+				ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysSystemBase],
+			}},
+		},
 	}
-	p.ResourceType = p.Resources[0][0].ResourceType
-	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
+	permission.ResourceType = permission.Resources[0][0].ResourceType
+	permission.ResourceTypeName = permission.Resources[0][0].ResourceTypeName
 
-	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{permission})
 	return &resp
 }
 

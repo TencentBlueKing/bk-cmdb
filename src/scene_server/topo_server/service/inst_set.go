@@ -118,6 +118,10 @@ func (s *Service) createSet(params types.ContextParams, bizID int64, obj model.O
 		return nil, err
 	}
 
+	if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(params, setID); err != nil {
+		blog.Errorf("createSet success, but UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", setID, err, params.ReqID)
+	}
+
 	// auth: register set
 	if err := s.AuthManager.RegisterSetByID(params.Context, params.Header, setID); err != nil {
 		blog.Errorf("create set success,but register to iam failed, err:  %+v, rid: %s", err, params.ReqID)
