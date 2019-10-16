@@ -1,9 +1,8 @@
 <template>
     <div class="relation-topology-layout" :class="{ 'full-screen': fullScreen }" ref="layout">
-        <bk-button class="exit-full-screen" size="small" theme="default"
+        <bk-button class="exit-full-screen icon-cc-resize-small" size="small" theme="default"
             v-show="fullScreen"
             @click="toggleFullScreen(false)">
-            <i class="icon-cc-resize-small"></i>
             {{$t('退出')}}
         </bk-button>
         <div class="tolology-loading" v-bkloading="{ isLoading: $loading(getRelationRequestId) }">
@@ -30,23 +29,27 @@
                 {{$t('详情信息')}}
             </a>
         </div>
-        <cmdb-topo-details
-            v-if="details.show"
-            :full-screen="fullScreen"
-            :obj-id="details.objId"
-            :inst-id="details.instId"
-            :title="details.title"
-            :show.sync="details.show">
-        </cmdb-topo-details>
+        <bk-sideslider
+            v-transfer-dom
+            :width="800"
+            :is-show.sync="details.show"
+            :title="details.title">
+            <cmdb-details slot="content"
+                v-if="details.show"
+                :show-options="false"
+                :inst="details.inst"
+                :properties="details.properties"
+                :property-groups="details.propertyGroups">
+            </cmdb-details>
+        </bk-sideslider>
     </div>
 </template>
 
 <script>
+    import { mapActions, mapGetters } from 'vuex'
     import cytoscape from 'cytoscape'
     import popper from 'cytoscape-popper'
     import dagre from 'cytoscape-dagre'
-    import { mapActions, mapGetters } from 'vuex'
-    import cmdbTopoDetails from './_details.vue'
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import memoize from 'lodash.memoize'
     import debounce from 'lodash.debounce'
@@ -58,13 +61,11 @@
     let NODE_ID = 0
 
     export default {
-        components: {
-            cmdbTopoDetails
-        },
+        name: 'cmdb-host-association-graphics',
         data () {
             return {
                 getRelationRequestId: null,
-
+                fullScreen: false,
                 // 关联数据
                 associationList: [],
 
@@ -79,8 +80,6 @@
                     padding: 60
                 },
 
-                fullScreen: false,
-
                 legends: {},
 
                 hoverNodeData: null,
@@ -90,8 +89,9 @@
                 details: {
                     show: false,
                     title: '',
-                    objId: null,
-                    instId: null
+                    inst: {},
+                    properties: [],
+                    propertyGroups: []
                 }
             }
         },
@@ -99,7 +99,10 @@
             ...mapGetters(['supplierAccount']),
             ...mapGetters('objectModelClassify', [
                 'getModelById'
-            ])
+            ]),
+            id () {
+                return parseInt(this.$route.params.id)
+            }
         },
         created () {
             if (typeof cytoscape('core', 'popper') !== 'function') {
@@ -109,15 +112,11 @@
                 cytoscape.use(dagre)
             }
         },
-        async mounted () {
+        mounted () {
             this.initNetwork()
         },
         methods: {
             ...mapActions('objectRelation', ['getInstRelationTopo', 'updateInstRelation']),
-            ...mapActions('objectModelProperty', ['searchObjectAttribute']),
-            ...mapActions('objectModelFieldGroup', ['searchGroup']),
-            ...mapActions('objectBiz', ['searchBusiness']),
-            ...mapActions('hostSearch', ['getHostBaseInfo']),
             ...mapActions('objectAssociation', [
                 'searchAssociationType'
             ]),
@@ -272,7 +271,7 @@
                 }).on('resize', debounce((event) => {
                     event.cy.fit()
                     this.fitMaxZoom(event.cy)
-                }, 200)).on('mouseover', 'node', throttle((event) => {
+                }, 500)).on('mouseover', 'node', throttle((event) => {
                     const node = event.target
                     const nodeData = node.data()
 
@@ -326,8 +325,8 @@
             },
             async initTopoElements () {
                 try {
-                    const rootObjId = this.$parent.objId
-                    const rootInstId = this.$parent.formatedInst['bk_inst_id']
+                    const rootObjId = 'host'
+                    const rootInstId = this.id
                     const rootNodeId = `${rootObjId}_${rootInstId}_${NODE_ID++}`
                     const [asstData, relData] = await Promise.all([
                         this.getAssociationType(),
@@ -571,15 +570,100 @@
                 legend.nodeIds.forEach(nodeId => cy.$(`#${nodeId}`).style('display', legend.active ? 'element' : 'none'))
                 cy.endBatch()
             },
-            handleShowDetails () {
-                this.details.objId = this.hoverNodeData.objId
-                this.details.instId = this.hoverNodeData.instId
-                this.details.title = `${this.hoverNodeData.modelName}-${this.hoverNodeData.name}`
-                this.details.show = true
+            async handleShowDetails () {
+                const nodeData = this.hoverNodeData
+                this.details.title = `${nodeData.modelName}-${nodeData.name}`
+                try {
+                    const [inst, properties, propertyGroups] = await Promise.all([
+                        this.getInst(),
+                        this.getProperties(),
+                        this.getPropertyGroups()
+                    ])
+                    this.details.inst = this.$tools.flattenItem(properties, inst)
+                    this.details.properties = properties
+                    this.details.propertyGroups = propertyGroups
+                    this.details.show = true
+                } catch (e) {
+                    this.details.inst = {}
+                    this.details.properties = []
+                    this.details.propertyGroups = []
+                    this.details.show = false
+                }
 
                 if (this.hoverNodeData.popover) {
                     this.hoverNodeData.popover.hide()
                 }
+            },
+            async getInst () {
+                const modelId = this.hoverNodeData.objId
+                if (modelId === 'host') {
+                    return this.getHostDetails()
+                } else if (modelId === 'biz') {
+                    return this.getBusinessDetails()
+                }
+                return this.getInstDetails()
+            },
+            getHostDetails () {
+                const hostId = this.hoverNodeData.instId
+                return this.$store.dispatch('hostSearch/getHostBaseInfo', { hostId }).then(data => {
+                    const inst = {}
+                    data.forEach(field => {
+                        inst[field['bk_property_id']] = field['bk_property_value']
+                    })
+                    return inst
+                })
+            },
+            getBusinessDetails () {
+                const bizId = this.hoverNodeData.instId
+                return this.$store.dispatch('objectBiz/searchBusiness', {
+                    params: {
+                        condition: { 'bk_biz_id': bizId },
+                        fields: [],
+                        page: { start: 0, limit: 1 }
+                    }
+                }).then(({ info }) => info[0])
+            },
+            getInstDetails () {
+                const modelId = this.hoverNodeData.objId
+                const instId = this.hoverNodeData.instId
+                const model = this.getModelById(modelId)
+                return this.$store.dispatch('objectCommonInst/searchInst', {
+                    objId: modelId,
+                    params: this.$injectMetadata({
+                        condition: {
+                            [modelId]: [{
+                                field: 'bk_inst_id',
+                                operator: '$eq',
+                                value: instId
+                            }]
+                        },
+                        fields: {},
+                        page: { start: 0, limit: 1 }
+                    }, {
+                        inject: !!this.$tools.getMetadataBiz(model)
+                    })
+                }).then(({ info }) => info[0])
+            },
+            getProperties () {
+                const modelId = this.hoverNodeData.objId
+                const model = this.getModelById(modelId)
+                return this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
+                    params: this.$injectMetadata({
+                        'bk_obj_id': modelId
+                    }, {
+                        inject: !!this.$tools.getMetadataBiz(model)
+                    })
+                })
+            },
+            getPropertyGroups () {
+                const modelId = this.hoverNodeData.objId
+                const model = this.getModelById(modelId)
+                return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
+                    objId: modelId,
+                    params: this.$injectMetadata({}, {
+                        inject: !!this.$tools.getMetadataBiz(model)
+                    })
+                })
             },
             toggleFullScreen (fullScreen) {
                 this.fullScreen = fullScreen

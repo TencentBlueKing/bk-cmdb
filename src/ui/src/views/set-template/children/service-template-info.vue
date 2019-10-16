@@ -5,7 +5,8 @@
             v-bkloading="{ isLoading: $loading() }"
             :data="processes"
             :show-header="!!processes.length"
-            :max-height="300">
+            :height="276"
+            :max-height="276">
             <bk-table-column v-for="head in header"
                 :key="head.id"
                 :prop="head.id"

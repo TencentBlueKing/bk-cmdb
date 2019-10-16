@@ -50,7 +50,18 @@
                 </set-instance>
             </div>
             <div class="footer">
-                <bk-button theme="primary" class="mr10" @click="handleConfirmSync">{{$t('确认同步')}}</bk-button>
+                <span style="display: inlink-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_TOPO),
+                        auth: [$OPERATION.U_TOPO]
+                    }">
+                    <bk-button class="mr10"
+                        theme="primary"
+                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
+                        @click="handleConfirmSync">
+                        {{$t('确认同步')}}
+                    </bk-button>
+                </span>
                 <bk-button class="mr10" @click="handleGoback">{{$t('取消')}}</bk-button>
                 <span v-if="!isSingleSync">{{$tc('已选集群实例', setInstancesId.length, { count: setInstancesId.length })}}</span>
             </div>
@@ -137,7 +148,11 @@
                             requestId: 'diffTemplateAndInstances'
                         }
                     })
-                    this.isLatestInfo = !this.diffList.length
+                    const changeList = this.diffList.filter(set => {
+                        const moduleDiffs = set.module_diffs
+                        return moduleDiffs && moduleDiffs.filter(module => module.diff_type !== 'unchanged').length
+                    })
+                    this.isLatestInfo = !changeList.length
                     this.noInfo = false
                 } catch (e) {
                     console.error(e)
