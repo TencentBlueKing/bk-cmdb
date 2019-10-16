@@ -74,13 +74,13 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
 
-	// ATTETION: Currently only business dimension isolation is done,
+	// ATTENTION: Currently only business dimension isolation is done,
 	//           and there may be isolation requirements for other dimensions in the future.
-	isExsit, bizID := inputParam.Spec.Metadata.Label.Get(common.BKAppIDField)
-	if isExsit {
+	isExist, bizID := inputParam.Spec.Metadata.Label.Get(common.BKAppIDField)
+	if isExist {
 		_, metaCond := condCheckModel.Embed(metadata.BKMetadata)
-		_, lableCond := metaCond.Embed(metadata.BKLabel)
-		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+		_, labelCond := metaCond.Embed(metadata.BKLabel)
+		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
 
 	_, exists, err := m.isExists(ctx, condCheckModel)
@@ -221,7 +221,7 @@ func (m *modelManager) UpdateModel(ctx core.ContextParams, inputParam metadata.U
 
 func (m *modelManager) DeleteModel(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
-	// read all models by the deletion conditon
+	// read all models by the deletion condition
 	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
@@ -234,7 +234,7 @@ func (m *modelManager) DeleteModel(ctx core.ContextParams, inputParam metadata.D
 		return &metadata.DeletedCount{}, err
 	}
 
-	targetObjIDS := []string{}
+	targetObjIDS := make([]string, 0)
 	for _, modelItem := range modelItems {
 		targetObjIDS = append(targetObjIDS, modelItem.ObjectID)
 	}
@@ -307,7 +307,7 @@ func (m *modelManager) SearchModel(ctx core.ContextParams, inputParam metadata.Q
 
 	modelItems, err := m.search(ctx, searchCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is faield to search models by the condition (%#v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to search models by the condition (%#v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
 		return dataResult, err
 	}
 
@@ -335,7 +335,7 @@ func (m *modelManager) SearchModelWithAttribute(ctx core.ContextParams, inputPar
 	dataResult.Count = int64(totalCount)
 	modelItems, err := m.search(ctx, searchCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is faield to search models by the condition (%#v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to search models by the condition (%#v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
 		return dataResult, err
 	}
 

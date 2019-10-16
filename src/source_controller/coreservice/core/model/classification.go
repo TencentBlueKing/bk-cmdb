@@ -98,7 +98,7 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 		item.OwnerID = ctx.SupplierAccount
 		id, err := m.save(ctx, item)
 		if nil != err {
-			blog.Errorf("request(%s): it is failed to save the clasisfication(%#v), error info is %s", ctx.ReqID, item, err.Error())
+			blog.Errorf("request(%s): it is failed to save the classification(%#v), error info is %s", ctx.ReqID, item, err.Error())
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}

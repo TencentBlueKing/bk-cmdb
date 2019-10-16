@@ -23,7 +23,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-var _ (core.ModelAttributeGroup) = nil
+var _ core.ModelAttributeGroup = nil
 
 type modelAttributeGroup struct {
 	model   *modelManager
@@ -62,7 +62,7 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(ctx core.ContextParams, 
 	}
 	id, err := g.save(ctx, inputParam.Data)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to create a new model attribtue group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is to failed to create a new model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
 		return dataResult, err
 	}
 	dataResult.Created.ID = id
@@ -103,13 +103,13 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 
 		id, err := g.save(ctx, inputParam.Data)
 		if nil != err {
-			blog.Errorf("request(%s): it is to failed to create a new model attribtue group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+			blog.Errorf("request(%s): it is to failed to create a new model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
 			return &metadata.SetDataResult{}, err
 		}
 
 		dataResult.CreatedCount.Count++
 		dataResult.Created = []metadata.CreatedDataResult{
-			metadata.CreatedDataResult{
+			{
 				ID: id,
 			}}
 
@@ -128,7 +128,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 	}
 	dataResult.UpdatedCount.Count = cnt
 	dataResult.Updated = []metadata.UpdatedDataResult{
-		metadata.UpdatedDataResult{
+		{
 			ID: uint64(existsGroup.ID),
 		},
 	}
@@ -354,7 +354,7 @@ func (g *modelAttributeGroup) DeleteModelAttributeGroup(ctx core.ContextParams, 
 		return &metadata.DeletedCount{}, err
 	}
 
-	grpIDS := []string{}
+	grpIDS := make([]string, 0)
 	for _, grp := range grps {
 		grpIDS = append(grpIDS, grp.GroupID)
 	}
