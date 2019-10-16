@@ -578,7 +578,17 @@ func (s *Service) SearchInstAssociationWithOtherObject(params types.ContextParam
 	reqParams := &metadata.RequestInstAssociationObjectID{}
 	if err := data.MarshalJSONInto(reqParams); nil != err {
 		blog.Errorf("SearchInstAssociationWithOtherObject failed to parse the data and the condition, the input (%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
-		return nil, err
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	if reqParams.Condition.ObjectID == "" {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
+	}
+	if reqParams.Condition.InstID == 0 {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKInstIDField)
+	}
+	if reqParams.Condition.AssociationObjectID == "" {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, "association_obj_id")
 	}
 
 	cond := condition.CreateCondition()
@@ -594,12 +604,14 @@ func (s *Service) SearchInstAssociationWithOtherObject(params types.ContextParam
 		cond.Field(common.BKAsstObjIDField).Eq(reqParams.Condition.AssociationObjectID)
 	}
 
+	sortArr := metadata.NewSearchSortParse().String(reqParams.Page.Sort).ToSearchSortArr()
 	input := &metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
 		Limit: metadata.SearchLimit{
 			Limit:  int64(reqParams.Page.Limit),
 			Offset: int64(reqParams.Page.Start),
 		},
+		SortArr: sortArr,
 	}
 
 	if input.IsIllegal() {
