@@ -94,6 +94,11 @@
             moduleName () {
                 const moduleModel = this.$store.getters['objectModelClassify/getModelById']('module') || {}
                 return moduleModel.bk_obj_name || ''
+            },
+            sortedServices () {
+                return [...this.services].sort((A, B) => {
+                    return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' })
+                })
             }
         },
         watch: {
