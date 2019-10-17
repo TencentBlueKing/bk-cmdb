@@ -1,6 +1,5 @@
 <template>
     <section>
-        <cmdb-tips class="tips">{{$t('服务模板选择器提示语')}}</cmdb-tips>
         <ul class="template-list clearfix"
             v-bkloading="{ isLoading: $loading('getServiceTemplate') }"
             :class="{ 'is-loading': $loading('getServiceTemplate') }">
@@ -58,7 +57,13 @@
                             requestId: 'getServiceTemplate'
                         }
                     })
-                    this.templates = data.info.map(datum => datum.service_template)
+                    this.templates = data.info.map(datum => datum.service_template).sort((A, B) => {
+                        return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' })
+                    }).sort((A, B) => {
+                        const weightA = this.selected.includes(A.id) ? 1 : 0
+                        const weightB = this.selected.includes(B.id) ? 1 : 0
+                        return weightB - weightA
+                    })
                 } catch (e) {
                     console.error(e)
                     this.templates = []
@@ -85,9 +90,6 @@
 </script>
 
 <style lang="scss" scoped>
-    .tips {
-        margin-top: -4px;
-    }
     .template-list {
         max-height: 340px;
         @include scrollbar-y;
@@ -97,7 +99,7 @@
         .template-item {
             width: calc((100% - 20px) / 3);
             height: 32px;
-            margin: 16px 0 0 0;
+            margin: 0 0 16px 0;
             padding: 0 6px 0 10px;
             line-height: 30px;
             border-radius: 2px;
@@ -105,7 +107,7 @@
             color: #63656E;
             cursor: pointer;
             &.is-middle {
-                margin: 16px 10px 0;
+                margin: 0 10px 16px;
             }
             &.is-selected {
                 background-color: #E1ECFF;
