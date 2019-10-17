@@ -6,7 +6,7 @@
                 <h2 class="path">{{topoPath}}</h2>
                 <span :class="['count', { 'is-read': hasRead }]">{{changeCount}}</span>
             </div>
-            <i v-show="iconClose" class="bk-icon icon-close" @click.stop="handleClose"></i>
+            <i v-show="iconClose" :title="$t('本次不同步')" class="bk-icon icon-close" @click.stop="handleClose"></i>
         </div>
         <cmdb-collapse-transition>
             <div class="main clearfix" v-show="localExpand">
@@ -15,7 +15,7 @@
                     <div class="sync-main fl">
                         <div class="sync-title" :class="{ 'is-expand': beforeSyncExpand }" @click.stop="beforeSyncExpand = !beforeSyncExpand">
                             <i class="bk-icon icon-right-shape"></i>
-                            <i class="bk-icon icon-cc-nav-model-02"></i>
+                            <i class="sync-icon">{{$i18n.locale === 'en' ? 's' : '集'}}</i>
                             <span class="set-name">{{setDeatails.bk_set_name}}</span>
                         </div>
                         <cmdb-collapse-transition>
@@ -23,8 +23,8 @@
                                 <ul class="sync-info"
                                     v-for="_module in beforeChangeList"
                                     :key="_module.bk_module_id">
-                                    <li class="mt20">
-                                        <i class="bk-icon icon-cc-nav-model-02"></i>
+                                    <li class="mt15">
+                                        <i class="sync-icon">{{$i18n.locale === 'en' ? 'm' : '模'}}</i>
                                         <span class="name">{{_module.bk_module_name}}</span>
                                     </li>
                                 </ul>
@@ -37,7 +37,7 @@
                     <div class="sync-main fl">
                         <div class="sync-title" :class="{ 'is-expand': afterSyncExpand }" @click.stop="afterSyncExpand = !afterSyncExpand">
                             <i class="bk-icon icon-right-shape"></i>
-                            <i class="bk-icon icon-cc-nav-model-02"></i>
+                            <i class="sync-icon">{{$i18n.locale === 'en' ? 's' : '集'}}</i>
                             <span class="set-name">{{setDeatails.bk_set_name}}</span>
                         </div>
                         <cmdb-collapse-transition>
@@ -45,12 +45,12 @@
                                 <ul class="sync-info"
                                     v-for="_module in instance.module_diffs"
                                     :key="_module.bk_module_id">
-                                    <li :class="['mt20', {
+                                    <li :class="['mt15', {
                                         'has-delete': _module.diff_type === 'remove',
                                         'has-changed': _module.diff_type === 'changed',
                                         'new-add': _module.diff_type === 'add'
                                     }]">
-                                        <i class="bk-icon icon-cc-nav-model-02"></i>
+                                        <i class="sync-icon">{{$i18n.locale === 'en' ? 'm' : '模'}}</i>
                                         <span class="name">{{_module.bk_module_name}}</span>
                                     </li>
                                 </ul>
@@ -156,7 +156,7 @@
         .count {
             min-width: 18px;
             height: 18px;
-            line-height: 16px;
+            line-height: 17px;
             font-size: 12px;
             color: #ffffff;
             text-align: center;
@@ -189,6 +189,19 @@
             float: left;
             margin-right: 30px;
         }
+        .sync-icon {
+            @include inlineBlock;
+            width: 20px;
+            height: 20px;
+            line-height: 19px;
+            font-size: 12px;
+            font-style: normal;
+            text-align: center;
+            color: #FFFFFF;
+            border-radius: 50%;
+            background-color: #C4C6CC;
+            margin-right: 7px;
+        }
         .sync-title {
             display: flex;
             align-items: center;
@@ -204,29 +217,16 @@
                     transition: all .5s;
                     margin-right: 10px;
                 }
-                &.icon-cc-nav-model-02 {
-                    font-size: 18px;
-                    margin-right: 6px;
-                }
             }
         }
         .sync-info {
             padding-left: 48px;
             li {
-                .bk-icon {
-                    width: 20px;
-                    height: 20px;
-                    line-height: 20px;
-                    text-align: center;
-                    color: #ffffff;
-                    font-size: 12px;
-                    background-color: #C4C6CC;
-                    border-radius: 50%;
-                }
+                font-size: 0;
                 .name {
-                    display: inline-block;
+                    @include inlineBlock;
                     line-height: 20px;
-                    padding-left: 2px;
+                    font-size: 14px;
                 }
                 &.has-delete {
                     color: #FF5656;

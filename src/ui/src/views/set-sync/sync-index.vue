@@ -22,10 +22,6 @@
                         <i class="dot"></i>
                         {{$t('新增模块')}}
                     </span>
-                    <span class="mr30">
-                        <i class="dot blue"></i>
-                        {{$t('变更模块')}}
-                    </span>
                     <span>
                         <i class="dot red"></i>
                         {{$t('删除模块')}}
@@ -107,15 +103,26 @@
             }
         },
         async created () {
-            this.setBreadcrumbs()
-            await this.getSetTemplateInfo()
-            await this.getDiffData()
+            this.getSetTemplateInfo()
+            this.getDiffData()
         },
         methods: {
             setBreadcrumbs () {
                 this.$store.commit('setBreadcrumbs', [{
                     label: this.$t('集群模板'),
                     route: { name: MENU_BUSINESS_SET_TEMPLATE }
+                }, {
+                    label: this.templateName,
+                    route: {
+                        name: 'setTemplateConfig',
+                        params: {
+                            mode: 'view',
+                            templateId: this.setTemplateId
+                        },
+                        query: {
+                            tab: 'instance'
+                        }
+                    }
                 }, {
                     label: this.$t('同步集群模板')
                 }])
@@ -127,6 +134,7 @@
                         setTemplateId: this.setTemplateId
                     })
                     this.templateName = info.name
+                    this.setBreadcrumbs()
                 } catch (e) {
                     console.error(e)
                 }
@@ -179,6 +187,7 @@
                                     requestId: 'syncTemplateToInstances'
                                 }
                             })
+                            this.$success(this.$t('提交同步成功'))
                             this.$router.replace({
                                 name: 'setTemplateConfig',
                                 params: {
@@ -266,9 +275,6 @@
             margin-right: 2px;
             &.red {
                 background-color: #FF5656;
-            }
-            &.blue {
-                background-color: #3A84FF;
             }
         }
     }
