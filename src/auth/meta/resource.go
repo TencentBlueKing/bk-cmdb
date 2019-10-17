@@ -60,6 +60,7 @@ const (
 	UserCustom               ResourceType = "usercustom"   // 用户自定义
 	SystemBase               ResourceType = "systemBase"
 	SetTemplate              ResourceType = "setTemplate"
+	OperationStatistic       ResourceType = "operationStatistic" // 运营统计
 )
 
 const (
