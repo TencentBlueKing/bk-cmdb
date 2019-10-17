@@ -201,7 +201,10 @@ func (st *setTemplate) SyncSetTplToInst(params types.ContextParams, bizID int64,
 
 		// 定时更新 SetTemplateSyncStatus 状态，优化加载
 		go func(setID int64) {
-			ticker := time.NewTicker(5 * time.Second)
+			// 指数增长轮询间隔
+			duration := 200 * time.Millisecond
+			maxDuration := 10 * time.Second
+			ticker := time.NewTimer(duration)
 			timeoutTimer := time.NewTimer(5 * time.Minute)
 			for {
 				select {
@@ -217,6 +220,13 @@ func (st *setTemplate) SyncSetTplToInst(params types.ContextParams, bizID int64,
 					if setSyncStatus.Status.IsFinished() == true {
 						return
 					}
+
+					// set next timer
+					duration = duration * 2
+					if duration > maxDuration {
+						duration = maxDuration
+					}
+					ticker = time.NewTimer(duration)
 				}
 			}
 		}(setDiff.SetID)
