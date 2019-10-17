@@ -283,7 +283,7 @@
                     this.list = await this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
                         params: this.$injectMetadata({
                             service_instance_id: this.instance.id
-                        }),
+                        }, { injectBizId: true }),
                         config: {
                             requestId: this.requestId.processList
                         }
@@ -325,7 +325,7 @@
                         config: {
                             data: this.$injectMetadata({
                                 process_instance_ids: [item.bk_process_id]
-                            })
+                            }, { injectBizId: true })
                         }
                     })
                     this.$success(this.$t('删除成功'))
@@ -359,7 +359,7 @@
                                 config: {
                                     data: this.$injectMetadata({
                                         service_instance_ids: [this.instance.id]
-                                    }),
+                                    }, { injectBizId: true }),
                                     requestId: this.requestId.deleteProcess
                                 }
                             })
@@ -415,7 +415,7 @@
                                 data: this.$injectMetadata({
                                     instance_ids: [this.instance.id],
                                     keys: removeKeysList
-                                }),
+                                }, { injectBizId: true }),
                                 requestId: 'deleteInstanceLabel',
                                 transformData: false
                             }
@@ -431,7 +431,7 @@
                             params: this.$injectMetadata({
                                 instance_ids: [this.instance.id],
                                 labels: labelSet
-                            }),
+                            }, { injectBizId: true }),
                             config: {
                                 requestId: 'createInstanceLabel',
                                 transformData: false
