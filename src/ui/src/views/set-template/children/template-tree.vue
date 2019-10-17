@@ -2,7 +2,7 @@
     <div class="template-tree">
         <div class="node-root clearfix">
             <i class="folder-icon bk-icon icon-down-shape fl" @click="handleCollapse"></i>
-            <i class="root-icon icon icon-cc-nav-model-02 fl"></i>
+            <i class="node-icon fl">{{setName[0]}}</i>
             <span class="root-name" :title="templateName">{{templateName}}</span>
         </div>
         <cmdb-collapse-transition>
@@ -12,7 +12,7 @@
                     :key="service.id"
                     :class="{ selected: selected === service.id }"
                     @click="handleChildClick(service)">
-                    <i class="child-icon icon icon-cc-cube fl"></i>
+                    <i class="node-icon fl">{{moduleName[0]}}</i>
                     <span class="child-options fr" v-if="mode !== 'view'">
                         <i class="options-view icon icon-cc-show" @click="handleViewService(service)"></i>
                         <i class="options-delete icon icon-cc-tips-close" @click="handleDeleteService(index)"></i>
@@ -22,7 +22,7 @@
                 <li class="options-child node-child clearfix"
                     v-if="['create', 'edit'].includes(mode)"
                     @click="handleAddService">
-                    <i class="child-icon icon icon-cc-zoom-in fl"></i>
+                    <i class="node-icon icon icon-cc-zoom-in fl"></i>
                     <span class="child-name">{{$t('添加服务模板')}}</span>
                 </li>
             </ul>
@@ -86,11 +86,22 @@
                     const target = this.services[index]
                     return (target && target.id !== service.id) || !target
                 })
+            },
+            setName () {
+                const setModel = this.$store.getters['objectModelClassify/getModelById']('set') || {}
+                return setModel.bk_obj_name || ''
+            },
+            moduleName () {
+                const moduleModel = this.$store.getters['objectModelClassify/getModelById']('module') || {}
+                return moduleModel.bk_obj_name || ''
             }
         },
         watch: {
             hasChange (value) {
                 this.$emit('service-change', value)
+            },
+            services (value) {
+                this.$emit('service-selected', value)
             }
         },
         created () {
@@ -164,6 +175,9 @@
             },
             handleDeleteService (index) {
                 this.services.splice(index, 1)
+            },
+            recoveryService () {
+                this.services = [...this.originalServices]
             }
         }
     }
@@ -178,6 +192,20 @@
         border: 1px solid #C4C6CC;
         background-color: #fff;
     }
+    .node-icon {
+        position: relative;
+        margin: 8px 4px 8px 0px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        line-height: 20px;
+        text-align: center;
+        font-size: 12px;
+        font-style: normal;
+        color: #fff;
+        background-color: $iconColor;
+        z-index: 2;
+    }
     .node-root {
         line-height: 36px;
         cursor: default;
@@ -189,14 +217,6 @@
             font-size: 12px;
             color: $iconColor;
             cursor: pointer;
-        }
-        .root-icon {
-            position: relative;
-            margin: 8px 4px 8px 0px;
-            font-size: 20px;
-            color: $iconColor;
-            background-color: #fff;
-            z-index: 2;
         }
         .root-name {
             display: block;
@@ -221,7 +241,7 @@
             }
             &:hover,
             &.selected {
-                .child-icon {
+                .node-icon {
                     background-color: $highlightColor;
                 }
                 .child-name {
@@ -244,9 +264,9 @@
             }
             &.options-child {
                 cursor: pointer;
-                .child-icon {
+                .node-icon {
                     font-size: 18px;
-                    background-color: #fff;
+                    background-color: transparent;
                     color: $highlightColor;
                 }
                 .child-name {
@@ -259,17 +279,6 @@
                 font-size: 14px;
                 color: $fontColor;
                 @include ellipsis;
-            }
-            .child-icon {
-                width: 20px;
-                height: 20px;
-                margin: 8px 7px 0 0;
-                border-radius: 50%;
-                text-align: center;
-                color: #fff;
-                line-height: 20px;
-                font-size: 12px;
-                background-color: $iconColor;
             }
             .child-options {
                 display: none;

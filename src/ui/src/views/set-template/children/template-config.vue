@@ -25,8 +25,11 @@
             <cmdb-set-template-tree class="row-content" ref="templateTree"
                 :mode="mode"
                 :template-id="templateId"
-                @service-change="handleServiceChange">
+                @service-change="handleServiceChange"
+                @service-selected="handleServiceSelected">
             </cmdb-set-template-tree>
+            <input type="hidden" :value="services.length" v-validate="'min_value:1'" data-vv-name="service">
+            <p class="row-error" v-if="errors.has('service')">{{$t('请添加服务模板')}}</p>
         </div>
         <div class="template-options">
             <template v-if="isViewMode">
@@ -42,6 +45,19 @@
                         @click="handleEdit"
                     >
                         {{$t('编辑')}}
+                    </bk-button>
+                </span>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.D_SET_TEMPLATE),
+                        auth: [$OPERATION.D_SET_TEMPLATE]
+                    }">
+                    <bk-button
+                        class="options-confirm"
+                        :disabled="!$isAuthorized($OPERATION.D_SET_TEMPLATE)"
+                        @click="handleDelete"
+                    >
+                        {{$t('删除')}}
                     </bk-button>
                 </span>
             </template>
@@ -75,6 +91,8 @@
                 templateName: '',
                 originalTemplateName: '',
                 serviceChange: false,
+                services: [],
+                validateServices: false,
                 insideMode: null
             }
         },
@@ -93,6 +111,18 @@
                     return true
                 }
                 return this.templateName !== this.originalTemplateName || this.serviceChange
+            }
+        },
+        watch: {
+            mode (mode) {
+                this.errors.clear()
+            },
+            services (services) {
+                if (!this.isViewMode) {
+                    this.$nextTick(() => {
+                        this.$validator.validate('service')
+                    })
+                }
             }
         },
         created () {
@@ -130,6 +160,30 @@
             },
             handleEdit () {
                 this.insideMode = 'edit'
+            },
+            async handleDelete () {
+                const instance = this.$bkInfo({
+                    title: this.$t('确认删除xx集群模板', { name: this.originalTemplateName }),
+                    confirmFn: async () => {
+                        try {
+                            instance.buttonLoading = true
+                            await this.$store.dispatch('setTemplate/deleteSetTemplate', {
+                                bizId: this.$store.getters['objectBiz/bizId'],
+                                config: {
+                                    data: {
+                                        set_template_ids: [this.templateId]
+                                    }
+                                }
+                            })
+                            this.$router.replace({
+                                name: MENU_BUSINESS_SET_TEMPLATE
+                            })
+                        } catch (e) {
+                            console.error(e)
+                            instance.buttonLoading = false
+                        }
+                    }
+                })
             },
             async handleConfirm () {
                 try {
@@ -224,6 +278,7 @@
             handleCancel () {
                 if (this.insideMode) {
                     this.insideMode = null
+                    this.$refs.templateTree.recoveryService()
                 } else {
                     this.$router.replace({
                         name: MENU_BUSINESS_SET_TEMPLATE
@@ -232,6 +287,9 @@
             },
             handleServiceChange (value) {
                 this.serviceChange = value
+            },
+            handleServiceSelected (services) {
+                this.services = services
             }
         }
     }
@@ -289,7 +347,7 @@
         margin-top: 39px;
     }
     .template-options {
-        padding:23px 0 0 134px;
+        padding:23px 0 0 144px;
         font-size: 0;
         .options-confirm {
             margin-right: 10px;
