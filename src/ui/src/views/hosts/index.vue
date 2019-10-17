@@ -336,6 +336,11 @@
             }
         }
     }
+    [bk-language='en'] {
+        .topology-tips {
+            padding: 2px 3px;
+        }
+    }
     .topology-tree {
         width: 100%;
         max-height: 100%;
