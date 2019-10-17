@@ -17,6 +17,8 @@ import (
 	"strconv"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth/extensions"
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -41,15 +43,17 @@ type ModuleOperationInterface interface {
 }
 
 // NewModuleOperation create a new module
-func NewModuleOperation(client apimachinery.ClientSetInterface) ModuleOperationInterface {
+func NewModuleOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) ModuleOperationInterface {
 	return &module{
-		clientSet: client,
+		clientSet:   client,
+		authManager: authManager,
 	}
 }
 
 type module struct {
-	clientSet apimachinery.ClientSetInterface
-	inst      InstOperationInterface
+	clientSet   apimachinery.ClientSetInterface
+	inst        InstOperationInterface
+	authManager *extensions.AuthManager
 }
 
 func (m *module) SetProxy(inst InstOperationInterface) {
@@ -192,23 +196,46 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
 
 	inst, createErr := m.inst.CreateInst(params, obj, data)
-	if createErr == nil {
-		return inst, nil
+	if createErr != nil {
+		moduleNameStr, exist := data[common.BKModuleNameField]
+		if exist == false {
+			return inst, err
+		}
+		moduleName := util.GetStrByInterface(moduleNameStr)
+		isDuplicate, err := m.IsModuleNameDuplicateError(params, bizID, setID, moduleName, createErr)
+		if err != nil {
+			blog.Infof("create module failed and check whether is name duplicated err failed, bizID: %d, setID: %d, moduleName: %s, err: %+v, rid: %s", bizID, setID, moduleName, err, params.ReqID)
+			return inst, err
+		}
+		if isDuplicate {
+			return inst, params.Err.CCError(common.CCErrorTopoModuleNameDuplicated)
+		}
 	}
 
-	ccErr, ok := createErr.(errors.CCErrorCoder)
+	// auth: register module to iam
+	moduleID, err := inst.GetInstID()
+	if err != nil {
+		blog.Errorf("create module success, but parse module id failed, response: %s, err: %s, rid: %s", inst, err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrTopoModuleCreateFailed)
+	}
+	if err := m.authManager.RegisterModuleByID(params.Context, params.Header, moduleID); err != nil {
+		blog.Errorf("create module success, but register to iam failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
+	}
+	return inst, nil
+}
+
+func (m *module) IsModuleNameDuplicateError(params types.ContextParams, bizID, setID int64, moduleName string, inputErr error) (bool, error) {
+
+	ccErr, ok := inputErr.(errors.CCErrorCoder)
 	if ok == false {
-		return inst, createErr
+		return false, nil
 	}
 	if ccErr.GetCode() != common.CCErrCommDuplicateItem {
-		return inst, createErr
+		return false, nil
 	}
 
 	// 检测模块名重复并返回定制提示信息
-	moduleName, exist := data[common.BKModuleNameField]
-	if exist == false {
-		return inst, createErr
-	}
 	nameDuplicateFilter := &metadata.QueryCondition{
 		Limit: metadata.SearchLimit{
 			Limit: 1,
@@ -221,18 +248,17 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	}
 	result, err := m.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, nameDuplicateFilter)
 	if err != nil {
-		blog.ErrorJSON("create module failed, find duplicated name modules failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), params.ReqID)
-		return nil, err
+		blog.ErrorJSON("IsModuleNameDuplicateError failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), params.ReqID)
+		return false, err
 	}
 	if result.Result == false || result.Code != 0 {
-		blog.ErrorJSON("create module failed, find duplicated name modules failed, result false, filter: %s, result: %s, err: %s, rid: %s", nameDuplicateFilter, result, err.Error(), params.ReqID)
-		return nil, errors.New(result.Code, result.ErrMsg)
+		blog.ErrorJSON("IsModuleNameDuplicateError failed, result false, filter: %s, result: %s, err: %s, rid: %s", nameDuplicateFilter, result, err.Error(), params.ReqID)
+		return false, errors.New(result.Code, result.ErrMsg)
 	}
 	if result.Data.Count > 0 {
-		blog.ErrorJSON("create module failed, module name duplicated, filter: %s, rid: %s", nameDuplicateFilter, params.ReqID)
-		return nil, params.Err.CCError(common.CCErrorTopoModuleNameDuplicated)
+		return true, nil
 	}
-	return inst, createErr
+	return false, nil
 }
 
 func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setIDs, moduleIDS []int64) error {
@@ -258,9 +284,26 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 		innerCond.Field(common.BKModuleIDField).In(moduleIDS)
 	}
 
+	// auth: deregister module to iam
+	iamResources, err := m.authManager.MakeResourcesByModuleIDs(params.Context, params.Header, meta.EmptyAction, moduleIDS...)
+	if err != nil {
+		blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, params.ReqID)
+		return params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
+
 	// module table doesn't have metadata field
 	params.MetaData = nil
-	return m.inst.DeleteInst(params, obj, innerCond, false)
+	err = m.inst.DeleteInst(params, obj, innerCond, false)
+	if err != nil {
+		blog.Errorf("delete module failed, DeleteInst failed, err: %+v, rid: %s", err, params.ReqID)
+		return err
+	}
+
+	if err := m.authManager.DeregisterResource(params.Context, iamResources...); err != nil {
+		blog.Errorf("delete module success, but deregister module failed, err: %+v, rid: %s", err, params.ReqID)
+		return params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
+	return nil
 }
 
 func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []mapstr.MapStr, err error) {
@@ -341,5 +384,27 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 	// module table don't have metadata field
 	params.MetaData = nil
 	data.Remove(common.BKSetIDField)
-	return m.inst.UpdateInst(params, data, obj, innerCond, -1)
+	updateErr := m.inst.UpdateInst(params, data, obj, innerCond, -1)
+	if updateErr != nil {
+		moduleNameStr, exist := data[common.BKModuleNameField]
+		if exist == false {
+			return updateErr
+		}
+		moduleName := util.GetStrByInterface(moduleNameStr)
+		isDuplicate, err := m.IsModuleNameDuplicateError(params, bizID, setID, moduleName, updateErr)
+		if err != nil {
+			blog.Infof("update module failed and check whether is name duplicated err failed, bizID: %d, setID: %d, moduleName: %s, err: %+v, rid: %s", bizID, setID, moduleName, err, params.ReqID)
+			return err
+		}
+		if isDuplicate {
+			return params.Err.CCError(common.CCErrorTopoModuleNameDuplicated)
+		}
+	}
+
+	// auth: update registered module to iam
+	if err := m.authManager.UpdateRegisteredModuleByID(params.Context, params.Header, moduleID); err != nil {
+		blog.Errorf("update module success, but update registered module failed, err: %+v, rid: %s", err, params.ReqID)
+		return params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
+	}
+	return nil
 }
