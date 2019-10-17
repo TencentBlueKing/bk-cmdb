@@ -16,7 +16,7 @@ export default {
             i18n: '运营统计'
         },
         auth: {
-            view: {
+            operation: {
                 C_STATISTICAL_REPORT,
                 D_STATISTICAL_REPORT,
                 R_STATISTICAL_REPORT,
