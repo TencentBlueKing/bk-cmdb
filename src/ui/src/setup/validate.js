@@ -32,7 +32,7 @@ const customRules = {
     },
     classifyId: {
         validate: value => {
-            return /^[a-z0-9_]{1,20}$/.test(value)
+            return /^[a-zA-Z0-9_]{1,20}$/.test(value)
         }
     },
     http: {
