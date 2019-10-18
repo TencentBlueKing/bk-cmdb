@@ -227,7 +227,7 @@
             ]),
             getCategoryList () {
                 this.searchServiceCategory({
-                    params: this.$injectMetadata({})
+                    params: this.$injectMetadata({}, { injectBizId: true })
                 }).then((data) => {
                     const categoryList = data.info.map(item => {
                         return {
@@ -250,7 +250,7 @@
                         bk_root_id: rootId,
                         bk_parent_id: rootId,
                         name
-                    })
+                    }, { injectBizId: true })
                 }).then(res => {
                     this.$success(this.$t('保存成功'))
                     this.showAddMianCategory = false
@@ -293,7 +293,7 @@
                         params: this.$injectMetadata({
                             id: data.id,
                             name: type === 'main' ? this.mainCategoryName : this.childCategoryName
-                        })
+                        }, { injectBizId: true })
                     }).then(res => {
                         this.$success(this.$t('保存成功'))
                         this.handleCloseEditChild()
@@ -319,7 +319,7 @@
                     confirmFn: async () => {
                         await this.deleteServiceCategory({
                             params: {
-                                data: this.$injectMetadata({ id })
+                                data: this.$injectMetadata({ id }, { injectBizId: true })
                             },
                             config: {
                                 requestId: 'delete_proc_services_category'

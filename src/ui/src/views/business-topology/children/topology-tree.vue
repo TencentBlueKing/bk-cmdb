@@ -30,7 +30,12 @@
                         active: !$isAuthorized($OPERATION.C_TOPO),
                         auth: [$OPERATION.C_TOPO]
                     }">
-                    <bk-button class="node-button"
+                    <i v-if="data.set_template_id"
+                        class="node-button set-template-button"
+                        v-bk-tooltips="{ content: $t('模板集群添加模块提示'), placement: 'top' }">
+                        {{$t('新建')}}
+                    </i>
+                    <bk-button v-else class="node-button"
                         theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_TOPO)"
                         @click.stop="showCreateDialog(node)">
@@ -186,7 +191,7 @@
                     const node = this.$refs.tree.getNodeById(id)
                     if (node) {
                         const num = datum.service_instance_count
-                        datum.service_instance_count = num > 999 ? '999+' : num
+                        datum.service_instance_count = num > 999 ? '999+' : num || 0
                         node.data = datum
                     }
                     const child = datum.child
@@ -203,7 +208,7 @@
                 return !isModule && !this.isBlueKing
             },
             isTemplate (node) {
-                return node.data.service_template_id
+                return node.data.service_template_id || node.data.set_template_id
             },
             async showCreateDialog (node) {
                 const nodeModel = this.mainLine.find(data => data.bk_obj_id === node.data.bk_obj_id)
@@ -442,6 +447,14 @@
             border-radius: 4px;
             font-size: 12px;
             min-width: auto;
+            &.set-template-button {
+                @include inlineBlock;
+                font-style: normal;
+                background-color: #dcdee5;
+                color: #ffffff;
+                outline: none;
+                cursor: not-allowed;
+            }
         }
         .instance-num {
             margin: 9px 20px 9px 5px;
