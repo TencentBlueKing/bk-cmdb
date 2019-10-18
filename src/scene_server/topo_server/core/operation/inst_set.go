@@ -101,6 +101,8 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 			}
 			setTemplate = st
 		}
+	} else {
+		data[common.BKSetTemplateIDField] = common.SetTemplateIDNotSet
 	}
 
 	// TODO: run in transaction
