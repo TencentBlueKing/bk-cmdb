@@ -358,6 +358,28 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 		return params.Err.CCError(common.CCErrCommParseDBFailed)
 	}
 
+	// 检查并提示禁止修改集群模板ID字段
+	if val, ok := data[common.BKSetTemplateIDField]; ok == true {
+		setTemplateID, err := util.GetInt64ByInterface(val)
+		if err != nil {
+			return params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+		}
+		if setTemplateID != moduleInstance.SetTemplateID {
+			return params.Err.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKSetTemplateIDField)
+		}
+	}
+
+	// 检查并提示禁止修改集服务模板ID字段
+	if val, ok := data[common.BKServiceTemplateIDField]; ok == true {
+		serviceTemplateID, err := util.GetInt64ByInterface(val)
+		if err != nil {
+			return params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
+		if serviceTemplateID != moduleInstance.ServiceTemplateID {
+			return params.Err.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKServiceTemplateIDField)
+		}
+	}
+
 	if moduleInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
 		// 检查并提示禁止修改服务分类
 		if val, ok := data[common.BKServiceCategoryIDField]; ok == true {

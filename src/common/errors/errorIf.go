@@ -56,6 +56,14 @@ func New(errCode int, msg string) CCErrorCoder {
 	}
 }
 
+func NewFromStdError(err error, defaultErrCode int) CCErrorCoder {
+	ccErr, ok := err.(CCErrorCoder)
+	if ok == true {
+		return ccErr
+	}
+	return New(defaultErrCode, err.Error())
+}
+
 // globalCCError 代表从zk中读取到的error配置，
 // 结合 utils.GetDefaultCCError 使用即可实现国际化
 // 设计背景：用于减少不必要的参数传递
