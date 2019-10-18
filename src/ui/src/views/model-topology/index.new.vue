@@ -1230,13 +1230,13 @@
         }
         .vis-button-group {
             float: right;
-            padding-top: 6px;
             >i {
-                margin-left: 28px;
+                margin-left: 22px;
                 font-size: 20px;
                 cursor: pointer;
                 outline: 0;
                 color: #979ba5;
+                padding: 6px;
                 &:hover {
                     color: $cmdbBorderFocusColor;
                 }
@@ -1286,7 +1286,7 @@
         @include scrollbar;
         .group-info {
             line-height: 42px;
-            padding: 0 20px 0 15px;
+            padding: 0 16px 0 5px;
             font-size: 14px;
             cursor: pointer;
             color: #63656e;
@@ -1317,14 +1317,19 @@
                 }
             }
             &.invisible {
-                opacity: 0.5;
                 .icon-cc-hide {
                     display: inline-block;
+                }
+                .group-name {
+                    opacity: 0.5;
+                }
+                .model-count {
+                    display: none;
                 }
             }
             .model-count {
                 position: absolute;
-                right: 14px;
+                right: 16px;
                 top: 12px;
                 padding: 0 5px;
                 border-radius: 2px;
@@ -1348,7 +1353,7 @@
             .icon-cc-hide {
                 display: none;
                 position: absolute;
-                right: 14px;
+                right: 16px;
                 top: 12px;
                 font-size: 18px;
                 color: #979ba5;
@@ -1362,7 +1367,7 @@
             padding: 8px 0;
         }
         .model-item {
-            padding: 5px 12px 5px 30px;
+            padding: 5px 16px 5px 20px;
             position: relative;
             cursor: pointer;
             &:hover {
@@ -1377,9 +1382,12 @@
                 opacity: .6;
             }
             &.invisible {
-                opacity: 0.5;
                 .icon-cc-hide {
                     display: inline-block;
+                }
+                .info,
+                .node-icon {
+                    opacity: 0.5;
                 }
             }
             &.selected {
@@ -1417,7 +1425,7 @@
             .icon-cc-hide {
                 display: none;
                 position: absolute;
-                right: 14px;
+                right: 16px;
                 top: 14px;
                 font-size: 18px;
                 color: #979ba5;
@@ -1432,6 +1440,7 @@
         float: left;
         width: calc(100% - 210px);
         height: calc(100% - 50px);
+        padding: 12px;
         background-color: #f4f5f8;
         background-image: linear-gradient(#eef1f5 1px, transparent 0), linear-gradient(90deg, #eef1f5 1px, transparent 0);
         background-size: 10px 10px;
