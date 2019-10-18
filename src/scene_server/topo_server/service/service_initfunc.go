@@ -128,6 +128,7 @@ func (s *Service) initInst() {
 	// 2019-09-30 废弃接口
 	//s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}", s.SearchInstAssociation, nil)
 	s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}/web", s.SearchInstAssociationUI, nil)
+	s.addAction(http.MethodPost, "/findmany/inst/association/association_object/inst_base_info", s.SearchInstAssociationWithOtherObject, nil)
 
 }
 

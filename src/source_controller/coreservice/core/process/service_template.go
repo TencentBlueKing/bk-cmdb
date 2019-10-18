@@ -13,6 +13,7 @@
 package process
 
 import (
+	"fmt"
 	"time"
 
 	"configcenter/src/common"
@@ -184,6 +185,12 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, option m
 	if option.ServiceTemplateIDs != nil {
 		filter[common.BKFieldID] = map[string][]int64{
 			common.BKDBIN: option.ServiceTemplateIDs,
+		}
+	}
+
+	if len(option.Search) > 0 {
+		filter[common.BKFieldName] = map[string]interface{}{
+			common.BKDBLIKE: fmt.Sprintf(".*%s.*", option.Search),
 		}
 	}
 

@@ -13,45 +13,8 @@
 package mapstr
 
 import (
-	"encoding/json"
-	"errors"
-	"reflect"
-
-	"configcenter/src/common/blog"
+    "encoding/json"
 )
-
-// ConvertArrayMapStrInto convert a MapStr array into a new slice instance
-func ConvertArrayMapStrInto(datas []MapStr, output interface{}) error {
-
-	resultv := reflect.ValueOf(output)
-	if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Slice {
-		return errors.New("result argument must be a slice address")
-	}
-	slicev := resultv.Elem()
-	slicev = slicev.Slice(0, slicev.Cap())
-	elemt := slicev.Type().Elem()
-	idx := 0
-	for _, dataItem := range datas {
-		if slicev.Len() == idx {
-			elemp := reflect.New(elemt)
-			if err := dataItem.MarshalJSONInto(elemp.Interface()); nil != err {
-				panic(err)
-			}
-			slicev = reflect.Append(slicev, elemp.Elem())
-			slicev = slicev.Slice(0, slicev.Cap())
-			idx++
-			continue
-		}
-
-		if err := dataItem.MarshalJSONInto(slicev.Index(idx).Addr().Interface()); nil != err {
-			return err
-		}
-		idx++
-	}
-	resultv.Elem().Set(slicev.Slice(0, idx))
-
-	return nil
-}
 
 // DecodeFromMapStr convert input into json, then decode json into data
 // 接口背景：mapstr 直接解析结构体实现的不完整，有很多坑点，已知问题：结构体中指针类型会导致 mapstr 解析结构体异常。
@@ -61,7 +24,6 @@ func DecodeFromMapStr(data interface{}, input MapStr) error {
 	if err != nil {
 		return err
 	}
-	blog.Infof("DecodeFromMapStr: %s", inputBytes)
 	err = json.Unmarshal(inputBytes, data)
 	return err
 }
