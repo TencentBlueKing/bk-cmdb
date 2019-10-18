@@ -123,7 +123,6 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 	}
 
 	// set create by template should create module at the same time
-	// TODO: create module
 	serviceTemplates, err := s.clientSet.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(params.Context, params.Header, bizID, setTemplate.ID)
 	if err != nil {
 		blog.Errorf("create set failed, ListSetTplRelatedSvcTpl failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplate.ID, err.Error(), params.ReqID)
