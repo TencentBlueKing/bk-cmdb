@@ -42,7 +42,7 @@ type SetTemplateResult struct {
 }
 
 type DeleteSetTemplateOption struct {
-	SetTemplateIDs []int64 `field:"set_template_ids" json:"set_template_ids" bson:"set_template_ids"`
+	SetTemplateIDs []int64 `field:"set_template_ids" json:"set_template_ids" bson:"set_template_ids" mapstructure:"set_template_ids"`
 }
 
 type ListSetTemplateOption struct {
@@ -80,7 +80,8 @@ type CountSetTplInstItem struct {
 }
 
 type ListSetByTemplateOption struct {
-	Page BasePage `json:"page"`
+	Page   BasePage `json:"page"`
+	SetIDs []int64  `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
 }
 
 type DiffSetTplWithInstOption struct {

@@ -242,4 +242,27 @@ var expectBizResourceType = []ResourceType{
 	// 		},
 	// 	},
 	// },
+	{
+		ResourceTypeID:       BizSetTemplate,
+		ResourceTypeName:     "集群模板",
+		ParentResourceTypeID: "",
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: true,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: true,
+			},
+		},
+	},
 }

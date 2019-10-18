@@ -321,7 +321,7 @@
             },
             async getServiceClassification () {
                 const result = await this.searchServiceCategory({
-                    params: this.$injectMetadata(),
+                    params: this.$injectMetadata({}, { injectBizId: true }),
                     config: {
                         requestId: 'get_proc_services_categories'
                     }
@@ -335,7 +335,7 @@
                 this.getBatchProcessTemplate({
                     params: this.$injectMetadata({
                         service_template_id: this.originTemplateValues['id']
-                    })
+                    }, { injectBizId: true })
                 }).then(data => {
                     this.processList = data.info.map(template => {
                         return {
@@ -362,7 +362,7 @@
                             processes: [{
                                 spec: values
                             }]
-                        })
+                        }, { injectBizId: true })
                     }).then(() => {
                         this.getProcessList()
                         this.handleCancelProcess()
@@ -372,7 +372,7 @@
                         params: this.$injectMetadata({
                             process_template_id: values['process_id'],
                             process_property: changedValues
-                        })
+                        }, { injectBizId: true })
                     }).then(() => {
                         this.getProcessList()
                         this.handleCancelProcess()
@@ -410,7 +410,7 @@
                                 params: {
                                     data: this.$injectMetadata({
                                         process_templates: [template['process_id']]
-                                    })
+                                    }, { injectBizId: true })
                                 }
                             }).then(() => {
                                 this.$success(this.$t('删除成功'))
@@ -429,7 +429,7 @@
                                 spec: process
                             }
                         })
-                    })
+                    }, { injectBizId: true })
                 }).then(() => {
                     if (this.isCreatedType) {
                         this.createdSucess.show = true
@@ -446,7 +446,7 @@
                             id: this.formData.templateId,
                             name: this.formData.templateName,
                             service_category_id: this.formData.secondaryClassification
-                        })
+                        }, { injectBizId: true })
                     }).then(() => {
                         if (this.isCreatedType) {
                             this.handleSubmitProcessList()
@@ -473,7 +473,7 @@
                     params: this.$injectMetadata({
                         name: this.formData.templateName,
                         service_category_id: this.formData.secondaryClassification
-                    })
+                    }, { injectBizId: true })
                 }).then(data => {
                     this.createdSucess.name = data.name
                     this.formData.templateId = data.id

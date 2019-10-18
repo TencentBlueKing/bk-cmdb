@@ -13,6 +13,7 @@
 package parser
 
 import (
+	"configcenter/src/common/util"
 	"regexp"
 
 	"configcenter/src/auth/meta"
@@ -65,6 +66,60 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 				}
 			}
 			businessID = bizID
+		}
+
+		iamResources := make([]meta.ResourceAttribute, 0)
+		if item.InstanceIDGetter == nil {
+			iamResource := meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   item.ResourceType,
+					Action: item.ResourceAction,
+				},
+				BusinessID: businessID,
+			}
+			iamResources = append(iamResources, iamResource)
+		} else {
+			ids, err := item.InstanceIDGetter(request, item.Regex)
+			if err != nil {
+				blog.Warnf("get business id in metadata failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
+				return nil, err
+			}
+			for _, id := range ids {
+				iamResource := meta.ResourceAttribute{
+					Basic: meta.Basic{
+						Type:       item.ResourceType,
+						Action:     item.ResourceAction,
+						InstanceID: id,
+					},
+					BusinessID: businessID,
+				}
+				iamResources = append(iamResources, iamResource)
+			}
+		}
+		return iamResources, nil
+	}
+	return nil, nil
+}
+
+var (
+	BizIDRegex = regexp.MustCompile("bk_biz_id/([0-9]+)")
+)
+
+func MatchAndGenerateBizInURLIAMResource(authConfigs []AuthConfig, request *RequestContext) ([]meta.ResourceAttribute, error) {
+	for _, item := range authConfigs {
+		if item.Match(request) == false {
+			continue
+		}
+
+		var businessID int64
+		if item.RequiredBizInMetadata {
+			match := BizIDRegex.FindStringSubmatch(request.URI)
+			var err error
+			businessID, err = util.GetInt64ByInterface(match[1])
+			if err != nil {
+				blog.Warnf("get business id from request path failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
+				return nil, err
+			}
 		}
 
 		iamResources := make([]meta.ResourceAttribute, 0)
