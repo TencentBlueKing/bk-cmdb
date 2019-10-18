@@ -333,7 +333,7 @@
                                     processes: this.getCloneProcessValues()
                                 }
                             ]
-                        })
+                        }, { injectBizId: true })
                     })
                     this.$success(this.$t('克隆成功'))
                     this.backToModule()

@@ -420,7 +420,7 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                            params: this.$injectMetadata()
+                            params: this.$injectMetadata({}, { injectBizId: true })
                         })
                         const categories = this.collectServiceCategories(data.info)
                         this.$store.commit('businessTopology/setCategories', {
@@ -625,7 +625,7 @@
                                 requestId: 'removeServiceTemplate',
                                 data: this.$injectMetadata({
                                     bk_module_id: this.instance.bk_module_id
-                                })
+                                }, { injectBizId: true })
                             }
                         })
                         this.selectedNode.data.service_template_id = 0

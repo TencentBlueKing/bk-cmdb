@@ -213,7 +213,10 @@
             getShowPropertyText (property, source, thisProperty) {
                 const cloneSource = this.$tools.clone(source)
                 const reg = /\<em\>.+\<\/em\>/
-                const propertyValue = cloneSource[thisProperty].toString()
+                let propertyValue = cloneSource[thisProperty].toString()
+                if (propertyValue === '[object Object]') {
+                    propertyValue = cloneSource[thisProperty]
+                }
                 const isHeightLight = reg.test(propertyValue)
                 cloneSource[thisProperty] = isHeightLight ? propertyValue.replace(/(\<\/?em\>)/g, '') : propertyValue
                 const flatternedText = this.$tools.getPropertyText(property, cloneSource)

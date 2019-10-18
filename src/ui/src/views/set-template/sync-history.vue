@@ -22,7 +22,7 @@
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column :label="$t('集群名称')" prop="bk_set_name"></bk-table-column>
-            <bk-table-column :label="$t('拓扑结构')" prop="topo_path">
+            <bk-table-column :label="$t('拓扑路径')" prop="topo_path">
                 <template slot-scope="{ row }">
                     <span>{{getTopoPath(row)}}</span>
                 </template>
@@ -33,15 +33,16 @@
                         <img class="svg-icon" src="../../assets/images/icon/loading.svg" alt="">
                         {{$t('同步中')}}
                     </span>
-                    <span v-else-if="row.status === 'waiting'">
+                    <span v-else-if="row.status === 'waiting'" class="sync-status">
+                        <i class="status-circle waiting"></i>
                         {{$t('待同步')}}
                     </span>
-                    <span v-else-if="row.status === 'finished'" class="sync-status success">
-                        <i class="bk-icon icon-check-1"></i>
+                    <span v-else-if="row.status === 'finished'" class="sync-status">
+                        <i class="status-circle success"></i>
                         {{$t('已同步')}}
                     </span>
-                    <span v-else-if="row.status === 'failure'" class="sync-status fail">
-                        <i class="bk-icon icon-cc-log-02 "></i>
+                    <span v-else-if="row.status === 'failure'" class="sync-status">
+                        <i class="status-circle fail"></i>
                         {{$t('同步失败')}}
                     </span>
                     <span v-else>--</span>
@@ -251,22 +252,26 @@
     .history-table {
         .sync-status {
             color: #63656E;
-            .bk-icon {
-                margin-top: -2px;
+            .status-circle {
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                margin-right: 4px;
+                border-radius: 50%;
+                &.waiting {
+                    background-color: #3A84FF;
+                }
+                &.success {
+                    background-color: #2DCB56;
+                }
+                &.fail {
+                    background-color: #EA3536;
+                }
             }
             .svg-icon {
                 @include inlineBlock;
                 margin-top: -4px;
                 width: 16px;
-            }
-            &.fail {
-                color: #EA3536;
-                .bk-icon {
-                    color: #63656E;
-                }
-            }
-            &.success {
-                color: #2DCB56;
             }
         }
     }
