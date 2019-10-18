@@ -52,12 +52,17 @@
             <bk-button
                 theme="primary"
                 :loading="$loading('updateObjectAssociation')"
-                :disabled="JSON.stringify(relationInfo) === relationInfoJson"
+                :disabled="JSON.stringify(relationInfo) === relationInfoSnapshot"
                 @click="saveRelation"
             >
                 {{$t('确定')}}
             </bk-button>
-            <bk-button theme="danger" outline @click="deleteRelation" :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')">
+            <bk-button
+                theme="danger"
+                outline
+                :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')"
+                @click="deleteRelation"
+            >
                 {{$t('删除关联')}}
             </bk-button>
         </div>
@@ -105,7 +110,7 @@
                     mapping: '',
                     on_delete: []
                 },
-                relationInfoJson: ''
+                relationInfoSnapshot: ''
             }
         },
         computed: {
@@ -130,7 +135,7 @@
                 })
                 if (this.asstId !== '') {
                     this.relationInfo = asstList.find(asst => asst.id === this.asstId)
-                    this.relationInfoJson = JSON.stringify(this.relationInfo)
+                    this.relationInfoSnapshot = JSON.stringify(this.relationInfo)
                 }
             },
             getModelName (objId) {
