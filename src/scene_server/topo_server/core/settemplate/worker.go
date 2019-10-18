@@ -44,7 +44,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 		MetaData:        &md,
 		ReqID:           rid,
 	}
-	obj, err := bw.ObjectOperation.FindSingleObject(params, common.BKInnerObjIDModule)
+	moduleObj, err := bw.ObjectOperation.FindSingleObject(params, common.BKInnerObjIDModule)
 	if err != nil {
 		blog.Errorf("DoModuleSyncTask failed, FindSingleObject: module failed, err: %s, rid: %s", err.Error(), rid)
 		return err
@@ -55,7 +55,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 	moduleID := moduleDiff.ModuleID
 	switch moduleDiff.DiffType {
 	case metadata.ModuleDiffRemove:
-		err := bw.ModuleOperation.DeleteModule(params, obj, set.BizID, []int64{setID}, []int64{moduleID})
+		err := bw.ModuleOperation.DeleteModule(params, moduleObj, set.BizID, []int64{setID}, []int64{moduleID})
 		if err != nil {
 			blog.ErrorJSON("DoModuleSyncTask failed, DeleteModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
 			return err
@@ -74,7 +74,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 			common.BKSetTemplateIDField:     set.SetTemplateID,
 		}
 
-		_, err := bw.ModuleOperation.CreateModule(params, obj, bizID, setID, data)
+		_, err := bw.ModuleOperation.CreateModule(params, moduleObj, bizID, setID, data)
 		if err != nil {
 			blog.ErrorJSON("DoModuleSyncTask failed, CreateModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
 			return err
@@ -83,7 +83,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 		data := mapstr.MapStr(map[string]interface{}{
 			common.BKModuleNameField: moduleDiff.ModuleName,
 		})
-		err := bw.ModuleOperation.UpdateModule(params, data, obj, bizID, setID, moduleID)
+		err := bw.ModuleOperation.UpdateModule(params, data, moduleObj, bizID, setID, moduleID)
 		if err != nil {
 			blog.ErrorJSON("DoModuleSyncTask failed, UpdateModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
 			return err
