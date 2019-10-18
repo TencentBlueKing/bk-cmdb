@@ -44,7 +44,7 @@
                             <div v-show="afterSyncExpand">
                                 <ul class="sync-info"
                                     v-for="_module in instance.module_diffs"
-                                    :key="_module.bk_module_id">
+                                    :key="_module.bk_module_id + _module.bk_module_name">
                                     <li :class="['mt15', {
                                         'has-delete': _module.diff_type === 'remove',
                                         'has-changed': _module.diff_type === 'changed',
@@ -154,6 +154,7 @@
             }
         }
         .count {
+            display: inline-block;
             min-width: 18px;
             height: 18px;
             line-height: 17px;
