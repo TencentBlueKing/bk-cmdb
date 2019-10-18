@@ -38,6 +38,10 @@ func (s *Service) CreateSetTemplate(params types.ContextParams, pathParams, quer
 		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
+	if len(option.ServiceTemplateIDs) == 0 {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsNeedSet, "service_template_ids")
+	}
+
 	setTemplate, err := s.Engine.CoreAPI.CoreService().SetTemplate().CreateSetTemplate(params.Context, params.Header, bizID, option)
 	if err != nil {
 		blog.Errorf("CreateSetTemplate failed, core service create failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
