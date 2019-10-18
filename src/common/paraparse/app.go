@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -52,6 +53,25 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 			regex := make(map[string]interface{})
 			regex[common.BKDBLIKE] = i.Value
 			output[i.Field] = regex
+
+		case common.BKDBMULTIPLELike:
+			multi, ok := i.Value.([]interface{})
+			if !ok {
+				return fmt.Errorf("operator %s only support for string array", common.BKDBMULTIPLELike)
+			}
+			fields := make([]interface{}, 0)
+			for _, m := range multi {
+				mstr, ok := m.(string)
+				if !ok {
+					return fmt.Errorf("operator %s only support for string array", common.BKDBMULTIPLELike)
+				}
+				fields = append(fields, mapstr.MapStr{i.Field: mapstr.MapStr{common.BKDBLIKE: mstr}})
+			}
+			if len(fields) != 0 {
+				// only when the fields is none empty, then the fields is valid.
+				// a or operator can not have a empty value in mongodb.
+				output[common.BKDBOR] = fields
+			}
 		default:
 			d := make(map[string]interface{})
 			if i.Value == nil {

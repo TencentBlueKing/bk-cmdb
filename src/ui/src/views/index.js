@@ -4,7 +4,6 @@ import businessModel from '@/views/business-model/router.config'
 import businessTopology from '@/views/business-topology/router.config'
 import customQuery from '@/views/custom-query/router.config'
 import eventpush from '@/views/eventpush/router.config'
-import history from '@/views/history/router.config'
 import hosts from '@/views/hosts/router.config'
 import resourceHostDetails from '@/views/host-details/router.config'
 import model from '@/views/model-manage/router.config'
@@ -65,7 +64,6 @@ export const businessViews = injectStatusComponents(flatternViews([
 export const resourceViews = injectStatusComponents(flatternViews([
     business,
     resource,
-    history,
     resourceHostDetails,
     generalModel,
     eventpush,

@@ -34,7 +34,7 @@ import (
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
@@ -104,7 +104,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Engine: procSvr.Engine,
 	}
 
-	if err := backbone.StartServer(ctx, engine, procSvr.WebService(), true); err != nil {
+	err = backbone.StartServer(ctx, cancel, engine, procSvr.WebService(), true)
+	if err != nil {
 		return err
 	}
 
