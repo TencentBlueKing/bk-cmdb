@@ -49,7 +49,7 @@
                 @selection-change="handleSelectionChange">
                 <bk-table-column type="selection" width="50" :selectable="handleSelectable"></bk-table-column>
                 <bk-table-column :label="$t('集群名称')" prop="bk_set_name"></bk-table-column>
-                <bk-table-column :label="$t('拓扑结构')" prop="topo_path">
+                <bk-table-column :label="$t('拓扑路径')" prop="topo_path">
                     <template slot-scope="{ row }">
                         <span>{{getTopoPath(row)}}</span>
                     </template>
@@ -101,7 +101,7 @@
                             <bk-button v-else text
                                 :disabled="!$isAuthorized($OPERATION.U_TOPO) || ['syncing', 'finished'].includes(row.status)"
                                 @click="handleSync(row)">
-                                {{$t('同步')}}
+                                {{$t('去同步')}}
                             </bk-button>
                         </span>
                     </template>
@@ -378,7 +378,7 @@
                         }
                     })
                     row.status = 'syncing'
-                    this.$success(this.$t('重试同步中'))
+                    this.$success(this.$t('提交同步成功'))
                 } catch (e) {
                     console.error(e)
                 }
