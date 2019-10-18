@@ -21,14 +21,13 @@
         <label class="form-label">
             <span class="label-text">
                 {{$t('关联描述')}}
-                <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
                 <bk-input type="text" class="cmdb-form-input"
                     name="asstName"
                     :disabled="relationInfo.ispre || !isEdit"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
-                    v-validate="'required|singlechar|length:256'">
+                    v-validate="'singlechar|length:256'">
                 </bk-input>
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
@@ -50,10 +49,15 @@
             </div>
         </label>
         <div class="btn-group" v-if="isEdit && relationInfo.bk_asst_id !== 'bk_mainline'">
-            <bk-button theme="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
+            <bk-button
+                theme="primary"
+                :loading="$loading('updateObjectAssociation')"
+                :disabled="JSON.stringify(relationInfo) === relationInfoJson"
+                @click="saveRelation"
+            >
                 {{$t('确定')}}
             </bk-button>
-            <bk-button theme="danger" @click="deleteRelation" :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')">
+            <bk-button theme="danger" outline @click="deleteRelation" :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')">
                 {{$t('删除关联')}}
             </bk-button>
         </div>
@@ -100,7 +104,8 @@
                     bk_asst_id: '',
                     mapping: '',
                     on_delete: []
-                }
+                },
+                relationInfoJson: ''
             }
         },
         computed: {
@@ -125,6 +130,7 @@
                 })
                 if (this.asstId !== '') {
                     this.relationInfo = asstList.find(asst => asst.id === this.asstId)
+                    this.relationInfoJson = JSON.stringify(this.relationInfo)
                 }
             },
             getModelName (objId) {
