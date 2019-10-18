@@ -201,6 +201,16 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		data[common.BKSetTemplateIDField] = common.SetTemplateIDNotSet
 	}
 
+	// convert bk_parent_id to int
+	parentIDIf, ok := data[common.BKParentIDField]
+	if ok == true {
+		parentID, err := util.GetInt64ByInterface(parentIDIf)
+		if err != nil {
+			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
+		}
+		data[common.BKParentIDField] = parentID
+	}
+
 	inst, createErr := m.inst.CreateInst(params, obj, data)
 	if createErr != nil {
 		moduleNameStr, exist := data[common.BKModuleNameField]
