@@ -977,7 +977,7 @@
     "同步后": "After sync",
     "失败重试": "Retry",
     "关闭页面": "Close",
-    "拓扑结构": "Topology",
+    "拓扑路径": "Topological path",
     "查看同步": "View sync",
     "同步失败": "fail",
     "已完成": "completed",
@@ -1026,7 +1026,6 @@
     "进程详情": "Progress details",
     "克隆服务实例": "Clone service instance",
     "当前模型暂未定义可用关联": "The current model does not yet define an available association",
-    "同步时间": "Sync time",
     "更新收藏成功": "Update collection success",
     "该名字已经存在": "The name already exists",
     "已归档业务": "Archived business",
@@ -1046,5 +1045,10 @@
     "分配主机到业务空闲机": "Assign host to business idle machine",
     "拓扑层级管理": "Topology management",
     "管理页面入口": "Management page entry",
-    "模型拓扑视图": "Model topology view"
+    "模型拓扑视图": "Model topology view",
+    "同步时间": "Sync time",
+    "本次不同步": "This time is out of sync",
+    "提交同步成功": "Submit is successful, please wait for execution to complete",
+    "去同步": "Go to sync",
+    "模板集群添加模块提示": "The accumulated template is currently configured, and modules cannot be added."
 }

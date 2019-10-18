@@ -1,22 +1,8 @@
 import Meta from '@/router/meta'
-import {
-    C_MODEL_GROUP,
-    U_MODEL_GROUP,
-    D_MODEL_GROUP,
-    C_MODEL,
-    U_MODEL,
-    D_MODEL
-} from '@/dictionary/auth'
+import { U_MODEL } from '@/dictionary/auth'
 import { MENU_BUSINESS_ADVANCED } from '@/dictionary/menu-symbol'
 
-export const OPERATION = {
-    C_MODEL_GROUP,
-    U_MODEL_GROUP,
-    D_MODEL_GROUP,
-    C_MODEL,
-    U_MODEL,
-    D_MODEL
-}
+export const OPERATION = { U_MODEL }
 
 export default {
     name: 'customFields',
@@ -28,7 +14,7 @@ export default {
             parent: MENU_BUSINESS_ADVANCED
         },
         auth: {
-            operation: OPERATION,
+            operation: { U_MODEL },
             authScope: 'business'
         }
     })
