@@ -124,8 +124,20 @@ func (c *client) getRPCByAddr(addr string) (rpc.Client, bool) {
 func (c *client) addRPCByAddr(addr string) (rpc.Client, error) {
 	c.p.Lock()
 	defer c.p.Unlock()
+	// judge again, in case multi goroutine create rpc client repeatly
+	rpcCli, ok := c.p.cache[addr]
+	if ok {
+		if err := rpcCli.Ping(); err == nil {
+			return rpcCli, nil
+		}
+	}
 	getSrvFunc := func() ([]string, error) {
 		return []string{addr}, nil
 	}
-	return rpc.NewClientPool("tcp", getSrvFunc, "/txn/v3/rpc")
+	rpcCli, err := rpc.NewClientPool("tcp", getSrvFunc, "/txn/v3/rpc")
+	if err != nil {
+		return nil, err
+	}
+	c.p.cache[addr] = rpcCli
+	return rpcCli, nil
 }

@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -23,13 +24,39 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 )
 
+var engine *backbone.Engine
+
+func init() {
+	svrInfo := &types.ServerInfo{
+		IP:       "127.0.0.1",
+		Port:     60008,
+		HostName: "",
+		Scheme:   "http",
+		Pid:      os.Getpid(),
+	}
+	input := &backbone.BackboneParameter{
+		ConfigPath:   "",
+		Regdiscv:     "127.0.0.1:2181",
+		SrvInfo:      svrInfo,
+		ConfigUpdate: func(previous, current cc.ProcessConfig) {},
+	}
+	fmt.Printf("backboneParameter:%#v\n", input)
+	fmt.Printf("SrvInfo:%#v, ConfigPath:%#v\n", input.SrvInfo, input.ConfigPath)
+	var err error
+	engine, err = backbone.NewBackbone(context.Background(), input)
+	fmt.Printf("err:%#v\n", err)
+}
+
 func MBenchmarkRemoteCUD(b *testing.B) {
 
-	db, err := NewWithDiscover(getServerFunc)
+	db, err := NewWithDiscover(engine)
 	require.NoError(b, err)
 
 	header := http.Header{}
@@ -70,7 +97,7 @@ func MBenchmarkRemoteCUD(b *testing.B) {
 }
 
 func BenchmarkRemoteCUDParallel(b *testing.B) {
-	db, err := NewWithDiscover(func() ([]string, error) { return []string{"http://127.0.0.1:60008"}, nil })
+	db, err := NewWithDiscover(engine)
 	require.NoError(b, err)
 	tablename := "tmptest"
 	header := http.Header{}
@@ -124,7 +151,7 @@ func BenchmarkRemoteCUDParallel(b *testing.B) {
 
 func TestDDL(t *testing.T) {
 	// 127.0.0.1:60008
-	db, err := NewWithDiscover(getServerFunc)
+	db, err := NewWithDiscover(engine)
 	require.NoError(t, err)
 
 	tableName := "tmp_test"
@@ -170,7 +197,7 @@ func TestDDL(t *testing.T) {
 
 func TestInsertTime(t *testing.T) {
 	// 127.0.0.1:60008
-	db, err := NewWithDiscover(getServerFunc)
+	db, err := NewWithDiscover(engine)
 	require.NoError(t, err)
 
 	tableName := "tmp_test_insert"
