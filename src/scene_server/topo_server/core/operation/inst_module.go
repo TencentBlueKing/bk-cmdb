@@ -107,7 +107,7 @@ func (m *module) validBizSetID(params types.ContextParams, bizID int64, setID in
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !rsp.Result {
-		blog.Errorf("[operation-inst] faild to read the object(%s) inst by the condition(%#v), err: %s, rid: %s", common.BKInnerObjIDSet, cond, rsp.ErrMsg, params.ReqID)
+		blog.Errorf("[operation-inst] failed to read the object(%s) inst by the condition(%#v), err: %s, rid: %s", common.BKInnerObjIDSet, cond, rsp.ErrMsg, params.ReqID)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 	if rsp.Data.Count > 0 {
@@ -194,6 +194,12 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		}
 	}
 	data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
+
+	// set default set template
+	_, exist := data[common.BKSetTemplateIDField]
+	if exist == false {
+		data[common.BKSetTemplateIDField] = common.SetTemplateIDNotSet
+	}
 
 	inst, createErr := m.inst.CreateInst(params, obj, data)
 	if createErr != nil {
