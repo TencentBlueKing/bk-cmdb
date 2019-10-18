@@ -210,6 +210,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		if isDuplicate {
 			return inst, params.Err.CCError(common.CCErrorTopoModuleNameDuplicated)
 		}
+		return inst, createErr
 	}
 
 	// auth: register module to iam
@@ -421,6 +422,7 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 		if isDuplicate {
 			return params.Err.CCError(common.CCErrorTopoModuleNameDuplicated)
 		}
+		return updateErr
 	}
 
 	// auth: update registered module to iam
