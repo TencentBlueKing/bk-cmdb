@@ -2,7 +2,7 @@
     <div class="template-tree">
         <div class="node-root clearfix">
             <i class="folder-icon bk-icon icon-down-shape fl" @click="handleCollapse"></i>
-            <i class="root-icon icon icon-cc-nav-model-02 fl"></i>
+            <i class="root-icon fl">{{$i18n.locale === 'en' ? 's' : '集'}}</i>
             <span class="root-name" :title="templateName">{{templateName}}</span>
         </div>
         <cmdb-collapse-transition>
@@ -12,7 +12,7 @@
                     :key="service.id"
                     :class="{ selected: selected === service.id }"
                     @click="handleChildClick(service)">
-                    <i class="child-icon icon icon-cc-cube fl"></i>
+                    <i class="child-icon fl">{{$i18n.locale === 'en' ? 'm' : '模'}}</i>
                     <span class="child-options fr" v-if="mode !== 'view'">
                         <i class="options-view icon icon-cc-show" @click="handleViewService(service)"></i>
                         <i class="options-delete icon icon-cc-tips-close" @click="handleDeleteService(index)"></i>
@@ -192,10 +192,16 @@
         }
         .root-icon {
             position: relative;
-            margin: 8px 4px 8px 0px;
-            font-size: 20px;
-            color: $iconColor;
-            background-color: #fff;
+            width: 20px;
+            height: 20px;
+            line-height: 19px;
+            border-radius: 50%;
+            margin: 8px 7px 8px 0px;
+            font-size: 12px;
+            color: #ffffff;
+            font-style: normal;
+            text-align: center;
+            background-color: $iconColor;
             z-index: 2;
         }
         .root-name {
@@ -267,8 +273,9 @@
                 border-radius: 50%;
                 text-align: center;
                 color: #fff;
-                line-height: 20px;
+                line-height: 19px;
                 font-size: 12px;
+                font-style: normal;
                 background-color: $iconColor;
             }
             .child-options {
