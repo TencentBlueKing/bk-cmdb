@@ -325,12 +325,12 @@
                         if (data.total) {
                             if (!this.query.objId) {
                                 this.currentClassify = -1
-                                this.curModelMap = modelData.map(item => {
+                                this.curModelMap = modelData.sort((prev, next) => next.count - prev.count).map(item => {
                                     return {
                                         ...this.getModelById(item.key),
                                         count: item.count > 999 ? '999+' : item.count
                                     }
-                                }).sort((prev, next) => next.count - prev.count)
+                                })
                             }
                         }
                         this.lenovoList = hitData.length > 8 ? hitData.slice(0, 8) : hitData
