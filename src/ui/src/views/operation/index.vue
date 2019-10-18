@@ -505,7 +505,7 @@
             },
             deleteChart (type, key, list, item) {
                 this.$bkInfo({
-                    title: this.$tc('Operation["是否确认删除"]'),
+                    title: this.$tc('是否确认删除'),
                     subTitle: '确定要删除【' + item.name + '】',
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: () => {
