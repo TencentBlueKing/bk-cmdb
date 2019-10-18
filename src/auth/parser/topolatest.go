@@ -47,7 +47,8 @@ func (ps *parseStream) topologyLatest() *parseStream {
 		ObjectClassificationLatest().
 		objectAttributeGroupLatest().
 		objectAttributeLatest().
-		mainlineLatest()
+		mainlineLatest().
+		SetTemplate()
 
 	return ps
 }

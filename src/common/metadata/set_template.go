@@ -26,11 +26,11 @@ type SetTemplate struct {
 	BizID int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
 	// 通用字段
-	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
-	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
-	CreateTime      time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
-	LastTime        time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
-	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	Creator         string    `field:"creator" json:"creator" bson:"creator"`
+	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 func (st SetTemplate) Validate() (key string, err error) {
@@ -47,7 +47,7 @@ type SetServiceTemplateRelation struct {
 	BizID             int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	SetTemplateID     int64  `field:"set_template_id" json:"set_template_id" bson:"set_template_id"`
 	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
-	SupplierAccount   string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	SupplierAccount   string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type SyncStatus string
@@ -69,10 +69,10 @@ type SetTemplateSyncStatus struct {
 	BizID         int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
 	SetTemplateID int64  `field:"set_template_id" json:"set_template_id" bson:"set_template_id" mapstructure:"set_template_id"`
 
-	Creator         string `field:"creator" json:"creator,omitempty" bson:"creator" mapstructure:"creator"`
-	CreateTime      Time   `field:"create_time" json:"create_time,omitempty" bson:"create_time" mapstructure:"create_time"`
-	LastTime        Time   `field:"last_time" json:"last_time,omitempty" bson:"last_time" mapstructure:"last_time"`
-	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	Creator         string `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
+	CreateTime      Time   `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
+	LastTime        Time   `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
+	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 
 	Status SyncStatus `field:"status" json:"status" bson:"status" mapstructure:"status"`
 	TaskID string     `field:"task_id" json:"task_id" bson:"task_id" mapstructure:"task_id"`

@@ -677,7 +677,7 @@
                 width: 66px;
                 text-align: center;
                 font-size: 32px;
-                color: $cmdbBorderFocusColor;
+                color: #3a84ff;
                 .icon {
                     line-height: 68px;
                 }

@@ -104,7 +104,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 	}
 
 	// TODO: run in transaction
-	// data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
+	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
 	setInstance, err := s.inst.CreateInst(params, obj, data)
 	if err != nil {
 		blog.Errorf("create set instance failed, object: %+v, data: %+v, err: %s, rid: %s", obj, data, err.Error(), params.ReqID)
