@@ -30,7 +30,7 @@ import (
 )
 
 func main() {
-	common.SetIdentification(types.CC_MODULE_MIGRATE)
+	common.SetIdentification(types.CCModuleMigrate)
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 

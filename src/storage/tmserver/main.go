@@ -31,7 +31,7 @@ import (
 )
 
 func main() {
-	common.SetIdentification(types.CC_MODULE_TXC)
+	common.SetIdentification(types.CCModuleTXC)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	blog.InitLogs()

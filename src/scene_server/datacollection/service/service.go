@@ -110,8 +110,8 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, zkItem)
 
 	// topo server
-	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_TOPO}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_TOPO); err != nil {
+	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CCModuleTop.Name}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(objCtr.Name); err != nil {
 		objCtr.IsHealthy = false
 		objCtr.Message = err.Error()
 	}
@@ -141,7 +141,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_DATACOLLECTION,
+		Module:     types.CCModuleDataCollection.Name,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}

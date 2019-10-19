@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	common.SetIdentification(types.CC_MODULE_EVENTSERVER)
+	common.SetIdentification(types.CCModuleEventServer)
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 

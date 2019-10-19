@@ -45,8 +45,8 @@ func (h *health) Health(params types.ContextParams) (*metric.HealthResponse, err
 	meta.Items = append(meta.Items, zkItem)
 
 	// core service
-	coreSrv := metric.HealthItem{IsHealthy: true, Name: gtypes.CC_MODULE_CORESERVICE}
-	if _, err := h.clientSet.Healthz().HealthCheck(gtypes.CC_MODULE_CORESERVICE); err != nil {
+	coreSrv := metric.HealthItem{IsHealthy: true, Name: gtypes.CCModuleCoerService.Name}
+	if _, err := h.clientSet.Healthz().HealthCheck(coreSrv.Name); err != nil {
 		coreSrv.IsHealthy = false
 		coreSrv.Message = err.Error()
 	}
@@ -61,7 +61,7 @@ func (h *health) Health(params types.ContextParams) (*metric.HealthResponse, err
 	}
 
 	info := metric.HealthInfo{
-		Module:     gtypes.CC_MODULE_TOPO,
+		Module:     gtypes.CCModuleTop.Name,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}

@@ -42,28 +42,28 @@ type health struct {
 
 func (h *health) HealthCheck(moduleName string) (healthy bool, err error) {
 	switch moduleName {
-	case types.CC_MODULE_DATACOLLECTION:
+	case types.CCModuleDataCollection.Name:
 		h.capability.Discover = h.disc.DataCollect()
 
-	case types.CC_MODULE_HOST:
+	case types.CCModuleHost.Name:
 		h.capability.Discover = h.disc.HostServer()
 
-	case types.CC_MODULE_MIGRATE:
+	case types.CCModuleMigrate.Name:
 		h.capability.Discover = h.disc.MigrateServer()
 
-	case types.CC_MODULE_PROC:
+	case types.CCModuleProc.Name:
 		h.capability.Discover = h.disc.ProcServer()
 
-	case types.CC_MODULE_TOPO:
+	case types.CCModuleTop.Name:
 		h.capability.Discover = h.disc.TopoServer()
 
-	case types.CC_MODULE_EVENTSERVER:
+	case types.CCModuleEventServer.Name:
 		h.capability.Discover = h.disc.EventServer()
 
-	case types.CC_MODULE_APISERVER:
+	case types.CCModuleAPIServer.Name:
 		h.capability.Discover = h.disc.ApiServer()
 
-	case types.CC_MODULE_CORESERVICE:
+	case types.CCModuleCoerService.Name:
 		h.capability.Discover = h.disc.CoreService()
 
 	default:

@@ -364,15 +364,15 @@ func (s *Service) initCodeTaskConfig() map[string]TaskInfo {
 			Path:  codeTaskConfig.Path,
 		}
 		switch codeTaskConfig.SvrType {
-		case types.CC_MODULE_APISERVER:
+		case types.CCModuleAPIServer.Name:
 			ti.Addr = s.Engine.Discovery().ApiServer().GetServers
-		case types.CC_MODULE_HOST:
+		case types.CCModuleHost.Name:
 			ti.Addr = s.Engine.Discovery().HostServer().GetServers
-		case types.CC_MODULE_PROC:
+		case types.CCModuleProc.Name:
 			ti.Addr = s.Engine.Discovery().ProcServer().GetServers
-		case types.CC_MODULE_TOPO:
+		case types.CCModuleTop.Name:
 			ti.Addr = s.Engine.Discovery().TopoServer().GetServers
-		case types.CC_MODULE_TASK:
+		case types.CCModuleTask.Name:
 			ti.Addr = s.Engine.Discovery().TaskServer().GetServers
 		default:
 			panicErr := fmt.Sprintf("task code init. task:%s, svrType:%s, not exist", ti.Name, codeTaskConfig.SvrType)

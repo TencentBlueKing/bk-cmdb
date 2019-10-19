@@ -32,7 +32,7 @@ import (
 )
 
 func main() {
-	common.SetIdentification(types.CC_MODULE_DATACOLLECTION)
+	common.SetIdentification(types.CCModuleDataCollection)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var mock bool

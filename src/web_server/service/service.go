@@ -91,8 +91,8 @@ func (s *Service) Healthz(c *gin.Context) {
 
 	meta.Items = append(meta.Items, zkItem)
 
-	apiServer := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_APISERVER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_APISERVER); err != nil {
+	apiServer := metric.HealthItem{IsHealthy: true, Name: types.CCModuleAPIServer.Name}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(apiServer.Name); err != nil {
 		apiServer.IsHealthy = false
 		apiServer.Message = err.Error()
 	}
@@ -107,7 +107,7 @@ func (s *Service) Healthz(c *gin.Context) {
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_WEBSERVER,
+		Module:     types.CCModuleAPIServer.Name,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}

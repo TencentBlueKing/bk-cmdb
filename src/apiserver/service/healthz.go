@@ -35,24 +35,24 @@ func (s *service) healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, zkItem)
 
 	// topo server
-	topoSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_TOPO}
-	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_TOPO); err != nil {
+	topoSrv := metric.HealthItem{IsHealthy: true, Name: types.CCModuleTop.Name}
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(topoSrv.Name); err != nil {
 		topoSrv.IsHealthy = false
 		topoSrv.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, topoSrv)
 
 	// host server
-	hostSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOST}
-	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOST); err != nil {
+	hostSrv := metric.HealthItem{IsHealthy: true, Name: types.CCModuleHost.Name}
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(hostSrv.Name); err != nil {
 		hostSrv.IsHealthy = false
 		hostSrv.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, hostSrv)
 
 	// proc server
-	procSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_PROC}
-	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_PROC); err != nil {
+	procSrv := metric.HealthItem{IsHealthy: true, Name: types.CCModuleProc.Name}
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(procSrv.Name); err != nil {
 		procSrv.IsHealthy = false
 		procSrv.Message = err.Error()
 	}
@@ -67,7 +67,7 @@ func (s *service) healthz(req *restful.Request, resp *restful.Response) {
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_APISERVER,
+		Module:     types.CCModuleAPIServer.Name,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}

@@ -35,7 +35,7 @@ var (
 
 // init for auto task
 func init() {
-	AddCodeTaskConfig("sync-settemplate2set", types.CC_MODULE_TOPO, "/topo/v3/internal/task", 1)
+	AddCodeTaskConfig("sync-settemplate2set", types.CCModuleTop.Name, "/topo/v3/internal/task", 1)
 }
 
 // AddCodeTaskConfig add task

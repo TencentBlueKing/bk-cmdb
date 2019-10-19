@@ -113,7 +113,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_EVENTSERVER,
+		Module:     types.CCModuleEventServer.Name,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}
