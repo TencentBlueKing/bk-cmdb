@@ -23,43 +23,109 @@ const (
 	CC_SERVERROR_BASEPATH = "/cc/services/errors"
 	CC_SERVLANG_BASEPATH  = "/cc/services/language"
 
+	ccSrvUINodeName       = "ui"
+	ccSrvAPINodeName      = "api"
+	ccSrvSenceNodeName    = "sence"
+	ccSrvResourceNodeName = "sence"
+	ccSrvCommonNodeName   = "common"
+	CCSvrUIBasePath       = CC_SERV_BASEPATH + "/" + ccSrvUINodeName
+	CCSvrAPIBasePath      = CC_SERV_BASEPATH + "/" + ccSrvAPINodeName
+	CCSvrSceneBasePath    = CC_SERV_BASEPATH + "/" + ccSrvSenceNodeName
+	CCSvrResourceBasePath = CC_SERV_BASEPATH + "/" + ccSrvResourceNodeName
+	CCSvrCommonBasePath   = CC_SERV_BASEPATH + "/" + ccSrvCommonNodeName
+
 	CC_DISCOVERY_PREFIX = "cc_"
 )
 
 // cc modules
-const (
-	CC_MODULE_DATACOLLECTION = "datacollection"
-	CC_MODULE_HOST           = "host"
-	CC_MODULE_MIGRATE        = "migrate"
-	CC_MODULE_PROC           = "proc"
-	CC_MODULE_TOPO           = "topo"
-	CC_MODULE_APISERVER      = "apiserver"
-	CC_MODULE_WEBSERVER      = "webserver"
-	CC_MODULE_EVENTSERVER    = "eventserver"
-	CC_MODULE_CORESERVICE    = "coreservice"
-	GSE_MODULE_PROCSERVER    = "gseprocserver"
-	CC_MODULE_TXC            = "txc"
-	// CC_MODULE_SYNCHRONZESERVER multiple cmdb synchronize data server
-	CC_MODULE_SYNCHRONZESERVER = "sync"
-	CC_MODULE_OPERATION        = "operation"
-	CC_MODULE_TASK             = "task"
+var (
+	CCModuleDataCollection = SvrModuleInfo{Name: "datacollection", Layer: Sence}
+	CCModuleHost           = SvrModuleInfo{Name: "host", Layer: Sence}
+	CCModuleMigrate        = SvrModuleInfo{Name: "migrate", Layer: Sence}
+	CCModuleProc           = SvrModuleInfo{Name: "proc", Layer: Sence}
+	CCModuleTop            = SvrModuleInfo{Name: "topo", Layer: Sence}
+	CCModuleAPIServer      = SvrModuleInfo{Name: "apiserver", Layer: API}
+	CCModuleWebServer      = SvrModuleInfo{Name: "webserver", Layer: UI}
+	CCModuleEventServer    = SvrModuleInfo{Name: "eventserver", Layer: Sence}
+	CCModuleCoerService    = SvrModuleInfo{Name: "coreservice", Layer: Resource}
+	GSEModuleProcServer    = SvrModuleInfo{Name: "gseprocserver", Layer: Sence}
+	CCModuleTXC            = SvrModuleInfo{Name: "txc", Layer: Common}
+	// CCModuleSynchronize multiple cmdb synchronize data server
+	CCModuleSynchronize = SvrModuleInfo{Name: "sync", Layer: Sence}
+	CCModuleOperation   = SvrModuleInfo{Name: "operation", Layer: Sence}
+	CCModuleTask        = SvrModuleInfo{Name: "task", Layer: Sence}
 )
 
-// AllModule all cc module
-var AllModule = map[string]bool{
-	CC_MODULE_DATACOLLECTION:   true,
-	CC_MODULE_HOST:             true,
-	CC_MODULE_MIGRATE:          true,
-	CC_MODULE_PROC:             true,
-	CC_MODULE_TOPO:             true,
-	CC_MODULE_APISERVER:        true,
-	CC_MODULE_WEBSERVER:        true,
-	CC_MODULE_EVENTSERVER:      true,
-	CC_MODULE_TXC:              true,
-	CC_MODULE_CORESERVICE:      true,
-	CC_MODULE_SYNCHRONZESERVER: true,
-	CC_MODULE_OPERATION:        true,
-	CC_MODULE_TASK:             true,
+// LayerModuleMap all cc module
+// 根据节点前缀发下节点下面的服务， 这样保证依赖的服务可以自动发现，无需配置。
+var LayerModuleMap = map[Layer][]SvrModuleInfo{
+	// UI 层需要发现节点
+	UI: []SvrModuleInfo{
+		CCModuleAPIServer,
+	},
+	// API 层需要发现节点
+	API: []SvrModuleInfo{
+		CCModuleHost,
+		CCModuleDataCollection,
+		CCModuleProc,
+		CCModuleTop,
+		CCModuleEventServer,
+		CCModuleSynchronize,
+		CCModuleOperation,
+		CCModuleTask,
+		CCModuleTXC,
+	},
+	// Sence 层需要发现节点
+	Sence: []SvrModuleInfo{
+		CCModuleTXC,
+		CCModuleTask,
+		CCModuleCoerService,
+	},
+	// Resource 层需要发现节点
+	Resource: []SvrModuleInfo{
+		CCModuleTXC,
+		CCModuleTask,
+	},
+}
+
+// Layer curent layer name
+type Layer int64
+
+const (
+	// UI webserver,  ui 层需要发现节点
+	UI Layer = iota + 1
+	// API  apiserver, api 层需要发现节点
+	API
+	// Sence layer. sence 层需要发现节点
+	Sence
+	// Resource controller layer. controller 层需要发现节点
+	Resource
+	// Common for common, Can be found by all services
+	// reserved text
+	Common
+)
+
+func (l Layer) String() string {
+	switch l {
+	case UI:
+		return ccSrvUINodeName
+	case API:
+		return ccSrvAPINodeName
+	case Sence:
+		return ccSrvSenceNodeName
+	case Resource:
+		return ccSrvResourceNodeName
+	case Common:
+		return ccSrvCommonNodeName
+
+	}
+	return ""
+}
+
+// SvrModuleInfo service module information
+type SvrModuleInfo struct {
+	Name  string
+	Layer Layer
 }
 
 // cc functionality define
