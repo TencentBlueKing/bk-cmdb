@@ -39,7 +39,7 @@ func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]
 
 	if !ret.Result {
 		blog.Errorf("rid: %s list process instance with procID: %d failed, err: %v", kit.Rid, procIDs, ret.ErrMsg)
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	processes := make([]metadata.Process, 0)
