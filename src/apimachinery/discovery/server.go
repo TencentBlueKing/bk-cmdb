@@ -86,17 +86,17 @@ func (s *server) IsMaster(strAddrs string) bool {
 }
 
 func (s *server) run() {
-	blog.Infof("start to discover cc component from zk, path:[%s].", s.path)
+	blog.V(5).Infof("start to discover cc component from zk, path:[%s].", s.path)
 	go func() {
 		for svr := range s.discoverChan {
-			blog.Warnf("received one zk event from path %s.", s.path)
+			blog.V(5).Infof("received one zk event from path %s, server:%v.", s.path, svr.Server)
 			if svr.Err != nil {
 				blog.Errorf("get zk event with error about path[%s]. err: %v", s.path, svr.Err)
 				continue
 			}
 
 			if len(svr.Server) <= 0 {
-				blog.Warnf("get zk event with 0 instance with path[%s], reset its servers", s.path)
+				blog.V(6).Infof("get zk event with 0 instance with path[%s], reset its servers", s.path)
 				s.resetServer()
 				continue
 			}
