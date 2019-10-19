@@ -93,7 +93,7 @@ func (s *Service) checkConf() error {
 		return fmt.Errorf("ping regdiscv [%s] failed: %v", s.regdiscv, err)
 	}
 
-	path := fmt.Sprintf("%s/%s", types.CCSvrConfBasePath, types.CCModuleDataCollection.Layer.String(), types.CCModuleDataCollection.Name)
+	path := fmt.Sprintf("%s/%s", types.CCSvrConfBasePath, types.CCModuleDataCollection.String())
 	strConf, err := client.Client().Get(path)
 	if err != nil {
 		return fmt.Errorf("get path [%s] from regdiscv [%s] failed: %v", path, s.regdiscv, err)

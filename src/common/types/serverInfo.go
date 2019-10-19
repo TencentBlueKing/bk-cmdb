@@ -128,6 +128,10 @@ type SvrModuleInfo struct {
 	Layer Layer
 }
 
+func (smi *SvrModuleInfo) String() string {
+	return smi.Layer.String() + "/" + smi.Name
+}
+
 // cc functionality define
 const (
 	CCFunctionalityServicediscover = "servicediscover"

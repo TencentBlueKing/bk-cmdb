@@ -58,7 +58,7 @@ func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 	// 根据节点前缀发下节点下面的服务， 这样保证依赖的服务可以自动发现，无需配置。
 	currSvrComponent := common.GetIdentification()
 	for _, component := range types.LayerModuleMap[currSvrComponent.Layer] {
-		path := fmt.Sprintf("%s/%s/%s", types.CCSvrBasePath, component.Layer.String(), component.Name)
+		path := fmt.Sprintf("%s/%s", types.CCSvrBasePath, component.String())
 		svr, err := newServerDiscover(disc, path, component.Name)
 		if err != nil {
 			return nil, fmt.Errorf("discover %s failed, err: %v", component, err)
@@ -72,7 +72,7 @@ func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 
 	//  如果当前服务不是标准服务，发现自己的服务其他节点
 	if strings.HasPrefix(currSvrComponent.Name, types.CC_DISCOVERY_PREFIX) {
-		path := fmt.Sprintf("%s/%s/%s", types.CCSvrBasePath, currSvrComponent.Layer.String(), currSvrComponent.Name)
+		path := fmt.Sprintf("%s/%s", types.CCSvrBasePath, currSvrComponent.String())
 		svr, err := newServerDiscover(disc, path, currSvrComponent.Name)
 		if err != nil {
 			return nil, fmt.Errorf("discover %s failed, err: %v", currSvrComponent, err)
