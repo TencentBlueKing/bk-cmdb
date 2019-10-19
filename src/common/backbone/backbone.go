@@ -77,7 +77,8 @@ func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discove
 	if err != nil {
 		return nil, fmt.Errorf("new api machinery failed, err: %v", err)
 	}
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, common.GetIdentification(), srvInfo.IP)
+	srvModuleInfo := common.GetIdentification()
+	regPath := fmt.Sprintf("%s/%s/%s/%s", types.CC_SERV_BASEPATH, srvModuleInfo.Layer, srvModuleInfo.Name, srvInfo.IP)
 
 	bonC := &Config{
 		RegisterPath: regPath,
@@ -111,7 +112,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, err
 	}
 
-	metricService := metrics.NewService(metrics.Config{ProcessName: common.GetIdentification(), ProcessInstance: input.SrvInfo.Instance()})
+	metricService := metrics.NewService(metrics.Config{ProcessName: common.GetIdentificationName(), ProcessInstance: input.SrvInfo.Instance()})
 
 	common.SetServerInfo(input.SrvInfo)
 	client, err := newSvcManagerClient(ctx, input.Regdiscv)
@@ -153,7 +154,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		OnErrorUpdate:    engine.onErrorUpdate,
 	}
 
-	err = cc.NewConfigCenter(ctx, client, common.GetIdentification(), input.ConfigPath, handler)
+	err = cc.NewConfigCenter(ctx, client, common.GetIdentificationName(), input.ConfigPath, handler)
 	if err != nil {
 		return nil, fmt.Errorf("new config center failed, err: %v", err)
 	}
