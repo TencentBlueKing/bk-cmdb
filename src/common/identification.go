@@ -16,17 +16,24 @@ import (
 	"configcenter/src/common/types"
 )
 
-var identification string = "unknown"
+var identification types.SvrModuleInfo = types.SvrModuleInfo{Name: "unknown"}
 var server *types.ServerInfo
 
-func SetIdentification(id string) {
-	if identification == "unknown" {
-		identification = id
+func SetIdentification(svrInfo types.SvrModuleInfo) {
+	if identification.Name == "unknown" {
+		identification.Name = svrInfo.Name
+		identification.Layer = svrInfo.Layer
+		return
 	}
+	panic("repeat settings")
 }
 
-func GetIdentification() string {
+func GetIdentification() types.SvrModuleInfo {
 	return identification
+}
+
+func GetIdentificationName() string {
+	return identification.Name
 }
 
 // SetServerInfo Information about the current process in service governance
