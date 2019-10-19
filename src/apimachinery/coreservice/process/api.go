@@ -39,7 +39,7 @@ func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, cate
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -61,7 +61,7 @@ func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categor
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -83,7 +83,7 @@ func (p *process) GetDefaultServiceCategory(ctx context.Context, h http.Header) 
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -106,7 +106,7 @@ func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, cate
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -128,7 +128,7 @@ func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, cate
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+		return errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -151,7 +151,7 @@ func (p *process) ListServiceCategories(ctx context.Context, h http.Header, opti
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -177,7 +177,7 @@ func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, temp
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -199,7 +199,7 @@ func (p *process) GetServiceTemplateDetail(ctx context.Context, h http.Header, t
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -221,7 +221,7 @@ func (p *process) GetServiceTemplate(ctx context.Context, h http.Header, templat
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -244,7 +244,7 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -266,7 +266,7 @@ func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, temp
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+		return errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -289,7 +289,7 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, optio
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -312,7 +312,7 @@ func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, temp
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -334,7 +334,7 @@ func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templat
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -357,7 +357,7 @@ func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, temp
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -379,7 +379,7 @@ func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, temp
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+		return errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -406,7 +406,7 @@ func (p *process) DeleteProcessTemplateBatch(ctx context.Context, h http.Header,
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+		return errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -429,7 +429,7 @@ func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, optio
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -455,7 +455,7 @@ func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, inst
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -477,7 +477,7 @@ func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanc
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -500,7 +500,7 @@ func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, inst
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -523,7 +523,7 @@ func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, opti
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+		return errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -546,7 +546,7 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -569,7 +569,7 @@ func (p *process) ListServiceInstanceDetail(ctx context.Context, h http.Header, 
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -595,7 +595,7 @@ func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Head
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -617,7 +617,7 @@ func (p *process) GetProcessInstanceRelation(ctx context.Context, h http.Header,
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -640,7 +640,7 @@ func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Head
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -663,7 +663,7 @@ func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Head
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+		return errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -686,7 +686,7 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -709,7 +709,7 @@ func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.He
 		return emptyInfo, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return emptyInfo, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return emptyInfo, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return ret.Data, nil
@@ -731,7 +731,7 @@ func (p *process) RemoveTemplateBindingOnModule(ctx context.Context, h http.Head
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return nil, nil
@@ -753,7 +753,7 @@ func (p *process) ReconstructServiceInstanceName(ctx context.Context, h http.Hea
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+		return errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -776,7 +776,7 @@ func (p *process) GetProc2Module(ctx context.Context, h http.Header, option meta
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return ret.Data, nil

@@ -440,7 +440,7 @@ func (h *host) ListHosts(ctx context.Context, header http.Header, option metadat
 		return result.Data, err
 	}
 	if result.Code > 0 || result.Result == false {
-		return result.Data, errors.NewCCError(result.Code, result.ErrMsg)
+		return result.Data, errors.New(result.Code, result.ErrMsg)
 	}
 	return result.Data, nil
 }
