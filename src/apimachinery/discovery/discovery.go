@@ -54,32 +54,31 @@ func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 	d := &discover{
 		servers: make(map[string]*server),
 	}
-	for component := range types.AllModule {
-		if component == types.CC_MODULE_WEBSERVER {
-			continue
-		}
-		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
-		svr, err := newServerDiscover(disc, path, component)
+
+	// 根据节点前缀发下节点下面的服务， 这样保证依赖的服务可以自动发现，无需配置。
+	currSvrComponent := common.GetIdentification()
+	for _, component := range types.LayerModuleMap[currSvrComponent.Layer] {
+		path := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, component.Layer.String(), component.Name)
+		svr, err := newServerDiscover(disc, path, component.Name)
 		if err != nil {
 			return nil, fmt.Errorf("discover %s failed, err: %v", component, err)
 		}
 
-		d.servers[component] = svr
+		d.servers[component.Name] = svr
 	}
 	// 如果要支持第三方服务自动发现，
 	// 需要watch  types.CC_SERV_BASEPATH 节点。发现有新的节点加入，
-	//  对改节点执行newServerDiscover 方法。 这个操作d 对象需要加锁
+	//  对改节点执行newServerDiscover 方法。 这个操作对象需要加锁
 
 	//  如果当前服务不是标准服务，发现自己的服务其他节点
-	component := common.GetIdentification()
-	if strings.HasPrefix(common.GetIdentification(), types.CC_DISCOVERY_PREFIX) {
-		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
-		svr, err := newServerDiscover(disc, path, component)
+	if strings.HasPrefix(currSvrComponent.Name, types.CC_DISCOVERY_PREFIX) {
+		path := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, currSvrComponent.Layer.String(), currSvrComponent.Name)
+		svr, err := newServerDiscover(disc, path, currSvrComponent.Name)
 		if err != nil {
-			return nil, fmt.Errorf("discover %s failed, err: %v", component, err)
+			return nil, fmt.Errorf("discover %s failed, err: %v", currSvrComponent, err)
 		}
 
-		d.servers[component] = svr
+		d.servers[currSvrComponent.Name] = svr
 
 	}
 
@@ -91,54 +90,54 @@ type discover struct {
 }
 
 func (d *discover) ApiServer() Interface {
-	return d.servers[types.CC_MODULE_APISERVER]
+	return d.servers[types.CCModuleAPIServer.Name]
 }
 
 func (d *discover) MigrateServer() Interface {
-	return d.servers[types.CC_MODULE_MIGRATE]
+	return d.servers[types.CCModuleMigrate.Name]
 }
 
 func (d *discover) EventServer() Interface {
-	return d.servers[types.CC_MODULE_EVENTSERVER]
+	return d.servers[types.CCModuleEventServer.Name]
 }
 
 func (d *discover) HostServer() Interface {
-	return d.servers[types.CC_MODULE_HOST]
+	return d.servers[types.CCModuleHost.Name]
 }
 
 func (d *discover) ProcServer() Interface {
-	return d.servers[types.CC_MODULE_PROC]
+	return d.servers[types.CCModuleProc.Name]
 }
 
 func (d *discover) TopoServer() Interface {
-	return d.servers[types.CC_MODULE_TOPO]
+	return d.servers[types.CCModuleTop.Name]
 }
 
 func (d *discover) DataCollect() Interface {
-	return d.servers[types.CC_MODULE_DATACOLLECTION]
+	return d.servers[types.CCModuleDataCollection.Name]
 }
 
 func (d *discover) GseProcServer() Interface {
-	return d.servers[types.GSE_MODULE_PROCSERVER]
+	return d.servers[types.GSEModuleProcServer.Name]
 }
 
 func (d *discover) CoreService() Interface {
-	return d.servers[types.CC_MODULE_CORESERVICE]
+	return d.servers[types.CCModuleCoerService.Name]
 }
 
 func (d *discover) TMServer() Interface {
-	return d.servers[types.CC_MODULE_TXC]
+	return d.servers[types.CCModuleTXC.Name]
 }
 
 func (d *discover) OperationServer() Interface {
-	return d.servers[types.CC_MODULE_OPERATION]
+	return d.servers[types.CCModuleOperation.Name]
 }
 
 func (d *discover) TaskServer() Interface {
-	return d.servers[types.CC_MODULE_TASK]
+	return d.servers[types.CCModuleTask.Name]
 }
 
 // IsMaster check whether current is master
 func (d *discover) IsMaster() bool {
-	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().Address())
+	return d.servers[common.GetIdentificationName()].IsMaster(common.GetServerInfo().Address())
 }
