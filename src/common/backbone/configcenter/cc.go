@@ -82,18 +82,18 @@ type CC struct {
 
 func (c *CC) run() error {
 
-	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
+	procPath := fmt.Sprintf("%s/%s", types.CCSvrConfBasePath, c.procName)
 	procEvent, err := c.disc.Discover(procPath)
 	if err != nil {
 		return err
 	}
 
-	langEvent, err := c.disc.Discover(types.CC_SERVLANG_BASEPATH)
+	langEvent, err := c.disc.Discover(types.CCSvrLangBasePath)
 	if err != nil {
 		return err
 	}
 
-	errEvent, err := c.disc.Discover(types.CC_SERVERROR_BASEPATH)
+	errEvent, err := c.disc.Discover(types.CCSvrErrorBasePath)
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func (c *CC) sync() {
 
 func (c *CC) syncProc() {
 	blog.V(5).Infof("start sync proc config from config center.")
-	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
+	procPath := fmt.Sprintf("%s/%s", types.CCSvrConfBasePath, c.procName)
 	data, err := c.disc.Read(procPath)
 	if err != nil {
 		blog.Errorf("sync process config failed, node: %s, err: %v", procPath, err)
@@ -238,9 +238,9 @@ func (c *CC) syncProc() {
 
 func (c *CC) syncLang() {
 	blog.V(5).Infof("start sync lang config from config center.")
-	data, err := c.disc.Read(types.CC_SERVLANG_BASEPATH)
+	data, err := c.disc.Read(types.CCSvrLangBasePath)
 	if err != nil {
-		blog.Errorf("sync process config failed, node: %s, err: %v", types.CC_SERVLANG_BASEPATH, err)
+		blog.Errorf("sync process config failed, node: %s, err: %v", types.CCSvrLangBasePath, err)
 		return
 	}
 
@@ -268,9 +268,9 @@ func (c *CC) syncLang() {
 
 func (c *CC) syncErr() {
 	blog.V(5).Infof("start sync error config from config center.")
-	data, err := c.disc.Read(types.CC_SERVERROR_BASEPATH)
+	data, err := c.disc.Read(types.CCSvrErrorBasePath)
 	if err != nil {
-		blog.Errorf("sync process config failed, node: %s, err: %v", types.CC_SERVERROR_BASEPATH, err)
+		blog.Errorf("sync process config failed, node: %s, err: %v", types.CCSvrErrorBasePath, err)
 		return
 	}
 

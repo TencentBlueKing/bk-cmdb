@@ -76,7 +76,7 @@ func (r *RegDiscover) Start() error {
 
 	// here: discover other services
 	// cc api server
-	apiPath := types.CC_SERV_BASEPATH + "/" + types.CCModuleAPIServer
+	apiPath := types.CCSvrBasePath + "/" + types.CCModuleAPIServer.Layer.String() + "/" + types.CCModuleAPIServer.Name
 	apiEvent, err := r.rd.DiscoverService(apiPath)
 	if err != nil {
 		blog.Errorf("fail to register discover for proc server. err:%s", err.Error())
@@ -145,7 +145,7 @@ func (r *RegDiscover) registerItself() error {
 		return err
 	}
 
-	path := types.CC_SERV_BASEPATH + "/framework/" + r.moduleName + "/" + r.ip
+	path := types.CCSvrBasePath + "/framework/" + r.moduleName + "/" + r.ip
 
 	return r.rd.RegisterAndWatchService(path, data)
 }

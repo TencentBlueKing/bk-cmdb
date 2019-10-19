@@ -56,21 +56,21 @@ func (cc *ConfCenter) Start(confDir, errRes, languageRes string) error {
 		blog.Errorf("fail to write configures to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("write all configures resource to center %v success", types.CC_SERVCONF_BASEPATH)
+		blog.Infof("write all configures resource to center %v success", types.CCSvrConfBasePath)
 	}
 
 	if err := cc.writeErrorRes2Center(errRes); err != nil {
 		blog.Errorf("fail to write error resource to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("write error resource to center %v success", types.CC_SERVERROR_BASEPATH)
+		blog.Infof("write error resource to center %v success", types.CCSvrErrorBasePath)
 	}
 
 	if err := cc.writeLanguageRes2Center(languageRes); err != nil {
 		blog.Errorf("fail to write language packages to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("write language packages to center %v success", types.CC_SERVLANG_BASEPATH)
+		blog.Infof("write language packages to center %v success", types.CCSvrLangBasePath)
 	}
 
 	// TODO discover config file change
@@ -100,7 +100,7 @@ func (cc *ConfCenter) writeErrorRes2Center(errorres string) error {
 	}
 
 	data, err := json.Marshal(errcode)
-	key := types.CC_SERVERROR_BASEPATH
+	key := types.CCSvrErrorBasePath
 	return cc.confRegDiscv.Write(key, data)
 }
 
@@ -125,7 +125,7 @@ func (cc *ConfCenter) writeLanguageRes2Center(languageres string) error {
 	if err != nil {
 		return err
 	}
-	key := types.CC_SERVLANG_BASEPATH
+	key := types.CCSvrLangBasePath
 	return cc.confRegDiscv.Write(key, data)
 }
 
@@ -168,7 +168,7 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 	for _, moduleName := range modules {
 
 		filePath := filepath.Join(confRootPath, moduleName+confFileSuffix)
-		key := types.CC_SERVCONF_BASEPATH + "/" + moduleName
+		key := types.CCSvrConfBasePath + "/" + moduleName
 		if err := cc.writeConfigure(filePath, key); err != nil {
 			blog.Warnf("fail to write configure of module(%s) into center", moduleName)
 			continue

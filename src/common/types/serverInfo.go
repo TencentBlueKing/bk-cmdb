@@ -18,21 +18,21 @@ import (
 
 // zk path
 const (
-	CC_SERV_BASEPATH      = "/cc/services/endpoints"
-	CC_SERVCONF_BASEPATH  = "/cc/services/config"
-	CC_SERVERROR_BASEPATH = "/cc/services/errors"
-	CC_SERVLANG_BASEPATH  = "/cc/services/language"
+	CCSvrBasePath      = "/cc/services/endpoints"
+	CCSvrConfBasePath  = "/cc/services/config"
+	CCSvrErrorBasePath = "/cc/services/errors"
+	CCSvrLangBasePath  = "/cc/services/language"
 
 	ccSrvUINodeName       = "ui"
 	ccSrvAPINodeName      = "api"
 	ccSrvSenceNodeName    = "sence"
 	ccSrvResourceNodeName = "sence"
 	ccSrvCommonNodeName   = "common"
-	CCSvrUIBasePath       = CC_SERV_BASEPATH + "/" + ccSrvUINodeName
-	CCSvrAPIBasePath      = CC_SERV_BASEPATH + "/" + ccSrvAPINodeName
-	CCSvrSceneBasePath    = CC_SERV_BASEPATH + "/" + ccSrvSenceNodeName
-	CCSvrResourceBasePath = CC_SERV_BASEPATH + "/" + ccSrvResourceNodeName
-	CCSvrCommonBasePath   = CC_SERV_BASEPATH + "/" + ccSrvCommonNodeName
+	CCSvrUIBasePath       = CCSvrBasePath + "/" + ccSrvUINodeName
+	CCSvrAPIBasePath      = CCSvrBasePath + "/" + ccSrvAPINodeName
+	CCSvrSceneBasePath    = CCSvrBasePath + "/" + ccSrvSenceNodeName
+	CCSvrResourceBasePath = CCSvrBasePath + "/" + ccSrvResourceNodeName
+	CCSvrCommonBasePath   = CCSvrBasePath + "/" + ccSrvCommonNodeName
 
 	CC_DISCOVERY_PREFIX = "cc_"
 )

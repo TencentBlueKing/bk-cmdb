@@ -78,7 +78,7 @@ func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discove
 		return nil, fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 	srvModuleInfo := common.GetIdentification()
-	regPath := fmt.Sprintf("%s/%s/%s/%s", types.CC_SERV_BASEPATH, srvModuleInfo.Layer, srvModuleInfo.Name, srvInfo.IP)
+	regPath := fmt.Sprintf("%s/%s/%s/%s", types.CCSvrBasePath, srvModuleInfo.Layer.String(), srvModuleInfo.Name, srvInfo.IP)
 
 	bonC := &Config{
 		RegisterPath: regPath,
