@@ -139,7 +139,7 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 			ErrMsg: errMsg,
 			Code:   code,
 		},
-		Data: "",
+		Data: nil,
 	}
 
 	if err := c.resp.WriteAsJson(body); err != nil {
