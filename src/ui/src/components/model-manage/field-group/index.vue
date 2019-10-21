@@ -13,9 +13,9 @@
                         <div class="header-title fl">
                             <div class="group-name">
                                 {{group.info['bk_group_name']}}
-                                <span v-if="!isAdminView && group.info['bk_isdefault']">（{{$t('内置组不支持修改，排序')}}）</span>
+                                <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('内置组不支持修改，排序')}}）</span>
                             </div>
-                            <div class="title-icon-btn">
+                            <div class="title-icon-btn" v-if="!(!isAdminView && isBuiltInGroup(group.info))">
                                 <i class="title-icon icon icon-cc-edit"
                                     :class="{ authDisabled: !updateAuth, disabled: !isEditable(group.info) }"
                                     v-cursor="{
@@ -110,6 +110,7 @@
                                 <i class="bk-icon icon-plus"></i>
                                 {{$t('添加')}}
                             </li>
+                            <li class="property-empty" v-if="!isEditable(group.info) && !group.properties.length">{{$t('暂无字段')}}</li>
                         </vue-draggable>
                     </template>
                 </cmdb-collapse>
@@ -360,6 +361,12 @@
             ...mapActions('objectModelProperty', [
                 'searchObjectAttribute'
             ]),
+            isBuiltInGroup (group) {
+                if (group) {
+                    return !(group.metadata && group.metadata.label && group.metadata.label.bk_biz_id)
+                }
+                return false
+            },
             isFieldEditable (item) {
                 if (item.ispre || this.isReadOnly || !this.updateAuth) {
                     return false
@@ -1041,6 +1048,16 @@
                 color: #3a84ff;
                 border-color: #3a84ff;
             }
+        }
+        .property-empty {
+            width: calc(100% - 10px);
+            height: 60px;
+            line-height: 60px;
+            border: 1px dashed #dde4eb;
+            text-align: center;
+            font-size: 14px;
+            color: #aaaaaa;
+            margin: 10px 0 10px 5px;
         }
     }
     .add-group {

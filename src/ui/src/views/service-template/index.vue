@@ -195,7 +195,7 @@
             },
             getTemplateData () {
                 return this.searchServiceTemplate({
-                    params: this.$injectMetadata(this.params),
+                    params: this.$injectMetadata(this.params, { injectBizId: true }),
                     config: {
                         requestId: 'get_proc_service_template',
                         cancelPrevious: true
@@ -204,7 +204,7 @@
             },
             async getServiceClassification () {
                 const res = await this.searchServiceCategory({
-                    params: this.$injectMetadata(),
+                    params: this.$injectMetadata({}, { injectBizId: true }),
                     config: {
                         requestId: 'get_proc_services_categories'
                     }
@@ -246,6 +246,8 @@
                             params: {
                                 data: this.$injectMetadata({
                                     service_template_id: template.id
+                                }, {
+                                    injectBizId: true
                                 })
                             },
                             config: {

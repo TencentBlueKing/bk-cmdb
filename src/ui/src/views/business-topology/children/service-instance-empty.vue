@@ -120,7 +120,7 @@
                     const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
                         params: this.$injectMetadata({
                             service_template_id: this.moduleInstance.service_template_id
-                        }),
+                        }, { injectBizId: true }),
                         config: {
                             requestId: 'getBatchProcessTemplate',
                             cancelPrevious: true
@@ -168,7 +168,7 @@
                                     })
                                 }
                             })
-                        })
+                        }, { injectBizId: true })
                     })
                     if (this.withTemplate) {
                         this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count + addNum

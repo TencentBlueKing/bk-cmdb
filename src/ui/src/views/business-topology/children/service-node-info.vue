@@ -36,7 +36,7 @@
                         auth: [$OPERATION.D_TOPO]
                     }">
                     <bk-button class="btn-delete"
-                        :disabled="!$isAuthorized($OPERATION.D_TOPO)"
+                        :disabled="!$isAuthorized($OPERATION.D_TOPO) || moduleFromSetTemplate"
                         @click="handleDelete">
                         {{$t('删除节点')}}
                     </bk-button>
@@ -161,6 +161,9 @@
             },
             flattenedInstance () {
                 return this.$tools.flattenItem(this.properties, this.instance)
+            },
+            moduleFromSetTemplate () {
+                return this.isModuleNode && !!this.selectedNode.parent.data.set_template_id
             }
         },
         watch: {
@@ -420,7 +423,7 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                            params: this.$injectMetadata()
+                            params: this.$injectMetadata({}, { injectBizId: true })
                         })
                         const categories = this.collectServiceCategories(data.info)
                         this.$store.commit('businessTopology/setCategories', {
@@ -625,7 +628,7 @@
                                 requestId: 'removeServiceTemplate',
                                 data: this.$injectMetadata({
                                     bk_module_id: this.instance.bk_module_id
-                                })
+                                }, { injectBizId: true })
                             }
                         })
                         this.selectedNode.data.service_template_id = 0
@@ -725,7 +728,7 @@
     }
     .btn-delete{
         min-width: 76px;
-        &:hover {
+        &:not(.is-disabled):hover {
             color: #ff5656;
             border-color: #ff5656;
         }
