@@ -4,7 +4,7 @@
             <textarea ref="textarea"
                 v-model="localValue"
                 :rows="rows"
-                :placeholder="$t('请输入关键词')"
+                :placeholder="placeholder || $t('请输入关键词')"
                 @focus="handleFocus"
                 @blur="handleBlur"
                 @input="setValue"
@@ -24,6 +24,10 @@
         name: 'cmdb-search-input',
         props: {
             value: {
+                type: String,
+                default: ''
+            },
+            placeholder: {
                 type: String,
                 default: ''
             }

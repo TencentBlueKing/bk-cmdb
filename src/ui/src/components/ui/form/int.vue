@@ -1,7 +1,7 @@
 <template>
     <div class="cmdb-form form-int">
         <input class="cmdb-form-input form-int-input" type="text"
-            :placeholder="$t('Form[\'请输入数字\']')"
+            :placeholder="placeholder || $t('Form[\'请输入数字\']')"
             :value="value"
             :maxlength="maxlength"
             :disabled="disabled"
@@ -27,6 +27,10 @@
             maxlength: {
                 type: Number,
                 default: 11
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {

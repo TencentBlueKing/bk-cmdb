@@ -23,38 +23,48 @@
                     @click="filterConfig.show = true">
                 </i>
             </div>
-            <div class="filter-group"
-                v-for="(property, index) in customFieldProperties"
-                :key="property['bk_property_id']">
-                <label class="filter-label">{{getFilterLabel(property)}}</label>
-                <div class="filter-field clearfix">
-                    <filter-field-operator class="filter-field-operator fl"
-                        v-show="!['date', 'time'].includes(property['bk_property_type'])"
-                        :type="getOperatorType(property)"
-                        v-model="condition[property['bk_obj_id']][property['bk_property_id']]['operator']">
-                    </filter-field-operator>
-                    <cmdb-form-enum class="filter-field-value fr"
-                        v-if="property['bk_property_type'] === 'enum'"
-                        :allow-clear="true"
-                        :options="property.option || []"
-                        v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
-                    </cmdb-form-enum>
-                    <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fr"
-                        v-else-if="property['bk_property_type'] === 'bool'"
-                        v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
-                    </cmdb-form-bool-input>
-                    <cmdb-search-input class="filter-field-value fr"
-                        v-else-if="['singlechar', 'longchar'].includes(property.bk_property_type)"
-                        v-model="condition[property.bk_obj_id][property.bk_property_id].value">
-                    </cmdb-search-input>
-                    <component class="filter-field-value fr" :class="`filter-field-${property['bk_property_type']}`"
-                        v-else
-                        :is="`cmdb-form-${property['bk_property_type']}`"
-                        v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
-                    </component>
+            <div v-click-outside="handleGroupOutsideClick">
+                <div class="filter-group"
+                    v-for="(property, index) in customFieldProperties"
+                    :key="property['bk_property_id']"
+                    ref="filterGroup"
+                    @click="handleGroupClick($event)">
+                    <label class="filter-label">{{getFilterLabel(property)}}</label>
+                    <div class="filter-field clearfix">
+                        <filter-field-operator class="filter-field-operator fl"
+                            v-show="!['date', 'time'].includes(property['bk_property_type'])"
+                            :type="getOperatorType(property)"
+                            v-model="condition[property['bk_obj_id']][property['bk_property_id']]['operator']">
+                        </filter-field-operator>
+                        <cmdb-form-enum class="filter-field-value fr"
+                            v-if="property['bk_property_type'] === 'enum'"
+                            :allow-clear="true"
+                            :options="property.option || []"
+                            :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                            v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
+                        </cmdb-form-enum>
+                        <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fr"
+                            v-else-if="property['bk_property_type'] === 'bool'"
+                            v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']"
+                            :placeholder="$t('请输入xx', { name: property.bk_property_name })">
+                        </cmdb-form-bool-input>
+                        <cmdb-search-input class="filter-field-value fr"
+                            v-else-if="['singlechar', 'longchar'].includes(property.bk_property_type)"
+                            v-model="condition[property.bk_obj_id][property.bk_property_id].value"
+                            :placeholder="$t('请输入xx', { name: property.bk_property_name })">
+                        </cmdb-search-input>
+                        <component class="filter-field-value fr" :class="`filter-field-${property['bk_property_type']}`"
+                            v-else
+                            :is="`cmdb-form-${property['bk_property_type']}`"
+                            :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                            v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
+                        </component>
+                    </div>
                 </div>
             </div>
-            <div class="filter-button clearfix" :class="{sticky: layout.scroll}">
+            <div class="filter-button clearfix" :class="{sticky: layout.scroll}" ref="filterButton"
+                v-click-outside="handldeButtonOutsideClick"
+                @click="handleButtonClick">
                 <bk-button type="primary" @click="refresh" :disabled="$loading()">{{$t('Common["查询"]')}}</bk-button>
                 <bk-button type="default" @click="reset">{{$t('Common["清空"]')}}</bk-button>
                 <bk-button class="collection-button fr" type="default" v-if="activeSetting.includes('collection')"
@@ -505,6 +515,23 @@
                     const $filterLayout = this.$refs.filterLayout
                     this.layout.scroll = $filterLayout.offsetHeight !== $filterLayout.scrollHeight
                 })
+            },
+            handleGroupClick (event) {
+                this.$refs.filterGroup.forEach(el => {
+                    el.style.zIndex = 'auto'
+                })
+                event.currentTarget.style.zIndex = 200
+            },
+            handleGroupOutsideClick () {
+                this.$refs.filterGroup.forEach(el => {
+                    el.style.zIndex = 'auto'
+                })
+            },
+            handleButtonClick () {
+                this.$refs.filterButton.style.zIndex = 201
+            },
+            handldeButtonOutsideClick () {
+                this.$refs.filterButton.style.zIndex = 199
             }
         }
     }
@@ -577,16 +604,17 @@
         font-size: 16px;
     }
     .filter-button{
-        position: sticky;
-        bottom: 0;
-        left: 0;
+        position: relative;
         width: 100%;
         padding: 20px 20px 0;
         background-color: #fff;
         &.sticky {
+            position: sticky;
+            bottom: 0;
+            left: 0;
             border-top: 1px solid $cmdbBorderColor;
             padding: 10px 20px 0;
-            z-index: 101;
+            z-index: 201;
         }
         .collection-button.collecting {
             color: #ffb400;

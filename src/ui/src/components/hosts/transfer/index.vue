@@ -109,7 +109,7 @@
             },
             showIncrementOption () {
                 const hasSpecialModule = this.selectedModuleStates.some(({node}) => node['bk_inst_id'] === 'source' || [1, 2].includes(node.default))
-                return !!this.selectedModuleStates.length && !hasSpecialModule
+                return !!this.selectedModuleStates.length && !hasSpecialModule && this.selectedHosts.length > 1
             },
             loading () {
                 const requestIds = [
