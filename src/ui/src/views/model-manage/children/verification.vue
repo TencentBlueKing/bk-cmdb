@@ -162,7 +162,7 @@
             },
             deleteVerification (verification) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除唯一校验？"]', this.getRuleName(verification.keys), {name: this.getRuleName(verification.keys)}),
+                    title: this.$t('ModelManagement["确定删除唯一校验"]', {name: this.getRuleName(verification.keys)}),
                     confirmFn: async () => {
                         await this.deleteObjectUniqueConstraints({
                             objId: verification['bk_obj_id'],

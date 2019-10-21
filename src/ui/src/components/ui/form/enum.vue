@@ -5,7 +5,8 @@
             :list="options"
             :disabled="disabled"
             :allow-clear="allowClear"
-            :selected.sync="selected">
+            :selected.sync="selected"
+            :placeholder="placeholder">
         </bk-selector>
     </div>
 </template>
@@ -30,6 +31,10 @@
                 default () {
                     return []
                 }
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {

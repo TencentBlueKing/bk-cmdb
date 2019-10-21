@@ -264,6 +264,21 @@ export function clone (object) {
     return JSON.parse(JSON.stringify(object))
 }
 
+export function transformHostSearchParams (params) {
+    const transformedParams = clone(params)
+    const conditions = transformedParams.condition
+    conditions.forEach(item => {
+        item.condition.forEach(field => {
+            const operator = field.operator
+            const value = field.value
+            if (['$in', '$multilike'].includes(operator) && !Array.isArray(value)) {
+                field.value = value.split('\n').filter(str => str.trim().length).map(str => str.trim())
+            }
+        })
+    })
+    return transformedParams
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -278,5 +293,6 @@ export default {
     flatternHostItem,
     formatTime,
     clone,
-    getInstFormValues
+    getInstFormValues,
+    transformHostSearchParams
 }
