@@ -173,6 +173,8 @@ func (s *Service) initObject() {
 	s.addAction(http.MethodGet, "/object/statistics", s.GetModelStatistics, nil)
 
 }
+
+// 内置权限方案: 用户组
 func (s *Service) initPrivilegeGroup() {
 	s.addAction(http.MethodPost, "/topo/privilege/group/{bk_supplier_account}", s.CreateUserGroup, nil)
 	s.addAction(http.MethodDelete, "/topo/privilege/group/{bk_supplier_account}/{group_id}", s.DeleteUserGroup, nil)
@@ -180,14 +182,16 @@ func (s *Service) initPrivilegeGroup() {
 	s.addAction(http.MethodPost, "/topo/privilege/group/{bk_supplier_account}/search", s.SearchUserGroup, nil)
 }
 
+// 内置权限方案: 角色
 func (s *Service) initPrivilegeRole() {
 	s.addAction(http.MethodPost, "/topo/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.CreatePrivilege, s.ParseCreateRolePrivilegeOriginData)
 	s.addAction(http.MethodGet, "/topo/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.GetPrivilege, nil)
 }
 
+// 内置权限方案: 权限
 func (s *Service) initPrivilege() {
-	s.addAction(http.MethodPost, "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", s.UpdateUserGroupPrivilege, nil)
 	s.addAction(http.MethodGet, "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", s.GetUserGroupPrivilege, nil)
+	s.addAction(http.MethodPost, "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", s.UpdateUserGroupPrivilege, nil)
 	s.addAction(http.MethodGet, "/topo/privilege/user/detail/{bk_supplier_account}/{user_name}", s.GetUserPrivilege, nil)
 }
 
@@ -199,6 +203,7 @@ func (s *Service) initIdentifier() {
 	s.addAction(http.MethodPost, "/identifier/{obj_type}/search", s.SearchIdentifier, s.ParseSearchIdentifierOriginData)
 }
 
+// 全文索引
 func (s *Service) initFind() {
 	s.addAction(http.MethodPost, "/find/full_text", s.FullTextFind, nil)
 }
