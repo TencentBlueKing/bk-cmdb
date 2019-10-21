@@ -391,7 +391,7 @@
                         params: this.$injectMetadata({
                             bk_module_id: this.currentNode.data.bk_inst_id,
                             service_template_id: this.withTemplate
-                        })
+                        }, { injectBizId: true })
                     }).then(res => {
                         this.topoStatus = res.has_difference
                     })
@@ -415,7 +415,7 @@
                                 ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
                                 : '',
                             selectors: this.getSelectorParams()
-                        }),
+                        }, { injectBizId: true }),
                         config: {
                             requestId: 'getModuleServiceInstances',
                             cancelPrevious: true
@@ -481,7 +481,7 @@
             async getHistoryLabel () {
                 try {
                     const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
-                        params: this.$injectMetadata({}),
+                        params: this.$injectMetadata({}, { injectBizId: true }),
                         config: {
                             requestId: 'getHistoryLabel',
                             cancelPrevious: true
@@ -501,14 +501,14 @@
                             id: key
                         }
                     })
-                    if (!valueOption.length) {
-                        this.$set(this.searchSelect[1], 'disabled', true)
-                    }
-                    if (!keyOption.length) {
-                        this.$set(this.searchSelect[2], 'disabled', true)
-                    }
+                    const notRender = this.searchSelect[1].disabled
+                    this.$set(this.searchSelect[1], 'disabled', !valueOption.length)
+                    this.$set(this.searchSelect[2], 'disabled', !keyOption.length)
                     this.$set(this.searchSelect[1], 'conditions', valueOption)
                     this.$set(this.searchSelect[2], 'children', keyOption)
+                    if (notRender && this.$refs.searchSelect) {
+                        this.$refs.searchSelect.$forceUpdate()
+                    }
                 } catch (e) {
                     console.error(e)
                 }
@@ -680,14 +680,14 @@
                         processes: [{
                             process_info: values
                         }]
-                    })
+                    }, { injectBizId: true })
                 })
             },
             updateProcess (values, instance) {
                 return this.$store.dispatch('processInstance/updateServiceInstanceProcess', {
                     params: this.$injectMetadata({
                         processes: [{ ...instance, ...values }]
-                    })
+                    }, { injectBizId: true })
                 })
             },
             handleCloseProcessForm () {
@@ -765,7 +765,7 @@
                                 config: {
                                     data: this.$injectMetadata({
                                         service_instance_ids: serviceInstanceIds
-                                    }),
+                                    }, { injectBizId: true }),
                                     requestId: 'batchDeleteServiceInstance'
                                 }
                             })
@@ -851,7 +851,7 @@
                                 data: this.$injectMetadata({
                                     instance_ids: instanceIds,
                                     keys: removeKeys
-                                }),
+                                }, { injectBizId: true }),
                                 requestId: 'deleteInstanceLabel',
                                 transformData: false
                             }
@@ -867,7 +867,7 @@
                             params: this.$injectMetadata({
                                 instance_ids: serviceInstanceIds,
                                 labels: labelSet
-                            }),
+                            }, { injectBizId: true }),
                             config: {
                                 requestId: 'createInstanceLabel',
                                 transformData: false
@@ -914,7 +914,7 @@
                     const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
                         params: this.$injectMetadata({
                             service_template_id: id
-                        }),
+                        }, { injectBizId: true }),
                         config: {
                             requestId: 'getBatchProcessTemplate',
                             cancelPrevious: true
@@ -948,7 +948,7 @@
                                     })
                                 }
                             })
-                        })
+                        }, { injectBizId: true })
                     })
                     if (this.withTemplate) {
                         this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count + addNum

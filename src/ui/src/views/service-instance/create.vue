@@ -147,7 +147,7 @@
                     const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
                         params: this.$injectMetadata({
                             service_template_id: this.moduleInstance.service_template_id
-                        }),
+                        }, { injectBizId: true }),
                         config: {
                             requestId: 'getBatchProcessTemplate',
                             cancelPrevious: true
@@ -187,7 +187,7 @@
                                         })
                                     }
                                 })
-                            })
+                            }, { injectBizId: true })
                         })
                     } else {
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
@@ -204,7 +204,7 @@
                                         })
                                     }
                                 })
-                            })
+                            }, { injectBizId: true })
                         })
                     }
                     this.$success(this.$t('添加成功'))
