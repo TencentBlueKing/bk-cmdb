@@ -167,42 +167,32 @@
                     this.noInfo = true
                 }
             },
-            handleConfirmSync () {
-                this.$bkInfo({
-                    type: 'warning',
-                    title: this.$t('确定同步拓扑'),
-                    subTitle: this.isSingleSync
-                        ? this.$tc('单个集群同步提示', 1, { name: this.templateName })
-                        : this.$tc('多个集群同步提示', 1, { name: this.templateName, count: this.setInstancesId.length }),
-                    extCls: 'set-confirm-sync',
-                    confirmFn: async () => {
-                        try {
-                            await this.$store.dispatch('setSync/syncTemplateToInstances', {
-                                bizId: this.business,
-                                setTemplateId: this.setTemplateId,
-                                params: {
-                                    bk_set_ids: this.setInstancesId
-                                },
-                                config: {
-                                    requestId: 'syncTemplateToInstances'
-                                }
-                            })
-                            this.$success(this.$t('提交同步成功'))
-                            this.$router.replace({
-                                name: 'setTemplateConfig',
-                                params: {
-                                    templateId: this.setTemplateId,
-                                    mode: 'view'
-                                },
-                                query: {
-                                    tab: 'instance'
-                                }
-                            })
-                        } catch (e) {
-                            console.error(e)
+            async handleConfirmSync () {
+                try {
+                    await this.$store.dispatch('setSync/syncTemplateToInstances', {
+                        bizId: this.business,
+                        setTemplateId: this.setTemplateId,
+                        params: {
+                            bk_set_ids: this.setInstancesId
+                        },
+                        config: {
+                            requestId: 'syncTemplateToInstances'
                         }
-                    }
-                })
+                    })
+                    this.$success(this.$t('提交同步成功'))
+                    this.$router.replace({
+                        name: 'setTemplateConfig',
+                        params: {
+                            templateId: this.setTemplateId,
+                            mode: 'view'
+                        },
+                        query: {
+                            tab: 'instance'
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                }
             },
             handleExpandAll (expand) {
                 this.$refs.setInstance.forEach(instance => {
