@@ -153,7 +153,6 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 	if !auth.IsAuthed() {
 		return meta.Decision{Authorized: true}, nil
 	}
-
 	// filter out SkipAction, which set by api server to skip authorization
 	noSkipResources := make([]meta.ResourceAttribute, 0)
 	for _, resource := range a.Resources {
@@ -167,8 +166,11 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 		blog.V(5).Infof("Authorize skip. auth attribute: %+v", a)
 		return meta.Decision{Authorized: true}, nil
 	}
-
 	batchresult, err := ac.AuthorizeBatch(ctx, a.User, a.Resources...)
+	if err != nil {
+		blog.Errorf("AuthorizeBatch error. err:%s", err.Error())
+		return meta.Decision{}, err
+	}
 	noAuth := make([]string, 0)
 	for i, item := range batchresult {
 		if !item.Authorized {
@@ -901,10 +903,10 @@ func (ac *AuthCenter) GetUserGroupMembers(ctx context.Context, header http.Heade
 	return ac.authClient.GetUserGroupMembers(ctx, header, bizID, groups)
 }
 
-func (ac *AuthCenter) DeleteResources(ctx context.Context, header http.Header, scopeType string, resType ResourceTypeID) error  {
-    if !auth.IsAuthed() {
-        return errors.New("auth center not enabled")
-    }
-    
-    return ac.authClient.DeleteResources(ctx, header, scopeType, resType)
+func (ac *AuthCenter) DeleteResources(ctx context.Context, header http.Header, scopeType string, resType ResourceTypeID) error {
+	if !auth.IsAuthed() {
+		return errors.New("auth center not enabled")
+	}
+
+	return ac.authClient.DeleteResources(ctx, header, scopeType, resType)
 }
