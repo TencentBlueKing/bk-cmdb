@@ -129,6 +129,9 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 		setSyncStatus.LastTime = metadata.Time{Time: detail.LastTime}
 		setSyncStatus.TaskID = detail.TaskID
 	}
+	if setSyncStatus.Status == metadata.SyncStatusWaiting {
+		setSyncStatus.TaskID = ""
+	}
 	err = st.client.CoreService().SetTemplate().UpdateSetTemplateSyncStatus(params.Context, params.Header, setID, setSyncStatus)
 	if err != nil {
 		blog.Errorf("UpdateSetSyncStatus failed, UpdateSetTemplateSyncStatus failed, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
