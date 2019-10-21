@@ -4,7 +4,8 @@
             :searchable="true"
             :list="timezoneList"
             :disabled="disabled"
-            :selected.sync="selected">
+            :selected.sync="selected"
+            :placeholder="placeholder">
         </bk-selector>
     </div>
 </template>
@@ -20,6 +21,10 @@
             disabled: {
                 type: Boolean,
                 default: false
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {
