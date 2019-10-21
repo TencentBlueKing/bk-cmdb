@@ -517,13 +517,13 @@
                 })
             },
             handleGroupClick (event) {
-                this.$refs.filterGroup.forEach(el => {
+                this.$refs.filterGroup && this.$refs.filterGroup.forEach(el => {
                     el.style.zIndex = 'auto'
                 })
                 event.currentTarget.style.zIndex = 200
             },
             handleGroupOutsideClick () {
-                this.$refs.filterGroup.forEach(el => {
+                this.$refs.filterGroup && this.$refs.filterGroup.forEach(el => {
                     el.style.zIndex = 'auto'
                 })
             },
