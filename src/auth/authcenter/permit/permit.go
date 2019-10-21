@@ -93,6 +93,8 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 		return true
 	case rsc.Type == meta.MainlineModelTopology && IsReadAction(rsc.Action):
 		return true
+	case rsc.Type == meta.OperationStatistic && IsReadAction(rsc.Action):
+		return true
 	default:
 		return false
 	}
