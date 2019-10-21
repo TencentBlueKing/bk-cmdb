@@ -1,4 +1,5 @@
 {
+    "请输入xx": "Please enter {name}",
     "Common": {
         "logo": "en",
         "您没有当前业务的权限": "You do not have permission to the current business",
@@ -216,6 +217,7 @@
         "模块转移": "Module Transfer",
         "获取推送列表失败": "Failed to get push list",
         "编辑推送": "Edit Push",
+        "新增推送": "New Push",
         "删除推送确认": "Confirm deletion of the push with the name {name} ?",
         "删除推送成功": "Delete Push Success",
         "删除推送失败": "Delete Push Fail",

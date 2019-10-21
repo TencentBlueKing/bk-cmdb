@@ -1,13 +1,13 @@
 <template>
     <div class="form-associate-input">
-        <input class="cmdb-form-input" type="text" v-model.trim="localValue">
+        <input class="cmdb-form-input" type="text" v-model.trim="localValue" :placeholder="placeholder">
     </div>
 </template>
 
 <script>
     export default {
         name: 'cmdb-form-associate-input',
-        props: ['value'],
+        props: ['value', 'placeholder'],
         data () {
             return {
                 localValue: ''

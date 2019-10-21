@@ -5,6 +5,7 @@
             :start-date="startDate"
             :end-date="endDate"
             :disabled="disabled"
+            :placeholder="placeholder"
             @date-selected="handleDateSelected"
             @change="handleChange">
         </bk-date-picker>
@@ -30,6 +31,10 @@
             disabled: {
                 type: Boolean,
                 default: false
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {
