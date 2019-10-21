@@ -56,6 +56,18 @@ func (cli *Service) GetHostByCondition(ctx context.Context, db dal.RDB, fields [
 
 //GetObjectByCondition get object by condition
 func (cli *Service) GetObjectByCondition(ctx context.Context, db dal.RDB, defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
+	
+	// 判断是否有要根据default字段，需要国际化的内容
+	if _, ok := defaultNameLanguagePkg[objType]; ok {
+		// 大于两个字段
+		if len(fields) > 1 {
+			fields = append(fields, common.BKDefaultField)
+		} else if len(fields) == 1 && fields[0] != "" {
+			// 只有一个字段，如果字段为空白字符，则不处理
+			fields = append(fields, common.BKDefaultField)
+		}
+	}
+
 	tName := common.GetInstTableName(objType)
 	if err := db.Table(tName).Find(condition).Fields(fields...).Limit(uint64(limit)).Start(uint64(skip)).Sort(sort).All(ctx, result); err != nil {
 		blog.Errorf("failed to query the inst , error info %s", err.Error())
@@ -68,7 +80,7 @@ func (cli *Service) GetObjectByCondition(ctx context.Context, db dal.RDB, defLan
 		case *[]map[string]interface{}:
 			results := *result.(*[]map[string]interface{})
 			for index := range results {
-				l := m[fmt.Sprint(results[index]["default"])]
+				l := m[fmt.Sprint(results[index][common.BKDefaultField])]
 				if len(l) >= 3 {
 					results[index][l[1]] = util.FirstNotEmptyString(defLang.Language(l[0]), fmt.Sprint(results[index][l[1]]), fmt.Sprint(results[index][l[2]]))
 				}
