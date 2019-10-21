@@ -328,6 +328,7 @@
                 try {
                     const rootObjId = this.$parent.objId
                     const rootInstId = this.$parent.formatedInst['bk_inst_id']
+                    const rootInstName = this.$parent.formatedInst['bk_inst_name']
                     const rootNodeId = `${rootObjId}_${rootInstId}_${NODE_ID++}`
                     const [asstData, relData] = await Promise.all([
                         this.getAssociationType(),
@@ -346,7 +347,7 @@
                     elements.push({
                         data: {
                             id: rootNodeId,
-                            name: this.getInstDetail(rootObjId, rootInstId).name,
+                            name: rootInstName,
                             icon: this.getModelById(rootObjId).bk_obj_icon,
                             objId: rootObjId,
                             instId: rootInstId,

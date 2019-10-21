@@ -46,7 +46,7 @@
 </template>
 
 <script>
-    import { mapActions, mapGetters } from 'vuex'
+    import { mapActions, mapGetters, mapState } from 'vuex'
     import cytoscape from 'cytoscape'
     import popper from 'cytoscape-popper'
     import dagre from 'cytoscape-dagre'
@@ -100,6 +100,10 @@
             ...mapGetters('objectModelClassify', [
                 'getModelById'
             ]),
+            ...mapState('hostDetails', ['info']),
+            host () {
+                return this.info.host || {}
+            },
             id () {
                 return parseInt(this.$route.params.id)
             }
@@ -327,6 +331,7 @@
                 try {
                     const rootObjId = 'host'
                     const rootInstId = this.id
+                    const rootInstName = this.host['bk_host_innerip']
                     const rootNodeId = `${rootObjId}_${rootInstId}_${NODE_ID++}`
                     const [asstData, relData] = await Promise.all([
                         this.getAssociationType(),
@@ -345,7 +350,7 @@
                     elements.push({
                         data: {
                             id: rootNodeId,
-                            name: this.getInstDetail(rootObjId, rootInstId).name,
+                            name: rootInstName,
                             icon: this.getModelById(rootObjId).bk_obj_icon,
                             objId: rootObjId,
                             instId: rootInstId,
