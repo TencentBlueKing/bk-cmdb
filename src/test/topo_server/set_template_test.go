@@ -24,10 +24,9 @@ var _ = Describe("create empty set template test", func() {
 			ServiceTemplateIDs: nil,
 		}
 		rsp, err := topoServerClient.SetTemplate().CreateSetTemplate(ctx, header, bizID, option)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data.Name).To(Equal("setTpl1"))
-		Expect(rsp.Data.ID).To(Not(Equal(int64(0))))
+		Expect(err).To(HaveOccurred())
+		Expect(err.GetCode()).Should(Equal(common.CCErrCommParamsNeedSet))
+		Expect(rsp).To(BeNil())
 	})
 })
 

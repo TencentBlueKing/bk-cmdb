@@ -42,7 +42,7 @@ type ModuleInst struct {
 	ServiceCategoryID int64  `bson:"service_category_id" json:"service_category_id" field:"service_category_id" mapstructure:"service_category_id"`
 	ServiceTemplateID int64  `bson:"service_template_id" json:"service_template_id" field:"service_template_id" mapstructure:"service_template_id"`
 	ParentID          int64  `bson:"bk_parent_id" json:"bk_parent_id" field:"bk_parent_id" mapstructure:"bk_parent_id"`
-	SetTemplateID     int64  `bson:"set_template_id" json:"set_template_id" mapstructure:"set_template_id"`
+	SetTemplateID     int64  `bson:"set_template_id" json:"set_template_id" field:"set_template_id" mapstructure:"set_template_id"`
 }
 
 type BizInst struct {
