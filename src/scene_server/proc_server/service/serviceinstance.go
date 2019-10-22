@@ -524,10 +524,13 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				}
 			}
 
+			processName := ""
+			if process.ProcessName != nil {
+				processName = *process.ProcessName
+			}
 			property, exist := pTemplateMap[relation.ProcessTemplateID]
 			if !exist {
 				// process's template doesn't exist means the template has already been removed.
-				processName := *process.ProcessName
 				removed[processName] = append(removed[processName], recorder{
 					ProcessID:       relation.ProcessID,
 					Process:         process,
@@ -542,7 +545,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				// nothing changed
 				unchanged[relation.ProcessTemplateID] = append(unchanged[relation.ProcessTemplateID], recorder{
 					ProcessID:       relation.ProcessID,
-					ProcessName:     *process.ProcessName,
+					ProcessName:     processName,
 					ServiceInstance: &serviceInstances.Info[idx],
 				})
 				continue
@@ -551,7 +554,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 			// something has already changed.
 			changed[relation.ProcessTemplateID] = append(changed[relation.ProcessTemplateID], recorder{
 				ProcessID:        relation.ProcessID,
-				ProcessName:      *process.ProcessName,
+				ProcessName:      processName,
 				ServiceInstance:  &serviceInstances.Info[idx],
 				ChangedAttribute: changedAttributes,
 			})
@@ -1117,12 +1120,12 @@ func (ps *ProcServer) ServiceInstanceLabelsAggregation(ctx *rest.Contexts) {
 			return
 		}
 	}
-	
+
 	if bizID == 0 {
-        ctx.RespErrorCodeF(common.CCErrCommParamsIsInvalid, "list service instance label, but got invalid biz id: 0", "bk_biz_id")
-        return
-    }
-	
+		ctx.RespErrorCodeF(common.CCErrCommParamsIsInvalid, "list service instance label, but got invalid biz id: 0", "bk_biz_id")
+		return
+	}
+
 	listOption := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
 	}

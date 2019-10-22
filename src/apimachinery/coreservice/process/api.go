@@ -340,13 +340,13 @@ func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templat
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
+func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, property map[string]interface{}) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := fmt.Sprintf("/update/process/process_template/%d", templateID)
 
 	err := p.client.Put().
 		WithContext(ctx).
-		Body(template).
+		Body(property).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
