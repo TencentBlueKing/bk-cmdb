@@ -81,7 +81,7 @@
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="bk_biz_id" label="ID" width="50" align="center" fixed></bk-table-column>
+            <bk-table-column prop="bk_biz_id" label="ID" width="100" align="center" fixed></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 :class-name="column.id === 'bk_biz_name' ? 'is-highlight' : ''"
                 sortable="custom"
