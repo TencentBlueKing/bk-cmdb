@@ -1117,6 +1117,12 @@ func (ps *ProcServer) ServiceInstanceLabelsAggregation(ctx *rest.Contexts) {
 			return
 		}
 	}
+	
+	if bizID == 0 {
+        ctx.RespErrorCodeF(common.CCErrCommParamsIsInvalid, "list service instance label, but got invalid biz id: 0", "bk_biz_id")
+        return
+    }
+	
 	listOption := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
 	}

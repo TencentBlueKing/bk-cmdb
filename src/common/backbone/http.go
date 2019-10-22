@@ -13,6 +13,7 @@
 package backbone
 
 import (
+	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -20,13 +21,17 @@ import (
 	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
+	"configcenter/src/common/zkclient"
 )
 
-func ListenAndServe(c Server) error {
+func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.CancelFunc) error {
 	handler := c.Handler
 	if c.PProfEnabled {
 		rootMux := http.NewServeMux()
@@ -38,11 +43,33 @@ func ListenAndServe(c Server) error {
 		Addr:    net.JoinHostPort(c.ListenAddr, strconv.FormatUint(uint64(c.ListenPort), 10)),
 		Handler: handler,
 	}
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, syscall.SIGTERM)
+	go func() {
+		for {
+			select {
+			case sig := <-exit:
+				blog.Infof("receive signal %v, begin to shutdown", sig)
+				svcDisc.Cancel()
+				if err := svcDisc.ClearRegisterPath(); err != nil && err != zkclient.ErrNoNode {
+					break
+				}
+				server.SetKeepAlivesEnabled(false)
+				err := server.Shutdown(context.Background())
+				if err != nil {
+					blog.Fatalf("Could not gracefully shutdown the server: %v \n", err)
+				}
+				blog.Info("server shutdown done")
+				cancel()
+				return
+			}
+		}
+	}()
 
 	if len(c.TLS.CertFile) == 0 && len(c.TLS.KeyFile) == 0 {
 		blog.Infof("start insecure server on %s:%d", c.ListenAddr, c.ListenPort)
 		go func() {
-			if err := server.ListenAndServe(); err != nil {
+			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				blog.Fatalf("listen and serve failed, err: %v", err)
 			}
 		}()
@@ -70,7 +97,7 @@ func ListenAndServe(c Server) error {
 	server.TLSConfig = tlsC
 	blog.Infof("start secure server on %s:%d", c.ListenAddr, c.ListenPort)
 	go func() {
-		if err := server.ListenAndServe(); err != nil {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			blog.Fatalf("listen and serve failed, err: %v", err)
 		}
 	}()

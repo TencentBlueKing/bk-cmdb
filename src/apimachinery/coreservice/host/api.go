@@ -380,7 +380,7 @@ func (h *host) DeleteHostFavouriteByID(ctx context.Context, user string, id stri
 	return
 }
 
-func (h *host) GetHostFavourites(ctx context.Context, user string, header http.Header, dat *metadata.QueryInput) (resp *metadata.GetHostFavoriteResult, err error) {
+func (h *host) ListHostFavourites(ctx context.Context, user string, header http.Header, dat *metadata.QueryInput) (resp *metadata.GetHostFavoriteResult, err error) {
 	resp = new(metadata.GetHostFavoriteResult)
 	subPath := fmt.Sprintf("/findmany/hosts/favorites/search/%s", user)
 

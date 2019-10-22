@@ -264,6 +264,9 @@
                 return operateTypeMap
             }
         },
+        created () {
+            this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+        },
         mounted () {
             this.initDate()
         },

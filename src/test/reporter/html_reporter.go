@@ -42,7 +42,7 @@ var dir string
 
 func NewHtmlReporter(filename string, reportUrl string, generateSummary bool) *HtmlReporter {
 	return &HtmlReporter{
-		filename:        filename,
+		filename:        strings.Trim(filename, "/"),
 		generateSummary: generateSummary,
 		reportUrl:       reportUrl,
 	}
@@ -57,7 +57,10 @@ func (reporter *HtmlReporter) SpecSuiteWillBegin(ginkgoConfig config.GinkgoConfi
 	reporter.suite.Url = reporter.reportUrl + reporter.filename
 	dir = reporter.filename[:strings.LastIndex(reporter.filename, "/")]
 	if _, err := os.Stat(dir); err != nil && os.IsNotExist(err) {
-		os.MkdirAll(dir, 0777)
+		err = os.MkdirAll(dir, 0777)
+		if err != nil {
+			reporter.filename = reporter.filename[strings.LastIndex(reporter.filename, "/")+1:]
+		}
 	}
 }
 
@@ -136,15 +139,18 @@ func (reporter *HtmlReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 	file, err := os.Create(reporter.filename)
 	if err != nil {
 		fmt.Printf("Failed to create Html report file: %s\n\t%s", reporter.filename, err.Error())
+		return
 	}
 	defer file.Close()
 	t, err := template.New("HtmlTemplate").Parse(HtmlTemplate)
 	if nil != err {
 		fmt.Printf("Failed to parse Html template: %s\n\t%s", reporter.filename, err.Error())
+		return
 	}
 	err = t.Execute(file, reporter.suite)
 	if err != nil {
 		fmt.Printf("Failed to generate Html report file: %s\n\t%s", reporter.filename, err.Error())
+		return
 	}
 
 	if reporter.generateSummary {
@@ -158,21 +164,25 @@ func (reporter *HtmlReporter) generateSummaryHtml() {
 		summary, err := os.Create(dir + "/summary.html")
 		if err != nil {
 			fmt.Printf("Failed to create summary Html report file\n\t%s", err.Error())
+			return
 		}
+		defer summary.Close()
 		temp, err := template.New("SummaryHtmlTemplate").Parse(SummaryHtmlTemplate)
 		if nil != err {
 			fmt.Printf("Failed to parse summary Html template\n\t%s", err.Error())
+			return
 		}
 		err = temp.Execute(summary, reporter)
 		if err != nil {
 			fmt.Printf("Failed to generate summary Html report file\n\t%s", err.Error())
+			return
 		}
-		summary.Close()
 	}
 
 	summary, err := ioutil.ReadFile(dir + "/summary.html")
 	if err != nil {
 		fmt.Printf("Failed to open summary Html report file\n\t%s", err.Error())
+		return
 	}
 
 	sum := string(summary)
@@ -180,10 +190,12 @@ func (reporter *HtmlReporter) generateSummaryHtml() {
 	temp, err := template.New("SummaryTemplate").Parse(SummaryTemplate)
 	if nil != err {
 		fmt.Printf("Failed to parse summary Html template\n\t%s", err.Error())
+		return
 	}
 	err = temp.Execute(&buf, reporter.suite)
 	if err != nil {
 		fmt.Printf("Failed to generate summary Html report file\n\t%s", err.Error())
+		return
 	}
 	sum = sum[:index] + buf.String() + sum[index:]
 	buf.Reset()
@@ -192,15 +204,18 @@ func (reporter *HtmlReporter) generateSummaryHtml() {
 	temp, err = template.New("FailedTemplate").Parse(FailedTemplate)
 	if nil != err {
 		fmt.Printf("Failed to parse summary Html template\n\t%s", err.Error())
+		return
 	}
 	err = temp.Execute(&buf, reporter.suite)
 	if err != nil {
 		fmt.Printf("Failed to generate summary Html report file\n\t%s", err.Error())
+		return
 	}
 	sum = sum[:index] + buf.String() + sum[index:]
 
 	err = ioutil.WriteFile(dir+"/summary.html", []byte(sum), 0666)
 	if err != nil {
 		fmt.Printf("Failed to write summary Html report file\n\t%s", err.Error())
+		return
 	}
 }

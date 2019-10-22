@@ -551,8 +551,9 @@
             handleCancel () {
                 this.type = 'details'
             },
-            handleDelete () {
-                if (this.selectedNode.data.host_count) {
+            async handleDelete () {
+                const count = await this.getSelectedNodeHostCount()
+                if (count) {
                     this.$error(this.$t('目标包含主机, 不允许删除'))
                     return
                 }
@@ -687,6 +688,54 @@
                         moduleId: this.selectedNode.data.bk_inst_id
                     }
                 })
+            },
+            async getSelectedNodeHostCount () {
+                const defaultModel = ['biz', 'set', 'module', 'host', 'object']
+                const modelInstKey = {
+                    biz: 'bk_biz_id',
+                    set: 'bk_set_id',
+                    module: 'bk_module_id',
+                    host: 'bk_host_id',
+                    object: 'bk_inst_id'
+                }
+                const conditionParams = {
+                    condition: defaultModel.map(model => {
+                        return {
+                            bk_obj_id: model,
+                            condition: [],
+                            fields: []
+                        }
+                    })
+                }
+                const selectedNode = this.selectedNode
+                const selectedModel = defaultModel.includes(selectedNode.data.bk_obj_id) ? selectedNode.data.bk_obj_id : 'object'
+                const selectedModelCondition = conditionParams.condition.find(model => model.bk_obj_id === selectedModel)
+                selectedModelCondition.condition.push({
+                    field: modelInstKey[selectedModel],
+                    operator: '$eq',
+                    value: selectedNode.data.bk_inst_id
+                })
+                const data = await this.$store.dispatch('hostSearch/searchHost', {
+                    params: {
+                        ...conditionParams,
+                        bk_biz_id: this.business,
+                        ip: {
+                            flag: 'bk_host_innerip|bk_host_outer',
+                            exact: 0,
+                            data: []
+                        },
+                        page: {
+                            start: 0,
+                            limit: 1,
+                            sort: ''
+                        }
+                    },
+                    config: {
+                        requestId: 'searchHosts',
+                        cancelPrevious: true
+                    }
+                })
+                return data && data.count
             }
         }
     }

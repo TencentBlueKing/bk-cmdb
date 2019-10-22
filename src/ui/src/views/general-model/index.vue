@@ -726,7 +726,7 @@
             },
             routeToHistory () {
                 this.$router.push({
-                    name: 'history',
+                    name: 'instanceHistory',
                     params: {
                         objId: this.objId
                     }

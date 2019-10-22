@@ -70,8 +70,9 @@
     "1199072": "get skip to bk auth center url failed, please refer to bk auth center",
     "1199073": "%s field exceeds maximum value %s",
     "1199074": "global cc error not initialized",
-    "1199075": "modify field %s forbidden",
-
+    "1199075": "forbidden operate mainline model instance with common instance API",
+    "1199076": "forbidden operate inner model instance with common instance API",
+    "1199077": "modify field %s forbidden",
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",
     "":""
