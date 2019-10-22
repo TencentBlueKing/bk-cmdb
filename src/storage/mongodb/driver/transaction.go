@@ -53,3 +53,7 @@ func (t *transaction) Close() error {
 	t.innerSession.EndSession(context.TODO())
 	return nil
 }
+
+func (t *transaction) GetInnerSession() mongo.Session {
+	return t.innerSession
+}

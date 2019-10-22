@@ -12,10 +12,15 @@
 
 package mongodb
 
+import (
+	"github.com/mongodb/mongo-go-driver/mongo"
+)
+
 // Transaction transaction operation methods
 type Transaction interface {
 	StartTransaction() error
 	AbortTransaction() error
 	CommitTransaction() error
 	Collection(collName string) CollectionInterface
+	GetInnerSession() mongo.Session
 }
