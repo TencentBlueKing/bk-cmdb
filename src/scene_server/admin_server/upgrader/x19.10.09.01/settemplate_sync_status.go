@@ -64,6 +64,12 @@ func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrade
 				Name:       "idx_createLastTime",
 				Background: true,
 			},
+			{
+				Keys:       map[string]int32{"status": 1},
+				Name:       "idx_status",
+				Unique:     false,
+				Background: true,
+			},
 		}
 
 		for _, index := range indexArr {
