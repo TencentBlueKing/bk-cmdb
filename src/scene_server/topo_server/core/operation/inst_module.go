@@ -310,7 +310,7 @@ func (m *module) DeleteModule(params types.ContextParams, moduleModel model.Obje
 
 	// module table doesn't have metadata field
 	params.MetaData = nil
-	err = m.inst.DeleteInst(params, obj, innerCond, false)
+	err = m.inst.DeleteInst(params, moduleModel, innerCond, false)
 	if err != nil {
 		blog.Errorf("delete module failed, DeleteInst failed, err: %+v, rid: %s", err, params.ReqID)
 		return err
