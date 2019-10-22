@@ -25,6 +25,7 @@ import searchInput from './form/search-input.vue'
 import inputSelect from './selector/input-select.vue'
 import iconButton from './button/icon-button.vue'
 import tips from './other/tips.vue'
+import auth from './auth/auth.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -53,7 +54,8 @@ const install = (Vue, opts = {}) => {
         searchInput,
         inputSelect,
         iconButton,
-        tips
+        tips,
+        auth
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -87,5 +89,6 @@ export default {
     searchInput,
     inputSelect,
     iconButton,
-    tips
+    tips,
+    auth
 }
