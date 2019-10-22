@@ -301,7 +301,8 @@
                                 service_instance_count: 0,
                                 service_template_id: value.service_template_id,
                                 bk_inst_id: set.data.bk_set_id,
-                                bk_inst_name: set.data.bk_set_name
+                                bk_inst_name: set.data.bk_set_name,
+                                set_template_id: value.set_template_id
                             }
                             this.$refs.tree.addNode(nodeData, parentNode.id, 0)
                             if (value.set_template_id) {

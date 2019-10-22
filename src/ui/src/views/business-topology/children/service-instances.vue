@@ -504,14 +504,14 @@
                             id: key
                         }
                     })
-                    if (!valueOption.length) {
-                        this.$set(this.searchSelect[1], 'disabled', true)
-                    }
-                    if (!keyOption.length) {
-                        this.$set(this.searchSelect[2], 'disabled', true)
-                    }
+                    const notRender = this.searchSelect[1].disabled
+                    this.$set(this.searchSelect[1], 'disabled', !valueOption.length)
+                    this.$set(this.searchSelect[2], 'disabled', !keyOption.length)
                     this.$set(this.searchSelect[1], 'conditions', valueOption)
                     this.$set(this.searchSelect[2], 'children', keyOption)
+                    if (notRender && this.$refs.searchSelect) {
+                        this.$refs.searchSelect.$forceUpdate()
+                    }
                 } catch (e) {
                     console.error(e)
                 }
