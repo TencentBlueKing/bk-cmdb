@@ -18,18 +18,52 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
+
+func (s *Service) IsSetInitializedByTemplate(params types.ContextParams, setID int64) (bool, errors.CCErrorCoder) {
+	qc := &metadata.QueryCondition{
+		Fields: []string{common.BKSetTemplateIDField, common.BKSetIDField},
+		Condition: map[string]interface{}{
+			common.BKSetIDField: setID,
+		},
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, qc)
+	if err != nil {
+		blog.Errorf("IsSetInitializedByTemplate failed, failed to search set instance, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
+		return false, errors.NewFromStdError(err, common.CCErrCommHTTPDoRequestFailed)
+	}
+	if result.Code != 0 {
+		return false, errors.NewCCError(result.Code, result.ErrMsg)
+	}
+	if len(result.Data.Info) == 0 {
+		blog.ErrorJSON("IsSetInitializedByTemplate failed, set:%d not found, rid: %s", setID, params.ReqID)
+		return false, params.Err.CCError(common.CCErrCommNotFound)
+	}
+	if len(result.Data.Info) > 1 {
+		blog.ErrorJSON("IsSetInitializedByTemplate failed, set:%d got multiple, rid: %s", setID, params.ReqID)
+		return false, params.Err.CCError(common.CCErrCommGetMultipleObject)
+	}
+	setData := result.Data.Info[0]
+	set := metadata.SetInst{}
+	if err := mapstruct.Decode2Struct(setData, &set); err != nil {
+		blog.ErrorJSON("IsSetInitializedByTemplate failed, decode set failed, data: %s, err: %s, rid: %s", setData)
+		return false, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+	return set.SetTemplateID > 0, nil
+}
 
 // CreateModule create a new module
 func (s *Service) CreateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
-		blog.Errorf("create module failed, failed to search the set, %s, rid: %s", err.Error(), params.ReqID)
+		blog.Errorf("create module failed, failed to search set model, err: %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
@@ -45,22 +79,21 @@ func (s *Service) CreateModule(params types.ContextParams, pathParams, queryPara
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKSetIDField)
 	}
 
+	// 通过集群模板创建的模板禁止直接操作(只能通过集群模板同步)
+	initializedByTemplate, err := s.IsSetInitializedByTemplate(params, setID)
+	if err != nil {
+		blog.Errorf("CreateModule failed, IsSetInitializedByTemplate failed, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if initializedByTemplate == true {
+		blog.V(3).Infof("CreateModule failed, forbidden add module to set initialized by template, setID: %d, rid: %s", setID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate)
+	}
+
 	module, err := s.Core.ModuleOperation().CreateModule(params, obj, bizID, setID, data)
 	if err != nil {
 		blog.Errorf("[api-module] create module failed, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
-	}
-
-	moduleID, err := module.GetInstID()
-	if err != nil {
-		blog.Errorf("create module failed, unexpected error, create module success, but get id failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
-	}
-
-	// auth: register module to iam
-	if err := s.AuthManager.RegisterModuleByID(params.Context, params.Header, moduleID); err != nil {
-		blog.Errorf("create module success, but register module failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
 	return module, nil
@@ -87,16 +120,21 @@ func (s *Service) DeleteModule(params types.ContextParams, pathParams, queryPara
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
+	// 通过集群模板创建的模板禁止直接操作(只能通过集群模板同步)
+	initializedByTemplate, err := s.IsSetInitializedByTemplate(params, setID)
+	if err != nil {
+		blog.Errorf("DeleteModule failed, IsSetInitializedByTemplate failed, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if initializedByTemplate == true {
+		blog.V(3).Infof("DeleteModule failed, forbidden add module to set initialized by template, setID: %d, rid: %s", setID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate)
+	}
+
 	moduleID, err := strconv.ParseInt(pathParams("module_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-module]failed to parse the module id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "module id")
-	}
-
-	// auth: deregister module to iam
-	if err := s.AuthManager.DeregisterModuleByID(params.Context, params.Header, moduleID); err != nil {
-		blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 
 	err = s.Core.ModuleOperation().DeleteModule(params, obj, bizID, []int64{setID}, []int64{moduleID})
@@ -129,6 +167,19 @@ func (s *Service) UpdateModule(params types.ContextParams, pathParams, queryPara
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
+	/*
+		// 通过集群模板创建的模板禁止直接操作(只能通过集群模板同步)
+		initializedByTemplate, err := s.IsSetInitializedByTemplate(params, setID)
+		if err != nil {
+			blog.Errorf("UpdateModule failed, IsSetInitializedByTemplate failed, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
+			return nil, err
+		}
+		if initializedByTemplate == true {
+			blog.V(3).Infof("UpdateModule failed, forbidden add module to set initialized by template, setID: %d, rid: %s", setID, params.ReqID)
+			return nil, params.Err.Error(common.CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate)
+		}
+	*/
+
 	moduleID, err := strconv.ParseInt(pathParams("module_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-module]failed to parse the module id, error info is %s, rid: %s", err.Error(), params.ReqID)
@@ -139,12 +190,6 @@ func (s *Service) UpdateModule(params types.ContextParams, pathParams, queryPara
 	if err != nil {
 		blog.Errorf("update module failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
-	}
-
-	// auth: update registered module to iam
-	if err := s.AuthManager.UpdateRegisteredModuleByID(params.Context, params.Header, moduleID); err != nil {
-		blog.Errorf("update module success, but update registered module failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
 	return nil, nil

@@ -138,6 +138,9 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizTopology
 	case meta.SetTemplate:
 		iamResourceType = BizSetTemplate
+
+	case meta.OperationStatistic:
+		iamResourceType = SysOperationStatistic
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -150,15 +153,16 @@ type ResourceTypeID string
 
 // System Resource
 const (
-	SysSystemBase       ResourceTypeID = "sys_system_base"
-	SysBusinessInstance ResourceTypeID = "sys_business_instance"
-	SysHostInstance     ResourceTypeID = "sys_host_instance"
-	SysEventPushing     ResourceTypeID = "sys_event_pushing"
-	SysModelGroup       ResourceTypeID = "sys_model_group"
-	SysModel            ResourceTypeID = "sys_model"
-	SysInstance         ResourceTypeID = "sys_instance"
-	SysAssociationType  ResourceTypeID = "sys_association_type"
-	SysAuditLog         ResourceTypeID = "sys_audit_log"
+	SysSystemBase         ResourceTypeID = "sys_system_base"
+	SysBusinessInstance   ResourceTypeID = "sys_business_instance"
+	SysHostInstance       ResourceTypeID = "sys_host_instance"
+	SysEventPushing       ResourceTypeID = "sys_event_pushing"
+	SysModelGroup         ResourceTypeID = "sys_model_group"
+	SysModel              ResourceTypeID = "sys_model"
+	SysInstance           ResourceTypeID = "sys_instance"
+	SysAssociationType    ResourceTypeID = "sys_association_type"
+	SysAuditLog           ResourceTypeID = "sys_audit_log"
+	SysOperationStatistic ResourceTypeID = "sys_operation_statistic"
 )
 
 // Business Resource
@@ -206,6 +210,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizProcessServiceCategory: "服务分类",
 	BizProcessServiceInstance: "服务实例",
 	BizSetTemplate:            "集群模板",
+	SysOperationStatistic:     "运营统计",
 }
 
 type ActionID string
@@ -500,5 +505,10 @@ var (
 	SystemBaseDescribe = ResourceDetail{
 		Type:    SysSystemBase,
 		Actions: []ActionID{Get, Delete, Edit, Create},
+	}
+
+	OperationStatistic = ResourceDetail{
+		Type:    SysOperationStatistic,
+		Actions: []ActionID{Get, Edit},
 	}
 )

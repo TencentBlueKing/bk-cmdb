@@ -343,6 +343,8 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 		return e
 	}
 	moduleServiceTemplateIDMap := make(map[int64]int64)
+	moduleSetTemplateIDMap := make(map[int64]int64)
+	setSetTemplateIDMap := make(map[int64]int64)
 	for _, module := range modules.Data.Info {
 		moduleStruct := &metadata.ModuleInst{}
 		if err := module.ToStructByTag(moduleStruct, "field"); err != nil {
@@ -350,6 +352,8 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 			return err
 		}
 		moduleServiceTemplateIDMap[moduleStruct.ModuleID] = moduleStruct.ServiceTemplateID
+		moduleSetTemplateIDMap[moduleStruct.ModuleID] = moduleStruct.SetTemplateID
+		setSetTemplateIDMap[moduleStruct.ParentID] = moduleStruct.SetTemplateID
 	}
 
 	exactNodes := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule}
@@ -370,6 +374,14 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 				}
 				if id, exist := moduleServiceTemplateIDMap[node.InstID]; exist == true {
 					node.ServiceTemplateID = id
+				}
+				if id, exist := moduleSetTemplateIDMap[node.InstID]; exist == true {
+					node.SetTemplateID = id
+				}
+			}
+			if node.ObjID == common.BKInnerObjIDSet {
+				if id, exist := setSetTemplateIDMap[node.InstID]; exist == true {
+					node.SetTemplateID = id
 				}
 			}
 		})

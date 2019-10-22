@@ -85,6 +85,8 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return processServiceTemplateResourceID(resourceType, attribute)
 	case meta.SetTemplate:
 		return setTemplateResourceID(resourceType, attribute)
+	case meta.OperationStatistic:
+		return operationStatisticResourceID(resourceType, attribute)
 	}
 	return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", attribute.Type)
 }
@@ -426,6 +428,18 @@ func processServiceTemplateResourceID(resourceType ResourceTypeID, attribute *me
 }
 
 func setTemplateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	if attribute.InstanceID == 0 {
+		return make([]RscTypeAndID, 0), nil
+	}
+	return []RscTypeAndID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
+}
+
+func operationStatisticResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID == 0 {
 		return make([]RscTypeAndID, 0), nil
 	}

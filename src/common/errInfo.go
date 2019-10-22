@@ -202,6 +202,8 @@ const (
 
 	CCErrCommGlobalCCErrorNotInitialized = 1199074
 
+	CCErrCommModifyFieldForbidden = 1199075
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
@@ -438,6 +440,8 @@ const (
 	CCErrorTopoModuleNameDuplicated    = 1101094
 	CCErrorTopoSyncModuleTaskFailed    = 1101095
 	CCErrorTopoSyncModuleTaskIsRunning = 1101096
+
+	CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate = 1101097
 
 	// object controller 1102XXX
 
