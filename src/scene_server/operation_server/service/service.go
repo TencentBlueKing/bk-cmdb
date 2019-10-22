@@ -126,7 +126,7 @@ func (o *OperationServer) Healthz(req *restful.Request, resp *restful.Response) 
 	meta.Items = append(meta.Items, zkItem)
 
 	// coreservice
-	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CCModuleCoerService.Name}
+	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CCModuleCoreService.Name}
 	if _, err := o.Engine.CoreAPI.Healthz().HealthCheck(coreSrv.Name); err != nil {
 		coreSrv.IsHealthy = false
 		coreSrv.Message = err.Error()

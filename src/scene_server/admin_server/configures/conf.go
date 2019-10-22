@@ -145,7 +145,7 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 	modules = append(modules, types.CCModuleAPIServer.Name)
 	modules = append(modules, types.CCModuleEventServer.Name)
 	modules = append(modules, types.CCModuleTXC.Name)
-	modules = append(modules, types.CCModuleCoerService.Name)
+	modules = append(modules, types.CCModuleCoreService.Name)
 	modules = append(modules, types.CCModuleSynchronize.Name)
 	modules = append(modules, types.CCModuleOperation.Name)
 	modules = append(modules, types.CCModuleTask.Name)

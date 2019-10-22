@@ -63,7 +63,7 @@ func (h *health) HealthCheck(moduleName string) (healthy bool, err error) {
 	case types.CCModuleAPIServer.Name:
 		h.capability.Discover = h.disc.ApiServer()
 
-	case types.CCModuleCoerService.Name:
+	case types.CCModuleCoreService.Name:
 		h.capability.Discover = h.disc.CoreService()
 
 	default:

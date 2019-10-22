@@ -47,7 +47,7 @@ var (
 	CCModuleAPIServer      = SvrModuleInfo{Name: "apiserver", Layer: API}
 	CCModuleWebServer      = SvrModuleInfo{Name: "webserver", Layer: UI}
 	CCModuleEventServer    = SvrModuleInfo{Name: "eventserver", Layer: Sence}
-	CCModuleCoerService    = SvrModuleInfo{Name: "coreservice", Layer: Resource}
+	CCModuleCoreService    = SvrModuleInfo{Name: "coreservice", Layer: Resource}
 	GSEModuleProcServer    = SvrModuleInfo{Name: "gseprocserver", Layer: Sence}
 	CCModuleTXC            = SvrModuleInfo{Name: "txc", Layer: Common}
 	// CCModuleSynchronize multiple cmdb synchronize data server
@@ -79,7 +79,7 @@ var LayerModuleMap = map[Layer][]SvrModuleInfo{
 	Sence: []SvrModuleInfo{
 		CCModuleTXC,
 		CCModuleTask,
-		CCModuleCoerService,
+		CCModuleCoreService,
 	},
 	// Resource 层需要发现节点
 	Resource: []SvrModuleInfo{

@@ -122,7 +122,7 @@ func (d *discover) GseProcServer() Interface {
 }
 
 func (d *discover) CoreService() Interface {
-	return d.servers[types.CCModuleCoerService.Name]
+	return d.servers[types.CCModuleCoreService.Name]
 }
 
 func (d *discover) TMServer() Interface {
