@@ -80,7 +80,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	go operationSvr.InitFunc()
-	if err := backbone.StartServer(ctx, engine, operationSvr.WebService(), true); err != nil {
+	if err := backbone.StartServer(ctx, cancel, engine, operationSvr.WebService(), true); err != nil {
 		return err
 	}
 
