@@ -183,11 +183,9 @@
             async getProperties () {
                 try {
                     this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-                        params: this.$injectMetadata({
+                        params: {
                             bk_obj_id: this.id
-                        }, {
-                            inject: this.isBusinessModel
-                        }),
+                        },
                         config: {
                             fromCache: true,
                             requestId: this.propertyRequest
@@ -281,7 +279,7 @@
             getModelInstances (config) {
                 return this.$store.dispatch('objectCommonInst/searchInst', {
                     objId: this.id,
-                    params: this.$injectMetadata({
+                    params: {
                         fields: {},
                         condition: {
                             [this.id]: [{
@@ -294,7 +292,7 @@
                             ...this.page,
                             sort: 'bk_inst_id'
                         }
-                    }),
+                    },
                     config
                 }).then(data => {
                     data = data || {
@@ -316,9 +314,7 @@
                     await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
                         id: associationInstance.asso_id,
                         config: {
-                            data: this.$injectMetadata({}, {
-                                inject: !!this.$tools.getMetadataBiz(this.model)
-                            })
+                            data: {}
                         }
                     })
                     this.$store.commit('hostDetails/deleteAssociation', {

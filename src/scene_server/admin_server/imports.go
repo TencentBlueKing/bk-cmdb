@@ -60,6 +60,7 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.05"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.06"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.07"
+	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.08"
 
 	// v3.6.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.06.01"

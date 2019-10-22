@@ -7,7 +7,7 @@
                         active: !$isAuthorized(auth),
                         auth: [auth]
                     }">
-                    <bk-button class="options-button options-button-update" size="small" theme="primary"
+                    <bk-button class="options-button options-button-update" theme="primary"
                         :disabled="!hasRelation || !$isAuthorized(auth)"
                         :class="{ active: activeComponent === 'cmdbRelationUpdate' }"
                         @click="handleShowUpdate">

@@ -28,12 +28,29 @@ import (
 
 // CreateInst create a new inst
 func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	objID := pathParams("bk_obj_id")
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+	}
+
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("failed to search the inst, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
+	}
+
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("CreateInst failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
+		return nil, err
+	}
+	if isMainline == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
 	}
 
 	if data.Exists("BatchInfo") {
@@ -103,11 +120,29 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 }
 
 func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	objID := pathParams("bk_obj_id")
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, pathParams("bk_obj_id"))
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("DeleteInsts failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+	}
+
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
 		return nil, err
+	}
+
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("DeleteInsts failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
+		return nil, err
+	}
+	if isMainline == true {
+		blog.V(5).Infof("DeleteInsts failed, delete %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
 	}
 
 	deleteCondition := &operation.OpCondition{}
@@ -126,6 +161,13 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 
 // DeleteInst delete the inst
 func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	objID := pathParams("bk_obj_id")
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+	}
 
 	if "batch" == pathParams("inst_id") {
 		return s.DeleteInsts(params, pathParams, queryParams, data)
@@ -137,10 +179,21 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "inst id")
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, pathParams("bk_obj_id"))
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
 		return nil, err
+	}
+
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("DeleteInst failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
+		return nil, err
+	}
+	if isMainline == true {
+		blog.V(5).Infof("DeleteInst failed, delete %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
 	}
 
 	// auth: deregister resources
@@ -155,6 +208,12 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 
 func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objID := pathParams("bk_obj_id")
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+	}
 
 	updateCondition := &operation.OpCondition{}
 	if err := data.MarshalJSONInto(updateCondition); nil != err {
@@ -182,6 +241,17 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 		return nil, err
 	}
 
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("UpdateInsts failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
+		return nil, err
+	}
+	if isMainline == true {
+		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+	}
+
 	instanceIDs := make([]int64, 0)
 	for _, item := range updateCondition.Update {
 		instanceIDs = append(instanceIDs, item.InstID)
@@ -205,12 +275,18 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 
 // UpdateInst update the inst
 func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	objID := pathParams("bk_obj_id")
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+	}
 
 	if "batch" == pathParams("inst_id") {
 		return s.UpdateInsts(params, pathParams, queryParams, data)
 	}
 
-	objID := pathParams("bk_obj_id")
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s, rid: %s", err.Error(), params.ReqID)
@@ -219,8 +295,19 @@ func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", objID, err.Error(), params.ReqID)
 		return nil, err
+	}
+
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("UpdateInsts failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
+		return nil, err
+	}
+	if isMainline == true {
+		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
 	}
 
 	// this is a special logic for mainline object instance.
@@ -527,7 +614,7 @@ func (s *Service) SearchInstAssociation(params types.ContextParams, pathParams, 
 
 func (s *Service) SearchInstAssociationUI(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	objID := pathParams("bk_obj_id")
+	objID := pathParams(common.BKObjIDField)
 	instID, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
@@ -569,5 +656,66 @@ func (s *Service) SearchInstAssociationUI(params types.ContextParams, pathParams
 		"data":              infos,
 		"association_count": cnt,
 		"page":              input.Limit,
+	}, err
+}
+
+// SearchInstAssociationWithOtherObject  要求根据实例信息（实例的模型ID，实例ID）和模型ID（关联关系中的源，目的模型ID） 返回实例关联或者被关联模型实例得数据。
+func (s *Service) SearchInstAssociationWithOtherObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	reqParams := &metadata.RequestInstAssociationObjectID{}
+	if err := data.MarshalJSONInto(reqParams); nil != err {
+		blog.Errorf("SearchInstAssociationWithOtherObject failed to parse the data and the condition, the input (%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	if reqParams.Condition.ObjectID == "" {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
+	}
+	if reqParams.Condition.InstID == 0 {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKInstIDField)
+	}
+	if reqParams.Condition.AssociationObjectID == "" {
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, "association_obj_id")
+	}
+
+	cond := condition.CreateCondition()
+	if reqParams.Condition.IsTargetObject {
+		// 作为目标模型
+		cond.Field(common.BKAsstObjIDField).Eq(reqParams.Condition.ObjectID)
+		cond.Field(common.BKAsstInstIDField).Eq(reqParams.Condition.InstID)
+		cond.Field(common.BKObjIDField).Eq(reqParams.Condition.AssociationObjectID)
+	} else {
+		// 作为源模型
+		cond.Field(common.BKObjIDField).Eq(reqParams.Condition.ObjectID)
+		cond.Field(common.BKInstIDField).Eq(reqParams.Condition.InstID)
+		cond.Field(common.BKAsstObjIDField).Eq(reqParams.Condition.AssociationObjectID)
+	}
+
+	sortArr := metadata.NewSearchSortParse().String(reqParams.Page.Sort).ToSearchSortArr()
+	input := &metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+		Limit: metadata.SearchLimit{
+			Limit:  int64(reqParams.Page.Limit),
+			Offset: int64(reqParams.Page.Start),
+		},
+		SortArr: sortArr,
+	}
+
+	if input.IsIllegal() {
+		blog.ErrorJSON("parse page illegal, input:%s,rid:%s", input, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommPageLimitIsExceeded)
+	}
+
+	blog.V(5).Infof("input:%#v, rid:%s", input, params.ReqID)
+	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationSingleObjectInstInfo(params, reqParams.Condition.AssociationObjectID, input)
+	if err != nil {
+		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"info":  infos,
+		"count": cnt,
+		"page":  input.Limit,
 	}, err
 }

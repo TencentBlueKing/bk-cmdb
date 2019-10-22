@@ -16,11 +16,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+
+	"github.com/emicklei/go-restful"
 )
 
 type infoParam struct {
@@ -40,7 +40,7 @@ type queryParam struct {
 	IPList   []string    `json:"ip_list"`
 }
 
-func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response) {
+func (s *Service) ListHostFavourites(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	query := new(metadata.QueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(query); err != nil {
@@ -51,7 +51,7 @@ func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response
 		_ = resp.WriteError(http.StatusBadRequest, responseData)
 		return
 	}
-	result, err := s.CoreAPI.CoreService().Host().GetHostFavourites(srvData.ctx, srvData.user, srvData.header, query)
+	result, err := s.CoreAPI.CoreService().Host().ListHostFavourites(srvData.ctx, srvData.user, srvData.header, query)
 	if err != nil {
 		blog.Errorf("GetHostFavourites http do error,err:%s,input:%+v,rid:%s", err.Error(), query, srvData.rid)
 		responseData := &metadata.RespError{

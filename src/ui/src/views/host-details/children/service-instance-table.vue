@@ -244,6 +244,7 @@
                                     requestId: this.requestId.deleteProcess
                                 }
                             })
+                            this.$success(this.$t('删除成功'))
                             this.$emit('delete-instance', this.instance.id)
                         } catch (e) {
                             console.error(e)

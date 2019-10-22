@@ -77,6 +77,9 @@
                 return this.usercustom[customKeyMap[this.objId]] || []
             },
             objId () {
+                if (this.$route.name === 'hostHistory') {
+                    return 'host'
+                }
                 return this.$route.params.objId
             },
             model () {

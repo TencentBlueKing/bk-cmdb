@@ -43,3 +43,11 @@ func (*mockDisc) Stop() error {
 func (*mockDisc) Register(path string, c types.ServerInfo) error {
 	return nil
 }
+
+func (*mockDisc) Cancel() {
+
+}
+
+func (*mockDisc) ClearRegisterPath() error {
+	return nil
+}
