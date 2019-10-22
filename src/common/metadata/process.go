@@ -478,28 +478,114 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 	}
 
 	property := pt.Property
-	processInstance.ProcessName = property.ProcessName.Value
-	processInstance.ProcNum = property.ProcNum.Value
-	processInstance.StopCmd = property.StopCmd.Value
-	processInstance.RestartCmd = property.RestartCmd.Value
-	processInstance.ForceStopCmd = property.ForceStopCmd.Value
-	processInstance.FuncName = property.FuncName.Value
-	processInstance.WorkPath = property.WorkPath.Value
-	processInstance.BindIP = new(string)
-	*processInstance.BindIP = property.BindIP.Value.IP()
-	processInstance.Priority = property.Priority.Value
-	processInstance.ReloadCmd = property.ReloadCmd.Value
-	processInstance.Port = property.Port.Value
-	processInstance.PidFile = property.PidFile.Value
-	processInstance.AutoStart = property.AutoStart.Value
-	processInstance.AutoTimeGap = property.AutoTimeGapSeconds.Value
-	processInstance.StartCmd = property.StartCmd.Value
-	processInstance.FuncID = property.FuncID.Value
-	processInstance.User = property.User.Value
-	processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
-	processInstance.Protocol = property.Protocol.Value
-	processInstance.Description = property.Description.Value
-	processInstance.StartParamRegex = property.StartParamRegex.Value
+
+	processName := ""
+	processInstance.ProcessName = &processName
+	if IsAsDefaultValue(property.ProcessName.AsDefaultValue) {
+		processInstance.ProcessName = property.ProcessName.Value
+	}
+
+	processInstance.ProcNum = nil
+	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) {
+		processInstance.ProcNum = property.ProcNum.Value
+	}
+
+	processInstance.StopCmd = nil
+	if IsAsDefaultValue(property.StopCmd.AsDefaultValue) {
+		processInstance.StopCmd = property.StopCmd.Value
+	}
+
+	processInstance.RestartCmd = nil
+	if IsAsDefaultValue(property.RestartCmd.AsDefaultValue) {
+		processInstance.RestartCmd = property.RestartCmd.Value
+	}
+
+	processInstance.ForceStopCmd = nil
+	if IsAsDefaultValue(property.ForceStopCmd.AsDefaultValue) {
+		processInstance.ForceStopCmd = property.ForceStopCmd.Value
+	}
+
+	processInstance.FuncName = nil
+	if IsAsDefaultValue(property.FuncName.AsDefaultValue) {
+		processInstance.FuncName = property.FuncName.Value
+	}
+
+	processInstance.WorkPath = nil
+	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) {
+		processInstance.WorkPath = property.WorkPath.Value
+	}
+
+	processInstance.BindIP = nil
+	if IsAsDefaultValue(property.BindIP.AsDefaultValue) {
+		processInstance.BindIP = new(string)
+		*processInstance.BindIP = property.BindIP.Value.IP()
+	}
+
+	processInstance.Priority = nil
+	if IsAsDefaultValue(property.Priority.AsDefaultValue) {
+		processInstance.Priority = property.Priority.Value
+	}
+
+	processInstance.ReloadCmd = nil
+	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) {
+		processInstance.ReloadCmd = property.ReloadCmd.Value
+	}
+
+	processInstance.Port = nil
+	if IsAsDefaultValue(property.Port.AsDefaultValue) {
+		processInstance.Port = property.Port.Value
+	}
+
+	processInstance.PidFile = nil
+	if IsAsDefaultValue(property.PidFile.AsDefaultValue) {
+		processInstance.PidFile = property.PidFile.Value
+	}
+
+	processInstance.AutoStart = nil
+	if IsAsDefaultValue(property.AutoStart.AsDefaultValue) {
+		processInstance.AutoStart = property.AutoStart.Value
+	}
+
+	processInstance.AutoTimeGap = nil
+	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) {
+		processInstance.AutoTimeGap = property.AutoTimeGapSeconds.Value
+	}
+
+	processInstance.StartCmd = nil
+	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) {
+		processInstance.StartCmd = property.StartCmd.Value
+	}
+
+	processInstance.FuncID = nil
+	if IsAsDefaultValue(property.FuncID.AsDefaultValue) {
+		processInstance.FuncID = property.FuncID.Value
+	}
+
+	processInstance.User = nil
+	if IsAsDefaultValue(property.User.AsDefaultValue) {
+		processInstance.User = property.User.Value
+	}
+
+	processInstance.TimeoutSeconds = nil
+	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) {
+		processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
+	}
+
+	processInstance.Protocol = nil
+	if IsAsDefaultValue(property.Protocol.AsDefaultValue) {
+		processInstance.Protocol = property.Protocol.Value
+	}
+
+	processInstance.Description = nil
+	if IsAsDefaultValue(property.Description.AsDefaultValue) {
+		processInstance.Description = property.Description.Value
+	}
+
+	processInstance.StartParamRegex = nil
+	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) {
+		processInstance.StartParamRegex = property.StartParamRegex.Value
+	}
+
 	return processInstance
 }
 
