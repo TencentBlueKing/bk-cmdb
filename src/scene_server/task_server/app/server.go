@@ -35,7 +35,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		blog.Errorf("wrap server info failed, err: %v", err)
@@ -88,7 +88,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	taskSrv.Core = engine
 	taskSrv.Service = service
 
-	if err := backbone.StartServer(ctx, engine, service.WebService(), true); err != nil {
+	if err := backbone.StartServer(ctx, cancel, engine, service.WebService(), true); err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)
 		return err
 	}
