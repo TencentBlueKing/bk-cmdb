@@ -24,7 +24,10 @@ import (
 func (s *Service) SyncModuleTaskHandler(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// parse task body
 	backendWorker := settemplate.BackendWorker{
-		ClientSet: s.Engine.CoreAPI,
+		ClientSet:       s.Engine.CoreAPI,
+		Engine:          s.Engine,
+		ObjectOperation: s.Core.ObjectOperation(),
+		ModuleOperation: s.Core.ModuleOperation(),
 	}
 	task := &metadata.SyncModuleTask{}
 	if err := data.MarshalJSONInto(task); err != nil {

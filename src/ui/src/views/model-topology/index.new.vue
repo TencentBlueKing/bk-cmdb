@@ -152,7 +152,6 @@
     import cytoscape from 'cytoscape'
     import edgehandles from 'cytoscape-edgehandles'
     import popper from 'cytoscape-popper'
-    import noOverlap from 'cytoscape-no-overlap'
     import theRelation from './children/create-relation'
     import theRelationDetail from './children/relation-detail'
     import theCreateModel from '@/components/model-manage/_create-model'
@@ -264,9 +263,6 @@
             }
             if (typeof cytoscape('core', 'popper') !== 'function') {
                 cytoscape.use(popper)
-            }
-            if (typeof cytoscape('collection', 'noOverlap') !== 'function') {
-                cytoscape.use(noOverlap)
             }
 
             // 已记录的隐藏节点信息
@@ -544,7 +540,6 @@
                 // 所有操作的事件绑定
                 cy.on('ready', (event) => {
                     const cy = event.cy
-                    cy.nodes().noOverlap({ padding: 5 })
 
                     // 初始化节点隐藏
                     cy.batch(() => {
@@ -584,7 +579,8 @@
                             theme: 'node-tooltip',
                             boundary: this.$refs.topo,
                             trigger: 'manual',
-                            distance: 0
+                            distance: 6,
+                            offset: 12
                         })
 
                         node.data('popover', popover)
@@ -996,7 +992,6 @@
                 }
 
                 // 显示新建层级操作节点
-                // cy.nodes('.add-business-btn').style('display', 'element')
                 this.toggleAddBusinessBtn()
             },
             handleExitEdit () {
@@ -1291,6 +1286,9 @@
             cursor: pointer;
             color: #63656e;
             position: relative;
+            &.group-total {
+                padding-left: 15px;
+            }
             &:hover {
                 background: #e1ecff;
 

@@ -144,3 +144,10 @@ func extractBusinessID(m metadata.Label) (int64, error) {
 	}
 	return 0, nil
 }
+
+func (am *AuthManager) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	if am.Enabled() == false {
+		return nil
+	}
+	return am.Authorize.DeregisterResource(ctx, rs...)
+}

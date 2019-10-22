@@ -401,8 +401,9 @@ type TopoInst struct {
 	ObjName              string `json:"bk_obj_name"`
 	Default              int    `json:"default"`
 	HostCount            int64  `json:"host_count"`
-	ServiceInstanceCount int64  `json:"service_instance_count"`
-	ServiceTemplateID    int64  `json:"service_template_id"`
+	ServiceInstanceCount int64  `json:"service_instance_count,omitempty"`
+	ServiceTemplateID    int64  `json:"service_template_id,omitempty"`
+	SetTemplateID        int64  `json:"set_template_id,omitempty"`
 }
 
 // TopoInstRst 拓扑实例
