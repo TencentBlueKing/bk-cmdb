@@ -24,50 +24,50 @@ func TestHealthz(t *testing.T) {
 }
 
 var _ = Describe("healthz test", func() {
-	It(types.CCModuleDataCollection+" healthz test", func() {
-		isHealthy, err := healthzClient.HealthCheck(types.CCModuleDataCollection)
+	It(types.CCModuleDataCollection.Name+" healthz test", func() {
+		isHealthy, err := healthzClient.HealthCheck(types.CCModuleDataCollection.Name)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(isHealthy).To(Equal(true))
 	})
 
-	It(types.CCModuleHost+" healthz test", func() {
-		isHealthy, err := healthzClient.HealthCheck(types.CCModuleHost)
+	It(types.CCModuleHost.Name+" healthz test", func() {
+		isHealthy, err := healthzClient.HealthCheck(types.CCModuleHost.Name)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(isHealthy).To(Equal(true))
 	})
 
-	It(types.CCModuleMigrate+" healthz test", func() {
-		isHealthy, err := healthzClient.HealthCheck(types.CCModuleMigrate)
+	It(types.CCModuleMigrate.Name+" healthz test", func() {
+		isHealthy, err := healthzClient.HealthCheck(types.CCModuleMigrate.Name)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(isHealthy).To(Equal(true))
 	})
 
-	It(types.CCModuleProc+" healthz test", func() {
-		isHealthy, err := healthzClient.HealthCheck(types.CCModuleProc)
+	It(types.CCModuleProc.Name+" healthz test", func() {
+		isHealthy, err := healthzClient.HealthCheck(types.CCModuleProc.Name)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(isHealthy).To(Equal(true))
 	})
 
-	It(types.CCModuleTop+" healthz test", func() {
-		isHealthy, err := healthzClient.HealthCheck(types.CCModuleTop)
+	It(types.CCModuleTop.Name+" healthz test", func() {
+		isHealthy, err := healthzClient.HealthCheck(types.CCModuleTop.Name)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(isHealthy).To(Equal(true))
 	})
 
-	It(types.CCModuleEventServer+" healthz test", func() {
-		isHealthy, err := healthzClient.HealthCheck(types.CCModuleEventServer)
+	It(types.CCModuleEventServer.Name+" healthz test", func() {
+		isHealthy, err := healthzClient.HealthCheck(types.CCModuleEventServer.Name)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(isHealthy).To(Equal(true))
 	})
 
-	It(types.CCModuleAPIServer+" healthz test", func() {
-		isHealthy, err := healthzClient.HealthCheck(types.CCModuleAPIServer)
+	It(types.CCModuleAPIServer.Name+" healthz test", func() {
+		isHealthy, err := healthzClient.HealthCheck(types.CCModuleAPIServer.Name)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(isHealthy).To(Equal(true))
 	})
 
-	It(types.CCModuleCoerService+" healthz test", func() {
-		isHealthy, err := healthzClient.HealthCheck(types.CCModuleCoerService)
+	It(types.CCModuleCoreService.Name+" healthz test", func() {
+		isHealthy, err := healthzClient.HealthCheck(types.CCModuleCoreService.Name)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(isHealthy).To(Equal(true))
 	})
