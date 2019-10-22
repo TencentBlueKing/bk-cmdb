@@ -86,9 +86,10 @@ type CreateRawProcessInstanceInput struct {
 }
 
 type UpdateRawProcessInstanceInput struct {
-	Metadata  *Metadata `json:"metadata"`
-	BizID     int64     `json:"bk_biz_id"`
-	Processes []Process `json:"processes"`
+	Metadata  *Metadata                `json:"metadata"`
+	BizID     int64                    `json:"bk_biz_id"`
+	Processes []Process                `json:"-"`
+	Raw       []map[string]interface{} `json:"processes"`
 }
 
 type DeleteProcessInstanceInServiceInstanceInput struct {
@@ -502,6 +503,44 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 	return processInstance
 }
 
+func FilterValidFields(fields []string) []string {
+	allFields := GetAllProcessPropertyFields()
+
+	result := make([]string, 0)
+	for _, field := range fields {
+		if util.InStrArr(allFields, field) {
+			result = append(result, field)
+		}
+	}
+	return result
+}
+
+func GetAllProcessPropertyFields() []string {
+	fields := make([]string, 0)
+	fields = append(fields, "bk_func_name")
+	fields = append(fields, "bk_process_name")
+	fields = append(fields, "bk_func_id")
+	fields = append(fields, "bk_start_param_regex")
+	fields = append(fields, "auto_time_gap")
+	fields = append(fields, "user")
+	fields = append(fields, "stop_cmd")
+	fields = append(fields, "proc_num")
+	fields = append(fields, "port")
+	fields = append(fields, "description")
+	fields = append(fields, "protocol")
+	fields = append(fields, "timeout")
+	fields = append(fields, "auto_start")
+	fields = append(fields, "pid_file")
+	fields = append(fields, "reload_cmd")
+	fields = append(fields, "restart_cmd")
+	fields = append(fields, "face_stop_cmd")
+	fields = append(fields, "work_path")
+	fields = append(fields, "bind_ip")
+	fields = append(fields, "priority")
+	fields = append(fields, "start_cmd")
+	return fields
+}
+
 // ExtractChangeInfo get changes that will be applied to process instance
 func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 	t := pt.Property
@@ -785,6 +824,87 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 	}
 
 	return process, changed
+}
+
+// FilterEditableFields only return editable fields
+func (pt *ProcessTemplate) GetEditableFields(fields []string) []string {
+	editableFields := pt.ExtractEditableFields()
+	result := make([]string, 0)
+	for _, field := range fields {
+		if util.InStrArr(editableFields, field) {
+			result = append(result, field)
+		}
+	}
+	return result
+}
+
+func (pt *ProcessTemplate) ExtractEditableFields() []string {
+	editableFields := make([]string, 0)
+	property := pt.Property
+	if IsAsDefaultValue(property.FuncName.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_func_name")
+	}
+	if IsAsDefaultValue(property.ProcessName.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_process_name")
+	}
+	if IsAsDefaultValue(property.FuncID.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_func_id")
+	}
+	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_start_param_regex")
+	}
+	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) == false {
+		editableFields = append(editableFields, "auto_time_gap")
+	}
+	if IsAsDefaultValue(property.User.AsDefaultValue) == false {
+		editableFields = append(editableFields, "user")
+	}
+	if IsAsDefaultValue(property.StopCmd.AsDefaultValue) == false {
+		editableFields = append(editableFields, "stop_cmd")
+	}
+	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) == false {
+		editableFields = append(editableFields, "proc_num")
+	}
+	if IsAsDefaultValue(property.Port.AsDefaultValue) == false {
+		editableFields = append(editableFields, "port")
+	}
+	if IsAsDefaultValue(property.Description.AsDefaultValue) == false {
+		editableFields = append(editableFields, "description")
+	}
+	if IsAsDefaultValue(property.Protocol.AsDefaultValue) == false {
+		editableFields = append(editableFields, "protocol")
+	}
+	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) == false {
+		editableFields = append(editableFields, "timeout")
+	}
+	if IsAsDefaultValue(property.AutoStart.AsDefaultValue) == false {
+		editableFields = append(editableFields, "auto_start")
+	}
+	if IsAsDefaultValue(property.PidFile.AsDefaultValue) == false {
+		editableFields = append(editableFields, "pid_file")
+	}
+	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) == false {
+		editableFields = append(editableFields, "reload_cmd")
+	}
+	if IsAsDefaultValue(property.RestartCmd.AsDefaultValue) == false {
+		editableFields = append(editableFields, "restart_cmd")
+	}
+	if IsAsDefaultValue(property.ForceStopCmd.AsDefaultValue) == false {
+		editableFields = append(editableFields, "face_stop_cmd")
+	}
+	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) == false {
+		editableFields = append(editableFields, "work_path")
+	}
+	if IsAsDefaultValue(property.BindIP.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bind_ip")
+	}
+	if IsAsDefaultValue(property.Priority.AsDefaultValue) == false {
+		editableFields = append(editableFields, "priority")
+	}
+	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) == false {
+		editableFields = append(editableFields, "start_cmd")
+	}
+	return editableFields
 }
 
 // InstanceUpdate is used for update instance's value
