@@ -523,7 +523,6 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 					return
 				}
 			}
-
 			processName := ""
 			if process.ProcessName != nil {
 				processName = *process.ProcessName
