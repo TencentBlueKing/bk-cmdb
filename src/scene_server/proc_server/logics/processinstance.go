@@ -39,7 +39,7 @@ func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]
 
 	if !ret.Result {
 		blog.Errorf("rid: %s list process instance with procID: %d failed, err: %v", kit.Rid, procIDs, ret.ErrMsg)
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	processes := make([]metadata.Process, 0)
@@ -86,12 +86,15 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 }
 
 func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr.MapStr) error {
+	delete(info, common.BkSupplierAccount)
 	option := metadata.UpdateOption{
 		Data: info,
 		Condition: map[string]interface{}{
-			common.BKProcessIDField: procID,
+			common.BKProcessIDField:  procID,
+			common.BkSupplierAccount: kit.SupplierAccount,
 		},
 	}
+
 	result, err := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
 		return err

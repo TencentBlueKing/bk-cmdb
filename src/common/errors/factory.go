@@ -36,3 +36,10 @@ func NewFromCtx(errcode map[string]ErrorCode) CCErrorIf {
 	tmp.Load(errcode)
 	return tmp
 }
+
+// New 根据response返回的信息产生错误
+func New(errCode int, errMsg string) CCErrorCoder {
+	return &ccError{code: errCode, callback: func() string {
+		return errMsg
+	}}
+}
