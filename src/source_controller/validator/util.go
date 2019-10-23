@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/validator"
 
 	"github.com/tidwall/gjson"
 	"gopkg.in/mgo.v2/bson"
@@ -103,11 +104,21 @@ func FillLostedFieldValue(valData map[string]interface{}, propertys []metadata.A
 
 // ParseEnumOption convert val to []EnumVal
 func ParseEnumOption(val interface{}) EnumOption {
+
 	enumOptions := []EnumVal{}
 	if nil == val || "" == val {
 		return enumOptions
 	}
 	switch options := val.(type) {
+	case validator.EnumOption:
+		for _, optionVal := range options {
+			enumOption := EnumVal{}
+			enumOption.ID = optionVal.ID
+			enumOption.Name = optionVal.Name
+			enumOption.Type = optionVal.Type
+			enumOption.IsDefault = optionVal.IsDefault
+			enumOptions = append(enumOptions, enumOption)
+		}
 	case []EnumVal:
 		return options
 	case string:
