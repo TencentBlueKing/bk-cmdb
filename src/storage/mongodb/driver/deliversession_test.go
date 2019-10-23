@@ -28,16 +28,17 @@ import (
 
 // TestCreateApp test create app which will be successful
 func TestCreateApp(t *testing.T) {
+	ClearAllBizSet(t)
+
 	s, err := GetSession()
 	require.NoError(t, err)
 	err = s.StartTransaction()
 	require.NoError(t, err)
+	err = ActivateTransaction(s)
+	require.NoError(t, err)
 
 	se := &mongo.SessionExposer{}
 	info, err := se.GetSessionInfo(s.GetInnerSession())
-	require.NoError(t, err)
-
-	err = ActivateTransaction(s)
 	require.NoError(t, err)
 
 	err = CreateBiz(info)
@@ -48,20 +49,32 @@ func TestCreateApp(t *testing.T) {
 
 	s.CommitTransaction()
 
+	sNoTxn, err := GetSession()
+	require.NoError(t, err)
+
+	rs, err := SearchAllBiz(sNoTxn)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(rs))
+
+	rs, err = SearchAllSet(sNoTxn)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(rs))
+
 }
 
 // TestCreateAppFailed test create app which will be failed
 func TestCreateAppFailed(t *testing.T) {
+	ClearAllBizSet(t)
+
 	s, err := GetSession()
 	require.NoError(t, err)
 	err = s.StartTransaction()
 	require.NoError(t, err)
+	err = ActivateTransaction(s)
+	require.NoError(t, err)
 
 	se := &mongo.SessionExposer{}
 	info, err := se.GetSessionInfo(s.GetInnerSession())
-	require.NoError(t, err)
-
-	err = ActivateTransaction(s)
 	require.NoError(t, err)
 
 	err = CreateBiz(info)
@@ -70,20 +83,31 @@ func TestCreateAppFailed(t *testing.T) {
 	err = CreateSetFailed(info)
 	require.Error(t, err)
 
+	sNoTxn, err := GetSession()
+	require.NoError(t, err)
+
+	rs, err := SearchAllBiz(sNoTxn)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(rs))
+
+	rs, err = SearchAllSet(sNoTxn)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(rs))
 }
 
 // TestCreateAppFailed test create app which will be aborted
 func TestCreateAppAbort(t *testing.T) {
+	ClearAllBizSet(t)
+
 	s, err := GetSession()
 	require.NoError(t, err)
 	err = s.StartTransaction()
 	require.NoError(t, err)
+	err = ActivateTransaction(s)
+	require.NoError(t, err)
 
 	se := &mongo.SessionExposer{}
 	info, err := se.GetSessionInfo(s.GetInnerSession())
-	require.NoError(t, err)
-
-	err = ActivateTransaction(s)
 	require.NoError(t, err)
 
 	err = CreateBiz(info)
@@ -93,17 +117,90 @@ func TestCreateAppAbort(t *testing.T) {
 	require.NoError(t, err)
 
 	s.AbortTransaction()
+
+	sNoTxn, err := GetSession()
+	require.NoError(t, err)
+
+	rs, err := SearchAllBiz(sNoTxn)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(rs))
+
+	rs, err = SearchAllSet(sNoTxn)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(rs))
+}
+
+// TestTxnIsolation test the isolation of transaction
+func TestTxnIsolation(t *testing.T) {
+	ClearAllBizSet(t)
+
+	s, err := GetSession()
+	require.NoError(t, err)
+	err = s.StartTransaction()
+	require.NoError(t, err)
+	err = ActivateTransaction(s)
+	require.NoError(t, err)
+
+	se := &mongo.SessionExposer{}
+	info, err := se.GetSessionInfo(s.GetInnerSession())
+	require.NoError(t, err)
+
+	err = CreateBizNoTxn()
+	require.NoError(t, err)
+
+	sNoTxn, err := GetSession()
+	require.NoError(t, err)
+
+	rs, err := SearchAllBiz(sNoTxn)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(rs))
+
+	rs, err = SearchAllBiz(s)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(rs))
+
+	err = CreateBiz(info)
+	require.NoError(t, err)
+
+	rs, err = SearchAllBiz(s)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(rs))
+
+	rs, err = SearchAllBiz(sNoTxn)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(rs))
+
+	s.CommitTransaction()
+
+	rs, err = SearchAllBiz(sNoTxn)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(rs))
+}
+
+func ClearAllBizSet(t *testing.T) {
+	s, err := GetSession()
+	require.NoError(t, err)
+
+	_, err = DeleteAllBiz(s)
+	require.NoError(t, err)
+	rs, err := SearchAllBiz(s)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(rs))
+
+	_, err = DeleteAllSet(s)
+	require.NoError(t, err)
+	rs, err = SearchAllSet(s)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(rs))
 }
 
 func CreateBiz(info *mongo.SessionInfo) error {
 	s, err := GetSession()
 	if err != nil {
-		fmt.Println("GetSession err:", err)
 		return err
 	}
 	err = s.StartTransaction()
 	if err != nil {
-		fmt.Println("StartTransaction err:", err)
 		return err
 	}
 	se := &mongo.SessionExposer{}
@@ -111,11 +208,22 @@ func CreateBiz(info *mongo.SessionInfo) error {
 	bizColl := s.Collection("app")
 	biz := map[string]string{"app": "appname"}
 	if err := bizColl.InsertOne(context.Background(), biz, nil); err != nil {
-		fmt.Println("InsertOne err:", err)
 		return err
 	}
 	return nil
+}
 
+func CreateBizNoTxn() error {
+	s, err := GetSession()
+	if err != nil {
+		return err
+	}
+	bizColl := s.Collection("app")
+	biz := map[string]string{"app": "appNoTxn"}
+	if err := bizColl.InsertOne(context.Background(), biz, nil); err != nil {
+		return err
+	}
+	return nil
 }
 
 func CreateSet(info *mongo.SessionInfo) error {
@@ -154,6 +262,30 @@ func CreateSetFailed(info *mongo.SessionInfo) error {
 		return err
 	}
 	return errors.New("create set failed")
+}
+
+func SearchAllBiz(s mongodb.Session) ([]mapstr.MapStr, error) {
+	coll := s.Collection("app")
+	resultOne := []mapstr.MapStr{}
+	err := coll.Find(context.TODO(), mapstr.MapStr{}, nil, &resultOne)
+	return resultOne, err
+}
+
+func SearchAllSet(s mongodb.Session) ([]mapstr.MapStr, error) {
+	coll := s.Collection("set")
+	resultOne := []mapstr.MapStr{}
+	err := coll.Find(context.TODO(), mapstr.MapStr{}, nil, &resultOne)
+	return resultOne, err
+}
+
+func DeleteAllBiz(s mongodb.Session) (*mongodb.DeleteResult, error) {
+	coll := s.Collection("app")
+	return coll.DeleteMany(context.TODO(), mapstr.MapStr{}, nil)
+}
+
+func DeleteAllSet(s mongodb.Session) (*mongodb.DeleteResult, error) {
+	coll := s.Collection("set")
+	return coll.DeleteMany(context.TODO(), mapstr.MapStr{}, nil)
 }
 
 func GetSession() (mongodb.Session, error) {
