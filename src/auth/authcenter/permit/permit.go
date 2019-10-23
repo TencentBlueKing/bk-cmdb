@@ -12,7 +12,9 @@
 
 package permit
 
-import "configcenter/src/auth/meta"
+import (
+	"configcenter/src/auth/meta"
+)
 
 func IsReadAction(action meta.Action) bool {
 	if action == meta.FindMany || action == meta.Find {
@@ -56,7 +58,7 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 		return true
 
 	// all the model instance association related operation is all authorized for now.
-	case rsc.Type == meta.ModelInstanceAssociation:
+	case rsc.Type == meta.ModelInstanceAssociation && IsReadAction(rsc.Action):
 		return true
 
 	// case rsc.Type == meta.ModelInstance && (rsc.Action == meta.Find || rsc.Action == meta.FindMany):

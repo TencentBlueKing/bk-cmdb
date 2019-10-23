@@ -10,32 +10,29 @@
  * limitations under the License.
  */
 
-package app
+package x19_10_22_01
 
 import (
-	"os"
+	"context"
+	"fmt"
 
-	"configcenter/src/tools/cmdb_ctl/app/config"
-	"configcenter/src/tools/cmdb_ctl/cmd"
-
-	"github.com/spf13/cobra"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func Run() error {
-	config.Conf = new(config.Config)
-
-	rootCmd := &cobra.Command{
-		Use: os.Args[0],
-		Run: func(cmd *cobra.Command, args []string) {
-			_ = cmd.Help()
-		},
+func UpdateCpuUnit(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	filter := map[string]interface{}{
+		common.BKObjIDField:      common.BKInnerObjIDHost,
+		common.BKPropertyIDField: "bk_cpu_mhz",
 	}
-
-	config.Conf.AddFlags(rootCmd)
-	rootCmd.AddCommand(cmd.NewLogCommand())
-	rootCmd.AddCommand(cmd.NewExitCommand())
-	rootCmd.AddCommand(cmd.NewZkCommand())
-	rootCmd.AddCommand(cmd.NewEchoCommand())
-
-	return rootCmd.Execute()
+	doc := map[string]interface{}{
+		"unit": "MHz",
+	}
+	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, doc); err != nil {
+		blog.Errorf("UpdateCpuUnit failed, err: %+v", err)
+		return fmt.Errorf("UpdateCpuUnit failed, err: %v", err)
+	}
+	return nil
 }
