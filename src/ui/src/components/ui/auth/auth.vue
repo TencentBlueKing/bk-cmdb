@@ -36,10 +36,7 @@
                     if (!deepEqual(value, oldValue)) {
                         temp.pushQueue({
                             component: this,
-                            resource: {
-                                instanceId: this._uid,
-                                ...this.authResource
-                            }
+                            data: this.authResource
                         })
                     }
                 }
