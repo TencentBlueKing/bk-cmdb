@@ -82,6 +82,7 @@ func (valid *Validator) ValidateCreate(valData map[string]interface{}) error {
 	}
 	err := valid.ValidateMap(valData)
 	if err != nil {
+		blog.Errorf("ValidateMap, err: %v", err)
 		return err
 	}
 	return valid.validCreateUnique(valData)
@@ -444,6 +445,7 @@ func (valid *Validator) validEnum(val interface{}, key string) error {
 	}
 	// validate within enum
 	enumOption := ParseEnumOption(option.Option)
+
 	match := false
 	for _, k := range enumOption {
 		if k.ID == valStr {
