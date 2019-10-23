@@ -41,14 +41,14 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 		return nil, nil, nil, nil, err
 	}
 
-	hostIDMap, err := instance.GetHostIDByHostInfoArr(ctx, hostInfos)
+	hostIDMap, err := instance.ExtractAlreadyExistHosts(ctx, hostInfos)
 	if err != nil {
 		blog.Errorf("get hosts failed, err:%s, rid:%s", err.Error(), lgc.rid)
 		return nil, nil, nil, nil, err
 	}
 
-	var errMsg, updateErrMsg, succMsg []string
-	logConents := make([]metadata.SaveAuditLogParams, 0)
+	var errMsg, updateErrMsg, successMsg []string
+	logContents := make([]metadata.SaveAuditLogParams, 0)
 	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID, nil)
 	if err != nil {
 		return nil, nil, nil, nil, err
@@ -122,7 +122,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 			hostIDMap[generateHostCloudKey(innerIP, iSubArea)] = intHostID
 		}
 		// add current host operate result to  batch add result
-		succMsg = append(succMsg, strconv.FormatInt(index, 10))
+		successMsg = append(successMsg, strconv.FormatInt(index, 10))
 
 		// host info after it changed
 		curData, _, err := lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
@@ -131,7 +131,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 		}
 
 		// add audit log
-		logConents = append(logConents, metadata.SaveAuditLogParams{
+		logContents = append(logContents, metadata.SaveAuditLogParams{
 			ID: intHostID,
 			Content: metadata.Content{
 				PreData: preData,
@@ -147,18 +147,18 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 		hostIDs = append(hostIDs, intHostID)
 	}
 
-	if len(logConents) > 0 {
-		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, logConents...)
+	if len(logContents) > 0 {
+		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, logContents...)
 		if err != nil {
-			return hostIDs, succMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+			return hostIDs, successMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 	}
 
 	if 0 < len(errMsg) || 0 < len(updateErrMsg) {
-		return hostIDs, succMsg, updateErrMsg, errMsg, errors.New(lgc.ccLang.Language("host_import_err"))
+		return hostIDs, successMsg, updateErrMsg, errMsg, errors.New(lgc.ccLang.Language("host_import_err"))
 	}
 
-	return hostIDs, succMsg, updateErrMsg, errMsg, nil
+	return hostIDs, successMsg, updateErrMsg, errMsg, nil
 }
 
 func (lgc *Logics) getHostFields(ctx context.Context, ownerID string) (map[string]*metadata.ObjAttDes, error) {
@@ -289,9 +289,9 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 	return hostID, nil
 }
 
-// GetHostIDByHostInfoArr get host id map at it best, ip not exist in db will be ignored.
-func (h *importInstance) GetHostIDByHostInfoArr(ctx context.Context, hostInfos map[int64]map[string]interface{}) (map[string]int64, error) {
-	// TODO why don't it just return a data structure of cloudKey: hostID map ?
+// ExtractAlreadyExistHosts extract hosts that already in db(same innerIP host)
+// return: map[hostKey]hostID
+func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos map[int64]map[string]interface{}) (map[string]int64, error) {
 	// step1. extract all innerIP from hostInfos
 	var ipArr []string
 	for _, host := range hostInfos {
@@ -300,15 +300,16 @@ func (h *importInstance) GetHostIDByHostInfoArr(ctx context.Context, hostInfos m
 			ipArr = append(ipArr, innerIP)
 		}
 	}
+	if len(ipArr) == 0 {
+		return make(map[string]int64), nil
+	}
 
 	// step2. query host info by innerIPs
-	var conds map[string]interface{}
-	if 0 < len(ipArr) {
-		conds = map[string]interface{}{common.BKHostInnerIPField: common.KvMap{common.BKDBIN: ipArr}}
-
+	filter := map[string]interface{}{
+		common.BKHostInnerIPField: common.KvMap{common.BKDBIN: ipArr},
 	}
 	query := &metadata.QueryCondition{
-		Condition: conds,
+		Condition: filter,
 		Limit: metadata.SearchLimit{
 			Offset: 0,
 			Limit:  common.BKNoLimit,
@@ -331,7 +332,7 @@ func (h *importInstance) GetHostIDByHostInfoArr(ctx context.Context, hostInfos m
 		hostID, err := host.Int64(common.BKHostIDField)
 		if err != nil {
 			blog.Errorf("GetHostIDByHostInfoArr get hostID error. err:%s, hostInfo:%#v, rid:%s", err.Error(), host, h.rid)
-			// convert %s  field %s to %s error %s
+			// message format: `convert %s  field %s to %s error %s`
 			return hostMap, h.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 		}
 		hostMap[key] = hostID
