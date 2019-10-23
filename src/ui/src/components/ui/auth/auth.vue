@@ -9,17 +9,13 @@
 </template>
 
 <script>
-    import temp from './auth-queue'
+    import temp, { deepEqual } from './auth-queue'
     export default {
         name: 'cmdb-auth',
         props: {
             authResource: {
                 type: Object,
-                default: () => ({})
-            },
-            bizId: {
-                type: Number,
-                default: null
+                required: true
             }
         },
         data () {
@@ -31,29 +27,23 @@
         computed: {
             resource () {
                 return this.authResource.type || ''
-            },
-            resourceId () {
-                return this.authResource.id || 0
             }
         },
         watch: {
-            authResource () {
-                console.log(1)
-                // temp.addQueue({
-                //     id: `${this.resource}-${this.resourceId}`,
-                //     component: this,
-                //     bizId: this.bizId,
-                //     resource: this.authResource
-                // })
+            authResource: {
+                immediate: true,
+                handler (value, oldValue) {
+                    if (!deepEqual(value, oldValue)) {
+                        temp.pushQueue({
+                            component: this,
+                            resource: {
+                                instanceId: this._uid,
+                                ...this.authResource
+                            }
+                        })
+                    }
+                }
             }
-        },
-        created () {
-            temp.addQueue({
-                id: `${this.resource}-${this.resourceId}`,
-                component: this,
-                bizId: this.bizId,
-                resource: this.authResource
-            })
         },
         methods: {
             updateAuth (auth) {
