@@ -51,7 +51,7 @@
     "host_property_bk_os_version": "os vesion",
     "host_property_bk_os_bit": "os bit",
     "host_property_bk_cpu": "cpu number",
-    "host_property_bk_cpu_mhz": "cpu mhz",
+    "host_property_bk_cpu_mhz": "cpu frequency",
     "host_property_bk_cpu_module": "cpu module",
     "host_property_bk_mem": "memory",
     "host_property_bk_disk": "disk",
