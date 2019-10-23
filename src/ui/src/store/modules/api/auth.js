@@ -68,38 +68,49 @@ const actions = {
     async getAuth ({ commit, getters, rootGetters }, params) {
         const allAuth = params.list || []
         const authType = params.type || 'operation'
-        const shouldAuth = []
-        const shouldNotAuth = []
-        const hasBusiness = !!rootGetters['objectBiz/bizId']
-        const isBusinessMode = !rootGetters.isAdminView
-
-        allAuth.forEach(auth => {
-            const isBusinessAuth = STATIC_BUSINESS_MODE.includes(auth)
-            if (isBusinessMode && isBusinessAuth) {
-                if (hasBusiness) {
-                    shouldAuth.push(auth)
-                } else {
-                    shouldNotAuth.push(auth)
+        let allAuthData = []
+        if (rootGetters.site.authscheme !== 'iam') {
+            allAuthData = allAuth.map(auth => {
+                return {
+                    ...defaultAuthData,
+                    ...getters.getAuthMeta(auth),
+                    is_pass: true
                 }
-            } else {
-                shouldAuth.push(auth)
-            }
-        })
+            })
+        } else {
+            const shouldAuth = []
+            const shouldNotAuth = []
+            const hasBusiness = !!rootGetters['objectBiz/bizId']
+            const isBusinessMode = !rootGetters.isAdminView
 
-        let authData = []
-        if (shouldAuth.length) {
-            authData = await $http.post('auth/verify', {
-                resources: shouldAuth.map(auth => getters.getAuthMeta(auth))
-            }, params.config || {})
+            allAuth.forEach(auth => {
+                const isBusinessAuth = STATIC_BUSINESS_MODE.includes(auth)
+                if (isBusinessMode && isBusinessAuth) {
+                    if (hasBusiness) {
+                        shouldAuth.push(auth)
+                    } else {
+                        shouldNotAuth.push(auth)
+                    }
+                } else {
+                    shouldAuth.push(auth)
+                }
+            })
+
+            let authData = []
+            if (shouldAuth.length) {
+                authData = await $http.post('auth/verify', {
+                    resources: shouldAuth.map(auth => getters.getAuthMeta(auth))
+                }, params.config || {})
+            }
+
+            allAuthData = authData.concat(shouldNotAuth.map(auth => {
+                const meta = getters.getAuthMeta(auth)
+                return {
+                    ...defaultAuthData,
+                    ...meta
+                }
+            }))
         }
-
-        const allAuthData = authData.concat(shouldNotAuth.map(auth => {
-            const meta = getters.getAuthMeta(auth)
-            return {
-                ...defaultAuthData,
-                ...meta
-            }
-        }))
 
         commit('setAuth', {
             type: authType,
