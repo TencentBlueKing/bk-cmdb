@@ -723,8 +723,8 @@ const (
 	CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate                    = 1113022
 	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 删除多个模型中的%s数据
 	CCErrCoreServiceDeleteMultpleObjectIDRecordErr = 1113023
-	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 不允许删除在唯一校验中的字段
-	CCErrCoreServiceNotAllowUnqiueAttr = 1113024
+	// CCErrCoreServiceDeleteMultipleObjectIDRecordErr 不允许删除在唯一校验中的字段
+	CCErrCoreServiceNotAllowUniqueAttr = 1113024
 	// CCErrCoreServiceNotUpdatePredefinedAttrErr 修改不允许修改的属性的描述
 	CCErrCoreServiceNotUpdatePredefinedAttrErr = 1113025
 	// CCErrCoreServiceNotAllowAddRequiredFieldErr 模型[%s]不允许新加必填字段
@@ -738,7 +738,8 @@ const (
 	// CCErrCoreServiceModelHasInstanceErr 模型下有示例数据
 	CCErrCoreServiceModelHasInstanceErr = 1113030
 	// CCErrCoreServiceModelHasAssociationErr 模型与其他模型有关联关系
-	CCErrCoreServiceModelHasAssociationErr = 1113031
+	CCErrCoreServiceModelHasAssociationErr           = 1113031
+	CCErrCoreServiceOnlyNodeServiceCategoryAvailable = 1113032
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
