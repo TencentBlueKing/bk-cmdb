@@ -14,15 +14,172 @@ package driver_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
+
+	"configcenter/src/common/mapstr"
+	"configcenter/src/storage/mongodb"
 
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/stretchr/testify/require"
 )
 
-func TestDeliverSession(t *testing.T) {
+// TestCreateApp test create app which will be successful
+func TestCreateApp(t *testing.T) {
+	s, err := GetSession()
+	require.NoError(t, err)
+	err = s.StartTransaction()
+	require.NoError(t, err)
+
+	se := &mongo.SessionExposer{}
+	info, err := se.GetSessionInfo(s.GetInnerSession())
+	require.NoError(t, err)
+
+	err = ActivateTransaction(s)
+	require.NoError(t, err)
+
+	err = CreateBiz(info)
+	require.NoError(t, err)
+
+	err = CreateSet(info)
+	require.NoError(t, err)
+
+	s.CommitTransaction()
+
+}
+
+// TestCreateAppFailed test create app which will be failed
+func TestCreateAppFailed(t *testing.T) {
+	s, err := GetSession()
+	require.NoError(t, err)
+	err = s.StartTransaction()
+	require.NoError(t, err)
+
+	se := &mongo.SessionExposer{}
+	info, err := se.GetSessionInfo(s.GetInnerSession())
+	require.NoError(t, err)
+
+	err = ActivateTransaction(s)
+	require.NoError(t, err)
+
+	err = CreateBiz(info)
+	require.NoError(t, err)
+
+	err = CreateSetFailed(info)
+	require.Error(t, err)
+
+}
+
+// TestCreateAppFailed test create app which will be aborted
+func TestCreateAppAbort(t *testing.T) {
+	s, err := GetSession()
+	require.NoError(t, err)
+	err = s.StartTransaction()
+	require.NoError(t, err)
+
+	se := &mongo.SessionExposer{}
+	info, err := se.GetSessionInfo(s.GetInnerSession())
+	require.NoError(t, err)
+
+	err = ActivateTransaction(s)
+	require.NoError(t, err)
+
+	err = CreateBiz(info)
+	require.NoError(t, err)
+
+	err = CreateSet(info)
+	require.NoError(t, err)
+
+	s.AbortTransaction()
+}
+
+func CreateBiz(info *mongo.SessionInfo) error {
+	s, err := GetSession()
+	if err != nil {
+		fmt.Println("GetSession err:", err)
+		return err
+	}
+	err = s.StartTransaction()
+	if err != nil {
+		fmt.Println("StartTransaction err:", err)
+		return err
+	}
+	se := &mongo.SessionExposer{}
+	se.SetSessionInfo(s.GetInnerSession(), info)
+	bizColl := s.Collection("app")
+	biz := map[string]string{"app": "appname"}
+	if err := bizColl.InsertOne(context.Background(), biz, nil); err != nil {
+		fmt.Println("InsertOne err:", err)
+		return err
+	}
+	return nil
+
+}
+
+func CreateSet(info *mongo.SessionInfo) error {
+	s, err := GetSession()
+	if err != nil {
+		return err
+	}
+	err = s.StartTransaction()
+	if err != nil {
+		return err
+	}
+	se := &mongo.SessionExposer{}
+	se.SetSessionInfo(s.GetInnerSession(), info)
+	setColl := s.Collection("set")
+	set := map[string]string{"set": "setname"}
+	if err := setColl.InsertOne(context.Background(), set, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
+func CreateSetFailed(info *mongo.SessionInfo) error {
+	s, err := GetSession()
+	if err != nil {
+		return err
+	}
+	err = s.StartTransaction()
+	if err != nil {
+		return err
+	}
+	se := &mongo.SessionExposer{}
+	se.SetSessionInfo(s.GetInnerSession(), info)
+	setColl := s.Collection("set")
+	set := map[string]string{"set": "failed"}
+	if err := setColl.InsertOne(context.Background(), set, nil); err != nil {
+		return err
+	}
+	return errors.New("create set failed")
+}
+
+func GetSession() (mongodb.Session, error) {
+	client := createConnection()
+	err := client.Open()
+	if err != nil {
+		return nil, err
+	}
+	session := client.Session().Create()
+	err = session.Open()
+	if err != nil {
+		return nil, err
+	}
+	return session, nil
+}
+
+// ActivateTransaction activate transaction number in mongo server
+func ActivateTransaction(s mongodb.Session) error {
+	// find
+	coll := s.Collection("111")
+	resultOne := []mapstr.MapStr{}
+	err := coll.Find(context.TODO(), mapstr.MapStr{"aaa": "bbb"}, nil, &resultOne)
+	return err
+}
+
+func aTestDeliverSession(t *testing.T) {
 
 	var err error
 
@@ -38,13 +195,14 @@ func TestDeliverSession(t *testing.T) {
 	}()
 	err = session1.StartTransaction()
 	require.NoError(t, err)
-	coll1 := session1.Collection("cc_tranTest")
 
 	// get seesion info
 	se := &mongo.SessionExposer{}
 	info, err := se.GetSessionInfo(session1.GetInnerSession())
 	require.NoError(t, err)
 	fmt.Printf("info:%#v", info)
+
+	coll1 := session1.Collection("cc_tranTest")
 
 	// insert one
 	err = coll1.InsertOne(context.TODO(), bson.M{"key": "value_aaa"}, nil)
@@ -79,10 +237,10 @@ func TestDeliverSession(t *testing.T) {
 	require.NoError(t, err)
 	fmt.Println("has inserted many")
 
-	// err = session1.AbortTransaction()
-	// require.NoError(t, err)
-	err = session1.CommitTransaction()
+	err = session1.AbortTransaction()
 	require.NoError(t, err)
+	// err = session1.CommitTransaction()
+	// require.NoError(t, err)
 	// err = session2.AbortTransaction()
 	// require.NoError(t, err)
 	// err = session2.CommitTransaction()
