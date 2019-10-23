@@ -76,7 +76,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 
 		iSubAreaVal, err := util.GetInt64ByInterface(iSubArea)
 		if err != nil || iSubAreaVal < 0 {
-			errMsg = append(errMsg, lgc.ccLang.Language("import_host_cloudID_invaild"))
+			errMsg = append(errMsg, lgc.ccLang.Language("import_host_cloudID_invalid"))
 			continue
 		}
 
