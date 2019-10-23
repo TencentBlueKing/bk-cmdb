@@ -86,12 +86,15 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 }
 
 func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr.MapStr) error {
+	delete(info, common.BkSupplierAccount)
 	option := metadata.UpdateOption{
 		Data: info,
 		Condition: map[string]interface{}{
-			common.BKProcessIDField: procID,
+			common.BKProcessIDField:  procID,
+			common.BkSupplierAccount: kit.SupplierAccount,
 		},
 	}
+
 	result, err := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
 		return err
