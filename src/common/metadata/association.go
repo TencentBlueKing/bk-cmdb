@@ -454,3 +454,28 @@ type ResponeImportAssociationData struct {
 type RequestImportAssociation struct {
 	AssociationInfoMap map[int]ExcelAssocation `json:"association_info"`
 }
+
+// RequestInstAssociationObjectID 要求根据实例信息（实例的模型ID，实例ID）和模型ID（关联关系中的源，目的模型ID）, 返回关联关系的请求参数
+type RequestInstAssociationObjectID struct {
+	Condition RequestInstAssociationObjectIDCondition `json:"condition"`
+	Page      BasePage                                `json:"page"`
+}
+
+// RequestInstAssociationObjectIDCondition  query condition
+type RequestInstAssociationObjectIDCondition struct {
+	// 实例得模型ID
+	ObjectID string `json:"bk_obj_id"`
+	// 实例ID
+	InstID int64 `json:"bk_inst_id"`
+	// ObjectID是否为目标模型， 默认false， 关联关系中的源模型，否则是目标模型
+	IsTargetObject bool `json:"is_target_object"`
+
+	// 关联对象的模型ID
+	AssociationObjectID string `json:"association_obj_id"`
+}
+
+// InstBaseInfo instance base info
+type InstBaseInfo struct {
+	ID   int64  `json:"bk_inst_id"`
+	Name string `json:"bk_inst_name"`
+}

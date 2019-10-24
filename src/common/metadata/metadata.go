@@ -180,6 +180,9 @@ type Metadata struct {
 }
 
 func (md *Metadata) ParseBizID() (int64, error) {
+    if md == nil {
+        return 0, errors.New("invalid nil matadata")
+    }
 	bizID, err := BizIDFromMetadata(*md)
 	if err != nil {
 		return 0, err

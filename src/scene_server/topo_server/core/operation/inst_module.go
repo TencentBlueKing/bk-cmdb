@@ -278,7 +278,7 @@ func (m *module) IsModuleNameDuplicateError(params types.ContextParams, bizID, s
 	return false, nil
 }
 
-func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setIDs, moduleIDS []int64) error {
+func (m *module) DeleteModule(params types.ContextParams, moduleModel model.Object, bizID int64, setIDs, moduleIDS []int64) error {
 
 	exists, err := m.hasHost(params, bizID, setIDs, moduleIDS)
 	if nil != err {
@@ -310,7 +310,7 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 
 	// module table doesn't have metadata field
 	params.MetaData = nil
-	err = m.inst.DeleteInst(params, obj, innerCond, false)
+	err = m.inst.DeleteInst(params, moduleModel, innerCond, false)
 	if err != nil {
 		blog.Errorf("delete module failed, DeleteInst failed, err: %+v, rid: %s", err, params.ReqID)
 		return err

@@ -71,6 +71,17 @@ func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams
 		return nil, err
 	}
 
+	// 判断是否有要根据default字段，需要国际化的内容
+	if _, ok := defaultNameLanguagePkg[pathParams("bk_obj_id")]; ok {
+		// 大于两个字段
+		if len(inputData.Fields) > 1 {
+			inputData.Fields = append(inputData.Fields, common.BKDefaultField)
+		} else if len(inputData.Fields) == 1 && inputData.Fields[0] != "" {
+			// 只有一个字段，如果字段为空白字符，则不处理
+			inputData.Fields = append(inputData.Fields, common.BKDefaultField)
+		}
+	}
+
 	dataResult, err := s.core.InstanceOperation().SearchModelInstance(params, pathParams("bk_obj_id"), inputData)
 	if nil != err {
 		return dataResult, err
@@ -79,7 +90,7 @@ func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams
 	// translate language for default name
 	if m, ok := defaultNameLanguagePkg[pathParams("bk_obj_id")]; ok {
 		for idx := range dataResult.Info {
-			subResult := m[fmt.Sprint(dataResult.Info[idx]["default"])]
+			subResult := m[fmt.Sprint(dataResult.Info[idx][common.BKDefaultField])]
 			if len(subResult) >= 3 {
 				dataResult.Info[idx][subResult[1]] = util.FirstNotEmptyString(params.Lang.Language(subResult[0]), fmt.Sprint(dataResult.Info[idx][subResult[1]]), fmt.Sprint(dataResult.Info[idx][subResult[2]]))
 			}

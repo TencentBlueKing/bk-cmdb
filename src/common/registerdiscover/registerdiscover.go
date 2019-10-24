@@ -74,3 +74,13 @@ func (rd *RegDiscover) DiscoverService(key string) (<-chan *DiscoverEvent, error
 func (rd *RegDiscover) Ping() error {
 	return rd.rdServer.Ping()
 }
+
+// Cancel to stop server register and discover
+func (rd *RegDiscover) Cancel() {
+	rd.rdServer.Cancel()
+}
+
+// ClearRegisterPath to delete server register path from zk
+func (rd *RegDiscover) ClearRegisterPath() error {
+	return rd.rdServer.ClearRegisterPath()
+}

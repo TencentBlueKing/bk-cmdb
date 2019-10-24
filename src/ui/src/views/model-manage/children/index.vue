@@ -461,7 +461,8 @@
                             requestId: 'deleteModel'
                         }
                     })
-                    this.$router.replace({ name: MENU_MODEL_MANAGEMENT })
+                    const routerName = this.$route.query.from === 'business' ? MENU_MODEL_BUSINESS_TOPOLOGY : MENU_MODEL_MANAGEMENT
+                    this.$router.replace({ name: routerName })
                 } else {
                     await this.deleteObject({
                         id: this.activeModel['id'],
