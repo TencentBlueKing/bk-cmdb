@@ -26,7 +26,15 @@
                 <i18n class="node-view-handler"
                     v-if="!selectedNode.children.length"
                     path="未添加节点提示">
+
                     <a class="node-view-link" href="javascript:void(0)" place="link"
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_TOPO),
+                            auth: [$OPERATION.C_TOPO]
+                        }"
+                        :class="{
+                            disabled: !$isAuthorized($OPERATION.C_TOPO)
+                        }"
                         @click="handleAddNode">
                         {{$t('添加节点')}}
                     </a>
@@ -35,6 +43,13 @@
                     v-else
                     path="已添加节点提示">
                     <a class="node-view-link" href="javascript:void(0)" place="link" style="margin-left: -2px"
+                        v-cursor="{
+                            active: !$isAuthorized($OPERATION.C_TOPO),
+                            auth: [$OPERATION.C_TOPO]
+                        }"
+                        :class="{
+                            disabled: !$isAuthorized($OPERATION.C_TOPO)
+                        }"
                         @click="handleAddNode">
                         {{$t('添加节点')}}
                     </a>
@@ -129,6 +144,9 @@
         }
         .node-view-link {
             color: #3A84FF;
+            &.disabled {
+                color: #dcdee5;
+            }
         }
     }
 </style>

@@ -1,6 +1,6 @@
 <template>
     <div class="source-layout">
-        <p class="source-tips">{{$t('源实例主机提示')}}</p>
+        <!-- <p class="source-tips">{{$t('源实例主机提示')}}</p> -->
         <div class="table-options">
             <bk-button class="options-button"
                 :disabled="!checked.length"

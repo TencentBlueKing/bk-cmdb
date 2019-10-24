@@ -214,6 +214,7 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 		BusinessID:        bizID,
 		Page:              input.Page,
 		ServiceCategoryID: &input.ServiceCategoryID,
+		Search:            input.Search,
 	}
 
 	if ps.AuthManager.Enabled() == true {

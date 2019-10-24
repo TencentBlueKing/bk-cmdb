@@ -158,7 +158,7 @@
                             </bk-input>
                             <p class="form-error" :title="errors.first('classifyId')">{{errors.first('classifyId')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('下划线，数字，英文小写的组合')"></i>
+                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('下划线，数字，英文大小写的组合')"></i>
                     </label>
                     <label>
                         <span class="label-title">

@@ -133,12 +133,15 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 	}
 	input.BizID = bizID
 
-	if input.ProcessProperty == nil || input.ProcessTemplateID <= 0 {
+	if input.Property == nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update process template, but property empty, input: %+v", input)
+		return
+	}
+	if input.ProcessTemplateID <= 0 {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update process template, but get nil process template, input: %+v", input)
 		return
 	}
 
-	// authorize
 	listOption := &metadata.ListProcessTemplatesOption{
 		BusinessID:         bizID,
 		ProcessTemplateIDs: []int64{input.ProcessTemplateID},
@@ -157,12 +160,7 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	updateParam := metadata.ProcessTemplate{
-		ID:       input.ProcessTemplateID,
-		BizID:    bizID,
-		Property: input.ProcessProperty,
-	}
-	template, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplateID, &updateParam)
+	template, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplateID, input.Property)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcUpdateProcessTemplateFailed, "update process template: %v failed.", input)
 		return

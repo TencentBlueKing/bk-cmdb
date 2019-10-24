@@ -464,6 +464,8 @@ const (
 
 var (
 	deleteObjectInstanceAssociationLatestRegexp = regexp.MustCompile("^/api/v3/delete/instassociation/[0-9]+/?$")
+	findObjectInstanceTopologyUILatestRegexp    = regexp.MustCompile(`^/api/v3/findmany/inst/association/object/[^\s/]+/inst_id/[0-9]+/offset/[0-9]+/limit/[0-9]+/web$`)
+	findInstAssociationObjInstInfoLatestRegexp  = regexp.MustCompile(`^/api/v3/findmany/inst/association/association_object/inst_base_info$`)
 )
 
 func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
@@ -543,7 +545,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		return ps
 	}
 
-	// delete object's instance association operation.
+	// delete object's instance association operation. for web
 	if ps.hitRegexp(deleteObjectInstanceAssociationLatestRegexp, http.MethodDelete) {
 		assoID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
@@ -590,6 +592,44 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 				})
 		}
 
+		return ps
+	}
+
+	// find object instance's association operation.
+	if ps.hitRegexp(findObjectInstanceTopologyUILatestRegexp, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find object instance's association object instance info operation.
+	if ps.hitRegexp(findInstAssociationObjInstInfoLatestRegexp, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.FindMany,
+				},
+			},
+		}
 		return ps
 	}
 

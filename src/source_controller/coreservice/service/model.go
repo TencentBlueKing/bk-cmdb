@@ -40,7 +40,7 @@ func (s *coreService) CreateOneModelClassification(params core.ContextParams, pa
 	return s.core.ModelOperation().CreateOneModelClassification(params, inputData)
 }
 
-func (s *coreService) SetOneModelClassificaition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SetOneModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.SetOneModelClassification{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
@@ -50,7 +50,7 @@ func (s *coreService) SetOneModelClassificaition(params core.ContextParams, path
 	return s.core.ModelOperation().SetOneModelClassification(params, inputData)
 }
 
-func (s *coreService) SetManyModelClassificaiton(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SetManyModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputDatas := metadata.SetManyModelClassification{}
 	if err := data.MarshalJSONInto(&inputDatas); nil != err {
@@ -75,15 +75,6 @@ func (s *coreService) DeleteModelClassification(params core.ContextParams, pathP
 		return nil, err
 	}
 	return s.core.ModelOperation().DeleteModelClassification(params, inputData)
-}
-
-func (s *coreService) CascadeDeleteModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	inputData := metadata.DeleteOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
-	}
-	return s.core.ModelOperation().CascadeDeleteModeClassification(params, inputData)
 }
 
 func (s *coreService) SearchModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -144,11 +135,16 @@ func (s *coreService) DeleteModel(params core.ContextParams, pathParams, queryPa
 
 func (s *coreService) CascadeDeleteModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
+	idStr := pathParams(common.BKFieldID)
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
+	}
 	inputData := metadata.DeleteOption{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.ModelOperation().CascadeDeleteModel(params, inputData)
+	return s.core.ModelOperation().CascadeDeleteModel(params, id)
 }
 
 func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -200,7 +196,15 @@ func (s *coreService) GetModelStatistics(params core.ContextParams, pathParams, 
 		return nil, err
 	}
 
-	bizCount, err := s.db.Table(common.BKTableNameBaseApp).Find(filter).Count(params.Context)
+	appFilter := map[string]interface{}{
+		common.BKDefaultField: map[string]interface{}{
+			common.BKDBNE: 1,
+		},
+		common.BKDataStatusField: map[string]interface{}{
+			common.BKDBNE: common.DataStatusDisabled,
+		},
+	}
+	bizCount, err := s.db.Table(common.BKTableNameBaseApp).Find(appFilter).Count(params.Context)
 	if err != nil {
 		blog.Errorf("GetModelStatistics failed, count application model instances failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
