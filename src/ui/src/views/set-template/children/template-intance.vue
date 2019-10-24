@@ -139,7 +139,8 @@
                     current: 1,
                     ...this.$tools.getDefaultPaginationConfig()
                 },
-                listSort: 'last_time'
+                listSort: 'last_time',
+                instancesInfo: {}
             }
         },
         computed: {
@@ -214,7 +215,8 @@
         async created () {
             await this.getData()
             if (this.list.length) {
-                this.setsId.length && this.getSetInstancesWithTopo()
+                this.getSetInstancesWithTopo()
+                this.getInstancesInfo()
                 this.polling()
             }
         },
@@ -297,6 +299,19 @@
                     this.listWithTopo = []
                 }
             },
+            async getInstancesInfo () {
+                const instancesInfo = await this.$store.dispatch('setSync/getInstancesSyncStatus', {
+                    bizId: this.business,
+                    setTemplateId: this.templateId,
+                    params: {
+                        bk_set_ids: this.setsId
+                    },
+                    config: {
+                        requestId: 'getInstancesInfo'
+                    }
+                })
+                this.instancesInfo = instancesInfo
+            },
             polling () {
                 try {
                     if (this.timer) {
@@ -305,6 +320,7 @@
                     }
                     this.timer = setInterval(() => {
                         this.updateStatusData()
+                        this.getInstancesInfo()
                     }, 10000)
                 } catch (e) {
                     console.error(e)
@@ -318,7 +334,10 @@
             async handleFilter (current = 1) {
                 this.pagination.current = current
                 await this.getData()
-                this.setsId.length && this.getSetInstancesWithTopo()
+                if (this.list.length) {
+                    this.getSetInstancesWithTopo()
+                    this.getInstancesInfo()
+                }
             },
             handleSelectionChange (selection) {
                 this.checkedList = selection.map(item => item.bk_set_id)
