@@ -20,7 +20,6 @@ import (
 	"configcenter/src/apimachinery/toposerver/inst"
 	"configcenter/src/apimachinery/toposerver/object"
 	"configcenter/src/apimachinery/toposerver/openapi"
-	"configcenter/src/apimachinery/toposerver/privilege"
 	"configcenter/src/apimachinery/util"
 )
 
@@ -28,7 +27,6 @@ type TopoServerClientInterface interface {
 	Instance() inst.InstanceInterface
 	Object() object.ObjectInterface
 	OpenAPI() openapi.OpenApiInterface
-	Privilege() privilege.PrivilegeInterface
 	Association() association.AssociationInterface
 }
 
@@ -53,10 +51,6 @@ func (t *topoServer) Object() object.ObjectInterface {
 
 func (t *topoServer) OpenAPI() openapi.OpenApiInterface {
 	return openapi.NewOpenApiInterface(t.restCli)
-}
-
-func (t *topoServer) Privilege() privilege.PrivilegeInterface {
-	return privilege.NewPrivilegeInterface(t.restCli)
 }
 
 func (t *topoServer) Association() association.AssociationInterface {

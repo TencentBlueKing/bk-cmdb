@@ -601,3 +601,22 @@ var _ = Describe("inst test", func() {
 		Expect(int64(data["bk_inst_id"].(float64))).To(Equal(instId))
 	})
 })
+
+var _ = Describe("audit test", func() {
+	It("get audit log", func() {
+		input := &metadata.QueryInput{
+			Condition: map[string]interface{}{
+				"op_time": []string{
+					"2018-07-20 00:00:00",
+					"2018-07-21 23:59:59",
+				},
+			},
+			Start: 0,
+			Limit: 10,
+			Sort:  "-op_time",
+		}
+		rsp, err := instClient.QueryAuditLog(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+})
