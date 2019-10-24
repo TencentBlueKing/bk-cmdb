@@ -9,11 +9,11 @@
 </template>
 
 <script>
-    import temp, { deepEqual } from './auth-queue'
+    import resourceOperation, { deepEqual } from './auth-queue'
     export default {
         name: 'cmdb-auth',
         props: {
-            authResource: {
+            auth: {
                 type: Object,
                 required: true
             }
@@ -26,17 +26,18 @@
         },
         computed: {
             resource () {
-                return this.authResource.type || ''
+                return this.auth.type || ''
             }
         },
         watch: {
-            authResource: {
+            auth: {
                 immediate: true,
+                deep: true,
                 handler (value, oldValue) {
                     if (!deepEqual(value, oldValue)) {
-                        temp.pushQueue({
+                        resourceOperation.pushQueue({
                             component: this,
-                            data: this.authResource
+                            data: this.auth
                         })
                     }
                 }
