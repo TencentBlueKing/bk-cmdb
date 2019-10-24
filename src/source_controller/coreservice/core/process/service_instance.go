@@ -222,8 +222,10 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 		filter[common.BKServiceTemplateIDField] = option.ServiceTemplateID
 	}
 
-	if option.HostID != 0 {
-		filter[common.BKHostIDField] = option.HostID
+	if len(option.HostIDs) > 0 {
+		filter[common.BKHostIDField] = map[string]interface{}{
+			common.BKDBIN: option.HostIDs,
+		}
 	}
 
 	if option.ModuleID != 0 {
