@@ -41,7 +41,7 @@ type ProcessInterface interface {
 	// process template
 	CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder)
 	GetProcessTemplate(ctx context.Context, h http.Header, templateID int64) (*metadata.ProcessTemplate, errors.CCErrorCoder)
-	UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder)
+	UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, property map[string]interface{}) (*metadata.ProcessTemplate, errors.CCErrorCoder)
 	ListProcessTemplates(ctx context.Context, h http.Header, option *metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder)
 	DeleteProcessTemplate(ctx context.Context, h http.Header, processTemplateID int64) errors.CCErrorCoder
 	DeleteProcessTemplateBatch(ctx context.Context, h http.Header, processTemplateIDs []int64) errors.CCErrorCoder

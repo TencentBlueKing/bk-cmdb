@@ -47,7 +47,7 @@ func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfi
 }
 
 // Run main function
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -91,7 +91,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return err
 	}
-	if err := backbone.StartServer(ctx, engine, coreService.WebService(), true); err != nil {
+	err = backbone.StartServer(ctx, cancel, engine, coreService.WebService(), true)
+	if err != nil {
 		return err
 	}
 	select {

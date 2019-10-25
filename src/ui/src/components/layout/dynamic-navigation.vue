@@ -62,7 +62,6 @@
                                 <router-link class="submenu-link"
                                     v-for="(submenu, submenuIndex) in menu.submenu"
                                     ref="menuLink"
-                                    exact
                                     active-class="active"
                                     :class="{
                                         'is-relative-active': isRelativeActive(submenu)
@@ -315,6 +314,7 @@
             },
             handleToggleBusiness (id, old) {
                 if (old) {
+                    window.location.hash = '#/business/host'
                     window.location.reload()
                 }
             }

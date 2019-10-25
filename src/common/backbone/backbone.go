@@ -164,10 +164,15 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("new config center failed, err: %v", err)
 	}
 
+	err = handleNotice(ctx, client.Client(), input.SrvInfo.Instance())
+	if err != nil {
+		return nil, fmt.Errorf("handle notice failed, err: %v", err)
+	}
+
 	return engine, nil
 }
 
-func StartServer(ctx context.Context, e *Engine, HTTPHandler http.Handler, pprofEnabled bool) error {
+func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTPHandler http.Handler, pprofEnabled bool) error {
 	e.server = Server{
 		ListenAddr:   e.srvInfo.IP,
 		ListenPort:   e.srvInfo.Port,
@@ -176,10 +181,7 @@ func StartServer(ctx context.Context, e *Engine, HTTPHandler http.Handler, pprof
 		PProfEnabled: pprofEnabled,
 	}
 
-	if err := ListenAndServe(e.server); err != nil {
-		return err
-	}
-	return nil
+	return ListenAndServe(e.server, e.SvcDisc, cancel)
 }
 
 func New(c *Config, disc ServiceRegisterInterface) (*Engine, error) {

@@ -47,7 +47,7 @@
                     :right-icon="'bk-icon icon-search'"
                     font-size="large"
                     v-model.trim="filter.templateName"
-                    @enter="searchByTemplateName">
+                    @enter="getTableData">
                 </bk-input>
             </div>
         </div>
@@ -149,6 +149,7 @@
                     : this.maincategoryId ? this.maincategoryId : 0
                 return {
                     service_category_id: id,
+                    search: this.filter.templateName,
                     page: {
                         start: (this.table.pagination.current - 1) * this.table.pagination.limit,
                         limit: this.table.pagination.limit,
@@ -212,11 +213,6 @@
                 this.classificationList = res.info.map(item => item['category'])
                 this.mainList = this.classificationList.filter(classification => !classification['bk_parent_id'])
                 this.allSecondaryList = this.classificationList.filter(classification => classification['bk_parent_id'])
-            },
-            searchByTemplateName () {
-                const reg = new RegExp(this.filter.templateName, 'gi')
-                const filterList = this.table.allList.filter(template => reg.test(template['name']))
-                this.table.list = this.filter.templateName ? filterList : this.table.allList
             },
             handleSelect (id, data) {
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)

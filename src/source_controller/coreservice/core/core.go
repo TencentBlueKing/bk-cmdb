@@ -40,7 +40,6 @@ type ModelClassification interface {
 	SetOneModelClassification(ctx ContextParams, inputParam metadata.SetOneModelClassification) (*metadata.SetDataResult, error)
 	UpdateModelClassification(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModelClassification(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	CascadeDeleteModeClassification(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	SearchModelClassification(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelClassificationDataResult, error)
 }
 
@@ -74,7 +73,7 @@ type ModelOperation interface {
 	SetModel(ctx ContextParams, inputParam metadata.SetModel) (*metadata.SetDataResult, error)
 	UpdateModel(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	CascadeDeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
+	CascadeDeleteModel(ctx ContextParams, modelID int64) (*metadata.DeletedCount, error)
 	SearchModel(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error)
 	SearchModelWithAttribute(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelWithAttributeDataResult, error)
 }
@@ -205,7 +204,7 @@ type ProcessOperation interface {
 	// process template
 	CreateProcessTemplate(ctx ContextParams, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder)
 	GetProcessTemplate(ctx ContextParams, templateID int64) (*metadata.ProcessTemplate, errors.CCErrorCoder)
-	UpdateProcessTemplate(ctx ContextParams, templateID int64, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder)
+	UpdateProcessTemplate(ctx ContextParams, templateID int64, property map[string]interface{}) (*metadata.ProcessTemplate, errors.CCErrorCoder)
 	ListProcessTemplates(ctx ContextParams, option metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder)
 	DeleteProcessTemplate(ctx ContextParams, processTemplateID int64) errors.CCErrorCoder
 

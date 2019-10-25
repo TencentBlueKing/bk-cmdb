@@ -119,6 +119,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 			ServiceTemplateID: module.ServiceTemplateID,
 			Page: metadata.BasePage{
 				Limit: common.BKNoLimit,
+				Sort:  "id",
 			},
 		}
 		listProcTplResult, ccErr := p.ListProcessTemplates(ctx, listProcessTemplateOption)

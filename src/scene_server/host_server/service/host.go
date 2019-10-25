@@ -296,6 +296,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		}
 	}
 
+	// 获取目标业务空先机模块ID
 	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).MapStr()
 	cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, cond)
@@ -479,18 +480,18 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	// TODO: this is a wrong usage, just for compatible the wrong usage before.
 	// delete this, when the frontend use the right request field. not the number.
 	id := data[common.BKHostIDField]
-    hostIDStr := ""
-	switch id.(type){
-    case float64:
-        floatID := id.(float64)
-        hostIDStr = strconv.FormatInt(int64(floatID), 10)
-    case string:
-        hostIDStr = id.(string)
-    default:
-        blog.Errorf("update host batch failed, got invalid host id(%v) data type,rid:%s", id, srvData.rid)
-        _ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "bk_host_id")})
-        return
-    }
+	hostIDStr := ""
+	switch id.(type) {
+	case float64:
+		floatID := id.(float64)
+		hostIDStr = strconv.FormatInt(int64(floatID), 10)
+	case string:
+		hostIDStr = id.(string)
+	default:
+		blog.Errorf("update host batch failed, got invalid host id(%v) data type,rid:%s", id, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "bk_host_id")})
+		return
+	}
 
 	businessMedata := data.Remove(common.MetadataField)
 	data.Remove(common.BKHostIDField)

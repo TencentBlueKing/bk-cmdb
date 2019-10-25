@@ -159,7 +159,7 @@
                         'bk_obj_id': 'module',
                         'bk_inst_id': module.bk_module_id,
                         'bk_inst_name': module.bk_module_name,
-                        'host_count': module.host_count
+                        'host_count': module.host_count > 999 ? '999+' : module.host_count
                     }
                 }))
                 return instance
@@ -334,6 +334,11 @@
             &:hover {
                 color: #3c96ff;
             }
+        }
+    }
+    [bk-language='en'] {
+        .topology-tips {
+            padding: 2px 3px;
         }
     }
     .topology-tree {

@@ -34,7 +34,7 @@ import (
 	synchronizeUtil "configcenter/src/apimachinery/synchronize/util"
 )
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -76,10 +76,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	service.SetSynchronizeServer(synchronizeClientInst)
 	go synchronSrv.Service.InitBackground()
 	handler := restful.NewContainer().Add(service.WebService())
-	if err := backbone.StartServer(ctx, engine, handler, true); err != nil {
+	err = backbone.StartServer(ctx, cancel, engine, handler, true)
+	if err != nil {
 		return err
 	}
-	select {}
+	select {
+	case <-ctx.Done():
+	}
+	return nil
 }
 
 type SynchronizeServer struct {

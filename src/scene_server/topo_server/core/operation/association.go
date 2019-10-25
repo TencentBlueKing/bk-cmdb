@@ -34,32 +34,28 @@ import (
 var (
 	InstanceAssociationAuditHeaders = []metadata.Header{
 		{
+			PropertyName: "association kind",
+			PropertyID:   common.AssociationKindIDField,
+		},
+		{
+			PropertyName: "association instance id",
+			PropertyID:   common.BKAsstInstIDField,
+		},
+		{
+			PropertyName: "association model id",
+			PropertyID:   common.BKAsstObjIDField,
+		},
+		{
+			PropertyName: "instance id",
+			PropertyID:   common.BKInstIDField,
+		},
+		{
+			PropertyName: "association id",
+			PropertyID:   common.AssociationObjAsstIDField,
+		},
+		{
 			PropertyName: common.AssociationKindIDField,
-			PropertyID:   "association kind",
-		},
-		{
-			PropertyName: common.BKAsstInstIDField,
-			PropertyID:   "association instance id",
-		},
-		{
-			PropertyName: common.BKAsstObjIDField,
-			PropertyID:   "association model id",
-		},
-		{
-			PropertyName: common.BKInstIDField,
-			PropertyID:   "instance id",
-		},
-		{
-			PropertyName: common.AssociationObjAsstIDField,
-			PropertyID:   "association id",
-		},
-		{
-			PropertyName: common.BKObjIDField,
-			PropertyID:   "model id",
-		},
-		{
-			PropertyName: "name",
-			PropertyID:   "association name",
+			PropertyID:   "name",
 		},
 	}
 )
@@ -82,6 +78,7 @@ type AssociationOperationInterface interface {
 	SearchInstAssociation(params types.ContextParams, query *metadata.QueryInput) ([]metadata.InstAsst, error)
 	SearchInstAssociationList(params types.ContextParams, query *metadata.QueryCondition) ([]metadata.InstAsst, uint64, error)
 	SearchInstAssociationUIList(params types.ContextParams, objID string, query *metadata.QueryCondition) (result interface{}, asstCnt uint64, err error)
+	SearchInstAssociationSingleObjectInstInfo(params types.ContextParams, returnInstInfoObjID string, query *metadata.QueryCondition) (result []metadata.InstBaseInfo, cnt uint64, err error)
 	CheckBeAssociation(params types.ContextParams, obj model.Object, cond condition.Condition) error
 	CreateCommonInstAssociation(params types.ContextParams, data *metadata.InstAsst) error
 	DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error
@@ -1049,4 +1046,82 @@ func (assoc *association) SearchInstAssociationUIList(params types.ContextParams
 	}
 
 	return result, rsp.Data.Count, nil
+}
+
+// SearchInstAssociationUIList 与实例有关系的实例关系数据,以分页的方式返回
+// returnInstInfoObjID 根据条件查询出来关联关系，需要返回实例信息（实例名，实例ID）的模型ID
+func (assoc *association) SearchInstAssociationSingleObjectInstInfo(params types.ContextParams, returnInstInfoObjID string, query *metadata.QueryCondition) (result []metadata.InstBaseInfo, cnt uint64, err error) {
+
+	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), params.Header, query)
+	if nil != err {
+		blog.Errorf("ReadInstAssociation http do error, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, 0, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rsp.Result {
+		blog.ErrorJSON("ReadInstAssociation http response error, query: %s, response: %s, rid: %s", query, rsp, params.ReqID)
+		return nil, 0, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+	// association count
+	cnt = rsp.Data.Count
+
+	if cnt == 0 {
+		return nil, 0, nil
+	}
+
+	var objIDInstIDArr []int64
+
+	for _, instAsst := range rsp.Data.Info {
+		if instAsst.ObjectID == returnInstInfoObjID {
+			objIDInstIDArr = append(objIDInstIDArr, instAsst.InstID)
+		} else if instAsst.AsstObjectID == returnInstInfoObjID {
+			objIDInstIDArr = append(objIDInstIDArr, instAsst.AsstInstID)
+
+		}
+	}
+
+	idField := metadata.GetInstIDFieldByObjID(returnInstInfoObjID)
+	nameField := metadata.GetInstNameFieldName(returnInstInfoObjID)
+	cond := condition.CreateCondition()
+	cond.Field(idField).In(objIDInstIDArr)
+	input := &metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+		Limit: metadata.SearchLimit{
+			Offset: 0,
+			Limit:  common.BKNoLimit,
+		},
+		Fields: []string{nameField, idField},
+	}
+	instResp, err := assoc.clientSet.CoreService().Instance().
+		ReadInstance(context.Background(), params.Header, returnInstInfoObjID, input)
+	if err != nil {
+		blog.Errorf("ReadInstance http do error, err: %s, input:%s, rid: %s", err.Error(), input, params.ReqID)
+		return nil, 0, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+	if !instResp.Result {
+		blog.ErrorJSON("ReadInstance http response error, query: %s, response: %s, rid: %s", query, rsp, params.ReqID)
+		return nil, 0, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	result = make([]metadata.InstBaseInfo, 0)
+	for _, row := range instResp.Data.Info {
+		id, err := row.Int64(idField)
+		if err != nil {
+			blog.ErrorJSON("ReadInstance  convert field(%s) to int error. err:%s, inst:%s,rid:%s", idField, err.Error(), row, params.ReqID)
+			// CCErrCommInstFieldConvertFail  convert %s  field %s to %s error %s
+			return nil, 0, params.Err.Errorf(common.CCErrCommInstFieldConvertFail, returnInstInfoObjID, idField, "int", err.Error())
+		}
+		name, err := row.String(nameField)
+		if err != nil {
+			blog.ErrorJSON("ReadInstance  convert field(%s) to int error. err:%s, inst:%s,rid:%s", nameField, err.Error(), row, params.ReqID)
+			// CCErrCommInstFieldConvertFail  convert %s  field %s to %s error %s
+			return nil, 0, params.Err.Errorf(common.CCErrCommInstFieldConvertFail, returnInstInfoObjID, idField, "string", err.Error())
+		}
+		result = append(result, metadata.InstBaseInfo{
+			ID:   id,
+			Name: name,
+		})
+	}
+
+	return result, cnt, nil
 }
