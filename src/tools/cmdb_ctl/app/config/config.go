@@ -25,15 +25,16 @@ import (
 var Conf *Config
 
 type Config struct {
-	ZkAddr   string
+	ZkConf   *zkclient.ZkConf
 	AddrPort string
 }
 
 // AddFlags add flags
 func (c *Config) AddFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&c.ZkAddr, "zkaddr", os.Getenv("ZK_ADDR"), "the ip address and port for the zookeeper hosts, separated by ',', corresponding environment variable is ZK_ADDR")
-	// TODO add zkuser and zkpwd
-	cmd.PersistentFlags().StringVar(&c.AddrPort, "addrport", os.Getenv("ADDR_PORT"), "the ip address and port for the hosts to apply command, separated by ',', corresponding environment variable is ADDR_PORT")
+	cmd.PersistentFlags().StringVar(&c.ZkConf.ZkAddr, "zkaddr", os.Getenv("ZK_ADDR"), "the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR")
+	cmd.PersistentFlags().StringVar(&c.ZkConf.ZkUser, "zkuser", os.Getenv("ZK_USER"), "the zookeeper auth user, corresponding environment variable is ZK_USER")
+	cmd.PersistentFlags().StringVar(&c.ZkConf.ZkUser, "zkpwd", os.Getenv("ZK_PWD"), "the zookeeper auth password, corresponding environment variable is ZK_PWD")
+	cmd.PersistentFlags().StringVar(&c.AddrPort, "addrport", os.Getenv("ADDR_PORT"), "the ip address and port for the hosts to apply command, separated by comma, corresponding environment variable is ADDR_PORT")
 }
 
 type Service struct {
@@ -41,12 +42,18 @@ type Service struct {
 	Addrport []string
 }
 
-func NewService(zkaddr string, addrport string) (*Service, error) {
-	if zkaddr == "" {
+func NewService(zkConf *zkclient.ZkConf, addrport string) (*Service, error) {
+	if zkConf.ZkAddr == "" {
 		return nil, errors.New("zkaddr must set via flag or environment variable")
 	}
+	if zkConf.ZkUser == "" {
+		return nil, errors.New("zkuser must set via flag or environment variable")
+	}
+	if zkConf.ZkPwd == "" {
+		return nil, errors.New("zkpwd must set via flag or environment variable")
+	}
 	service := &Service{
-		ZkCli:    zkclient.NewZkClient(strings.Split(zkaddr, ",")),
+		ZkCli:    zkclient.NewZkClient(zkConf),
 		Addrport: strings.Split(addrport, ","),
 	}
 	if err := service.ZkCli.Connect(); err != nil {
