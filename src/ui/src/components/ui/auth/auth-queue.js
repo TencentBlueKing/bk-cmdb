@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import equal from 'deep-equal'
-import deepClone from 'clone-deep'
 import $http from '@/api'
 import { GET_AUTH_META } from '@/dictionary/auth'
 
@@ -16,8 +15,8 @@ export default new Vue({
     watch: {
         async queue () {
             if (!this.queue.length) return
-            const queue = deepClone(this.queue)
-            const authInstances = deepClone(this.authInstances)
+            const queue = [...this.queue]
+            const authInstances = [...this.authInstances]
             this.queue = []
             this.authInstances = []
             const resources = queue.map(item => {
