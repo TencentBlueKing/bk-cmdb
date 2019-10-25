@@ -26,6 +26,7 @@ import inputSelect from './selector/input-select.vue'
 import iconButton from './button/icon-button.vue'
 import tips from './other/tips.vue'
 import auth from './auth/auth.vue'
+import tableStuff from './table-stuff/table-stuff.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -55,7 +56,8 @@ const install = (Vue, opts = {}) => {
         inputSelect,
         iconButton,
         tips,
-        auth
+        auth,
+        tableStuff
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
