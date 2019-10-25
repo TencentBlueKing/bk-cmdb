@@ -12,9 +12,9 @@
         }"
     >
         <div class="template-info clearfix" v-if="isModuleNode && type === 'details'">
-            <div class="info-item fl">
+            <div class="info-item fl" :title="`${$t('服务模板')} : ${templateInfo.serviceTemplateName}`">
                 <span class="name fl">{{$t('服务模板')}}</span>
-                <div class="value fl" :title="templateInfo.serviceTemplateName">
+                <div class="value fl">
                     <div class="template-value" v-if="withTemplate" @click="goServiceTemplate">
                         <span class="text link">{{templateInfo.serviceTemplateName}}</span>
                         <i class="icon-cc-share"></i>
@@ -22,9 +22,9 @@
                     <span class="text" v-else>{{templateInfo.serviceTemplateName}}</span>
                 </div>
             </div>
-            <div class="info-item fl">
+            <div class="info-item fl" :title="`${$t('服务分类')} : ${templateInfo.serviceCategory || '--'}`">
                 <span class="name fl">{{$t('服务分类')}}</span>
-                <div class="value fl" :title="templateInfo.serviceCategory || '--'">
+                <div class="value fl">
                     <span class="text">{{templateInfo.serviceCategory || '--'}}</span>
                 </div>
             </div>
