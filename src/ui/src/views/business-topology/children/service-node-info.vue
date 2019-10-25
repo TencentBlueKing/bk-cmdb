@@ -11,6 +11,24 @@
             ])
         }"
     >
+        <div class="template-info clearfix" v-if="isModuleNode && type === 'details'">
+            <div class="info-item fl" :title="`${$t('服务模板')} : ${templateInfo.serviceTemplateName}`">
+                <span class="name fl">{{$t('服务模板')}}</span>
+                <div class="value fl">
+                    <div class="template-value" v-if="withTemplate" @click="goServiceTemplate">
+                        <span class="text link">{{templateInfo.serviceTemplateName}}</span>
+                        <i class="icon-cc-share"></i>
+                    </div>
+                    <span class="text" v-else>{{templateInfo.serviceTemplateName}}</span>
+                </div>
+            </div>
+            <div class="info-item fl" :title="`${$t('服务分类')} : ${templateInfo.serviceCategory || '--'}`">
+                <span class="name fl">{{$t('服务分类')}}</span>
+                <div class="value fl">
+                    <span class="text">{{templateInfo.serviceCategory || '--'}}</span>
+                </div>
+            </div>
+        </div>
         <cmdb-details class="topology-details"
             v-if="type === 'details'"
             :properties="properties"
@@ -42,46 +60,33 @@
                     </bk-button>
                 </span>
             </template>
-            <span class="property-value fl" slot="__template_name__">
-                <span class="link"
-                    v-if="withTemplate"
-                    @click="goServiceTemplate">{{flattenedInstance.__template_name__}}</span>
-                <span v-else>{{flattenedInstance.__template_name__}}</span>
-                <!-- <span style="display: inline-block;"
-                    v-if="withTemplate"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_TOPO),
-                        auth: [$OPERATION.U_TOPO]
-                    }">
-                    <bk-button class="unbind-button"
-                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
-                        @click="handleRemoveTemplate">
-                        {{$t('解除模板')}}
-                    </bk-button>
-                </span> -->
-            </span>
         </cmdb-details>
-        <cmdb-form class="topology-form" v-else-if="type === 'update'"
-            ref="form"
-            :properties="properties"
-            :property-groups="propertyGroups"
-            :disabled-properties="disabledProperties"
-            :inst="instance"
-            :type="type"
-            @on-submit="handleSubmit"
-            @on-cancel="handleCancel">
-            <template slot="__service_category__" v-if="!withTemplate">
-                <cmdb-selector class="category-selector fl"
-                    :list="firstCategories"
-                    v-model="first">
-                </cmdb-selector>
-                <cmdb-selector class="category-selector fl"
-                    :list="secondCategories"
-                    v-model="second"
-                    @on-selected="handleChangeCategory">
-                </cmdb-selector>
-            </template>
-        </cmdb-form>
+        <template v-else-if="type === 'update'">
+            <div class="service-category" v-if="!withTemplate">
+                <span class="title">{{$t('服务分类')}}</span>
+                <div class="selector-item mt10 clearfix">
+                    <cmdb-selector class="category-selector fl"
+                        :list="firstCategories"
+                        v-model="first">
+                    </cmdb-selector>
+                    <cmdb-selector class="category-selector fl"
+                        :list="secondCategories"
+                        v-model="second"
+                        @on-selected="handleChangeCategory">
+                    </cmdb-selector>
+                </div>
+            </div>
+            <cmdb-form class="topology-form"
+                ref="form"
+                :properties="properties"
+                :property-groups="propertyGroups"
+                :disabled-properties="disabledProperties"
+                :inst="instance"
+                :type="type"
+                @on-submit="handleSubmit"
+                @on-cancel="handleCancel">
+            </cmdb-form>
+        </template>
     </div>
 </template>
 
@@ -95,7 +100,8 @@
                 propertyGroups: [],
                 instance: {},
                 first: '',
-                second: ''
+                second: '',
+                templateInfo: {}
             }
         },
         computed: {
@@ -199,39 +205,12 @@
                             requestId: 'getModelProperties'
                         }
                     })
-                    if (modelId === 'module') {
-                        properties.push(...this.getModuleServiceTemplateProperties())
-                    }
                     this.$store.commit('businessTopology/setProperties', {
                         id: modelId,
                         properties: properties
                     })
                 }
                 return Promise.resolve(properties)
-            },
-            getModuleServiceTemplateProperties () {
-                const group = this.getModuleServiceTemplateGroup()
-                return [{
-                    bk_property_id: '__template_name__',
-                    bk_property_name: this.$t('模板名称'),
-                    bk_property_group: group.bk_group_id,
-                    bk_property_index: 1,
-                    bk_isapi: false,
-                    editable: false,
-                    unit: ''
-                }, {
-                    bk_property_id: '__service_category__',
-                    bk_property_name: this.$t('服务分类'),
-                    bk_property_group: group.bk_group_id,
-                    bk_property_index: 2,
-                    bk_isapi: false,
-                    editable: false,
-                    unit: ''
-                }]
-            },
-            updateCategoryProperty (state) {
-                const serviceCategoryProperty = this.properties.find(property => property.bk_property_id === '__service_category__') || {}
-                Object.assign(serviceCategoryProperty, state)
             },
             async getPropertyGroups () {
                 let groups = []
@@ -247,24 +226,12 @@
                             requestId: 'getModelPropertyGroups'
                         }
                     })
-                    if (modelId === 'module') {
-                        groups.push(this.getModuleServiceTemplateGroup())
-                    }
                     this.$store.commit('businessTopology/setPropertyGroups', {
                         id: modelId,
                         groups: groups
                     })
                 }
                 return Promise.resolve(groups)
-            },
-            getModuleServiceTemplateGroup () {
-                return {
-                    bk_group_id: '__service_template_info__',
-                    bk_group_index: -1,
-                    bk_group_name: this.$t('服务模板信息'),
-                    bk_obj_id: 'module',
-                    ispre: true
-                }
             },
             async getInstance () {
                 try {
@@ -332,22 +299,15 @@
                     }
                 })
                 const instance = data.info[0]
-                const serviceInfo = await this.getServiceInfo(instance)
-                return {
-                    ...instance,
-                    ...serviceInfo
-                }
+                this.getServiceInfo(instance)
+                return instance
             },
             async getServiceInfo (instance) {
-                const serviceInfo = {}
-                if (instance.service_template_id) {
-                    serviceInfo.__template_name__ = instance.bk_module_name
-                }
+                this.templateInfo.serviceTemplateName = instance.service_template_id ? instance.bk_module_name : this.$t('无')
                 const categories = await this.getServiceCategories()
                 const firstCategory = categories.find(category => category.secondCategory.some(second => second.id === instance.service_category_id)) || {}
                 const secondCategory = (firstCategory.secondCategory || []).find(second => second.id === instance.service_category_id) || {}
-                serviceInfo.__service_category__ = `${firstCategory.name || '--'} / ${secondCategory.name || '--'}`
-                return serviceInfo
+                this.templateInfo.serviceCategory = `${firstCategory.name || '--'} / ${secondCategory.name || '--'}`
             },
             async getServiceCategories () {
                 if (this.categoryMap.hasOwnProperty(this.business)) {
@@ -412,9 +372,6 @@
                         this.first = firstCategory.id
                         this.second = second
                     }
-                    this.updateCategoryProperty({
-                        editable: !this.withTemplate
-                    })
                 }
                 this.type = 'update'
             },
@@ -451,8 +408,6 @@
                 })
             },
             updateModuleInstance (value) {
-                delete value.__template_name__
-                delete value.__service_category__
                 return this.$store.dispatch('objectModule/updateModule', {
                     bizId: this.business,
                     setId: this.selectedNode.parent.data.bk_inst_id,
@@ -465,8 +420,7 @@
                         requestId: 'updateNodeInstance'
                     }
                 }).then(async () => {
-                    const serviceInfo = await this.getServiceInfo({ service_category_id: value.service_category_id || this.instance.service_category_id })
-                    Object.assign(this.instance, serviceInfo)
+                    this.getServiceInfo({ service_category_id: value.service_category_id || this.instance.service_category_id })
                 })
             },
             updateCustomInstance (value) {
@@ -548,7 +502,7 @@
                         'font-size': '14px'
                     },
                     domProps: {
-                        innerHTML: this.$tc('解除模板影响', this.flattenedInstance.__template_name__, { name: this.flattenedInstance.__template_name__ })
+                        innerHTML: this.$tc('解除模板影响', this.templateInfo.serviceTemplateName, { name: this.templateInfo.serviceTemplateName })
                     }
                 })
                 this.$bkInfo({
@@ -565,7 +519,7 @@
                         })
                         this.selectedNode.data.service_template_id = 0
                         this.instance.service_template_id = null
-                        this.instance.__template_name__ = '--'
+                        this.templateInfo.serviceTemplateName = this.$t('无')
                         this.disabledProperties = []
                     }
                 })
@@ -632,9 +586,57 @@
 </script>
 
 <style lang="scss" scoped>
+    .template-info {
+        font-size: 14px;
+        color: #63656e;
+        padding: 10px 0 26px 36px;
+        margin: 10px 0 4px;
+        border-bottom: 1px solid #dcdee5;
+        .info-item {
+            width: 50%;
+            max-width: 400px;
+            line-height: 26px;
+        }
+        .name {
+            position: relative;
+            padding-right: 16px;
+            &::after {
+                content: ":";
+                position: absolute;
+                right: 10px;
+            }
+        }
+        .value {
+            width: 80%;
+            overflow: hidden;
+            .text {
+                @include inlineBlock;
+                @include ellipsis;
+                max-width: calc(100% - 16px);
+                font-size: 14px;
+            }
+            .template-value {
+                width: 100%;
+                font-size: 0;
+                color: #3a84ff;
+                cursor: pointer;
+            }
+            .icon-cc-share {
+                @include inlineBlock;
+                font-size: 12px;
+                margin-left: 4px;
+            }
+        }
+    }
     .topology-details {
-        /deep/ .details-options {
-            padding: 28px 18px 0 0;
+        padding: 0 !important;
+        /deep/ {
+            .property-list {
+                margin-left: 36px;
+            }
+            .details-options {
+                padding: 28px 18px 0 36px;
+            }
         }
     }
     .property-value {
@@ -654,14 +656,35 @@
         font-size: 12px;
         color: #63656E;
     }
-    .topology-form {
-        /deep/ .property-item {
-            max-width: 554px !important;
+    .service-category {
+        font-size: 12px;
+        padding: 20px 0 24px 36px;
+        border-bottom: 1px solid #dcdee5;
+        .selector-item {
+            width: 50%;
+            max-width: 554px;
+            padding-right: 54px;
         }
         .category-selector {
             width: calc(50% - 5px);
             & + .category-selector {
                 margin-left: 10px;
+            }
+        }
+    }
+    .topology-form {
+        /deep/ {
+            .form-groups {
+                padding: 0;
+            }
+            .property-list {
+                margin-left: 36px;
+            }
+            .property-item {
+                max-width: 554px !important;
+            }
+            .form-options {
+                padding: 10px 0 0 36px;
             }
         }
     }
