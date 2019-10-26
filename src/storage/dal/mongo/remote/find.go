@@ -49,13 +49,13 @@ func (f *Find) Sort(sort string) dal.Find {
 }
 
 // Start 查询上标
-func (f *Find) Start(start uint64) dal.Find {
+func (f *Find) Start(start int64) dal.Find {
 	f.msg.Start = start
 	return f
 }
 
 // Limit 查询限制
-func (f *Find) Limit(limit uint64) dal.Find {
+func (f *Find) Limit(limit int64) dal.Find {
 	f.msg.Limit = limit
 	return f
 }
@@ -125,7 +125,7 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 }
 
 // Count 统计数量(非事务)
-func (f *Find) Count(ctx context.Context) (uint64, error) {
+func (f *Find) Count(ctx context.Context) (int64, error) {
 	// build msg
 	f.msg.OPCode = types.OPCountCode
 

@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	ccErr "configcenter/src/common/errors"
-	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/types"
 )
 
@@ -50,11 +49,11 @@ type DB interface {
 	Ping() error // 健康检查
 
 	// HasTable 判断是否存在集合
-	HasTable(tablename string) (bool, error)
+	HasTable(ctx context.Context, tablename string) (bool, error)
 	// DropTable 移除集合
-	DropTable(tablename string) error
+	DropTable(ctx context.Context, tablename string) error
 	// CreateTable 创建集合
-	CreateTable(tablename string) error
+	CreateTable(ctx context.Context, tablename string) error
 
 	IsDuplicatedError(error) bool
 	IsNotFoundError(error) bool
@@ -133,19 +132,24 @@ type Find interface {
 	// Sort 设置查询排序
 	Sort(sort string) Find
 	// Start 设置限制查询上标
-	Start(start uint64) Find
+	Start(start int64) Find
 	// Limit 设置查询数量
-	Limit(limit uint64) Find
+	Limit(limit int64) Find
 	// All 查询多个
 	All(ctx context.Context, result interface{}) error
 	// One 查询单个
 	One(ctx context.Context, result interface{}) error
 	// Count 统计数量(非事务)
-	Count(ctx context.Context) (uint64, error)
+	Count(ctx context.Context) (int64, error)
 }
 
 // Index define the DB index struct
-type Index mongodb.Index
+type Index struct {
+	Keys       map[string]int32 `json:"keys" bson:"key"`
+	Name       string           `json:"name" bson:"name"`
+	Unique     bool             `json:"unique" bson:"unique"`
+	Background bool             `json:"background" bson:"background"`
+}
 
 // ModeUpdate  根据不同的操作符去更新数据
 type ModeUpdate struct {

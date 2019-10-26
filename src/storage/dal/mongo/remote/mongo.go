@@ -205,7 +205,7 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 }
 
 // HasTable 判断是否存在集合
-func (c *Mongo) HasTable(tableName string) (bool, error) {
+func (c *Mongo) HasTable(ctx context.Context, tableName string) (bool, error) {
 
 	msg := types.OPDDLOperation{
 		Command:    types.OPDDLHasCollectCommand,
@@ -229,7 +229,7 @@ func (c *Mongo) HasTable(tableName string) (bool, error) {
 }
 
 // DropTable 移除集合
-func (c *Mongo) DropTable(tableName string) error {
+func (c *Mongo) DropTable(ctx context.Context, tableName string) error {
 	msg := types.OPDDLOperation{
 		Command:    types.OPDDLDropCollectCommand,
 		Collection: tableName,
@@ -250,7 +250,7 @@ func (c *Mongo) DropTable(tableName string) error {
 }
 
 // CreateTable 创建集合
-func (c *Mongo) CreateTable(tableName string) error {
+func (c *Mongo) CreateTable(ctx context.Context, tableName string) error {
 	msg := types.OPDDLOperation{
 		Command:    types.OPDDLCreateCollectCommand,
 		Collection: tableName,

@@ -64,7 +64,7 @@ type MockResult struct {
 	Err        error
 	OK         bool
 	RawResult  []byte
-	Count      uint64
+	Count      int64
 	SequenceID uint64
 	Info       types.Transaction
 	Indexs     []dal.Index
@@ -105,16 +105,16 @@ type MockCollection struct {
 
 // Find 查询多个并反序列化到 Result
 func (c *MockCollection) Find(filter dal.Filter) dal.Find {
-	return &MockFind{MockCollection: c, filter: filter, projection: types.Document{"_id": false}}
+	return &MockFind{MockCollection: c, filter: filter, projection: map[string]interface{}{"_id": false}}
 }
 
 // MockFind define a find operation
 type MockFind struct {
 	*MockCollection `json:"-"`
-	projection      types.Document
+	projection      map[string]interface{}
 	filter          dal.Filter
-	start           uint64
-	limit           uint64
+	start           int64
+	limit           int64
 	sort            []string
 }
 
@@ -139,13 +139,13 @@ func (f *MockFind) Sort(sort string) dal.Find {
 }
 
 // Start 查询上标
-func (f *MockFind) Start(start uint64) dal.Find {
+func (f *MockFind) Start(start int64) dal.Find {
 	f.start = start
 	return f
 }
 
 // Limit 查询限制
-func (f *MockFind) Limit(limit uint64) dal.Find {
+func (f *MockFind) Limit(limit int64) dal.Find {
 	f.limit = limit
 	return f
 }
@@ -204,7 +204,7 @@ func (f *MockFind) One(ctx context.Context, result interface{}) error {
 }
 
 // Count 统计数量(非事务)
-func (f *MockFind) Count(ctx context.Context) (uint64, error) {
+func (f *MockFind) Count(ctx context.Context) (int64, error) {
 	out, err := json.Marshal(f)
 	if err != nil {
 		return 0, err
@@ -346,7 +346,7 @@ func (c *Mock) TxnInfo() *types.Transaction {
 }
 
 // HasTable 判断是否存在集合
-func (c *Mock) HasTable(collName string) (bool, error) {
+func (c *Mock) HasTable(ctx context.Context, collName string) (bool, error) {
 	key := "HAS_TABLE" + collName
 	if retval, ok := c.cache[key]; ok {
 		return retval.OK, retval.Err
@@ -357,7 +357,7 @@ func (c *Mock) HasTable(collName string) (bool, error) {
 }
 
 // DropTable 移除集合
-func (c *Mock) DropTable(collName string) error {
+func (c *Mock) DropTable(ctx context.Context, collName string) error {
 	key := "HAS_TABLE:" + collName
 	if retval, ok := c.cache[key]; ok {
 		return retval.Err
@@ -369,7 +369,7 @@ func (c *Mock) DropTable(collName string) error {
 }
 
 // CreateTable 创建集合
-func (c *Mock) CreateTable(collName string) error {
+func (c *Mock) CreateTable(ctx context.Context, collName string) error {
 	key := "CREATE_TABLE:" + collName
 	if retval, ok := c.cache[key]; ok {
 		return retval.Err
