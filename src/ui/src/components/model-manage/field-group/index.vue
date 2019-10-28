@@ -15,7 +15,7 @@
                                 {{group.info['bk_group_name']}}
                                 <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('内置组不支持修改，排序')}}）</span>
                             </div>
-                            <div class="title-icon-btn" v-if="!(!isAdminView && isBuiltInGroup(group.info))">
+                            <div class="title-icon-btn" v-if="!(!isAdminView && isBuiltInGroup(group.info))" @click.stop>
                                 <cmdb-auth class="ml10" :auth="authResources" @udpate-auth="handleReceiveAuth">
                                     <bk-button slot-scope="{ disabled }"
                                         class="icon-btn"
@@ -85,7 +85,7 @@
                                     <p>{{fieldTypeMap[property['bk_property_type']]}}</p>
                                 </div>
                                 <template v-if="!property['ispre']">
-                                    <cmdb-auth class="mr10" :auth="authResources">
+                                    <cmdb-auth class="mr10" :auth="authResources" @click.native.stop>
                                         <bk-button slot-scope="{ disabled }"
                                             class="property-icon-btn"
                                             :text="true"
@@ -94,12 +94,12 @@
                                             <i class="property-icon icon-cc-edit"></i>
                                         </bk-button>
                                     </cmdb-auth>
-                                    <cmdb-auth class="mr10" :auth="authResources">
+                                    <cmdb-auth class="mr10" :auth="authResources" @click.native.stop>
                                         <bk-button slot-scope="{ disabled }"
                                             class="property-icon-btn"
                                             :text="true"
                                             :disabled="disabled || !isFieldEditable(property)"
-                                            @click="handleDeleteField({ property, index, _index })">
+                                            @click.stop="handleDeleteField({ property, index, _index })">
                                             <i class="property-icon bk-icon icon-cc-delete"></i>
                                         </bk-button>
                                     </cmdb-auth>
@@ -111,7 +111,7 @@
                                         class="property-add-btn"
                                         :text="true"
                                         :disabled="disabled"
-                                        @click="handleAddField(group)">
+                                        @click.stop="handleAddField(group)">
                                         <i class="bk-icon icon-plus"></i>
                                         {{$t('添加')}}
                                     </bk-button>
@@ -127,7 +127,7 @@
                             class="add-group-trigger"
                             :text="true"
                             :disabled="disabled || activeModel['bk_ispaused']"
-                            @click="handleAddGroup">
+                            @click.stop="handleAddGroup">
                             <i class="bk-icon icon-plus-circle"></i>
                             {{$t('添加分组')}}
                         </bk-button>

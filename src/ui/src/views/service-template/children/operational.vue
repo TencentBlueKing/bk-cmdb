@@ -55,16 +55,16 @@
             <h3>{{$t('服务进程')}}</h3>
             <div class="precess-box">
                 <div class="process-create">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized(auth),
-                            auth: [auth]
-                        }">
-                        <bk-button class="create-btn" :disabled="!$isAuthorized(auth)" @click="handleCreateProcess">
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_SERVICE_TEMPLATE })">
+                        <bk-button slot-scope="{ disabled }"
+                            class="create-btn"
+                            theme="default"
+                            :disabled="disabled"
+                            @click="handleCreateProcess">
                             <i class="bk-icon icon-plus"></i>
                             <span>{{$t('新建进程')}}</span>
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                     <span class="create-tips">{{$t('新建进程提示')}}</span>
                 </div>
                 <process-table
@@ -76,17 +76,14 @@
                     :list="processList">
                 </process-table>
                 <div class="btn-box">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized(auth),
-                            auth: [auth]
-                        }">
-                        <bk-button theme="primary"
-                            :disabled="!$isAuthorized(auth)"
+                    <cmdb-auth class="mr5" :auth="$authResources({ type: auth })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            :disabled="disabled"
                             @click="handleSubmit">
                             {{isCreatedType ? $t('提交') : $t('保存')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                     <bk-button @click="handleReturn">{{$t('取消')}}</bk-button>
                 </div>
             </div>
