@@ -254,7 +254,7 @@ func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condit
 	// delete field in module unique. not allow delete
 	if exist {
 		blog.ErrorJSON("delete field in unique. delete cond:%s, field:%s, rid:%s", condMap, resultAttrs, ctx.ReqID)
-		return 0, ctx.Error.Error(common.CCErrCoreServiceNotAllowUnqiueAttr)
+		return 0, ctx.Error.Error(common.CCErrCoreServiceNotAllowUniqueAttr)
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Delete(ctx, condMap)
