@@ -29,15 +29,6 @@ const (
 	// BKTableNameProcOperateTask  the table name of the process instance operater task info
 	BKTableNameProcOperateTask = "cc_ProcOpTask"
 
-	// BKTableNamePrivilege the table name of the privilege module
-	BKTableNamePrivilege = "cc_Privilege"
-
-	// BKTableNameUserGroup the table name of the user group module
-	BKTableNameUserGroup = "cc_UserGroup"
-
-	// BKTableNameUserGroupPrivilege the table name of the user group privilege
-	BKTableNameUserGroupPrivilege = "cc_UserGroupPrivilege"
-
 	// BKTableNamePropertyGroup the table name of the property group
 	BKTableNamePropertyGroup = "cc_PropertyGroup"
 
@@ -110,9 +101,6 @@ var AllTables = []string{
 	BKTableNameProcInstanceModel,
 	BKTableNameProcInstaceDetail,
 	BKTableNameProcOperateTask,
-	BKTableNamePrivilege,
-	BKTableNameUserGroup,
-	BKTableNameUserGroupPrivilege,
 	BKTableNamePropertyGroup,
 	BKTableNameObjDes,
 	BKTableNameObjAttDes,
