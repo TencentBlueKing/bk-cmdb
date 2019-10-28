@@ -13,7 +13,6 @@
 package metadata
 
 import (
-	"configcenter/src/common/querybuilder"
 	"context"
 	"fmt"
 	"net/http"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 )
 

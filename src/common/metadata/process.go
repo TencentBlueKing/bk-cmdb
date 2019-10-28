@@ -102,6 +102,7 @@ type GetServiceInstanceInModuleInput struct {
 	Metadata  *Metadata          `json:"metadata"`
 	BizID     int64              `json:"bk_biz_id"`
 	ModuleID  int64              `json:"bk_module_id"`
+	HostIDs   []int64            `json:"bk_host_ids"`
 	Page      BasePage           `json:"page"`
 	SearchKey *string            `json:"search_key"`
 	Selectors selector.Selectors `json:"selectors"`
