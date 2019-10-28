@@ -326,13 +326,13 @@ type MultipleServiceTemplate struct {
 
 type ListServiceInstanceOption struct {
 	BusinessID         int64              `json:"bk_biz_id"`
-	ServiceTemplateID  int64              `json:"service_template_id,omitempty"`
-	HostID             int64              `json:"host_id,omitempty"`
-	ModuleID           int64              `json:"module_id,omitempty"`
-	SearchKey          *string            `json:"search_key,omitempty"`
+	ServiceTemplateID  int64              `json:"service_template_id"`
+	HostIDs            []int64            `json:"bk_host_ids"`
+	ModuleID           int64              `json:"bk_module_id"`
+	SearchKey          *string            `json:"search_key"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
-	Selectors          selector.Selectors `json:"selectors,omitempty"`
-	Page               BasePage           `json:"page,omitempty"`
+	Selectors          selector.Selectors `json:"selectors"`
+	Page               BasePage           `json:"page"`
 }
 
 type ListServiceInstanceDetailOption struct {

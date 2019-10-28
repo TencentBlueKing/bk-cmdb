@@ -171,6 +171,9 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 	// module instance's name must coincide with template
 	if objID == common.BKInnerObjIDModule {
 		if err := m.validateModuleCreate(ctx, instanceData, valid); err != nil {
+			if blog.V(9) {
+				blog.InfoJSON("validateModuleCreate failed, module: %s, err: %s, rid: %s", instanceData, err, ctx.ReqID)
+			}
 			return err
 		}
 	}
