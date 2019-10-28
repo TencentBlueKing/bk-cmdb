@@ -583,7 +583,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 	if !result.Result {
-		blog.Errorf("UpdateHostBatch UpdateObject http response error, err code:%d, err msg:%s, input:%+v, param:%+v, rid:%s", result.Code, data, opt, srvData.rid)
+		blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 		return
 	}
