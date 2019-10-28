@@ -208,6 +208,7 @@ type ProcessOperation interface {
 	UpdateServiceCategory(ctx ContextParams, categoryID int64, category metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder)
 	ListServiceCategories(ctx ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder)
 	DeleteServiceCategory(ctx ContextParams, categoryID int64) errors.CCErrorCoder
+	IsServiceCategoryLeafNode(ctx ContextParams, categoryID int64) (bool, errors.CCErrorCoder)
 
 	// service template
 	CreateServiceTemplate(ctx ContextParams, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder)
