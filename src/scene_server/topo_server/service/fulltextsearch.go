@@ -135,7 +135,7 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 				if _, ok := notFoundKey[objID]; ok == false {
 					notFoundKey[objID] = 0
 				}
-				notFoundKey[objID] += 1
+				notFoundKey[objID]++
 			}
 		}
 	}
