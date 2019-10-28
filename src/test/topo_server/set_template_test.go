@@ -35,36 +35,6 @@ var _ = Describe("create normal set template test", func() {
 	var bizID int64
 	var categoryId int64
 
-	It("create parent service category", func() {
-		input := map[string]interface{}{
-			"bk_parent_id":      0,
-			common.BKAppIDField: bizID,
-			"name":              "test10",
-		}
-		rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-		j, err := json.Marshal(rsp.Data)
-		data := metadata.ServiceCategory{}
-		json.Unmarshal(j, &data)
-		categoryId = data.ID
-	})
-
-	It("create service sub category", func() {
-		input := map[string]interface{}{
-			"bk_parent_id":      categoryId,
-			common.BKAppIDField: bizID,
-			"name":              "test10",
-		}
-		rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-		j, err := json.Marshal(rsp.Data)
-		data := metadata.ServiceCategory{}
-		json.Unmarshal(j, &data)
-		categoryId = data.ID
-	})
-
 	It("create business", func() {
 		data := map[string]interface{}{
 			"bk_biz_name":       "biz3",
@@ -83,6 +53,38 @@ var _ = Describe("create normal set template test", func() {
 		Expect(rsp.Data[common.BKAppIDField]).To(Not(Equal(int64(0))))
 		bizID, err = util.GetInt64ByInterface(rsp.Data[common.BKAppIDField])
 		Expect(err).To(BeNil())
+	})
+
+	It("create parent service category", func() {
+		input := map[string]interface{}{
+			"bk_parent_id":      0,
+			common.BKAppIDField: bizID,
+			"name":              "root0",
+		}
+		rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		j, err := json.Marshal(rsp.Data)
+		data := metadata.ServiceCategory{}
+		err = json.Unmarshal(j, &data)
+		Expect(err).To(BeNil())
+		categoryId = data.ID
+	})
+
+	It("create service sub category", func() {
+		input := map[string]interface{}{
+			"bk_parent_id":      categoryId,
+			common.BKAppIDField: bizID,
+			"name":              "child0",
+		}
+		rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		j, err := json.Marshal(rsp.Data)
+		data := metadata.ServiceCategory{}
+		err = json.Unmarshal(j, &data)
+		Expect(err).To(BeNil())
+		categoryId = data.ID
 	})
 
 	var serviceTemplateID int64
