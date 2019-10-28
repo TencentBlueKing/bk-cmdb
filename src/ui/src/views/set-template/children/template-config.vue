@@ -33,46 +33,45 @@
         </div>
         <div class="template-options">
             <template v-if="isViewMode">
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
-                        auth: [$OPERATION.U_SET_TEMPLATE]
-                    }">
-                    <bk-button
+                <cmdb-auth :auth="$authResources({
+                    resource_id: templateId,
+                    type: $OPERATION.U_SET_TEMPLATE
+                })">
+                    <bk-button slot-scope="{ disabled }"
                         class="options-confirm"
                         theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE)"
+                        :disabled="disabled"
                         @click="handleEdit"
                     >
                         {{$t('编辑')}}
                     </bk-button>
-                </span>
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.D_SET_TEMPLATE),
-                        auth: [$OPERATION.D_SET_TEMPLATE]
-                    }">
-                    <bk-button
+                </cmdb-auth>
+                <cmdb-auth :auth="$authResources({
+                    resource_id: templateId,
+                    type: $OPERATION.D_SET_TEMPLATE
+                })">
+                    <bk-button slot-scope="{ disabled }"
                         class="options-confirm"
-                        :disabled="!$isAuthorized($OPERATION.D_SET_TEMPLATE)"
+                        :disabled="disabled"
                         @click="handleDelete"
                     >
                         {{$t('删除')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </template>
             <template v-else>
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION[mode === 'create' ? 'C_SET_TEMPLATE' : 'U_SET_TEMPLATE']),
-                        auth: [$OPERATION[mode === 'create' ? 'C_SET_TEMPLATE' : 'U_SET_TEMPLATE']]
-                    }">
-                    <bk-button class="options-confirm" theme="primary"
-                        :disabled="!$isAuthorized($OPERATION[mode === 'create' ? 'C_SET_TEMPLATE' : 'U_SET_TEMPLATE']) || !hasChange"
+                <cmdb-auth :auth="$authResources({
+                    resource_id: templateId,
+                    type: $OPERATION[mode === 'create' ? 'C_SET_TEMPLATE' : 'U_SET_TEMPLATE']
+                })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="options-confirm"
+                        theme="primary"
+                        :disabled="disabled || !hasChange"
                         @click="handleConfirm">
                         {{$t('确定')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <bk-button class="options-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </template>
         </div>
@@ -104,7 +103,7 @@
                 return this.mode === 'view'
             },
             templateId () {
-                return this.$route.params.templateId
+                return Number(this.$route.params.templateId) || null
             },
             hasChange () {
                 if (this.mode !== 'edit') {
