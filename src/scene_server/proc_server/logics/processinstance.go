@@ -63,12 +63,12 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 	reqParam.Condition = condition
 	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, reqParam)
 	if nil != err {
-		blog.Errorf("rid: %s get process instance with procID: %d failed, err: %v", kit.Rid, procID, err)
+		blog.Errorf("GetProcessInstanceWithID failed, get process instance with procID: %d failed, err: %v, rid: %s", procID, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !ret.Result {
-		blog.Errorf("rid: %s get process instance with procID: %d failed, err: %v", kit.Rid, procID, ret.ErrMsg)
+		blog.Errorf("GetProcessInstanceWithID failed, get process instance with procID: %d failed, err: %v, rid: %s", procID, ret.ErrMsg, kit.Rid)
 		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
@@ -78,7 +78,7 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 	}
 
 	if err := ret.Data.Info[0].MarshalJSONInto(process); err != nil {
-		blog.Errorf("GetProcessInstanceWithID fai, rid: %s", err, kit.Rid)
+		blog.Errorf("GetProcessInstanceWithID failed err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 

@@ -261,7 +261,7 @@ func (s *Service) GetBusinessBasicInfo(params types.ContextParams, pathParams, q
 		return nil, err
 	}
 	if len(result.Data.Info) == 0 {
-		blog.Errorf("get business by id not found, bizID: %s, rid: %s", bizID, params.ReqID)
+		blog.Errorf("GetBusinessBasicInfo failed, get business by id not found, bizID: %d, rid: %s", bizID, params.ReqID)
 		err := params.Err.CCError(common.CCErrCommNotFound)
 		return nil, err
 	}

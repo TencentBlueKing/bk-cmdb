@@ -404,7 +404,7 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 		},
 	}
 	if err := p.dbProxy.Table(common.BKTableNameBaseProcess).Find(processFilter).All(ctx.Context, &processes); err != nil {
-		blog.Errorf("ListServiceInstanceDetail failed, list process failed, filter: %+v, err: %+v, rid: %s", processFilter, err, ctx.ReqID)
+		blog.Errorf("ListServiceInstanceDetail failed, list process failed, filter: %+v, err: %s, rid: %s", processFilter, err.Error(), ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	// processID -> relation
