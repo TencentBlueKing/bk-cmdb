@@ -111,7 +111,7 @@
                         </span>
                     </template>
                 </bk-table-column>
-                <template slot="empty">
+                <template slot="empty" v-if="showEmpty">
                     <img src="../../../assets/images/empty-content.png" alt="">
                     <i18n path="空集群模板实例提示" tag="div">
                         <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
@@ -219,6 +219,9 @@
                 }
                 this.filterName && (params.search = this.filterName)
                 return params
+            },
+            showEmpty () {
+                return this.statusFilter === 'all' && !this.filterName && !this.displayList.length
             }
         },
         watch: {
