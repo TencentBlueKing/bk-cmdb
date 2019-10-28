@@ -298,6 +298,11 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 	}
 	input.BizID = bizID
 
+	if len(input.ServiceInstanceIDs) == 0 {
+		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "delete service instances, service_instance_ids empty", "service_instance_ids")
+		return
+	}
+
 	// when a service instance is deleted, the related data should be deleted at the same time
 	for _, serviceInstanceID := range input.ServiceInstanceIDs {
 		serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
