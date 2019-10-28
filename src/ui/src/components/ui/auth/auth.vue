@@ -3,7 +3,8 @@
         v-cursor="{
             active: isAuthorized,
             auth: [resource]
-        }">
+        }"
+        @click.stop>
         <slot :disabled="disabled"></slot>
     </span>
 </template>
@@ -48,6 +49,7 @@
                 const isPass = auth.is_pass
                 this.isAuthorized = !isPass
                 this.disabled = !isPass
+                this.$emit('udpate-auth', isPass)
             }
         }
     }

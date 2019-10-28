@@ -26,7 +26,7 @@ export default new Vue({
             })
             const authData = await $http.post('auth/verify', { resources })
             authInstances.forEach(instance => {
-                const index = queue.findIndex(item => equal(item.resource, instance.resource))
+                const index = queue.findIndex(item => equal(item.data, instance.data))
                 if (index > -1) {
                     instance.component.updateAuth(authData[index])
                 }
