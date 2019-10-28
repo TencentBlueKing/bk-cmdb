@@ -51,7 +51,9 @@ var _ = Describe("create normal set template test", func() {
 			}
 			rsp, err := topoServerClient.Instance().CreateApp(ctx, common.BKDefaultOwnerID, header, data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 			Expect(rsp.Data[common.BKAppIDField]).To(Not(Equal(int64(0))))
 			bizID, err = util.GetInt64ByInterface(rsp.Data[common.BKAppIDField])
 			Expect(err).To(BeNil())
@@ -66,7 +68,9 @@ var _ = Describe("create normal set template test", func() {
 			}
 			rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 			j, err := json.Marshal(rsp.Data)
 			data := metadata.ServiceCategory{}
 			err = json.Unmarshal(j, &data)
@@ -83,7 +87,9 @@ var _ = Describe("create normal set template test", func() {
 			}
 			rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 			j, err := json.Marshal(rsp.Data)
 			data := metadata.ServiceCategory{}
 			err = json.Unmarshal(j, &data)
@@ -101,7 +107,9 @@ var _ = Describe("create normal set template test", func() {
 			}
 			rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 			Expect(rsp.Data[common.BKFieldID]).To(Not(Equal(int64(0))))
 			Expect(rsp.Data[common.BKFieldName]).To(Equal("svcTpl1"))
 			serviceTemplateID, err = util.GetInt64ByInterface(rsp.Data[common.BKFieldID])
@@ -117,7 +125,9 @@ var _ = Describe("create normal set template test", func() {
 			}
 			rsp, err := topoServerClient.SetTemplate().CreateSetTemplate(ctx, header, bizID, option)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 			Expect(rsp.Data.Name).To(Equal("setTpl2"))
 			Expect(rsp.Data.ID).To(Not(Equal(int64(0))))
 			setTemplateID = rsp.Data.ID
@@ -133,7 +143,9 @@ var _ = Describe("create normal set template test", func() {
 			}
 			rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 			Expect(rsp.Data[common.BKFieldID]).To(Not(Equal(int64(0))))
 			Expect(rsp.Data[common.BKFieldName]).To(Equal("svcTpl2"))
 			serviceTemplateID2, err = util.GetInt64ByInterface(rsp.Data[common.BKFieldID])
@@ -150,7 +162,9 @@ var _ = Describe("create normal set template test", func() {
 			}
 			rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 			Expect(rsp.Data[common.BKFieldID]).To(Not(Equal(int64(0))))
 			Expect(rsp.Data[common.BKFieldName]).To(Equal("svcTpl3"))
 			serviceTemplateID3, err = util.GetInt64ByInterface(rsp.Data[common.BKFieldID])
@@ -165,7 +179,9 @@ var _ = Describe("create normal set template test", func() {
 			}
 			rsp, err := topoServerClient.SetTemplate().UpdateSetTemplate(ctx, header, bizID, setTemplateID, option)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 			Expect(rsp.Data.Name).To(Equal("setTpl3"))
 			Expect(rsp.Data.ID).To(Equal(setTemplateID))
 		}()
@@ -220,7 +236,9 @@ var _ = Describe("create normal set template test", func() {
 			bizIDStr := strconv.FormatInt(bizID, 10)
 			rsp, err := topoServerClient.Instance().CreateSet(ctx, bizIDStr, header, data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 			Expect(rsp.Data[common.BKSetNameField]).To(Equal("set1"))
 			Expect(rsp.Data[common.BKSetIDField]).To(Not(Equal(int64(0))))
 			setID, err = util.GetInt64ByInterface(rsp.Data[common.BKSetIDField])
@@ -258,7 +276,9 @@ var _ = Describe("create normal set template test", func() {
 			}
 			rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 			Expect(rsp.Data[common.BKFieldID]).To(Not(Equal(int64(0))))
 			Expect(rsp.Data[common.BKFieldName]).To(Equal("svcTpl4"))
 			serviceTemplateID4, err = util.GetInt64ByInterface(rsp.Data[common.BKFieldID])
@@ -273,7 +293,9 @@ var _ = Describe("create normal set template test", func() {
 			}
 			rsp, err := topoServerClient.SetTemplate().UpdateSetTemplate(ctx, header, bizID, setTemplateID, option)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 			Expect(rsp.Data.Name).To(Equal("setTpl4"))
 			Expect(rsp.Data.ID).To(Equal(setTemplateID))
 		}()
@@ -332,7 +354,9 @@ var _ = Describe("create normal set template test", func() {
 			setIDstr := strconv.FormatInt(setID, 10)
 			resp, err := topoServerClient.Instance().DeleteSet(ctx, bizIDstr, setIDstr, header)
 			Expect(err).To(BeNil())
-			Expect(resp.Result).To(BeTrue())
+			Expect(resp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
+				"Result": Equal(true),
+			}))
 		}()
 
 		By("delete set template")
