@@ -69,7 +69,12 @@
                             <i class="status-circle success"></i>
                             {{$t('已同步')}}
                         </span>
-                        <span v-else-if="row.status === 'failure'" class="sync-status">
+                        <span v-else-if="row.status === 'failure'"
+                            class="sync-status"
+                            v-bk-tooltips="{
+                                content: row.fail_tips,
+                                placement: 'right'
+                            }">
                             <i class="status-circle fail"></i>
                             {{$t('同步失败')}}
                         </span>
@@ -139,7 +144,8 @@
                     current: 1,
                     ...this.$tools.getDefaultPaginationConfig()
                 },
-                listSort: 'last_time'
+                listSort: 'last_time',
+                instancesInfo: {}
             }
         },
         computed: {
@@ -179,9 +185,23 @@
                         otherParams.topo_path = setInfo.topo_path || []
                         otherParams.host_count = setInfo.host_count || 0
                     }
+                    const templateSyncInfo = this.instancesInfo[item.bk_set_id]
+                    const syncFail = 500
+                    let failTips = []
+                    if (templateSyncInfo && templateSyncInfo.status === syncFail) {
+                        const failModules = (templateSyncInfo.detail || []).filter(module => module.status === syncFail)
+                        failTips = failModules.map(module => {
+                            const data = module.data
+                            const moduleName = data && data.module_diff && data.module_diff.bk_module_name
+                            const errorMsg = module.response && module.response.bk_error_msg
+                            const tips = moduleName && errorMsg ? `${moduleName} : ${errorMsg}` : ''
+                            return tips
+                        }).filter(tips => tips)
+                    }
                     return {
                         ...item,
-                        ...otherParams
+                        ...otherParams,
+                        fail_tips: failTips.join('<br />')
                     }
                 })
             },
@@ -214,7 +234,8 @@
         async created () {
             await this.getData()
             if (this.list.length) {
-                this.setsId.length && this.getSetInstancesWithTopo()
+                this.getSetInstancesWithTopo()
+                this.getInstancesInfo()
                 this.polling()
             }
         },
@@ -297,6 +318,19 @@
                     this.listWithTopo = []
                 }
             },
+            async getInstancesInfo () {
+                const instancesInfo = await this.$store.dispatch('setSync/getInstancesSyncStatus', {
+                    bizId: this.business,
+                    setTemplateId: this.templateId,
+                    params: {
+                        bk_set_ids: this.setsId
+                    },
+                    config: {
+                        requestId: 'getInstancesInfo'
+                    }
+                })
+                this.instancesInfo = instancesInfo
+            },
             polling () {
                 try {
                     if (this.timer) {
@@ -305,6 +339,7 @@
                     }
                     this.timer = setInterval(() => {
                         this.updateStatusData()
+                        this.getInstancesInfo()
                     }, 10000)
                 } catch (e) {
                     console.error(e)
@@ -318,7 +353,10 @@
             async handleFilter (current = 1) {
                 this.pagination.current = current
                 await this.getData()
-                this.setsId.length && this.getSetInstancesWithTopo()
+                if (this.list.length) {
+                    this.getSetInstancesWithTopo()
+                    this.getInstancesInfo()
+                }
             },
             handleSelectionChange (selection) {
                 this.checkedList = selection.map(item => item.bk_set_id)
