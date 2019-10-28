@@ -33,6 +33,38 @@ var _ = Describe("create empty set template test", func() {
 var _ = Describe("create normal set template test", func() {
 	ctx := context.Background()
 	var bizID int64
+	var categoryId int64
+
+	It("create parent service category", func() {
+		input := map[string]interface{}{
+			"bk_parent_id":      0,
+			common.BKAppIDField: bizID,
+			"name":              "test10",
+		}
+		rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		j, err := json.Marshal(rsp.Data)
+		data := metadata.ServiceCategory{}
+		json.Unmarshal(j, &data)
+		categoryId = data.ID
+	})
+
+	It("create service sub category", func() {
+		input := map[string]interface{}{
+			"bk_parent_id":      categoryId,
+			common.BKAppIDField: bizID,
+			"name":              "test10",
+		}
+		rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		j, err := json.Marshal(rsp.Data)
+		data := metadata.ServiceCategory{}
+		json.Unmarshal(j, &data)
+		categoryId = data.ID
+	})
+
 	It("create business", func() {
 		data := map[string]interface{}{
 			"bk_biz_name":       "biz3",
@@ -58,7 +90,7 @@ var _ = Describe("create normal set template test", func() {
 		data := map[string]interface{}{
 			"bk_biz_id":           bizID,
 			"name":                "svcTpl1",
-			"service_category_id": 1,
+			"service_category_id": categoryId,
 		}
 		rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
 		Expect(err).NotTo(HaveOccurred())
@@ -88,7 +120,7 @@ var _ = Describe("create normal set template test", func() {
 		data := map[string]interface{}{
 			"bk_biz_id":           bizID,
 			"name":                "svcTpl2",
-			"service_category_id": 1,
+			"service_category_id": categoryId,
 		}
 		rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
 		Expect(err).NotTo(HaveOccurred())
@@ -103,7 +135,7 @@ var _ = Describe("create normal set template test", func() {
 		data := map[string]interface{}{
 			"bk_biz_id":           bizID,
 			"name":                "svcTpl3",
-			"service_category_id": 1,
+			"service_category_id": categoryId,
 		}
 		rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
 		Expect(err).NotTo(HaveOccurred())
@@ -203,7 +235,7 @@ var _ = Describe("create normal set template test", func() {
 		data := map[string]interface{}{
 			"bk_biz_id":           bizID,
 			"name":                "svcTpl4",
-			"service_category_id": 1,
+			"service_category_id": categoryId,
 		}
 		rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
 		Expect(err).NotTo(HaveOccurred())
