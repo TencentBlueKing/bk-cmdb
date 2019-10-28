@@ -123,7 +123,11 @@
                 first: '',
                 second: '',
                 hasChange: false,
-                templateInfo: {}
+                templateInfo: {
+                    serviceTemplateName: this.$t('无'),
+                    serviceCategory: '',
+                    setTemplateName: this.$t('无')
+                }
             }
         },
         computed: {
