@@ -112,7 +112,7 @@
                 this.getHistory()
             },
             handleSortChange (sort) {
-                this.sort = sort
+                this.sort = this.$tools.getSort(sort)
                 this.getHistory()
             },
             handleRowClick (item) {
