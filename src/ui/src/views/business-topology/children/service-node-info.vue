@@ -62,7 +62,7 @@
             </template>
         </cmdb-details>
         <template v-else-if="type === 'update'">
-            <div class="service-category" v-if="!withTemplate">
+            <div class="service-category" v-if="!withTemplate && isModuleNode">
                 <span class="title">{{$t('服务分类')}}</span>
                 <div class="selector-item mt10 clearfix">
                     <cmdb-selector class="category-selector fl"
@@ -101,7 +101,10 @@
                 instance: {},
                 first: '',
                 second: '',
-                templateInfo: {}
+                templateInfo: {
+                    serviceTemplateName: this.$t('无'),
+                    serviceCategory: ''
+                }
             }
         },
         computed: {
@@ -607,8 +610,8 @@
             }
         }
         .value {
-            width: 80%;
-            overflow: hidden;
+            width: calc(80% - 10px);
+            padding-right: 10px;
             .text {
                 @include inlineBlock;
                 @include ellipsis;
