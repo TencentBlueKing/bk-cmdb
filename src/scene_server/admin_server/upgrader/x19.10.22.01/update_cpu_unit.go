@@ -10,17 +10,29 @@
  * limitations under the License.
  */
 
-package auth
+package x19_10_22_01
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
+	"fmt"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-type Auth interface {
-	ValidResAccess(pathArr []string, c *gin.Context) bool
-}
-
-// NewUser return user instance by type
-func NewAuth() Auth {
-	return &publicAuth{}
+func UpdateCpuUnit(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	filter := map[string]interface{}{
+		common.BKObjIDField:      common.BKInnerObjIDHost,
+		common.BKPropertyIDField: "bk_cpu_mhz",
+	}
+	doc := map[string]interface{}{
+		"unit": "MHz",
+	}
+	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, doc); err != nil {
+		blog.Errorf("UpdateCpuUnit failed, err: %+v", err)
+		return fmt.Errorf("UpdateCpuUnit failed, err: %v", err)
+	}
+	return nil
 }

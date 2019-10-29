@@ -34,6 +34,8 @@ func Run() error {
 	config.Conf.AddFlags(rootCmd)
 	rootCmd.AddCommand(cmd.NewLogCommand())
 	rootCmd.AddCommand(cmd.NewExitCommand())
+	rootCmd.AddCommand(cmd.NewZkCommand())
+	rootCmd.AddCommand(cmd.NewEchoCommand())
 
 	return rootCmd.Execute()
 }

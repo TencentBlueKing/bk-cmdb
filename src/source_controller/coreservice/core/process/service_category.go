@@ -89,6 +89,18 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 	return &category, nil
 }
 
+func (p *processOperation) IsServiceCategoryLeafNode(ctx core.ContextParams, categoryID int64) (bool, errors.CCErrorCoder) {
+	filter := map[string]interface{}{
+		common.BKParentIDField: categoryID,
+	}
+	count, err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).Count(ctx)
+	if err != nil {
+		blog.Errorf("IsServiceCategoryLeafNode failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceCategory, filter, err, ctx.ReqID)
+		return false, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	return count == 0, nil
+}
+
 func (p *processOperation) GetServiceCategory(ctx core.ContextParams, categoryID int64) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	category := metadata.ServiceCategory{}
 

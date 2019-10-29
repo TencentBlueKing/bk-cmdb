@@ -92,13 +92,7 @@ func (s *coreService) UpdateProcessTemplate(params core.ContextParams, pathParam
 		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKProcessTemplateIDField)
 	}
 
-	template := metadata.ProcessTemplate{}
-	if err := mapstr.DecodeFromMapStr(&template, data); err != nil {
-		blog.Errorf("UpdateProcessTemplate failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
-		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
-	}
-
-	result, err := s.core.ProcessOperation().UpdateProcessTemplate(params, processTemplateID, template)
+	result, err := s.core.ProcessOperation().UpdateProcessTemplate(params, processTemplateID, data)
 	if err != nil {
 		blog.Errorf("UpdateProcessTemplate failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
