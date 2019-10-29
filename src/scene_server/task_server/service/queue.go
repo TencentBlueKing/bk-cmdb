@@ -101,7 +101,7 @@ func (tq *TaskQueue) executeWrap(ctx context.Context, taskInfo TaskInfo) {
 func (tq *TaskQueue) execute(ctx context.Context, task TaskInfo) {
 	defer func() {
 		if fetalErr := recover(); fetalErr != nil {
-			blog.Errorf("err:%s, painc:%s", fetalErr, debug.Stack())
+			blog.Errorf("err:%s, panic:%s", fetalErr, debug.Stack())
 		}
 	}()
 	if task.Retry < 1 {
@@ -115,7 +115,7 @@ func (tq *TaskQueue) execute(ctx context.Context, task TaskInfo) {
 		canSleep := true
 		taskQueueInfoArr, err := tq.getWaitExectue(ctx, task.Name)
 		if err != nil {
-			blog.Errorf("exceute get wait execute task error. task name:%s, err:%s", task.Name, err.Error())
+			blog.Errorf("execute get wait execute task error. task name:%s, err:%s", task.Name, err.Error())
 			// select db error. sleep 10s
 			time.Sleep(time.Second * 10)
 			continue

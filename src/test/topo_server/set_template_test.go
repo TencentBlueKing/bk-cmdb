@@ -9,6 +9,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -36,6 +37,9 @@ var _ = Describe("create normal set template test", func() {
 	var categoryId int64
 
 	It("normal set template test", func() {
+		By("clear database")
+		test.ClearDatabase()
+
 		By("create business")
 		func() {
 			data := map[string]interface{}{
