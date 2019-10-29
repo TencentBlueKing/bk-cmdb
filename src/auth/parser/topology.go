@@ -38,11 +38,11 @@ func (ps *parseStream) topology() *parseStream {
 		objectInstanceAssociation().
 		objectInstance().
 		object().
-		ObjectClassification().
+        objectClassification().
 		objectAttributeGroup().
 		objectAttribute().
-		ObjectModule().
-		ObjectSet().
+        objectModule().
+        objectSet().
 		objectUnique().
 		audit().
 		instanceAudit().
@@ -1251,7 +1251,7 @@ var (
 	findObjectsBelongsToClassificationRegexp = regexp.MustCompile(`^/api/v3/object/classification/[^\s/]+/objects$`)
 )
 
-func (ps *parseStream) ObjectClassification() *parseStream {
+func (ps *parseStream) objectClassification() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -1574,7 +1574,7 @@ var (
 	findModuleRegexp   = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
 )
 
-func (ps *parseStream) ObjectModule() *parseStream {
+func (ps *parseStream) objectModule() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -1753,7 +1753,7 @@ var (
 	findSetRegexp       = regexp.MustCompile(`^/api/v3/set/search/[^\s/]+/[0-9]+/?$`)
 )
 
-func (ps *parseStream) ObjectSet() *parseStream {
+func (ps *parseStream) objectSet() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
