@@ -25,10 +25,10 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
 
-	"github.com/mongodb/mongo-go-driver/bson"
-	"github.com/mongodb/mongo-go-driver/mongo"
-	"github.com/mongodb/mongo-go-driver/mongo/options"
-	"github.com/mongodb/mongo-go-driver/x/network/connstring"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
 // Mongo implement client.DALRDB interface
@@ -46,7 +46,7 @@ func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
 		return nil, err
 	}
 
-	client, err := mongo.NewClient(uri)
+	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
 	if nil != err {
 		return nil, err
 	}
