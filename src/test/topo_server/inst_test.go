@@ -483,7 +483,7 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
-	It("update inst with unmatch object", func() {
+	It("update inst with mismatch object", func() {
 		input := map[string]interface{}{
 			"bk_inst_name": "123",
 		}
@@ -498,7 +498,7 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(true))
 	})
 
-	It("delete inst with unmatch object", func() {
+	It("delete inst with mismatch object", func() {
 		rsp, err := instClient.DeleteInst(context.Background(), "0", "cc_test", instId, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
