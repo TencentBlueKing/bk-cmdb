@@ -47,7 +47,8 @@ func (ps *parseStream) topology() *parseStream {
 		audit().
 		instanceAudit().
 		privilege().
-		fullTextSearch()
+		fullTextSearch().
+		cloudArea()
 
 	return ps
 }
@@ -2083,6 +2084,73 @@ func (ps *parseStream) fullTextSearch() *parseStream {
 				Basic: meta.Basic{
 					Action: meta.SkipAction,
 				},
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+const (
+	findManyCloudAreaPattern = "/api/v3/findmany/cloudarea"
+	createCloudAreaPattern   = "/api/v3/create/cloudarea"
+)
+
+var (
+	deleteCloudAreaRegexp = regexp.MustCompile(`/api/v3/delete/cloudarea/[0-9]+/?$`)
+)
+
+func (ps *parseStream) cloudArea() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDPlat})
+	if err != nil {
+		ps.err = err
+		return ps
+	}
+
+	if len(model) != 1 {
+		ps.err = fmt.Errorf("find plat model info, but find %d plat", len(model))
+		return ps
+	}
+
+	if ps.hitPattern(findManyCloudAreaPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.FindMany,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(createCloudAreaPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.Create,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(deleteCloudAreaRegexp, http.MethodDelete) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.Delete,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
