@@ -457,8 +457,7 @@ func (s *Service) SyncSetTplToInst(params types.ContextParams, pathParams, query
 	return nil, nil
 }
 
-// Deprecated: replace with ListSetTemplateSyncStatus
-func (s *Service) GetSetSyncStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+func (s *Service) GetSetSyncDetails(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
 	bizIDStr := pathParams(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {

@@ -108,13 +108,14 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 		resp, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
 		if err != nil {
 			blog.Error("statistic chart data fail, err: %v, rid: %v", err)
-			return
+			time.Sleep(10 * time.Second)
+			continue
 		}
 		if resp.Data {
 			blog.V(3).Info("collection cc_ChartData inited")
 			break
 		}
-		time.Sleep(30 * time.Second)
+		time.Sleep(10 * time.Second)
 		blog.V(3).Info("waiting collection cc_ChartData init")
 	}
 

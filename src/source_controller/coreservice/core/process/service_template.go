@@ -48,6 +48,14 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 		blog.Errorf("CreateServiceTemplate failed, category id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_category_id")
 	}
+	isLeafNode, ccErr := p.IsServiceCategoryLeafNode(ctx, category.ID)
+	if ccErr != nil {
+		blog.Errorf("UpdateServiceTemplate failed, check leaf node failed, err: %+v, rid: %s", ccErr, ctx.ReqID)
+		return nil, ccErr
+	}
+	if isLeafNode == false {
+		return nil, ctx.Error.CCError(common.CCErrCoreServiceOnlyNodeServiceCategoryAvailable)
+	}
 
 	// make sure biz id identical with category
 	// categoryBizID 0 and 1 is default category
@@ -130,6 +138,14 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 		if category.BizID != 0 && category.BizID != template.BizID {
 			blog.Errorf("UpdateServiceTemplate failed, category biz id and template not equal, err: %+v, rid: %s", err, ctx.ReqID)
 			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		}
+		isLeafNode, err := p.IsServiceCategoryLeafNode(ctx, template.ServiceCategoryID)
+		if err != nil {
+			blog.Errorf("UpdateServiceTemplate failed, check leaf node failed, err: %+v, rid: %s", err, ctx.ReqID)
+			return nil, err
+		}
+		if isLeafNode == false {
+			return nil, ctx.Error.CCError(common.CCErrCoreServiceOnlyNodeServiceCategoryAvailable)
 		}
 	}
 
