@@ -47,7 +47,7 @@
                     :right-icon="'bk-icon icon-search'"
                     font-size="large"
                     v-model.trim="filter.templateName"
-                    @enter="getTableData">
+                    @enter="getTableData(true)">
                 </bk-input>
             </div>
         </div>
@@ -102,6 +102,12 @@
                     </span>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$OPERATION.C_SERVICE_TEMPLATE"
+                @create="operationTemplate"
+            ></cmdb-table-stuff>
         </bk-table>
     </div>
 </template>
@@ -131,7 +137,13 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-last_time',
-                    sort: '-id'
+                    sort: '-id',
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.$t('服务模板')
+                        }
+                    }
                 },
                 mainList: [],
                 secondaryList: [],
@@ -173,33 +185,48 @@
         methods: {
             ...mapActions('serviceTemplate', ['searchServiceTemplate', 'deleteServiceTemplate']),
             ...mapActions('serviceClassification', ['searchServiceCategory']),
-            async getTableData () {
-                const templateData = await this.getTemplateData()
-                if (templateData.count && !templateData.info.length) {
-                    this.table.pagination.current -= 1
-                    this.getTableData()
-                }
-                this.table.pagination.count = templateData.count
-                this.table.allList = templateData.info.map(template => {
-                    const result = {
-                        ...template,
-                        ...template['service_template']
+            async getTableData (event) {
+                try {
+                    const templateData = await this.getTemplateData()
+                    if (templateData.count && !templateData.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getTableData()
                     }
-                    const secondaryCategory = this.allSecondaryList.find(classification => classification['id'] === result['service_category_id'])
-                    const mainCategory = this.mainList.find(classification => secondaryCategory && classification['id'] === secondaryCategory['bk_parent_id'])
-                    const secondaryCategoryName = secondaryCategory ? secondaryCategory['name'] : '--'
-                    const mainCategoryName = mainCategory ? mainCategory['name'] : '--'
-                    result['service_category'] = `${mainCategoryName} / ${secondaryCategoryName}`
-                    return result
-                })
-                this.table.list = this.table.allList
+                    this.table.pagination.count = templateData.count
+                    this.table.allList = templateData.info.map(template => {
+                        const result = {
+                            ...template,
+                            ...template['service_template']
+                        }
+                        const secondaryCategory = this.allSecondaryList.find(classification => classification['id'] === result['service_category_id'])
+                        const mainCategory = this.mainList.find(classification => secondaryCategory && classification['id'] === secondaryCategory['bk_parent_id'])
+                        const secondaryCategoryName = secondaryCategory ? secondaryCategory['name'] : '--'
+                        const mainCategoryName = mainCategory ? mainCategory['name'] : '--'
+                        result['service_category'] = `${mainCategoryName} / ${secondaryCategoryName}`
+
+                        if (event) {
+                            this.table.stuff.type = 'search'
+                        }
+
+                        return result
+                    })
+                    this.table.list = this.table.allList
+                } catch ({ permission }) {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
+                }
             },
             getTemplateData () {
                 return this.searchServiceTemplate({
                     params: this.$injectMetadata(this.params, { injectBizId: true }),
                     config: {
                         requestId: 'get_proc_service_template',
-                        cancelPrevious: true
+                        cancelPrevious: true,
+                        globalPermission: false
                     }
                 })
             },
@@ -218,11 +245,11 @@
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
                 this.filter.secondaryClassification = ''
                 this.maincategoryId = id
-                this.getTableData()
+                this.getTableData(true)
             },
             handleSelectSecondary (id) {
                 this.categoryId = id
-                this.getTableData()
+                this.getTableData(true)
             },
             operationTemplate (id) {
                 this.$router.push({

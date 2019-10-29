@@ -22,7 +22,7 @@
         </div>
         <bk-table
             v-bkloading="{ isLoading: $loading('searchSubscription') }"
-            :data="table.list"
+            :data="[]"
             :pagination="table.pagination"
             :max-height="$APP.height - 229"
             @sort-change="handleSortChange"
@@ -77,10 +77,12 @@
                     </span>
                 </template>
             </bk-table-column>
-            <div slot="empty">
-                <p>{{$t('暂时没有数据')}}</p>
-                <p>{{$t('事件推送功能提示')}}</p>
-            </div>
+            <cmdb-table-stuff slot="empty" :stuff="table.stuff">
+                <template>
+                    <p>{{$t('暂时没有数据')}}</p>
+                    <p>{{$t('事件推送功能提示')}}</p>
+                </template>
+            </cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -123,7 +125,11 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-last_time',
-                    sort: '-last_time'
+                    sort: '-last_time',
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 slider: {
                     isShow: false,
@@ -207,17 +213,33 @@
                         sort: this.table.sort
                     }
                 }
-                const res = await this.searchSubscription({ bkBizId: 0, params, config: { requestId: 'searchSubscription' } })
-                if (res.count && !res.info.length) {
-                    this.table.pagination.current -= 1
-                    this.getTableData()
+                try {
+                    const res = await this.searchSubscription({
+                        bkBizId: 0,
+                        params,
+                        config: {
+                            requestId: 'searchSubscription',
+                            globalPermission: false
+                        }
+                    })
+                    if (res.count && !res.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getTableData()
+                    }
+                    res.info.map(item => {
+                        item['subscription_form'] = item['subscription_form'].split(',')
+                        item['last_time'] = formatTime(item['last_time'])
+                    })
+                    this.table.list = res.info
+                    pagination.count = res.count
+                } catch ({ permission }) {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 }
-                res.info.map(item => {
-                    item['subscription_form'] = item['subscription_form'].split(',')
-                    item['last_time'] = formatTime(item['last_time'])
-                })
-                this.table.list = res.info
-                pagination.count = res.count
             },
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)

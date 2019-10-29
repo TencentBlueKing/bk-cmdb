@@ -46,6 +46,7 @@
                     </span>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
         </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.show">
             <p class="tips-content">{{$t('确认取消')}}</p>
@@ -84,6 +85,14 @@
                     count: 0,
                     current: 1,
                     size: 10
+                },
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 },
                 expanded: false,
                 confirm: {

@@ -121,6 +121,7 @@
                     {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option')) | addUnit(getPropertyValue(column.objId, column.id, 'unit')) }}
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -267,7 +268,13 @@
                     },
                     defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
-                    exportUrl: `${window.API_HOST}hosts/export`
+                    exportUrl: `${window.API_HOST}hosts/export`,
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 },
                 filter: {
                     business: '',
@@ -342,7 +349,7 @@
                 this.setTableHeader()
             },
             scope () {
-                this.handlePageChange(1)
+                this.handlePageChange(1, true)
             }
         },
         async created () {
@@ -505,7 +512,7 @@
                 })
                 return text.join(',') || '--'
             },
-            getHostList () {
+            getHostList (event) {
                 this.searchHost({
                     params: this.injectScope({
                         ...this.filter.condition,
@@ -523,6 +530,11 @@
                 }).then(data => {
                     this.table.pagination.count = data.count
                     this.table.list = data.info
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+
                     return data
                 }).catch(e => {
                     this.table.checked = []
@@ -552,17 +564,17 @@
                 }
                 return params
             },
-            search (business, condition, resetPage = false) {
+            search (business, condition, resetPage = false, event = false) {
                 this.filter.business = business
                 this.filter.condition = condition
                 if (resetPage) {
                     this.table.pagination.current = 1
                 }
-                this.getHostList()
+                this.getHostList(event)
             },
-            handlePageChange (current) {
+            handlePageChange (current, event) {
                 this.table.pagination.current = current
-                this.getHostList()
+                this.getHostList(event)
             },
             handleSizeChange (limit) {
                 this.table.pagination.limit = limit

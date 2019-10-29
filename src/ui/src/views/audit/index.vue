@@ -117,7 +117,7 @@
                 prop="op_time"
                 :label="$t('操作时间')">
             </bk-table-column>
-            <table-stuff slot="empty" :stuff="table.stuff"></table-stuff>
+            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom

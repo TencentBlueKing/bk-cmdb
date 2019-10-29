@@ -65,6 +65,7 @@
                     </button>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -104,7 +105,13 @@
                 table: {
                     list: [],
                     defaultSort: '-op_time',
-                    sort: '-op_time'
+                    sort: '-op_time',
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 },
                 mappingMap: {
                     '1:1': '1-1',

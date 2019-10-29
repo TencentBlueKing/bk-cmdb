@@ -90,12 +90,12 @@
                 :prop="column.id"
                 :label="column.name">
             </bk-table-column>
-            <table-stuff
+            <cmdb-table-stuff
                 slot="empty"
                 :stuff="table.stuff"
                 :auth="$OPERATION.C_BUSINESS"
                 @create="handleCreate"
-            />
+            ></cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
