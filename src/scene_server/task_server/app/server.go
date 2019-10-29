@@ -95,7 +95,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	queue := service.NewQueue(taskSrv.taskQueue)
 	queue.Start()
-	select {}
+	select {
+	case <-ctx.Done():
+	}
+	return nil
 }
 
 type TaskServer struct {

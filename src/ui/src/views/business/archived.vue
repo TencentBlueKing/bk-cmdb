@@ -2,7 +2,11 @@
     <div class="archived-layout">
         <div class="archived-filter">
             <div class="filter-item">
-                <bk-input v-model="filter.name" right-icon="bk-icon icon-search" @enter="handlePageChange(1, $event)"></bk-input>
+                <bk-input v-model="filter.name"
+                    :placeholder="$t('请输入xx', { name: $t('业务') })"
+                    right-icon="bk-icon icon-search"
+                    @enter="handlePageChange(1, $event)">
+                </bk-input>
             </div>
         </div>
         <bk-table class="archived-table"

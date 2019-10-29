@@ -1052,5 +1052,6 @@
     "模板集群添加模块提示": "The accumulated template is currently configured, and modules cannot be added.",
     "抱歉您没有查看权限": "Sorry, you don't have permission to view, {link}",
     "您还未XXX": "You have not yet {action} {resource}, {link}",
-    "搜索内容为空": "Search result is empty"
+    "搜索内容为空": "Search result is empty",
+    "无": "none"
 }
