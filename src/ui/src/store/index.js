@@ -54,6 +54,8 @@ import fullTextSearch from './modules/api/full-text-search.js'
 import setSync from './modules/api/set-sync.js'
 import setTemplate from './modules/api/set-template.js'
 
+import businessHost from './modules/view/business-host.js'
+
 Vue.use(Vuex)
 
 export default new Vuex.Store({
@@ -110,6 +112,7 @@ export default new Vuex.Store({
         instanceLabel,
         fullTextSearch,
         setSync,
-        setTemplate
+        setTemplate,
+        businessHost
     }
 })

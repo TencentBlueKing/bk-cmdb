@@ -22,6 +22,8 @@ import operation from '@/views/operation/router.config'
 import setSync from '@/views/set-sync/router.config'
 import setTemplate from '@/views/set-template/router.config'
 
+import businessTopologyNew from '@/views/business-topology-new/router.config'
+
 import statusPermission from '@/views/status/permission'
 import statusError from '@/views/status/error'
 
@@ -52,6 +54,7 @@ export const businessViews = injectStatusComponents(flatternViews([
     hosts,
     customQuery,
     businessTopology,
+    businessTopologyNew,
     serviceTemplate,
     serviceCategory,
     serviceInstance,
