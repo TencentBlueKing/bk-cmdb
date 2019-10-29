@@ -22,23 +22,31 @@
         <div class="content" v-else>
             <img class="img-empty" src="../../../assets/images/empty-content.png" alt="">
             <div>
-                <i18n path="您还未XXX" tag="div" v-if="!emptyText">
-                    <span place="action">{{action}}</span>
-                    <span place="resource">{{resource}}</span>
-                    <bk-button
-                        text
-                        place="link"
-                        theme="primary"
-                        @click="$emit('create')"
-                    >
-                        <cmdb-auth :auth="authParams">
-                            {{`立即${action}`}}
-                        </cmdb-auth>
-                    </bk-button>
-                </i18n>
-                <span v-else>
-                    {{emptyText}}
-                </span>
+                <template v-if="$slots.default">
+                    <slot></slot>
+                </template>
+                <template v-else>
+                    <i18n path="您还未XXX" tag="div" v-if="!emptyText">
+                        <span place="action">{{action}}</span>
+                        <span place="resource">{{resource}}</span>
+                        <span place="link">
+                            <cmdb-auth :auth="authParams">
+                                <bk-button
+                                    text
+                                    place="link"
+                                    theme="primary"
+                                    :disabled="!$isAuthorized(auth)"
+                                    @click="$emit('create')"
+                                >
+                                    {{`立即${action}`}}
+                                </bk-button>
+                            </cmdb-auth>
+                        </span>
+                    </i18n>
+                    <span v-else>
+                        {{emptyText}}
+                    </span>
+                </template>
             </div>
         </div>
     </div>
@@ -48,7 +56,7 @@
     import { mapState, mapGetters } from 'vuex'
     import permissionMixins from '@/mixins/permission'
     export default {
-        name: 'table-stuff',
+        name: 'cmdb-table-stuff',
         mixins: [permissionMixins],
         props: {
             stuff: {
@@ -59,7 +67,8 @@
                 })
             },
             auth: {
-                type: String
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -101,6 +110,8 @@
                 },
                 deep: true
             }
+        },
+        mounted () {
         },
         methods: {
         }

@@ -31,7 +31,7 @@
                     </span>
                 </template>
             </bk-table-column>
-            <table-stuff slot="empty" :stuff="table.stuff"></table-stuff>
+            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
         </bk-table>
     </div>
 </template>

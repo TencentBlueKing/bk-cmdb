@@ -87,12 +87,12 @@
                     </span>
                 </template>
             </bk-table-column>
-            <table-stuff
+            <cmdb-table-stuff
                 slot="empty"
                 :stuff="table.stuff"
                 :auth="$OPERATION.C_CUSTOM_QUERY"
                 @create="showUserAPISlider('create')"
-            />
+            ></cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom

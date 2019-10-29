@@ -177,7 +177,7 @@
             },
             filterParams () {
                 if (this.ready) {
-                    this.getHostList()
+                    this.getHostList(false, true)
                 }
             }
         },
@@ -228,9 +228,9 @@
                     return result
                 })
             },
-            getHostList (resetPage = false) {
+            getHostList (resetPage = false, event = false) {
                 const params = this.getParams()
-                this.$refs.resourceTable.search(-1, params, resetPage)
+                this.$refs.resourceTable.search(-1, params, resetPage, event)
             },
             getParams () {
                 const defaultModel = ['biz', 'set', 'module', 'host']

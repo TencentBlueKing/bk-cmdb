@@ -81,32 +81,32 @@
                     :auto-select="false"
                     font-size="14"
                     v-model="filter.value"
-                    @on-selected="getTableData">
+                    @on-selected="getTableData(true)">
                 </cmdb-form-enum>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
                     font-size="large"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData">
+                    @enter="getTableData(true)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
                     font-size="large"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData">
+                    @enter="getTableData(true)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
                     font-size="large"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData">
+                    @enter="getTableData(true)">
                 </bk-input>
                 <i class="filter-search bk-icon icon-search"
                     v-show="filter.type !== 'enum'"
-                    @click="getTableData"></i>
+                    @click="getTableData(true)"></i>
             </div>
         </div>
         <bk-table class="models-table" ref="table"
@@ -132,6 +132,13 @@
                     <span>{{row[column.id] | addUnit(getPropertyUnit(column.id))}}</span>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff
+                slot="empty"
+                :auth="$OPERATION.C_INST"
+                :stuff="table.stuff"
+                @create="handleCreate"
+            >
+            </cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -251,7 +258,11 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
-                    sort: 'bk_inst_id'
+                    sort: 'bk_inst_id',
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 filter: {
                     id: '',
@@ -410,7 +421,13 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
-                    sort: 'bk_inst_id'
+                    sort: 'bk_inst_id',
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.model['bk_obj_name']
+                        }
+                    }
                 }
             },
             getPropertyGroups () {
@@ -516,8 +533,8 @@
                 })
                 this.table.allList = [...this.table.allList, ...newList]
             },
-            getTableData () {
-                this.getInstList().then(data => {
+            getTableData (event) {
+                this.getInstList({ cancelPrevious: true, globalPermission: false }).then(data => {
                     if (data.count && !data.info.length) {
                         this.table.pagination.current -= 1
                         this.getTableData()
@@ -525,7 +542,19 @@
                     this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
                     this.setAllHostList(data.info)
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+
                     return data
+                }).catch(({ permission }) => {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 })
             },
             getSearchParams () {

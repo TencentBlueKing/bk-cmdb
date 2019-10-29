@@ -70,25 +70,12 @@
                     </span>
                 </template>
             </bk-table-column>
-            <template slot="empty">
-                <i class="bk-table-empty-icon bk-icon icon-empty"></i>
-                <i18n path="空集群模板提示" tag="div">
-                    <span
-                        place="link"
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SET_TEMPLATE),
-                            auth: [$OPERATION.C_SET_TEMPLATE]
-                        }">
-                        <bk-button
-                            text
-                            :disabled="!$isAuthorized($OPERATION.C_SET_TEMPLATE)"
-                            @click="handleCreate"
-                        >
-                            {{$t('立即创建')}}
-                        </bk-button>
-                    </span>
-                </i18n>
-            </template>
+            <cmdb-table-stuff
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$OPERATION.C_SET_TEMPLATE"
+                @create="handleCreate"
+            ></cmdb-table-stuff>
         </bk-table>
     </div>
 </template>
@@ -99,7 +86,15 @@
             return {
                 list: [],
                 originList: [],
-                searchName: ''
+                searchName: '',
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.$t('集群模板')
+                        }
+                    }
+                }
             }
         },
         computed: {
@@ -168,6 +163,8 @@
                 this.list = this.searchName
                     ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
                     : originList
+
+                this.table.stuff.type = 'search'
             },
             handleSelectable (row) {
                 return !row.set_instance_count
