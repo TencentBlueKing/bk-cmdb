@@ -2,7 +2,7 @@
     <div :class="['table-stuff', type]">
         <div class="content" v-if="type === 'search'">
             <i class="bk-cc-icon icon-cc-tips"></i>
-            <span class="text">搜索内容为空</span>
+            <span class="text">{{$t('搜索内容为空')}}</span>
         </div>
         <div class="content" v-else-if="type === 'permission'">
             <i class="bk-cc-icon icon-cc-no-authority"></i>
