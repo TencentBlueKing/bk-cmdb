@@ -11,23 +11,44 @@
             ])
         }"
     >
-        <div class="template-info clearfix" v-if="isModuleNode && type === 'details'">
-            <div class="info-item fl" :title="`${$t('服务模板')} : ${templateInfo.serviceTemplateName}`">
-                <span class="name fl">{{$t('服务模板')}}</span>
-                <div class="value fl">
-                    <div class="template-value" v-if="withTemplate" @click="goServiceTemplate">
-                        <span class="text link">{{templateInfo.serviceTemplateName}}</span>
-                        <i class="icon-cc-share"></i>
+        <div class="template-info clearfix" v-if="( isSetNode || isModuleNode) && type === 'details'">
+            <template v-if="isModuleNode">
+                <div class="info-item fl" :title="`${$t('服务模板')} : ${templateInfo.serviceTemplateName}`">
+                    <span class="name fl">{{$t('服务模板')}}</span>
+                    <div class="value fl">
+                        <div class="template-value" v-if="withTemplate" @click="goServiceTemplate">
+                            <span class="text link">{{templateInfo.serviceTemplateName}}</span>
+                            <i class="icon-cc-share"></i>
+                        </div>
+                        <span class="text" v-else>{{templateInfo.serviceTemplateName}}</span>
                     </div>
-                    <span class="text" v-else>{{templateInfo.serviceTemplateName}}</span>
                 </div>
-            </div>
-            <div class="info-item fl" :title="`${$t('服务分类')} : ${templateInfo.serviceCategory || '--'}`">
-                <span class="name fl">{{$t('服务分类')}}</span>
-                <div class="value fl">
-                    <span class="text">{{templateInfo.serviceCategory || '--'}}</span>
+                <div class="info-item fl" :title="`${$t('服务分类')} : ${templateInfo.serviceCategory || '--'}`">
+                    <span class="name fl">{{$t('服务分类')}}</span>
+                    <div class="value fl">
+                        <span class="text">{{templateInfo.serviceCategory || '--'}}</span>
+                    </div>
                 </div>
-            </div>
+            </template>
+            <template v-else-if="isSetNode">
+                <div class="info-item fl" :title="`${$t('集群模板')} : ${templateInfo.setTemplateName}`">
+                    <span class="name fl">{{$t('集群模板')}}</span>
+                    <div class="value fl">
+                        <template v-if="withSetTemplate">
+                            <div class="template-value set-template fl" @click="goSetTemplate">
+                                <span class="text link">{{templateInfo.setTemplateName}}</span>
+                                <i class="icon-cc-share"></i>
+                            </div>
+                            <bk-button :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
+                                :disabled="!hasChange"
+                                @click="handleSyncSetTemplate">
+                                {{$t('同步集群')}}
+                            </bk-button>
+                        </template>
+                        <span class="text" v-else>{{templateInfo.setTemplateName}}</span>
+                    </div>
+                </div>
+            </template>
         </div>
         <cmdb-details class="topology-details"
             v-if="type === 'details'"
@@ -59,7 +80,7 @@
             </template>
         </cmdb-details>
         <template v-else-if="type === 'update'">
-            <div class="service-category" v-if="!withTemplate">
+            <div class="service-category" v-if="!withTemplate && isModuleNode">
                 <span class="title">{{$t('服务分类')}}</span>
                 <div class="selector-item mt10 clearfix">
                     <cmdb-selector class="category-selector fl"
@@ -88,7 +109,6 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         data () {
             return {
@@ -100,7 +120,11 @@
                 first: '',
                 second: '',
                 hasChange: false,
-                templateInfo: {}
+                templateInfo: {
+                    serviceTemplateName: this.$t('无'),
+                    serviceCategory: '',
+                    setTemplateName: this.$t('无')
+                }
             }
         },
         computed: {
@@ -291,15 +315,12 @@
                     }
                 })
                 const setTemplateId = data.info[0].set_template_id
-                let setTemplateName = ''
+                let setTemplateInfo = {}
                 if (setTemplateId) {
-                    const setTemplateInfo = await this.getSetTemplateInfo(setTemplateId)
-                    setTemplateName = setTemplateInfo.name
+                    setTemplateInfo = await this.getSetTemplateInfo(setTemplateId)
                 }
-                return {
-                    __set_template_name__: setTemplateName,
-                    ...data.info[0]
-                }
+                this.templateInfo.setTemplateName = setTemplateInfo.name || this.$t('无')
+                return data.info[0]
             },
             getSetTemplateInfo (id) {
                 return this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
@@ -427,7 +448,6 @@
                 }
             },
             updateSetInstance (value) {
-                delete value.__set_template_name__
                 return this.$store.dispatch('objectSet/updateSet', {
                     bizId: this.business,
                     setId: this.selectedNode.data.bk_inst_id,
@@ -597,9 +617,10 @@
             },
             goSetTemplate () {
                 this.$router.push({
-                    name: MENU_BUSINESS_SET_TEMPLATE,
+                    name: 'setTemplateConfig',
                     params: {
-                        templateId: this.instance.service_template_id,
+                        mode: 'view',
+                        templateId: this.instance.set_template_id,
                         moduleId: this.selectedNode.data.bk_inst_id
                     }
                 })
@@ -678,8 +699,8 @@
             }
         }
         .value {
-            width: 80%;
-            overflow: hidden;
+            width: calc(80% - 10px);
+            padding-right: 10px;
             .text {
                 @include inlineBlock;
                 @include ellipsis;
@@ -691,6 +712,10 @@
                 font-size: 0;
                 color: #3a84ff;
                 cursor: pointer;
+                &.set-template {
+                    width: auto;
+                    max-width: calc(100% - 75px);
+                }
             }
             .icon-cc-share {
                 @include inlineBlock;
