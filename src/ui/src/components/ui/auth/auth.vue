@@ -2,7 +2,7 @@
     <span class="auth-box"
         v-cursor="{
             active: isAuthorized,
-            auth: [resource]
+            auth: resources
         }">
         <slot :disabled="disabled"></slot>
     </span>
@@ -16,6 +16,10 @@
             auth: {
                 type: Object,
                 required: true
+            },
+            requestAuth: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
@@ -25,8 +29,9 @@
             }
         },
         computed: {
-            resource () {
-                return this.auth.type || ''
+            resources () {
+                if (!this.auth.type) return []
+                return Array.isArray(this.auth.type) ? this.auth.type : [this.auth.type]
             }
         },
         watch: {
@@ -34,21 +39,32 @@
                 immediate: true,
                 deep: true,
                 handler (value, oldValue) {
-                    if (!deepEqual(value, oldValue)) {
+                    if (this.requestAuth && !deepEqual(value, oldValue)) {
                         resourceOperation.pushQueue({
                             component: this,
                             data: this.auth
                         })
                     }
                 }
+            },
+            requestAuth: {
+                immediate: true,
+                handler (value) {
+                    if (!value) {
+                        this.disabled = false
+                    }
+                }
             }
         },
         methods: {
-            updateAuth (auth) {
-                const isPass = auth.is_pass
+            updateAuth (auths) {
+                const passData = auths.map(auth => {
+                    return auth.is_pass
+                })
+                const isPass = passData.every(pass => pass)
                 this.isAuthorized = !isPass
                 this.disabled = !isPass
-                this.$emit('udpate-auth', isPass)
+                this.$emit('update-auth', isPass)
             }
         }
     }
