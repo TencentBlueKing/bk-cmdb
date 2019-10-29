@@ -17,6 +17,7 @@ var procServerClient = clientSet.ProcServer()
 var apiServerClient = clientSet.ApiServer()
 var instClient = topoServerClient.Instance()
 var objectClient = topoServerClient.Object()
+var serviceClient = clientSet.ProcServer().Service()
 
 func TestTopoServer(t *testing.T) {
 	RegisterFailHandler(Fail)
