@@ -23,7 +23,7 @@
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                    <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
                         <bk-button slot-scope="{ disabled }"
                             theme="primary"
                             :disabled="!hosts.length || disabled"

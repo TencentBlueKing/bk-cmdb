@@ -39,11 +39,14 @@
                                 <span class="text link">{{templateInfo.setTemplateName}}</span>
                                 <i class="icon-cc-share"></i>
                             </div>
-                            <bk-button :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
-                                :disabled="!hasChange"
-                                @click="handleSyncSetTemplate">
-                                {{$t('同步集群')}}
-                            </bk-button>
+                            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                                <bk-button slot-scope="{ disabled }"
+                                    :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
+                                    :disabled="!hasChange || disabled"
+                                    @click="handleSyncSetTemplate">
+                                    {{$t('同步集群')}}
+                                </bk-button>
+                            </cmdb-auth>
                         </template>
                         <span class="text" v-else>{{templateInfo.setTemplateName}}</span>
                     </div>
