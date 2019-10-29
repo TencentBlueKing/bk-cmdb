@@ -3,8 +3,7 @@
         v-cursor="{
             active: isAuthorized,
             auth: [resource]
-        }"
-        @click.stop>
+        }">
         <slot :disabled="disabled"></slot>
     </span>
 </template>
