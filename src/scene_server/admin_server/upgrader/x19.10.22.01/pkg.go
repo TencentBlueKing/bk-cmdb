@@ -9,5 +9,25 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package x19_10_22_01
 
-package privilege
+import (
+	"context"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
+)
+
+func init() {
+	upgrader.RegistUpgrader("x19_10_22_01", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = UpdateCpuUnit(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x19_10_22_01] UpdateCpuUnit error  %s", err.Error())
+		return err
+	}
+	return
+}

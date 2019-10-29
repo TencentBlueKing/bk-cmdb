@@ -111,13 +111,19 @@
             height: 100%;
             padding: 0;
         }
-        /deep/ .bk-tab-section {
-            height: calc(100% - 42px);
-            padding-top: 14px;
-            min-width: 826px;
-        }
-        /deep/ .bk-tab-content {
-            height: 100%;
+        /deep/ {
+            .bk-tab-header {
+                margin: 0 20px;
+                padding: 0;
+            }
+            .bk-tab-section {
+                height: calc(100% - 42px);
+                padding-top: 14px;
+                min-width: 826px;
+            }
+            .bk-tab-content {
+                height: 100%;
+            }
         }
     }
     .business-node-view {

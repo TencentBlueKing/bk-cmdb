@@ -14,6 +14,7 @@ package metadata
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 )
 
@@ -23,6 +24,22 @@ type BaseResp struct {
 	Code        int          `json:"bk_error_code"`
 	ErrMsg      string       `json:"bk_error_msg"`
 	Permissions []Permission `json:"permission"`
+}
+
+// CCError 根据response返回的信息产生错误
+func (br *BaseResp) CCError() errors.CCErrorCoder {
+	if br.Result {
+		return nil
+	}
+	return errors.New(br.Code, br.ErrMsg)
+}
+
+// New 根据response返回的信息产生错误
+func (br *BaseResp) Error() error {
+	if br.Result {
+		return nil
+	}
+	return errors.New(br.Code, br.ErrMsg)
 }
 
 // Permission  describes all the authorities that a user

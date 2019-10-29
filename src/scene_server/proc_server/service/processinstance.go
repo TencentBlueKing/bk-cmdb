@@ -128,7 +128,15 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 		}
 	}
 	processIDs := make([]int64, 0)
-	for _, process := range input.Processes {
+	input.Processes = make([]metadata.Process, 0)
+	for _, pData := range input.Raw {
+		process := metadata.Process{}
+		if err := mapstr.DecodeFromMapStr(&process, pData); err != nil {
+			ctx.RespErrorCodeF(common.CCErrCommJSONUnmarshalFailed, "update process instance failed, unmarshal request body failed", common.BKProcessIDField)
+			return
+		}
+		input.Processes = append(input.Processes, process)
+
 		if process.ProcessID == 0 {
 			ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "update process instance failed, process_id invalid", common.BKProcessIDField)
 			return
@@ -189,7 +197,17 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 	}
 
 	var processTemplate *metadata.ProcessTemplate
-	for _, process := range input.Processes {
+	for idx, process := range input.Processes {
+		// 单独提取需要被重置成 nil 的字段
+		raw := input.Raw[idx]
+		clearFields := make([]string, 0)
+		for key, value := range raw {
+			if value == nil {
+				clearFields = append(clearFields, key)
+			}
+		}
+		clearFields = metadata.FilterValidFields(clearFields)
+
 		relation, exist := process2ServiceInstanceMap[process.ProcessID]
 		if exist == false {
 			err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessIDField)
@@ -197,7 +215,7 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 			return
 		}
 
-		processData := mapstr.MapStr{}
+		processData := make(map[string]interface{})
 		if relation.ProcessTemplateID == common.ServiceTemplateIDNotSet {
 			serviceInstanceID := relation.ServiceInstanceID
 			if err := ps.validateRawInstanceUnique(ctx, serviceInstanceID, &process); err != nil {
@@ -216,10 +234,10 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 				err := ctx.Kit.CCError.CCError(common.CCErrCommJsonDecode)
 				ctx.RespWithError(err, common.CCErrCommJsonDecode, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
 			}
-			processData.Remove(common.BKProcessIDField)
-			processData.Remove(common.MetadataField)
-			processData.Remove(common.LastTimeField)
-			processData.Remove(common.CreateTimeField)
+			delete(processData, common.BKProcessIDField)
+			delete(processData, common.MetadataField)
+			delete(processData, common.LastTimeField)
+			delete(processData, common.CreateTimeField)
 		} else {
 			processTemplate, exist = processTemplateMap[relation.ProcessTemplateID]
 			if exist == false {
@@ -227,8 +245,12 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 				ctx.RespWithError(err, common.CCErrCommNotFound, "update process instance failed, process related template not found, relation: %+v, err: %v", relation, err)
 				return
 			}
-			updateData := processTemplate.ExtractInstanceUpdateData(&process)
-			processData = mapstr.MapStr(updateData)
+			processData = processTemplate.ExtractInstanceUpdateData(&process)
+			clearFields = processTemplate.GetEditableFields(clearFields)
+		}
+		// set field value as nil
+		for _, field := range clearFields {
+			processData[field] = nil
 		}
 
 		if err := ps.Logic.UpdateProcessInstance(ctx.Kit, process.ProcessID, processData); err != nil {
@@ -320,7 +342,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	}
 	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
 	if err != nil {
-		blog.Errorf("validateRawInstanceUnique failed, get service instance failed, metadata: %+v, err: %v, rid: %s", serviceInstance.BizID, err, ctx.Kit.Rid)
+		blog.Errorf("validateRawInstanceUnique failed, get service instance failed, bk_biz_id: %d, err: %v, rid: %s", serviceInstance.BizID, err, ctx.Kit.Rid)
 		return err
 	}
 
@@ -369,7 +391,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 		return ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if listResult.Data.Count > 0 {
-		blog.Errorf("validateRawInstanceUnique failed, bk_process_name duplicated under service instance, err: %v, rid: %s", serviceInstance.BizID, err, ctx.Kit.Rid)
+		blog.Errorf("validateRawInstanceUnique failed, bk_process_name duplicated under service instance, bk_biz_id: %d, err: %v, rid: %s", serviceInstance.BizID, err, ctx.Kit.Rid)
 		processName := ""
 		if processInfo.ProcessName != nil {
 			processName = *processInfo.ProcessName

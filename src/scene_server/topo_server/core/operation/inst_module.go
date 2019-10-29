@@ -139,6 +139,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		}
 		serviceCategoryID = scID
 	}
+
 	var serviceTemplateID int64
 	var err error
 	serviceTemplateIDIf, serviceTemplateFieldExist := data.Get(common.BKServiceTemplateIDField)
@@ -148,8 +149,8 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
 	}
-	data.Set(common.BKServiceTemplateIDField, serviceTemplateID)
-	if serviceCategoryExist == false && (serviceTemplateFieldExist == false || serviceTemplateID == common.ServiceTemplateIDNotSet) {
+
+	if serviceCategoryID == 0 && serviceTemplateID == 0 {
 		// set default service template id
 		defaultServiceCategory, err := m.clientSet.CoreService().Process().GetDefaultServiceCategory(params.Context, params.Header)
 		if err != nil {
@@ -157,8 +158,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 			return nil, params.Err.Errorf(common.CCErrProcGetDefaultServiceCategoryFailed)
 		}
 		serviceCategoryID = defaultServiceCategory.ID
-	}
-	if serviceTemplateID != common.ServiceTemplateIDNotSet {
+	} else if serviceTemplateID != common.ServiceTemplateIDNotSet {
 		// 校验 serviceCategoryID 与 serviceTemplateID 对应
 		templateIDs := []int64{serviceTemplateID}
 		option := metadata.ListServiceTemplateOption{
@@ -176,6 +176,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
 			return nil, params.Err.Error(common.CCErrProcServiceTemplateAndCategoryNotCoincide)
 		}
+		serviceCategoryID = stResult.Info[0].ServiceCategoryID
 	} else {
 		// 检查 service category id 是否有效
 		serviceCategory, err := m.clientSet.CoreService().Process().GetServiceCategory(params.Context, params.Header, serviceCategoryID)
@@ -188,6 +189,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		}
 	}
 	data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
+	data.Set(common.BKServiceTemplateIDField, serviceTemplateID)
 
 	return m.inst.CreateInst(params, obj, data)
 }
