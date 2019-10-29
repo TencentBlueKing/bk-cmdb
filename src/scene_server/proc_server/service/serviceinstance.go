@@ -154,7 +154,7 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
-		ModuleID:   input.ModuleID,
+		ModuleIDs:  []int64{input.ModuleID},
 		Page:       input.Page,
 		SearchKey:  input.SearchKey,
 		Selectors:  input.Selectors,
@@ -230,7 +230,7 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
-		ModuleID:   input.ModuleID,
+		ModuleIDs:  []int64{input.ModuleID},
 		Page:       input.Page,
 		SearchKey:  input.SearchKey,
 		Selectors:  input.Selectors,
@@ -363,7 +363,7 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		filter := &metadata.ListServiceInstanceOption{
 			BusinessID: bizID,
 			HostIDs:    []int64{serviceInstance.HostID},
-			ModuleID:   serviceInstance.ModuleID,
+			ModuleIDs:  []int64{serviceInstance.ModuleID},
 		}
 		result, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, filter)
 		if err != nil {
@@ -467,7 +467,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	serviceOption := &metadata.ListServiceInstanceOption{
 		BusinessID:        module.BizID,
 		ServiceTemplateID: module.ServiceTemplateID,
-		ModuleID:          diffOption.ModuleID,
+		ModuleIDs:         []int64{diffOption.ModuleID},
 	}
 	serviceInstances, e := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
 	if e != nil {
@@ -773,7 +773,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	// find service instances
 	serviceInstanceOption := &metadata.ListServiceInstanceOption{
 		BusinessID:        bizID,
-		ModuleID:          syncOption.ModuleID,
+		ModuleIDs:         []int64{syncOption.ModuleID},
 		ServiceTemplateID: module.ServiceTemplateID,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
@@ -1136,7 +1136,7 @@ func (ps *ProcServer) ServiceInstanceLabelsAggregation(ctx *rest.Contexts) {
 		BusinessID: bizID,
 	}
 	if option.ModuleID != nil {
-		listOption.ModuleID = *option.ModuleID
+		listOption.ModuleIDs = []int64{*option.ModuleID}
 	}
 	instanceRst, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
 	if err != nil {

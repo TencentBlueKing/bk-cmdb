@@ -198,12 +198,11 @@ const (
 	CCErrGetNoAuthSkipURLFailed  = 1199072
 
 	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
-	CCErrCommValExceedMaxFailed                              = 1199073
+	CCErrCommValExceedMaxFailed          = 1199073
 	CCErrCommGlobalCCErrorNotInitialized = 1199074
-	
+
 	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
 	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199076
-
 
 	CCErrCommModifyFieldForbidden = 1199077
 
@@ -580,6 +579,8 @@ const (
 
 	CCErrProcUnbindModuleServiceTemplateDisabled = 1108042
 	CCErrProcGetServiceCategoryFailed            = 1108043
+
+	CCErrHostTransferFinalModuleConflict = 1108044
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001

@@ -351,3 +351,21 @@ type DeleteHostFromBizParameter struct {
 type CloudAreaParameter struct {
 	Page BasePage `json:"page" bson:"page" field:"page"`
 }
+
+type TopoNode struct {
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id"`
+	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id"`
+}
+
+type TransferHostWithAutoClearServiceInstanceOption struct {
+	RemoveFrom *TopoNode `field:"remove_from" json:"remove_from"`
+	HostIDs    []int64   `field:"bk_host_ids" json:"bk_host_ids"`
+	AddTo      []int64   `field:"add_to" json:"add_to"`
+}
+
+type HostTransferPlan struct {
+	HostID       int64   `field:"bk_host_id" json:"bk_host_id"`
+	FinalModules []int64 `field:"final_modules" json:"final_modules"`
+	RemoveFrom   []int64 `field:"remove_from" json:"remove_from"`
+	AddTo        []int64 `field:"add_to" json:"add_to"`
+}

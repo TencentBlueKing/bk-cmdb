@@ -137,7 +137,7 @@ type SearchTopoModelNodeResult struct {
 	Data     TopoModelNode `json:"data"`
 }
 
-// LeftestObjectIDList extrac leftest node's id of each level, arrange as a list
+// LeftestObjectIDList extract leftest node's id of each level, arrange as a list
 // it's useful in model mainline topo case, as bk_mainline relationship degenerate to a list.
 func (tn *TopoModelNode) LeftestObjectIDList() []string {
 	objectIDs := make([]string, 0)
@@ -214,6 +214,16 @@ func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int6
 	}
 
 	return []*TopoInstanceNode{}
+}
+
+func (node *TopoInstanceNode) DeepFirstTraversal(f func(node *TopoInstanceNode)) {
+	if node == nil {
+		return
+	}
+	for _, child := range node.Children {
+		child.DeepFirstTraversal(f)
+	}
+	f(node)
 }
 
 type TopoInstance struct {
@@ -328,7 +338,7 @@ type ListServiceInstanceOption struct {
 	BusinessID         int64              `json:"bk_biz_id"`
 	ServiceTemplateID  int64              `json:"service_template_id"`
 	HostIDs            []int64            `json:"bk_host_ids"`
-	ModuleID           int64              `json:"bk_module_id"`
+	ModuleIDs          []int64            `json:"bk_module_ids"`
 	SearchKey          *string            `json:"search_key"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
 	Selectors          selector.Selectors `json:"selectors"`
