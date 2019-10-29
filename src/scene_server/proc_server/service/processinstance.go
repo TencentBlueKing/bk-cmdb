@@ -342,7 +342,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	}
 	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
 	if err != nil {
-		blog.Errorf("validateRawInstanceUnique failed, get service instance failed, metadata: %+v, err: %v, rid: %s", serviceInstance.BizID, err, ctx.Kit.Rid)
+		blog.Errorf("validateRawInstanceUnique failed, get service instance failed, bk_biz_id: %d, err: %v, rid: %s", serviceInstance.BizID, err, ctx.Kit.Rid)
 		return err
 	}
 
@@ -391,7 +391,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 		return ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if listResult.Data.Count > 0 {
-		blog.Errorf("validateRawInstanceUnique failed, bk_process_name duplicated under service instance, err: %v, rid: %s", serviceInstance.BizID, err, ctx.Kit.Rid)
+		blog.Errorf("validateRawInstanceUnique failed, bk_process_name duplicated under service instance, bk_biz_id: %d, err: %v, rid: %s", serviceInstance.BizID, err, ctx.Kit.Rid)
 		processName := ""
 		if processInfo.ProcessName != nil {
 			processName = *processInfo.ProcessName
