@@ -25,18 +25,24 @@ import {
 } from '@/views'
 
 const getSubmenu = (views, symbol, pathPrefix = '') => {
-    const submenuViews = views.filter(view => {
-        return view.meta.menu.parent === symbol
-    })
-    const submenu = submenuViews.map(view => {
-        const menu = view.meta.menu
-        return {
-            id: Symbol(menu.i18n),
-            i18n: menu.i18n,
-            route: getMenuRoute(view, symbol, pathPrefix)
-        }
-    })
-    return submenu
+    let temp
+    try {
+        const submenuViews = views.filter(view => {
+            temp = view
+            return view.meta.menu.parent === symbol
+        })
+        const submenu = submenuViews.map(view => {
+            const menu = view.meta.menu
+            return {
+                id: Symbol(menu.i18n),
+                i18n: menu.i18n,
+                route: getMenuRoute(view, symbol, pathPrefix)
+            }
+        })
+        return submenu
+    } catch (e) {
+        console.log(temp)
+    }
 }
 
 const getMenuRoute = (views, symbol, pathPrefix = '') => {
@@ -60,6 +66,11 @@ const menus = [{
     id: MENU_BUSINESS,
     i18n: '业务',
     menu: [{
+        id: 'businessTopologyNew',
+        i18n: '业务拓扑',
+        icon: 'icon-cc-square',
+        route: getMenuRoute(businessViews, 'businessTopologyNew', 'business')
+    }, {
         id: MENU_BUSINESS_HOST,
         i18n: '主机',
         icon: 'icon-cc-host',
