@@ -15,7 +15,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" prop="operation">
                 <template slot-scope="{ row }">
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_SERVICE_TEMPLATE })">
+                    <cmdb-auth :auth="$authResources(auth)">
                         <bk-button slot-scope="{ disabled }"
                             class="mr10"
                             theme="primary"
@@ -25,7 +25,7 @@
                             {{$t('编辑')}}
                         </bk-button>
                     </cmdb-auth>
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_SERVICE_TEMPLATE })">
+                    <cmdb-auth :auth="$authResources(auth)">
                         <bk-button slot-scope="{ disabled }"
                             theme="primary"
                             :disabled="disabled"
@@ -52,6 +52,10 @@
             }
         },
         props: {
+            auth: {
+                type: Object,
+                default: () => ({})
+            },
             list: {
                 type: Array,
                 default: () => {

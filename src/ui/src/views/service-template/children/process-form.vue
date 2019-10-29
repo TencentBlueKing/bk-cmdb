@@ -56,7 +56,7 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_SERVICE_TEMPLATE })">
+                <cmdb-auth :auth="$authResources(auth)">
                     <bk-button slot-scope="{ disabled }"
                         class="button-save"
                         theme="primary"
@@ -111,6 +111,10 @@
             hasUsed: {
                 type: Boolean,
                 default: false
+            },
+            auth: {
+                type: Object,
+                default: () => ({})
             }
         },
         data () {

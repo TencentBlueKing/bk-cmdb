@@ -343,8 +343,16 @@
             metadataGroupedProperties () {
                 return this.groupedProperties.filter(group => !!this.$tools.getMetadataBiz(group.info))
             },
+            modelId () {
+                if (!this.objId) return null
+                const model = this.$store.getters['objectModelClassify/getModelById'](this.objId)
+                return model.id
+            },
             authResources () {
-                return this.$authResources({ type: this.$OPERATION.U_MODEL })
+                return this.$authResources({
+                    resource_id: this.modelId,
+                    type: this.$OPERATION.U_MODEL
+                })
             }
         },
         async created () {

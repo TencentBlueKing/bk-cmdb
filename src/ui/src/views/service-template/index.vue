@@ -66,7 +66,10 @@
             </bk-table-column>
             <bk-table-column prop="operation" :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_SERVICE_TEMPLATE })">
+                    <cmdb-auth class="mr10" :auth="$authResources({
+                        resource_id: row.id,
+                        type: $OPERATION.U_SERVICE_TEMPLATE
+                    })">
                         <bk-button slot-scope="{ disabled }"
                             theme="primary"
                             :disabled="disabled"
@@ -75,7 +78,10 @@
                             {{$t('编辑')}}
                         </bk-button>
                     </cmdb-auth>
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.D_SERVICE_TEMPLATE })">
+                    <cmdb-auth :auth="$authResources({
+                        resource_id: row.id,
+                        type: $OPERATION.D_SERVICE_TEMPLATE
+                    })">
                         <template slot-scope="{ disabled }">
                             <span class="text-primary"
                                 style="color: #dcdee5 !important; cursor: not-allowed;"
