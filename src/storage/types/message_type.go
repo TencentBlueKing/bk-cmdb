@@ -12,10 +12,6 @@
 
 package types
 
-import (
-	"configcenter/src/storage/mongodb"
-)
-
 // MsgHeader message header
 type MsgHeader struct {
 	OPCode    OPCode
@@ -204,7 +200,7 @@ type OPDDLOperation struct {
 	MsgHeader         // 标准报文头
 	Collection string // "dbname.collectionname"
 	Command    OPDDLCommand
-	Index      mongodb.Index
+	Index      Index
 }
 
 // ReplyHeader the rpc message header structure
@@ -221,4 +217,12 @@ type OPReply struct {
 	ReplyHeader           // 标准报文头
 	Count       uint64    // 文档查询结果数
 	Docs        Documents // 文档查询结果
+}
+
+// Index the collection index definition
+type Index struct {
+	Keys       map[string]int32 `json:"keys" bson:"key"`
+	Name       string           `json:"name" bson:"name"`
+	Unique     bool             `json:"unique" bson:"unique"`
+	Background bool             `json:"background" bson:"background"`
 }
