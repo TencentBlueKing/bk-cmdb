@@ -117,6 +117,7 @@
             margin-top: calc((100vh - var(--height)) / 3);
             max-height: calc(100vh - 225px);
             min-height: 100px;
+            border-radius: 2px;
             background-color: #fff;
             box-shadow:0px 4px 12px 0px rgba(0,0,0,0.2);
             @include scrollbar;

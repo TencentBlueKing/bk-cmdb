@@ -108,7 +108,7 @@
 }
 
 .bk-big-tree {
-    .bk-big-tree-node {
+    .bk-big-tree-node:not(.has-link-line) {
         height: 36px;
         line-height: 36px;
         &.is-leaf {
