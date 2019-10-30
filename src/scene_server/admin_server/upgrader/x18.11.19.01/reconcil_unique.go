@@ -25,12 +25,12 @@ import (
 func createObjectUnitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablenames := []string{common.BKTableNameObjUnique}
 	for _, tablename := range tablenames {
-		exists, err := db.HasTable(tablename)
+		exists, err := db.HasTable(ctx, tablename)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			if err = db.CreateTable(tablename); err != nil && !db.IsDuplicatedError(err) {
+			if err = db.CreateTable(ctx, tablename); err != nil && !db.IsDuplicatedError(err) {
 				return err
 			}
 		}

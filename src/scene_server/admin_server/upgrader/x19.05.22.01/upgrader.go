@@ -24,13 +24,13 @@ import (
 
 func addChartConfigTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameChartConfig
-	exists, err := db.HasTable(tableName)
+	exists, err := db.HasTable(ctx, tableName)
 
 	if err != nil {
 		return err
 	}
 	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}
@@ -50,13 +50,13 @@ func addChartConfigTable(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 
 func addChartPositionTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameChartPosition
-	exists, err := db.HasTable(tableName)
+	exists, err := db.HasTable(ctx, tableName)
 
 	if err != nil {
 		return err
 	}
 	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}
@@ -76,13 +76,13 @@ func addChartPositionTable(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 
 func addChartDataTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameChartData
-	exists, err := db.HasTable(tableName)
+	exists, err := db.HasTable(ctx, tableName)
 
 	if err != nil {
 		return err
 	}
 	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}

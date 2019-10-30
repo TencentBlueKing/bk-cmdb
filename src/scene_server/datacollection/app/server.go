@@ -33,10 +33,8 @@ import (
 	"configcenter/src/scene_server/datacollection/datacollection"
 	"configcenter/src/scene_server/datacollection/logics"
 	svc "configcenter/src/scene_server/datacollection/service"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
@@ -74,12 +72,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		var mgoCli dal.RDB
-		if process.Config.MongoDB.Enable == "true" {
-			mgoCli, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
-		} else {
-			mgoCli, err = remote.NewWithDiscover(process.Core)
-		}
+		mgoCli, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 		}

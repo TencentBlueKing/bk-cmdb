@@ -30,12 +30,12 @@ func createServiceTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader
 	}
 
 	for _, tableName := range tables {
-		exists, err := db.HasTable(tableName)
+		exists, err := db.HasTable(ctx, tableName)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			if err = db.CreateTable(tableName); err != nil && !db.IsDuplicatedError(err) {
+			if err = db.CreateTable(ctx, tableName); err != nil && !db.IsDuplicatedError(err) {
 				return err
 			}
 		}
