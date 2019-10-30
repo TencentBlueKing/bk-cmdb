@@ -358,9 +358,9 @@ type TopoNode struct {
 }
 
 type TransferHostWithAutoClearServiceInstanceOption struct {
-	RemoveFrom *TopoNode `field:"remove_from" json:"remove_from"`
-	HostIDs    []int64   `field:"bk_host_ids" json:"bk_host_ids"`
-	AddTo      []int64   `field:"add_to" json:"add_to"`
+	RemoveFromNode *TopoNode `field:"remove_from_node" json:"remove_from_node"`
+	HostIDs        []int64   `field:"bk_host_ids" json:"bk_host_ids"`
+	AddToModules   []int64   `field:"add_to_modules" json:"add_to_modules"`
 }
 
 type HostTransferPlan struct {
