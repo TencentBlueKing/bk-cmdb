@@ -102,7 +102,7 @@ func (es *EsSrv) Search(ctx context.Context, query elastic.Query, types []string
 
 	if err != nil {
 		// Handle error
-		blog.Errorf("es search [%s] error, err: %v, rid: %s", query, err, rid)
+		blog.Errorf("es search cond[%v] failed, err: %v, rid: %s", query, err, rid)
 		return nil, err
 	}
 
