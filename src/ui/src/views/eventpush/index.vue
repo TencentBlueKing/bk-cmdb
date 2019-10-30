@@ -8,17 +8,14 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="btn-wrapper clearfix">
-            <span class="inline-block-middle"
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.C_EVENT),
-                    auth: [$OPERATION.C_EVENT]
-                }">
-                <bk-button theme="primary"
-                    :disabled="!$isAuthorized($OPERATION.C_EVENT)"
+            <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.C_EVENT })">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
+                    :disabled="disabled"
                     @click="createPush">
                     {{$t('新建')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
         </div>
         <bk-table
             v-bkloading="{ isLoading: $loading('searchSubscription') }"
@@ -49,32 +46,24 @@
             </bk-table-column>
             <bk-table-column prop="setting" :label="$t('配置')">
                 <template slot-scope="{ row }">
-                    <span class="text-primary mr20"
-                        v-if="$isAuthorized($OPERATION.U_EVENT)"
-                        @click.stop="editPush(row)">
-                        {{$t('编辑')}}
-                    </span>
-                    <span class="text-primary disabled mr20"
-                        v-else
-                        v-cursor="{
-                            active: true,
-                            auth: [$OPERATION.U_EVENT]
-                        }">
-                        {{$t('编辑')}}
-                    </span>
-                    <span class="text-primary"
-                        v-if="$isAuthorized($OPERATION.D_EVENT)"
-                        @click.stop="deleteConfirm(row)">
-                        {{$t('删除')}}
-                    </span>
-                    <span class="text-primary disabled"
-                        v-else
-                        v-cursor="{
-                            active: true,
-                            auth: [$OPERATION.D_EVENT]
-                        }">
-                        {{$t('删除')}}
-                    </span>
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_EVENT })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            text
+                            :disabled="disabled"
+                            @click.stop="editPush(row)">
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </cmdb-auth>
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.D_EVENT })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            text
+                            :disabled="disabled"
+                            @click.stop="deleteConfirm(row)">
+                            {{$t('删除')}}
+                        </bk-button>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
             <div slot="empty">
