@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"github.com/robfig/cron"
 	"time"
 
 	"configcenter/src/common"
@@ -22,6 +21,8 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+
+	"github.com/robfig/cron"
 )
 
 func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
@@ -56,6 +57,11 @@ func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64
 
 func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
 	cond := &metadata.QueryCondition{}
+	condition := mapstr.MapStr{
+		"ispre":       false,
+		"bk_ispaused": false,
+	}
+	cond.Condition = condition
 	result, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("GetModelAndInstCount fail, search model fail , err: %v, rid: %v", err, kit.Rid)
@@ -65,7 +71,7 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCount
 	info := make([]metadata.IDStringCountInt64, 0)
 	info = append(info, metadata.IDStringCountInt64{
 		Id:    "model",
-		Count: result.Data.Count - 6, // 去除内置的模型(主机、集群等)
+		Count: result.Data.Count, // 去除内置的模型(主机、集群等)
 	})
 
 	opt := make(map[string]interface{})
@@ -120,8 +126,9 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	}
 
 	c := cron.New()
-	spec := "0 0 2 * * ?" // 每天凌晨两点，更新定时统计图表数据
-	err := c.AddFunc(spec, func() {
+	spec := "0 0 * * * " // 每天凌晨，更新定时统计图表数据
+	_, err := c.AddFunc(spec, func() {
+		blog.V(3).Info("begin statistic chart data, time: %v", time.Now())
 		// 主服务器跑定时
 		isMaster := lgc.Engine.ServiceManageInterface.IsMaster()
 		if isMaster {
