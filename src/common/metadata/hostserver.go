@@ -364,8 +364,9 @@ type TransferHostWithAutoClearServiceInstanceOption struct {
 }
 
 type HostTransferPlan struct {
-	HostID       int64   `field:"bk_host_id" json:"bk_host_id"`
-	FinalModules []int64 `field:"final_modules" json:"final_modules"`
-	RemoveFrom   []int64 `field:"remove_from" json:"remove_from"`
-	AddTo        []int64 `field:"add_to" json:"add_to"`
+	HostID        int64   `field:"bk_host_id" json:"bk_host_id"`
+	FinalModules  []int64 `field:"final_modules" json:"final_modules"`
+	RemoveFrom    []int64 `field:"remove_from" json:"remove_from"`
+	AddTo         []int64 `field:"add_to" json:"add_to"`
+	ToInnerModule bool    `field:"to_inner_module" json:"to_inner_module"`
 }
