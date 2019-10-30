@@ -60,7 +60,7 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 		return
 	}
 
-	if option.RemoveFrom == nil && option.AddTo == nil {
+	if option.RemoveFromNode == nil && option.AddToModules == nil {
 		err := srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "add_to")
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
@@ -234,13 +234,13 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option metadata.TransferHostWithAutoClearServiceInstanceOption) ([]metadata.HostTransferPlan, errors.CCErrorCoder) {
 	// step1. resolve host remove from modules
 	removeFromModules := make([]int64, 0)
-	if option.RemoveFrom != nil {
+	if option.RemoveFromNode != nil {
 		topoTree, ccErr := s.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(srvData.ctx, srvData.header, bizID, false)
 		if ccErr != nil {
 			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, SearchMainlineInstanceTopo failed, bizID: %d, err: %s, rid: %s", bizID, ccErr.Error(), srvData.rid)
 			return nil, ccErr
 		}
-		topoNodePath := topoTree.TraversalFindNode(option.RemoveFrom.ObjectID, option.RemoveFrom.InstanceID)
+		topoNodePath := topoTree.TraversalFindNode(option.RemoveFromNode.ObjectID, option.RemoveFromNode.InstanceID)
 		if len(topoNodePath) == 0 {
 			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, remove_from invalid, bizID: %d, rid: %s", bizID, srvData.rid)
 			err := srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, "remove_from")
@@ -292,7 +292,7 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 
 	transferPlans := make([]metadata.HostTransferPlan, 0)
 	for hostID, currentInModules := range hostModulesIDMap {
-		transferPlan := generateTransferPlan(currentInModules, removeFromModules, option.AddTo)
+		transferPlan := generateTransferPlan(currentInModules, removeFromModules, option.AddToModules)
 		transferPlan.HostID = hostID
 		// check module compatibility
 		finalModuleCount := len(transferPlan.FinalModules)
