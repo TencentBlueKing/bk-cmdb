@@ -5,16 +5,42 @@ import { GET_AUTH_META } from '@/dictionary/auth'
 
 export const deepEqual = equal
 
+const debounce = (fn, delay) => {
+    let timer = null
+    return function () {
+        const _this = this
+        const args = arguments
+        clearTimeout(timer)
+        timer = setTimeout(() => {
+            fn.apply(_this, args)
+        }, delay)
+    }
+}
+
 export default new Vue({
     data () {
         return {
             queue: [],
-            authInstances: []
+            authInstances: [],
+            verify: null
         }
     },
     watch: {
-        async queue () {
+        queue () {
             if (!this.queue.length) return
+            this.verify()
+        }
+    },
+    created () {
+        this.verify = debounce(this.getAuth, 20)
+    },
+    methods: {
+        pushQueue (auth) {
+            this.authInstances.push(auth)
+            const repeat = this.queue.some(item => equal(item.data, auth.data))
+            !repeat && this.queue.push(auth)
+        },
+        async getAuth () {
             const queue = [...this.queue]
             const authInstances = [...this.authInstances]
             this.queue = []
@@ -45,13 +71,6 @@ export default new Vue({
                     instance.component.updateAuth(auths)
                 }
             })
-        }
-    },
-    methods: {
-        pushQueue (auth) {
-            this.authInstances.push(auth)
-            const repeat = this.queue.some(item => equal(item.data, auth.data))
-            !repeat && this.queue.push(auth)
         }
     }
 })
