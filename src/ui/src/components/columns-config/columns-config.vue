@@ -211,7 +211,7 @@
     }
     .property-list-layout {
         height: calc(100% - 78px);
-        padding: 15px 0;
+        padding: 0;
         @include scrollbar-y;
     }
     .property-list {
