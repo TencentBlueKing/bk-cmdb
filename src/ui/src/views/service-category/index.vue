@@ -400,11 +400,14 @@
         }
         .category-item {
             position: relative;
-            flex: 0 0 22%;
+            flex: 0 0 calc(25% - 15px);
             border: 1px solid #dcdee5;
-            margin-right: 30px;
+            margin-left: 20px;
             margin-bottom: 20px;
             overflow: hidden;
+            &:nth-child(4n+1) {
+                margin-left: 0;
+            }
             &.add-item {
                 .category-name {
                     color: #dcdee5 !important;
@@ -612,7 +615,13 @@
     }
     @media screen and (min-width: 1920px){
         .category-item {
-            flex: 0 0 18% !important;
+            flex: 0 0 calc(20% - 16px) !important;
+            &:nth-child(4n+1) {
+                margin-left: 20px !important;
+            }
+            &:nth-child(5n+1) {
+                margin-left: 0 !important;
+            }
         }
     }
 </style>

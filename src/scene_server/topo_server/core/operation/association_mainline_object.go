@@ -71,7 +71,7 @@ func (assoc *association) DeleteMainlineAssociation(params types.ContextParams, 
 	}
 
 	// delete objects
-	if err = assoc.obj.DeleteObject(params, tObject.ID, nil, false); nil != err && io.EOF != err {
+	if err = assoc.obj.DeleteObject(params, tObject.ID, false); nil != err && io.EOF != err {
 		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s, rid: %s", tObject.ID, err.Error(), params.ReqID)
 		return err
 	}

@@ -296,6 +296,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		}
 	}
 
+	// 获取目标业务空先机模块ID
 	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).MapStr()
 	cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, cond)
@@ -479,18 +480,18 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	// TODO: this is a wrong usage, just for compatible the wrong usage before.
 	// delete this, when the frontend use the right request field. not the number.
 	id := data[common.BKHostIDField]
-    hostIDStr := ""
-	switch id.(type){
-    case float64:
-        floatID := id.(float64)
-        hostIDStr = strconv.FormatInt(int64(floatID), 10)
-    case string:
-        hostIDStr = id.(string)
-    default:
-        blog.Errorf("update host batch failed, got invalid host id(%v) data type,rid:%s", id, srvData.rid)
-        _ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "bk_host_id")})
-        return
-    }
+	hostIDStr := ""
+	switch id.(type) {
+	case float64:
+		floatID := id.(float64)
+		hostIDStr = strconv.FormatInt(int64(floatID), 10)
+	case string:
+		hostIDStr = id.(string)
+	default:
+		blog.Errorf("update host batch failed, got invalid host id(%v) data type,rid:%s", id, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "bk_host_id")})
+		return
+	}
 
 	businessMedata := data.Remove(common.MetadataField)
 	data.Remove(common.BKHostIDField)
@@ -582,7 +583,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 	if !result.Result {
-		blog.Errorf("UpdateHostBatch UpdateObject http response error, err code:%d, err msg:%s, input:%+v, param:%+v, rid:%s", result.Code, data, opt, srvData.rid)
+		blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 		return
 	}
@@ -767,15 +768,15 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	// get host in set
-	var condition meta.HostModuleRelationRequest
-	hostIDArr := make([]int64, 0)
-
 	if 0 == data.SetID && 0 == data.ModuleID {
 		blog.Errorf("MoveSetHost2IdleModule bk_set_id and bk_module_id cannot be empty at the same time,input:%#v,rid:%s", data, util.GetHTTPCCRequestID(header))
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
 		return
 	}
+
+	// get host in set
+	var condition meta.HostModuleRelationRequest
+	hostIDArr := make([]int64, 0)
 
 	if 0 != data.SetID {
 		condition.SetIDArr = []int64{data.SetID}

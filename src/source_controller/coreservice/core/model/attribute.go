@@ -169,7 +169,7 @@ func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID str
 
 	cnt, err := m.update(ctx, inputParam.Data, cond)
 	if nil != err {
-		blog.Errorf("UpdateModelAttributes failed, failed to update fields (%#v)of of model(%s) by the condition(%#v), err: %s, rid: %s", inputParam.Data, objID, err.Error(), ctx.ReqID)
+		blog.ErrorJSON("UpdateModelAttributes failed, update attributes failed, model:%s, attributes:%s, condition: %s, err: %s, rid: %s", inputParam.Data, objID, cond, err.Error(), ctx.ReqID)
 		return &metadata.UpdatedCount{}, err
 	}
 

@@ -70,6 +70,8 @@
                             :key="collection.id"
                             :id="collection.id"
                             :name="collection.name">
+                            <span class="collection-name" :title="collection.name">{{collection.name}}</span>
+                            <i class="bk-icon icon-close" @click.stop="handleDeleteCollection(collection)"></i>
                         </bk-option>
                         <div slot="extension">
                             <a href="javascript:void(0)" class="collection-create" @click="handleCreateCollection">
@@ -116,7 +118,7 @@
                 :fixed="column.id === 'bk_host_innerip'"
                 :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type) }}
+                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option')) | addUnit(getPropertyValue(column.objId, column.id, 'unit')) }}
                 </template>
             </bk-table-column>
         </bk-table>
@@ -197,7 +199,13 @@
             cmdbHostFilter
         },
         filters: {
-            hostValueFilter
+            hostValueFilter,
+            addUnit (value, unit) {
+                if (value === '--' || !unit) {
+                    return value
+                }
+                return value + unit
+            }
         },
         props: {
             columnsConfigProperties: {
@@ -355,6 +363,14 @@
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('hostUpdate', ['updateHost']),
             ...mapActions('hostSearch', ['searchHost', 'searchHostByInnerip']),
+            getPropertyValue (modelId, propertyId, field) {
+                const model = this.properties[modelId]
+                if (!model) {
+                    return ''
+                }
+                const curProperty = model.find(property => property.bk_property_id === propertyId)
+                return curProperty ? curProperty[field] : ''
+            },
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
@@ -386,7 +402,11 @@
             async getCollectionList () {
                 try {
                     const data = await this.$store.dispatch('hostFavorites/searchFavorites', {
-                        params: {},
+                        params: {
+                            condition: {
+                                bk_biz_id: this.$store.getters['objectBiz/bizId']
+                            }
+                        },
                         config: {
                             requestId: 'searchCollection'
                         }
@@ -399,6 +419,22 @@
             handleCollectionToggle (isOpen) {
                 if (isOpen) {
                     this.$refs.hostFilter.$refs.filterPopper.instance.hide()
+                }
+            },
+            async handleDeleteCollection (collection) {
+                try {
+                    await this.$store.dispatch('hostFavorites/deleteFavorites', {
+                        id: collection.id,
+                        config: {
+                            requestId: 'deleteFavorites'
+                        }
+                    })
+                    this.$success(this.$t('删除成功'))
+                    this.selectedCollection = ''
+                    this.$store.commit('hosts/deleteCollection', collection.id)
+                    this.handleCollectionClear()
+                } catch (e) {
+                    console.error(e)
                 }
             },
             handleCollectionSelect (value) {
@@ -636,6 +672,7 @@
                 })
             },
             handleTransferSuccess () {
+                this.$emit('update-host-count')
                 this.table.checked = []
                 this.transfer.show = false
                 this.getHostList()
@@ -667,12 +704,7 @@
                 this.$emit('on-quick-search', property, value, operator)
             },
             routeToHistory () {
-                this.$router.push({
-                    name: 'history',
-                    params: {
-                        objId: 'host'
-                    }
-                })
+                this.$router.push({ name: 'hostHistory' })
             },
             handleColumnConfigClick () {
                 this.$refs.hostFilter.$refs.filterPopper.instance.hide()
@@ -736,7 +768,31 @@
         height: 540px;
     }
     .options-collection {
-        width: 200px;
+        width: 280px;
+    }
+    /deep/ .bk-option-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .collection-name {
+            @include ellipsis;
+            flex: 1;
+        }
+        &:hover {
+            .icon-close {
+                display: inline-block;
+            }
+        }
+        .icon-close {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 1px;
+            color: #979BA5;
+            display: none;
+            &:hover {
+                color: #3a84ff;
+            }
+        }
     }
     .collection-create {
         display: inline-block;

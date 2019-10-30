@@ -65,10 +65,18 @@
             <li class="group-item clearfix"
                 v-for="(classification, classIndex) in currentClassifications"
                 :key="classIndex">
-                <div class="group-title" v-bk-tooltips="classification.bk_classification_type === 'inner' ? groupToolTips : ''">
-                    <span>{{classification['bk_classification_name']}}</span>
-                    <span class="number">({{classification['bk_objects'].length}})</span>
-                    <template v-if="isEditable(classification)">
+                <div class="group-title">
+                    <div class="title-info"
+                        v-if="classification.bk_classification_type === 'inner'"
+                        v-bk-tooltips="groupToolTips">
+                        <span class="mr5">{{classification['bk_classification_name']}}</span>
+                        <span class="number">({{classification['bk_objects'].length}})</span>
+                    </div>
+                    <div class="title-info" v-else>
+                        <span class="mr5">{{classification['bk_classification_name']}}</span>
+                        <span class="number">({{classification['bk_objects'].length}})</span>
+                    </div>
+                    <template v-if="isEditable(classification) && modelType === 'enable'">
                         <i class="icon-cc-add-line text-primary"
                             :class="[{ 'disabled': !$isAuthorized($OPERATION.C_MODEL) }]"
                             :style="{ 'margin': '0 6px' }"
@@ -598,9 +606,13 @@
                 vertical-align: middle;
                 background: $cmdbBorderColor;
             }
-            >span {
-                display: inline-block;
-                vertical-align: middle;
+            .title-info {
+                @include inlineBlock;
+                font-size: 0;
+                > span {
+                    @include inlineBlock;
+                    font-size: 16px;
+                }
             }
             .number {
                 color: $cmdbBorderColor;
@@ -665,7 +677,7 @@
                 width: 66px;
                 text-align: center;
                 font-size: 32px;
-                color: $cmdbBorderFocusColor;
+                color: #3a84ff;
                 .icon {
                     line-height: 68px;
                 }

@@ -40,7 +40,6 @@ type ModelClassification interface {
 	SetOneModelClassification(ctx ContextParams, inputParam metadata.SetOneModelClassification) (*metadata.SetDataResult, error)
 	UpdateModelClassification(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModelClassification(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	CascadeDeleteModeClassification(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	SearchModelClassification(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelClassificationDataResult, error)
 }
 
@@ -74,7 +73,7 @@ type ModelOperation interface {
 	SetModel(ctx ContextParams, inputParam metadata.SetModel) (*metadata.SetDataResult, error)
 	UpdateModel(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	CascadeDeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
+	CascadeDeleteModel(ctx ContextParams, modelID int64) (*metadata.DeletedCount, error)
 	SearchModel(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error)
 	SearchModelWithAttribute(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelWithAttributeDataResult, error)
 }
@@ -194,6 +193,7 @@ type ProcessOperation interface {
 	UpdateServiceCategory(ctx ContextParams, categoryID int64, category metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder)
 	ListServiceCategories(ctx ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder)
 	DeleteServiceCategory(ctx ContextParams, categoryID int64) errors.CCErrorCoder
+	IsServiceCategoryLeafNode(ctx ContextParams, categoryID int64) (bool, errors.CCErrorCoder)
 
 	// service template
 	CreateServiceTemplate(ctx ContextParams, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder)
@@ -205,7 +205,7 @@ type ProcessOperation interface {
 	// process template
 	CreateProcessTemplate(ctx ContextParams, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder)
 	GetProcessTemplate(ctx ContextParams, templateID int64) (*metadata.ProcessTemplate, errors.CCErrorCoder)
-	UpdateProcessTemplate(ctx ContextParams, templateID int64, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder)
+	UpdateProcessTemplate(ctx ContextParams, templateID int64, property map[string]interface{}) (*metadata.ProcessTemplate, errors.CCErrorCoder)
 	ListProcessTemplates(ctx ContextParams, option metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder)
 	DeleteProcessTemplate(ctx ContextParams, processTemplateID int64) errors.CCErrorCoder
 

@@ -5,7 +5,7 @@
             <i class="tips-icon bk-icon icon-close-circle-shape" @click="showBrowserTips = false"></i>
         </div>
         <the-header></the-header>
-        <router-view class="views-layout"></router-view>
+        <router-view class="views-layout" v-bkloading="{ isLoading: isIndex && globalLoading }"></router-view>
         <the-permission-modal ref="permissionModal"></the-permission-modal>
         <cmdb-business-selector v-if="businessSelectorVisible" hidden
             @on-select="resolveBusinessSelectorPromise"
@@ -19,6 +19,7 @@
     import thePermissionModal from '@/components/modal/permission'
     // import { execMainScrollListener, execMainResizeListener } from '@/utils/main-scroller'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+    import { MENU_INDEX } from '@/dictionary/menu-symbol'
     import { mapGetters } from 'vuex'
     export default {
         name: 'app',
@@ -35,7 +36,10 @@
         },
         computed: {
             ...mapGetters(['globalLoading', 'businessSelectorVisible']),
-            ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey'])
+            ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey']),
+            isIndex () {
+                return this.$route.name === MENU_INDEX
+            }
         },
         mounted () {
             this.$store.commit('setFeatureTipsParams')

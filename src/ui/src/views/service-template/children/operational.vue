@@ -1,5 +1,5 @@
 <template>
-    <div class="create-template-wrapper">
+    <div class="create-template-wrapper" v-bkloading="{ isLoading: $loading('getSingleServiceTemplate') }">
         <div class="info-group">
             <h3>{{$t('基本属性')}}</h3>
             <div class="form-info clearfix">
@@ -303,6 +303,7 @@
                 this.originTemplateValues = await this.findServiceTemplate({
                     id: this.templateId,
                     config: {
+                        requestId: 'getSingleServiceTemplate',
                         globalError: false,
                         cancelPrevious: true,
                         transformData: false
@@ -389,10 +390,14 @@
                 this.attribute.inst.edit = {}
             },
             handleUpdateProcess (template) {
-                this.slider.show = true
-                this.slider.title = template['bk_func_name']['value']
-                this.attribute.type = 'update'
-                this.attribute.inst.edit = template
+                try {
+                    this.slider.show = true
+                    this.slider.title = template['bk_func_name']['value']
+                    this.attribute.type = 'update'
+                    this.attribute.inst.edit = template
+                } catch (e) {
+                    console.error(e)
+                }
             },
             handleDeleteProcess (template) {
                 this.$bkInfo({

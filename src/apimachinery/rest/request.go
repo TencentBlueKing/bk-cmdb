@@ -299,7 +299,6 @@ func (r *Request) Do() *Result {
 				continue
 
 			}
-			cost := time.Since(start).Nanoseconds() / int64(time.Millisecond)
 
 			var body []byte
 			if resp.Body != nil {
@@ -317,7 +316,7 @@ func (r *Request) Do() *Result {
 				body = data
 			}
 			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s\nresponse status: %s, response body: %s, rid: %s",
-				cost, string(r.verb), url, r.body, resp.Status, body, rid)
+                time.Since(start).Nanoseconds() / int64(time.Millisecond), string(r.verb), url, r.body, resp.Status, body, rid)
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			result.Status = resp.Status

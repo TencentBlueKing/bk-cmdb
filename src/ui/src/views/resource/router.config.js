@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
+import { MENU_RESOURCE_HOST, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
 import {
     C_RESOURCE_HOST,
     U_RESOURCE_HOST,
@@ -12,7 +12,7 @@ export const OPERATION = {
     D_RESOURCE_HOST
 }
 
-export default {
+export default [{
     name: MENU_RESOURCE_HOST,
     path: 'host',
     component: () => import('./index.vue'),
@@ -26,4 +26,13 @@ export default {
         },
         filterPropertyKey: 'resource_host_filter_properties'
     })
-}
+}, {
+    name: 'hostHistory',
+    path: 'host/history',
+    component: () => import('@/views/history/index.vue'),
+    meta: new Meta({
+        menu: {
+            relative: MENU_RESOURCE_MANAGEMENT
+        }
+    })
+}]

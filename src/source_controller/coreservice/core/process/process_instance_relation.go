@@ -13,8 +13,6 @@
 package process
 
 import (
-	"strconv"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -32,20 +30,12 @@ func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams,
 
 	var bizID int64
 	var err error
-	if bizID, err = p.validateBizID(ctx, relation.Metadata); err != nil {
+	if bizID, err = p.validateBizID(ctx, relation.BizID); err != nil {
 		blog.Errorf("CreateProcessInstanceRelation failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	// keep metadata clean
-	relation.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
-
-	// validate service category id field
-	_, err = p.GetServiceInstance(ctx, relation.ServiceInstanceID)
-	if err != nil {
-		blog.Errorf("CreateProcessInstanceRelation failed, service instance id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_instance_id")
-	}
+	relation.BizID = bizID
 
 	// validate service category id field
 	_, err = p.GetServiceInstance(ctx, relation.ServiceInstanceID)
@@ -53,7 +43,14 @@ func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams,
 		blog.Errorf("CreateProcessInstanceRelation failed, service instance id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_instance_id")
 	}
-	// TODO: asset bizID == category.Metadata.Label.bk_biz_id
+
+	// validate service category id field
+	_, err = p.GetServiceInstance(ctx, relation.ServiceInstanceID)
+	if err != nil {
+		blog.Errorf("CreateProcessInstanceRelation failed, service instance id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_instance_id")
+	}
+	// TODO: asset bizID == category.BizID
 
 	relation.SupplierAccount = ctx.SupplierAccount
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Insert(ctx.Context, &relation); nil != err {
@@ -105,9 +102,9 @@ func (p *processOperation) UpdateProcessInstanceRelation(ctx core.ContextParams,
 }
 
 func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder) {
-	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
-	filter := map[string]interface{}{}
-	filter[common.MetadataField] = md.ToMapStr()
+	filter := map[string]interface{}{
+		common.BKAppIDField: option.BusinessID,
+	}
 
 	// filter with matching any sub category
 	if option.ServiceInstanceIDs != nil && len(option.ServiceInstanceIDs) > 0 {
@@ -183,7 +180,7 @@ func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams,
 	}
 
 	if parameterEnough == false {
-		blog.Errorf("DeleteProcessInstanceRelation failed, filter parameters not enough, filter: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, ctx.ReqID)
+		blog.Errorf("DeleteProcessInstanceRelation failed, filter parameters not enough, filter: %+v, rid: %s", deleteFilter, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommParametersCountNotEnough)
 	}
 

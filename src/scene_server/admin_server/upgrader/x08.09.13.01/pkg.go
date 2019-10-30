@@ -30,15 +30,5 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade x08.09.13.01] addOperationLogIndex error  %s", err.Error())
 		return err
 	}
-	err = reconcileGroupPrivilege(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x08.09.13.01] reconcileGroupPrivilege error  %s", err.Error())
-		return err
-	}
-	err = reconcileGroupPrivilege(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x08.09.13.01] reconcileGroupPrivilege error  %s", err.Error())
-		return err
-	}
 	return
 }

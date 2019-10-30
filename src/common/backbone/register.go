@@ -13,7 +13,7 @@
 package backbone
 
 import (
-	"github.com/gin-gonic/gin/json"
+	"encoding/json"
 
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/registerdiscover"
@@ -26,6 +26,10 @@ type ServiceRegisterInterface interface {
 	Ping() error
 	// register local server info, it can only be called for once.
 	Register(path string, c types.ServerInfo) error
+	// Cancel to stop server register and discover
+	Cancel()
+	// ClearRegisterPath to delete server register path from zk
+	ClearRegisterPath() error
 }
 
 func NewServiceRegister(client *zk.ZkClient) (ServiceRegisterInterface, error) {
@@ -54,4 +58,14 @@ func (s *serviceRegister) Register(path string, c types.ServerInfo) error {
 // Ping to ping server
 func (s *serviceRegister) Ping() error {
 	return s.client.Ping()
+}
+
+// Cancel to stop server register and discover
+func (s *serviceRegister) Cancel() {
+	s.client.Cancel()
+}
+
+// ClearRegisterPath to delete server register path from zk
+func (s *serviceRegister) ClearRegisterPath() error {
+	return s.client.ClearRegisterPath()
 }

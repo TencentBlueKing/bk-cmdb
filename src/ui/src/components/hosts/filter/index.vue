@@ -49,7 +49,7 @@
                 </div>
                 <div class="filter-group"
                     v-for="(filterItem, index) in filterCondition"
-                    :key="index">
+                    :key="filterItem.bk_property_id">
                     <label class="filter-label">{{getFilterLabel(filterItem)}}</label>
                     <div class="filter-condition">
                         <filter-operator class="filter-operator"
@@ -136,7 +136,7 @@
                     </div>
                 </template>
                 <template v-else>
-                    <bk-button theme="primary" @click="handleSearch">{{$t('查询')}}</bk-button>
+                    <bk-button theme="primary" class="mr5" @click="handleSearch">{{$t('查询')}}</bk-button>
                     <bk-button theme="default" @click="handleReset">{{$t('清空')}}</bk-button>
                 </template>
             </div>
@@ -332,6 +332,7 @@
             },
             getCollectionParams () {
                 return {
+                    bk_biz_id: this.$store.getters['objectBiz/bizId'],
                     name: this.collectionName,
                     info: JSON.stringify({
                         exact_search: this.ip.exact,
@@ -489,6 +490,9 @@
 </script>
 
 <style lang="scss" scoped="true">
+    .filter-content {
+        border: 1px solid #DCDEE5;
+    }
     .filter-trigger {
         width: 32px;
         padding: 0;

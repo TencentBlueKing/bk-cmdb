@@ -106,8 +106,8 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 
 		rowMap, err := mapstr.NewFromInterface(hostData[common.BKInnerObjIDHost])
 		if err != nil {
+			blog.ErrorJSON("BuildHostExcelFromData failed, hostData: %s, err: %s, rid: %s", hostData, err.Error(), rid)
 			msg := fmt.Sprintf("data format error:%v", hostData)
-			blog.Errorf("BuildHostExcelFromData failed, rid: %s", msg, rid)
 			return errors.New(msg)
 		}
 		moduleMap, ok := hostData[common.BKInnerObjIDModule].([]interface{})

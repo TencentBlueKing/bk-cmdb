@@ -82,6 +82,7 @@
             <bk-table-column
                 sortable="custom"
                 prop="operator"
+                class-name="is-highlight"
                 :label="$t('操作账号')">
             </bk-table-column>
             <bk-table-column
@@ -262,6 +263,9 @@
                 })
                 return operateTypeMap
             }
+        },
+        created () {
+            this.$store.dispatch('objectBiz/getAuthorizedBusiness')
         },
         mounted () {
             this.initDate()

@@ -46,7 +46,7 @@ func (l *label) AddLabel(ctx context.Context, h http.Header, tableName string, o
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+		return errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -74,7 +74,7 @@ func (l *label) RemoveLabel(ctx context.Context, h http.Header, tableName string
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+		return errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	return nil

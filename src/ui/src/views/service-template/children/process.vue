@@ -13,7 +13,7 @@
                     <span v-else>{{row[column.id] || '--'}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')">
+            <bk-table-column :label="$t('操作')" prop="operation">
                 <template slot-scope="{ row }">
                     <span
                         v-cursor="{
