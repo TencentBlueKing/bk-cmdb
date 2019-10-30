@@ -53,7 +53,7 @@ type UserCustomQueryDetailResult struct {
 type HostInputType string
 
 const (
-	ExecelType  HostInputType = "excel"
+	ExcelType   HostInputType = "excel"
 	CollectType HostInputType = "collect"
 )
 
@@ -364,9 +364,26 @@ type TransferHostWithAutoClearServiceInstanceOption struct {
 }
 
 type HostTransferPlan struct {
-	HostID        int64   `field:"bk_host_id" json:"bk_host_id"`
-	FinalModules  []int64 `field:"final_modules" json:"final_modules"`
-	RemoveFrom    []int64 `field:"remove_from" json:"remove_from"`
-	AddTo         []int64 `field:"add_to" json:"add_to"`
-	ToInnerModule bool    `field:"to_inner_module" json:"to_inner_module"`
+	HostID                  int64   `field:"bk_host_id" json:"bk_host_id"`
+	FinalModules            []int64 `field:"final_modules" json:"final_modules"`
+	ToRemoveFromModules     []int64 `field:"to_remove_from_modules" json:"to_remove_from_modules"`
+	ToAddToModules          []int64 `field:"to_add_to_modules" json:"to_add_to_modules"`
+	IsTransferToInnerModule bool    `field:"is_transfer_to_inner_module" json:"is_transfer_to_inner_module"`
+}
+
+type RemoveFromModuleInfo struct {
+	ModuleID         int64             `field:"bk_module_id" json:"bk_module_id"`
+	ServiceInstances []ServiceInstance `field:"service_instances" json:"service_instances"`
+}
+
+type AddToModuleInfo struct {
+	ModuleID        int64                  `field:"bk_module_id" json:"bk_module_id"`
+	ServiceTemplate *ServiceTemplateDetail `field:"service_template" json:"service_template"`
+}
+
+type HostTransferPreview struct {
+	HostID              int64                  `field:"bk_host_id" json:"bk_host_id"`
+	FinalModules        []int64                `field:"final_modules" json:"final_modules"`
+	ToRemoveFromModules []RemoveFromModuleInfo `field:"to_remove_from_modules" json:"to_remove_from_modules"`
+	ToAddToModules      []AddToModuleInfo      `field:"to_add_to_modules" json:"to_add_to_modules"`
 }

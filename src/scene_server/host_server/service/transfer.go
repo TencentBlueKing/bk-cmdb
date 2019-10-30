@@ -32,19 +32,19 @@ transfer模块 实现带实例自动清除的主机转移操作
 */
 
 // TransferHostWithAutoClearServiceInstance 主机转移接口(带服务实例自动清除功能)
-// 1. 将主机 bk_host_ids 从 remove_from 指定的拓扑节点移除
-// 2. 移入到 add_to 指定的模块中
+// 1. 将主机 bk_host_ids 从 remove_from_node 指定的拓扑节点移除
+// 2. 移入到 add_to_modules 指定的模块中
 // 3. 自动删除主机在移除模块下的服务实例
 // 4. 自动添加主机在新模块上的服务实例
 // note:
-// - 不允许 remove_from 和 add_to 同时为空
+// - 不允许 remove_from_node 和 add_to_modules 同时为空
 // - bk_host_ids 不允许为空
-// - 如果 remove_from 指定为业务ID，则接口行为是：覆盖更新
-// - 如果 remove_from 没有指定，仅仅是增量更新，无移除操作
-// - 如果 add_to 没有指定，主机将仅仅从 remove_from 指定的模块中移除
-// - 如果 add_to 是空先机/故障机/待回收模块中的一个，必须显式指定 remove_from(可指定成业务节点), 否则报主机不能属于互斥模块错误
-// - 如果 add_to 是普通模块，主机当前数据空先机/故障机/待回收模块中的一个，必须显式指定 remove_from(可指定成业务节点), 否则报主机不能属于互斥模块错误
-// - 模块同时出现在add_to和 remove_from 时，不会导致对应的服务实例被删除然后重新添加
+// - 如果 remove_from_node 指定为业务ID，则接口行为是：覆盖更新
+// - 如果 remove_from_node 没有指定，仅仅是增量更新，无移除操作
+// - 如果 add_to_modules 没有指定，主机将仅仅从 remove_from_node 指定的模块中移除
+// - 如果 add_to_modules 是空先机/故障机/待回收模块中的一个，必须显式指定 remove_from_node(可指定成业务节点), 否则报主机不能属于互斥模块错误
+// - 如果 add_to_modules 是普通模块，主机当前数据空先机/故障机/待回收模块中的一个，必须显式指定 remove_from_node(可指定成业务节点), 否则报主机不能属于互斥模块错误
+// - 模块同时出现在 add_to_modules 和 remove_from_node 时，不会导致对应的服务实例被删除然后重新添加
 func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	option := metadata.TransferHostWithAutoClearServiceInstanceOption{}
@@ -61,7 +61,7 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 	}
 
 	if option.RemoveFromNode == nil && option.AddToModules == nil {
-		err := srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "add_to")
+		err := srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "add_to_modules")
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
 	}
@@ -121,7 +121,7 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 	listServiceInstanceOption := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
 		HostIDs:    []int64{transferPlan.HostID},
-		ModuleIDs:  transferPlan.RemoveFrom,
+		ModuleIDs:  transferPlan.ToRemoveFromModules,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
@@ -202,7 +202,7 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 	var transferHostResult *metadata.OperaterException
 	var err error
 	var option interface{}
-	if transferPlan.ToInnerModule == true {
+	if transferPlan.IsTransferToInnerModule == true {
 		transferOption := &metadata.TransferHostToInnerModule{
 			ApplicationID: bizID,
 			HostID:        []int64{transferPlan.HostID},
@@ -242,8 +242,8 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 		}
 		topoNodePath := topoTree.TraversalFindNode(option.RemoveFromNode.ObjectID, option.RemoveFromNode.InstanceID)
 		if len(topoNodePath) == 0 {
-			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, remove_from invalid, bizID: %d, rid: %s", bizID, srvData.rid)
-			err := srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, "remove_from")
+			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, remove_from_node invalid, bizID: %d, rid: %s", bizID, srvData.rid)
+			err := srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, "remove_from_node")
 			return nil, err
 		}
 		topoNodePath[0].DeepFirstTraversal(func(node *metadata.TopoInstanceNode) {
@@ -281,7 +281,7 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 	}
 
 	// get inner modules
-	innerModules, ccErr := s.GetInnerModules(*srvData, bizID)
+	innerModules, ccErr := s.getInnerModules(*srvData, bizID)
 	if ccErr != nil {
 		return nil, ccErr
 	}
@@ -301,7 +301,7 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 				return nil, srvData.ccErr.CCError(common.CCErrHostTransferFinalModuleConflict)
 			}
 			if util.InArray(moduleID, innerModuleIDs) && finalModuleCount == 1 {
-				transferPlan.ToInnerModule = true
+				transferPlan.IsTransferToInnerModule = true
 			}
 		}
 		transferPlans = append(transferPlans, transferPlan)
@@ -331,30 +331,72 @@ func generateTransferPlan(currentIn []int64, removeFrom []int64, addTo []int64) 
 
 	// 主机将会被移出的模块列表
 	realRemoveModules := make([]int64, 0)
-	for _, moduleID := range removeFrom {
+	for _, moduleID := range currentIn {
 		if util.InArray(moduleID, finalModules) {
 			continue
 		}
 		realRemoveModules = append(realRemoveModules, moduleID)
 	}
 	realRemoveModules = util.IntArrayUnique(realRemoveModules)
-	plan.RemoveFrom = realRemoveModules
+	plan.ToRemoveFromModules = realRemoveModules
 
 	// 主机将会被新加到的模块列表
 	realAddModules := make([]int64, 0)
-	for _, moduleID := range addTo {
+	for _, moduleID := range finalModules {
 		if util.InArray(moduleID, currentIn) {
 			continue
 		}
 		realAddModules = append(realAddModules, moduleID)
 	}
 	realAddModules = util.IntArrayUnique(realAddModules)
-	plan.AddTo = realAddModules
+	plan.ToAddToModules = realAddModules
 
 	return plan
 }
 
-func (s *Service) GetInnerModules(srvData srvComm, bizID int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
+func (s *Service) getModules(srvData srvComm, bizID int64, moduleIDs []int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
+	query := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Fields: []string{
+			common.BKModuleIDField,
+			common.BKDefaultField,
+			common.BKModuleNameField,
+			common.BKAppIDField,
+			common.BKSetIDField,
+			common.BKServiceTemplateIDField,
+		},
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBIN: moduleIDs,
+			},
+		},
+	}
+	result, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, query)
+	if err != nil {
+		blog.ErrorJSON("GetModules failed, http do error, input:%+v, err:%s, rid:%s", query, err.Error(), srvData.rid)
+		return nil, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.ErrorJSON("GetModules failed, result failed, input:%+v, response: %s, rid:%s", query, result, srvData.rid)
+		return nil, errors.New(result.Code, result.ErrMsg)
+	}
+
+	modules := make([]metadata.ModuleInst, 0)
+	for _, item := range result.Data.Info {
+		module := metadata.ModuleInst{}
+		if err := mapstruct.Decode2Struct(item, &module); err != nil {
+			return nil, srvData.ccErr.CCError(common.CCErrCommJSONUnmarshalFailed)
+		}
+		modules = append(modules, module)
+	}
+
+	return modules, nil
+}
+
+func (s *Service) getInnerModules(srvData srvComm, bizID int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
 	query := &metadata.QueryCondition{
 		Limit: metadata.SearchLimit{
 			Limit: common.BKNoLimit,
@@ -393,4 +435,142 @@ func (s *Service) GetInnerModules(srvData srvComm, bizID int64) ([]metadata.Modu
 	}
 
 	return modules, nil
+}
+
+// TransferHostWithAutoClearServiceInstancePreview generate a preview of changes for TransferHostWithAutoClearServiceInstance operation
+func (s *Service) TransferHostWithAutoClearServiceInstancePreview(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	option := metadata.TransferHostWithAutoClearServiceInstanceOption{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&option); err != nil {
+		blog.Errorf("TransferHostWithAutoClearServiceInstancePreview failed, parse request body failed, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	if len(option.HostIDs) == 0 {
+		err := srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "bk_host_ids")
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+		return
+	}
+
+	if option.RemoveFromNode == nil && option.AddToModules == nil {
+		err := srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "add_to_modules")
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+		return
+	}
+
+	bizIDStr := req.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.V(7).Infof("parse bizID from url failed, bizID: %s, err: %+v, rid: %s", bizIDStr, srvData.rid)
+		err := srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+		return
+	}
+
+	transferPlans, ccErr := s.generateTransferPlans(srvData, bizID, option)
+	if ccErr != nil {
+		blog.ErrorJSON("TransferHostWithAutoClearServiceInstancePreview failed, generateTransferPlans failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, ccErr.Error(), srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: ccErr})
+		return
+	}
+	addModuleIDs := make([]int64, 0)
+	removeModuleIDs := make([]int64, 0)
+	for _, plan := range transferPlans {
+		addModuleIDs = append(addModuleIDs, plan.ToAddToModules...)
+		removeModuleIDs = append(removeModuleIDs, plan.ToRemoveFromModules...)
+	}
+
+	// get to remove service instances
+	listSrvInstOption := &metadata.ListServiceInstanceOption{
+		BusinessID: bizID,
+		HostIDs:    option.HostIDs,
+		ModuleIDs:  removeModuleIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	srvInstResult, ccErr := s.CoreAPI.CoreService().Process().ListServiceInstance(srvData.ctx, srvData.header, listSrvInstOption)
+	if ccErr != nil {
+		blog.ErrorJSON("TransferHostWithAutoClearServiceInstancePreview failed, ListServiceInstance failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, listSrvInstOption, ccErr.Error(), srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: ccErr})
+		return
+	}
+	moduleServiceInstanceMap := make(map[int64][]metadata.ServiceInstance)
+	for _, item := range srvInstResult.Info {
+		if _, exist := moduleServiceInstanceMap[item.ModuleID]; exist == false {
+			moduleServiceInstanceMap[item.ModuleID] = make([]metadata.ServiceInstance, 0)
+		}
+		moduleServiceInstanceMap[item.ModuleID] = append(moduleServiceInstanceMap[item.ModuleID], item)
+	}
+
+	// get add to modules
+	modules, ccErr := s.getModules(*srvData, bizID, addModuleIDs)
+	if ccErr != nil {
+		blog.ErrorJSON("TransferHostWithAutoClearServiceInstancePreview failed, ListServiceInstance failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, listSrvInstOption, ccErr.Error(), srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: ccErr})
+		return
+	}
+
+	// get service template related to add modules
+	serviceTemplateIDs := make([]int64, 0)
+	for _, module := range modules {
+		if module.ServiceTemplateID == common.ServiceTemplateIDNotSet {
+			continue
+		}
+		serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
+	}
+	serviceTemplateDetails, ccErr := s.CoreAPI.CoreService().Process().ListServiceTemplateDetail(srvData.ctx, srvData.header, bizID, serviceTemplateIDs...)
+	if ccErr != nil {
+		blog.ErrorJSON("TransferHostWithAutoClearServiceInstancePreview failed, ListServiceTemplateDetail failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, listSrvInstOption, ccErr.Error(), srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: ccErr})
+		return
+	}
+	serviceTemplateMap := make(map[int64]metadata.ServiceTemplateDetail)
+	for _, templateDetail := range serviceTemplateDetails.Info {
+		serviceTemplateMap[templateDetail.ServiceTemplate.ID] = templateDetail
+	}
+	moduleServiceTemplateMap := make(map[int64]metadata.ServiceTemplateDetail)
+	for _, module := range modules {
+		templateDetail, exist := serviceTemplateMap[module.ServiceTemplateID]
+		if exist == true {
+			moduleServiceTemplateMap[module.ModuleID] = templateDetail
+		}
+	}
+
+	previews := make([]metadata.HostTransferPreview, 0)
+	for _, plan := range transferPlans {
+		preview := metadata.HostTransferPreview{
+			HostID:              plan.HostID,
+			FinalModules:        plan.FinalModules,
+			ToRemoveFromModules: make([]metadata.RemoveFromModuleInfo, 0),
+			ToAddToModules:      make([]metadata.AddToModuleInfo, 0),
+		}
+		for _, moduleID := range plan.ToRemoveFromModules {
+			removeInfo := metadata.RemoveFromModuleInfo{
+				ModuleID:         moduleID,
+				ServiceInstances: make([]metadata.ServiceInstance, 0),
+			}
+			serviceInstances, exist := moduleServiceInstanceMap[moduleID]
+			if exist {
+				removeInfo.ServiceInstances = serviceInstances
+			}
+			preview.ToRemoveFromModules = append(preview.ToRemoveFromModules, removeInfo)
+		}
+		for _, moduleID := range plan.ToAddToModules {
+			addInfo := metadata.AddToModuleInfo{
+				ModuleID:        moduleID,
+				ServiceTemplate: nil,
+			}
+			serviceTemplateDetail, exist := moduleServiceTemplateMap[moduleID]
+			if exist {
+				addInfo.ServiceTemplate = &serviceTemplateDetail
+			}
+			preview.ToAddToModules = append(preview.ToAddToModules, addInfo)
+		}
+		previews = append(previews, preview)
+	}
+
+	_ = resp.WriteEntity(metadata.Response{Data: previews})
+	return
 }

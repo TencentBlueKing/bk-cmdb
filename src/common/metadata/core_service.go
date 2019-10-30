@@ -324,9 +324,19 @@ type OneServiceTemplateResult struct {
 	Data     ServiceTemplate `json:"data"`
 }
 
-type OneServiceTemplateDetailResult struct {
+type OneServiceTemplateWithStatisticsResult struct {
 	BaseResp `json:",inline"`
-	Data     ServiceTemplateDetail `json:"data"`
+	Data     ServiceTemplateWithStatistics `json:"data"`
+}
+
+type MultipleServiceTemplateDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceTemplateDetail `json:"data"`
+}
+
+type MultipleServiceTemplateDetail struct {
+	Count uint64                  `json:"count"`
+	Info  []ServiceTemplateDetail `json:"info"`
 }
 
 type MultipleServiceTemplate struct {
@@ -396,7 +406,7 @@ type DeleteProcessInstanceRelationOption struct {
 type ListProcessTemplatesOption struct {
 	BusinessID         int64    `json:"bk_biz_id" bson:"bk_biz_id"`
 	ProcessTemplateIDs []int64  `json:"process_template_ids,omitempty" bson:"process_template_ids"`
-	ServiceTemplateID  int64    `json:"service_template_id,omitempty" bson:"service_template_id"`
+	ServiceTemplateIDs []int64  `json:"service_template_ids,omitempty" bson:"service_template_ids"`
 	Page               BasePage `json:"page" field:"page" bson:"page"`
 }
 type ListServiceCategoriesOption struct {
