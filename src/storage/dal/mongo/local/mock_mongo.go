@@ -139,14 +139,14 @@ func (f *MockFind) Sort(sort string) dal.Find {
 }
 
 // Start 查询上标
-func (f *MockFind) Start(start int64) dal.Find {
-	f.start = start
+func (f *MockFind) Start(start uint64) dal.Find {
+	f.start = int64(start)
 	return f
 }
 
 // Limit 查询限制
-func (f *MockFind) Limit(limit int64) dal.Find {
-	f.limit = limit
+func (f *MockFind) Limit(limit uint64) dal.Find {
+	f.limit = int64(limit)
 	return f
 }
 
@@ -204,7 +204,7 @@ func (f *MockFind) One(ctx context.Context, result interface{}) error {
 }
 
 // Count 统计数量(非事务)
-func (f *MockFind) Count(ctx context.Context) (int64, error) {
+func (f *MockFind) Count(ctx context.Context) (uint64, error) {
 	out, err := json.Marshal(f)
 	if err != nil {
 		return 0, err
@@ -213,10 +213,10 @@ func (f *MockFind) Count(ctx context.Context) (int64, error) {
 	key := "FINDCOUNT:" + f.collName + ":" + string(out)
 
 	if retval, ok := f.Mock.cache[string(key)]; ok {
-		return retval.Count, retval.Err
+		return uint64(retval.Count), retval.Err
 	}
 
-	return f.Mock.retval.Count, err
+	return uint64(f.Mock.retval.Count), err
 }
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据

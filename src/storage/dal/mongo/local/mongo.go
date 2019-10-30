@@ -174,16 +174,16 @@ func (f *Find) Sort(sort string) dal.Find {
 }
 
 // Start 查询上标
-func (f *Find) Start(start int64) dal.Find {
-	// change to int64
+func (f *Find) Start(start uint64) dal.Find {
+	// change to int64,后续改成int64
 	dbStart := int64(start)
 	f.start = dbStart
 	return f
 }
 
 // Limit 查询限制
-func (f *Find) Limit(limit int64) dal.Find {
-	// change to int64
+func (f *Find) Limit(limit uint64) dal.Find {
+	// change to int64,后续改成int64
 	dbLimit := int64(limit)
 	f.limit = dbLimit
 	return f
@@ -257,11 +257,13 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 }
 
 // Count 统计数量(非事务)
-func (f *Find) Count(ctx context.Context) (int64, error) {
+func (f *Find) Count(ctx context.Context) (uint64, error) {
 	if f.filter == nil {
 		f.filter = bson.M{}
 	}
-	return f.dbc.Database(f.dbname).Collection(f.collName).CountDocuments(ctx, f.filter)
+	cnt, err := f.dbc.Database(f.dbname).Collection(f.collName).CountDocuments(ctx, f.filter)
+	// 后续改成int64
+	return uint64(cnt), err
 }
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
