@@ -410,15 +410,6 @@ const (
 	// BKOptionField the option field
 	BKOptionField = "option"
 
-	// BKPrivilegeField the privilege field
-	BKPrivilegeField = "privilege"
-
-	// BKUserGroupIDField the group id field
-	BKUserGroupIDField = "group_id"
-
-	// BKUserListField the user list field
-	BKUserListField = "user_list"
-
 	// BKContentField the content field
 	BKContentField = "content"
 
@@ -720,6 +711,15 @@ const (
 
 	// FieldTypeLongLenChar the long char length limit
 	FieldTypeLongLenChar int = 15000
+
+	//FieldTypeStrictCharRegexp the single char regex expression
+	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
+
+	//FieldTypeSingleCharRegexp the single char regex expression
+	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:\."'\/\\\+\-\s#@\(\)])+$`
+
+	//FieldTypeLongCharRegexp the single char regex expression
+	FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
 )
 
 const (

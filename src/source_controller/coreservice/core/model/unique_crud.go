@@ -26,11 +26,11 @@ func (m *modelAttrUnique) searchModelAttrUnique(ctx core.ContextParams, inputPar
 	results = []metadata.ObjectUnique{}
 	instHandler := m.dbProxy.Table(common.BKTableNameObjUnique).Find(inputParam.Condition)
 	for _, sort := range inputParam.SortArr {
-		fileld := sort.Field
+		field := sort.Field
 		if sort.IsDsc {
-			fileld = "-" + fileld
+			field = "-" + field
 		}
-		instHandler = instHandler.Sort(fileld)
+		instHandler = instHandler.Sort(field)
 	}
 	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
 
@@ -147,15 +147,15 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 		cond.Field(metadata.BKMetadata).Eq(unique.Metadata)
 	}
 
-	oldunique := metadata.ObjectUnique{}
-	err = m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).One(ctx, &oldunique)
+	oldUnique := metadata.ObjectUnique{}
+	err = m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).One(ctx, &oldUnique)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] find error: %s, raw: %#v, rid: %s", err, cond.ToMapStr(), ctx.ReqID)
 		return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
-	if oldunique.Ispre {
-		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %+v %v, rid: %s", oldunique, err, ctx.ReqID)
+	if oldUnique.Ispre {
+		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %+v %v, rid: %s", oldUnique, err, ctx.ReqID)
 		return ctx.Error.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
 	}
 
@@ -213,7 +213,7 @@ func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID st
 }
 
 func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, objID string, keys []metadata.UniqueKey, mustCheck bool, meta metadata.Metadata) error {
-	propertyIDs := []uint64{}
+	propertyIDs := make([]uint64, 0)
 	for _, key := range keys {
 		switch key.Kind {
 		case metadata.UniqueKeyKindProperty:
@@ -223,12 +223,12 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 		}
 	}
 
-	propertys := []metadata.Attribute{}
-	attcond := condition.CreateCondition()
-	attcond.Field(common.BKObjIDField).Eq(objID)
-	attcond.Field(common.BKOwnerIDField).Eq(ctx.SupplierAccount)
-	attcond.Field(common.BKFieldID).In(propertyIDs)
-	fCond := attcond.ToMapStr()
+	properties := make([]metadata.Attribute, 0)
+	attCond := condition.CreateCondition()
+	attCond.Field(common.BKObjIDField).Eq(objID)
+	attCond.Field(common.BKOwnerIDField).Eq(ctx.SupplierAccount)
+	attCond.Field(common.BKFieldID).In(propertyIDs)
+	fCond := attCond.ToMapStr()
 	if len(meta.Label) > 0 {
 		fCond.Merge(metadata.PublicAndBizCondition(meta))
 		fCond.Remove(metadata.BKMetadata)
@@ -236,14 +236,14 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 		fCond.Merge(metadata.BizLabelNotExist)
 	}
 
-	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(fCond).All(ctx, &propertys)
+	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(fCond).All(ctx, &properties)
 	if err != nil {
-		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts find propertys for %s failed %s: %s, rid: %s", objID, err, ctx.ReqID)
+		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts find properties for %s failed %s: %s, rid: %s", objID, err, ctx.ReqID)
 		return err
 	}
 
-	keynames := []string{}
-	for _, property := range propertys {
+	keynames := make([]string, 0)
+	for _, property := range properties {
 		keynames = append(keynames, property.PropertyID)
 	}
 	if len(keynames) <= 0 {
@@ -251,26 +251,26 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 		return nil
 	}
 
-	pipeline := []interface{}{}
+	pipeline := make([]interface{}, 0)
 
-	instcond := mapstr.MapStr{}
+	instCond := mapstr.MapStr{}
 	if len(meta.Label) > 0 {
-		instcond.Merge(metadata.PublicAndBizCondition(meta))
-		instcond.Remove(metadata.BKMetadata)
+		instCond.Merge(metadata.PublicAndBizCondition(meta))
+		instCond.Remove(metadata.BKMetadata)
 	} else {
-		instcond.Merge(metadata.BizLabelNotExist)
+		instCond.Merge(metadata.BizLabelNotExist)
 	}
 	if common.GetObjByType(objID) == common.BKInnerObjIDObject {
-		instcond.Set(common.BKObjIDField, objID)
+		instCond.Set(common.BKObjIDField, objID)
 	}
 
 	if !mustCheck {
 		for _, key := range keynames {
-			instcond.Set(key, mapstr.MapStr{common.BKDBNE: nil})
+			instCond.Set(key, mapstr.MapStr{common.BKDBNE: nil})
 		}
 	}
 
-	pipeline = append(pipeline, mapstr.MapStr{common.BKDBMatch: instcond})
+	pipeline = append(pipeline, mapstr.MapStr{common.BKDBMatch: instCond})
 
 	group := mapstr.MapStr{}
 	for _, key := range keynames {

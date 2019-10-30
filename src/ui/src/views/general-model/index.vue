@@ -128,6 +128,9 @@
                 :label="column.name"
                 :class-name="column.id === 'bk_inst_name' ? 'is-highlight' : ''"
                 :fixed="column.id === 'bk_inst_name'">
+                <template slot-scope="{ row }">
+                    <span>{{row[column.id] | addUnit(getPropertyUnit(column.id))}}</span>
+                </template>
             </bk-table-column>
         </bk-table>
         <bk-sideslider
@@ -218,6 +221,14 @@
     import cmdbImport from '@/components/import/import'
     import { MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     export default {
+        filters: {
+            addUnit (value, unit) {
+                if (value === '--' || !unit) {
+                    return value
+                }
+                return value + unit
+            }
+        },
         components: {
             cmdbColumnsConfig,
             cmdbAuditHistory,
@@ -355,6 +366,13 @@
                 }, {
                     label: this.model.bk_obj_name
                 }])
+            },
+            getPropertyUnit (propertyId) {
+                const property = this.properties.find(property => property.bk_property_id === propertyId)
+                if (!property) {
+                    return ''
+                }
+                return property.unit || ''
             },
             async reload () {
                 try {
@@ -708,7 +726,7 @@
             },
             routeToHistory () {
                 this.$router.push({
-                    name: 'history',
+                    name: 'instanceHistory',
                     params: {
                         objId: this.objId
                     }
@@ -775,6 +793,9 @@
         .filter-value{
             width: 320px;
             border-radius: 0 2px 2px 0;
+            /deep/ .bk-form-input {
+                line-height: 32px;
+            }
         }
         .filter-search{
             position: absolute;

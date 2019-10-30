@@ -16,14 +16,31 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+
+	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response) {
+type infoParam struct {
+	ExactSearch bool     `json:"exact_search"`
+	InnerIP     bool     `json:"bk_host_innerip"`
+	OuterIP     bool     `json:"bk_host_outerip"`
+	IPList      []string `json:"ip_list"`
+}
+
+type queryParams []queryParam
+type queryParam struct {
+	ObjID    string      `json:"bk_obj_id"`
+	Field    string      `json:"field"`
+	Operator string      `json:"operator"`
+	Value    interface{} `json:"value"`
+	OuterIP  bool        `json:"bk_host_outerip"`
+	IPList   []string    `json:"ip_list"`
+}
+
+func (s *Service) ListHostFavourites(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	query := new(metadata.QueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(query); err != nil {
@@ -34,7 +51,7 @@ func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response
 		_ = resp.WriteError(http.StatusBadRequest, responseData)
 		return
 	}
-	result, err := s.CoreAPI.CoreService().Host().GetHostFavourites(srvData.ctx, srvData.user, srvData.header, query)
+	result, err := s.CoreAPI.CoreService().Host().ListHostFavourites(srvData.ctx, srvData.user, srvData.header, query)
 	if err != nil {
 		blog.Errorf("GetHostFavourites http do error,err:%s,input:%+v,rid:%s", err.Error(), query, srvData.rid)
 		responseData := &metadata.RespError{
@@ -70,6 +87,24 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 		blog.Errorf("add host favorite, but got empty favorite name, param: %+v,rid:%s", param, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostEmptyFavName)})
 		return
+	}
+
+	if param.Info != "" {
+		// check if the info string matches the required structure
+		err := json.Unmarshal([]byte(param.Info), &infoParam{})
+		if err != nil {
+			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), param.Info, srvData.rid)
+			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "info")})
+			return
+		}
+	}
+	if param.QueryParams != "" {
+		err := json.Unmarshal([]byte(param.QueryParams), &queryParams{})
+		if err != nil {
+			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), param.QueryParams, srvData.rid)
+			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "query params")})
+			return
+		}
 	}
 
 	result, err := s.CoreAPI.CoreService().Host().AddHostFavourite(srvData.ctx, srvData.user, srvData.header, param)
@@ -111,6 +146,31 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 		blog.Errorf("update host favorite, but got empty name, data: %+v, rid:%s", data, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostFavUpdateFail)})
 		return
+	}
+
+	if info, exists := data["info"]; exists {
+		info := info.(string)
+		if info != "" {
+			// check if the info string matches the required structure
+			err := json.Unmarshal([]byte(info), &infoParam{})
+			if err != nil {
+				blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), info, srvData.rid)
+				_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "info")})
+				return
+			}
+		}
+	}
+	if queryParam, exists := data["query_params"]; exists {
+		queryParam := queryParam.(string)
+		if queryParam != "" {
+			// check if the info string matches the required structure
+			err := json.Unmarshal([]byte(queryParam), &queryParams{})
+			if err != nil {
+				blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), queryParam, srvData.rid)
+				_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "query params")})
+				return
+			}
+		}
 	}
 
 	result, err := s.CoreAPI.CoreService().Host().UpdateHostFavouriteByID(srvData.ctx, srvData.user, ID, srvData.header, data)

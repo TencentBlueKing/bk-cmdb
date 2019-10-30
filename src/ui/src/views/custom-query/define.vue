@@ -238,7 +238,7 @@
             ]),
             editable () {
                 if (this.type === 'update') {
-                    return this.$isAuthorized(this.$OPERATION.D_CUSTOM_QUERY)
+                    return this.$isAuthorized(this.$OPERATION.U_CUSTOM_QUERY)
                 }
                 return true
             },
@@ -459,7 +459,7 @@
                 } else if (property.operator === '$multilike' && Array.isArray(property.value)) {
                     return property.value.join('\n')
                 }
-                return property.value
+                return (property.value === null || property.value === undefined) ? '' : property.value
             },
             async previewUserAPI () {
                 if (!await this.$validator.validateAll()) {

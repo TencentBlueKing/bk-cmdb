@@ -198,7 +198,9 @@ const (
 	CCErrGetNoAuthSkipURLFailed  = 1199072
 
 	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
-	CCErrCommValExceedMaxFailed = 1199073
+	CCErrCommValExceedMaxFailed                              = 1199073
+	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199074
+	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -379,14 +381,6 @@ const (
 	CCErrTopoMainlineDeleteFailed                             = 1101138
 	CCErrTopoMainlineSelectFailed                             = 1101139
 	CCErrTopoTopoSelectFailed                                 = 1101140
-	CCErrTopoUserGroupCreateFailed                            = 1101141
-	CCErrTopoUserGroupDeleteFailed                            = 1101142
-	CCErrTopoUserGroupUpdateFailed                            = 1101143
-	CCErrTopoUserGroupSelectFailed                            = 1101144
-	CCErrTopoUserGroupPrivilegeUpdateFailed                   = 1101145
-	CCErrTopoUserGroupPrivilegeSelectFailed                   = 1101146
-	CCErrTopoUserPrivilegeSelectFailed                        = 1101147
-	CCErrTopoRolePrivilegeCreateFailed                        = 1101148
 	CCErrTopoDeleteMainLineObjectAndInstNameRepeat            = 1101149
 	CCErrHostNotAllowedToMutiBiz                              = 1101150
 	CCErrTopoGraphicsSearchFailed                             = 1101151
@@ -641,6 +635,10 @@ const (
 	// CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed Module does not exist or there are multiple built-in modules
 	CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed = 1110057
 	CCErrHostSearchNeedObjectInstIDErr                        = 1110058
+	CCErrHostSetNotExist                                      = 1110059
+	CCErrHostSetNotBelongBusinessErr                          = 1110060
+	CCErrHostModuleNotBelongBusinessErr                       = 1110061
+	CCErrHostModuleNotBelongSetErr                            = 1110062
 
 	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001
@@ -717,8 +715,8 @@ const (
 	CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate                    = 1113022
 	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 删除多个模型中的%s数据
 	CCErrCoreServiceDeleteMultpleObjectIDRecordErr = 1113023
-	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 不允许删除在唯一校验中的字段
-	CCErrCoreServiceNotAllowUnqiueAttr = 1113024
+	// CCErrCoreServiceDeleteMultipleObjectIDRecordErr 不允许删除在唯一校验中的字段
+	CCErrCoreServiceNotAllowUniqueAttr = 1113024
 	// CCErrCoreServiceNotUpdatePredefinedAttrErr 修改不允许修改的属性的描述
 	CCErrCoreServiceNotUpdatePredefinedAttrErr = 1113025
 	// CCErrCoreServiceNotAllowAddRequiredFieldErr 模型[%s]不允许新加必填字段
@@ -732,7 +730,8 @@ const (
 	// CCErrCoreServiceModelHasInstanceErr 模型下有示例数据
 	CCErrCoreServiceModelHasInstanceErr = 1113030
 	// CCErrCoreServiceModelHasAssociationErr 模型与其他模型有关联关系
-	CCErrCoreServiceModelHasAssociationErr = 1113031
+	CCErrCoreServiceModelHasAssociationErr           = 1113031
+	CCErrCoreServiceOnlyNodeServiceCategoryAvailable = 1113032
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900

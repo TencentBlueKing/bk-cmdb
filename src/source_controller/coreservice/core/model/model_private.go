@@ -26,7 +26,7 @@ func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condit
 	oneModel = &metadata.Object{}
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).One(ctx, oneModel)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
-		blog.Errorf("request(%s): it is failed to execute database findone operation on the table (%#v) by the condition (%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute database findOne operation on the table (%#v) by the condition (%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
 		return oneModel, exists, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 	exists = !m.dbProxy.IsNotFoundError(err)
@@ -40,13 +40,12 @@ func (m *modelManager) isValid(ctx core.ContextParams, objID string) error {
 	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
 
 	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(ctx)
-	isValid := (0 != cnt)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database cout operation on the table (%s) by the condition (%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, checkCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute database count operation on the table (%s) by the condition (%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, checkCond.ToMapStr(), err.Error())
 		return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
-	if !isValid {
+	if cnt == 0 {
 		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, objID)
 	}
 

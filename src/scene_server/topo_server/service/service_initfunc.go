@@ -125,7 +125,11 @@ func (s *Service) initInst() {
 	s.addAction(http.MethodPost, "/inst/search/owner/{owner_id}/object/{bk_obj_id}/detail", s.SearchInstAndAssociationDetail, nil)
 	s.addAction(http.MethodPost, "/inst/search/owner/{owner_id}/object/{bk_obj_id}", s.SearchInstByObject, nil)
 	s.addAction(http.MethodPost, "/inst/search/{owner_id}/{bk_obj_id}/{inst_id}", s.SearchInstByInstID, nil)
-	s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}", s.SearchInstAssociation, nil)
+	// 2019-09-30 废弃接口
+	//s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}", s.SearchInstAssociation, nil)
+	s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}/web", s.SearchInstAssociationUI, nil)
+	s.addAction(http.MethodPost, "/findmany/inst/association/association_object/inst_base_info", s.SearchInstAssociationWithOtherObject, nil)
+
 }
 
 func (s *Service) initObjectAttribute() {
@@ -170,23 +174,6 @@ func (s *Service) initObject() {
 	s.addAction(http.MethodGet, "/object/statistics", s.GetModelStatistics, nil)
 
 }
-func (s *Service) initPrivilegeGroup() {
-	s.addAction(http.MethodPost, "/topo/privilege/group/{bk_supplier_account}", s.CreateUserGroup, nil)
-	s.addAction(http.MethodDelete, "/topo/privilege/group/{bk_supplier_account}/{group_id}", s.DeleteUserGroup, nil)
-	s.addAction(http.MethodPut, "/topo/privilege/group/{bk_supplier_account}/{group_id}", s.UpdateUserGroup, nil)
-	s.addAction(http.MethodPost, "/topo/privilege/group/{bk_supplier_account}/search", s.SearchUserGroup, nil)
-}
-
-func (s *Service) initPrivilegeRole() {
-	s.addAction(http.MethodPost, "/topo/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.CreatePrivilege, s.ParseCreateRolePrivilegeOriginData)
-	s.addAction(http.MethodGet, "/topo/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.GetPrivilege, nil)
-}
-
-func (s *Service) initPrivilege() {
-	s.addAction(http.MethodPost, "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", s.UpdateUserGroupPrivilege, nil)
-	s.addAction(http.MethodGet, "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", s.GetUserGroupPrivilege, nil)
-	s.addAction(http.MethodGet, "/topo/privilege/user/detail/{bk_supplier_account}/{user_name}", s.GetUserPrivilege, nil)
-}
 
 func (s *Service) initGraphics() {
 	s.addAction(http.MethodPost, "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/search", s.SelectObjectTopoGraphics, nil)
@@ -213,9 +200,6 @@ func (s *Service) initService() {
 	s.initObjectAttribute()
 	s.initObjectClassification()
 	s.initObjectGroup()
-	s.initPrivilegeGroup()
-	s.initPrivilegeRole()
-	s.initPrivilege()
 	s.initGraphics()
 	s.initIdentifier()
 	s.initObjectObjectUnique()

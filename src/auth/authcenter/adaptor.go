@@ -84,10 +84,17 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysAssociationType
 
 	case meta.ModelAssociation:
-		return nil, errors.New("model association does not support auth now")
-
+		if businessID > 0 {
+			iamResourceType = BizInstance
+		} else {
+			iamResourceType = SysInstance
+		}
 	case meta.ModelInstanceAssociation:
-		return nil, errors.New("model instance association does not support  auth now")
+		if businessID > 0 {
+			iamResourceType = BizInstance
+		} else {
+			iamResourceType = SysInstance
+		}
 	case meta.MainlineModelTopology:
 		iamResourceType = SysSystemBase
 
@@ -264,6 +271,11 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		if r.Action == meta.Update {
 			return Edit, nil
 		}
+	}
+
+	// TODO: confirm this.
+	if r.Action == meta.Execute && r.Basic.Type == meta.DynamicGrouping {
+		return Get, nil
 	}
 
 	if r.Action == meta.Find || r.Action == meta.Delete || r.Action == meta.Create {

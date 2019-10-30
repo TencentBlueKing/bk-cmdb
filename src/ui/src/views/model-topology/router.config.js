@@ -13,7 +13,7 @@ export default {
     component: () => import('./index.old.vue'),
     meta: new Meta({
         menu: {
-            i18n: '模型关系'
+            i18n: '模型拓扑'
         },
         auth: {
             operation: OPERATION,

@@ -198,6 +198,7 @@ func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathPara
 		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
 		appList, err := s.AuthManager.Authorize.GetAnyAuthorizedBusinessList(params.Context, user)
 		if err != nil {
+			blog.Errorf("[api-biz] SearchReducedBusinessList failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
 		}
 
@@ -260,7 +261,7 @@ func (s *Service) GetBusinessBasicInfo(params types.ContextParams, pathParams, q
 		return nil, err
 	}
 	if len(result.Data.Info) == 0 {
-		blog.Errorf("get business by id not found, bizID: %s, rid: %s", bizID, params.ReqID)
+		blog.Errorf("GetBusinessBasicInfo failed, get business by id not found, bizID: %d, rid: %s", bizID, params.ReqID)
 		err := params.Err.CCError(common.CCErrCommNotFound)
 		return nil, err
 	}
@@ -346,6 +347,7 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
 		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(params.Context, user)
 		if err != nil {
+			blog.Errorf("[api-biz] SearchBusiness failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
 		}
 
@@ -411,6 +413,7 @@ func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams,
 		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
 		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(params.Context, user)
 		if err != nil {
+			blog.Errorf("[api-biz] SearchArchivedBusiness failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
 		}
 		// sort for prepare to find business with page.

@@ -14,8 +14,7 @@
                             appendTo: () => this.$el
                         }"
                         :request-config="{ fromCache: true }"
-                        @on-select="handleToggleBusiness"
-                        @business-empty="handleBusinessEmpty">
+                        @on-select="handleToggleBusiness">
                     </cmdb-business-selector>
                 </transition>
                 <transition name="fade">
@@ -26,6 +25,7 @@
                 <template v-for="(menu, index) in currentMenus">
                     <router-link class="menu-item is-link" tag="li" active-class="active"
                         v-if="menu.hasOwnProperty('route')"
+                        ref="menuLink"
                         :class="{
                             'is-relative-active': isRelativeActive(menu)
                         }"
@@ -61,7 +61,7 @@
                                 v-show="unfold && isMenuExpanded(menu)">
                                 <router-link class="submenu-link"
                                     v-for="(submenu, submenuIndex) in menu.submenu"
-                                    exact
+                                    ref="menuLink"
                                     active-class="active"
                                     :class="{
                                         'is-relative-active': isRelativeActive(submenu)
@@ -108,7 +108,8 @@
                 routerLinkHeight: 42,
                 timer: null,
                 state: {},
-                menus: []
+                menus: [],
+                hasExactActive: false
             }
         },
         computed: {
@@ -137,7 +138,7 @@
                         collection.unshift('biz')
                     }
                     return collection.filter(modelId => {
-                        return this.models.some(model => model.bk_obj_id === modelId)
+                        return this.models.some(model => model.bk_obj_id === modelId && !model.bk_ispaused)
                     })
                 }
                 return []
@@ -159,13 +160,11 @@
                 if (this.owner === MENU_RESOURCE) {
                     menus.splice(1, 0, ...this.collectionMenus)
                 }
-                return menus.filter(menu => {
-                    return menu.hasOwnProperty('route') || (Array.isArray(menu.submenu) && menu.submenu.length)
-                })
+                return menus
             },
             relativeActiveName () {
                 const relative = this.$tools.getValue(this.$route, 'meta.menu.relative')
-                if (relative) {
+                if (relative && !this.hasExactActive) {
                     const names = Array.isArray(relative) ? relative : [relative]
                     let relativeActiveName = null
                     for (let index = 0; index < names.length; index++) {
@@ -193,6 +192,7 @@
                 immediate: true,
                 handler () {
                     this.setDefaultExpand()
+                    this.checkExactActive()
                 }
             }
         },
@@ -212,6 +212,11 @@
                         this.$set(this.state, parent.id, { expanded: true })
                     }
                 }
+            },
+            checkExactActive () {
+                this.$nextTick(() => {
+                    this.hasExactActive = this.$refs.menuLink.some(link => link.$el.classList.contains('active'))
+                })
             },
             isMenuExpanded (menu) {
                 if (this.state.hasOwnProperty(menu.id)) {
@@ -301,16 +306,17 @@
                             [MENU_RESOURCE_COLLECTION]: this.usercustom[MENU_RESOURCE_COLLECTION].filter(id => id !== modelId)
                         })
                     }
+                    this.checkExactActive()
                     this.$success(this.$t('取消导航成功'))
                 } catch (e) {
                     console.log(e)
                 }
             },
-            handleToggleBusiness (id) {
-                this.$emit('business-change', id)
-            },
-            handleBusinessEmpty () {
-                this.$emit('business-empty')
+            handleToggleBusiness (id, old) {
+                if (old) {
+                    window.location.hash = '#/business/host'
+                    window.location.reload()
+                }
             }
         }
     }

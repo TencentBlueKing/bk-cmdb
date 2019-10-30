@@ -38,16 +38,16 @@ func (ps *parseStream) topology() *parseStream {
 		objectInstanceAssociation().
 		objectInstance().
 		object().
-		ObjectClassification().
+        objectClassification().
 		objectAttributeGroup().
 		objectAttribute().
-		ObjectModule().
-		ObjectSet().
+        objectModule().
+        objectSet().
 		objectUnique().
 		audit().
 		instanceAudit().
-		privilege().
-		fullTextSearch()
+		fullTextSearch().
+		cloudArea()
 
 	return ps
 }
@@ -1251,7 +1251,7 @@ var (
 	findObjectsBelongsToClassificationRegexp = regexp.MustCompile(`^/api/v3/object/classification/[^\s/]+/objects$`)
 )
 
-func (ps *parseStream) ObjectClassification() *parseStream {
+func (ps *parseStream) objectClassification() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -1574,7 +1574,7 @@ var (
 	findModuleRegexp   = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
 )
 
-func (ps *parseStream) ObjectModule() *parseStream {
+func (ps *parseStream) objectModule() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -1753,7 +1753,7 @@ var (
 	findSetRegexp       = regexp.MustCompile(`^/api/v3/set/search/[^\s/]+/[0-9]+/?$`)
 )
 
-func (ps *parseStream) ObjectSet() *parseStream {
+func (ps *parseStream) objectSet() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -2045,16 +2045,15 @@ func (ps *parseStream) instanceAudit() *parseStream {
 }
 
 var (
-	findPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/.*$`)
-	postPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/.*$`)
+	fullTextSearchPattern = "/api/v3/find/full_text"
 )
 
-func (ps *parseStream) privilege() *parseStream {
+func (ps *parseStream) fullTextSearch() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
 
-	if ps.hitRegexp(findPrivilege, http.MethodGet) || ps.hitRegexp(findPrivilege, http.MethodPost) {
+	if ps.hitPattern(fullTextSearchPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -2068,21 +2067,65 @@ func (ps *parseStream) privilege() *parseStream {
 	return ps
 }
 
-var (
-	fullTextSearchPattern = "/api/v3/find/full_text"
+const (
+	findManyCloudAreaPattern = "/api/v3/findmany/cloudarea"
+	createCloudAreaPattern   = "/api/v3/create/cloudarea"
 )
 
-func (ps *parseStream) fullTextSearch() *parseStream {
+var (
+	deleteCloudAreaRegexp = regexp.MustCompile(`/api/v3/delete/cloudarea/[0-9]+/?$`)
+)
+
+func (ps *parseStream) cloudArea() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
 
-	if ps.hitRegexp(findPrivilege, http.MethodGet) || ps.hitPattern(fullTextSearchPattern, http.MethodPost) {
+	model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDPlat})
+	if err != nil {
+		ps.err = err
+		return ps
+	}
+
+	if len(model) != 1 {
+		ps.err = fmt.Errorf("find plat model info, but find %d plat", len(model))
+		return ps
+	}
+
+	if ps.hitPattern(findManyCloudAreaPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Action: meta.SkipAction,
+					Type:   meta.ModelInstance,
+					Action: meta.FindMany,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(createCloudAreaPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.Create,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(deleteCloudAreaRegexp, http.MethodDelete) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.Delete,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps

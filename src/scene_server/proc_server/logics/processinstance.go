@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]metadata.Process, error) {
+func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]metadata.Process, errors.CCErrorCoder) {
 	reqParam := &metadata.QueryCondition{
 		Condition: mapstr.MapStr(map[string]interface{}{
 			common.BKProcessIDField: map[string]interface{}{
@@ -34,19 +34,19 @@ func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]
 	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, reqParam)
 	if nil != err {
 		blog.Errorf("rid: %s list process instance with procID: %d failed, err: %v", kit.Rid, procIDs, err)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !ret.Result {
 		blog.Errorf("rid: %s list process instance with procID: %d failed, err: %v", kit.Rid, procIDs, ret.ErrMsg)
-		return nil, kit.CCError.New(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
 	processes := make([]metadata.Process, 0)
 	for _, p := range ret.Data.Info {
 		process := new(metadata.Process)
 		if err := p.MarshalJSONInto(process); err != nil {
-			return nil, kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed)
+			return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 		}
 		processes = append(processes, *process)
 	}
@@ -63,12 +63,12 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 	reqParam.Condition = condition
 	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, reqParam)
 	if nil != err {
-		blog.Errorf("rid: %s get process instance with procID: %d failed, err: %v", kit.Rid, procID, err)
+		blog.Errorf("GetProcessInstanceWithID failed, get process instance with procID: %d failed, err: %v, rid: %s", procID, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !ret.Result {
-		blog.Errorf("rid: %s get process instance with procID: %d failed, err: %v", kit.Rid, procID, ret.ErrMsg)
+		blog.Errorf("GetProcessInstanceWithID failed, get process instance with procID: %d failed, err: %v, rid: %s", procID, ret.ErrMsg, kit.Rid)
 		return nil, errors.New(ret.Code, ret.ErrMsg)
 	}
 
@@ -78,7 +78,7 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 	}
 
 	if err := ret.Data.Info[0].MarshalJSONInto(process); err != nil {
-		blog.Errorf("GetProcessInstanceWithID fai, rid: %s", err, kit.Rid)
+		blog.Errorf("GetProcessInstanceWithID failed err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
@@ -86,12 +86,15 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 }
 
 func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr.MapStr) error {
+	delete(info, common.BkSupplierAccount)
 	option := metadata.UpdateOption{
 		Data: info,
 		Condition: map[string]interface{}{
-			common.BKProcessIDField: procID,
+			common.BKProcessIDField:  procID,
+			common.BkSupplierAccount: kit.SupplierAccount,
 		},
 	}
+
 	result, err := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
 		return err

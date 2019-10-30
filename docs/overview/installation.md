@@ -270,6 +270,12 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 |--listen_port|cmdb_webserver服务监听的端口，默认是8083|是|8083|
 |--full_text_search|全文检索功能开关(取值：off/on)，默认是off，开启是on|否|off|
 |--es_url|elasticsearch服务监听url，默认是http://127.0.0.1:9200|否|http://127.0.0.1:9200|
+|--auth_scheme | 权限模式，web页面使用，可选值: internal, iam | 否 | internal |
+|--auth_enabled | 是否采用蓝鲸权限中心鉴权 |      否 | false |
+|--auth_address       | 蓝鲸权限中心地址 | auth_enabled 为真时必填 | https://iam.domain.com/ |
+|--auth_app_code      | cmdb项目在蓝鲸权限中心的应用编码 | auth_enabled 为真时必填 | bk_cmdb |
+|--auth_app_secret    | cmdb项目在蓝鲸权限中心的应用密钥 | auth_enabled 为真时必填 | xxxxxxx |
+|--log_level          | 日志级别0-9, 9日志最详细 | 否 | 3  |
 
 **注:init.py 执行成功后会自动生成cmdb各服务进程所需要的配置。**
 
@@ -277,7 +283,27 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 
 如果部署了用于全文检索的第6和第7步，如要开启全文检索功能把full_text_search的值置为on
 ``` shell
-python init.py --discovery 127.0.0.1:2181 --database cmdb --redis_ip 127.0.0.1 --redis_port 6379 --redis_pass cc --mongo_ip 127.0.0.1 --mongo_port 27017 --mongo_user cc --mongo_pass cc --blueking_cmdb_url http://127.0.0.1:8083 --listen_port 8083 --full_text_search on --es_url http://127.0.0.1:9200
+python init.py  \
+  --discovery          127.0.0.1:2181 \
+  --database           cmdb \
+  --redis_ip           127.0.0.1 \
+  --redis_port         6379 \
+  --redis_pass         1111 \
+  --mongo_ip           127.0.0.1 \
+  --mongo_port         27017 \
+  --mongo_user         cc \
+  --mongo_pass         cc \
+  --blueking_cmdb_url  http://127.0.0.1:8080/ \
+  --blueking_paas_url  http://paas.domain.com \
+  --listen_port        8080 \
+  --auth_scheme        internal \
+  --auth_enabled       false \
+  --auth_address       https://iam.domain.com/ \
+  --auth_app_code      bk_cmdb \
+  --auth_app_secret    xxxxxxx \
+  --full_text_search   off \
+  --es_url             http://127.0.0.1:9200 \
+  --log_level          3
 ```
 
 

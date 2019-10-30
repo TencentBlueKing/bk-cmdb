@@ -11,11 +11,11 @@
             <div class="info-pagination fr" v-show="pagination.count">
                 <span class="pagination-info">{{getPaginationInfo()}}</span>
                 <span class="pagination-toggle">
-                    <i class="pagination-icon bk-icon icon-angle-left"
+                    <i class="pagination-icon bk-icon icon-cc-arrow-down left"
                         :class="{ disabled: pagination.current === 1 }"
                         @click="togglePage(-1)">
                     </i>
-                    <i class="pagination-icon bk-icon icon-angle-right"
+                    <i class="pagination-icon bk-icon icon-cc-arrow-down right"
                         :class="{ disabled: pagination.current === totalPage }"
                         @click="togglePage(1)">
                     </i>
@@ -183,11 +183,9 @@
             async getProperties () {
                 try {
                     this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-                        params: this.$injectMetadata({
+                        params: {
                             bk_obj_id: this.id
-                        }, {
-                            inject: this.isBusinessModel
-                        }),
+                        },
                         config: {
                             fromCache: true,
                             requestId: this.propertyRequest
@@ -281,7 +279,7 @@
             getModelInstances (config) {
                 return this.$store.dispatch('objectCommonInst/searchInst', {
                     objId: this.id,
-                    params: this.$injectMetadata({
+                    params: {
                         fields: {},
                         condition: {
                             [this.id]: [{
@@ -294,7 +292,7 @@
                             ...this.page,
                             sort: 'bk_inst_id'
                         }
-                    }),
+                    },
                     config
                 }).then(data => {
                     data = data || {
@@ -316,9 +314,7 @@
                     await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
                         id: associationInstance.asso_id,
                         config: {
-                            data: this.$injectMetadata({}, {
-                                inject: !!this.$tools.getMetadataBiz(this.model)
-                            })
+                            data: {}
                         }
                     })
                     this.$store.commit('hostDetails/deleteAssociation', {
@@ -413,14 +409,20 @@
     .info-pagination {
         color: #8b8d95;
         .pagination-toggle {
+            margin-left: 10px;
             .pagination-icon {
-                transform: scale(.5);
-                font-size: 20px;
+                font-size: 14px;
                 color: #979BA5;
                 cursor: pointer;
                 &.disabled {
                     color: #C4C6CC;
                     cursor: not-allowed;
+                }
+                &.left {
+                    transform: rotate(90deg);
+                }
+                &.right {
+                    transform: rotate(-90deg);
                 }
             }
         }

@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -103,7 +102,11 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	}
 
 	object := obj.Object()
-
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+		return results, err
+	}
 	// 1. 检查实例与URL参数指定的模型一致
 	for line, inst := range batchInfo.BatchInfo {
 		objID, exist := inst[common.BKObjIDField]
@@ -181,6 +184,12 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
 			continue
 		}
+		if isMainline {
+			if err := c.validMainLineParentID(params, obj, colInput); nil != err {
+				blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+				return nil, err
+			}
+		}
 
 		// create with metadata
 		if bizID != 0 {
@@ -211,10 +220,20 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	return results, nil
 }
 
-func (c *commonInst) isValidInstID(params types.ContextParams, obj metadata.Object, instID int64) error {
+func (c *commonInst) isValidBizInstID(params types.ContextParams, obj metadata.Object, instID int64, bizID int64) error {
 
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
+	if bizID != 0 {
+		or := cond.NewOR()
+		or.Item(mapstr.MapStr{common.BKAppIDField: bizID})
+		meta := metadata.Metadata{
+			Label: map[string]string{
+				common.BKAppIDField: strconv.FormatInt(bizID, 10),
+			},
+		}
+		or.Item(mapstr.MapStr{metadata.BKMetadata: meta})
+	}
 	if obj.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(obj.ObjectID)
 	}
@@ -230,7 +249,7 @@ func (c *commonInst) isValidInstID(params types.ContextParams, obj metadata.Obje
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.ObjectID, cond, rsp.ErrMsg, params.ReqID)
+		blog.Errorf("[operation-inst] faild to read the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.ObjectID, cond, rsp.ErrMsg, params.ReqID)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -241,6 +260,43 @@ func (c *commonInst) isValidInstID(params types.ContextParams, obj metadata.Obje
 	return params.Err.Error(common.CCErrTopoInstSelectFailed)
 }
 
+func (c *commonInst) isValidInstID(params types.ContextParams, obj metadata.Object, instID int64) error {
+	return c.isValidBizInstID(params, obj, instID, 0)
+}
+
+func (c *commonInst) validMainLineParentID(params types.ContextParams, obj model.Object, data mapstr.MapStr) error {
+	if obj.Object().ObjectID == common.BKInnerObjIDApp {
+		return nil
+	}
+	def, exist := data.Get(common.BKDefaultField)
+	if exist && def.(int) != 0 {
+		return nil
+	}
+	parent, err := obj.GetMainlineParentObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get the object(%s) mainline parent, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+		return err
+	}
+	bizID, err := data.Int64(common.BKAppIDField)
+	if err != nil {
+		bizID, err = metadata.ParseBizIDFromData(data)
+		if err != nil {
+			blog.Errorf("[operation-inst]failed to parse the biz id, err: %s, rid: %s", err.Error(), params.ReqID)
+			return params.Err.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
+		}
+	}
+	parentID, err := data.Int64(common.BKParentIDField)
+	if err != nil {
+		blog.Errorf("[operation-inst]failed to parse the parent id, err: %s, rid: %s", err.Error(), params.ReqID)
+		return params.Err.Errorf(common.CCErrCommParamsIsInvalid, common.BKParentIDField)
+	}
+	if err = c.isValidBizInstID(params, parent.Object(), parentID, bizID); err != nil {
+		blog.Errorf("[operation-inst]parent id %d is invalid, err: %s, rid: %s", parentID, err.Error(), params.ReqID)
+		return params.Err.Errorf(common.CCErrCommParamsIsInvalid, common.BKParentIDField)
+	}
+	return nil
+}
+
 func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
 	// create new insts
@@ -248,13 +304,21 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	item.SetValues(data)
 
 	iData := item.ToMapStr()
-	if obj.Object().ObjectID == "plat" {
+	if obj.Object().ObjectID == common.BKInnerObjIDPlat {
 		iData["bk_supplier_account"] = params.SupplierAccount
 	}
-	// if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, iData); nil != err {
-	// 	blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  err: %s, rid: %s", iData, err.Error(), params.ReqID)
-	// 	return nil, err
-	// }
+
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if isMainline {
+		if err := c.validMainLineParentID(params, obj, data); nil != err {
+			blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+			return nil, err
+		}
+	}
 
 	if err := item.Create(); nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s, rid: %s", obj.Object().ObjectID, data, err.Error(), params.ReqID)
@@ -341,12 +405,14 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst, c
 }
 
 func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error {
-
 	object := obj.Object()
+	objID := object.ID
+	objectID := object.ObjectID
+
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).In(instID)
 	if obj.IsCommon() {
-		cond.Field(common.BKObjIDField).Eq(object.ObjectID)
+		cond.Field(common.BKObjIDField).Eq(objectID)
 	}
 
 	query := &metadata.QueryInput{}
@@ -372,12 +438,14 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 	}
 
 	for _, delInst := range deleteIDS {
-		preAudit := NewSupplementary().Audit(params, c.clientSet, delInst.obj, c).CreateSnapshot(delInst.instID, condition.CreateCondition().ToMapStr())
+		auditFilter := condition.CreateCondition().ToMapStr()
+		preAudit := NewSupplementary().Audit(params, c.clientSet, delInst.obj, c).CreateSnapshot(delInst.instID, auditFilter)
+
 		// if this instance has been bind to a instance by the association, then this instance should not be deleted.
 		innerCond := condition.CreateCondition()
-		innerCond.Field(common.BKAsstObjIDField).Eq(delInst.obj.GetObjectID())
+		innerCond.Field(common.BKAsstObjIDField).Eq(objID)
 		innerCond.Field(common.BKAsstInstIDField).Eq(delInst.instID)
-		err := c.asst.CheckBeAssociation(params, delInst.obj, innerCond)
+		err := c.asst.CheckBeAssociation(params, obj, innerCond)
 		if nil != err {
 			return err
 		}
@@ -385,7 +453,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		// this instance has not be bind to another instance, we can delete all the associations it created
 		// by the association with other instances.
 		innerCond = condition.CreateCondition()
-		innerCond.Field(common.BKObjIDField).Eq(delInst.obj.GetObjectID())
+		innerCond.Field(common.BKObjIDField).Eq(objID)
 		innerCond.Field(common.BKInstIDField).Eq(delInst.instID)
 		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
 			blog.Errorf("[operation-inst] failed to delete the inst asst, err: %s, rid: %s", err.Error(), params.ReqID)
@@ -396,17 +464,18 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		delCond := condition.CreateCondition()
 		delCond.Field(delInst.obj.GetInstIDFieldName()).In(delInst.instID)
 		if delInst.obj.IsCommon() {
-			delCond.Field(common.BKObjIDField).Eq(delInst.obj.GetObjectID())
+			delCond.Field(common.BKObjIDField).Eq(objID)
 		}
 		// clear association
-		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(context.Background(), params.Header, delInst.obj.GetObjectID(), &metadata.DeleteOption{Condition: delCond.ToMapStr()})
+		dc := &metadata.DeleteOption{Condition: delCond.ToMapStr()}
+		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(params.Context, params.Header, objectID, dc)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", delInst.obj.GetObjectID(), delCond.ToMapStr(), rsp.ErrMsg, params.ReqID)
+			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", objectID, delCond.ToMapStr(), rsp.ErrMsg, params.ReqID)
 			return params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
@@ -450,7 +519,7 @@ func (c *commonInst) DeleteMainlineInstWithID(params types.ContextParams, obj mo
 	ops := metadata.DeleteOption{
 		Condition: delCond.ToMapStr(),
 	}
-	rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(context.Background(), params.Header, object.ObjectID, &ops)
+	rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(params.Context, params.Header, object.ObjectID, &ops)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -837,7 +906,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 					switch t := objCondition.Value.(type) {
 					case string:
 						instCond[objCondition.Field] = map[string]interface{}{
-							common.BKDBEQ: gparams.SpecialCharChange(t),
+							common.BKDBEQ: t,
 						}
 					default:
 						instCond[objCondition.Field] = objCondition.Value
@@ -964,7 +1033,10 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 }
 
 func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
-
+	// not allowed to update these fields, need to use specialized function
+	data.Remove(common.BKParentIDField)
+	data.Remove(common.BKAppIDField)
+	data.Remove(metadata.BKMetadata)
 	// update association
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()

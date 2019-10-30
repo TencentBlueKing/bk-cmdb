@@ -19,8 +19,11 @@
                     </i18n>
                 </div>
                 <bk-table class="host-table"
+                    ref="hostTable"
                     :data="list"
                     :height="290"
+                    :row-style="{ cursor: 'pointer' }"
+                    @row-click="handleRowClick"
                     @selection-change="handleSelectHost">
                     <bk-table-column type="selection" fixed width="60" align="center" class-name="bk-table-selection"></bk-table-column>
                     <bk-table-column v-for="column in header"
@@ -253,7 +256,7 @@
                 })
             },
             async infiniteHandler (infiniteState) {
-                console.log(infiniteState)
+                // console.log(infiniteState)
                 try {
                     const { current } = this.pagination
                     this.pagination.current = current + 1
@@ -265,6 +268,10 @@
                 } catch (e) {
                     infiniteState.error()
                 }
+            },
+            handleRowClick (row, event) {
+                const hostTable = this.$refs.hostTable
+                hostTable && hostTable.toggleRowSelection(row)
             },
             handleSelectHost (selection) {
                 this.checked = selection.map(row => row.bk_host_id)

@@ -16,6 +16,7 @@ import (
 	"context"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -285,6 +286,7 @@ func (valid *validator) validLongChar(ctx context.Context, val interface{}, key 
 
 	switch value := val.(type) {
 	case string:
+		value = strings.TrimSpace(value)
 		if len(value) > common.FieldTypeLongLenChar {
 			blog.Errorf("params over length %d, rid: %s", common.FieldTypeSingleLenChar, rid)
 			return valid.errif.Errorf(common.CCErrCommOverLimit, key)
@@ -295,6 +297,12 @@ func (valid *validator) validLongChar(ctx context.Context, val interface{}, key 
 				return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 			}
 			return nil
+		}
+
+		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, value)
+		if nil != err || !match {
+			blog.Errorf(`params "%s" not match longchar regexp, rid:  %s`, val, rid)
+			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
 		}
 
 		if property, ok := valid.propertys[key]; ok && "" != val {
@@ -342,6 +350,13 @@ func (valid *validator) validChar(ctx context.Context, val interface{}, key stri
 				return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 			}
 			return nil
+		}
+
+		value = strings.TrimSpace(value)
+		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
+		if nil != err || !match {
+			blog.Errorf(`params "%s" not match singlechar regexp, rid:  %s`, val, rid)
+			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
 		}
 
 		if property, ok := valid.propertys[key]; ok && "" != val {

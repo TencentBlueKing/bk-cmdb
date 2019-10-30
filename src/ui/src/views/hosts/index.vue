@@ -53,7 +53,8 @@
             :save-auth="$OPERATION.U_HOST"
             :transfer-resource-auth="$OPERATION.HOST_TO_RESOURCE"
             :columns-config-key="columnsConfigKey"
-            :columns-config-properties="columnsConfigProperties">
+            :columns-config-properties="columnsConfigProperties"
+            @update-host-count="hanldeUpdateHostCount">
         </cmdb-hosts-table>
     </div>
 </template>
@@ -158,7 +159,7 @@
                         'bk_obj_id': 'module',
                         'bk_inst_id': module.bk_module_id,
                         'bk_inst_name': module.bk_module_name,
-                        'host_count': module.host_count
+                        'host_count': module.host_count > 999 ? '999+' : module.host_count
                     }
                 }))
                 return instance
@@ -252,6 +253,17 @@
             handleCloseTopologyTips () {
                 this.showTopologyTips = false
                 window.localStorage.setItem('showTopologyTips', false)
+            },
+            async hanldeUpdateHostCount () {
+                this.getHostCount()
+                const internal = await this.getInternalModules()
+                internal.module && internal.module.forEach(module => {
+                    const node = this.$refs.tree.getNodeById(`module-${module.bk_module_id}`)
+                    if (node) {
+                        const count = module.host_count
+                        this.$set(node.data, 'host_count', count > 999 ? '999+' : count)
+                    }
+                })
             }
         }
     }
@@ -322,6 +334,11 @@
             &:hover {
                 color: #3c96ff;
             }
+        }
+    }
+    [bk-language='en'] {
+        .topology-tips {
+            padding: 2px 3px;
         }
     }
     .topology-tree {
