@@ -780,6 +780,7 @@
             height: calc(100% - 100px);
             @include scrollbar-y;
             .tree-node {
+              position: relative;
                 font-size: 0;
                 &:hover{
                     .topo-node-icon.topo-node-icon-text{
@@ -830,6 +831,8 @@
                 @include ellipsis;
             }
             .topo-node-btn-create{
+                position: absolute;
+                right: 0;
                 width: auto;
                 height: 18px;
                 padding: 0 6px;
