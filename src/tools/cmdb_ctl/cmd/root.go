@@ -10,24 +10,21 @@
  * limitations under the License.
  */
 
-package options
+package cmd
 
-import "testing"
-import "github.com/spf13/pflag"
+import (
+	"os"
 
-var svrOpt *ServerOption
+	"github.com/spf13/cobra"
+)
 
-func init() {
-	svrOpt = NewServerOption()
+var rootCmd = &cobra.Command{
+	Use: os.Args[0],
+	Run: func(cmd *cobra.Command, args []string) {
+		_ = cmd.Help()
+	},
 }
 
-func TestNewServerOption(t *testing.T) {
-	svrOpt = NewServerOption()
-	if svrOpt == nil {
-		t.Error("NewServerOption failed.")
-	}
-}
-
-func TestServerOption_AddFlags(t *testing.T) {
-	svrOpt.AddFlags(pflag.CommandLine)
+func GetRootCmd() *cobra.Command {
+	return rootCmd
 }

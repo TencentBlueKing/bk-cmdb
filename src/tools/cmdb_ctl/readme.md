@@ -88,7 +88,7 @@
 - 使用方式
 
   ```
-  ./tool_ctl echo [command]
+  ./tool_ctl echo [flags]
   ```
 
 - 命令行参数
@@ -99,4 +99,21 @@
 
   - ```
     ./tool_ctl echo --url=127.0.0.1:8080/echo
+    ```
+### 检查主机快照
+- 使用方式
+
+  ```
+  ./tool_ctl snapshot-check [flags]
+  ```
+
+- 命令行参数
+  ```
+  --bizId=2: blueking business id. e.g: 2
+  --zkaddr="": the ip address and port for the zookeeper hosts, separated by ',', corresponding environment variable is ZK_ADDR
+  ```
+- 示例
+
+  - ```
+    ./tool_ctl snapshot-check --bizId=2 --zkaddr=127.0.0.1:2181
     ```
