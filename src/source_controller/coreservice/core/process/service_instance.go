@@ -115,8 +115,8 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 
 	if instance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
 		listProcessTemplateOption := metadata.ListProcessTemplatesOption{
-			BusinessID:        module.BizID,
-			ServiceTemplateID: module.ServiceTemplateID,
+			BusinessID:         module.BizID,
+			ServiceTemplateIDs: []int64{module.ServiceTemplateID},
 			Page: metadata.BasePage{
 				Limit: common.BKNoLimit,
 				Sort:  "id",
