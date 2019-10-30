@@ -31,10 +31,8 @@ import (
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/service"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
 	"configcenter/src/thirdpartyclient/elasticsearch"
 )
 
@@ -100,12 +98,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	var txn dal.Transcation
-	if server.Config.Mongo.Enable == "true" {
-		txn, err = local.NewMgo(server.Config.Mongo.BuildURI(), time.Second*5)
-	} else {
-		txn, err = remote.NewWithDiscover(engine)
-	}
+	txn, err := local.NewMgo(server.Config.Mongo.BuildURI(), time.Second*5)
 	if err != nil {
 		blog.Errorf("failed to connect the txc server, error info is %v", err)
 		return err

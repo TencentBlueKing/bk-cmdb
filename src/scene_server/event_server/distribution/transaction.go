@@ -77,27 +77,7 @@ outer:
 }
 
 func (th *TxnHandler) watchTransaction() {
-	defer th.wg.Done()
-	if th.rc == nil {
-		return
-	}
-
-	for !th.shouldClose.IsSet() {
-		stream, err := th.rc.CallStream(daltypes.CommandWatchTransactionOperation, nil)
-		if err != nil {
-			blog.Errorf("WatchTransaction failed %v", err)
-			return
-		}
-		txn := daltypes.Transaction{}
-		var recvErr error
-		for recvErr = stream.Recv(&txn); recvErr == nil && !th.shouldClose.IsSet(); recvErr = stream.Recv(&txn) {
-			go th.handleTxn(txn)
-		}
-		if recvErr != nil {
-			blog.Errorf("watch stream stopped with error: %v", recvErr)
-		}
-		stream.Close()
-	}
+	return
 }
 
 func (th *TxnHandler) fetchTimeout() {

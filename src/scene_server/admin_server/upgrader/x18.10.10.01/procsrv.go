@@ -27,12 +27,12 @@ import (
 
 func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameProcOperateTask
-	exists, err := db.HasTable(tableName)
+	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}
@@ -50,12 +50,12 @@ func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 }
 func addProcInstanceModelTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameProcInstanceModel
-	exists, err := db.HasTable(tableName)
+	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}
@@ -73,12 +73,12 @@ func addProcInstanceModelTable(ctx context.Context, db dal.RDB, conf *upgrader.C
 }
 func addProcInstanceDetailTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameProcInstaceDetail
-	exists, err := db.HasTable(tableName)
+	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}

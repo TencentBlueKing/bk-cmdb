@@ -23,14 +23,14 @@ import (
 
 func taskMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
-	existTable, err := db.HasTable(common.BKTableNameAPITask)
+	existTable, err := db.HasTable(ctx, common.BKTableNameAPITask)
 	if err != nil {
 		blog.Errorf("has table %s error. err:%s", common.BKTableNameAPITask, err.Error())
 		return err
 	}
 
 	if !existTable {
-		err := db.CreateTable(common.BKTableNameAPITask)
+		err := db.CreateTable(ctx, common.BKTableNameAPITask)
 		if err != nil {
 			blog.Errorf("create table %s error. err:%s", common.BKTableNameAPITask, err.Error())
 			return err

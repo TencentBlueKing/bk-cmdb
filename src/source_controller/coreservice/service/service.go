@@ -46,7 +46,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
 	dalredis "configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
@@ -89,13 +88,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		s.language = language
 	}
 
-	var dbErr error
-	var db dal.RDB
-	if s.cfg.Mongo.Enable == "true" {
-		db, dbErr = local.NewMgo(s.cfg.Mongo.BuildURI(), time.Minute)
-	} else {
-		db, dbErr = remote.NewWithDiscover(s.engin)
-	}
+	db, dbErr := local.NewMgo(s.cfg.Mongo.BuildURI(), time.Minute)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
 		return dbErr

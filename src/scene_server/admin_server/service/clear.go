@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/emicklei/go-restful"
@@ -56,7 +57,7 @@ func (s *Service) clear(req *restful.Request, resp *restful.Response) {
 func clearDatabase(db dal.RDB) error {
 	// clear mongodb
 	for _, tableName := range common.AllTables {
-		db.DropTable(tableName)
+		db.DropTable(context.TODO(), tableName)
 	}
 
 	// TODO clear redis
