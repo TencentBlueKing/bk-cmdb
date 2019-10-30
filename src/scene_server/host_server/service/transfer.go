@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/common/mapstruct"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -21,8 +20,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -76,7 +77,7 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 
 	transferPlans, err := s.generateTransferPlans(srvData, bizID, option)
 	if err != nil {
-		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, generateTransferPlans failed, bizID: %s, option: %s, err: %+v, rid: %s", bizID, option, err.Error(), srvData.rid)
+		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, generateTransferPlans failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
 	}
@@ -135,6 +136,7 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 		serviceInstanceIDs = append(serviceInstanceIDs, instance.ID)
 	}
 
+	// clear service instance if necessary
 	if len(serviceInstanceIDs) > 0 {
 		// step2.1 delete process instance relation
 		listRelationOption := &metadata.ListProcessInstanceRelationOption{
@@ -197,19 +199,33 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 	}
 
 	// step3 transfer host
-	transferOption := &metadata.HostsModuleRelation{
-		ApplicationID: bizID,
-		HostID:        []int64{transferPlan.HostID},
-		ModuleID:      transferPlan.FinalModules,
-		IsIncrement:   false,
+	var transferHostResult *metadata.OperaterException
+	var err error
+	var option interface{}
+	if transferPlan.ToInnerModule == true {
+		transferOption := &metadata.TransferHostToInnerModule{
+			ApplicationID: bizID,
+			HostID:        []int64{transferPlan.HostID},
+			ModuleID:      transferPlan.FinalModules[0],
+		}
+		option = transferOption
+		transferHostResult, err = s.CoreAPI.CoreService().Host().TransferToInnerModule(srvData.ctx, srvData.header, transferOption)
+	} else {
+		transferOption := &metadata.HostsModuleRelation{
+			ApplicationID: bizID,
+			HostID:        []int64{transferPlan.HostID},
+			ModuleID:      transferPlan.FinalModules,
+			IsIncrement:   false,
+		}
+		option = transferOption
+		transferHostResult, err = s.CoreAPI.CoreService().Host().TransferToNormalModule(srvData.ctx, srvData.header, transferOption)
 	}
-	transferHostResult, err := s.CoreAPI.CoreService().Host().TransferToNormalModule(srvData.ctx, srvData.header, transferOption)
 	if err != nil {
-		blog.ErrorJSON("runTransferPlans failed, TransferToNormalModule failed, option: %s, err: %s, rid: %s", transferOption, err.Error(), srvData.rid)
+		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, err: %s, rid: %s", option, err.Error(), srvData.rid)
 		return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if transferHostResult.Result == false {
-		blog.ErrorJSON("runTransferPlans failed, TransferToNormalModule failed, option: %s, result: %s, rid: %s", transferOption, transferHostResult, srvData.rid)
+		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, result: %s, rid: %s", option, transferHostResult, srvData.rid)
 		return errors.New(transferHostResult.Code, transferHostResult.ErrMsg)
 	}
 	return nil
@@ -278,10 +294,14 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 	for hostID, currentInModules := range hostModulesIDMap {
 		transferPlan := generateTransferPlan(currentInModules, removeFromModules, option.AddTo)
 		transferPlan.HostID = hostID
-		// check module
+		// check module compatibility
+		finalModuleCount := len(transferPlan.FinalModules)
 		for _, moduleID := range transferPlan.FinalModules {
-			if util.InArray(moduleID, innerModuleIDs) && len(transferPlan.FinalModules) != 1 {
+			if util.InArray(moduleID, innerModuleIDs) && finalModuleCount != 1 {
 				return nil, srvData.ccErr.CCError(common.CCErrHostTransferFinalModuleConflict)
+			}
+			if util.InArray(moduleID, innerModuleIDs) && finalModuleCount == 1 {
+				transferPlan.ToInnerModule = true
 			}
 		}
 		transferPlans = append(transferPlans, transferPlan)
@@ -343,8 +363,11 @@ func (s *Service) GetInnerModules(srvData srvComm, bizID int64) ([]metadata.Modu
 			common.BKModuleIDField,
 			common.BKDefaultField,
 			common.BKModuleNameField,
+			common.BKAppIDField,
+			common.BKSetIDField,
 		},
 		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
 			common.BKDefaultField: map[string]interface{}{
 				common.BKDBNE: 0,
 			},
