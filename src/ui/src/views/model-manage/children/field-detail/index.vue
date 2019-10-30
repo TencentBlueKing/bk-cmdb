@@ -155,7 +155,8 @@
                     isrequired: false,
                     option: ''
                 },
-                charMap: ['singlechar', 'longchar']
+                charMap: ['singlechar', 'longchar'],
+                originalFieldInfo: {}
             }
         },
         computed: {
@@ -174,6 +175,15 @@
             },
             isComponentShow () {
                 return ['singlechar', 'longchar', 'enum', 'int', 'float'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+            },
+            changedValues () {
+                const changedValues = {}
+                for (const propertyId in this.fieldInfo) {
+                    if (JSON.stringify(this.fieldInfo[propertyId]) !== JSON.stringify(this.originalFieldInfo[propertyId])) {
+                        changedValues[propertyId] = this.fieldInfo[propertyId]
+                    }
+                }
+                return changedValues
             }
         },
         watch: {
@@ -197,6 +207,7 @@
             if (this.isEditField) {
                 this.initData()
             }
+            this.originalFieldInfo = this.$tools.clone(this.fieldInfo)
         },
         methods: {
             ...mapActions('objectModelProperty', [

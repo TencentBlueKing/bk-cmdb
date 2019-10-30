@@ -55,8 +55,10 @@
         <cmdb-slider
             :width="450"
             :title="slider.title"
-            :isShow.sync="slider.isShow">
+            :isShow.sync="slider.isShow"
+            :beforeClose="handleSliderBeforeClose">
             <the-relation-detail
+                ref="relationForm"
                 class="slider-content"
                 slot="content"
                 :isReadOnly="isReadOnly"
@@ -64,7 +66,7 @@
                 :relation="slider.relation"
                 :relationList="relationList"
                 @save="saveRelation"
-                @cancel="slider.isShow = false">
+                @cancel="handleSliderBeforeClose">
             </the-relation-detail>
         </cmdb-slider>
     </div>
@@ -240,6 +242,25 @@
             },
             handleSortChange (sort) {
                 this.table.sort = sort
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.slider.isShow = false
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.slider.isShow = false
+                return true
             }
         }
     }
