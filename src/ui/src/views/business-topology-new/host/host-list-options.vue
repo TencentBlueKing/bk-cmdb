@@ -1,7 +1,7 @@
 <template>
     <div class="options-layout clearfix">
         <div class="options fl">
-            <bk-button class="option" theme="primary">{{$t('新增')}}</bk-button>
+            <bk-button class="option" theme="primary" @click="handleAddHost">{{$t('新增')}}</bk-button>
             <bk-dropdown-menu class="option ml10" trigger="click"
                 font-size="large"
                 :disabled="!hasSelection"
@@ -71,15 +71,24 @@
             :properties="hostProperties"
             :selection="$parent.table.selection">
         </edit-multiple-host>
+        <cmdb-dialog v-model="dialog.show" v-bind="dialog.props">
+            <component
+                :is="dialog.component"
+                v-bind="dialog.componentProps"
+                @cancel="handleDialogCancel">
+            </component>
+        </cmdb-dialog>
     </div>
 </template>
 
 <script>
     import EditMultipleHost from './edit-multiple-host.vue'
+    import HostSelector from './host-selector.vue'
     import { mapGetters } from 'vuex'
     export default {
         components: {
-            EditMultipleHost
+            EditMultipleHost,
+            HostSelector
         },
         data () {
             return {
@@ -87,6 +96,15 @@
                 isMoreMenuOpen: false,
                 selectedCollection: '',
                 collectionList: [],
+                dialog: {
+                    show: false,
+                    props: {
+                        width: 850,
+                        showCloseIcon: false
+                    },
+                    component: null,
+                    componentProps: {}
+                },
                 request: {
                     collection: Symbol('collection')
                 }
@@ -112,7 +130,7 @@
             }
         },
         created () {
-            this.getCollectionList()
+            // this.getCollectionList()
         },
         methods: {
             async getCollectionList () {
@@ -157,6 +175,13 @@
             },
             handleMultipleEdit () {
                 this.$refs.editMultipleHost.handleMultipleEdit()
+            },
+            handleAddHost () {
+                this.dialog.component = HostSelector
+                this.dialog.show = true
+            },
+            handleDialogCancel () {
+                this.dialog.show = false
             }
         }
     }

@@ -8,11 +8,11 @@
             <topology-tree ref="topologyTree"></topology-tree>
         </cmdb-resize-layout>
         <div class="tab-layout">
-            <bk-tab class="topology-tab" type="unborder-card">
+            <bk-tab class="topology-tab" type="unborder-card" :active.sync="activeTab">
                 <bk-tab-panel name="hostList" :label="$t('主机列表')">
                     <host-list></host-list>
                 </bk-tab-panel>
-                <bk-tab-panel name="serviceInstance" :label="$t('服务实例')"></bk-tab-panel>
+                <bk-tab-panel name="serviceInstance" :label="$t('服务实例')" :visible="showServiceInstance"></bk-tab-panel>
                 <bk-tab-panel name="nodeInfo" :label="$t('节点信息')"></bk-tab-panel>
             </bk-tab>
         </div>
@@ -21,7 +21,7 @@
 
 <script>
     import TopologyTree from './children/topology-tree.vue'
-    import HostList from './children/host-list.vue'
+    import HostList from './host/host-list.vue'
     import { mapGetters } from 'vuex'
     export default {
         components: {
@@ -30,7 +30,7 @@
         },
         data () {
             return {
-                show: false,
+                activeTab: 'hostList',
                 request: {
                     mainline: Symbol('mainline'),
                     properties: Symbol('properties')
@@ -39,7 +39,18 @@
         },
         computed: {
             ...mapGetters(['supplierAccount']),
-            ...mapGetters('objectBiz', ['bizId'])
+            ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('businessHost', ['currentNode']),
+            showServiceInstance () {
+                return this.currentNode && this.currentNode.data.bk_obj_id === 'module'
+            }
+        },
+        watch: {
+            showServiceInstance (value) {
+                if (!value && this.activeTab === 'serviceInstance') {
+                    this.activeTab = 'hostList'
+                }
+            }
         },
         async created () {
             try {

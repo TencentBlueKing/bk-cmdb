@@ -23,13 +23,15 @@ const getters = {
     },
     currentNode: state => state.currentNode,
     getDefaultSearchCondition: state => () => {
-        return state.topologyModels.map(model => {
-            return {
-                bk_obj_id: model.bk_obj_id,
-                condition: [],
-                fields: []
-            }
-        })
+        let topologyModels = state.topologyModels
+        if (!topologyModels.length) {
+            topologyModels = ['biz', 'set', 'module', 'host'].map(modelId => ({ bk_obj_id: modelId }))
+        }
+        return topologyModels.map(model => ({
+            bk_obj_id: model.bk_obj_id,
+            condition: [],
+            fields: []
+        }))
     },
     commonRequest: state => state.commonRequest
 }
