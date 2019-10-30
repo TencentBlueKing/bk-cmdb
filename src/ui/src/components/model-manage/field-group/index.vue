@@ -16,7 +16,7 @@
                                 <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('内置组不支持修改，排序')}}）</span>
                             </div>
                             <div class="title-icon-btn" v-if="!(!isAdminView && isBuiltInGroup(group.info))" @click.stop>
-                                <cmdb-auth class="ml10" :auth="authResources" @udpate-auth="handleReceiveAuth">
+                                <cmdb-auth class="ml10" :auth="authResources" @update-auth="handleReceiveAuth">
                                     <bk-button slot-scope="{ disabled }"
                                         class="icon-btn"
                                         :text="true"
