@@ -38,14 +38,13 @@
         <label class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["关联描述"]')}}
-                <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
                 <input type="text" class="cmdb-form-input"
-                name="asstName"
-                v-validate="'required|singlechar'"
-                v-model.trim="relationInfo['bk_obj_asst_name']"
-                :placeholder="$t('ModelManagement[\'请输入关联描述\']')">
+                    name="asstName"
+                    v-validate="'singlechar'"
+                    v-model.trim="relationInfo['bk_obj_asst_name']"
+                    :placeholder="$t('ModelManagement[\'请输入关联描述\']')">
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
         </label>

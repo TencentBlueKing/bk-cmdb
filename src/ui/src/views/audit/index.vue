@@ -1,51 +1,56 @@
 <template>
     <div class="audit-wrapper">
         <div class="title-content clearfix">
-            <div class="group-content group-content-business">
-                <div class="selector-content selector-content-business">
-                    <bk-selector
-                        :list="business"
-                        :selected.sync="filter.bizId"
-                        :searchable="true"
-                        :allow-clear="true"
-                        display-key="bk_biz_name"
-                        search-key="bk_biz_name"
-                        setting-key="bk_biz_id"
-                    ></bk-selector>
+            <div class="filter-options">
+                <div class="group-content group-content-business">
+                    <span class="title-name">{{$t('Common["业务"]')}}</span>
+                    <div class="selector-content selector-content-business">
+                        <bk-selector
+                            :list="business"
+                            :selected.sync="filter.bizId"
+                            :searchable="true"
+                            :allow-clear="true"
+                            :placeholder="$t('请输入xx', { name: $t('Common[\'业务\']') })"
+                            display-key="bk_biz_name"
+                            search-key="bk_biz_name"
+                            setting-key="bk_biz_id"
+                        ></bk-selector>
+                    </div>
                 </div>
-            </div>
-            <div class="group-content group-content-ip">
-                <span class="title-name">IP</span>
-                <div class="selector-content selector-content-ip">
-                    <input class="cmdb-form-input" type="text" :placeholder="$t('OperationAudit[\'使用逗号分隔\']')" v-model.trim="filter.bkIP">
+                <div class="group-content group-content-ip">
+                    <span class="title-name">IP</span>
+                    <div class="selector-content selector-content-ip">
+                        <input class="cmdb-form-input" type="text" :placeholder="$t('OperationAudit[\'使用逗号分隔\']')" v-model.trim="filter.bkIP">
+                    </div>
                 </div>
-            </div>
-            <div class="group-content group-content-classify">
-                <span class="title-name">{{$t('OperationAudit["模型"]')}}</span>
-                <div class="selector-content selector-content-classify">
-                    <bk-selector
-                        :list="filterClassifications"
-                        :selected.sync="filter.classify"
-                        :allow-clear="true"
-                        :has-children="true"
-                        :searchable="true"
-                    ></bk-selector>
+                <div class="group-content group-content-classify">
+                    <span class="title-name">{{$t('OperationAudit["模型"]')}}</span>
+                    <div class="selector-content selector-content-classify">
+                        <bk-selector
+                            :list="filterClassifications"
+                            :selected.sync="filter.classify"
+                            :allow-clear="true"
+                            :has-children="true"
+                            :searchable="true"
+                            :placeholder="$t('请输入xx', { name: $t('OperationAudit[\'模型\']') })"
+                        ></bk-selector>
+                    </div>
                 </div>
-            </div>
-            <div class="group-content group-content-type">
-                <span class="title-name">{{$t('OperationAudit[\'类型\']')}}</span>
-                <div class="selector-content selector-content-type">
-                    <bk-selector
-                        :list="operateTypeList"
-                        :allow-clear="true"
-                        :selected.sync="filter.bkOpType"
-                    ></bk-selector>
+                <div class="group-content group-content-type">
+                    <span class="title-name">{{$t('OperationAudit[\'类型\']')}}</span>
+                    <div class="selector-content selector-content-type">
+                        <bk-selector
+                            :list="operateTypeList"
+                            :allow-clear="true"
+                            :selected.sync="filter.bkOpType"
+                        ></bk-selector>
+                    </div>
                 </div>
-            </div>
-            <div class="group-content group-content-time">
-                <span class="title-name">{{$t('OperationAudit[\'时间\']')}}</span>
-                <div class="selector-content selector-content-time">
-                    <cmdb-form-date-range class="date-range" position="left" v-model="filter.bkCreateTime"></cmdb-form-date-range>
+                <div class="group-content group-content-time">
+                    <span class="title-name">{{$t('OperationAudit[\'时间\']')}}</span>
+                    <div class="selector-content selector-content-time">
+                        <cmdb-form-date-range class="date-range" position="left" v-model="filter.bkCreateTime"></cmdb-form-date-range>
+                    </div>
                 </div>
             </div>
             <div class="group-content group-content-btn fr">
@@ -290,45 +295,37 @@
 
 <style lang="scss" scoped>
     .title-content{
-        .group-content{
+        .filter-options {
+            display: flex;
             float: left;
-            margin: 0 1.9% 20px 0;
-            white-space: nowrap;
-            font-size: 0;
-            &.group-content-business{
-                width: calc(120 / (1020 - 348) * (100% - 348px));
-                .selector-content-business{
-                    width: 100%;
+            width: calc(100% - 98px);
+            .group-content {
+                margin-bottom: 20px;
+                white-space: nowrap;
+                font-size: 0;
+                padding-right: 10px;
+                display: flex;
+                flex: 1;
+                .selector-content-business,
+                .selector-content-ip,
+                .selector-content-classify,
+                .selector-content-type,
+                .selector-content-time {
+                    width: 0;
+                    flex: 1;
+                }
+                .selector-content-time {
+                    min-width: 232px;
+                    .date-range {
+                        width: 100%;
+                    }
                 }
             }
-            &.group-content-ip{
-                width: calc(145 / (1020 - 348) * (100% - 348px));
-                .selector-content-ip{
-                    width: calc(122 / 145 * 100%);
-                }
-            }
-            &.group-content-classify{
-                width: calc(165 / (1020 - 348) * (100% - 348px));
-                .selector-content-classify{
-                    width: calc(127 / 165 * 100%);
-                }
-            }
-            &.group-content-type{
-                width: calc(145 / (1020 - 348) * (100% - 348px));
-                .selector-content-type{
-                    width: calc(107 / 145 * 100%);
-                }
-            }
-            &.group-content-time{
-                width: 280px;
-                margin-right: 0;
-                .date-range{
-                    width: 240px;
-                }
-            }
+        }
+        .group-content {
             &.group-content-btn{
                 width: auto;
-                margin-right: 0;
+                padding-right: 0;
             }
             .search-btn{
                 padding: 0 19px;
