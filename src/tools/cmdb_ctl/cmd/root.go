@@ -10,42 +10,21 @@
  * limitations under the License.
  */
 
-package main
+package cmd
 
 import (
-	"context"
-	"fmt"
 	"os"
-	"runtime"
 
-	"github.com/spf13/pflag"
-
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
-	"configcenter/src/tools/snapshot_check/app"
-	"configcenter/src/tools/snapshot_check/app/options"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
+var rootCmd = &cobra.Command{
+	Use: os.Args[0],
+	Run: func(cmd *cobra.Command, args []string) {
+		_ = cmd.Help()
+	},
+}
 
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	if err := common.SavePid(); err != nil {
-		blog.Errorf("fail to save pid: err:%s", err.Error())
-	}
-
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		blog.Errorf("process stopped by %v", err)
-		blog.CloseLogs()
-		os.Exit(1)
-	}
+func GetRootCmd() *cobra.Command {
+	return rootCmd
 }
