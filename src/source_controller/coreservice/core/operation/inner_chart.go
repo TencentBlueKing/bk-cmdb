@@ -226,11 +226,11 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams, wg *sync.W
 		currentData.Id.Time = now
 		currentData.Count = info.Count
 		if len(bizHostChange) > 0 {
-			//subHour := now.Sub(bizHostChange[0].LastTime.Time).Hours()
-			//if subHour < 24 {
-			//	blog.V(3).Info("Less than 24 hours since the last update, return")
-			//	return nil
-			//}
+			subHour := now.Sub(bizHostChange[0].LastTime.Time).Hours()
+			if subHour < 24 {
+				blog.V(3).Info("Less than 24 hours since the last update, return")
+				return nil
+			}
 			if len(bizHostChange[0].Data) > 0 {
 				bizHostChange[0].Data[info.Id] = append(bizHostChange[0].Data[info.Id], currentData)
 			} else {
