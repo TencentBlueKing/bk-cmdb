@@ -77,6 +77,12 @@
                                 v-else-if="['date', 'time'].includes(property.propertyType)"
                                 v-model="property.value">
                             </cmdb-form-date-range>
+                            <cmdb-cloud-selector
+                                v-else-if="property.propertyId === 'bk_cloud_id'"
+                                class="filter-field-value fl"
+                                :allow-clear="true"
+                                v-model="property.value">
+                            </cmdb-cloud-selector>
                             <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
                                 v-else
                                 :is="`cmdb-form-${property.propertyType}`"
@@ -106,7 +112,7 @@
                 </span>
             </div>
         </div>
-        
+
         <div class="userapi-btn-group">
             <span class="inline-block-middle"
                 v-cursor="{
@@ -244,9 +250,9 @@
             },
             filterList () {
                 return this.filter.allList.filter(item => {
-                    if (['foreignkey'].includes(item['bk_property_type'])) {
-                        return false
-                    }
+                    // if (['foreignkey'].includes(item['bk_property_type'])) {
+                    //     return false
+                    // }
                     return !this.userProperties.some(property => {
                         return item['bk_obj_id'] === property.objId && item['bk_property_id'] === property.propertyId
                     })
@@ -600,9 +606,9 @@
                     }
                 })
                 this.filter.allList = [...hostList, ...setList, ...moduleList]
-                const sliderProperty = this.filter.allList.filter(item => !['foreignkey'].includes(item['bk_property_type']))
+                // const sliderProperty = this.filter.allList.filter(item => !['foreignkey'].includes(item['bk_property_type']))
                 const propertyMap = {}
-                sliderProperty.forEach(item => {
+                this.filter.allList.forEach(item => {
                     if (propertyMap.hasOwnProperty(item['bk_obj_id'])) {
                         propertyMap[item['bk_obj_id']].push({
                             ...item,

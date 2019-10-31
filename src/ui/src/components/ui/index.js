@@ -1,6 +1,7 @@
 import businessSelector from './selector/business.vue'
 import clipboardSelector from './selector/clipboard.vue'
 import selector from './selector/selector.vue'
+import cloudSelector from './selector/cloud.vue'
 import details from './details/details.vue'
 import form from './form/form.vue'
 import formMultiple from './form/form-multiple.vue'
@@ -53,7 +54,8 @@ const install = (Vue, opts = {}) => {
         searchInput,
         inputSelect,
         iconButton,
-        tips
+        tips,
+        cloudSelector
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -87,5 +89,6 @@ export default {
     searchInput,
     inputSelect,
     iconButton,
-    tips
+    tips,
+    cloudSelector
 }
