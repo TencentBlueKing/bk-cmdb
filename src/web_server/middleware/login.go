@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
-	"configcenter/src/web_server/middleware/auth"
 	"configcenter/src/web_server/middleware/user"
 
 	"github.com/gin-gonic/gin"
@@ -51,19 +50,6 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 		}
 
 		if isAuthed(c, config) {
-			// valid resource access privilege
-			if config.Site.AuthScheme == "internal" {
-				author := auth.NewAuth()
-				ok := author.ValidResAccess(pathArr, c)
-				if false == ok {
-					c.JSON(403, gin.H{
-						"status": "access forbidden",
-					})
-					c.Abort()
-					return
-				}
-			}
-
 			// http request header add user
 			session := sessions.Default(c)
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
