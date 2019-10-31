@@ -158,6 +158,7 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 		Page:       input.Page,
 		SearchKey:  input.SearchKey,
 		Selectors:  input.Selectors,
+		HostIDs:    input.HostIDs,
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
@@ -233,6 +234,7 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 		Page:       input.Page,
 		SearchKey:  input.SearchKey,
 		Selectors:  input.Selectors,
+		HostIDs:    input.HostIDs,
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
@@ -296,6 +298,11 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 	}
 	input.BizID = bizID
 
+	if len(input.ServiceInstanceIDs) == 0 {
+		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "delete service instances, service_instance_ids empty", "service_instance_ids")
+		return
+	}
+
 	// when a service instance is deleted, the related data should be deleted at the same time
 	for _, serviceInstanceID := range input.ServiceInstanceIDs {
 		serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
@@ -355,7 +362,7 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		// step4: check and move host from module if no serviceInstance on it
 		filter := &metadata.ListServiceInstanceOption{
 			BusinessID: bizID,
-			HostID:     serviceInstance.HostID,
+			HostIDs:    []int64{serviceInstance.HostID},
 			ModuleID:   serviceInstance.ModuleID,
 		}
 		result, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, filter)
@@ -523,11 +530,13 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 					return
 				}
 			}
-
+			processName := ""
+			if process.ProcessName != nil {
+				processName = *process.ProcessName
+			}
 			property, exist := pTemplateMap[relation.ProcessTemplateID]
 			if !exist {
 				// process's template doesn't exist means the template has already been removed.
-				processName := *process.ProcessName
 				removed[processName] = append(removed[processName], recorder{
 					ProcessID:       relation.ProcessID,
 					Process:         process,
@@ -542,7 +551,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				// nothing changed
 				unchanged[relation.ProcessTemplateID] = append(unchanged[relation.ProcessTemplateID], recorder{
 					ProcessID:       relation.ProcessID,
-					ProcessName:     *process.ProcessName,
+					ProcessName:     processName,
 					ServiceInstance: &serviceInstances.Info[idx],
 				})
 				continue
@@ -551,7 +560,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 			// something has already changed.
 			changed[relation.ProcessTemplateID] = append(changed[relation.ProcessTemplateID], recorder{
 				ProcessID:        relation.ProcessID,
-				ProcessName:      *process.ProcessName,
+				ProcessName:      processName,
 				ServiceInstance:  &serviceInstances.Info[idx],
 				ChangedAttribute: changedAttributes,
 			})
@@ -989,7 +998,7 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 
 	option := metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
-		HostID:     input.HostID,
+		HostIDs:    []int64{input.HostID},
 		SearchKey:  input.SearchKey,
 		Page:       input.Page,
 		Selectors:  input.Selectors,
@@ -1029,7 +1038,7 @@ func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
 
 	option := metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
-		HostID:     input.HostID,
+		HostIDs:    []int64{input.HostID},
 		SearchKey:  input.SearchKey,
 		Page:       input.Page,
 		Selectors:  input.Selectors,
@@ -1117,12 +1126,12 @@ func (ps *ProcServer) ServiceInstanceLabelsAggregation(ctx *rest.Contexts) {
 			return
 		}
 	}
-	
+
 	if bizID == 0 {
-        ctx.RespErrorCodeF(common.CCErrCommParamsIsInvalid, "list service instance label, but got invalid biz id: 0", "bk_biz_id")
-        return
-    }
-	
+		ctx.RespErrorCodeF(common.CCErrCommParamsIsInvalid, "list service instance label, but got invalid biz id: 0", "bk_biz_id")
+		return
+	}
+
 	listOption := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
 	}

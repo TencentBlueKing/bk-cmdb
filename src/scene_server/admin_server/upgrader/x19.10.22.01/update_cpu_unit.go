@@ -10,42 +10,29 @@
  * limitations under the License.
  */
 
-package main
+package x19_10_22_01
 
 import (
 	"context"
 	"fmt"
-	"os"
-	"runtime"
-
-	"github.com/spf13/pflag"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
-	"configcenter/src/tools/snapshot_check/app"
-	"configcenter/src/tools/snapshot_check/app/options"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	if err := common.SavePid(); err != nil {
-		blog.Errorf("fail to save pid: err:%s", err.Error())
+func UpdateCpuUnit(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	filter := map[string]interface{}{
+		common.BKObjIDField:      common.BKInnerObjIDHost,
+		common.BKPropertyIDField: "bk_cpu_mhz",
 	}
-
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		blog.Errorf("process stopped by %v", err)
-		blog.CloseLogs()
-		os.Exit(1)
+	doc := map[string]interface{}{
+		"unit": "MHz",
 	}
+	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, doc); err != nil {
+		blog.Errorf("UpdateCpuUnit failed, err: %+v", err)
+		return fmt.Errorf("UpdateCpuUnit failed, err: %v", err)
+	}
+	return nil
 }

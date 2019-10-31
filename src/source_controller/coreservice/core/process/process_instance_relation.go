@@ -181,7 +181,7 @@ func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams,
 	}
 
 	if parameterEnough == false {
-		blog.Errorf("DeleteProcessInstanceRelation failed, filter parameters not enough, filter: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, ctx.ReqID)
+		blog.Errorf("DeleteProcessInstanceRelation failed, filter parameters not enough, filter: %+v, rid: %s", deleteFilter, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommParametersCountNotEnough)
 	}
 

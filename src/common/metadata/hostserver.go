@@ -13,7 +13,6 @@
 package metadata
 
 import (
-	"configcenter/src/common/querybuilder"
 	"context"
 	"fmt"
 	"net/http"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 )
 
@@ -145,19 +145,24 @@ func (option ListHosts) Validate() (string, error) {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
-	if key, err := option.HostPropertyFilter.Validate(); err != nil {
-		return fmt.Sprintf("host_property_filter.%s", key), err
+	if option.HostPropertyFilter != nil {
+		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+			return fmt.Sprintf("host_property_filter.%s", key), err
+		}
 	}
 
 	return "", nil
 }
 
 func (option ListHosts) GetHostPropertyFilter(ctx context.Context) (map[string]interface{}, error) {
-	mgoFilter, key, err := option.HostPropertyFilter.ToMgo()
-	if err != nil {
-		return nil, fmt.Errorf("invalid key:host_property_filter.%s, err: %s", key, err)
+	if option.HostPropertyFilter != nil {
+		mgoFilter, key, err := option.HostPropertyFilter.ToMgo()
+		if err != nil {
+			return nil, fmt.Errorf("invalid key:host_property_filter.%s, err: %s", key, err)
+		}
+		return mgoFilter, nil
 	}
-	return mgoFilter, nil
+	return make(map[string]interface{}), nil
 }
 
 // ip search info

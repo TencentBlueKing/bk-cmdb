@@ -29,6 +29,7 @@
     "1113029": "model [%s] is not allowed to delete",
     "1113030": "has instance under the model",
     "1113031": "the model is related to other models",
+    "1113032": "only leaf node available",
     
     "":""
 }

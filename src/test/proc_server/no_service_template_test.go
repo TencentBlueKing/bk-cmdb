@@ -313,8 +313,9 @@ var _ = Describe("no service template test", func() {
 						"processes": []map[string]interface{}{
 							{
 								"process_info": map[string]interface{}{
-									"bk_func_name":    "p1",
-									"bk_process_name": "p1",
+									"bk_func_name":         "p1",
+									"bk_process_name":      "p1",
+									"bk_start_param_regex": "",
 								},
 							},
 						},
@@ -384,8 +385,9 @@ var _ = Describe("no service template test", func() {
 						"processes": []map[string]interface{}{
 							{
 								"process_info": map[string]interface{}{
-									"bk_func_name":    "",
-									"bk_process_name": "",
+									"bk_func_name":         "",
+									"bk_process_name":      "",
+									"bk_start_param_regex": "",
 								},
 							},
 						},
@@ -419,8 +421,9 @@ var _ = Describe("no service template test", func() {
 						"processes": []map[string]interface{}{
 							{
 								"process_info": map[string]interface{}{
-									"bk_func_name":    "p1",
-									"bk_process_name": "p1",
+									"bk_func_name":         "p1",
+									"bk_process_name":      "p1",
+									"bk_start_param_regex": "",
 								},
 							},
 						},
@@ -443,8 +446,9 @@ var _ = Describe("no service template test", func() {
 						"processes": []map[string]interface{}{
 							{
 								"process_info": map[string]interface{}{
-									"bk_func_name":    "p1",
-									"bk_process_name": "p1",
+									"bk_func_name":         "p1",
+									"bk_process_name":      "p1",
+									"bk_start_param_regex": "",
 								},
 							},
 						},
@@ -658,7 +662,7 @@ var _ = Describe("no service template test", func() {
 			resMap["process_instance"] = j
 		})
 
-		It("udpate process instance with same name", func() {
+		It("update process instance with same name", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
 				"processes": []map[string]interface{}{
@@ -673,7 +677,7 @@ var _ = Describe("no service template test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("udpate process instance with same bk_func_name and bk_start_param_regex", func() {
+		It("update process instance with same bk_func_name and bk_start_param_regex", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
 				"processes": []map[string]interface{}{

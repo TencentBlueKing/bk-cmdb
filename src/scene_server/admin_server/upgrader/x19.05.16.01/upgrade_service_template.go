@@ -302,6 +302,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 						} else {
 							inst.BindIP = new(string)
 						}
+						inst.SupplierAccount = ownerID
 						blog.InfoJSON("procInst: %s", inst)
 						if err = db.Table(common.BKTableNameBaseProcess).Insert(ctx, inst); err != nil {
 							return err
