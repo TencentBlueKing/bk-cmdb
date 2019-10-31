@@ -1,7 +1,7 @@
 <template>
     <span class="auth-box"
         v-cursor="{
-            active: isAuthorized,
+            active: !isAuthorized,
             auth: resources
         }">
         <slot :disabled="disabled"></slot>
@@ -16,15 +16,11 @@
             auth: {
                 type: Object,
                 required: true
-            },
-            requestAuth: {
-                type: Boolean,
-                default: true
             }
         },
         data () {
             return {
-                isAuthorized: false,
+                isAuthorized: true,
                 disabled: true
             }
         },
@@ -39,19 +35,13 @@
                 immediate: true,
                 deep: true,
                 handler (value, oldValue) {
-                    if (this.requestAuth && !deepEqual(value, oldValue)) {
+                    if (!Object.keys(this.auth).length) {
+                        this.disabled = false
+                    } else if (!deepEqual(value, oldValue)) {
                         resourceOperation.pushQueue({
                             component: this,
                             data: this.auth
                         })
-                    }
-                }
-            },
-            requestAuth: {
-                immediate: true,
-                handler (value) {
-                    if (!value) {
-                        this.disabled = false
                     }
                 }
             }
@@ -62,7 +52,7 @@
                     return auth.is_pass
                 })
                 const isPass = passData.every(pass => pass)
-                this.isAuthorized = !isPass
+                this.isAuthorized = isPass
                 this.disabled = !isPass
                 this.$emit('update-auth', isPass)
             }
