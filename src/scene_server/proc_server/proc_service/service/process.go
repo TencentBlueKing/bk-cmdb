@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
 )
@@ -369,7 +369,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	if processName, ok := condition[common.BKProcessNameField]; ok {
 		processNameStr, ok := processName.(string)
 		if ok {
-			condition[common.BKProcessNameField] = map[string]interface{}{common.BKDBLIKE: params.SpeceialCharChange(processNameStr)}
+			condition[common.BKProcessNameField] = map[string]interface{}{common.BKDBLIKE: params.SpecialCharChange(processNameStr)}
 
 		} else {
 			condition[common.BKProcessNameField] = map[string]interface{}{common.BKDBLIKE: processName}

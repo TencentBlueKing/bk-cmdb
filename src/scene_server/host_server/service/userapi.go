@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -143,7 +143,7 @@ func (s *Service) GetUserCustomQuery(req *restful.Request, resp *restful.Respons
 	//if name in condition , add like search
 	name, ok := condition["name"].(string)
 	if ok && "" != name {
-		condition["name"] = common.KvMap{common.BKDBLIKE: params.SpeceialCharChange(name)}
+		condition["name"] = common.KvMap{common.BKDBLIKE: params.SpecialCharChange(name)}
 	}
 
 	var err error

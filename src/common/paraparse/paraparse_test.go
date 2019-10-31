@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSpeceialCharChange(t *testing.T) {
+func TestSpecialCharChange(t *testing.T) {
 	type testUnit struct {
 		src string
 		dst string
@@ -93,7 +93,7 @@ func TestSpeceialCharChange(t *testing.T) {
 	}
 
 	for _, item := range testUnits {
-		dst := SpeceialCharChange(item.src)
+		dst := SpecialCharChange(item.src)
 		//blog.Infof("src:%s, expact dst:%s, dst:%s", item.src, item.dst, dst)
 		require.Equal(t, item.dst, dst)
 	}
