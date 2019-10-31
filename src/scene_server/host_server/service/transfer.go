@@ -438,6 +438,9 @@ func (s *Service) getInnerModules(srvData srvComm, bizID int64) ([]metadata.Modu
 }
 
 // TransferHostWithAutoClearServiceInstancePreview generate a preview of changes for TransferHostWithAutoClearServiceInstance operation
+// 接口请求参数跟转移是一致的
+// 主机从模块删除时提供了将要删除的服务实例信息
+// 主机添加到新模块时，提供了模块对应的服务模板（如果有）
 func (s *Service) TransferHostWithAutoClearServiceInstancePreview(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	option := metadata.TransferHostWithAutoClearServiceInstanceOption{}
