@@ -130,12 +130,6 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 			return
 		}
 
-		if err := logger.WithCurrent(strconv.FormatInt(hostID, 10)); err != nil {
-			blog.Errorf("delet host batch, but get current host data failed, err: %v", err)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
-			return
-		}
-
 		logConents = append(logConents, *logger.AuditLog(hostID))
 	}
 
