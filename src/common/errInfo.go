@@ -386,14 +386,6 @@ const (
 	CCErrTopoMainlineDeleteFailed                             = 1101138
 	CCErrTopoMainlineSelectFailed                             = 1101139
 	CCErrTopoTopoSelectFailed                                 = 1101140
-	CCErrTopoUserGroupCreateFailed                            = 1101141
-	CCErrTopoUserGroupDeleteFailed                            = 1101142
-	CCErrTopoUserGroupUpdateFailed                            = 1101143
-	CCErrTopoUserGroupSelectFailed                            = 1101144
-	CCErrTopoUserGroupPrivilegeUpdateFailed                   = 1101145
-	CCErrTopoUserGroupPrivilegeSelectFailed                   = 1101146
-	CCErrTopoUserPrivilegeSelectFailed                        = 1101147
-	CCErrTopoRolePrivilegeCreateFailed                        = 1101148
 	CCErrTopoDeleteMainLineObjectAndInstNameRepeat            = 1101149
 	CCErrHostNotAllowedToMutiBiz                              = 1101150
 	CCErrTopoGraphicsSearchFailed                             = 1101151
