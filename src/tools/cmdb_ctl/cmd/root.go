@@ -10,4 +10,21 @@
  * limitations under the License.
  */
 
-package privilege
+package cmd
+
+import (
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+var rootCmd = &cobra.Command{
+	Use: os.Args[0],
+	Run: func(cmd *cobra.Command, args []string) {
+		_ = cmd.Help()
+	},
+}
+
+func GetRootCmd() *cobra.Command {
+	return rootCmd
+}
