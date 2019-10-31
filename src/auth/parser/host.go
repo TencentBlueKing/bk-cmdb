@@ -269,6 +269,7 @@ const (
 	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
 	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts/host/add/module"
 	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
+	findHostTopoRelationPattern               = "/api/v3/host/topo/relation/read"
 
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
@@ -510,6 +511,25 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
+	if ps.hitPattern(findHostTopoRelationPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
 	// synchronize hosts directly to a module in a business if this host does not exist.
 	// otherwise, this operation will only change host's attribute.
 	if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
@@ -588,7 +608,7 @@ func (ps *parseStream) host() *parseStream {
 
 	// find hosts under business specified by path parameter
 	if ps.hitRegexp(findBizHostsRegex, http.MethodPost) {
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("list business's hosts, but got invalid business id: %s", ps.RequestCtx.Elements[4])
 			return ps
