@@ -132,6 +132,15 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		RequiredBizInMetadata: true,
 		ResourceType:          meta.ProcessServiceInstance,
 		ResourceAction:        meta.Delete,
+	}, {
+		Name:                  "deleteServiceInstancePreviewRegexp",
+		Description:           "删除服务实例预览",
+		Regex:                 regexp.MustCompile(`/api/v3/deletemany/proc/service_instance/preview/?$`),
+		HTTPMethod:            http.MethodPost,
+		RequiredBizInMetadata: true,
+		ResourceType:          meta.ProcessServiceInstance,
+		// ResourceAction:        meta.Find,
+		ResourceAction: meta.SkipAction,
 	},
 }
 
