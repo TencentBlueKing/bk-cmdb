@@ -32,30 +32,24 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="details-options">
-                <span class="inline-block-middle"
-                    v-if="showEdit"
-                    v-cursor="{
-                        active: !$isAuthorized(editAuth),
-                        auth: [editAuth]
-                    }">
-                    <bk-button class="button-edit" theme="primary"
-                        :disabled="!$isAuthorized(editAuth)"
+                <cmdb-auth v-if="showEdit" class="inline-block-middle" :auth="authResources(editAuth)">
+                    <bk-button slot-scope="{ disabled }"
+                        class="button-edit"
+                        theme="primary"
+                        :disabled="disabled"
                         @click="handleEdit">
                         {{editText}}
                     </bk-button>
-                </span>
-                <span class="inline-block-middle"
-                    v-if="showDelete"
-                    v-cursor="{
-                        active: !$isAuthorized(deleteAuth),
-                        auth: [deleteAuth]
-                    }">
-                    <bk-button class="button-delete" theme="danger"
-                        :disabled="!$isAuthorized(deleteAuth)"
+                </cmdb-auth>
+                <cmdb-auth v-if="showDelete" class="inline-block-middle" :auth="authResources(deleteAuth)">
+                    <bk-button slot-scope="{ disabled }"
+                        class="button-delete"
+                        theme="danger"
+                        :disabled="disabled"
                         @click="handleDelete">
                         {{deleteText}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </slot>
         </div>
     </div>
@@ -121,6 +115,11 @@
             RESIZE_EVENTS.removeResizeListener(this.$el.detailsWrapper, this.checkScrollbar)
         },
         methods: {
+            authResources (auth) {
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
+            },
             checkScrollbar () {
                 const $layout = this.$el
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
@@ -237,6 +236,9 @@
             min-width: 76px;
             background-color: #fff;
             color: #ff5656;
+            &:disabled {
+                color: #dcdee5 !important;
+            }
         }
     }
 </style>

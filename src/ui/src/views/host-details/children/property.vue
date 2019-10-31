@@ -29,18 +29,16 @@
                         </span>
                     </bk-popover>
                     <template v-if="isPropertyEditable(property)">
-                        <i class="property-edit icon-cc-edit"
-                            v-if="$isAuthorized(updateAuth)"
-                            v-show="property !== editState.property"
-                            @click="setEditState(property)">
-                        </i>
-                        <i class="property-edit icon-cc-edit disabled"
-                            v-else
-                            v-cursor="{
-                                active: true,
-                                auth: [updateAuth]
-                            }">
-                        </i>
+                        <cmdb-auth style="margin: 8px 0 0 8px; font-size: 0;" :auth="updateAuthResources" v-show="property !== editState.property">
+                            <bk-button slot-scope="{ disabled }"
+                                text
+                                theme="primary"
+                                class="property-edit-btn"
+                                :disabled="disabled"
+                                @click="setEditState(property)">
+                                <i class="property-edit icon-cc-edit"></i>
+                            </bk-button>
+                        </cmdb-auth>
                         <div class="property-form" v-if="property === editState.property">
                             <component class="form-component"
                                 :is="`cmdb-form-${property.bk_property_type}`"
@@ -105,12 +103,12 @@
             host () {
                 return this.info.host || {}
             },
-            updateAuth () {
+            updateAuthResources () {
                 const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
                 if (isResourceHost) {
-                    return this.$OPERATION.U_RESOURCE_HOST
+                    return this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
                 }
-                return this.$OPERATION.U_HOST
+                return this.$authResources({ type: this.$OPERATION.U_HOST })
             }
         },
         methods: {
@@ -242,17 +240,15 @@
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
             }
+            .property-edit-btn {
+                height: auto;
+                font-size: 0;
+            }
             .property-edit {
-                opacity: 0;
-                margin: 8px 0 0 8px;
                 font-size: 16px;
-                color: #3c96ff;
-                cursor: pointer;
+                opacity: 0;
                 &:hover {
                     opacity: .8;
-                }
-                &.disabled {
-                    color: #ccc;
                 }
             }
             .property-copy {
