@@ -21,9 +21,7 @@
                 <label class="userapi-label">
                     {{$t('查询名称')}}<span class="color-danger"> * </span>
                 </label>
-                <cmdb-auth style="display: block;"
-                    :auth="$authResources({ type: $OPERATION.U_CUSTOM_QUERY })"
-                    :request-auth="getAuth">
+                <cmdb-auth style="display: block;" :auth="authResources">
                     <bk-input slot-scope="{ disabled }"
                         type="text"
                         class="cmdb-form-input"
@@ -47,8 +45,7 @@
                             {{property.objName}} - {{property.propertyName}}
                         </label>
                         <cmdb-auth style="display: block;"
-                            :auth="$authResources({ type: $OPERATION.U_CUSTOM_QUERY })"
-                            :request-auth="getAuth">
+                            :auth="authResources">
                             <template slot-scope="{ disabled }">
                                 <div class="filter-content clearfix" :class="{ disabled: disabled }">
                                     <filter-field-operator class="filter-field-operator fl"
@@ -93,7 +90,7 @@
                         </cmdb-auth>
                     </li>
                 </ul>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_CUSTOM_QUERY })" :request-auth="getAuth">
+                <cmdb-auth :auth="authResources">
                     <bk-button slot-scope="{ disabled }"
                         class="add-conditon-btn"
                         theme="primary"
@@ -107,7 +104,7 @@
             </div>
         </div>
         <div class="userapi-btn-group">
-            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_CUSTOM_QUERY })" :request-auth="getAuth">
+            <cmdb-auth :auth="authResources">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     class="userapi-btn"
@@ -233,9 +230,6 @@
             ...mapGetters([
                 'supplierAccount'
             ]),
-            getAuth () {
-                return this.type === 'update'
-            },
             filterList () {
                 return this.filter.allList.filter(item => {
                     if (['foreignkey'].includes(item['bk_property_type'])) {
@@ -345,6 +339,12 @@
             },
             selectedProperties () {
                 return this.userProperties.map(property => `${property.objId}-${property.propertyId}`)
+            },
+            authResources () {
+                if (this.type === 'update') {
+                    return this.$authResources({ type: this.$OPERATION.U_CUSTOM_QUERY })
+                }
+                return {}
             }
         },
         async created () {
