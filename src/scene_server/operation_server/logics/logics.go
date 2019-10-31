@@ -21,8 +21,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-
-	"github.com/robfig/cron"
 )
 
 func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
@@ -108,7 +106,6 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 
 func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	opt := mapstr.MapStr{}
-
 	// 检测cc_chartData集合是否存在
 	for {
 		resp, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
@@ -125,9 +122,8 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 		blog.V(3).Info("waiting collection cc_ChartData init")
 	}
 
-	c := cron.New()
-	spec := "0 0 * * * " // 每天凌晨，更新定时统计图表数据
-	_, err := c.AddFunc(spec, func() {
+	ticker := time.NewTicker(1 * time.Minute)
+	for range ticker.C {
 		blog.V(3).Info("begin statistic chart data, time: %v", time.Now())
 		// 主服务器跑定时
 		isMaster := lgc.Engine.ServiceManageInterface.IsMaster()
@@ -136,14 +132,7 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 				blog.Error("start statistic chart data timer fail, err: %v", err)
 			}
 		}
-	})
-
-	if err != nil {
-		blog.Error("start statistic chart data timer fail, err: %v", err)
 	}
-	c.Start()
-
-	select {}
 }
 
 func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig) (interface{}, error) {
