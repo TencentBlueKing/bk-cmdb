@@ -89,7 +89,7 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 
 func SpeceialCharChange(targetStr string) string {
 
-	re := regexp.MustCompile(`([\^\$\(\)\*\+\?\.\\\|\[\]\{\}])`)
+	re := regexp.MustCompile("[.()\\\\|\\[\\]\\-\\*{}\\^\\$\\?]")
 	delItems := re.FindAllString(targetStr, -1)
 	tmp := map[string]struct{}{}
 	for _, target := range delItems {
