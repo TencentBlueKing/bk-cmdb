@@ -122,7 +122,7 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 		blog.V(3).Info("waiting collection cc_ChartData init")
 	}
 
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(24 * time.Hour)
 	for range ticker.C {
 		blog.V(3).Info("begin statistic chart data, time: %v", time.Now())
 		// 主服务器跑定时
