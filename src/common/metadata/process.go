@@ -52,7 +52,7 @@ type ListServiceTemplateInput struct {
 	Metadata *Metadata `json:"metadata"`
 	BizID    int64     `json:"bk_biz_id"`
 	// this field can be empty, it a optional condition.
-	ServiceCategoryID int64    `json:"service_category_id,omitempty"`
+	ServiceCategoryID int64    `json:"service_category_id"`
 	Page              BasePage `json:"page"`
 	Search            string   `json:"search"`
 }
@@ -86,9 +86,10 @@ type CreateRawProcessInstanceInput struct {
 }
 
 type UpdateRawProcessInstanceInput struct {
-	Metadata  *Metadata `json:"metadata"`
-	BizID     int64     `json:"bk_biz_id"`
-	Processes []Process `json:"processes"`
+	Metadata  *Metadata                `json:"metadata"`
+	BizID     int64                    `json:"bk_biz_id"`
+	Processes []Process                `json:"-"`
+	Raw       []map[string]interface{} `json:"processes"`
 }
 
 type DeleteProcessInstanceInServiceInstanceInput struct {
@@ -101,8 +102,9 @@ type GetServiceInstanceInModuleInput struct {
 	Metadata  *Metadata          `json:"metadata"`
 	BizID     int64              `json:"bk_biz_id"`
 	ModuleID  int64              `json:"bk_module_id"`
+	HostIDs   []int64            `json:"bk_host_ids"`
 	Page      BasePage           `json:"page"`
-	SearchKey *string            `json:"search_key,omitempty"`
+	SearchKey *string            `json:"search_key"`
 	Selectors selector.Selectors `json:"selectors"`
 }
 
@@ -113,8 +115,8 @@ type ListServiceInstanceDetailRequest struct {
 	ModuleID           int64              `json:"bk_module_id"`
 	HostID             int64              `json:"bk_host_id"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
-	Page               BasePage           `json:"page,omitempty"`
-	Selectors          selector.Selectors `json:"selectors,omitempty"`
+	Page               BasePage           `json:"page"`
+	Selectors          selector.Selectors `json:"selectors"`
 }
 
 type DiffModuleWithTemplateOption struct {
@@ -202,7 +204,7 @@ type ServiceInstanceDifference struct {
 type ServiceDifferenceDetails struct {
 	ServiceInstance   ServiceInstance           `json:"service_instance"`
 	Process           *Process                  `json:"process"`
-	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes,omitempty"`
+	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
 }
 
 type CreateServiceInstanceDetail struct {
@@ -234,9 +236,9 @@ type ListServiceInstancesWithHostInput struct {
 	Metadata  *Metadata          `json:"metadata"`
 	BizID     int64              `json:"bk_biz_id"`
 	HostID    int64              `json:"bk_host_id"`
-	SearchKey *string            `json:"search_key,omitempty"`
-	Selectors selector.Selectors `json:"selectors,omitempty"`
-	Page      BasePage           `json:"page,omitempty"`
+	SearchKey *string            `json:"search_key"`
+	Selectors selector.Selectors `json:"selectors"`
+	Page      BasePage           `json:"page"`
 }
 
 type ListProcessInstancesOption struct {
@@ -252,10 +254,10 @@ type RemoveTemplateBindingOnModuleOption struct {
 }
 
 type UpdateProcessTemplateInput struct {
-	Metadata          *Metadata        `json:"metadata"`
-	BizID             int64            `json:"bk_biz_id"`
-	ProcessTemplateID int64            `json:"process_template_id"`
-	ProcessProperty   *ProcessProperty `json:"process_property"`
+	Metadata          *Metadata              `json:"metadata"`
+	BizID             int64                  `json:"bk_biz_id"`
+	ProcessTemplateID int64                  `json:"process_template_id"`
+	Property          map[string]interface{} `json:"process_property"`
 }
 
 type SocketBindType string
@@ -337,43 +339,43 @@ func (p ProtocolType) Validate() error {
 }
 
 type Process struct {
-	ProcNum         *int64        `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num" structs:"proc_num"`
-	StopCmd         *string       `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd" structs:"stop_cmd"`
-	RestartCmd      *string       `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd" structs:"restart_cmd"`
-	ForceStopCmd    *string       `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd" structs:"face_stop_cmd"`
-	ProcessID       int64         `field:"bk_process_id" json:"bk_process_id,omitempty" bson:"bk_process_id" structs:"bk_process_id"`
-	FuncName        *string       `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name" structs:"bk_func_name"`
-	WorkPath        *string       `field:"work_path" json:"work_path,omitempty" bson:"work_path" structs:"work_path"`
-	BindIP          *string       `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip" structs:"bind_ip"`
-	Priority        *int64        `field:"priority" json:"priority,omitempty" bson:"priority" structs:"priority"`
-	ReloadCmd       *string       `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd" structs:"reload_cmd"`
-	ProcessName     *string       `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name" structs:"bk_process_name"`
-	Port            *string       `field:"port" json:"port,omitempty" bson:"port" structs:"port"`
-	PidFile         *string       `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file" structs:"pid_file"`
-	AutoStart       *bool         `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start" structs:"auto_start"`
-	AutoTimeGap     *int64        `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap" structs:"auto_time_gap"`
-	LastTime        time.Time     `field:"last_time" json:"last_time,omitempty" bson:"last_time" structs:"last_time"`
-	CreateTime      time.Time     `field:"create_time" json:"create_time,omitempty" bson:"create_time" structs:"create_time"`
-	BusinessID      int64         `field:"bk_biz_id" json:"bk_biz_id,omitempty" bson:"bk_biz_id" structs:"bk_biz_id"`
-	StartCmd        *string       `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd" structs:"start_cmd"`
-	FuncID          *string       `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id" structs:"bk_func_id"`
-	User            *string       `field:"user" json:"user,omitempty" bson:"user" structs:"user"`
-	TimeoutSeconds  *int64        `field:"timeout" json:"timeout,omitempty" bson:"timeout" structs:"timeout"`
-	Protocol        *ProtocolType `field:"protocol" json:"protocol,omitempty" bson:"protocol" structs:"protocol"`
-	Description     *string       `field:"description" json:"description,omitempty" bson:"description" structs:"description"`
-	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" structs:"bk_supplier_account"`
-	StartParamRegex *string       `field:"bk_start_param_regex" json:"bk_start_param_regex,omitempty" bson:"bk_start_param_regex,omitempty" structs:"bk_start_param_regex"`
+	ProcNum         *int64        `field:"proc_num" json:"proc_num" bson:"proc_num" structs:"proc_num"`
+	StopCmd         *string       `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd" structs:"stop_cmd"`
+	RestartCmd      *string       `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd" structs:"restart_cmd"`
+	ForceStopCmd    *string       `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd" structs:"face_stop_cmd"`
+	ProcessID       int64         `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id" structs:"bk_process_id"`
+	FuncName        *string       `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" structs:"bk_func_name"`
+	WorkPath        *string       `field:"work_path" json:"work_path" bson:"work_path" structs:"work_path"`
+	BindIP          *string       `field:"bind_ip" json:"bind_ip" bson:"bind_ip" structs:"bind_ip"`
+	Priority        *int64        `field:"priority" json:"priority" bson:"priority" structs:"priority"`
+	ReloadCmd       *string       `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd" structs:"reload_cmd"`
+	ProcessName     *string       `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" structs:"bk_process_name"`
+	Port            *string       `field:"port" json:"port" bson:"port" structs:"port"`
+	PidFile         *string       `field:"pid_file" json:"pid_file" bson:"pid_file" structs:"pid_file"`
+	AutoStart       *bool         `field:"auto_start" json:"auto_start" bson:"auto_start" structs:"auto_start"`
+	AutoTimeGap     *int64        `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" structs:"auto_time_gap"`
+	LastTime        time.Time     `field:"last_time" json:"last_time" bson:"last_time" structs:"last_time"`
+	CreateTime      time.Time     `field:"create_time" json:"create_time" bson:"create_time" structs:"create_time"`
+	BusinessID      int64         `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" structs:"bk_biz_id"`
+	StartCmd        *string       `field:"start_cmd" json:"start_cmd" bson:"start_cmd" structs:"start_cmd"`
+	FuncID          *string       `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id" structs:"bk_func_id"`
+	User            *string       `field:"user" json:"user" bson:"user" structs:"user"`
+	TimeoutSeconds  *int64        `field:"timeout" json:"timeout" bson:"timeout" structs:"timeout"`
+	Protocol        *ProtocolType `field:"protocol" json:"protocol" bson:"protocol" structs:"protocol"`
+	Description     *string       `field:"description" json:"description" bson:"description" structs:"description"`
+	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account"`
+	StartParamRegex *string       `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex"`
 }
 
 type ServiceCategory struct {
 	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
-	ID   int64  `field:"id" json:"id,omitempty" bson:"id"`
-	Name string `field:"name" json:"name,omitempty" bson:"name"`
+	ID   int64  `field:"id" json:"id" bson:"id"`
+	Name string `field:"name" json:"name" bson:"name"`
 
-	RootID          int64  `field:"bk_root_id" json:"bk_root_id,omitempty" bson:"bk_root_id"`
-	ParentID        int64  `field:"bk_parent_id" json:"bk_parent_id,omitempty" bson:"bk_parent_id"`
-	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	RootID          int64  `field:"bk_root_id" json:"bk_root_id" bson:"bk_root_id"`
+	ParentID        int64  `field:"bk_parent_id" json:"bk_parent_id" bson:"bk_parent_id"`
+	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 
 	// IsBuiltIn indicates internal system service category, which shouldn't be modified.
 	IsBuiltIn bool `field:"is_built_in" json:"is_built_in" bson:"is_built_in"`
@@ -404,19 +406,19 @@ type ServiceTemplateDetail struct {
 type ServiceTemplate struct {
 	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
-	ID int64 `field:"id" json:"id,omitempty" bson:"id"`
+	ID int64 `field:"id" json:"id" bson:"id"`
 	// name of this service, can not be empty
-	Name string `field:"name" json:"name,omitempty" bson:"name"`
+	Name string `field:"name" json:"name" bson:"name"`
 
 	// the class of this service, each field means a class label.
 	// now, the class must have two labels.
-	ServiceCategoryID int64 `field:"service_category_id" json:"service_category_id,omitempty" bson:"service_category_id"`
+	ServiceCategoryID int64 `field:"service_category_id" json:"service_category_id" bson:"service_category_id"`
 
-	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
-	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
-	CreateTime      time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
-	LastTime        time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
-	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	Creator         string    `field:"creator" json:"creator" bson:"creator"`
+	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 func (st *ServiceTemplate) Validate() (field string, err error) {
@@ -432,7 +434,7 @@ func (st *ServiceTemplate) Validate() (field string, err error) {
 
 // this works for the process instance which is used for a template.
 type ProcessTemplate struct {
-	ID          int64  `field:"id" json:"id,omitempty" bson:"id"`
+	ID          int64  `field:"id" json:"id" bson:"id"`
 	ProcessName string `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name"`
 	BizID       int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	// the service template's, which this process template belongs to.
@@ -440,13 +442,13 @@ type ProcessTemplate struct {
 
 	// stores a process instance's data includes all the process's
 	// properties's value.
-	Property *ProcessProperty `field:"property" json:"property,omitempty" bson:"property"`
+	Property *ProcessProperty `field:"property" json:"property" bson:"property"`
 
-	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
-	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
-	CreateTime      time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
-	LastTime        time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
-	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	Creator         string    `field:"creator" json:"creator" bson:"creator"`
+	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 func (pt *ProcessTemplate) Validate() (field string, err error) {
@@ -477,29 +479,153 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 	}
 
 	property := pt.Property
-	processInstance.ProcessName = property.ProcessName.Value
-	processInstance.ProcNum = property.ProcNum.Value
-	processInstance.StopCmd = property.StopCmd.Value
-	processInstance.RestartCmd = property.RestartCmd.Value
-	processInstance.ForceStopCmd = property.ForceStopCmd.Value
-	processInstance.FuncName = property.FuncName.Value
-	processInstance.WorkPath = property.WorkPath.Value
-	processInstance.BindIP = new(string)
-	*processInstance.BindIP = property.BindIP.Value.IP()
-	processInstance.Priority = property.Priority.Value
-	processInstance.ReloadCmd = property.ReloadCmd.Value
-	processInstance.Port = property.Port.Value
-	processInstance.PidFile = property.PidFile.Value
-	processInstance.AutoStart = property.AutoStart.Value
-	processInstance.AutoTimeGap = property.AutoTimeGapSeconds.Value
-	processInstance.StartCmd = property.StartCmd.Value
-	processInstance.FuncID = property.FuncID.Value
-	processInstance.User = property.User.Value
-	processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
-	processInstance.Protocol = property.Protocol.Value
-	processInstance.Description = property.Description.Value
-	processInstance.StartParamRegex = property.StartParamRegex.Value
+
+	processName := ""
+	processInstance.ProcessName = &processName
+	if IsAsDefaultValue(property.ProcessName.AsDefaultValue) {
+		processInstance.ProcessName = property.ProcessName.Value
+	}
+
+	processInstance.ProcNum = nil
+	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) {
+		processInstance.ProcNum = property.ProcNum.Value
+	}
+
+	processInstance.StopCmd = nil
+	if IsAsDefaultValue(property.StopCmd.AsDefaultValue) {
+		processInstance.StopCmd = property.StopCmd.Value
+	}
+
+	processInstance.RestartCmd = nil
+	if IsAsDefaultValue(property.RestartCmd.AsDefaultValue) {
+		processInstance.RestartCmd = property.RestartCmd.Value
+	}
+
+	processInstance.ForceStopCmd = nil
+	if IsAsDefaultValue(property.ForceStopCmd.AsDefaultValue) {
+		processInstance.ForceStopCmd = property.ForceStopCmd.Value
+	}
+
+	processInstance.FuncName = nil
+	if IsAsDefaultValue(property.FuncName.AsDefaultValue) {
+		processInstance.FuncName = property.FuncName.Value
+	}
+
+	processInstance.WorkPath = nil
+	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) {
+		processInstance.WorkPath = property.WorkPath.Value
+	}
+
+	processInstance.BindIP = nil
+	if IsAsDefaultValue(property.BindIP.AsDefaultValue) {
+		processInstance.BindIP = new(string)
+		*processInstance.BindIP = property.BindIP.Value.IP()
+	}
+
+	processInstance.Priority = nil
+	if IsAsDefaultValue(property.Priority.AsDefaultValue) {
+		processInstance.Priority = property.Priority.Value
+	}
+
+	processInstance.ReloadCmd = nil
+	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) {
+		processInstance.ReloadCmd = property.ReloadCmd.Value
+	}
+
+	processInstance.Port = nil
+	if IsAsDefaultValue(property.Port.AsDefaultValue) {
+		processInstance.Port = property.Port.Value
+	}
+
+	processInstance.PidFile = nil
+	if IsAsDefaultValue(property.PidFile.AsDefaultValue) {
+		processInstance.PidFile = property.PidFile.Value
+	}
+
+	processInstance.AutoStart = nil
+	if IsAsDefaultValue(property.AutoStart.AsDefaultValue) {
+		processInstance.AutoStart = property.AutoStart.Value
+	}
+
+	processInstance.AutoTimeGap = nil
+	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) {
+		processInstance.AutoTimeGap = property.AutoTimeGapSeconds.Value
+	}
+
+	processInstance.StartCmd = nil
+	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) {
+		processInstance.StartCmd = property.StartCmd.Value
+	}
+
+	processInstance.FuncID = nil
+	if IsAsDefaultValue(property.FuncID.AsDefaultValue) {
+		processInstance.FuncID = property.FuncID.Value
+	}
+
+	processInstance.User = nil
+	if IsAsDefaultValue(property.User.AsDefaultValue) {
+		processInstance.User = property.User.Value
+	}
+
+	processInstance.TimeoutSeconds = nil
+	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) {
+		processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
+	}
+
+	processInstance.Protocol = nil
+	if IsAsDefaultValue(property.Protocol.AsDefaultValue) {
+		processInstance.Protocol = property.Protocol.Value
+	}
+
+	processInstance.Description = nil
+	if IsAsDefaultValue(property.Description.AsDefaultValue) {
+		processInstance.Description = property.Description.Value
+	}
+
+	processInstance.StartParamRegex = nil
+	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) {
+		processInstance.StartParamRegex = property.StartParamRegex.Value
+	}
+
 	return processInstance
+}
+
+func FilterValidFields(fields []string) []string {
+	allFields := GetAllProcessPropertyFields()
+
+	result := make([]string, 0)
+	for _, field := range fields {
+		if util.InStrArr(allFields, field) {
+			result = append(result, field)
+		}
+	}
+	return result
+}
+
+func GetAllProcessPropertyFields() []string {
+	fields := make([]string, 0)
+	fields = append(fields, "bk_func_name")
+	fields = append(fields, "bk_process_name")
+	fields = append(fields, "bk_func_id")
+	fields = append(fields, "bk_start_param_regex")
+	fields = append(fields, "auto_time_gap")
+	fields = append(fields, "user")
+	fields = append(fields, "stop_cmd")
+	fields = append(fields, "proc_num")
+	fields = append(fields, "port")
+	fields = append(fields, "description")
+	fields = append(fields, "protocol")
+	fields = append(fields, "timeout")
+	fields = append(fields, "auto_start")
+	fields = append(fields, "pid_file")
+	fields = append(fields, "reload_cmd")
+	fields = append(fields, "restart_cmd")
+	fields = append(fields, "face_stop_cmd")
+	fields = append(fields, "work_path")
+	fields = append(fields, "bind_ip")
+	fields = append(fields, "priority")
+	fields = append(fields, "start_cmd")
+	return fields
 }
 
 // ExtractChangeInfo get changes that will be applied to process instance
@@ -787,6 +913,87 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 	return process, changed
 }
 
+// FilterEditableFields only return editable fields
+func (pt *ProcessTemplate) GetEditableFields(fields []string) []string {
+	editableFields := pt.ExtractEditableFields()
+	result := make([]string, 0)
+	for _, field := range fields {
+		if util.InStrArr(editableFields, field) {
+			result = append(result, field)
+		}
+	}
+	return result
+}
+
+func (pt *ProcessTemplate) ExtractEditableFields() []string {
+	editableFields := make([]string, 0)
+	property := pt.Property
+	if IsAsDefaultValue(property.FuncName.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_func_name")
+	}
+	if IsAsDefaultValue(property.ProcessName.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_process_name")
+	}
+	if IsAsDefaultValue(property.FuncID.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_func_id")
+	}
+	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_start_param_regex")
+	}
+	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) == false {
+		editableFields = append(editableFields, "auto_time_gap")
+	}
+	if IsAsDefaultValue(property.User.AsDefaultValue) == false {
+		editableFields = append(editableFields, "user")
+	}
+	if IsAsDefaultValue(property.StopCmd.AsDefaultValue) == false {
+		editableFields = append(editableFields, "stop_cmd")
+	}
+	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) == false {
+		editableFields = append(editableFields, "proc_num")
+	}
+	if IsAsDefaultValue(property.Port.AsDefaultValue) == false {
+		editableFields = append(editableFields, "port")
+	}
+	if IsAsDefaultValue(property.Description.AsDefaultValue) == false {
+		editableFields = append(editableFields, "description")
+	}
+	if IsAsDefaultValue(property.Protocol.AsDefaultValue) == false {
+		editableFields = append(editableFields, "protocol")
+	}
+	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) == false {
+		editableFields = append(editableFields, "timeout")
+	}
+	if IsAsDefaultValue(property.AutoStart.AsDefaultValue) == false {
+		editableFields = append(editableFields, "auto_start")
+	}
+	if IsAsDefaultValue(property.PidFile.AsDefaultValue) == false {
+		editableFields = append(editableFields, "pid_file")
+	}
+	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) == false {
+		editableFields = append(editableFields, "reload_cmd")
+	}
+	if IsAsDefaultValue(property.RestartCmd.AsDefaultValue) == false {
+		editableFields = append(editableFields, "restart_cmd")
+	}
+	if IsAsDefaultValue(property.ForceStopCmd.AsDefaultValue) == false {
+		editableFields = append(editableFields, "face_stop_cmd")
+	}
+	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) == false {
+		editableFields = append(editableFields, "work_path")
+	}
+	if IsAsDefaultValue(property.BindIP.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bind_ip")
+	}
+	if IsAsDefaultValue(property.Priority.AsDefaultValue) == false {
+		editableFields = append(editableFields, "priority")
+	}
+	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) == false {
+		editableFields = append(editableFields, "start_cmd")
+	}
+	return editableFields
+}
+
 // InstanceUpdate is used for update instance's value
 func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]interface{} {
 	data := make(map[string]interface{})
@@ -900,27 +1107,27 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 }
 
 type ProcessProperty struct {
-	ProcNum            PropertyInt64    `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty" validate:"max=10000,min=1"`
-	StopCmd            PropertyString   `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd,omitempty"`
-	RestartCmd         PropertyString   `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd,omitempty"`
-	ForceStopCmd       PropertyString   `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd,omitempty"`
-	FuncName           PropertyString   `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty" validate:"required"`
-	WorkPath           PropertyString   `field:"work_path" json:"work_path,omitempty" bson:"work_path,omitempty"`
-	BindIP             PropertyBindIP   `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip,omitempty"`
-	Priority           PropertyInt64    `field:"priority" json:"priority,omitempty" bson:"priority,omitempty" validate:"max=10000,min=1"`
-	ReloadCmd          PropertyString   `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd,omitempty"`
-	ProcessName        PropertyString   `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name,omitempty" validate:"required"`
-	Port               PropertyPort     `field:"port" json:"port,omitempty" bson:"port,omitempty"`
-	PidFile            PropertyString   `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file,omitempty"`
-	AutoStart          PropertyBool     `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start,omitempty"`
-	AutoTimeGapSeconds PropertyInt64    `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty" validate:"max=10000,min=1"`
-	StartCmd           PropertyString   `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd,omitempty"`
-	FuncID             PropertyString   `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
-	User               PropertyString   `field:"user" json:"user,omitempty" bson:"user,omitempty"`
-	TimeoutSeconds     PropertyInt64    `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty" validate:"max=10000,min=1"`
-	Protocol           PropertyProtocol `field:"protocol" json:"protocol,omitempty" bson:"protocol,omitempty"`
-	Description        PropertyString   `field:"description" json:"description,omitempty" bson:"description,omitempty"`
-	StartParamRegex    PropertyString   `field:"bk_start_param_regex" json:"bk_start_param_regex,omitempty" bson:"bk_start_param_regex,omitempty"`
+	ProcNum            PropertyInt64    `field:"proc_num" json:"proc_num" bson:"proc_num" validate:"max=10000,min=1"`
+	StopCmd            PropertyString   `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd"`
+	RestartCmd         PropertyString   `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd"`
+	ForceStopCmd       PropertyString   `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd"`
+	FuncName           PropertyString   `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" validate:"required"`
+	WorkPath           PropertyString   `field:"work_path" json:"work_path" bson:"work_path"`
+	BindIP             PropertyBindIP   `field:"bind_ip" json:"bind_ip" bson:"bind_ip"`
+	Priority           PropertyInt64    `field:"priority" json:"priority" bson:"priority" validate:"max=10000,min=1"`
+	ReloadCmd          PropertyString   `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd"`
+	ProcessName        PropertyString   `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" validate:"required"`
+	Port               PropertyPort     `field:"port" json:"port" bson:"port"`
+	PidFile            PropertyString   `field:"pid_file" json:"pid_file" bson:"pid_file"`
+	AutoStart          PropertyBool     `field:"auto_start" json:"auto_start" bson:"auto_start"`
+	AutoTimeGapSeconds PropertyInt64    `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" validate:"max=10000,min=1"`
+	StartCmd           PropertyString   `field:"start_cmd" json:"start_cmd" bson:"start_cmd"`
+	FuncID             PropertyString   `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id"`
+	User               PropertyString   `field:"user" json:"user" bson:"user"`
+	TimeoutSeconds     PropertyInt64    `field:"timeout" json:"timeout" bson:"timeout" validate:"max=10000,min=1"`
+	Protocol           PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
+	Description        PropertyString   `field:"description" json:"description" bson:"description"`
+	StartParamRegex    PropertyString   `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
 }
 
 func (pt *ProcessProperty) Validate() (field string, err error) {
@@ -981,7 +1188,8 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 }
 
 // Update all not nil field from input to pt
-func (pt *ProcessProperty) Update(input ProcessProperty) {
+// rawProperty allows us set property field to nil
+func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]interface{}) {
 	selfType := reflect.TypeOf(pt).Elem()
 	selfVal := reflect.ValueOf(pt).Elem()
 	inputVal := reflect.ValueOf(input)
@@ -992,18 +1200,23 @@ func (pt *ProcessProperty) Update(input ProcessProperty) {
 		if util.InArray(fieldName, updateIgnoreField) == true {
 			continue
 		}
+		fieldTag := selfType.Field(fieldIdx).Tag.Get("json")
+		if _, ok := rawProperty[fieldTag]; ok == false {
+			continue
+		}
 		inputField := inputVal.Field(fieldIdx)
 		selfField := selfVal.Field(fieldIdx)
 		subFieldCount := inputField.NumField()
 		// subFields: Value, AsDefaultValue
 		for subFieldIdx := 0; subFieldIdx < subFieldCount; subFieldIdx++ {
+			selfFieldValuePtr := selfField.Field(subFieldIdx)
 			inputFieldPtr := inputField.Field(subFieldIdx)
 			if inputFieldPtr.IsNil() {
+				selfFieldValuePtr.Set(inputFieldPtr)
 				continue
 			}
 			inputFieldValue := inputFieldPtr.Elem()
 
-			selfFieldValuePtr := selfField.Field(subFieldIdx)
 			if selfFieldValuePtr.Kind() == reflect.Ptr {
 				if selfFieldValuePtr.IsNil() && selfFieldValuePtr.CanSet() {
 					selfFieldValuePtr.Set(reflect.New(selfFieldValuePtr.Type().Elem()))
@@ -1133,24 +1346,24 @@ func (ti *PropertyProtocol) Validate() error {
 // ServiceInstance is a service, which created when a host binding with a service template.
 type ServiceInstance struct {
 	BizID  int64           `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
-	ID     int64           `field:"id" json:"id,omitempty" bson:"id"`
-	Name   string          `field:"name" json:"name,omitempty" bson:"name"`
-	Labels selector.Labels `field:"labels" json:"labels,omitempty" bson:"labels"`
+	ID     int64           `field:"id" json:"id" bson:"id"`
+	Name   string          `field:"name" json:"name" bson:"name"`
+	Labels selector.Labels `field:"labels" json:"labels" bson:"labels"`
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
-	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
-	HostID            int64  `field:"bk_host_id" json:"bk_host_id,omitempty" bson:"bk_host_id"`
-	InnerIP           string `field:"bk_host_innerip" json:"bk_host_innerip,omitempty" bson:"bk_host_innerip"`
+	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
+	HostID            int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
+	InnerIP           string `field:"bk_host_innerip" json:"bk_host_innerip" bson:"bk_host_innerip"`
 
 	// the module that this service belongs to.
-	ModuleID int64 `field:"bk_module_id" json:"bk_module_id,omitempty" bson:"bk_module_id"`
+	ModuleID int64 `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id"`
 
-	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
-	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
-	CreateTime      time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
-	LastTime        time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
-	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	Creator         string    `field:"creator" json:"creator" bson:"creator"`
+	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 func (si *ServiceInstance) Validate() (field string, err error) {

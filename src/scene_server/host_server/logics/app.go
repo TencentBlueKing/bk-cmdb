@@ -39,7 +39,7 @@ func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, erro
 
 	id, err := util.GetInt64ByInterface(appDetails[common.BKAppIDField])
 	if nil != err {
-		blog.Errorf("GetDefaultAppID http response format error,convert bk_biz_id to int error, err:%s, inst:%+v, rid:%s", err.Error(), appDetails, lgc.rid)
+		blog.ErrorJSON("GetDefaultAppIDWithSupplier failed, parse bk_biz_id field from app details failed, inst:%s, err:%s, rid:%s", appDetails, err.Error(), lgc.rid)
 		return -1, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 	}
 	return id, nil
@@ -57,7 +57,7 @@ func (lgc *Logics) GetDefaultAppID(ctx context.Context) (int64, errors.CCError) 
 
 	id, err := appDetails.Int64(common.BKAppIDField)
 	if nil != err {
-		blog.Errorf("GetDefaultAppID http response format error,convert bk_biz_id to int error, err:%s, inst:%+v, rid:%s", err.Error(), appDetails, lgc.rid)
+		blog.ErrorJSON("GetDefaultAppID failed, parse bk_biz_id from app detail failed, inst:%s, err:%s, rid:%s", appDetails, err.Error(), lgc.rid)
 		return -1, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 	}
 	return id, nil
@@ -200,7 +200,7 @@ func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.Condition
 	for _, info := range result.Data.Info {
 		id, err := info.Int64(common.BKAppIDField)
 		if err != nil {
-			blog.Errorf("GetAppIDByCond http response format error,convert bk_biz_id to int error, err:%s, inst:%+v  input:%+v, rid:%s", err.Error(), info, query, lgc.rid)
+			blog.ErrorJSON("GetAppIDByCond failed, convert bk_biz_id to int error, inst:%s  input:%s, err:%s, rid:%s", info, query, err.Error(), lgc.rid)
 			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 		appIDs = append(appIDs, id)

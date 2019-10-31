@@ -113,7 +113,7 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		iamIDPrefix := ""
 		skipDeregister := false
 		if err := ih.diffAndSyncInstances(header, taskName, searchCondition, iamIDPrefix, resources, skipDeregister); err != nil {
-			blog.Errorf("diffAndSyncInstances failed, err: %+v")
+			blog.Errorf("diffAndSyncInstances failed, err: %+v", err)
 		}
 	}
 	return nil

@@ -47,15 +47,6 @@ type CCErrorIf interface {
 	Load(res map[string]ErrorCode)
 }
 
-func New(errCode int, msg string) CCErrorCoder {
-	return &ccError{
-		code: errCode,
-		callback: func() string {
-			return msg
-		},
-	}
-}
-
 func NewFromStdError(err error, defaultErrCode int) CCErrorCoder {
 	ccErr, ok := err.(CCErrorCoder)
 	if ok == true {

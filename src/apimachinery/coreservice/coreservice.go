@@ -24,7 +24,6 @@ import (
 	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
 	"configcenter/src/apimachinery/coreservice/operation"
-	"configcenter/src/apimachinery/coreservice/privilege"
 	"configcenter/src/apimachinery/coreservice/process"
 	"configcenter/src/apimachinery/coreservice/settemplate"
 	"configcenter/src/apimachinery/coreservice/synchronize"
@@ -45,7 +44,6 @@ type CoreServiceClientInterface interface {
 	Operation() operation.OperationClientInterface
 	Cloud() cloudsync.CloudSyncClientInterface
 	Label() label.LabelInterface
-	Privilege() privilege.PrivilegeInterface
 	TopoGraphics() topographics.TopoGraphicsInterface
 	SetTemplate() settemplate.SetTemplateInterface
 }
@@ -104,10 +102,6 @@ func (c *coreService) Cloud() cloudsync.CloudSyncClientInterface {
 
 func (c *coreService) Label() label.LabelInterface {
 	return label.NewLabelInterfaceClient(c.restCli)
-}
-
-func (c *coreService) Privilege() privilege.PrivilegeInterface {
-	return privilege.NewPrivilegeInterface(c.restCli)
 }
 
 func (c *coreService) TopoGraphics() topographics.TopoGraphicsInterface {

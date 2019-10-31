@@ -1,17 +1,17 @@
 <template>
     <div>
         <div class="operate-menus">
-            <div class="menu-items menu-items-blue" @click="goRouter('business')">
+            <div class="menu-items menu-items-blue" @click="goRouter(MENU_RESOURCE_BUSINESS)">
                 <div class="item-left">
                     <span v-if="navData.biz">{{ navData.biz }}</span>
                     <span v-if="!navData.biz">0</span>
                     <span>{{$t('业务总数')}}</span>
                 </div>
                 <div class="item-right item-right-left">
-                    <i class="icon icon-cc-operate-biz first-icon"></i>
+                    <i class="icon icon-cc-business icon-size"></i>
                 </div>
             </div>
-            <div class="menu-items menu-items-white" @click="goRouter('resource')">
+            <div class="menu-items menu-items-white" @click="goRouter(MENU_RESOURCE_HOST)">
                 <div class="item-left">
                     <span v-if="navData.host">{{ navData.host }}</span>
                     <span v-if="!navData.host">0</span>
@@ -21,14 +21,14 @@
                     <i class="icon icon-cc-host"></i>
                 </div>
             </div>
-            <div class="menu-items menu-items-blue" @click="goRouter('model')">
+            <div class="menu-items menu-items-blue" @click="goRouter(MENU_MODEL_MANAGEMENT)">
                 <div class="item-left">
                     <span v-if="navData.model">{{ navData.model }}</span>
                     <span v-if="!navData.model">0</span>
                     <span>{{$t('模型总数')}}</span>
                 </div>
                 <div class="item-right item-right-left">
-                    <i class="menu-icon icon-cc-operate-module"></i>
+                    <i class="menu-icon icon-cc-model-total icon-size"></i>
                 </div>
             </div>
             <div class="menu-items menu-items-white">
@@ -45,7 +45,7 @@
                     </span>
                 </div>
                 <div class="item-right item-right-right">
-                    <i class="icon icon-cc-operate-exam first-icon"></i>
+                    <i class="icon icon-cc-instance-total"></i>
                 </div>
             </div>
         </div>
@@ -141,6 +141,11 @@
 
 <script>
     import Plotly from 'plotly.js'
+    import {
+        MENU_RESOURCE_BUSINESS,
+        MENU_RESOURCE_HOST,
+        MENU_MODEL_MANAGEMENT
+    } from '@/dictionary/menu-symbol'
     import { mapActions } from 'vuex'
     import vDetail from './chart-detail'
     export default {
@@ -150,6 +155,9 @@
         },
         data () {
             return {
+                MENU_RESOURCE_BUSINESS,
+                MENU_RESOURCE_HOST,
+                MENU_MODEL_MANAGEMENT,
                 tooltip: this.$t('不包含业务、主机模型及实例'),
                 isShow: false,
                 newChart: {},
@@ -577,7 +585,7 @@
                 })
             },
             goRouter (route) {
-                this.$router.push(route)
+                this.$router.push({ name: route })
             },
             dateChange (date) {
                 this.dateChart.data.maxTime = date[1]
@@ -731,8 +739,8 @@
                    color: white;
                    font-size: 24px;
                }
-               .first-icon {
-                   font-size: 20px;
+               .icon-size {
+                   font-size: 26px;
                }
             }
         }
