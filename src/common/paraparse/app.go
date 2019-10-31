@@ -45,7 +45,7 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 		switch i.Operator {
 		case common.BKDBEQ:
 			if reflect.TypeOf(i.Value).Kind() == reflect.String {
-				output[i.Field] = SpeceialCharChange(i.Value.(string))
+				output[i.Field] = SpecialCharChange(i.Value.(string))
 			} else {
 				output[i.Field] = i.Value
 			}
@@ -77,7 +77,7 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 			if i.Value == nil {
 				d[i.Operator] = i.Value
 			} else if reflect.TypeOf(i.Value).Kind() == reflect.String {
-				d[i.Operator] = SpeceialCharChange(i.Value.(string))
+				d[i.Operator] = SpecialCharChange(i.Value.(string))
 			} else {
 				d[i.Operator] = i.Value
 			}
@@ -87,7 +87,7 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 	return nil
 }
 
-func SpeceialCharChange(targetStr string) string {
+func SpecialCharChange(targetStr string) string {
 
 	re := regexp.MustCompile("[.()\\\\|\\[\\]\\-\\*{}\\^\\$\\?]")
 	delItems := re.FindAllString(targetStr, -1)
@@ -114,10 +114,10 @@ func ParseAppSearchParams(input map[string]interface{}, userFieldArr []string) m
 			targetStr := j.(string)
 			if util.InStrArr(userFieldArr, i) {
 				// field type is user, use regex
-				userName := SpeceialCharChange(targetStr)
+				userName := SpecialCharChange(targetStr)
 				d[common.BKDBLIKE] = fmt.Sprintf("^%s,|,%s,|,%s$|^%s$", userName, userName, userName, userName)
 			} else {
-				d[common.BKDBLIKE] = SpeceialCharChange(targetStr)
+				d[common.BKDBLIKE] = SpecialCharChange(targetStr)
 			}
 			output[i] = d
 
