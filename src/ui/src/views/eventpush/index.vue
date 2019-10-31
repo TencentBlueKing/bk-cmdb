@@ -22,7 +22,7 @@
         </div>
         <bk-table
             v-bkloading="{ isLoading: $loading('searchSubscription') }"
-            :data="[]"
+            :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 229"
             @sort-change="handleSortChange"

@@ -431,7 +431,6 @@
                 this.attribute.type = 'update'
             },
             handleCreate () {
-                console.log('xxxxbb')
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
                 this.slider.show = true
