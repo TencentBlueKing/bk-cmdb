@@ -15,21 +15,18 @@
                 <ul class="menu-list"
                     @mouseenter="handleShowDotMenu"
                     @mouseleave="handleHideDotMenu">
-                    <li :class="['menu-item', { 'is-disabled': !$isAuthorized($OPERATION[menu.auth]) }]"
+                    <li class="menu-item"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
-                        <span class="menu-span"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION[menu.auth]),
-                                auth: [$OPERATION[menu.auth]]
-                            }">
-                            <bk-button class="menu-button"
+                        <cmdb-auth class="menu-span" :auth="$authResources({ type: $OPERATION[menu.auth] })">
+                            <bk-button slot-scope="{ disabled }"
+                                class="menu-button"
                                 :text="true"
-                                :disabled="!$isAuthorized($OPERATION[menu.auth])"
+                                :disabled="disabled"
                                 @click="menu.handler">
                                 {{menu.name}}
                             </bk-button>
-                        </span>
+                        </cmdb-auth>
                     </li>
                 </ul>
             </cmdb-dot-menu>
