@@ -13,8 +13,9 @@
 package metadata
 
 import (
-	"configcenter/src/common"
 	"time"
+
+	"configcenter/src/common"
 )
 
 type ChartConfig struct {
