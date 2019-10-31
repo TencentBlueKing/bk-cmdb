@@ -259,18 +259,16 @@ func (ps *parseStream) userCustom() *parseStream {
 }
 
 const (
-	deleteHostBatchPattern                               = "/api/v3/hosts/batch"
-	addHostsToHostPoolPattern                            = "/api/v3/hosts/add"
-	moveHostToBusinessModulePattern                      = "/api/v3/hosts/modules"
-	moveResPoolToBizIdleModulePattern                    = "/api/v3/hosts/modules/resource/idle"
-	moveHostsToBizFaultModulePattern                     = "/api/v3/hosts/modules/fault"
-	moveHostsFromModuleToResPoolPattern                  = "/api/v3/hosts/modules/resource"
-	moveHostsToBizIdleModulePattern                      = "/api/v3/hosts/modules/idle"
-	moveHostsFromOneToAnotherBizModulePattern            = "/api/v3/hosts/modules/biz/mutilple"
-	moveHostsFromRscPoolToAppModule                      = "/api/v3/hosts/host/add/module"
-	cleanHostInSetOrModulePattern                        = "/api/v3/hosts/modules/idle/set"
-	transferHostWithAutoClearServiceInstanceRegex        = "/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/"
-	transferHostWithAutoClearServiceInstancePreviewRegex = "/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/preview"
+	deleteHostBatchPattern                    = "/api/v3/hosts/batch"
+	addHostsToHostPoolPattern                 = "/api/v3/hosts/add"
+	moveHostToBusinessModulePattern           = "/api/v3/hosts/modules"
+	moveResPoolToBizIdleModulePattern         = "/api/v3/hosts/modules/resource/idle"
+	moveHostsToBizFaultModulePattern          = "/api/v3/hosts/modules/fault"
+	moveHostsFromModuleToResPoolPattern       = "/api/v3/hosts/modules/resource"
+	moveHostsToBizIdleModulePattern           = "/api/v3/hosts/modules/idle"
+	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
+	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts/host/add/module"
+	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
 
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
@@ -285,6 +283,9 @@ var (
 	findBizHostsRegex = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts`)
 	// find host instance's object properties info
 	findHostInstanceObjectPropertiesRegexp = regexp.MustCompile(`^/api/v3/hosts/[^\s/]+/[0-9]+/?$`)
+
+	transferHostWithAutoClearServiceInstanceRegex        = regexp.MustCompile("/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/")
+	transferHostWithAutoClearServiceInstancePreviewRegex = regexp.MustCompile("/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/preview")
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -530,8 +531,8 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	if ps.hitPattern(transferHostWithAutoClearServiceInstanceRegex, http.MethodPost) ||
-		ps.hitPattern(transferHostWithAutoClearServiceInstancePreviewRegex, http.MethodPost) {
+	if ps.hitRegexp(transferHostWithAutoClearServiceInstanceRegex, http.MethodPost) ||
+		ps.hitRegexp(transferHostWithAutoClearServiceInstancePreviewRegex, http.MethodPost) {
 		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
 		bizID, err := util.GetInt64ByInterface(match[1])
 		if err != nil {
