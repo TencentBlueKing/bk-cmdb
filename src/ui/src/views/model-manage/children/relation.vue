@@ -1,16 +1,15 @@
 <template>
     <div class="model-relation-wrapper">
         <div class="options">
-            <span v-cursor="{
-                active: !$isAuthorized($OPERATION.U_MODEL),
-                auth: [$OPERATION.U_MODEL]
-            }">
-                <bk-button class="create-btn" theme="primary"
-                    :disabled="isReadOnly || !updateAuth"
+            <cmdb-auth :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })" @update-auth="handleReceiveAuth">
+                <bk-button slot-scope="{ disabled }"
+                    class="create-btn"
+                    theme="primary"
+                    :disabled="isReadOnly || disabled"
                     @click="createRelation">
                     {{$t('新建关联')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
         </div>
         <bk-table
             class="relation-table"
@@ -92,8 +91,15 @@
         components: {
             theRelationDetail
         },
+        props: {
+            modelId: {
+                type: Number,
+                default: null
+            }
+        },
         data () {
             return {
+                updateAuth: false,
                 slider: {
                     isShow: false,
                     isEdit: false,
@@ -125,14 +131,6 @@
                     return this.activeModel['bk_ispaused']
                 }
                 return false
-            },
-            updateAuth () {
-                const cantEdit = ['process', 'plat']
-                if (cantEdit.includes(this.$route.params.modelId)) {
-                    return false
-                }
-                const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         created () {
@@ -256,6 +254,9 @@
                 this.slider.relation = row
                 this.slider.title = this.$t('查看关联')
                 this.slider.isShow = true
+            },
+            handleReceiveAuth (auth) {
+                this.updateAuth = auth
             }
         }
     }
