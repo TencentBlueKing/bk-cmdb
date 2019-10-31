@@ -14,6 +14,7 @@ package operation
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"configcenter/src/common"
@@ -25,22 +26,36 @@ import (
 )
 
 func (m *operationManager) TimerFreshData(params core.ContextParams) error {
-	if err := m.ModelInst(params); err != nil {
-		blog.Errorf("TimerFreshData, count model's instance, search model info fail ,err: %v, rid: %v", err)
-		return err
-	}
-	if err := m.ModelInstChange(params); err != nil {
-		blog.Errorf("TimerFreshData, model inst change count fail, err: %v", err)
-		return err
-	}
-	if err := m.BizHostCountChange(params); err != nil {
-		blog.Errorf("TimerFreshData fail, biz host change count fail, err: %v", err)
-		return err
-	}
+
+	wg := &sync.WaitGroup{}
+	wg.Add(3)
+	go func(wg *sync.WaitGroup) {
+		if err := m.ModelInst(params, wg); err != nil {
+			blog.Errorf("TimerFreshData, count model's instance, search model info fail ,err: %v, rid: %v", err)
+			return
+		}
+	}(wg)
+
+	go func(wg *sync.WaitGroup) {
+		if err := m.ModelInstChange(params, wg); err != nil {
+			blog.Errorf("TimerFreshData, model inst change count fail, err: %v", err)
+			return
+		}
+	}(wg)
+
+	go func(wg *sync.WaitGroup) {
+		if err := m.BizHostCountChange(params, wg); err != nil {
+			blog.Errorf("TimerFreshData fail, biz host change count fail, err: %v", err)
+			return
+		}
+	}(wg)
+
+	wg.Wait()
 	return nil
 }
 
-func (m *operationManager) ModelInst(ctx core.ContextParams) error {
+func (m *operationManager) ModelInst(ctx core.ContextParams, wg *sync.WaitGroup) error {
+	defer wg.Done()
 	modelInstCount := make([]metadata.StringIDCount, 0)
 
 	opt := mapstr.MapStr{}
@@ -101,7 +116,8 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) error {
 	return nil
 }
 
-func (m *operationManager) ModelInstChange(ctx core.ContextParams) error {
+func (m *operationManager) ModelInstChange(ctx core.ContextParams, wg *sync.WaitGroup) error {
+	defer wg.Done()
 	operationLog, err := m.StatisticOperationLog(ctx)
 	if err != nil {
 		blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, ctx.ReqID)
@@ -168,7 +184,8 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) error {
 	return nil
 }
 
-func (m *operationManager) BizHostCountChange(ctx core.ContextParams) error {
+func (m *operationManager) BizHostCountChange(ctx core.ContextParams, wg *sync.WaitGroup) error {
+	defer wg.Done()
 	bizHost, err := m.SearchBizHost(ctx)
 	if err != nil {
 		blog.Errorf("search biz's host count fail, err: %v, rid: %v", err, ctx.ReqID)
@@ -205,37 +222,32 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) error {
 	now := time.Now()
 
 	for _, info := range bizHost {
-		for _, biz := range bizInfo {
-			if info.Id != biz.BizID {
-				continue
-			}
-			currentData := metadata.BizHostChart{}
-			currentData.Id.Time = now
-			currentData.Count = int64(len(info.Count))
-			if len(bizHostChange) > 0 {
-				subHour := now.Sub(bizHostChange[0].UpdateTime.Time).Hours()
-				if subHour < 24 {
-					blog.V(3).Info("Less than 24 hours since the last update, return")
-					return nil
-				}
-				if len(bizHostChange[0].Data) > 0 {
-					bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], currentData)
-				} else {
-					bizHostChange[0].Data = map[string][]metadata.BizHostChart{}
-					bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], currentData)
-				}
-				bizHostChange[0].UpdateTime.Time = time.Now()
+		currentData := metadata.BizHostChart{}
+		currentData.Id.Time = now
+		currentData.Count = info.Count
+		if len(bizHostChange) > 0 {
+			//subHour := now.Sub(bizHostChange[0].LastTime.Time).Hours()
+			//if subHour < 24 {
+			//	blog.V(3).Info("Less than 24 hours since the last update, return")
+			//	return nil
+			//}
+			if len(bizHostChange[0].Data) > 0 {
+				bizHostChange[0].Data[info.Id] = append(bizHostChange[0].Data[info.Id], currentData)
 			} else {
-				if len(firstBizHostChange.Data) > 0 {
-					firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], currentData)
-				} else {
-					firstBizHostChange.OwnerID = "0"
-					firstBizHostChange.ReportType = common.HostChangeBizChart
-					firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
-					firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], currentData)
-				}
-				firstBizHostChange.UpdateTime.Time = time.Now()
+				bizHostChange[0].Data = map[string][]metadata.BizHostChart{}
+				bizHostChange[0].Data[info.Id] = append(bizHostChange[0].Data[info.Id], currentData)
 			}
+			bizHostChange[0].LastTime.Time = time.Now()
+		} else {
+			if len(firstBizHostChange.Data) > 0 {
+				firstBizHostChange.Data[info.Id] = append(firstBizHostChange.Data[info.Id], currentData)
+			} else {
+				firstBizHostChange.OwnerID = "0"
+				firstBizHostChange.ReportType = common.HostChangeBizChart
+				firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
+				firstBizHostChange.Data[info.Id] = append(firstBizHostChange.Data[info.Id], currentData)
+			}
+			firstBizHostChange.LastTime.Time = time.Now()
 		}
 	}
 
@@ -253,7 +265,7 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) error {
 	return nil
 }
 
-func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.IntIDArrayCount, error) {
+func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.StringIDCount, error) {
 	bizHostCount := make([]metadata.IntIDArrayCount, 0)
 
 	cond := mapstr.MapStr{}
@@ -262,17 +274,51 @@ func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.Int
 		blog.Errorf("aggregate: biz' host count fail, err: %v, rid: %v", err, ctx.ReqID)
 		return nil, err
 	}
-
-	if hostCount > 0 {
-		pipeline := []M{{"$group": M{"_id": "$bk_biz_id", "count": M{"$addToSet": "$bk_host_id"}}}}
-		if err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).AggregateAll(ctx, pipeline, &bizHostCount); err != nil {
-			blog.Errorf("aggregate: biz' host count fail, err: %v, rid: %v", err, ctx.ReqID)
-			return nil, err
-		}
-		return bizHostCount, nil
+	if hostCount == 0 {
+		return nil, nil
 	}
 
-	return nil, nil
+	opt := mapstr.MapStr{"bk_data_status": M{"$ne": "disabled"}, "bk_biz_id": M{"$ne": 1}}
+	bizInfo := make([]metadata.BizInst, 0)
+	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
+		blog.Errorf("HostBizChartData, get biz info fail, err: %v, rid: %v ", err, ctx.ReqID)
+		return nil, err
+	}
+
+	pipeline := []M{{"$group": M{"_id": "$bk_biz_id", "count": M{"$addToSet": "$bk_host_id"}}}}
+	if err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).AggregateAll(ctx, pipeline, &bizHostCount); err != nil {
+		blog.Errorf("aggregate: biz' host count fail, err: %v, rid: %v", err, ctx.ReqID)
+		return nil, err
+	}
+
+	rData := make([]metadata.StringIDCount, 0)
+	allBiz := make([]string, 0)
+	matchedBiz := make([]string, 0)
+	for _, biz := range bizInfo {
+		allBiz = append(allBiz, biz.BizName)
+		for _, host := range bizHostCount {
+			if host.Id == biz.BizID {
+				info := metadata.StringIDCount{
+					Id:    biz.BizName,
+					Count: int64(len(host.Count)),
+				}
+				rData = append(rData, info)
+				matchedBiz = append(matchedBiz, biz.BizName)
+			}
+		}
+	}
+
+	for _, biz := range allBiz {
+		if !util.InStrArr(matchedBiz, biz) {
+			info := metadata.StringIDCount{
+				Id:    biz,
+				Count: 0,
+			}
+			rData = append(rData, info)
+		}
+	}
+
+	return rData, nil
 }
 
 func (m *operationManager) HostCloudChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
@@ -340,7 +386,6 @@ func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam m
 		return nil, err
 	}
 
-	respData := make([]metadata.StringIDCount, 0)
 	opt := mapstr.MapStr{"bk_data_status": M{"$ne": "disabled"}, "bk_biz_id": M{"$ne": 1}}
 	bizInfo := make([]metadata.BizInst, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
@@ -348,44 +393,7 @@ func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam m
 		return nil, err
 	}
 
-	if bizHost == nil {
-		blog.V(3).Info("table cc_ModuleHOstConfig is empty, rid: %v", ctx.ReqID)
-		for _, biz := range bizInfo {
-			info := metadata.StringIDCount{
-				Id:    biz.BizName,
-				Count: 0,
-			}
-			respData = append(respData, info)
-		}
-		return respData, err
-	}
-
-	allBiz := make([]string, 0)
-	matchedBiz := make([]string, 0)
-	for _, biz := range bizInfo {
-		allBiz = append(allBiz, biz.BizName)
-		for _, host := range bizHost {
-			if host.Id == biz.BizID {
-				info := metadata.StringIDCount{
-					Id:    biz.BizName,
-					Count: int64(len(host.Count)),
-				}
-				respData = append(respData, info)
-				matchedBiz = append(matchedBiz, biz.BizName)
-			}
-		}
-	}
-
-	for _, biz := range allBiz {
-		if !util.InStrArr(matchedBiz, biz) {
-			info := metadata.StringIDCount{
-				Id:    biz,
-				Count: 0,
-			}
-			respData = append(respData, info)
-		}
-	}
-	return respData, nil
+	return bizHost, nil
 }
 
 func (m *operationManager) UpdateInnerChartData(ctx core.ContextParams, reportType string, data interface{}) error {
@@ -393,6 +401,7 @@ func (m *operationManager) UpdateInnerChartData(ctx core.ContextParams, reportTy
 		ReportType: reportType,
 		Data:       data,
 		OwnerID:    "0",
+		LastTime:   time.Now(),
 	}
 	// 此处不用update，因为第一次初始数据的时候会导致数据写不进去
 	cond := M{common.OperationReportType: reportType}
@@ -494,7 +503,7 @@ func (m *operationManager) BizHostEmpty(ctx core.ContextParams, bizInfo []metada
 			firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
 			firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], currentData)
 		}
-		firstBizHostChange.UpdateTime.Time = time.Now()
+		firstBizHostChange.LastTime.Time = time.Now()
 	}
 
 	if err = m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, firstBizHostChange); err != nil {
