@@ -49,7 +49,6 @@ export default new Vue({
                 const types = Array.isArray(item.data.type) ? item.data.type : [item.data.type]
                 const metas = types.map(type => {
                     const meta = GET_AUTH_META(type, item.data)
-                    delete meta.scope
                     return meta
                 })
                 return metas
