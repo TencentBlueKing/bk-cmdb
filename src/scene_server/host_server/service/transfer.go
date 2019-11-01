@@ -286,13 +286,26 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 		return nil, ccErr
 	}
 	innerModuleIDs := make([]int64, 0)
+	defaultInternalModuleID := int64(0)
 	for _, module := range innerModules {
 		innerModuleIDs = append(innerModuleIDs, module.ModuleID)
+		if module.Default == int64(common.DefaultResModuleFlag) {
+			defaultInternalModuleID = module.ModuleID
+		}
+	}
+	if option.DefaultInternalModule != 0 && util.InArray(option.DefaultInternalModule, innerModuleIDs) == false {
+		return nil, srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, "default_internal_module")
+	}
+	if option.DefaultInternalModule != 0 {
+		defaultInternalModuleID = option.DefaultInternalModule
 	}
 
 	transferPlans := make([]metadata.HostTransferPlan, 0)
 	for hostID, currentInModules := range hostModulesIDMap {
 		transferPlan := generateTransferPlan(currentInModules, removeFromModules, option.AddToModules)
+		if len(transferPlan.FinalModules) == 0 {
+			transferPlan.FinalModules = []int64{defaultInternalModuleID}
+		}
 		transferPlan.HostID = hostID
 		// check module compatibility
 		finalModuleCount := len(transferPlan.FinalModules)
