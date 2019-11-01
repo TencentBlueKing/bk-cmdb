@@ -1133,16 +1133,17 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
 	// parse platID from url
-	platID, err := util.GetInt64ByInterface(req.PathParameter(common.BKCloudIDField))
+	platIDStr := req.PathParameter(common.BKCloudIDField)
+	platID, err := util.GetInt64ByInterface(platIDStr)
 	if nil != err {
-		blog.Errorf("UpdatePlat failed, parse platID failed, err: %s, rid:%s", err.Error(), srvData.rid)
-		ccErr := srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, err.Error())
+		blog.Infof("UpdatePlat failed, parse platID failed, platID: %s, err: %s, rid:%s", platIDStr, err.Error(), srvData.rid)
+		ccErr := srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
 	if 0 == platID {
-		blog.Errorf("UpdatePlat failed, platID invalid, platID:%+v, rid:%s", platID, srvData.rid)
-		ccErr := srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		blog.Infof("UpdatePlat failed, update built in cloud area forbidden, platID:%+v, rid:%s", platID, srvData.rid)
+		ccErr := srvData.ccErr.Error(common.CCErrTopoUpdateBuiltInCloudForbidden)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
