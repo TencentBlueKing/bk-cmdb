@@ -56,8 +56,10 @@
             v-transfer-dom
             :width="450"
             :title="slider.title"
-            :is-show.sync="slider.isShow">
+            :is-show.sync="slider.isShow"
+            :before-close="handleSliderBeforeClose">
             <the-verification-detail
+                ref="verificationForm"
                 slot="content"
                 v-if="slider.isShow"
                 :is-read-only="isReadOnly || slider.isReadOnly"
@@ -65,7 +67,7 @@
                 :verification="slider.verification"
                 :attribute-list="attributeList"
                 @save="saveVerification"
-                @cancel="slider.isShow = false">
+                @cancel="handleSliderBeforeClose">
             </the-verification-detail>
         </bk-sideslider>
     </div>
@@ -98,7 +100,7 @@
                 'isInjectable'
             ]),
             isTopoModel () {
-                return this.activeModel.bk_classification_id === 'bk_biz_topo'
+                return ['bk_biz_topo', 'bk_organization'].includes(this.activeModel.bk_classification_id)
             },
             isReadOnly () {
                 if (this.activeModel) {
@@ -212,6 +214,27 @@
                 this.slider.isEdit = true
                 this.slider.isReadOnly = true
                 this.slider.isShow = true
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = Object.keys(this.$refs.verificationForm.changedValues).length
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
+                            confirmFn: () => {
+                                this.slider.isShow = false
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.slider.isShow = false
+                return true
             }
         }
     }
