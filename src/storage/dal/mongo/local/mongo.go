@@ -35,6 +35,7 @@ import (
 type Mongo struct {
 	dbc    *mongo.Client
 	dbname string
+	sess mongo.Session
 }
 
 var _ dal.DB = new(Mongo)
@@ -191,6 +192,12 @@ func (f *Find) Limit(limit uint64) dal.Find {
 
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
+	// 设置ctx的Session对象,用来处理事务
+	ctx, err := f.Mongo.ContextWithSession(ctx)
+	if err != nil {
+		return err
+	}
+
 	start := time.Now()
 	findOpts := &options.FindOptions{}
 	if len(f.projection) != 0 {
@@ -223,6 +230,12 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
+	// 设置ctx的Session对象,用来处理事务
+	ctx, err := f.Mongo.ContextWithSession(ctx)
+	if err != nil {
+		return err
+	}
+
 	start := time.Now()
 	rid := ctx.Value(common.ContextRequestIDField)
 	defer blog.V(5).InfoDepthf(1, "Find one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
@@ -259,6 +272,12 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 
 // Count 统计数量(非事务)
 func (f *Find) Count(ctx context.Context) (uint64, error) {
+	// 设置ctx的Session对象,用来处理事务
+	ctx, err := f.Mongo.ContextWithSession(ctx)
+	if err != nil {
+		return uint64(0), err
+	}
+
 	if f.filter == nil {
 		f.filter = bson.M{}
 	}
@@ -269,9 +288,15 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
+	// 设置ctx的Session对象,用来处理事务
+	ctx, err := c.Mongo.ContextWithSession(ctx)
+	if err != nil {
+		return err
+	}
+
 	rows := util.ConverToInterfaceSlice(docs)
 
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)
+	_, err = c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)
 	return err
 
 }
@@ -346,8 +371,97 @@ type Idgen struct {
 	SequenceID uint64 `bson:"SequenceID"`
 }
 
+// SetContextSession 设置context里的Session对象,事务的操作是在该Session上下文中进行的
+func (c *Mongo) ContextWithSession(ctx context.Context) (context.Context, error) {
+	se := &mongo.SessionExposer{}
+	// 如果当前Mongo对象自身开启了事务会话,则用自身会话
+	if c.sess != nil {
+		return se.ContextWithSession(ctx, c.sess), nil
+	}
+	// 如果context中有传递的事务信息，则用传递的会话
+	if opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption); ok {
+		info := &mongo.SessionInfo{SessionID:opt.SessionID, TxnNumber:opt.TxnNumber}
+		return c.GetSameSessionContext(ctx, info)
+	}
+	return ctx, nil
+}
+
+// GetSameSessionContext 根据info获取具有一样session上下文的context
+func (c *Mongo) GetSameSessionContext(ctx context.Context, info *mongo.SessionInfo) (context.Context, error) {
+	sess, err := c.dbc.StartSession()
+	if err != nil {
+		return nil, err
+	}
+	err = sess.StartTransaction()
+	if err != nil {
+		return nil, err
+	}
+
+	// update session according info
+	se := &mongo.SessionExposer{}
+	err = se.SetSessionInfo(sess, info)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx = se.ContextWithSession(ctx, sess)
+	return ctx, nil
+}
+
+// StartSession 开启新会话
+func (c *Mongo) StartSession() (dal.DB, error) {
+	sess, err := c.dbc.StartSession()
+	if err != nil {
+		return nil, err
+	}
+	m := c.Clone().(*Mongo)
+	m.sess = sess
+	return m, err
+}
+
+// EndSession 结束会话
+func (c *Mongo) EndSession(ctx context.Context) error {
+	if c.sess == nil {
+		return dal.ErrSessionNotStarted
+	}
+	c.sess.EndSession(ctx)
+	return nil
+}
+
+// StartTransaction 开启新事务
+func (c *Mongo) StartTransaction() error {
+	if c.sess == nil {
+		return dal.ErrSessionNotStarted
+	}
+	err := c.sess.StartTransaction()
+	if err != nil {
+		return err
+	}
+	// activate transaction number in mongo server
+	coll := c.Table("111")
+	resultMany := make([]map[string]interface{}, 0)
+	coll.Find(nil).All(context.Background(), &resultMany)
+	return nil
+}
+
+// CommitTransaction 提交事务
+func (c *Mongo) CommitTransaction(ctx context.Context) error {
+	if c.sess == nil {
+		return dal.ErrSessionNotStarted
+	}
+	return c.sess.CommitTransaction(ctx)
+}
+
+// AbortTransaction 取消事务
+func (c *Mongo) AbortTransaction(ctx context.Context) error {
+	if c.sess == nil {
+		return dal.ErrSessionNotStarted
+	}
+	return c.sess.AbortTransaction(ctx)
+}
+
 // Start 开启新事务
-func (c *Mongo) Start(ctx context.Context) (dal.Transcation, error) {
+func (c *Mongo) Start(ctx context.Context) (dal.Transaction, error) {
 	return c, nil
 }
 
@@ -362,8 +476,17 @@ func (c *Mongo) Abort(ctx context.Context) error {
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
-func (c *Mongo) TxnInfo() *types.Transaction {
-	return &types.Transaction{}
+func (c *Mongo) TxnInfo() (*types.Transaction, error) {
+	if c.sess == nil {
+		return nil, dal.ErrSessionNotStarted
+	}
+	se := mongo.SessionExposer{}
+	info, err := se.GetSessionInfo(c.sess)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.Transaction{SessionID:info.SessionID, TxnNumber:info.TxnNumber},nil
 }
 
 // HasTable 判断是否存在集合  TOOD test
@@ -466,6 +589,12 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 
 // AggregateAll aggregate all operation
 func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
+	// 设置ctx的Session对象,用来处理事务
+	ctx, err := c.Mongo.ContextWithSession(ctx)
+	if err != nil {
+		return err
+	}
+
 	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)
 	if err != nil {
 		return err
@@ -476,6 +605,12 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 
 // AggregateOne aggregate one operation
 func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
+	// 设置ctx的Session对象,用来处理事务
+	ctx, err := c.Mongo.ContextWithSession(ctx)
+	if err != nil {
+		return err
+	}
+
 	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)
 	if err != nil {
 		return err

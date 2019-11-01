@@ -98,7 +98,7 @@ func (c Config) GetMongoClient(engine *backbone.Engine) (db dal.RDB, err error) 
 	return
 }
 
-func (c Config) GetTransactionClient(engine *backbone.Engine) (client dal.Transcation, err error) {
+func (c Config) GetTransactionClient(engine *backbone.Engine) (client dal.Transaction, err error) {
 	client, err = local.NewMgo(c.BuildURI(), time.Minute)
 
 	if err != nil {
