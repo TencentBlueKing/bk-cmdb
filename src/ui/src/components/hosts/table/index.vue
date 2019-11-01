@@ -8,17 +8,15 @@
                         @click="handleMultipleEdit">
                         {{$t('编辑')}}
                     </bk-button>
-                    <span class="inline-block-middle mr10"
-                        v-cursor="{
-                            active: !$isAuthorized(transferAuth),
-                            auth: [transferAuth]
-                        }">
-                        <bk-button class="options-button" theme="default"
-                            :disabled="!table.checked.length || !$isAuthorized(transferAuth)"
+                    <cmdb-auth class="inline-block-middle mr10" :auth="transferAuthResources">
+                        <bk-button slot-scope="{ disabled }"
+                            class="options-button"
+                            theme="default"
+                            :disabled="!table.checked.length || disabled"
                             @click="transfer.show = true">
                             {{$t('转移')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                     <bk-button class="options-button mr10"
                         theme="default"
                         type="submit"
@@ -304,6 +302,12 @@
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapState('hosts', ['collectionList']),
+            transferAuthResources () {
+                const auth = this.transferAuth
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
+            },
             customColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },

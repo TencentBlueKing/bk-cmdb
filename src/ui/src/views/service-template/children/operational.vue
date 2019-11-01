@@ -55,38 +55,36 @@
             <h3>{{$t('服务进程')}}</h3>
             <div class="precess-box">
                 <div class="process-create">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized(auth),
-                            auth: [auth]
-                        }">
-                        <bk-button class="create-btn" :disabled="!$isAuthorized(auth)" @click="handleCreateProcess">
+                    <cmdb-auth :auth="$authResources(auth)">
+                        <bk-button slot-scope="{ disabled }"
+                            class="create-btn"
+                            theme="default"
+                            :disabled="disabled"
+                            @click="handleCreateProcess">
                             <i class="bk-icon icon-plus"></i>
                             <span>{{$t('新建进程')}}</span>
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                     <span class="create-tips">{{$t('新建进程提示')}}</span>
                 </div>
                 <process-table
                     v-if="processList.length"
                     :loading="processLoading"
                     :properties="properties"
+                    :auth="auth"
                     @on-edit="handleUpdateProcess"
                     @on-delete="handleDeleteProcess"
                     :list="processList">
                 </process-table>
                 <div class="btn-box">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized(auth),
-                            auth: [auth]
-                        }">
-                        <bk-button theme="primary"
-                            :disabled="!$isAuthorized(auth)"
+                    <cmdb-auth class="mr5" :auth="$authResources(auth)">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            :disabled="disabled"
                             @click="handleSubmit">
                             {{isCreatedType ? $t('提交') : $t('保存')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                     <bk-button @click="handleReturn">{{$t('取消')}}</bk-button>
                 </div>
             </div>
@@ -100,6 +98,7 @@
             <template slot="content" v-if="slider.show">
                 <process-form
                     ref="processForm"
+                    :auth="auth"
                     :properties="properties"
                     :property-groups="propertyGroups"
                     :inst="attribute.inst.edit"
@@ -198,9 +197,14 @@
             },
             auth () {
                 if (this.isCreatedType) {
-                    return this.$OPERATION.C_SERVICE_TEMPLATE
+                    return {
+                        type: this.$OPERATION.C_SERVICE_TEMPLATE
+                    }
                 }
-                return this.$OPERATION.U_SERVICE_TEMPLATE
+                return {
+                    resource_id: Number(this.templateId) || null,
+                    type: this.$OPERATION.U_SERVICE_TEMPLATE
+                }
             }
         },
         async created () {
