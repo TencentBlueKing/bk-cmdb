@@ -139,7 +139,8 @@
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'edit',
-                        templateId: row.id
+                        templateId: row.id,
+                        isApplied: !!row.set_instance_count
                     }
                 })
             },
@@ -180,7 +181,8 @@
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'view',
-                        templateId: row.id
+                        templateId: row.id,
+                        isApplied: !!row.set_instance_count
                     }
                 })
             }

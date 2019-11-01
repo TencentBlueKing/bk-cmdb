@@ -76,6 +76,21 @@
                 <bk-button class="options-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </template>
         </div>
+        <bk-dialog v-model="showUpdateInfo"
+            :esc-close="false"
+            :mask-close="false"
+            :show-footer="false"
+            :on-close="handleBackToList">
+            <div class="update-alert-layout">
+                <i class="bk-icon icon-check-1"></i>
+                <h3>{{$t('修改成功')}}</h3>
+                <div class="btns">
+                    <bk-button class="mr10" theme="primary" v-if="isApplied" @click="handleToSyncInstance">{{$t('同步实例')}}</bk-button>
+                    <bk-button class="mr10" :theme="isApplied ? 'default' : 'primary'" @click="handleToCreateInstance">{{$t('创建实例')}}</bk-button>
+                    <bk-button theme="default" @click="handleBackToList">{{$t('返回列表')}}</bk-button>
+                </div>
+            </div>
+        </bk-dialog>
     </section>
 </template>
 
@@ -93,12 +108,16 @@
                 serviceChange: false,
                 services: [],
                 validateServices: false,
-                insideMode: null
+                insideMode: null,
+                showUpdateInfo: false
             }
         },
         computed: {
             mode () {
                 return this.insideMode || this.$route.params.mode
+            },
+            isApplied () {
+                return this.$route.params.isApplied
             },
             isViewMode () {
                 return this.mode === 'view'
@@ -196,7 +215,7 @@
                         this.alertCreateInfo()
                     } else {
                         await this.updateSetTemplate()
-                        this.alertUpdateInfo()
+                        this.showUpdateInfo = true
                     }
                 } catch (e) {
                     console.error(e)
@@ -221,7 +240,7 @@
                 this.$bkInfo({
                     type: 'success',
                     title: this.$t('创建成功'),
-                    okText: this.$t('创建服务实例'),
+                    okText: this.$t('创建实例'),
                     cancelText: this.$t('返回列表'),
                     confirmFn: () => {
                         this.$router.replace({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
@@ -247,34 +266,6 @@
                     }
                 })
             },
-            alertUpdateInfo () {
-                if (this.insideMode) {
-                    this.insideMode = null
-                    this.$success(this.$t('修改成功'))
-                } else {
-                    this.$bkInfo({
-                        type: 'success',
-                        title: this.$t('修改成功'),
-                        okText: this.$t('同步实例'),
-                        cancelText: this.$t('返回列表'),
-                        confirmFn: () => {
-                            this.$router.replace({
-                                name: 'setTemplateConfig',
-                                params: {
-                                    mode: 'view',
-                                    templateId: this.templateId
-                                },
-                                query: {
-                                    tab: 'instance'
-                                }
-                            })
-                        },
-                        cancelFn: () => {
-                            this.$router.replace({ name: MENU_BUSINESS_SET_TEMPLATE })
-                        }
-                    })
-                }
-            },
             handleCancel () {
                 if (this.insideMode) {
                     this.insideMode = null
@@ -290,6 +281,24 @@
             },
             handleServiceSelected (services) {
                 this.services = services
+            },
+            handleBackToList () {
+                this.$router.replace({ name: MENU_BUSINESS_SET_TEMPLATE })
+            },
+            handleToCreateInstance () {
+                this.$router.replace({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
+            },
+            handleToSyncInstance () {
+                this.$router.replace({
+                    name: 'setTemplateConfig',
+                    params: {
+                        mode: 'view',
+                        templateId: this.templateId
+                    },
+                    query: {
+                        tab: 'instance'
+                    }
+                })
             }
         }
     }
@@ -351,6 +360,29 @@
         font-size: 0;
         .options-confirm {
             margin-right: 10px;
+        }
+    }
+    .update-alert-layout {
+        text-align: center;
+        .bk-icon {
+            width: 58px;
+            height: 58px;
+            line-height: 58px;
+            font-size: 30px;
+            color: #fff;
+            border-radius: 50%;
+            background-color: #2dcb56;
+            margin: 8px 0 15px;
+        }
+        h3 {
+            font-size: 24px;
+            color: #313238;
+            font-weight: normal;
+            padding-bottom: 32px;
+        }
+        .btns {
+            font-size: 0;
+            padding-bottom: 20px;
         }
     }
 </style>
