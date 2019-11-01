@@ -6,43 +6,37 @@
                 <p class="empty-text">{{$t('模板未定义进程', { template: (moduleNode || {}).name })}}</p>
                 <p class="empty-tips">{{$t('模板未定义进程提示')}}</p>
                 <div class="empty-options">
-                    <span style="display: inline-block;"
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_SERVICE_TEMPLATE),
-                            auth: [$OPERATION.U_SERVICE_TEMPLATE]
-                        }">
-                        <bk-button class="empty-button" theme="primary"
-                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_TEMPLATE)"
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_SERVICE_TEMPLATE })">
+                        <bk-button slot-scope="{ disabled }"
+                            class="empty-button"
+                            theme="primary"
+                            :disabled="disabled"
                             @click="goToTemplate">
                             {{$t('跳转模板添加进程')}}
                         </bk-button>
-                    </span>
-                    <span style="display: inline-block;"
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
-                            auth: [$OPERATION.C_SERVICE_INSTANCE]
-                        }">
-                        <bk-button class="empty-button" theme="default"
-                            :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                    </cmdb-auth>
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                        <bk-button slot-scope="{ disabled }"
+                            class="empty-button"
+                            theme="default"
+                            :disabled="disabled"
                             @click="handleAddHost">
                             {{$t('添加主机')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                 </div>
             </div>
-            <div class="empty-content" v-else-if="!isSearching"
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
-                    auth: [$OPERATION.C_SERVICE_INSTANCE]
-                }">
-                <i class="bk-icon icon-plus empty-plus"
-                    @click="handleCreateServiceInstance">
-                </i>
-                <p class="empty-tips">
-                    {{$t('创建实例提示')}}
-                    <a class="text-primary" href="javascript:void(0)" @click="handleCreateServiceInstance">{{$t('立即添加')}}</a>
-                </p>
-            </div>
+            <cmdb-auth v-else-if="!isSearching" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                <template slot-scope="{ disabled }">
+                    <i class="bk-icon icon-plus empty-plus"
+                        @click="handleCreateServiceInstance(disabled)">
+                    </i>
+                    <p class="empty-tips">
+                        {{$t('创建实例提示')}}
+                        <a class="text-primary" href="javascript:void(0)" @click="handleCreateServiceInstance(disabled)">{{$t('立即添加')}}</a>
+                    </p>
+                </template>
+            </cmdb-auth>
         </template>
         <host-selector
             :visible.sync="visible"
@@ -183,8 +177,8 @@
                     console.error(e)
                 }
             },
-            handleCreateServiceInstance () {
-                if (!this.$isAuthorized(this.$OPERATION.C_SERVICE_INSTANCE)) return
+            handleCreateServiceInstance (disabled) {
+                if (disabled) return
                 if (this.withTemplate) {
                     this.handleAddHost()
                 } else {

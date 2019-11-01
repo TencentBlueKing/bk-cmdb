@@ -55,17 +55,15 @@
         </div>
         <div class="form-options" :class="{ sticky: scrollbar }">
             <slot name="details-options">
-                <span class="inline-block-middle"
-                    v-cursor="{
-                        active: !$isAuthorized(saveAuth),
-                        auth: [saveAuth]
-                    }">
-                    <bk-button class="button-save" theme="primary"
-                        :disabled="!$isAuthorized(saveAuth) || !hasChange || $loading()"
+                <cmdb-auth class="inline-block-middle" :auth="authResources">
+                    <bk-button slot-scope="{ disabled }"
+                        class="button-save"
+                        theme="primary"
+                        :disabled="disabled || !hasChange || $loading()"
                         @click="handleSave">
                         {{$t('保存')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
         </div>
@@ -132,6 +130,12 @@
             },
             hasAvaliableGroups () {
                 return this.groupedProperties.some(properties => !!properties.length)
+            },
+            authResources () {
+                const auth = this.saveAuth
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
             }
         },
         watch: {

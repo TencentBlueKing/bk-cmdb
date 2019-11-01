@@ -21,18 +21,17 @@
                 <label class="userapi-label">
                     {{$t('查询名称')}}<span class="color-danger"> * </span>
                 </label>
-                <div v-cursor="{
-                    active: !editable,
-                    auth: [$OPERATION.U_CUSTOM_QUERY]
-                }">
-                    <bk-input type="text" class="cmdb-form-input"
+                <cmdb-auth style="display: block;" :auth="authResources">
+                    <bk-input slot-scope="{ disabled }"
+                        type="text"
+                        class="cmdb-form-input"
                         v-model.trim="name"
                         :name="$t('查询名称')"
                         :placeholder="$t('请输入xx', { name: $t('查询名称') })"
-                        :disabled="!editable"
+                        :disabled="disabled"
                         v-validate="'required|length:256'">
                     </bk-input>
-                </div>
+                </cmdb-auth>
                 <span v-show="errors.has($t('查询名称'))" class="color-danger">{{ errors.first($t('查询名称')) }}</span>
             </div>
             <div class="query-conditons">
@@ -45,88 +44,83 @@
                         <label class="filter-label">
                             {{property.objName}} - {{property.propertyName}}
                         </label>
-                        <div class="filter-content clearfix" :class="{ disabled: !editable }"
-                            v-cursor="{
-                                active: !editable,
-                                auth: [$OPERATION.U_CUSTOM_QUERY]
-                            }">
-                            <filter-field-operator class="filter-field-operator fl"
-                                v-if="!['date', 'time'].includes(property.propertyType)"
-                                :type="getOperatorType(property)"
-                                :disabled="!editable"
-                                v-model="property.operator">
-                            </filter-field-operator>
-                            <cmdb-form-enum class="filter-field-value filter-field-enum fl"
-                                v-if="property.propertyType === 'enum'"
-                                :allow-clear="true"
-                                :options="getEnumOptions(property)"
-                                :disabled="!editable"
-                                v-model="property.value">
-                            </cmdb-form-enum>
-                            <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
-                                v-else-if="property.propertyType === 'bool'"
-                                v-model="property.value"
-                                :disabled="!editable">
-                            </cmdb-form-bool-input>
-                            <cmdb-search-input class="filter-field-value filter-field-char fl" :style="{ '--index': 99 - index }"
-                                v-else-if="['singlechar', 'longchar'].includes(property.propertyType)"
-                                v-model="property.value"
-                                :disabled="!editable">
-                            </cmdb-search-input>
-                            <cmdb-form-date-range class="filter-field-value"
-                                v-else-if="['date', 'time'].includes(property.propertyType)"
-                                v-model="property.value">
-                            </cmdb-form-date-range>
-                            <cmdb-cloud-selector
-                                v-else-if="property.propertyId === 'bk_cloud_id'"
-                                class="filter-field-value fl"
-                                :allow-clear="true"
-                                v-model="property.value">
-                            </cmdb-cloud-selector>
-                            <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
-                                v-else
-                                :is="`cmdb-form-${property.propertyType}`"
-                                :disabled="!editable"
-                                v-model="property.value">
-                            </component>
-                            <i class="userapi-delete fr bk-icon icon-close"
-                                v-if="editable"
-                                @click="deleteUserProperty(property, index)">
-                            </i>
-                        </div>
+                        <cmdb-auth style="display: block;"
+                            :auth="authResources">
+                            <template slot-scope="{ disabled }">
+                                <div class="filter-content clearfix" :class="{ disabled: disabled }">
+                                    <filter-field-operator class="filter-field-operator fl"
+                                        v-if="!['date', 'time'].includes(property.propertyType)"
+                                        :type="getOperatorType(property)"
+                                        :disabled="disabled"
+                                        v-model="property.operator">
+                                    </filter-field-operator>
+                                    <cmdb-form-enum class="filter-field-value filter-field-enum fl"
+                                        v-if="property.propertyType === 'enum'"
+                                        :allow-clear="true"
+                                        :options="getEnumOptions(property)"
+                                        :disabled="disabled"
+                                        v-model="property.value">
+                                    </cmdb-form-enum>
+                                    <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
+                                        v-else-if="property.propertyType === 'bool'"
+                                        v-model="property.value"
+                                        :disabled="disabled">
+                                    </cmdb-form-bool-input>
+                                    <cmdb-search-input class="filter-field-value filter-field-char fl" :style="{ '--index': 99 - index }"
+                                        v-else-if="['singlechar', 'longchar'].includes(property.propertyType)"
+                                        v-model="property.value"
+                                        :disabled="disabled">
+                                    </cmdb-search-input>
+                                    <cmdb-form-date-range class="filter-field-value"
+                                        v-else-if="['date', 'time'].includes(property.propertyType)"
+                                        v-model="property.value">
+                                    </cmdb-form-date-range>
+                                    <cmdb-cloud-selector
+                                        v-else-if="property.propertyId === 'bk_cloud_id'"
+                                        class="filter-field-value fl"
+                                        :allow-clear="true"
+                                        v-model="property.value">
+                                    </cmdb-cloud-selector>
+                                    <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
+                                        v-else
+                                        :is="`cmdb-form-${property.propertyType}`"
+                                        :disabled="disabled"
+                                        v-model="property.value">
+                                    </component>
+                                    <i class="userapi-delete fr bk-icon icon-close"
+                                        v-if="!disabled"
+                                        @click="deleteUserProperty(property, index)">
+                                    </i>
+                                </div>
+                            </template>
+                        </cmdb-auth>
                     </li>
                 </ul>
-                <span class="inline-block-middle"
-                    v-cursor="{
-                        active: !editable,
-                        auth: [$OPERATION.U_CUSTOM_QUERY]
-                    }">
-                    <bk-button class="add-conditon-btn"
+                <cmdb-auth :auth="authResources">
+                    <bk-button slot-scope="{ disabled }"
+                        class="add-conditon-btn"
                         theme="primary"
                         :text="true"
-                        :disabled="!editable"
+                        :disabled="disabled"
                         icon="icon-plus-circle"
                         @click="handleAddQueryCondition">
                         {{$t('继续添加')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </div>
         </div>
-
         <div class="userapi-btn-group">
-            <span class="inline-block-middle"
-                v-cursor="{
-                    active: !editable,
-                    auth: [$OPERATION.U_CUSTOM_QUERY]
-                }">
-                <bk-button theme="primary" class="userapi-btn"
+            <cmdb-auth :auth="authResources">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
+                    class="userapi-btn"
                     v-bk-tooltips="$t('保存后的查询可通过接口调用生效')"
                     :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
-                    :disabled="errors.any() || !editable"
+                    :disabled="errors.any() || disabled"
                     @click="saveUserAPI">
                     {{$t('保存')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <bk-button class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
                 {{$t('预览')}}
             </bk-button>
@@ -242,17 +236,8 @@
             ...mapGetters([
                 'supplierAccount'
             ]),
-            editable () {
-                if (this.type === 'update') {
-                    return this.$isAuthorized(this.$OPERATION.U_CUSTOM_QUERY)
-                }
-                return true
-            },
             filterList () {
                 return this.filter.allList.filter(item => {
-                    // if (['foreignkey'].includes(item['bk_property_type'])) {
-                    //     return false
-                    // }
                     return !this.userProperties.some(property => {
                         return item['bk_obj_id'] === property.objId && item['bk_property_id'] === property.propertyId
                     })
@@ -357,6 +342,12 @@
             },
             selectedProperties () {
                 return this.userProperties.map(property => `${property.objId}-${property.propertyId}`)
+            },
+            authResources () {
+                if (this.type === 'update') {
+                    return this.$authResources({ type: this.$OPERATION.U_CUSTOM_QUERY })
+                }
+                return {}
             }
         },
         async created () {
@@ -606,7 +597,6 @@
                     }
                 })
                 this.filter.allList = [...hostList, ...setList, ...moduleList]
-                // const sliderProperty = this.filter.allList.filter(item => !['foreignkey'].includes(item['bk_property_type']))
                 const propertyMap = {}
                 this.filter.allList.forEach(item => {
                     if (propertyMap.hasOwnProperty(item['bk_obj_id'])) {
