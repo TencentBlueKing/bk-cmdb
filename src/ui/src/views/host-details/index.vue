@@ -179,9 +179,15 @@
         .details-tab {
             height: calc(100% - var(--infoHeight)) !important;
             min-height: 400px;
-            /deep/ .bk-tab-header {
-                padding: 0;
-                margin: 0 20px;
+            /deep/ {
+                .bk-tab-header {
+                    padding: 0;
+                    margin: 0 20px;
+                }
+                .bk-tab-section {
+                    @include scrollbar-y;
+                    padding-bottom: 10px;
+                }
             }
         }
     }
