@@ -100,7 +100,7 @@
                 'isInjectable'
             ]),
             isTopoModel () {
-                return this.activeModel.bk_classification_id === 'bk_biz_topo'
+                return ['bk_biz_topo', 'bk_organization'].includes(this.activeModel.bk_classification_id)
             },
             isReadOnly () {
                 if (this.activeModel) {
