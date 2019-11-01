@@ -246,9 +246,10 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	}
 
 	cursor, err := f.dbc.Database(f.dbname).Collection(f.collName).Find(ctx, f.filter, findOpts)
-	if err == mongo.ErrNoDocuments {
-		err = dal.ErrDocumentNotFound
+	if err != nil {
+		return err
 	}
+
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
 		return cursor.Decode(result)
