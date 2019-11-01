@@ -105,6 +105,8 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/modules/resource").To(s.MoveHostToResourcePool))
 	api.Route(api.POST("/hosts/modules/resource/idle").To(s.AssignHostToApp))
 	api.Route(api.POST("/host/add/module").To(s.AssignHostToAppModule))
+	api.Route(api.POST("/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/").To(s.TransferHostWithAutoClearServiceInstance))
+	api.Route(api.POST("/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview/").To(s.TransferHostWithAutoClearServiceInstancePreview))
 	api.Route(api.POST("/usercustom").To(s.SaveUserCustom))
 	api.Route(api.POST("/usercustom/user/search").To(s.GetUserCustom))
 	api.Route(api.POST("/usercustom/default/search").To(s.GetDefaultCustom))
