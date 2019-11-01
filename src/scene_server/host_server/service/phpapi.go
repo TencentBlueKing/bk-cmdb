@@ -1026,6 +1026,8 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	// read supplier account from header
+	input[common.BkSupplierAccount] = util.GetOwnerID(req.Request.Header)
 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeResourceCreate(srvData.ctx, srvData.header, 0, authmeta.Plat); err != nil {
