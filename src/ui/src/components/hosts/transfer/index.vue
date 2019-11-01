@@ -6,10 +6,14 @@
                 <cmdb-business-selector class="business-selector" v-model="businessId" disabled>
                 </cmdb-business-selector>
             </div>
+            <cmdb-auth style="display: none;"
+                :auth="transferResourceAuthData"
+                @update-auth="handleReceiveAuth">
+            </cmdb-auth>
             <div class="tree-layout">
                 <bk-big-tree ref="topoTree" class="topo-tree"
                     v-cursor="{
-                        active: !$isAuthorized(transferResourceAuth),
+                        active: !hasTransferResourceAuth,
                         auth: [transferResourceAuth],
                         selector: '.is-root.is-first-child'
                     }"
@@ -99,10 +103,17 @@
                     data: []
                 },
                 selectedModules: [],
-                increment: true
+                increment: true,
+                hasTransferResourceAuth: false
             }
         },
         computed: {
+            transferResourceAuthData () {
+                const auth = this.transferResourceAuth
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
+            },
             hostIds () {
                 return this.selectedHosts.map(host => host['host']['bk_host_id'])
             },
@@ -211,7 +222,7 @@
                         child: [...internalModule, ...instTopo[0].child]
                     }]
                     this.$refs.topoTree.setData(treeData)
-                    if (!this.$isAuthorized(this.transferResourceAuth)) {
+                    if (!this.hasTransferResourceAuth) {
                         this.$nextTick(() => {
                             this.$refs.topoTree.setDisabled('module-resource')
                         })
@@ -367,6 +378,9 @@
             },
             handleCancel () {
                 this.$emit('on-cancel')
+            },
+            handleReceiveAuth (auth) {
+                this.hasTransferResourceAuth = auth
             }
         }
     }
