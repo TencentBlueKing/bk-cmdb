@@ -2,28 +2,22 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <div class="fl mr10"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_INST),
-                        auth: [$OPERATION.C_INST]
-                    }">
-                    <bk-button theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_INST)"
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_INST })">
+                    <bk-button slot-scope="{ disabled }"
+                        theme="primary"
+                        :disabled="disabled"
                         @click="handleCreate">
                         {{$t('新建')}}
                     </bk-button>
-                </div>
-                <div class="fl mr10"
-                    v-cursor="{
-                        active: !$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST]),
-                        auth: [$OPERATION.C_INST, $OPERATION.U_INST]
-                    }">
-                    <bk-button class="models-button"
-                        :disabled="!$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST])"
+                </cmdb-auth>
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: [$OPERATION.C_INST, $OPERATION.U_INST] })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="models-button"
+                        :disabled="disabled"
                         @click="importSlider.show = true">
                         {{$t('导入')}}
                     </bk-button>
-                </div>
+                </cmdb-auth>
                 <div class="fl mr10">
                     <bk-button class="models-button" theme="default"
                         :disabled="!table.checked.length"
@@ -38,17 +32,14 @@
                         {{$t('批量更新')}}
                     </bk-button>
                 </div>
-                <div class="fl mr10"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.D_INST),
-                        auth: [$OPERATION.D_INST]
-                    }">
-                    <bk-button class="models-button button-delete"
-                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_INST)"
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="models-button button-delete"
+                        :disabled="!table.checked.length || disabled"
                         @click="handleMultipleDelete">
                         {{$t('删除')}}
                     </bk-button>
-                </div>
+                </cmdb-auth>
             </div>
             <div class="options-button fr">
                 <icon-button class="ml5"
@@ -81,32 +72,32 @@
                     :auto-select="false"
                     font-size="14"
                     v-model="filter.value"
-                    @on-selected="getTableData">
+                    @on-selected="getTableData(true)">
                 </cmdb-form-enum>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
                     font-size="large"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData">
+                    @enter="getTableData(true)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
                     font-size="large"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData">
+                    @enter="getTableData(true)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
                     font-size="large"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData">
+                    @enter="getTableData(true)">
                 </bk-input>
                 <i class="filter-search bk-icon icon-search"
                     v-show="filter.type !== 'enum'"
-                    @click="getTableData"></i>
+                    @click="getTableData(true)"></i>
             </div>
         </div>
         <bk-table class="models-table" ref="table"
@@ -132,6 +123,13 @@
                     <span>{{row[column.id] | addUnit(getPropertyUnit(column.id))}}</span>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff
+                slot="empty"
+                :auth="$OPERATION.C_INST"
+                :stuff="table.stuff"
+                @create="handleCreate"
+            >
+            </cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -251,7 +249,11 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
-                    sort: 'bk_inst_id'
+                    sort: 'bk_inst_id',
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 filter: {
                     id: '',
@@ -410,7 +412,13 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
-                    sort: 'bk_inst_id'
+                    sort: 'bk_inst_id',
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.model['bk_obj_name']
+                        }
+                    }
                 }
             },
             getPropertyGroups () {
@@ -516,8 +524,8 @@
                 })
                 this.table.allList = [...this.table.allList, ...newList]
             },
-            getTableData () {
-                this.getInstList().then(data => {
+            getTableData (event) {
+                this.getInstList({ cancelPrevious: true, globalPermission: false }).then(data => {
                     if (data.count && !data.info.length) {
                         this.table.pagination.current -= 1
                         this.getTableData()
@@ -525,7 +533,19 @@
                     this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
                     this.setAllHostList(data.info)
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+
                     return data
+                }).catch(({ permission }) => {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 })
             },
             getSearchParams () {

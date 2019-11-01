@@ -2,17 +2,17 @@
     <div class="association">
         <div class="options clearfix">
             <div class="fl" v-show="activeView === viewName.list">
-                <span class="inline-block-middle mr10" v-if="hasAssociation"
-                    v-cursor="{
-                        active: !$isAuthorized(updateAuth),
-                        auth: [updateAuth]
-                    }">
-                    <bk-button theme="primary" class="options-button"
-                        :disabled="!$isAuthorized(updateAuth)"
+                <cmdb-auth class="inline-block-middle mr10"
+                    v-if="hasAssociation"
+                    :auth="updateAuthResources">
+                    <bk-button slot-scope="{ disabled }"
+                        theme="primary"
+                        class="options-button"
+                        :disabled="disabled"
                         @click="showCreate = true">
                         {{$t('新增关联')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <span class="inline-block-middle mr10" v-else v-bk-tooltips="$t('当前模型暂未定义可用关联')">
                     <bk-button theme="primary" class="options-button" disabled>
                         {{$t('新增关联')}}
@@ -71,12 +71,12 @@
             }
         },
         computed: {
-            updateAuth () {
+            updateAuthResources () {
                 const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
                 if (isResourceHost) {
-                    return this.$OPERATION.U_RESOURCE_HOST
+                    return this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
                 }
-                return this.$OPERATION.U_HOST
+                return this.$authResources({ type: this.$OPERATION.U_HOST })
             },
             hasAssociation () {
                 const association = this.$store.state.hostDetails.association

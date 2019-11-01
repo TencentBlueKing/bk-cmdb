@@ -3,23 +3,20 @@
         <div class="instance-main">
             <div class="options clearfix">
                 <div class="fl">
-                    <span style="display: inlink-block;"
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_TOPO),
-                            auth: [$OPERATION.U_TOPO]
-                        }">
-                        <bk-button theme="primary"
-                            :disabled="!$isAuthorized($OPERATION.U_TOPO) || !checkedList.length"
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            :disabled="disabled || !checkedList.length"
                             @click="handleBatchSync">
                             {{$t('批量同步')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                 </div>
                 <div class="fr">
                     <bk-select class="filter-item mr10"
                         :clearable="false"
                         v-model="statusFilter"
-                        @selected="handleFilter(1)">
+                        @selected="handleFilter(1, true)">
                         <bk-option v-for="option in filterList"
                             :key="option.id"
                             :id="option.id"
@@ -93,30 +90,31 @@
                 </bk-table-column>
                 <bk-table-column :label="$t('操作')" width="180">
                     <template slot-scope="{ row }">
-                        <span style="display: inlink-block;"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION.U_TOPO),
-                                auth: [$OPERATION.U_TOPO]
-                            }">
-                            <bk-button v-if="row.status === 'failure'" text
-                                :disabled="!$isAuthorized($OPERATION.U_TOPO)"
-                                @click="handleRetry(row)">
-                                {{$t('重试')}}
-                            </bk-button>
-                            <bk-button v-else text
-                                :disabled="!$isAuthorized($OPERATION.U_TOPO) || ['syncing', 'finished'].includes(row.status)"
-                                @click="handleSync(row)">
-                                {{$t('去同步')}}
-                            </bk-button>
-                        </span>
+                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                            <template slot-scope="{ disabled }">
+                                <bk-button v-if="row.status === 'failure'"
+                                    text
+                                    :disabled="disabled"
+                                    @click="handleRetry(row)">
+                                    {{$t('重试')}}
+                                </bk-button>
+                                <bk-button v-else
+                                    text
+                                    :disabled="disabled || ['syncing', 'finished'].includes(row.status)"
+                                    @click="handleSync(row)">
+                                    {{$t('去同步')}}
+                                </bk-button>
+                            </template>
+                        </cmdb-auth>
                     </template>
                 </bk-table-column>
-                <template slot="empty" v-if="showEmpty">
-                    <img src="../../../assets/images/empty-content.png" alt="">
-                    <i18n path="空集群模板实例提示" tag="div">
-                        <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
-                    </i18n>
-                </template>
+                <cmdb-table-stuff slot="empty" :stuff="table.stuff">
+                    <div>
+                        <i18n path="空集群模板实例提示" tag="div">
+                            <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
+                        </i18n>
+                    </div>
+                </cmdb-table-stuff>
             </bk-table>
         </div>
     </div>
@@ -143,6 +141,12 @@
                     count: 0,
                     current: 1,
                     ...this.$tools.getDefaultPaginationConfig()
+                },
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 listSort: 'last_time',
                 instancesInfo: {}
@@ -219,9 +223,6 @@
                 }
                 this.filterName && (params.search = this.filterName)
                 return params
-            },
-            showEmpty () {
-                return this.statusFilter === 'all' && !this.filterName && !this.displayList.length
             }
         },
         watch: {
@@ -353,9 +354,14 @@
             handleLinkServiceTopo () {
                 this.$router.push({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
             },
-            async handleFilter (current = 1) {
+            async handleFilter (current = 1, event) {
                 this.pagination.current = current
                 await this.getData()
+
+                if (event) {
+                    this.table.stuff.type = 'search'
+                }
+
                 if (this.list.length) {
                     this.getSetInstancesWithTopo()
                     this.getInstancesInfo()
@@ -377,7 +383,7 @@
             },
             handleSearch (name) {
                 this.filterName = name
-                this.handleFilter(1)
+                this.handleFilter(1, true)
             },
             handleSelectable (row) {
                 return !['syncing', 'finished'].includes(row.status)

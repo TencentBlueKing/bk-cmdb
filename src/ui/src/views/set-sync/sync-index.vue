@@ -52,18 +52,15 @@
                 </set-instance>
             </div>
             <div class="footer">
-                <span style="display: inlink-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_TOPO),
-                        auth: [$OPERATION.U_TOPO]
-                    }">
-                    <bk-button class="mr10"
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="mr10"
                         theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
+                        :disabled="disabled"
                         @click="handleConfirmSync">
                         {{$t('确认同步')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <bk-button class="mr10" @click="handleGoback">{{$t('取消')}}</bk-button>
             </div>
         </template>
