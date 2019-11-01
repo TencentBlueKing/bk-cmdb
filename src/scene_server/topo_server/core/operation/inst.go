@@ -769,10 +769,26 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		for _, objCondition := range objs {
 			if objCondition.Operator != common.BKDBEQ {
 				if obj.GetID() == keyObjID {
-					// deal self condition
-					instCond[objCondition.Field] = map[string]interface{}{
-						objCondition.Operator: objCondition.Value,
+					if objCondition.Operator == common.BKDBLIKE ||
+						objCondition.Operator == common.BKDBMULTIPLELike {
+						switch t := objCondition.Value.(type) {
+						case string:
+							instCond[objCondition.Field] = map[string]interface{}{
+								objCondition.Operator: gparams.SpecialCharChange(t),
+							}
+						default:
+							// deal self condition
+							instCond[objCondition.Field] = map[string]interface{}{
+								objCondition.Operator: objCondition.Value,
+							}
+						}
+					} else {
+						// deal self condition
+						instCond[objCondition.Field] = map[string]interface{}{
+							objCondition.Operator: objCondition.Value,
+						}
 					}
+
 				} else {
 					// deal association condition
 					cond[objCondition.Field] = map[string]interface{}{
@@ -785,7 +801,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 					switch t := objCondition.Value.(type) {
 					case string:
 						instCond[objCondition.Field] = map[string]interface{}{
-							common.BKDBEQ: gparams.SpeceialCharChange(t),
+							common.BKDBEQ: t,
 						}
 					default:
 						instCond[objCondition.Field] = objCondition.Value
