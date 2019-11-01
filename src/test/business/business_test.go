@@ -19,7 +19,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
+	params "configcenter/src/common/paraparse"
 	"configcenter/src/test/run"
 
 	. "github.com/onsi/ginkgo"
@@ -43,11 +43,11 @@ var _ = Describe("GetBusinessList", func() {
 	header.Add("Content-Type", "application/json")
 
 	Describe("get business list load test", func() {
-		var cond map[string]interface{}
+		var cond *params.SearchParams
 		BeforeEach(func() {
-			cond = mapstr.MapStr{
-				"condition": mapstr.MapStr{
-					"bk_data_status": mapstr.MapStr{
+			cond = &params.SearchParams{
+				Condition: map[string]interface{}{
+					"bk_data_status": map[string]interface{}{
 						"$ne": "disabled",
 					},
 				},
@@ -56,7 +56,7 @@ var _ = Describe("GetBusinessList", func() {
 
 		Measure("emit the request", func(b Benchmarker) {
 			runtime := b.Time("runtime", func() {
-				_, err := clientSet.ApiServer().GetUserPrivilegeApp(context.Background(), header, "0", "admin", cond)
+				_, err := clientSet.ApiServer().SearchBiz(context.Background(), "0", header, cond)
 				Expect(err).Should(BeNil())
 			})
 			Expect(runtime.Seconds()).Should(BeNumerically("<", 0.05))
@@ -65,7 +65,7 @@ var _ = Describe("GetBusinessList", func() {
 		It("running load test", func() {
 			m := run.FireLoadTest(func() error {
 				h := CopyHeader(header)
-				rsp, err := clientSet.ApiServer().GetUserPrivilegeApp(context.Background(), h, "0", "admin", cond)
+				rsp, err := clientSet.ApiServer().SearchBiz(context.Background(), "0", h, cond)
 				if err != nil {
 					return err
 				}
