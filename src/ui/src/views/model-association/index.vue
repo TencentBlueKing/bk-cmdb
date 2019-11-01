@@ -74,6 +74,12 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$OPERATION.C_RELATION"
+                @create="createRelation"
+            ></cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -125,7 +131,13 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-ispre',
-                    sort: '-ispre'
+                    sort: '-ispre',
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.$t('关联类型')
+                        }
+                    }
                 },
                 sendSearchText: ''
             }
@@ -166,6 +178,7 @@
                 if (fromClick) {
                     this.sendSearchText = this.searchText
                     this.table.pagination.current = 1
+                    this.table.stuff.type = 'search'
                 }
                 this.searchAssociationType({
                     params: this.searchParams,
