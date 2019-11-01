@@ -32,17 +32,15 @@
             </bk-table-column>
         </bk-table>
         <div class="page-options">
-            <span
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
-                    auth: [$OPERATION.C_SERVICE_INSTANCE]
-                }">
-                <bk-button class="options-button" theme="primary"
-                    :disabled="!!repeatedProcesses.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+            <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                <bk-button slot-scope="{ disabled }"
+                    class="options-button"
+                    theme="primary"
+                    :disabled="!!repeatedProcesses.length || disabled"
                     @click="doClone">
                     {{$t('确定')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <bk-button class="options-button" @click="backToModule">{{$t('取消')}}</bk-button>
         </div>
         <bk-sideslider

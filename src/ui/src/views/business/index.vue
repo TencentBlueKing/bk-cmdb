@@ -1,29 +1,25 @@
 <template>
     <div class="business-layout">
         <div class="business-options clearfix">
-            <span class="fl" v-if="isAdminView"
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.C_BUSINESS),
-                    auth: [$OPERATION.C_BUSINESS]
-                }">
-                <bk-button class="fl" theme="primary"
-                    :disabled="!$isAuthorized($OPERATION.C_BUSINESS)"
+            <cmdb-auth class="fl" :auth="$authResources({ type: $OPERATION.C_BUSINESS })">
+                <bk-button slot-scope="{ disabled }"
+                    class="fl"
+                    theme="primary"
+                    :disabled="disabled"
                     @click="handleCreate">
                     {{$t('新建')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <div class="options-button fr">
-                <span class="inline-block-middle" v-cursor="{
-                    active: !$isAuthorized($OPERATION.BUSINESS_ARCHIVE),
-                    auth: [$OPERATION.BUSINESS_ARCHIVE]
-                }">
-                    <icon-button class="mr10"
+                <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
+                    <icon-button slot-scope="{ disabled }"
+                        class="mr10"
                         icon="icon-cc-history"
                         v-bk-tooltips.top="$t('查看已归档业务')"
-                        :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
+                        :disabled="disabled"
                         @click="routeToHistory">
                     </icon-button>
-                </span>
+                </cmdb-auth>
                 <icon-button
                     icon="icon-cc-setting"
                     v-bk-tooltips.top="$t('列表显示属性配置')"
