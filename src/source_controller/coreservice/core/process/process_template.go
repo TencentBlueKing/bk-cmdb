@@ -202,8 +202,10 @@ func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, option m
 		common.BKAppIDField: option.BusinessID,
 	}
 
-	if option.ServiceTemplateID != 0 {
-		filter[common.BKServiceTemplateIDField] = option.ServiceTemplateID
+	if len(option.ServiceTemplateIDs) != 0 {
+		filter[common.BKServiceTemplateIDField] = map[string]interface{}{
+			common.BKDBIN: option.ServiceTemplateIDs,
+		}
 	}
 
 	if option.ProcessTemplateIDs != nil {

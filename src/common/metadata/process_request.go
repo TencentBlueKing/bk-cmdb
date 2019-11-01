@@ -32,3 +32,13 @@ type UpdateServiceTemplateOption struct {
 	Name              string    `field:"name" json:"name,omitempty" bson:"name"`
 	ServiceCategoryID int64     `field:"service_category_id" json:"service_category_id,omitempty" bson:"service_category_id"`
 }
+
+type RemoveFromModuleHost struct {
+	MoveToIdle bool    `field:"move_to_idle" json:"move_to_idle"`
+	HostID     int64   `field:"bk_host_id" json:"bk_host_id"`
+	Modules    []int64 `field:"bk_module_ids" json:"bk_module_ids"`
+}
+
+type ServiceInstanceDeletePreview struct {
+	ToMoveModuleHosts []RemoveFromModuleHost `field:"to_move_module_hosts" json:"to_move_module_hosts"`
+}

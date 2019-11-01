@@ -1051,5 +1051,8 @@
     "去同步": "Go to sync",
     "模板集群添加模块提示": "The accumulated template is currently configured, and modules cannot be added.",
     "无": "none",
-    "创建实例": "创建实例"
+    "创建实例": "创建实例",
+    "抱歉您没有查看权限": "Sorry, you don't have permission to view, {link}",
+    "您还未XXX": "You have not yet {action} {resource}, {link}",
+    "搜索内容为空": "Search result is empty"
 }

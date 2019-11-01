@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -282,6 +284,9 @@ var (
 	findBizHostsRegex = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts`)
 	// find host instance's object properties info
 	findHostInstanceObjectPropertiesRegexp = regexp.MustCompile(`^/api/v3/hosts/[^\s/]+/[0-9]+/?$`)
+
+	transferHostWithAutoClearServiceInstanceRegex        = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/?$")
+	transferHostWithAutoClearServiceInstancePreviewRegex = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/preview/?$")
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -531,6 +536,28 @@ func (ps *parseStream) host() *parseStream {
 		bizID, err := ps.parseBusinessID()
 		if err != nil {
 			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveHostsToBusinessOrModule,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(transferHostWithAutoClearServiceInstanceRegex, http.MethodPost) ||
+		ps.hitRegexp(transferHostWithAutoClearServiceInstancePreviewRegex, http.MethodPost) {
+		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
+		bizID, err := util.GetInt64ByInterface(match[1])
+		if err != nil {
+			blog.Errorf("get business id from request path failed, name: %s, err: %v, rid: %s", transferHostWithAutoClearServiceInstanceRegex, err, ps.RequestCtx.Rid)
+			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{

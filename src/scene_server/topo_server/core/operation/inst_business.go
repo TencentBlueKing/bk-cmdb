@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
@@ -295,34 +296,34 @@ func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fi
 }
 
 func (b *business) GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error) {
-
-	// search the sets
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKDefaultField).Eq(common.DefaultResModuleFlag)
+	// get set model
 	setObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDSet)
 	if nil != err {
 		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
+	// search internal sets
 	querySet := &metadata.QueryInput{}
+	cond := condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(bizID)
+	cond.Field(common.BKDefaultField).Eq(common.DefaultResModuleFlag)
 	querySet.Condition = cond.ToMapStr()
 	_, sets, err := b.set.FindSet(params, setObj, querySet)
 	if nil != err {
 		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
-	// search modules
-	cond = condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKDefaultField).NotEq(0)
-
+	// get module model
 	moduleObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
 		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
+	// search internal modules
 	queryModule := &metadata.QueryInput{}
+	cond = condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(bizID)
+	cond.Field(common.BKDefaultField).NotEq(0)
 	queryModule.Condition = cond.ToMapStr()
 	_, modules, err := b.module.FindModule(params, moduleObj, queryModule)
 	if nil != err {
@@ -348,13 +349,14 @@ func (b *business) GetInternalModule(params types.ContextParams, obj model.Objec
 
 	for _, moduleMapStr := range modules {
 		module := metadata.ModuleInst{}
-		if err := moduleMapStr.MarshalJSONInto(&module); err != nil {
-			blog.ErrorJSON("GetInternalModule failed, module: %s, ")
+		if err := mapstruct.Decode2Struct(moduleMapStr, &module); err != nil {
+			blog.ErrorJSON("GetInternalModule failed, unmarshal module failed, module: %s, err: %s, rid: %s", moduleMapStr, err.Error(), params.ReqID)
 			return 0, nil, params.Err.CCError(common.CCErrCommParseDBFailed)
 		}
 		result.Module = append(result.Module, metadata.InnerModule{
 			ModuleID:   module.ModuleID,
 			ModuleName: module.ModuleName,
+			Default:    module.Default,
 		})
 	}
 
