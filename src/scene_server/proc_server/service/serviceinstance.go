@@ -77,7 +77,12 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		blog.Errorf("start transaction failed, err: %+v", e)
 		return
 	}
-	header = tx.TxnInfo().IntoHeader(header)
+	txnInfo, e := tx.TxnInfo()
+	if e != nil {
+		blog.Errorf("TxnInfo err: %+v", e)
+		return
+	}
+	header = txnInfo.IntoHeader(header)
 	ctx.Kit.Header = header
 
 	defer func() {

@@ -31,7 +31,13 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 		blog.Errorf("create mainline object failed, start transaction failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 	}
-	params.Header = tx.TxnInfo().IntoHeader(params.Header)
+
+	txnInfo, err := tx.TxnInfo()
+	if err != nil {
+		blog.Errorf("TxnInfo err: %+v", err)
+		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+	}
+	params.Header = txnInfo.IntoHeader(params.Header)
 
 	mainLineAssociation := &metadata.Association{}
 	_, err = mainLineAssociation.Parse(data)
@@ -44,12 +50,12 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 	if err != nil {
 		blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err, params.ReqID)
 		if txnErr := tx.Abort(context.Background()); txnErr != nil {
-			blog.Errorf("create mainline object, but abort transaction[id: %s] failed; %v, rid: %s", tx.TxnInfo().TxnID, txnErr, params.ReqID)
+			blog.Errorf("create mainline object, but abort transaction[id: %s] failed; %v, rid: %s", txnInfo.TxnNumber, txnErr, params.ReqID)
 		}
 		return nil, err
 	}
 	if txnErr := tx.Commit(context.Background()); txnErr != nil {
-		blog.Errorf("create mainline object, but commit transaction[id: %s] failed, err: %v, rid: %s", tx.TxnInfo().TxnID, txnErr, params.ReqID)
+		blog.Errorf("create mainline object, but commit transaction[id: %s] failed, err: %v, rid: %s", txnInfo.TxnNumber, txnErr, params.ReqID)
 		return nil, params.Err.Error(common.CCErrTopoMainlineCreatFailed)
 	}
 
@@ -68,7 +74,12 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 	if err != nil {
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 	}
-	params.Header = tx.TxnInfo().IntoHeader(params.Header)
+	txnInfo, err := tx.TxnInfo()
+	if err != nil {
+		blog.Errorf("TxnInfo err: %+v", err)
+		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+	}
+	params.Header = txnInfo.IntoHeader(params.Header)
 	objID := pathParams("bk_obj_id")
 
 	var bizID int64

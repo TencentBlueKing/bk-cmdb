@@ -28,6 +28,7 @@ var (
 	ErrDocumentNotFound    = errors.New("document not found")
 	ErrNotImplemented      = errors.New("not implemented")
 	ErrDuplicated          = errors.New("duplicated")
+	ErrSessionNotStarted = errors.New("session is not started")
 
 	UpdateOpAddToSet = "addToSet"
 	UpdateOpPull     = "pull"
@@ -59,18 +60,34 @@ type DB interface {
 	IsNotFoundError(error) bool
 
 	Close() error
+
+	//StartSession 开启会话
+	StartSession() (DB, error)
+	// EndSession 结束会话
+	EndSession(ctx context.Context) error
+
+	Transaction
+
 }
 
 // Transcation db transcation interface
-type Transcation interface {
+type Transaction interface {
+	// StartTransaction 开启新事务
+	StartTransaction() error
+	// CommitTransaction 提交事务
+	CommitTransaction(context.Context) error
+	// AbortTransaction 取消事务
+	AbortTransaction(context.Context) error
+
+
 	// Start 开启新事务
-	Start(ctx context.Context) (Transcation, error)
+	Start(ctx context.Context) (Transaction, error)
 	// Commit 提交事务
 	Commit(context.Context) error
 	// Abort 取消事务
 	Abort(context.Context) error
 	// TxnInfo 当前事务信息，用于事务发起者往下传递
-	TxnInfo() *types.Transaction
+	TxnInfo() (*types.Transaction, error)
 
 	// AutoRun Interface for automatic processing of encapsulated transactions
 	// f func return error, abort commit, other commit transcation. transcation commit can be error.
@@ -118,6 +135,10 @@ type JoinOption struct {
 	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
 
 	TMAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
+
+	SessionID string // 会话ID
+	TxnNumber string // 事务Number
+
 }
 
 type TxnWrapperOption struct {

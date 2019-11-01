@@ -291,7 +291,7 @@ func TestFindOpt(t *testing.T) {
 
 	filter = map[string]string{"ext": "ext"}
 	resultMany = make([]map[string]string, 0)
-	err = table.Find(filter).Start(int64(len(insertDataMany))).All(ctx, &resultMany)
+	err = table.Find(filter).Start(uint64(len(insertDataMany))).All(ctx, &resultMany)
 	require.NoError(t, err)
 	if len(resultMany) != 0 {
 		t.Errorf("find db skip %d data. row error", len(resultMany))
@@ -395,7 +395,7 @@ func TestFindOneOpt(t *testing.T) {
 
 	filter = map[string]string{"ext": "ext"}
 	resultOne = make(map[string]string, 0)
-	err = table.Find(filter).Start(int64(len(insertDataMany))).One(ctx, &resultOne)
+	err = table.Find(filter).Start(uint64(len(insertDataMany))).One(ctx, &resultOne)
 	if err != dal.ErrDocumentNotFound {
 		require.NoError(t, err)
 	}
@@ -475,14 +475,14 @@ func TestCount(t *testing.T) {
 
 	cnt, err := table.Find(nil).Count(ctx)
 	require.NoError(t, err)
-	if cnt != int64(len(insertDataMany)) {
+	if cnt != uint64(len(insertDataMany)) {
 		t.Errorf("db count result error. not equal %d", cnt)
 		return
 	}
 	filter := map[string]string{"ext": "ext"}
 	cnt, err = table.Find(filter).Count(ctx)
 	require.NoError(t, err)
-	if cnt != int64(len(insertDataMany)) {
+	if cnt != uint64(len(insertDataMany)) {
 		t.Errorf("db count result error. not equal %d", cnt)
 		return
 	}

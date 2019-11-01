@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"strings"
 
 	"configcenter/src/storage/dal"
@@ -301,8 +302,61 @@ func (c *Mock) NextSequence(ctx context.Context, sequenceName string) (uint64, e
 
 }
 
+// StartSession 开启新会话
+func (c *Mock) StartSession() (dal.DB, error) {
+	return c, nil
+}
+
+// EndSession 结束会话
+func (c *Mock) EndSession(ctx context.Context) error {
+	return nil
+}
+
 // StartTransaction 开启新事务
-func (c *Mock) StartTransaction(ctx context.Context) (dal.DB, error) {
+func (c *Mock) StartTransaction() error {
+	key := "StartTransaction"
+	if retval, ok := c.cache[key]; ok {
+		return retval.Err
+	}
+	c.cache[key] = c.retval
+	c.retval = nil
+	return nil
+}
+
+// CommitTransaction 提交事务
+func (c *Mock) CommitTransaction(ctx context.Context) error {
+	key := "COMMIT"
+	if retval, ok := c.cache[key]; ok {
+		return retval.Err
+	}
+	c.cache[key] = c.retval
+	c.retval = nil
+	return nil
+}
+
+// AbortTransaction 取消事务
+func (c *Mock) AbortTransaction(ctx context.Context) error {
+	key := "ABORT"
+	if retval, ok := c.cache[key]; ok {
+		return retval.Err
+	}
+	c.cache[key] = c.retval
+	c.retval = nil
+	return nil
+}
+
+// StartTransaction 开启新事务
+//func (c *Mock) StartTransaction(ctx context.Context) (dal.DB, error) {
+//	key := "StartTransaction"
+//	if retval, ok := c.cache[key]; ok {
+//		return c, retval.Err
+//	}
+//	c.cache[key] = c.retval
+//	c.retval = nil
+//	return c, nil
+//}
+
+func (c *Mock) Start(ctx context.Context) (dal.Transaction, error) {
 	key := "StartTransaction"
 	if retval, ok := c.cache[key]; ok {
 		return c, retval.Err
@@ -335,14 +389,32 @@ func (c *Mock) Abort(ctx context.Context) error {
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
-func (c *Mock) TxnInfo() *types.Transaction {
+func (c *Mock) TxnInfo() (*types.Transaction, error) {
 	key := "TxnInfo"
 	if retval, ok := c.cache[key]; ok {
-		return &retval.Info
+		return &retval.Info, nil
 	}
 	c.cache[key] = c.retval
 	c.retval = nil
-	return &types.Transaction{}
+	return &types.Transaction{}, nil
+}
+
+// TxnInfo 当前事务信息，用于事务发起者往下传递
+//func (c *Mock) TxnInfo() *types.Transaction {
+//	key := "TxnInfo"
+//	if retval, ok := c.cache[key]; ok {
+//		return &retval.Info
+//	}
+//	c.cache[key] = c.retval
+//	c.retval = nil
+//	return &types.Transaction{}
+//}
+
+// AutoRun Interface for automatic processing of encapsulated transactions
+// f func return error, abort commit, other commit transcation. transcation commit can be error.
+// f func parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
+func (c *Mock) AutoRun(ctx context.Context, opt dal.TxnWrapperOption, f func(header http.Header) error) error {
+	panic("transcation wrapper not implemented")
 }
 
 // HasTable 判断是否存在集合
