@@ -51,6 +51,7 @@
                     </button>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -92,7 +93,13 @@
                     verification: {}
                 },
                 table: {
-                    list: []
+                    list: [],
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 },
                 attributeList: [],
                 updateAuth: false

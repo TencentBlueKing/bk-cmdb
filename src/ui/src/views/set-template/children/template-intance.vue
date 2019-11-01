@@ -16,7 +16,7 @@
                     <bk-select class="filter-item mr10"
                         :clearable="false"
                         v-model="statusFilter"
-                        @selected="handleFilter(1)">
+                        @selected="handleFilter(1, true)">
                         <bk-option v-for="option in filterList"
                             :key="option.id"
                             :id="option.id"
@@ -108,12 +108,13 @@
                         </cmdb-auth>
                     </template>
                 </bk-table-column>
-                <template slot="empty" v-if="showEmpty">
-                    <img src="../../../assets/images/empty-content.png" alt="">
-                    <i18n path="空集群模板实例提示" tag="div">
-                        <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
-                    </i18n>
-                </template>
+                <cmdb-table-stuff slot="empty" :stuff="table.stuff">
+                    <div>
+                        <i18n path="空集群模板实例提示" tag="div">
+                            <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
+                        </i18n>
+                    </div>
+                </cmdb-table-stuff>
             </bk-table>
         </div>
     </div>
@@ -140,6 +141,12 @@
                     count: 0,
                     current: 1,
                     ...this.$tools.getDefaultPaginationConfig()
+                },
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 listSort: 'last_time',
                 instancesInfo: {}
@@ -216,9 +223,6 @@
                 }
                 this.filterName && (params.search = this.filterName)
                 return params
-            },
-            showEmpty () {
-                return this.statusFilter === 'all' && !this.filterName && !this.displayList.length
             }
         },
         watch: {
@@ -350,9 +354,14 @@
             handleLinkServiceTopo () {
                 this.$router.push({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
             },
-            async handleFilter (current = 1) {
+            async handleFilter (current = 1, event) {
                 this.pagination.current = current
                 await this.getData()
+
+                if (event) {
+                    this.table.stuff.type = 'search'
+                }
+
                 if (this.list.length) {
                     this.getSetInstancesWithTopo()
                     this.getInstancesInfo()
@@ -374,7 +383,7 @@
             },
             handleSearch (name) {
                 this.filterName = name
-                this.handleFilter(1)
+                this.handleFilter(1, true)
             },
             handleSelectable (row) {
                 return !['syncing', 'finished'].includes(row.status)

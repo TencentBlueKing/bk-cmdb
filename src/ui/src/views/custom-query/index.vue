@@ -78,6 +78,12 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$OPERATION.C_CUSTOM_QUERY"
+                @create="showUserAPISlider('create')"
+            ></cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -97,7 +103,7 @@
                 @cancel="handleSliderBeforeClose">
             </v-define>
         </bk-sideslider>
-        
+
         <!-- eslint-disable vue/space-infix-ops -->
         <cmdb-main-inject inject-type="prepend" v-transfer-dom>
             <v-preview ref="preview"
@@ -142,6 +148,12 @@
                         current: 1,
                         count: 0,
                         ...this.$tools.getDefaultPaginationConfig()
+                    },
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.$t('动态分组')
+                        }
                     }
                 },
                 slider: {
@@ -374,24 +386,38 @@
                 }
                 return params
             },
-            async getUserAPIList () {
-                const res = await this.searchCustomQuery({
-                    bizId: this.bizId,
-                    params: this.searchParams,
-                    config: {
-                        requestId: 'searchCustomQuery'
+            async getUserAPIList (value, event) {
+                try {
+                    const res = await this.searchCustomQuery({
+                        bizId: this.bizId,
+                        params: this.searchParams,
+                        config: {
+                            globalPermission: false,
+                            requestId: 'searchCustomQuery'
+                        }
+                    })
+                    if (res.count && !res.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getUserAPIList()
                     }
-                })
-                if (res.count && !res.info.length) {
-                    this.table.pagination.current -= 1
-                    this.getUserAPIList()
+                    if (res.count) {
+                        this.table.list = res.info
+                    } else {
+                        this.table.list = []
+                    }
+                    this.table.pagination.count = res.count
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+                } catch ({ permission }) {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 }
-                if (res.count) {
-                    this.table.list = res.info
-                } else {
-                    this.table.list = []
-                }
-                this.table.pagination.count = res.count
             },
             showUserAPISlider (type) {
                 this.slider.isShow = true
