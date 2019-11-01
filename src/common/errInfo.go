@@ -201,6 +201,7 @@ const (
 	CCErrCommValExceedMaxFailed                              = 1199073
 	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199074
 	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
+	CCErrTopoUpdateBuiltInCloudForbidden                     = 1199076
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
