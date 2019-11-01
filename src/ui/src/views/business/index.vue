@@ -86,6 +86,12 @@
                 :prop="column.id"
                 :label="column.name">
             </bk-table-column>
+            <cmdb-table-stuff
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$OPERATION.C_BUSINESS"
+                @create="handleCreate"
+            ></cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -173,7 +179,13 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_biz_id',
-                    sort: 'bk_biz_id'
+                    sort: 'bk_biz_id',
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.$t('业务')
+                        }
+                    }
                 },
                 filter: {
                     id: '',
@@ -356,17 +368,29 @@
             handleFilterData () {
                 this.table.pagination.current = 1
                 this.filter.sendValue = this.filter.value
-                this.getTableData()
+                this.getTableData(true)
             },
-            getTableData () {
-                this.getBusinessList().then(data => {
+            getTableData (event) {
+                this.getBusinessList({ cancelPrevious: true, globalPermission: false }).then(data => {
                     if (data.count && !data.info.length) {
                         this.table.pagination.current -= 1
                         this.getTableData()
                     }
                     this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+
                     return data
+                }).catch(({ permission }) => {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 })
             },
             getSearchParams () {
