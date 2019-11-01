@@ -2,28 +2,22 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <div class="fl mr10"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_INST),
-                        auth: [$OPERATION.C_INST]
-                    }">
-                    <bk-button theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_INST)"
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_INST })">
+                    <bk-button slot-scope="{ disabled }"
+                        theme="primary"
+                        :disabled="disabled"
                         @click="handleCreate">
                         {{$t('新建')}}
                     </bk-button>
-                </div>
-                <div class="fl mr10"
-                    v-cursor="{
-                        active: !$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST]),
-                        auth: [$OPERATION.C_INST, $OPERATION.U_INST]
-                    }">
-                    <bk-button class="models-button"
-                        :disabled="!$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST])"
+                </cmdb-auth>
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: [$OPERATION.C_INST, $OPERATION.U_INST] })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="models-button"
+                        :disabled="disabled"
                         @click="importSlider.show = true">
                         {{$t('导入')}}
                     </bk-button>
-                </div>
+                </cmdb-auth>
                 <div class="fl mr10">
                     <bk-button class="models-button" theme="default"
                         :disabled="!table.checked.length"
@@ -38,17 +32,14 @@
                         {{$t('批量更新')}}
                     </bk-button>
                 </div>
-                <div class="fl mr10"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.D_INST),
-                        auth: [$OPERATION.D_INST]
-                    }">
-                    <bk-button class="models-button button-delete"
-                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_INST)"
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="models-button button-delete"
+                        :disabled="!table.checked.length || disabled"
                         @click="handleMultipleDelete">
                         {{$t('删除')}}
                     </bk-button>
-                </div>
+                </cmdb-auth>
             </div>
             <div class="options-button fr">
                 <icon-button class="ml5"

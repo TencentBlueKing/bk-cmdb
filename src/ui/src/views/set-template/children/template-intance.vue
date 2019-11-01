@@ -3,17 +3,14 @@
         <div class="instance-main">
             <div class="options clearfix">
                 <div class="fl">
-                    <span style="display: inlink-block;"
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_TOPO),
-                            auth: [$OPERATION.U_TOPO]
-                        }">
-                        <bk-button theme="primary"
-                            :disabled="!$isAuthorized($OPERATION.U_TOPO) || !checkedList.length"
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            :disabled="disabled || !checkedList.length"
                             @click="handleBatchSync">
                             {{$t('批量同步')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                 </div>
                 <div class="fr">
                     <bk-select class="filter-item mr10"
@@ -93,22 +90,22 @@
                 </bk-table-column>
                 <bk-table-column :label="$t('操作')" width="180">
                     <template slot-scope="{ row }">
-                        <span style="display: inlink-block;"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION.U_TOPO),
-                                auth: [$OPERATION.U_TOPO]
-                            }">
-                            <bk-button v-if="row.status === 'failure'" text
-                                :disabled="!$isAuthorized($OPERATION.U_TOPO)"
-                                @click="handleRetry(row)">
-                                {{$t('重试')}}
-                            </bk-button>
-                            <bk-button v-else text
-                                :disabled="!$isAuthorized($OPERATION.U_TOPO) || ['syncing', 'finished'].includes(row.status)"
-                                @click="handleSync(row)">
-                                {{$t('去同步')}}
-                            </bk-button>
-                        </span>
+                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                            <template slot-scope="{ disabled }">
+                                <bk-button v-if="row.status === 'failure'"
+                                    text
+                                    :disabled="disabled"
+                                    @click="handleRetry(row)">
+                                    {{$t('重试')}}
+                                </bk-button>
+                                <bk-button v-else
+                                    text
+                                    :disabled="disabled || ['syncing', 'finished'].includes(row.status)"
+                                    @click="handleSync(row)">
+                                    {{$t('去同步')}}
+                                </bk-button>
+                            </template>
+                        </cmdb-auth>
                     </template>
                 </bk-table-column>
                 <cmdb-table-stuff slot="empty" :stuff="table.stuff">

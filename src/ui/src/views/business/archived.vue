@@ -22,17 +22,15 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <span class="inline-block-middle"
-                        v-cursor="{
-                            active: !$isAuthorized(archiveAuth),
-                            auth: [archiveAuth]
-                        }">
-                        <bk-button theme="primary" size="small"
-                            :disabled="!$isAuthorized(archiveAuth)"
+                    <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            size="small"
+                            :disabled="disabled"
                             @click="handleRecovery(row)">
                             {{$t('恢复业务')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
             <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
@@ -74,9 +72,6 @@
             ...mapGetters('objectBiz', ['bizId']),
             customBusinessColumns () {
                 return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
-            },
-            archiveAuth () {
-                return this.$OPERATION.BUSINESS_ARCHIVE
             }
         },
         async created () {

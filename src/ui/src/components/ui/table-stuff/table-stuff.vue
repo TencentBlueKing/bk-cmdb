@@ -30,12 +30,13 @@
                         <span place="action">{{action}}</span>
                         <span place="resource">{{resource}}</span>
                         <span place="link">
-                            <cmdb-auth :auth="authParams">
+                            <cmdb-auth :auth="$authResources(authParams)">
                                 <bk-button
                                     text
                                     place="link"
                                     theme="primary"
-                                    :disabled="!$isAuthorized(auth)"
+                                    slot-scope="{ disabled }"
+                                    :disabled="disabled"
                                     @click="$emit('create')"
                                 >
                                     {{`立即${action}`}}
