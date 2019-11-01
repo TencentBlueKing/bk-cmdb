@@ -5,7 +5,7 @@
                 <bk-input v-model="filter.name"
                     :placeholder="$t('请输入xx', { name: $t('业务') })"
                     right-icon="bk-icon icon-search"
-                    @enter="handlePageChange(1)">
+                    @enter="handlePageChange(1, $event)">
                 </bk-input>
             </div>
         </div>
@@ -33,6 +33,7 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
         </bk-table>
     </div>
 </template>
@@ -54,6 +55,14 @@
                     current: 1,
                     count: 0,
                     ...this.$tools.getDefaultPaginationConfig()
+                },
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 }
             }
         },
@@ -120,10 +129,11 @@
                     name: this.$t('更新时间')
                 }])
             },
-            getTableData () {
+            getTableData (event) {
                 this.searchBusiness({
                     params: this.getSearchParams(),
                     config: {
+                        globalPermission: false,
                         cancelPrevious: true,
                         requestId: 'searchArchivedBusiness'
                     }
@@ -137,6 +147,17 @@
                         biz['last_time'] = this.$tools.formatTime(biz['last_time'], 'YYYY-MM-DD HH:mm:ss')
                         return biz
                     }))
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+                }).catch(({ permission }) => {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 })
             },
             getSearchParams () {
@@ -189,9 +210,9 @@
                 this.pagination.limit = size
                 this.handlePageChange(1)
             },
-            handlePageChange (current) {
+            handlePageChange (current, event) {
                 this.pagination.current = current
-                this.getTableData()
+                this.getTableData(event)
             }
         }
     }
