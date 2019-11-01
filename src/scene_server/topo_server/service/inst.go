@@ -48,9 +48,9 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 		blog.Errorf("CreateInst failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
 		return nil, err
 	}
+
 	if isMainline == true {
-		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+		// TODO add custom mainline instance param validation
 	}
 
 	if data.Exists("BatchInfo") {
@@ -141,8 +141,7 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 		return nil, err
 	}
 	if isMainline == true {
-		blog.V(5).Infof("DeleteInsts failed, delete %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+		// TODO add custom mainline instance param validation
 	}
 
 	deleteCondition := &operation.OpCondition{}
@@ -192,8 +191,7 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 		return nil, err
 	}
 	if isMainline == true {
-		blog.V(5).Infof("DeleteInst failed, delete %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+		// TODO add custom mainline instance param validation
 	}
 
 	// auth: deregister resources
@@ -248,8 +246,7 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 		return nil, err
 	}
 	if isMainline == true {
-		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+		// TODO add custom mainline instance param validation
 	}
 
 	instanceIDs := make([]int64, 0)
@@ -306,8 +303,7 @@ func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams
 		return nil, err
 	}
 	if isMainline == true {
-		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+		// TODO add custom mainline instance param validation
 	}
 
 	// this is a special logic for mainline object instance.
