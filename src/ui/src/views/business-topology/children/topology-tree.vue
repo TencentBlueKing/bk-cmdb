@@ -24,24 +24,23 @@
                     }">
                     {{modelIconMap[data.bk_obj_id]}}
                 </i>
-                <span v-if="showCreate(node, data)"
+                <cmdb-auth v-if="showCreate(node, data)"
                     class="info-create-trigger fr"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_TOPO),
-                        auth: [$OPERATION.C_TOPO]
-                    }">
-                    <i v-if="data.set_template_id"
-                        class="node-button set-template-button"
-                        v-bk-tooltips="{ content: $t('模板集群添加模块提示'), placement: 'top' }">
-                        {{$t('新建')}}
-                    </i>
-                    <bk-button v-else class="node-button"
-                        theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_TOPO)"
-                        @click.stop="showCreateDialog(node)">
-                        {{$t('新建')}}
-                    </bk-button>
-                </span>
+                    :auth="$authResources({ type: $OPERATION.C_TOPO })">
+                    <template slot-scope="{ disabled }">
+                        <i v-if="data.set_template_id"
+                            class="node-button set-template-button"
+                            v-bk-tooltips="{ content: $t('模板集群添加模块提示'), placement: 'top' }">
+                            {{$t('新建')}}
+                        </i>
+                        <bk-button v-else class="node-button"
+                            theme="primary"
+                            :disabled="disabled"
+                            @click.stop="showCreateDialog(node)">
+                            {{$t('新建')}}
+                        </bk-button>
+                    </template>
+                </cmdb-auth>
                 <span class="instance-num fr">{{data.service_instance_count}}</span>
                 <div class="info-content">
                     <span class="node-name">{{data.bk_inst_name}}</span>

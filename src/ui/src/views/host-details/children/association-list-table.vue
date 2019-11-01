@@ -33,17 +33,15 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <span class="text-primary" @click="showTips($event, row)" v-if="$isAuthorized(updateAuth)">
-                        {{$t('取消关联')}}
-                    </span>
-                    <span class="text-primary disabled"
-                        v-else
-                        v-cursor="{
-                            active: true,
-                            auth: [updateAuth]
-                        }">
-                        {{$t('取消关联')}}
-                    </span>
+                    <cmdb-auth :auth="updateAuthResources">
+                        <bk-button slot-scope="{ disabled }"
+                            text
+                            theme="primary"
+                            :disabled="disabled"
+                            @click="showTips($event, row)">
+                            {{$t('取消关联')}}
+                        </bk-button>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
         </bk-table>
@@ -100,12 +98,12 @@
                 'sourceInstances',
                 'targetInstances'
             ]),
-            updateAuth () {
+            updateAuthResources () {
                 const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
                 if (isResourceHost) {
-                    return this.$OPERATION.U_RESOURCE_HOST
+                    return this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
                 }
-                return this.$OPERATION.U_HOST
+                return this.$authResources({ type: this.$OPERATION.U_HOST })
             },
             flattenList () {
                 return this.$tools.flattenList(this.properties, this.list)

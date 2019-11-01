@@ -21,17 +21,14 @@
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
-                            auth: [$OPERATION.C_SERVICE_INSTANCE]
-                        }">
-                        <bk-button theme="primary"
-                            :disabled="!hosts.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                    <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            :disabled="!hosts.length || disabled"
                             @click="handleConfirm">
                             {{$t('确定')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                     <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
                 </div>
             </div>

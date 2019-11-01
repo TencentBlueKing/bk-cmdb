@@ -8,16 +8,15 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="filter-wrapper clearfix">
-            <span class="inline-block-middle" v-cursor="{
-                active: !$isAuthorized($OPERATION.C_CUSTOM_QUERY),
-                auth: [$OPERATION.C_CUSTOM_QUERY]
-            }">
-                <bk-button theme="primary" class="api-btn"
-                    :disabled="!$isAuthorized($OPERATION.C_CUSTOM_QUERY)"
+            <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.C_CUSTOM_QUERY })">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
+                    class="api-btn"
+                    :disabled="disabled"
                     @click="showUserAPISlider('create')">
                     {{$t('新建')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <div class="api-input fr">
                 <bk-input type="text" class="cmdb-form-input"
                     right-icon="bk-icon icon-search"
@@ -61,30 +60,22 @@
                         @click.stop="getUserAPIDetail(row)">
                         {{$t('预览')}}
                     </bk-button>
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_CUSTOM_QUERY),
-                            auth: [$OPERATION.U_CUSTOM_QUERY]
-                        }">
-                        <bk-button class="mr10"
-                            :disabled="!$isAuthorized($OPERATION.U_CUSTOM_QUERY)"
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_CUSTOM_QUERY })">
+                        <bk-button slot-scope="{ disabled }"
+                            :disabled="disabled"
                             :text="true"
                             @click.stop="showUserAPIDetails(row)">
                             {{$t('编辑')}}
                         </bk-button>
-                    </span>
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.D_CUSTOM_QUERY),
-                            auth: [$OPERATION.D_CUSTOM_QUERY]
-                        }">
-                        <bk-button
-                            :disabled="!$isAuthorized($OPERATION.D_CUSTOM_QUERY)"
+                    </cmdb-auth>
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.D_CUSTOM_QUERY })">
+                        <bk-button slot-scope="{ disabled }"
+                            :disabled="disabled"
                             :text="true"
                             @click.stop="deleteUserAPI(row)">
                             {{$t('删除')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
         </bk-table>
@@ -199,12 +190,6 @@
                 }
                 this.filter.name ? params['condition'] = { 'name': this.filter.name } : void (0)
                 return params
-            },
-            editable () {
-                if (this.type === 'update') {
-                    return this.$isAuthorized(this.$OPERATION.D_CUSTOM_QUERY)
-                }
-                return true
             }
         },
         async created () {
@@ -414,7 +399,8 @@
                 this.slider.title = this.$t('新建动态分组')
             },
             /* 显示自定义API详情 */
-            showUserAPIDetails (userAPI) {
+            showUserAPIDetails (userAPI, event, column = {}) {
+                if (column.property === 'operation') return
                 this.slider.isShow = true
                 this.slider.type = 'update'
                 this.slider.id = userAPI['id']
