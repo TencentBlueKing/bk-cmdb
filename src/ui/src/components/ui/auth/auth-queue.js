@@ -1,21 +1,10 @@
 import Vue from 'vue'
 import equal from 'deep-equal'
+import debounce from 'lodash.debounce'
 import $http from '@/api'
 import { GET_AUTH_META } from '@/dictionary/auth'
 
 export const deepEqual = equal
-
-const debounce = (fn, delay) => {
-    let timer = null
-    return function () {
-        const _this = this
-        const args = arguments
-        clearTimeout(timer)
-        timer = setTimeout(() => {
-            fn.apply(_this, args)
-        }, delay)
-    }
-}
 
 export default new Vue({
     data () {
