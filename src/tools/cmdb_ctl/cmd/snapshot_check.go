@@ -10,109 +10,127 @@
  * limitations under the License.
  */
 
-package service
+package cmd
 
 import (
 	"configcenter/src/common"
 	"fmt"
+	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/backbone/service_mange/zk"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	ccRedis "configcenter/src/storage/dal/redis"
+	"configcenter/src/tools/cmdb_ctl/app/config"
 
+	"github.com/spf13/cobra"
 	"gopkg.in/redis.v5"
 )
 
-type Service struct {
-	regdiscv        string
-	strDefaultAppID string
-	config          map[string]string
+func init() {
+	rootCmd.AddCommand(NewSnapshotCheckCommand())
 }
 
-func NewService(regdiscv string, defaultAppID int) *Service {
-	return &Service{
-		regdiscv:        regdiscv,
-		strDefaultAppID: fmt.Sprintf("%d", defaultAppID),
-	}
+type snapshotCheckConf struct {
+	bizID int
 }
 
-func (s *Service) TriggerTicker(interval int) {
-	s.triggerTicker(interval)
-	timer := time.NewTicker(time.Duration(interval) * time.Minute)
-	for range timer.C {
-		s.triggerTicker(interval)
+func NewSnapshotCheckCommand() *cobra.Command {
+	conf := new(snapshotCheckConf)
+
+	cmd := &cobra.Command{
+		Use:   "snapshot-check",
+		Short: "check host snapshot",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runSnapshotCheck(conf)
+		},
 	}
+
+	conf.addFlags(cmd)
+
+	return cmd
 }
 
-func (s *Service) triggerTicker(interval int) {
+func (c *snapshotCheckConf) addFlags(cmd *cobra.Command) {
+	cmd.Flags().IntVar(&c.bizID, "bizId", 2, "blueking business id. e.g: 2")
+}
 
-	prefix := "\n\n\n\n\n\n"
-	blog.Infof("%s=====================\nstart check  ", prefix)
+type snapshotCheckService struct {
+	service *config.Service
+	bizID   string
+	config  map[string]string
+}
 
-	blog.Infof("start checkRegdiscv")
-	if err := s.checkRegdiscv(); err != nil {
-		blog.Errorf(err.Error())
+func newSnapshotCheckService(zkaddr string, bizID int) (*snapshotCheckService, error) {
+	service, err := config.NewService(zkaddr, "")
+	if err != nil {
+		return nil, err
 	}
+	return &snapshotCheckService{
+		service: service,
+		bizID:   strconv.Itoa(bizID),
+	}, nil
+}
 
-	blog.Infof("start checkConf")
+func runSnapshotCheck(c *snapshotCheckConf) error {
+	srv, err := newSnapshotCheckService(config.Conf.ZkAddr, c.bizID)
+	if err != nil {
+		return err
+	}
+	return srv.snapshotCheck()
+}
+
+func (s *snapshotCheckService) snapshotCheck() error {
+	redis.SetLogger(log.New(os.Stdout, "redis", 0))
+	fmt.Println("=====================\nstart check", )
+	fmt.Println("start checkConf")
 	if err := s.checkConf(); err != nil {
-		blog.Errorf(err.Error())
+		return err
 	}
 
-	blog.Infof("start checkCCHostSnaphot")
+	fmt.Println("start checkCCHostSnaphot")
 	if err := s.checkCCHostSnaphot(); err != nil {
-		blog.Errorf(err.Error())
+		return err
 	}
 
-	blog.Infof("start checkHostSnapshot")
+	fmt.Println("start checkHostSnapshot")
 	if err := s.checkHostSnapshot(); err != nil {
-		blog.Errorf(err.Error())
+		return err
 	}
 
-	blog.Infof("\nend check  ")
-
-}
-
-func (s *Service) checkRegdiscv() error {
-	client := zk.NewZkClient(s.regdiscv, 5*time.Second)
-	if err := client.Start(); err != nil {
-		return fmt.Errorf("connect regdiscv [%s] failed: %v", s.regdiscv, err)
-	}
+	fmt.Println("end check")
 	return nil
 }
 
-func (s *Service) checkConf() error {
-	client := zk.NewZkClient(s.regdiscv, 5*time.Second)
-	if err := client.Start(); err != nil {
-		return fmt.Errorf("connect regdiscv [%s] failed: %v", s.regdiscv, err)
-	}
-	if err := client.Ping(); err != nil {
-		return fmt.Errorf("ping regdiscv [%s] failed: %v", s.regdiscv, err)
+func (s *snapshotCheckService) checkConf() error {
+	if err := s.service.ZkCli.Ping(); err != nil {
+		if err = s.service.ZkCli.Connect(); err != nil {
+			return err
+		}
 	}
 
 	path := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CC_MODULE_DATACOLLECTION)
-	strConf, err := client.Client().Get(path)
+	strConf, err := s.service.ZkCli.Get(path)
 	if err != nil {
-		return fmt.Errorf("get path [%s] from regdiscv [%s] failed: %v", path, s.regdiscv, err)
+		return fmt.Errorf("get path [%s] from zk [%v] failed: %v", path, s.service.ZkCli.ZkHost, err)
 	}
 
 	procConf, err := configcenter.ParseConfigWithData([]byte(strConf))
 	if err != nil {
-		return fmt.Errorf("get path [%s] from regdiscv [%s]  parse config failed: %v", path, s.regdiscv, err)
+		return fmt.Errorf("get path [%s] from regdiscv [%v]  parse config failed: %v", path, s.service.ZkCli.ZkHost, err)
 	}
 
 	s.config = procConf.ConfigMap
 	if len(s.config) == 0 {
-		return fmt.Errorf("get path [%s] from regdiscv [%s]  parse config empty", path, s.regdiscv)
+		return fmt.Errorf("get path [%s] from regdiscv [%v]  parse config empty", path, s.service.ZkCli.ZkHost)
 	}
 
 	return nil
 }
 
-func (s *Service) checkCCHostSnaphot() error {
+func (s *snapshotCheckService) checkCCHostSnaphot() error {
 
 	redisConfig := ccRedis.ParseConfigFromKV("redis", s.config)
 	client, err := ccRedis.NewFromConfig(redisConfig)
@@ -125,12 +143,12 @@ func (s *Service) checkCCHostSnaphot() error {
 		return fmt.Errorf("execute keys command in redis [%s] failed: %s", redisConfig.Address, err.Error())
 	}
 
-	blog.Infof("checkCCHostSnaphost  has keys count:%s", len(keys))
+	fmt.Printf("checkCCHostSnaphost has keys count: %d\n", len(keys))
 
 	return nil
 }
 
-func (s *Service) checkHostSnapshot() error {
+func (s *snapshotCheckService) checkHostSnapshot() error {
 
 	redisConfig := ccRedis.ParseConfigFromKV("snap-redis", s.config)
 	client, err := ccRedis.NewFromConfig(redisConfig)
@@ -138,7 +156,7 @@ func (s *Service) checkHostSnapshot() error {
 		return fmt.Errorf("connect redis [%s] failed: %s", redisConfig.Address, err.Error())
 	}
 
-	channelArr := getSnapshotName(s.strDefaultAppID)
+	channelArr := getSnapshotName(s.bizID)
 	sub, err := client.PSubscribe(channelArr...)
 	if err != nil {
 		return fmt.Errorf("subscribe channel [%#v] from redis [%s] failed: %s", channelArr, redisConfig.Address, err.Error())
@@ -146,11 +164,11 @@ func (s *Service) checkHostSnapshot() error {
 
 	stopChn := make(chan bool, 2)
 	receiveMsgCount := 0
-	timer := time.NewTimer(time.Second * 70)
+	timer := time.NewTimer(time.Minute * 2)
 	var receiveMsgErr error
 	go func() {
 		for len(stopChn) == 0 {
-			received, err := sub.ReceiveTimeout(time.Second * 10)
+			received, err := sub.ReceiveTimeout(time.Minute * 1)
 			if err != nil {
 				receiveMsgErr = fmt.Errorf("receive message from channel [%#v] in redis [%s] failed: %s", channelArr, redisConfig.Address, err.Error())
 				return
@@ -173,7 +191,7 @@ func (s *Service) checkHostSnapshot() error {
 	}
 	stopChn <- true
 
-	blog.Infof("receive message from channel [%#v] of redis [%s] count: %d(1 minute total)", channelArr, redisConfig.Address, receiveMsgCount)
+	fmt.Printf("receive message from channel [%#v] of redis [%s] count: %d(1 minute total)\n", channelArr, redisConfig.Address, receiveMsgCount)
 	if receiveMsgCount == 0 {
 		return fmt.Errorf("not receive message from channel [%#v] of redis [%s]", channelArr, redisConfig.Address)
 	}
@@ -184,8 +202,8 @@ func (s *Service) checkHostSnapshot() error {
 func getSnapshotName(strDefaultAppID string) []string {
 	return []string{
 		// 瘦身后的通道名
-		"snapshot%d" + strDefaultAppID,
+		"snapshot" + strDefaultAppID,
 		// 瘦身前的通道名，为增加向前兼容的而订阅这个老通道
-		strDefaultAppID, "_snapshot",
+		strDefaultAppID + "_snapshot",
 	}
 }
