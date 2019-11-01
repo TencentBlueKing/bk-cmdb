@@ -56,17 +56,15 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <span style="display: inline-block"
-                    v-cursor="{
-                        active: !$isAuthorized(auth),
-                        auth: [auth]
-                    }">
-                    <bk-button class="button-save" theme="primary"
-                        :disabled="saveDisabled || $loading() || !$isAuthorized(auth)"
+                <cmdb-auth :auth="$authResources(auth)">
+                    <bk-button slot-scope="{ disabled }"
+                        class="button-save"
+                        theme="primary"
+                        :disabled="saveDisabled || $loading() || disabled"
                         @click="handleSave">
                         {{$t('保存')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>
@@ -113,6 +111,10 @@
             hasUsed: {
                 type: Boolean,
                 default: false
+            },
+            auth: {
+                type: Object,
+                default: () => ({})
             }
         },
         data () {
@@ -167,12 +169,6 @@
                     return filterProperties
                 })
                 return properties
-            },
-            auth () {
-                if (this.isCreatedService) {
-                    return this.$OPERATION.C_SERVICE_TEMPLATE
-                }
-                return this.$OPERATION.U_SERVICE_TEMPLATE
             },
             checkboxTips () {
                 return {

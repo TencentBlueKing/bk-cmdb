@@ -12,17 +12,16 @@
             @on-checked="handleChecked"
             @on-set-header="handleSetHeader">
             <template slot="options-left">
-                <span style="display: inline-block;" v-if="isAdminView"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_RESOURCE_HOST),
-                        auth: [$OPERATION.C_RESOURCE_HOST]
-                    }">
-                    <bk-button class="options-button" theme="primary" style="margin-left: 0"
-                        :disabled="!$isAuthorized($OPERATION.C_RESOURCE_HOST)"
+                <cmdb-auth v-if="isAdminView" :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="options-button"
+                        theme="primary"
+                        style="margin-left: 0"
+                        :disabled="disabled"
                         @click="importInst.show = true">
                         {{$t('导入主机')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <bk-select class="options-business-selector"
                     v-if="isAdminView"
                     :font-size="14"
@@ -130,20 +129,14 @@
                     id: 'edit',
                     text: this.$t('修改'),
                     handler: this.handleMultipleEdit,
-                    disabled: !this.table.checked.length || !this.$isAuthorized(this.$OPERATION.U_RESOURCE_HOST),
-                    auth: {
-                        active: !this.$isAuthorized(this.$OPERATION.U_RESOURCE_HOST),
-                        auth: [this.$OPERATION.U_RESOURCE_HOST]
-                    }
+                    disabled: !this.table.checked.length,
+                    auth: this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
                 }, {
                     id: 'delete',
                     text: this.$t('删除'),
                     handler: this.handleMultipleDelete,
-                    disabled: !this.table.checked.length || !this.$isAuthorized(this.$OPERATION.D_RESOURCE_HOST),
-                    auth: {
-                        active: !this.$isAuthorized(this.$OPERATION.D_RESOURCE_HOST),
-                        auth: [this.$OPERATION.D_RESOURCE_HOST]
-                    },
+                    disabled: !this.table.checked.length,
+                    auth: this.$authResources({ type: this.$OPERATION.D_RESOURCE_HOST }),
                     available: this.isAdminView
                 }, {
                     id: 'export',

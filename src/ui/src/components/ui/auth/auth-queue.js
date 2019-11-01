@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import equal from 'deep-equal'
-import deepClone from 'clone-deep'
+import debounce from 'lodash.debounce'
 import $http from '@/api'
 import { GET_AUTH_META } from '@/dictionary/auth'
 
@@ -10,35 +10,55 @@ export default new Vue({
     data () {
         return {
             queue: [],
-            authInstances: []
+            authInstances: [],
+            verify: null
         }
     },
     watch: {
-        async queue () {
+        queue () {
             if (!this.queue.length) return
-            const queue = deepClone(this.queue)
-            const authInstances = deepClone(this.authInstances)
-            this.queue = []
-            this.authInstances = []
-            const resources = queue.map(item => {
-                const meta = GET_AUTH_META(item.data.type, item.data)
-                delete meta.scope
-                return meta
-            })
-            const authData = await $http.post('auth/verify', { resources })
-            authInstances.forEach(instance => {
-                const index = queue.findIndex(item => equal(item.resource, instance.resource))
-                if (index > -1) {
-                    instance.component.updateAuth(authData[index])
-                }
-            })
+            this.verify()
         }
+    },
+    created () {
+        this.verify = debounce(this.getAuth, 20)
     },
     methods: {
         pushQueue (auth) {
             this.authInstances.push(auth)
             const repeat = this.queue.some(item => equal(item.data, auth.data))
             !repeat && this.queue.push(auth)
+        },
+        async getAuth () {
+            const queue = [...this.queue]
+            const authInstances = [...this.authInstances]
+            this.queue = []
+            this.authInstances = []
+            const params = queue.map(item => {
+                const types = Array.isArray(item.data.type) ? item.data.type : [item.data.type]
+                const metas = types.map(type => {
+                    const meta = GET_AUTH_META(type, item.data)
+                    return meta
+                })
+                return metas
+            })
+            const resources = []
+            params.forEach(metas => {
+                resources.push(...metas)
+            })
+            const authData = await $http.post('auth/verify', { resources })
+            authInstances.forEach(instance => {
+                const findIndex = queue.findIndex(item => equal(item.data, instance.data))
+                const types = Array.isArray(instance.data.type) ? instance.data.type : [instance.data.type]
+                if (findIndex > -1) {
+                    const auths = []
+                    types.forEach((type, index) => {
+                        const authIndex = findIndex + index
+                        authData[authIndex] && auths.push(authData[authIndex])
+                    })
+                    instance.component.updateAuth(auths)
+                }
+            })
         }
     }
 })
