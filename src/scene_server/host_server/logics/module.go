@@ -30,7 +30,7 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (lgc *Logics) GetResoulePoolModuleID(ctx context.Context, condition mapstr.MapStr) (int64, errors.CCError) {
+func (lgc *Logics) GetResourcePoolModuleID(ctx context.Context, condition mapstr.MapStr) (int64, errors.CCError) {
 	query := &metadata.QueryCondition{
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
 		SortArr:   metadata.NewSearchSortParse().String(common.BKModuleIDField).ToSearchSortArr(),
@@ -39,16 +39,16 @@ func (lgc *Logics) GetResoulePoolModuleID(ctx context.Context, condition mapstr.
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, query)
 	if err != nil {
-		blog.Errorf("GetResoulePoolModuleID http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
+		blog.Errorf("GetResourcePoolModuleID http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
 		return -1, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetResoulePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		blog.Errorf("GetResourcePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
 		return -1, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	if len(result.Data.Info) == 0 {
-		blog.Errorf("GetResoulePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		blog.Errorf("GetResourcePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
 		return -1, lgc.ccErr.Error(common.CCErrTopoGetAppFailed)
 	}
 
@@ -158,14 +158,14 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 		return nil, lgc.ccErr.Errorf(common.CCErrHostBelongResourceFail)
 	}
 	owenerModuleIDconds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(ownerAppID)
-	ownerModuleID, err := lgc.GetResoulePoolModuleID(ctx, owenerModuleIDconds.MapStr())
+	ownerModuleID, err := lgc.GetResourcePoolModuleID(ctx, owenerModuleIDconds.MapStr())
 	if err != nil {
 		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, owenerModuleIDconds.Data(), lgc.rid)
 		return nil, err
 	}
 
 	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(conf.ApplicationID)
-	moduleID, err := lgc.GetResoulePoolModuleID(ctx, conds.MapStr())
+	moduleID, err := lgc.GetResourcePoolModuleID(ctx, conds.MapStr())
 	if err != nil {
 		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, conds.Data(), lgc.rid)
 		return nil, err
@@ -280,7 +280,7 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 	}
 
 	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(ownerAppID)
-	ownerModuleID, err := lgc.GetResoulePoolModuleID(ctx, conds.MapStr())
+	ownerModuleID, err := lgc.GetResourcePoolModuleID(ctx, conds.MapStr())
 	if err != nil {
 		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,rid:%s", err, conds.MapStr(), lgc.rid)
 		return nil, err
@@ -301,7 +301,7 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 	}
 
 	mConds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(conf.ApplicationID)
-	moduleID, err := lgc.GetResoulePoolModuleID(ctx, mConds.MapStr())
+	moduleID, err := lgc.GetResourcePoolModuleID(ctx, mConds.MapStr())
 	if err != nil {
 		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,params:%+v,rid:%s", err, conf, mConds.MapStr(), lgc.rid)
 		return nil, err

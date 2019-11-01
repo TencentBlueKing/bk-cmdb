@@ -21,6 +21,7 @@
     "cytoscape-edgehandles": "3.6.0",
     "cytoscape-popper": "1.0.4",
     "date-fns": "1.29.0",
+    "deep-equal": "1.1.0",
     "echarts": "4.1.0",
     "get-value": "^3.0.1",
     "js-cookie": "2.2.0",

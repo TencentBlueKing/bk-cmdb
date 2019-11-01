@@ -30,21 +30,21 @@ import (
 // NOTE: 进程模板增删改操作检查服务模板的编辑权限
 var ProcessTemplateAuthConfigs = []AuthConfig{
 	{
-		Name:                  "createProcessTemplateBatchPattern",
-		Description:           "创建进程模板",
-		Pattern:               "/api/v3/createmany/proc/proc_template",
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessTemplate,
+		Name:         "createProcessTemplateBatchPattern",
+		Description:  "创建进程模板",
+		Pattern:      "/api/v3/createmany/proc/proc_template",
+		HTTPMethod:   http.MethodPost,
+		BizIDGetter:  DefaultBizIDGetter,
+		ResourceType: meta.ProcessTemplate,
 		// ResourceAction:        meta.Create,
 		ResourceAction: meta.SkipAction,
 	}, {
-		Name:                  "updateProcessTemplatePattern",
-		Description:           "更新进程模板",
-		Pattern:               "/api/v3/update/proc/proc_template",
-		HTTPMethod:            http.MethodPut,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessTemplate,
+		Name:         "updateProcessTemplatePattern",
+		Description:  "更新进程模板",
+		Pattern:      "/api/v3/update/proc/proc_template",
+		HTTPMethod:   http.MethodPut,
+		BizIDGetter:  DefaultBizIDGetter,
+		ResourceType: meta.ProcessTemplate,
 		// ResourceAction:        meta.Update,
 		ResourceAction: meta.SkipAction,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
@@ -55,12 +55,12 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 			return []int64{procTemplateID}, nil
 		},
 	}, {
-		Name:                  "deleteProcessTemplateBatchPattern",
-		Description:           "删除进程模板",
-		Pattern:               "/api/v3/deletemany/proc/proc_template",
-		HTTPMethod:            http.MethodDelete,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceTemplate,
+		Name:         "deleteProcessTemplateBatchPattern",
+		Description:  "删除进程模板",
+		Pattern:      "/api/v3/deletemany/proc/proc_template",
+		HTTPMethod:   http.MethodDelete,
+		BizIDGetter:  DefaultBizIDGetter,
+		ResourceType: meta.ProcessServiceTemplate,
 		// ResourceAction:        meta.Delete,
 		ResourceAction: meta.SkipAction,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
@@ -76,21 +76,21 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 			return ids, nil
 		},
 	}, {
-		Name:                  "findProcessTemplateBatchPattern",
-		Description:           "查找进程模板",
-		Pattern:               "/api/v3/findmany/proc/proc_template",
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessTemplate,
+		Name:         "findProcessTemplateBatchPattern",
+		Description:  "查找进程模板",
+		Pattern:      "/api/v3/findmany/proc/proc_template",
+		HTTPMethod:   http.MethodPost,
+		BizIDGetter:  DefaultBizIDGetter,
+		ResourceType: meta.ProcessTemplate,
 		// authorization should implements in scene server
 		ResourceAction: meta.SkipAction,
 	}, {
-		Name:                  "findProcessTemplateRegexp",
-		Description:           "获取进程模板",
-		Regex:                 regexp.MustCompile(`/api/v3/find/proc/proc_template/id/([0-9]+)/?$`),
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessTemplate,
+		Name:         "findProcessTemplateRegexp",
+		Description:  "获取进程模板",
+		Regex:        regexp.MustCompile(`/api/v3/find/proc/proc_template/id/([0-9]+)/?$`),
+		HTTPMethod:   http.MethodPost,
+		BizIDGetter:  DefaultBizIDGetter,
+		ResourceType: meta.ProcessTemplate,
 		// ResourceAction:        meta.Find,
 		ResourceAction: meta.SkipAction,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
@@ -112,12 +112,5 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 }
 
 func (ps *parseStream) ProcessTemplate() *parseStream {
-	resources, err := MatchAndGenerateIAMResource(ProcessTemplateAuthConfigs, ps.RequestCtx)
-	if err != nil {
-		ps.err = err
-	}
-	if resources != nil {
-		ps.Attribute.Resources = resources
-	}
-	return ps
+	return ParseStreamWithFramework(ps, ProcessTemplateAuthConfigs)
 }

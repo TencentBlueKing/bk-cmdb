@@ -39,11 +39,14 @@
                                 <span class="text link">{{templateInfo.setTemplateName}}</span>
                                 <i class="icon-cc-share"></i>
                             </div>
-                            <bk-button :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
-                                :disabled="!hasChange"
-                                @click="handleSyncSetTemplate">
-                                {{$t('同步集群')}}
-                            </bk-button>
+                            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                                <bk-button slot-scope="{ disabled }"
+                                    :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
+                                    :disabled="!hasChange || disabled"
+                                    @click="handleSyncSetTemplate">
+                                    {{$t('同步集群')}}
+                                </bk-button>
+                            </cmdb-auth>
                         </template>
                         <span class="text" v-else>{{templateInfo.setTemplateName}}</span>
                     </div>
@@ -57,29 +60,26 @@
             :inst="flattenedInstance"
             :show-options="modelId !== 'biz' && !isBlueking">
             <template slot="details-options">
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_TOPO),
-                        auth: [$OPERATION.U_TOPO]
-                    }">
-                    <bk-button class="button-edit"
-                        theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
-                        @click="handleEdit">
-                        {{$t('编辑')}}
-                    </bk-button>
-                </span>
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.D_TOPO),
-                        auth: [$OPERATION.D_TOPO]
-                    }">
-                    <bk-button class="btn-delete"
-                        :disabled="!$isAuthorized($OPERATION.D_TOPO) || moduleFromSetTemplate"
-                        @click="handleDelete">
-                        {{$t('删除节点')}}
-                    </bk-button>
-                </span>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                    <template slot-scope="{ disabled }">
+                        <bk-button class="button-edit"
+                            theme="primary"
+                            :disabled="disabled"
+                            @click="handleEdit">
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </template>
+                </cmdb-auth>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.D_TOPO })">
+                    <template slot-scope="{ disabled }">
+                        <bk-button class="btn-delete"
+                            theme="default"
+                            :disabled="disabled || moduleFromSetTemplate"
+                            @click="handleDelete">
+                            {{$t('删除节点')}}
+                        </bk-button>
+                    </template>
+                </cmdb-auth>
             </template>
         </cmdb-details>
         <template v-else-if="type === 'update'">
@@ -786,6 +786,10 @@
                 padding: 10px 0 0 36px;
             }
         }
+    }
+    .button-edit {
+        min-width: 76px;
+        margin-right: 4px;
     }
     .btn-delete{
         min-width: 76px;
