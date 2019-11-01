@@ -3,6 +3,14 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "B1EircrAtkauAlZfGVhEKBvSmsc=",
+			"path": "github.com/Workiva/go-datastructures",
+			"revision": "f07cbe3f82ca2fd6e5ab94afce65fe43319f675f",
+			"revisionTime": "2018-08-29T20:59:22Z",
+			"version": "v1.0.50",
+			"versionExact": "v1.0.50"
+		},
+		{
 			"checksumSHA1": "cFz6PdLyqjSwv7wWrgkhZa4UM08=",
 			"path": "github.com/go-playground/validator",
 			"revision": "61caf9d3038e1af346dbf5c2e16f6678e1548364",
