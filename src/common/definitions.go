@@ -410,15 +410,6 @@ const (
 	// BKOptionField the option field
 	BKOptionField = "option"
 
-	// BKPrivilegeField the privilege field
-	BKPrivilegeField = "privilege"
-
-	// BKUserGroupIDField the group id field
-	BKUserGroupIDField = "group_id"
-
-	// BKUserListField the user list field
-	BKUserListField = "user_list"
-
 	// BKContentField the content field
 	BKContentField = "content"
 
