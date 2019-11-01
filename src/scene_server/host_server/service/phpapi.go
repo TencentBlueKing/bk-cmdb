@@ -19,9 +19,11 @@ import (
 	"net/http"
 	"strings"
 
+	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -1015,6 +1017,7 @@ func (s *Service) GetPlat(req *restful.Request, resp *restful.Response) {
 
 // CreatePlat create a plat instance
 // available fields for body are last_time, bk_cloud_name, bk_supplier_account, bk_cloud_id, create_time
+// {"bk_cloud_name": "云区域", "bk_supplier_account": 0}
 func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	input := make(map[string]interface{})
@@ -1124,6 +1127,77 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 			Data:     "",
 		})
 	}
+}
+
+func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+
+	// parse platID from url
+	platIDStr := req.PathParameter(common.BKCloudIDField)
+	platID, err := util.GetInt64ByInterface(platIDStr)
+	if nil != err {
+		blog.Infof("UpdatePlat failed, parse platID failed, platID: %s, err: %s, rid:%s", platIDStr, err.Error(), srvData.rid)
+		ccErr := srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+		return
+	}
+	if 0 == platID {
+		blog.Infof("UpdatePlat failed, update built in cloud area forbidden, platID:%+v, rid:%s", platID, srvData.rid)
+		ccErr := srvData.ccErr.Error(common.CCErrTopoUpdateBuiltInCloudForbidden)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+		return
+	}
+
+	// decode request body
+	input := struct {
+		CloudName string `json:"bk_cloud_name"`
+	}{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
+		blog.Errorf("UpdatePlat failed, err:%+v, rid:%s", err, srvData.rid)
+		ccErr := srvData.ccErr.Errorf(common.CCErrCommJSONUnmarshalFailed)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+		return
+	}
+
+	// update plat
+	updateOption := &meta.UpdateOption{
+		Data: map[string]interface{}{
+			common.BKCloudNameField: input.CloudName,
+		},
+		Condition: map[string]interface{}{
+			common.BKCloudIDField: platID,
+		},
+	}
+	res, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, updateOption)
+	if nil != err {
+		blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, err:%s, rid:%s", updateOption, err.Error(), srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed)})
+		return
+	}
+	if res.Result == false || res.Code != 0 {
+		blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, response:%s, err:%s, rid:%s", updateOption, res, err.Error(), srvData.rid)
+		ccErr := &meta.RespError{Msg: errors.New(res.Code, res.ErrMsg)}
+		_ = resp.WriteError(http.StatusInternalServerError, ccErr)
+		return
+	}
+
+	// auth: sync resource info to iam
+	iamPlat := extensions.PlatSimplify{
+		BKCloudIDField:   platID,
+		BKCloudNameField: input.CloudName,
+	}
+	if err := s.AuthManager.UpdateRegisteredPlat(srvData.ctx, srvData.header, iamPlat); err != nil {
+		blog.Errorf("UpdatePlat success, but UpdateRegisteredPlat failed, plat: %d, err: %v, rid: %s", platID, err, srvData.rid)
+		ccErr := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)}
+		_ = resp.WriteError(http.StatusInternalServerError, ccErr)
+		return
+	}
+
+	// response success
+	_ = resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     "",
+	})
 }
 
 func (s *Service) getHostListByAppIDAndField(req *restful.Request, resp *restful.Response) {
