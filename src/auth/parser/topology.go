@@ -2073,8 +2073,8 @@ const (
 )
 
 var (
-	updateCloudAreaRegexp = regexp.MustCompile(`/api/v3/update/cloudarea/[0-9]+/?$`)
-	deleteCloudAreaRegexp = regexp.MustCompile(`/api/v3/delete/cloudarea/[0-9]+/?$`)
+	updateCloudAreaRegexp = regexp.MustCompile(`^/api/v3/update/cloudarea/[0-9]+/?$`)
+	deleteCloudAreaRegexp = regexp.MustCompile(`^/api/v3/delete/cloudarea/[0-9]+/?$`)
 )
 
 func (ps *parseStream) cloudArea() *parseStream {
