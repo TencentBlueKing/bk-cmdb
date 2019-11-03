@@ -902,7 +902,7 @@
     "应用收藏条件失败，转换数据错误": "Application collection condition failed, conversion data error",
     "请选择收藏条件": "Please select condition",
     "新增条件": "Add condition",
-    "收藏此条件": "Collect this condition",
+    "收藏此条件": "Collect",
     "添加节点已选择": "Selected",
     "新建集群": "New Set",
     "内置模型组不支持添加和修改": "Built-in model groups do not support adding and modifying",
