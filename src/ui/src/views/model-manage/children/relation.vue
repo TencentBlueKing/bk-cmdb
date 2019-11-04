@@ -70,8 +70,10 @@
             v-transfer-dom
             :width="450"
             :title="slider.title"
-            :is-show.sync="slider.isShow">
+            :is-show.sync="slider.isShow"
+            :before-close="handleSliderBeforeClose">
             <the-relation-detail
+                ref="relationForm"
                 slot="content"
                 v-if="slider.isShow"
                 :is-read-only="isReadOnly || slider.isReadOnly"
@@ -79,7 +81,7 @@
                 :relation="slider.relation"
                 :relation-list="relationList"
                 @save="saveRelation"
-                @cancel="slider.isShow = false">
+                @cancel="handleSliderBeforeClose">
             </the-relation-detail>
         </bk-sideslider>
     </div>
@@ -256,6 +258,27 @@
                 this.slider.relation = row
                 this.slider.title = this.$t('查看关联')
                 this.slider.isShow = true
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
+                            confirmFn: () => {
+                                this.slider.isShow = false
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.slider.isShow = false
+                return true
             }
         }
     }
