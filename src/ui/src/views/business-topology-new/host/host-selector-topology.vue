@@ -245,15 +245,15 @@
                     this.$refs.tree.setChecked(node.id, { checked: !node.checked, emitEvent: true })
                 }
             },
-            async handleCheckedChange (checked, currentNode) {
+            async handleCheckedChange (checked, selectedNode) {
                 const hosts = []
-                if (currentNode.data.bk_obj_id === 'host') {
-                    hosts.push(currentNode.data.item)
+                if (selectedNode.data.bk_obj_id === 'host') {
+                    hosts.push(selectedNode.data.item)
                 } else {
-                    const descendants = currentNode.descendants.filter(node => node.data.bk_obj_id === 'host')
+                    const descendants = selectedNode.descendants.filter(node => node.data.bk_obj_id === 'host')
                     hosts.push(...descendants.map(node => node.data.item))
                 }
-                if (currentNode.checked) {
+                if (selectedNode.checked) {
                     this.$parent.handleSelect(hosts)
                 } else {
                     this.$parent.handleRemove(hosts)
