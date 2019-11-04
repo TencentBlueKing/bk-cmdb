@@ -54,8 +54,8 @@ type BizInst struct {
 }
 
 type BizBasicInfo struct {
-	BizID   int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id"`
-	BizName string `bson:"bk_biz_name" json:"bk_biz_name" field:"bk_biz_name"`
+	BizID   int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
+	BizName string `bson:"bk_biz_name" json:"bk_biz_name" field:"bk_biz_name" mapstructure:"bk_biz_name"`
 }
 
 type CloudInst struct {
