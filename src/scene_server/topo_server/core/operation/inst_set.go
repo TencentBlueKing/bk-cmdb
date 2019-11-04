@@ -188,6 +188,12 @@ func (s *set) DeleteSet(params types.ContextParams, setModel model.Object, bizID
 		return params.Err.New(common.CCErrTopoSetDeleteFailed, err.Error())
 	}
 
+	// clear set template sync status
+	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(params.Context, params.Header, bizID, setIDS); ccErr != nil {
+		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDS, err.Error(), params.ReqID)
+		return ccErr
+	}
+
 	// clear the sets
 	return s.inst.DeleteInst(params, setModel, setCond, false)
 }
