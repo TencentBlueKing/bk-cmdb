@@ -38,11 +38,11 @@ func (ps *parseStream) topology() *parseStream {
 		objectInstanceAssociation().
 		objectInstance().
 		object().
-        objectClassification().
+		objectClassification().
 		objectAttributeGroup().
 		objectAttribute().
-        objectModule().
-        objectSet().
+		objectModule().
+		objectSet().
 		objectUnique().
 		audit().
 		instanceAudit().
@@ -63,6 +63,7 @@ var (
 )
 
 const findReducedBusinessList = `/api/v3/biz/with_reduced`
+const findSimplifiedBusinessList = `/api/v3/biz/simplify`
 
 func (ps *parseStream) business() *parseStream {
 	if ps.shouldReturn() {
@@ -71,6 +72,19 @@ func (ps *parseStream) business() *parseStream {
 
 	// find reduced business list for the user with any business resources
 	if ps.hitPattern(findReducedBusinessList, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find simplified business list with limited fields return
+	if ps.hitPattern(findSimplifiedBusinessList, http.MethodGet) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -2325,7 +2339,8 @@ const (
 )
 
 var (
-	deleteCloudAreaRegexp = regexp.MustCompile(`/api/v3/delete/cloudarea/[0-9]+/?$`)
+	updateCloudAreaRegexp = regexp.MustCompile(`^/api/v3/update/cloudarea/[0-9]+/?$`)
+	deleteCloudAreaRegexp = regexp.MustCompile(`^/api/v3/delete/cloudarea/[0-9]+/?$`)
 )
 
 func (ps *parseStream) cloudArea() *parseStream {
@@ -2358,6 +2373,19 @@ func (ps *parseStream) cloudArea() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.Create,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(updateCloudAreaRegexp, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.Update,
 				},
 				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},

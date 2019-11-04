@@ -271,3 +271,25 @@ func (s *coreService) ListSetTemplateSyncHistory(params core.ContextParams, path
 	}
 	return result, nil
 }
+
+func (s *coreService) DeleteSetTemplateSyncStatus(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.DeleteSetTemplateSyncStatusOption{}
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
+		blog.Errorf("DeleteSetTemplateSyncStatus failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+	option.BizID = bizID
+
+	ccErr := s.core.SetTemplateOperation().DeleteSetTemplateSyncStatus(params, option)
+	if ccErr != nil {
+		blog.Errorf("DeleteSetTemplateSyncStatus failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, ccErr, params.ReqID)
+		return nil, err
+	}
+	return nil, nil
+}

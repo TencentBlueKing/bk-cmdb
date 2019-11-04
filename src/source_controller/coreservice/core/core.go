@@ -262,6 +262,7 @@ type SetTemplateOperation interface {
 	UpdateSetTemplateSyncStatus(ctx ContextParams, setID int64, option metadata.SetTemplateSyncStatus) errors.CCErrorCoder
 	ListSetTemplateSyncStatus(ctx ContextParams, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
 	ListSetTemplateSyncHistory(ctx ContextParams, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
+	DeleteSetTemplateSyncStatus(ctx ContextParams, option metadata.DeleteSetTemplateSyncStatusOption) errors.CCErrorCoder
 }
 
 type core struct {

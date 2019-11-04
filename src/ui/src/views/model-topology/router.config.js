@@ -1,10 +1,11 @@
 import Meta from '@/router/meta'
 import { MENU_MODEL_TOPOLOGY, MENU_MODEL_TOPOLOGY_NEW } from '@/dictionary/menu-symbol'
 
-import { SYSTEM_MODEL_GRAPHICS } from '@/dictionary/auth'
+import { SYSTEM_MODEL_GRAPHICS, SYSTEM_TOPOLOGY } from '@/dictionary/auth'
 
 export const OPERATION = {
-    SYSTEM_MODEL_GRAPHICS
+    SYSTEM_MODEL_GRAPHICS,
+    SYSTEM_TOPOLOGY
 }
 
 export default [{
