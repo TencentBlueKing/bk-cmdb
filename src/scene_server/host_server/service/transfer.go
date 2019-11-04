@@ -112,7 +112,10 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 		return
 	}
 
-	_ = resp.WriteEntity(metadata.Response{Data: transferResult})
+	_ = resp.WriteEntity(metadata.Response{
+		BaseResp: metadata.SuccessBaseResp,
+		Data:     transferResult,
+	})
 	return
 }
 
@@ -587,6 +590,9 @@ func (s *Service) TransferHostWithAutoClearServiceInstancePreview(req *restful.R
 		previews = append(previews, preview)
 	}
 
-	_ = resp.WriteEntity(metadata.Response{Data: previews})
+	_ = resp.WriteEntity(metadata.Response{
+		BaseResp: metadata.SuccessBaseResp,
+		Data:     previews,
+	})
 	return
 }
