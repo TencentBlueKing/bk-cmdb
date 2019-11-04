@@ -74,7 +74,7 @@
                         <bk-search-select
                             ref="searchSelect"
                             :show-condition="false"
-                            :placeholder="$t('实例名称/标签')"
+                            :placeholder="$t('请输入实例名称或选择标签')"
                             :data="searchSelect"
                             v-model="searchSelectData"
                             @menu-child-condition-select="handleConditionSelect"
