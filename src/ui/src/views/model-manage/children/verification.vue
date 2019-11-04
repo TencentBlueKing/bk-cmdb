@@ -46,7 +46,7 @@
             :width="450"
             :title="slider.title"
             :isShow.sync="slider.isShow"
-            :beforeClose="handleSliderBeforeClose">>
+            :beforeClose="handleSliderBeforeClose">
             <the-verification-detail
                 ref="verificationForm"
                 class="slider-content"
