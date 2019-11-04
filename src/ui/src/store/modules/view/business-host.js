@@ -23,12 +23,8 @@ const getters = {
     },
     currentNode: state => state.currentNode,
     getDefaultSearchCondition: state => () => {
-        let topologyModels = state.topologyModels
-        if (!topologyModels.length) {
-            topologyModels = ['biz', 'set', 'module', 'host'].map(modelId => ({ bk_obj_id: modelId }))
-        }
-        return topologyModels.map(model => ({
-            bk_obj_id: model.bk_obj_id,
+        return ['biz', 'set', 'module', 'host', 'object'].map(modelId => ({
+            bk_obj_id: modelId,
             condition: [],
             fields: []
         }))

@@ -61,6 +61,7 @@
 <script>
     import { mapGetters } from 'vuex'
     export default {
+        name: 'cmdb-module-selector',
         props: {
             defaultChecked: {
                 type: Array,
@@ -105,7 +106,7 @@
                 return map
             }
         },
-        created () {
+        async created () {
             this.getModules()
         },
         methods: {
@@ -126,14 +127,17 @@
                 }
             },
             setDefaultChecked () {
-                this.defaultChecked.forEach(id => {
-                    const node = this.$refs.tree.getNodeById({
-                        bk_obj_id: 'module',
-                        bk_inst_id: id
+                this.$nextTick(() => {
+                    this.defaultChecked.forEach(id => {
+                        const node = this.$refs.tree.getNodeById(this.getNodeId({
+                            bk_obj_id: 'module',
+                            bk_inst_id: id
+                        }))
+                        if (node) {
+                            this.checked.push(node)
+                            this.$refs.tree.setChecked(node.id)
+                        }
                     })
-                    if (node) {
-                        this.checked.push(node)
-                    }
                 })
             },
             getInternalModules () {
@@ -215,6 +219,7 @@
                     this.$warn('请选择模块')
                     return false
                 }
+                this.$emit('confirm', this.checked)
             }
         }
     }

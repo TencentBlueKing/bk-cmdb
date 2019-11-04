@@ -13,6 +13,7 @@
 
 <script>
     export default {
+        name: 'cmdb-move-to-resource-confirm',
         props: {
             count: {
                 type: Number,

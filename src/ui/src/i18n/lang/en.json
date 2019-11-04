@@ -1052,5 +1052,13 @@
     "模板集群添加模块提示": "The accumulated template is currently configured, and modules cannot be added.",
     "请编辑": "Please edit",
     "无": "none",
-    "确认归还资源池主机数量": "Comfirm transfer {count} idle host(s) to resource pool?"
+    "确认归还资源池主机数量": "Comfirm transfer {count} idle host(s) to resource pool?",
+    "已选主机": "Host Count",
+    "N台主机": "{count}",
+    "变更确认": "Confirm Info",
+    "删除服务实例": "Deleted Service Instance",
+    "删除服务实例提示": "Remove from current module, service instance will be deleted at the same time.",
+    "确认移除": "Confirm",
+    "所属模块": "Module belongs to",
+    "转移到": "Transfer to"
 }

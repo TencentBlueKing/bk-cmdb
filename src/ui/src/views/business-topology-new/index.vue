@@ -102,7 +102,7 @@
         border-right: 1px solid $cmdbLayoutBorderColor;
     }
     .tab-layout {
-        height: calc(100vh - 140px);
+        height: calc(100vh - 120px);
         overflow: hidden;
         .topology-tab {
             /deep/ {

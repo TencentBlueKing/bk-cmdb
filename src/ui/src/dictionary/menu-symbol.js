@@ -38,3 +38,6 @@ export const MENU_RESOURCE_BUSINESS_COLLECTION = 'menu_resource_business_collect
 export const MENU_RESOURCE_HOST_DETAILS = 'menu_resource_host_details'
 export const MENU_RESOURCE_BUSINESS_HOST_DETAILS = 'menu_resource_business_host_details'
 export const MENU_BUSINESS_HOST_DETAILS = 'menu_business_host_details'
+
+// 转移主机
+export const MENU_BUSINESS_TRANSFER_HOST = 'menu_business_transfer_host'

@@ -1,7 +1,11 @@
 <template>
     <div class="options-layout clearfix">
         <div class="options fl">
-            <bk-button class="option" theme="primary" @click="handleAddHost">{{$t('新增')}}</bk-button>
+            <bk-button class="option" theme="primary"
+                :disabled="!isNormalModuleNode"
+                @click="handleAddHost">
+                {{$t('新增')}}
+            </bk-button>
             <bk-dropdown-menu class="option ml10" trigger="click"
                 font-size="large"
                 :disabled="!hasSelection"
@@ -13,8 +17,8 @@
                     <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
                 </bk-button>
                 <ul class="bk-dropdown-list" slot="dropdown-content">
-                    <li :class="['bk-dropdown-item', { disabled: !isIdleSet }]"
-                        @click="handleTransfer($event, 'idle', !isIdleSet)">
+                    <li :class="['bk-dropdown-item', { disabled: isIdleSet }]"
+                        @click="handleTransfer($event, 'idle', isIdleSet)">
                         {{$t('空闲模块')}}
                     </li>
                     <li class="bk-dropdown-item" @click="handleTransfer($event, 'business', false)">{{$t('业务模块')}}</li>
@@ -25,6 +29,12 @@
                 </ul>
             </bk-dropdown-menu>
             <bk-button class="option ml10" @click="handleMultipleEdit">{{$t('编辑')}}</bk-button>
+            <cmdb-clipboard-selector class="options-button ml10"
+                label-key="bk_property_name"
+                :list="clipboardList"
+                :disabled="!hasSelection"
+                @on-copy="handleCopy">
+            </cmdb-clipboard-selector>
             <bk-dropdown-menu class="option ml10" trigger="click"
                 font-size="large"
                 @show="isMoreMenuOpen = true"
@@ -34,9 +44,8 @@
                     <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
                 </bk-button>
                 <ul class="bk-dropdown-list" slot="dropdown-content">
-                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]">{{$t('移除')}}</li>
-                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]">{{$t('导出')}}</li>
-                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]">{{$t('复制')}}</li>
+                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleRemove">{{$t('移除')}}</li>
+                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport">{{$t('导出')}}</li>
                 </ul>
             </bk-dropdown-menu>
         </div>
@@ -85,10 +94,15 @@
     import EditMultipleHost from './edit-multiple-host.vue'
     import HostSelector from './host-selector.vue'
     import { mapGetters } from 'vuex'
+    import {
+        MENU_BUSINESS,
+        MENU_BUSINESS_TRANSFER_HOST
+    } from '@/dictionary/menu-symbol'
+    import Formatter from '@/filters/formatter.js'
     export default {
         components: {
             EditMultipleHost,
-            HostSelector
+            [HostSelector.name]: HostSelector
         },
         data () {
             return {
@@ -111,6 +125,7 @@
             }
         },
         computed: {
+            ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('businessHost', [
                 'getProperties',
@@ -122,11 +137,19 @@
             hasSelection () {
                 return !!this.$parent.table.selection.length
             },
+            isNormalModuleNode () {
+                return this.currentNode
+                    && this.currentNode.data.bk_obj_id === 'module'
+                    && this.currentNode.data.default === 0
+            },
             isIdleModule () {
                 return this.currentNode && this.currentNode.data.default === 1
             },
             isIdleSet () {
                 return this.currentNode && this.currentNode.data.default !== 0
+            },
+            clipboardList () {
+                return this.$parent.table.header
             }
         },
         created () {
@@ -177,8 +200,71 @@
                 this.$refs.editMultipleHost.handleMultipleEdit()
             },
             handleAddHost () {
-                this.dialog.component = HostSelector
+                this.dialog.component = HostSelector.name
                 this.dialog.show = true
+            },
+            handleRemove () {
+                if (!this.hasSelection) {
+                    return false
+                }
+                this.$router.push({
+                    name: MENU_BUSINESS_TRANSFER_HOST,
+                    params: {
+                        type: 'remove'
+                    },
+                    query: {
+                        sourceModel: this.currentNode.data.bk_obj_id,
+                        sourceId: this.currentNode.data.bk_inst_id,
+                        resources: this.$parent.table.selection.map(item => item.host.bk_host_id).join(',')
+                    }
+                })
+            },
+            async handleExport () {
+                if (!this.hasSelection) {
+                    return false
+                }
+                try {
+                    this.$store.commit('setGlobalLoading', true)
+                    const data = new FormData()
+                    data.append('bk_biz_id', -1)
+                    data.append('bk_host_id', this.$parent.table.selection.map(item => item.host.bk_host_id).join(','))
+                    const customFields = this.usercustom[this.$route.meta.customInstanceColumn]
+                    if (customFields) {
+                        data.append('export_custom_fields', customFields)
+                    }
+                    if (this.$route.meta.owner === MENU_BUSINESS) {
+                        data.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
+                    }
+                    await this.$http.download({
+                        url: `${window.API_HOST}hosts/export`,
+                        method: 'post',
+                        data
+                    })
+                    this.$store.commit('setGlobalLoading', false)
+                } catch (e) {
+                    console.error(e)
+                    this.$store.commit('setGlobalLoading', false)
+                }
+            },
+            handleCopy (target) {
+                const copyList = this.$parent.table.selection
+                const copyText = []
+                copyList.forEach(item => {
+                    const value = item[target.bk_obj_id][target.bk_property_id]
+                    const formattedValue = Formatter(value, target)
+                    if (formattedValue !== '--') {
+                        copyText.push(formattedValue)
+                    }
+                })
+                if (copyText.length) {
+                    this.$copyText(copyText.join('\n')).then(() => {
+                        this.$success(this.$t('复制成功'))
+                    }, () => {
+                        this.$error(this.$t('复制失败'))
+                    })
+                } else {
+                    this.$info(this.$t('该字段无可复制的值'))
+                }
             },
             handleDialogCancel () {
                 this.dialog.show = false
@@ -216,6 +302,7 @@
         font-size: 14px;
         color: $textColor;
         .bk-dropdown-item {
+            position: relative;
             display: block;
             padding: 0 20px;
             margin: 0;
@@ -232,5 +319,7 @@
                 cursor: not-allowed;
             }
         }
+    }
+    .clipboard-list {
     }
 </style>

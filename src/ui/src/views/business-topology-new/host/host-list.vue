@@ -6,6 +6,7 @@
             :data="table.data"
             :pagination="table.pagination"
             :row-style="{ cursor: 'pointer' }"
+            :max-height="$APP.height - 250"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @sort-change="handleSortChange"
@@ -28,7 +29,8 @@
             <component
                 :is="dialog.component"
                 v-bind="dialog.props"
-                @cancel="handleDialogCancel">
+                @cancel="handleDialogCancel"
+                @confirm="handleDialogConfirm">
             </component>
         </cmdb-dialog>
     </div>
@@ -40,12 +42,15 @@
     import MoveToResourceConfirm from './move-to-resource-confirm.vue'
     import hostValueFilter from '@/filters/host'
     import { mapGetters } from 'vuex'
-    import { MENU_BUSINESS_HOST_DETAILS } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_DETAILS,
+        MENU_BUSINESS_TRANSFER_HOST
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             HostListOptions,
-            ModuleSelector,
-            MoveToResourceConfirm
+            [ModuleSelector.name]: ModuleSelector,
+            [MoveToResourceConfirm.name]: MoveToResourceConfirm
         },
         filters: {
             hostValueFilter
@@ -70,7 +75,8 @@
                     props: {}
                 },
                 request: {
-                    table: Symbol('table')
+                    table: Symbol('table'),
+                    moveToResource: Symbol('moveToResource')
                 }
             }
         },
@@ -84,7 +90,7 @@
                 'commonRequest'
             ]),
             customColumns () {
-                const customColumnKey = this.$route.meta.tableColumnsConfigKey
+                const customColumnKey = this.$route.meta.customInstanceColumn
                 return this.usercustom[customColumnKey] || []
             }
         },
@@ -172,15 +178,17 @@
                     condition: this.getDefaultSearchCondition()
                 }
                 const idMap = {
+                    host: 'bk_host_id',
                     set: 'bk_set_id',
                     module: 'bk_module_id',
                     biz: 'bk_biz_id',
-                    default: 'bk_inst_id'
+                    object: 'bk_inst_id'
                 }
                 const nodeData = this.currentNode.data
-                const currentNodeCondition = params.condition.find(target => target.bk_obj_id === nodeData.bk_obj_id)
+                const conditionObjectId = Object.keys(idMap).includes(nodeData.bk_obj_id) ? nodeData.bk_obj_id : 'object'
+                const currentNodeCondition = params.condition.find(target => target.bk_obj_id === conditionObjectId)
                 currentNodeCondition.condition.push({
-                    field: idMap[nodeData.bk_obj_id] || idMap.default,
+                    field: idMap[conditionObjectId],
                     operator: '$eq',
                     value: nodeData.bk_inst_id
                 })
@@ -193,18 +201,57 @@
                         title: type === 'idle' ? this.$t('转移主机到空闲模块') : this.$t('转移主机到业务模块')
                     }
                     this.dialog.width = 720
-                    this.dialog.component = ModuleSelector
+                    this.dialog.component = ModuleSelector.name
                 } else {
                     this.dialog.props = {
                         count: this.table.selection.length
                     }
                     this.dialog.width = 400
-                    this.dialog.component = MoveToResourceConfirm
+                    this.dialog.component = MoveToResourceConfirm.name
                 }
                 this.dialog.show = true
             },
             handleDialogCancel () {
                 this.dialog.show = false
+            },
+            handleDialogConfirm () {
+                this.dialog.show = false
+                if (this.dialog.component === ModuleSelector.name) {
+                    this.gotoTransferPage(...arguments)
+                } else if (this.dialog.component === MoveToResourceConfirm.name) {
+                    this.moveHostToResource()
+                }
+            },
+            gotoTransferPage (modules) {
+                this.$router.push({
+                    name: MENU_BUSINESS_TRANSFER_HOST,
+                    params: {
+                        type: this.dialog.props.moduleType
+                    },
+                    query: {
+                        sourceModel: this.currentNode.data.bk_obj_id,
+                        sourceId: this.currentNode.data.bk_inst_id,
+                        targetModules: modules.map(node => node.data.bk_inst_id).join(','),
+                        resources: this.table.selection.map(item => item.host.bk_host_id).join(',')
+                    }
+                })
+            },
+            async moveHostToResource () {
+                try {
+                    await this.$store.dispatch('hostRelation/transferHostToResourceModule', {
+                        params: {
+                            bk_biz_id: this.bizId,
+                            bk_host_id: this.table.selection.map(item => item.host.bk_host_id)
+                        },
+                        config: {
+                            requestId: this.request.moveToResource
+                        }
+                    })
+                    this.handlePageChange(1)
+                    this.$success('转移成功')
+                } catch (e) {
+                    console.error(e)
+                }
             }
         }
     }
