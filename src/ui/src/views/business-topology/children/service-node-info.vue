@@ -88,13 +88,17 @@
                 <div class="selector-item mt10 clearfix">
                     <cmdb-selector class="category-selector fl"
                         :list="firstCategories"
-                        v-model="first">
+                        v-model="first"
+                        @on-selected="handleChangeFirstCategory">
                     </cmdb-selector>
                     <cmdb-selector class="category-selector fl"
                         :list="secondCategories"
+                        name="secondCategory"
+                        v-validate="'required'"
                         v-model="second"
                         @on-selected="handleChangeCategory">
                     </cmdb-selector>
+                    <span class="second-category-errors" v-if="errors.has('secondCategory')">{{errors.first('secondCategory')}}</span>
                 </div>
             </div>
             <cmdb-form class="topology-form"
@@ -428,10 +432,17 @@
                 }
                 this.type = 'update'
             },
+            handleChangeFirstCategory (id, category) {
+                if (!this.secondCategories.length) {
+                    this.second = ''
+                    this.$set(this.$refs.form.values, 'service_category_id', '')
+                }
+            },
             handleChangeCategory (id, category) {
                 this.$set(this.$refs.form.values, 'service_category_id', id)
             },
             async handleSubmit (value) {
+                if (!await this.$validator.validateAll()) return
                 const promiseMap = {
                     set: this.updateSetInstance,
                     module: this.updateModuleInstance
@@ -444,6 +455,7 @@
                     await (promiseMap[this.modelId] || this.updateCustomInstance)(this.$injectMetadata(value))
                     this.selectedNode.data.bk_inst_name = value[nameMap[this.modelId] || 'bk_inst_name']
                     this.instance = Object.assign({}, this.instance, value)
+                    this.getServiceInfo(this.instance)
                     this.type = 'details'
                     this.$success(this.$t('修改成功'))
                 } catch (e) {
@@ -472,8 +484,6 @@
                     config: {
                         requestId: 'updateNodeInstance'
                     }
-                }).then(async () => {
-                    this.getServiceInfo({ service_category_id: value.service_category_id || this.instance.service_category_id })
                 })
             },
             updateCustomInstance (value) {
@@ -760,6 +770,7 @@
         padding: 20px 0 24px 36px;
         border-bottom: 1px solid #dcdee5;
         .selector-item {
+            position: relative;
             width: 50%;
             max-width: 554px;
             padding-right: 54px;
@@ -769,6 +780,17 @@
             & + .category-selector {
                 margin-left: 10px;
             }
+        }
+        .second-category-errors {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-left: calc(50% - 18px);
+            line-height: 14px;
+            font-size: 12px;
+            color: #ff5656;
+            max-width: 100%;
+            @include ellipsis;
         }
     }
     .topology-form {

@@ -324,7 +324,7 @@ func (assoc *association) IsMainlineObject(params types.ContextParams, objID str
 	}
 
 	for _, mainline := range asst.Data.Info {
-		if mainline.ObjectID == objID {
+		if mainline.ObjectID == objID || mainline.AsstObjID == objID {
 			return true, nil
 		}
 	}

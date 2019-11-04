@@ -202,10 +202,10 @@ const (
 	CCErrCommGlobalCCErrorNotInitialized = 1199074
 
 	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
-	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199076
-
+	CCErrTopoUpdateBuiltInCloudForbidden                     = 1199076
 	CCErrCommModifyFieldForbidden = 1199077
-
+    CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199078
+    
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 

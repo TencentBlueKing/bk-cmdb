@@ -81,7 +81,8 @@
                 attribute: {
                     isShow: false,
                     list: this.attributeList
-                }
+                },
+                originVerificationInfo: {}
             }
         },
         computed: {
@@ -111,12 +112,22 @@
                     })
                 })
                 return params
+            },
+            changedValues () {
+                const changedValues = {}
+                for (const propertyId in this.verificationInfo) {
+                    if (JSON.stringify(this.verificationInfo[propertyId]) !== JSON.stringify(this.originVerificationInfo[propertyId])) {
+                        changedValues[propertyId] = this.verificationInfo[propertyId]
+                    }
+                }
+                return changedValues
             }
         },
         created () {
             if (this.isEdit) {
                 this.initData()
             }
+            this.originVerificationInfo = this.$tools.clone(this.verificationInfo)
         },
         methods: {
             ...mapActions('objectUnique', [
