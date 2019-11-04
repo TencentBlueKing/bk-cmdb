@@ -57,7 +57,7 @@ func (m *operationManager) ModelInst(ctx core.ContextParams, wg *sync.WaitGroup)
 	defer wg.Done()
 	modelInstCount := make([]metadata.StringIDCount, 0)
 
-	innerObject := []string{"host", "biz", "set", "cloud", "module", "process"}
+	innerObject := []string{"host", "biz", "set", "cloud", "module", "process", "plat"}
 	cond := mapstr.MapStr{}
 	cond["bk_obj_id"] = mapstr.MapStr{"$nin": innerObject}
 	modelInstNumber := make([]metadata.IDStringCountInt64, 0)
@@ -105,7 +105,7 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams, wg *sync.Wait
 		return err
 	}
 
-	innerObject := []string{"host", "biz", "set", "cloud", "module", "process"}
+	innerObject := []string{"host", "biz", "set", "cloud", "module", "process", "plat"}
 	cond := mapstr.MapStr{}
 	cond["bk_obj_id"] = mapstr.MapStr{"$nin": innerObject}
 	modelData := make([]metadata.Object, 0)
@@ -357,7 +357,7 @@ func (m *operationManager) UpdateInnerChartData(ctx core.ContextParams, reportTy
 func (m *operationManager) StatisticOperationLog(ctx core.ContextParams) (*metadata.StatisticInstOperation, error) {
 	lastTime := time.Now().AddDate(0, 0, -30)
 
-	innerObject := []string{"host", "biz", "set", "cloud", "module", "process"}
+	innerObject := []string{"host", "biz", "set", "cloud", "module", "process", "plat"}
 	opt := mapstr.MapStr{}
 	opt[common.OperationDescription] = common.CreateObject
 	createCount, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(opt).Count(ctx)
