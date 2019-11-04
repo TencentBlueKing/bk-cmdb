@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -58,57 +57,39 @@ func (m *operationManager) ModelInst(ctx core.ContextParams, wg *sync.WaitGroup)
 	defer wg.Done()
 	modelInstCount := make([]metadata.StringIDCount, 0)
 
-	opt := mapstr.MapStr{}
+	innerObject := []string{"host", "biz", "set", "cloud", "module", "process"}
+	cond := mapstr.MapStr{}
+	cond["bk_obj_id"] = mapstr.MapStr{"$nin": innerObject}
 	modelInstNumber := make([]metadata.IDStringCountInt64, 0)
 	modelInfo := make([]metadata.Object, 0)
-	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(opt).All(ctx, &modelInfo); err != nil {
+	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).All(ctx, &modelInfo); err != nil {
 		blog.Errorf("count model's instance, search model info fail ,err: %v, rid: %v", err, ctx.ReqID)
 		return err
 	}
-	instCount, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(opt).Count(ctx)
-	if err != nil {
-		blog.Errorf("count model's instance, search inst count fail ,err: %v, rid: %v", err, ctx.ReqID)
-		return err
-	}
-
-	if instCount == 0 {
-		err = m.ObjectBaseEmpty(ctx, modelInfo)
-		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, ctx.ReqID)
-		return err
-	}
 	pipeline := []M{{"$group": M{"_id": "$bk_obj_id", "count": M{"$sum": 1}}}}
-	if err = m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &modelInstCount); err != nil {
+	if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &modelInstCount); err != nil {
 		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, ctx.ReqID)
 		return err
 	}
 
-	allModels := make([]metadata.ObjectIDName, 0)
-	matchedModels := make([]string, 0)
 	for _, model := range modelInfo {
-		allModels = append(allModels, metadata.ObjectIDName{ObjectID: model.ObjectID, ObjectName: model.ObjectName})
+		matched := false
+		info := metadata.IDStringCountInt64{}
 		for _, countInfo := range modelInstCount {
 			if countInfo.Id == model.ObjectID {
-				info := metadata.IDStringCountInt64{
-					Id:    model.ObjectName,
-					Count: countInfo.Count,
-				}
-				modelInstNumber = append(modelInstNumber, info)
-				matchedModels = append(matchedModels, model.ObjectName)
+				info.Id = model.ObjectName
+				info.Count = countInfo.Count
+				matched = true
 			}
 		}
-	}
-
-	for _, model := range allModels {
-		if !util.InStrArr(matchedModels, model.ObjectName) && !util.IsInnerObject(model.ObjectID) {
-			info := metadata.IDStringCountInt64{
-				Id:    model.ObjectName,
-				Count: 0,
-			}
-			modelInstNumber = append(modelInstNumber, info)
+		if !matched {
+			info.Id = model.ObjectName
+			info.Count = 0
 		}
+		modelInstNumber = append(modelInstNumber, info)
 	}
 
-	if err = m.UpdateInnerChartData(ctx, common.ModelInstChart, modelInstNumber); err != nil {
+	if err := m.UpdateInnerChartData(ctx, common.ModelInstChart, modelInstNumber); err != nil {
 		blog.Errorf("update inner chart ModelInst data fail, err: %v, rid: %v", err, ctx.ReqID)
 		return err
 	}
@@ -124,7 +105,9 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams, wg *sync.Wait
 		return err
 	}
 
+	innerObject := []string{"host", "biz", "set", "cloud", "module", "process"}
 	cond := mapstr.MapStr{}
+	cond["bk_obj_id"] = mapstr.MapStr{"$nin": innerObject}
 	modelData := make([]metadata.Object, 0)
 	if err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).All(ctx, &modelData); nil != err {
 		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.ReqID, cond, err.Error())
@@ -158,21 +141,12 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams, wg *sync.Wait
 
 	modelInstData := metadata.ModelInstChange{}
 	// 把bk_obj_id换成bk_obj_name
-	allModels := make([]metadata.ObjectIDName, 0)
-	matchedModels := make([]string, 0)
 	for _, model := range modelData {
-		allModels = append(allModels, metadata.ObjectIDName{ObjectID: model.ObjectID, ObjectName: model.ObjectName})
+		modelInstData[model.ObjectName] = &metadata.InstChangeCount{}
 		for key, value := range modelInstChange {
 			if key == model.ObjectID {
-				matchedModels = append(matchedModels, model.ObjectName)
 				modelInstData[model.ObjectName] = value
 			}
-		}
-	}
-
-	for _, model := range allModels {
-		if !util.InStrArr(matchedModels, model.ObjectName) && !util.IsInnerObject(model.ObjectID) {
-			modelInstData[model.ObjectName] = &metadata.InstChangeCount{}
 		}
 	}
 
@@ -197,17 +171,6 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams, wg *sync.W
 	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
 		blog.Errorf("biz's host count, search biz info fail ,err: %v, rid: %v", err, ctx.ReqID)
 		return err
-	}
-
-	if bizHost == nil {
-		blog.V(3).Info("table cc_ModuleHostConfig is empty, rid: %v", ctx.ReqID)
-
-		err = m.BizHostEmpty(ctx, bizInfo)
-		if err != nil {
-			blog.Errorf("search biz's host count fail, err: %v, rid: %v", err, ctx.ReqID)
-			return err
-		}
-		return nil
 	}
 
 	condition := mapstr.MapStr{}
@@ -242,7 +205,7 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams, wg *sync.W
 			if len(firstBizHostChange.Data) > 0 {
 				firstBizHostChange.Data[info.Id] = append(firstBizHostChange.Data[info.Id], currentData)
 			} else {
-				firstBizHostChange.OwnerID = "0"
+				firstBizHostChange.OwnerID = ctx.SupplierAccount
 				firstBizHostChange.ReportType = common.HostChangeBizChart
 				firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
 				firstBizHostChange.Data[info.Id] = append(firstBizHostChange.Data[info.Id], currentData)
@@ -268,16 +231,6 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams, wg *sync.W
 func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.StringIDCount, error) {
 	bizHostCount := make([]metadata.IntIDArrayCount, 0)
 
-	cond := mapstr.MapStr{}
-	hostCount, err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(ctx)
-	if err != nil {
-		blog.Errorf("aggregate: biz' host count fail, err: %v, rid: %v", err, ctx.ReqID)
-		return nil, err
-	}
-	if hostCount == 0 {
-		return nil, nil
-	}
-
 	opt := mapstr.MapStr{"bk_data_status": M{"$ne": "disabled"}, "bk_biz_id": M{"$ne": 1}}
 	bizInfo := make([]metadata.BizInst, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
@@ -292,30 +245,21 @@ func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.Str
 	}
 
 	rData := make([]metadata.StringIDCount, 0)
-	allBiz := make([]string, 0)
-	matchedBiz := make([]string, 0)
 	for _, biz := range bizInfo {
-		allBiz = append(allBiz, biz.BizName)
+		matched := false
+		info := metadata.StringIDCount{}
 		for _, host := range bizHostCount {
 			if host.Id == biz.BizID {
-				info := metadata.StringIDCount{
-					Id:    biz.BizName,
-					Count: int64(len(host.Count)),
-				}
-				rData = append(rData, info)
-				matchedBiz = append(matchedBiz, biz.BizName)
+				info.Id = biz.BizName
+				info.Count = int64(len(host.Count))
+				matched = true
 			}
 		}
-	}
-
-	for _, biz := range allBiz {
-		if !util.InStrArr(matchedBiz, biz) {
-			info := metadata.StringIDCount{
-				Id:    biz,
-				Count: 0,
-			}
-			rData = append(rData, info)
+		if !matched {
+			info.Id = biz.BizName
+			info.Count = 0
 		}
+		rData = append(rData, info)
 	}
 
 	return rData, nil
@@ -353,29 +297,22 @@ func (m *operationManager) HostCloudChartData(ctx core.ContextParams, inputParam
 		return nil, err
 	}
 
-	matched := make([]string, 0)
-	for _, data := range commonCount {
-		for _, cloud := range cloudMapping {
+	for _, cloud := range cloudMapping {
+		matched := false
+		info := metadata.StringIDCount{}
+		info.Id = cloud.CloudName
+		for _, data := range commonCount {
 			if data.Id == cloud.CloudID {
-				info := metadata.StringIDCount{
-					Id:    cloud.CloudName,
-					Count: data.Count,
-				}
-				matched = append(matched, cloud.CloudName)
-				respData = append(respData, info)
+				matched = true
+				info.Count = data.Count
 			}
 		}
+		if !matched {
+			info.Count = 0
+		}
+		respData = append(respData, info)
 	}
 
-	for _, cloud := range cloudMapping {
-		if !util.InStrArr(matched, cloud.CloudName) {
-			info := metadata.StringIDCount{
-				Id:    cloud.CloudName,
-				Count: 0,
-			}
-			respData = append(respData, info)
-		}
-	}
 	return respData, nil
 }
 
@@ -400,7 +337,7 @@ func (m *operationManager) UpdateInnerChartData(ctx core.ContextParams, reportTy
 	chartData := metadata.ChartData{
 		ReportType: reportType,
 		Data:       data,
-		OwnerID:    "0",
+		OwnerID:    ctx.SupplierAccount,
 		LastTime:   time.Now(),
 	}
 	// 此处不用update，因为第一次初始数据的时候会导致数据写不进去
@@ -430,7 +367,7 @@ func (m *operationManager) StatisticOperationLog(ctx core.ContextParams) (*metad
 	}
 	createInstCount := make([]metadata.StringIDCount, 0)
 	if createCount > 0 {
-		createPipe := []M{{"$match": M{"op_type": 1, "op_target": M{"$nin": innerObject}}}, {"$group": M{"_id": "$op_target", "count": M{"$sum": 1}}}}
+		createPipe := []M{{"$match": M{"op_type": 1, "op_time": M{"$gte": lastTime}, "op_target": M{"$nin": innerObject}}}, {"$group": M{"_id": "$op_target", "count": M{"$sum": 1}}}}
 		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, createPipe, &createInstCount); err != nil {
 			blog.Errorf("aggregate: count create object fail, err: %v, rid", err, ctx.ReqID)
 			return nil, err
@@ -445,7 +382,7 @@ func (m *operationManager) StatisticOperationLog(ctx core.ContextParams) (*metad
 	}
 	deleteInstCount := make([]metadata.StringIDCount, 0)
 	if deleteCount > 0 {
-		deletePipe := []M{{"$match": M{"op_type": 3, "op_target": M{"$nin": innerObject}}}, {"$group": M{"_id": "$op_target", "count": M{"$sum": 1}}}}
+		deletePipe := []M{{"$match": M{"op_type": 3, "op_time": M{"$gte": lastTime}, "op_target": M{"$nin": innerObject}}}, {"$group": M{"_id": "$op_target", "count": M{"$sum": 1}}}}
 		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(ctx, deletePipe, &deleteInstCount); err != nil {
 			blog.Errorf("aggregate: count delete object fail, err: %v, rid: %v", err, ctx.ReqID)
 			return nil, err
@@ -475,60 +412,4 @@ func (m *operationManager) StatisticOperationLog(ctx core.ContextParams) (*metad
 	}
 
 	return result, nil
-}
-
-// BizHostEmpty cc_ModuleHOstConfig为空的情况下, 统计业务下主机为0
-func (m *operationManager) BizHostEmpty(ctx core.ContextParams, bizInfo []metadata.BizInst) error {
-	firstBizHostChange := metadata.HostChangeChartData{}
-	now := time.Now()
-
-	opt := M{common.OperationReportType: common.HostChangeBizChart}
-	chartExist, err := m.dbProxy.Table(common.BKTableNameChartData).Find(opt).Count(ctx)
-	if err != nil {
-		blog.Errorf("update biz host change chart fail, err: %v, rid: %v", err, ctx.ReqID)
-		return err
-	}
-	if chartExist > 0 {
-		return nil
-	}
-	for _, biz := range bizInfo {
-		currentData := metadata.BizHostChart{}
-		currentData.Id.Time = now
-		currentData.Count = 0
-		if len(firstBizHostChange.Data) > 0 {
-			firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], currentData)
-		} else {
-			firstBizHostChange.OwnerID = "0"
-			firstBizHostChange.ReportType = common.HostChangeBizChart
-			firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
-			firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], currentData)
-		}
-		firstBizHostChange.LastTime.Time = time.Now()
-	}
-
-	if err = m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, firstBizHostChange); err != nil {
-		blog.Errorf("update biz host change fail, err: %v, rid: %v", err, ctx.ReqID)
-		return err
-	}
-	return nil
-}
-
-// ObjectBaseEmpty cc_ObjectBase为空的情况下,统计模型下的实例为0
-func (m *operationManager) ObjectBaseEmpty(ctx core.ContextParams, modelInfo []metadata.Object) error {
-	modelInstNumber := make([]metadata.IDStringCountInt64, 0)
-	for _, model := range modelInfo {
-		if !util.IsInnerObject(model.ObjectID) {
-			info := metadata.IDStringCountInt64{
-				Id:    model.ObjectName,
-				Count: 0,
-			}
-			modelInstNumber = append(modelInstNumber, info)
-		}
-	}
-
-	if err := m.UpdateInnerChartData(ctx, common.ModelInstChart, modelInstNumber); err != nil {
-		blog.Errorf("update inner chart ModelInst data fail, err: %v, rid: %v", err, ctx.ReqID)
-		return err
-	}
-	return nil
 }
