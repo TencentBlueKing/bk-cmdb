@@ -74,7 +74,7 @@
                 </div>
             </bk-select>
             <icon-button class="option ml10" icon="icon-cc-funnel"></icon-button>
-            <icon-button class="option ml10" icon="icon-cc-setting"></icon-button>
+            <icon-button class="option ml10" icon="icon-cc-setting" @click="handleSetColumn"></icon-button>
         </div>
         <edit-multiple-host ref="editMultipleHost"
             :properties="hostProperties"
@@ -87,12 +87,28 @@
                 @cancel="handleDialogCancel">
             </component>
         </cmdb-dialog>
+        <bk-sideslider
+            v-transfer-dom
+            :is-show.sync="sideslider.show"
+            :width="600"
+            :title="$t('列表显示属性配置')">
+            <cmdb-columns-config slot="content"
+                v-if="sideslider.render"
+                :properties="columnsConfigProperties"
+                :selected="displayProperties"
+                :disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']"
+                @on-cancel="sideslider.show = false"
+                @on-apply="handleApplyColumnsConfig"
+                @on-reset="handleResetColumnsConfig">
+            </cmdb-columns-config>
+        </bk-sideslider>
     </div>
 </template>
 
 <script>
     import EditMultipleHost from './edit-multiple-host.vue'
     import HostSelector from './host-selector.vue'
+    import CmdbColumnsConfig from '@/components/columns-config/columns-config'
     import { mapGetters } from 'vuex'
     import {
         MENU_BUSINESS,
@@ -102,6 +118,7 @@
     export default {
         components: {
             EditMultipleHost,
+            CmdbColumnsConfig,
             [HostSelector.name]: HostSelector
         },
         data () {
@@ -119,6 +136,10 @@
                     component: null,
                     componentProps: {}
                 },
+                sideslider: {
+                    show: false,
+                    render: false
+                },
                 request: {
                     collection: Symbol('collection')
                 }
@@ -129,24 +150,33 @@
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('businessHost', [
                 'getProperties',
-                'currentNode'
+                'selectedNode'
             ]),
             hostProperties () {
                 return this.getProperties('host')
+            },
+            columnsConfigProperties () {
+                const setProperties = this.getProperties('set').filter(property => ['bk_set_name'].includes(property['bk_property_id']))
+                const moduleProperties = this.getProperties('module').filter(property => ['bk_module_name'].includes(property['bk_property_id']))
+                const hostProperties = this.getProperties('host')
+                return [...setProperties, ...moduleProperties, ...hostProperties]
+            },
+            displayProperties () {
+                return this.$parent.table.header.map(property => property.bk_property_id)
             },
             hasSelection () {
                 return !!this.$parent.table.selection.length
             },
             isNormalModuleNode () {
-                return this.currentNode
-                    && this.currentNode.data.bk_obj_id === 'module'
-                    && this.currentNode.data.default === 0
+                return this.selectedNode
+                    && this.selectedNode.data.bk_obj_id === 'module'
+                    && this.selectedNode.data.default === 0
             },
             isIdleModule () {
-                return this.currentNode && this.currentNode.data.default === 1
+                return this.selectedNode && this.selectedNode.data.default === 1
             },
             isIdleSet () {
-                return this.currentNode && this.currentNode.data.default !== 0
+                return this.selectedNode && this.selectedNode.data.default !== 0
             },
             clipboardList () {
                 return this.$parent.table.header
@@ -213,8 +243,8 @@
                         type: 'remove'
                     },
                     query: {
-                        sourceModel: this.currentNode.data.bk_obj_id,
-                        sourceId: this.currentNode.data.bk_inst_id,
+                        sourceModel: this.selectedNode.data.bk_obj_id,
+                        sourceId: this.selectedNode.data.bk_inst_id,
                         resources: this.$parent.table.selection.map(item => item.host.bk_host_id).join(',')
                     }
                 })
@@ -268,6 +298,21 @@
             },
             handleDialogCancel () {
                 this.dialog.show = false
+            },
+            handleApplyColumnsConfig (properties) {
+                this.$store.dispatch('userCustom/saveUsercustom', {
+                    [this.$route.meta.customInstanceColumn]: properties.map(property => property['bk_property_id'])
+                })
+                this.sideslider.show = false
+            },
+            handleResetColumnsConfig () {
+                this.$store.dispatch('userCustom/saveUsercustom', {
+                    [this.$route.meta.customInstanceColumn]: []
+                })
+            },
+            handleSetColumn () {
+                this.sideslider.render = true
+                this.sideslider.show = true
             }
         }
     }

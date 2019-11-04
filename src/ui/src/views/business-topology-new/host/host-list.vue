@@ -85,7 +85,7 @@
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('businessHost', [
                 'columnsConfigProperties',
-                'currentNode',
+                'selectedNode',
                 'getDefaultSearchCondition',
                 'commonRequest'
             ]),
@@ -101,7 +101,7 @@
             columnsConfigProperties () {
                 this.setTableHeader()
             },
-            currentNode (node) {
+            selectedNode (node) {
                 node && this.getHostList()
             }
         },
@@ -184,10 +184,10 @@
                     biz: 'bk_biz_id',
                     object: 'bk_inst_id'
                 }
-                const nodeData = this.currentNode.data
+                const nodeData = this.selectedNode.data
                 const conditionObjectId = Object.keys(idMap).includes(nodeData.bk_obj_id) ? nodeData.bk_obj_id : 'object'
-                const currentNodeCondition = params.condition.find(target => target.bk_obj_id === conditionObjectId)
-                currentNodeCondition.condition.push({
+                const selectedNodeCondition = params.condition.find(target => target.bk_obj_id === conditionObjectId)
+                selectedNodeCondition.condition.push({
                     field: idMap[conditionObjectId],
                     operator: '$eq',
                     value: nodeData.bk_inst_id
@@ -229,8 +229,8 @@
                         type: this.dialog.props.moduleType
                     },
                     query: {
-                        sourceModel: this.currentNode.data.bk_obj_id,
-                        sourceId: this.currentNode.data.bk_inst_id,
+                        sourceModel: this.selectedNode.data.bk_obj_id,
+                        sourceId: this.selectedNode.data.bk_inst_id,
                         targetModules: modules.map(node => node.data.bk_inst_id).join(','),
                         resources: this.table.selection.map(item => item.host.bk_host_id).join(',')
                     }
