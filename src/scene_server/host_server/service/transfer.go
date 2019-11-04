@@ -74,6 +74,18 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
 	}
+	if len(option.AddToModules) != 0 {
+		if ccErr := s.validateModules(*srvData, bizID, option.AddToModules, "add_to_modules"); ccErr != nil {
+			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: ccErr})
+			return
+		}
+	}
+	if option.DefaultInternalModule != 0 {
+		if ccErr := s.validateModules(*srvData, bizID, []int64{option.DefaultInternalModule}, "default_internal_module"); ccErr != nil {
+			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: ccErr})
+			return
+		}
+	}
 
 	transferPlans, err := s.generateTransferPlans(srvData, bizID, option)
 	if err != nil {
@@ -296,6 +308,9 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 			defaultInternalModuleID = module.ModuleID
 		}
 	}
+	if defaultInternalModuleID == 0 {
+		blog.InfoJSON("defaultInternalModuleID not found, bizID: %s, innerModules: %s, rid: %s", bizID, innerModules, srvData.rid)
+	}
 	if option.DefaultInternalModule != 0 && util.InArray(option.DefaultInternalModule, innerModuleIDs) == false {
 		return nil, srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, "default_internal_module")
 	}
@@ -305,10 +320,7 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 
 	transferPlans := make([]metadata.HostTransferPlan, 0)
 	for hostID, currentInModules := range hostModulesIDMap {
-		transferPlan := generateTransferPlan(currentInModules, removeFromModules, option.AddToModules)
-		if len(transferPlan.FinalModules) == 0 {
-			transferPlan.FinalModules = []int64{defaultInternalModuleID}
-		}
+		transferPlan := generateTransferPlan(currentInModules, removeFromModules, option.AddToModules, defaultInternalModuleID)
 		transferPlan.HostID = hostID
 		// check module compatibility
 		finalModuleCount := len(transferPlan.FinalModules)
@@ -330,7 +342,8 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 // param currentIn: 主机当前所属模块
 // param removeFrom: 从哪些模块中移除
 // param addTo: 添加到哪些模块
-func generateTransferPlan(currentIn []int64, removeFrom []int64, addTo []int64) metadata.HostTransferPlan {
+// param defaultInternalModuleID: 默认内置模块ID
+func generateTransferPlan(currentIn []int64, removeFrom []int64, addTo []int64, defaultInternalModuleID int64) metadata.HostTransferPlan {
 	plan := metadata.HostTransferPlan{}
 
 	// 主机最终所在模块列表
@@ -343,6 +356,9 @@ func generateTransferPlan(currentIn []int64, removeFrom []int64, addTo []int64) 
 	}
 	finalModules = append(finalModules, addTo...)
 	finalModules = util.IntArrayUnique(finalModules)
+	if len(finalModules) == 0 {
+		finalModules = []int64{defaultInternalModuleID}
+	}
 	plan.FinalModules = finalModules
 
 	// 主机将会被移出的模块列表
@@ -368,6 +384,21 @@ func generateTransferPlan(currentIn []int64, removeFrom []int64, addTo []int64) 
 	plan.ToAddToModules = realAddModules
 
 	return plan
+}
+
+func (s *Service) validateModules(srvData srvComm, bizID int64, moduleIDs []int64, field string) errors.CCErrorCoder {
+	if len(moduleIDs) == 0 {
+		return nil
+	}
+	moduleIDs = util.IntArrayUnique(moduleIDs)
+	modules, err := s.getModules(srvData, bizID, moduleIDs)
+	if err != nil {
+		return err
+	}
+	if len(modules) != len(moduleIDs) {
+		return srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, field)
+	}
+	return nil
 }
 
 func (s *Service) getModules(srvData srvComm, bizID int64, moduleIDs []int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
@@ -485,6 +516,19 @@ func (s *Service) TransferHostWithAutoClearServiceInstancePreview(req *restful.R
 		err := srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
+	}
+
+	if len(option.AddToModules) != 0 {
+		if ccErr := s.validateModules(*srvData, bizID, option.AddToModules, "add_to_modules"); ccErr != nil {
+			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: ccErr})
+			return
+		}
+	}
+	if option.DefaultInternalModule != 0 {
+		if ccErr := s.validateModules(*srvData, bizID, []int64{option.DefaultInternalModule}, "default_internal_module"); ccErr != nil {
+			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: ccErr})
+			return
+		}
 	}
 
 	transferPlans, ccErr := s.generateTransferPlans(srvData, bizID, option)
