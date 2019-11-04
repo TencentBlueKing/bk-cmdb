@@ -7,7 +7,7 @@
                 <bk-option id="custom" name="IP"></bk-option>
             </bk-select>
             <keep-alive>
-                <component :is="activeComponent" class="selector-component"></component>
+                <component :is="activeComponent" class="selector-component" ref="dynamic"></component>
             </keep-alive>
         </div>
         <div class="wrapper-right fl">
@@ -46,6 +46,7 @@
     import HostSelectorTopology from './host-selector-topology.vue'
     import HostSelectorCustom from './host-selector-custom.vue'
     export default {
+        name: 'cmdb-host-selector',
         components: {
             HostSelectorTopology,
             HostSelectorCustom
@@ -60,7 +61,7 @@
                     custom: HostSelectorCustom
                 },
                 activeComponent: null,
-                type: 'custom',
+                type: 'topology',
                 filter: '',
                 selected: [],
                 request: {
@@ -79,13 +80,24 @@
             }
         },
         methods: {
-            handleRemove (row) {
-                this.selected = this.selected.filter(target => target.host.bk_host_id !== row.host.bk_host_id)
+            handleRemove (hosts) {
+                const removeData = Array.isArray(hosts) ? hosts : [hosts]
+                const ids = [...new Set(removeData.map(data => data.host.bk_host_id))]
+                this.selected = this.selected.filter(target => !ids.includes(target.host.bk_host_id))
             },
-            handleSelect (item) {
-                const isExist = this.selected.some(target => target.host.bk_host_id === item.host.bk_host_id)
-                if (!isExist) {
-                    this.selected = [...this.selected, item]
+            handleSelect (hosts) {
+                const selectData = Array.isArray(hosts) ? hosts : [hosts]
+                const ids = [...new Set(selectData.map(data => data.host.bk_host_id))]
+                const uniqueData = ids.map(id => selectData.find(data => data.host.bk_host_id === id))
+                const newSelectData = []
+                uniqueData.forEach(data => {
+                    const isExist = this.selected.some(target => target.host.bk_host_id === data.host.bk_host_id)
+                    if (!isExist) {
+                        newSelectData.push(data)
+                    }
+                })
+                if (newSelectData.length) {
+                    this.selected = [...this.selected, ...newSelectData]
                 }
             },
             handleCancel () {

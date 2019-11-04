@@ -1,6 +1,6 @@
 <template>
     <section class="tree-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-        <bk-input class="tree-search"></bk-input>
+        <bk-input class="tree-search" v-model="filter"></bk-input>
         <bk-big-tree ref="tree" class="topology-tree"
             selectable
             :expand-on-click="false"
@@ -30,9 +30,12 @@
 
 <script>
     import { mapGetters } from 'vuex'
+    import debounce from 'lodash.debounce'
     export default {
         data () {
             return {
+                filter: '',
+                handleFilter: () => ({}),
                 nodeCountType: 'host_count',
                 nodeIconMap: {
                     1: 'icon-cc-host-free-pool',
@@ -48,36 +51,57 @@
         computed: {
             ...mapGetters('objectBiz', ['bizId'])
         },
+        watch: {
+            filter (value) {
+                this.handleFilter()
+            }
+        },
         created () {
+            this.handleFilter = debounce(() => {
+                this.$refs.tree.filter(this.filter)
+            }, 300)
             this.initTopology()
         },
         methods: {
             async initTopology () {
-                const [topology, internal] = await Promise.all([
-                    this.getInstanceTopology(),
-                    this.getInternalTopology()
-                ])
-                const root = topology[0] || {}
-                const children = root.child || []
-                const idlePool = {
-                    bk_obj_id: 'set',
-                    bk_inst_id: internal.bk_set_id,
-                    bk_inst_name: internal.bk_set_name,
-                    host_count: internal.host_count,
-                    service_instance_count: internal.service_instance_count,
-                    default: internal.default,
-                    child: (internal.module || []).map(module => ({
-                        bk_obj_id: 'module',
-                        bk_inst_id: module.bk_module_id,
-                        bk_inst_name: module.bk_module_name,
-                        host_count: module.host_count,
-                        service_instance_count: module.service_instance_count,
-                        default: module.default
-                    }))
+                try {
+                    const [topology, internal] = await Promise.all([
+                        this.getInstanceTopology(),
+                        this.getInternalTopology()
+                    ])
+                    const root = topology[0] || {}
+                    const children = root.child || []
+                    const idlePool = {
+                        bk_obj_id: 'set',
+                        bk_inst_id: internal.bk_set_id,
+                        bk_inst_name: internal.bk_set_name,
+                        host_count: internal.host_count,
+                        service_instance_count: internal.service_instance_count,
+                        default: internal.default,
+                        child: (internal.module || []).map(module => ({
+                            bk_obj_id: 'module',
+                            bk_inst_id: module.bk_module_id,
+                            bk_inst_name: module.bk_module_name,
+                            host_count: module.host_count,
+                            service_instance_count: module.service_instance_count,
+                            default: module.default
+                        }))
+                    }
+                    children.unshift(idlePool)
+                    this.$refs.tree.setData(topology)
+                    this.setDefaultState()
+                } catch (e) {
+                    console.error(e)
                 }
-                children.unshift(idlePool)
-                const defaultNodeId = this.getNodeId(topology[0])
-                this.$refs.tree.setData(topology)
+            },
+            setDefaultState () {
+                const businessNodeId = this.$refs.tree.nodes[0].id
+                const queryNodeId = this.$route.query.node
+                let defaultNodeId = businessNodeId
+                if (queryNodeId) {
+                    const node = this.$refs.tree.getNodeById(queryNodeId)
+                    defaultNodeId = node ? queryNodeId : businessNodeId
+                }
                 this.$refs.tree.setExpanded(defaultNodeId)
                 this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
             },

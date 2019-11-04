@@ -256,7 +256,7 @@ function getCancelToken () {
     }
 }
 
-function download (options = {}) {
+async function download (options = {}) {
     const { url, method = 'post', data } = options
     const config = Object.assign({
         globalError: false,
@@ -273,25 +273,25 @@ function download (options = {}) {
     } else {
         promise = $http[method](url, config)
     }
-    promise.then(response => {
-        try {
-            const disposition = response.headers['content-disposition']
-            const fileName = disposition.substring(disposition.indexOf('filename') + 9)
-            const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
-                type: response.headers['content-type']
-            }))
-            const link = document.createElement('a')
-            link.style.display = 'none'
-            link.href = downloadUrl
-            link.setAttribute('download', fileName)
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-        } catch (e) {
-            $error('Download failure')
-        }
-        return response
-    })
+    try {
+        const response = await promise
+        const disposition = response.headers['content-disposition']
+        const fileName = disposition.substring(disposition.indexOf('filename') + 9)
+        const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
+            type: response.headers['content-type']
+        }))
+        const link = document.createElement('a')
+        link.style.display = 'none'
+        link.href = downloadUrl
+        link.setAttribute('download', fileName)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        return Promise.resolve(response)
+    } catch (e) {
+        $error('Download failure')
+        return Promise.reject(e)
+    }
 }
 
 export default $http
