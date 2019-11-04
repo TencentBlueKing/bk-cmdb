@@ -15,24 +15,30 @@
             </div>
         </template>
         <template v-else-if="diffList.length">
+            <i18n path="已选集群实例"
+                tag="div"
+                class="count"
+                v-if="!isSingleSync">
+                <span place="count">{{setInstancesId.length}}</span>
+            </i18n>
             <div class="title clearfix">
-                <div class="tips fl">
-                    <p class="mr10">{{$t('请确认以下模板修改信息')}}：</p>
+                <p class="fl">{{$t('请确认以下模板修改信息')}}：</p>
+                <div class="tips fr">
                     <span class="mr30">
                         <i class="dot"></i>
                         {{$t('新增模块')}}
                     </span>
-                    <span>
+                    <span class="mr30">
                         <i class="dot red"></i>
                         {{$t('删除模块')}}
                     </span>
+                    <bk-checkbox class="expand-all"
+                        v-if="!isSingleSync"
+                        v-model="expandAll"
+                        @change="handleExpandAll">
+                        {{$t('全部展开')}}
+                    </bk-checkbox>
                 </div>
-                <bk-checkbox class="expand-all fr"
-                    v-if="!isSingleSync"
-                    v-model="expandAll"
-                    @change="handleExpandAll">
-                    {{$t('全部展开')}}
-                </bk-checkbox>
             </div>
             <div class="instance-list">
                 <set-instance class="instance-item"
@@ -56,7 +62,6 @@
                     </bk-button>
                 </cmdb-auth>
                 <bk-button class="mr10" @click="handleGoback">{{$t('取消')}}</bk-button>
-                <span v-if="!isSingleSync">{{$tc('已选集群实例', setInstancesId.length, { count: setInstancesId.length })}}</span>
             </div>
         </template>
     </div>
@@ -248,11 +253,19 @@
             padding: 20px 0 30px;
         }
     }
+    .count {
+        font-weight: bold;
+        font-size: 14px;
+        color: #63656E;
+        margin-bottom: 10px;
+    }
+    .title {
+        font-size: 14px;
+        color: #63656E;
+    }
     .tips {
         display: flex;
         align-items: center;
-        font-size: 14px;
-        color: #63656E;
         .dot {
             display: inline-block;
             width: 10px;
