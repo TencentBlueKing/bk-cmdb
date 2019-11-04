@@ -71,6 +71,7 @@
                     v-if="processList.length"
                     :loading="processLoading"
                     :properties="properties"
+                    :auth="auth"
                     @on-edit="handleUpdateProcess"
                     @on-delete="handleDeleteProcess"
                     :list="processList">
