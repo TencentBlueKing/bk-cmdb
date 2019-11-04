@@ -2,18 +2,15 @@
     <div class="template-layout">
         <div class="options clearfix">
             <div class="fl">
-                <span class="fl" v-cursor="{
-                    active: !$isAuthorized($OPERATION.C_SET_TEMPLATE),
-                    auth: [$OPERATION.C_SET_TEMPLATE]
-                }">
-                    <bk-button
+                <cmdb-auth class="fl" :auth="$authResources({ type: $OPERATION.C_SET_TEMPLATE })">
+                    <bk-button slot-scope="{ disabled }"
                         theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_SET_TEMPLATE)"
+                        :disabled="disabled"
                         @click="handleCreate"
                     >
                         {{$t('新建')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </div>
             <div class="fr">
                 <bk-input :placeholder="$t('模板名称搜索')"
@@ -37,58 +34,46 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" width="180">
                 <template slot-scope="{ row }">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
-                            auth: [$OPERATION.U_SET_TEMPLATE]
-                        }">
-                        <bk-button
+                    <cmdb-auth :auth="$authResources({
+                        resource_id: row.id,
+                        type: $OPERATION.U_SET_TEMPLATE
+                    })">
+                        <bk-button slot-scope="{ disabled }"
                             text
-                            :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE)"
+                            :disabled="disabled"
                             @click="handleEdit(row)"
                         >
                             {{$t('编辑')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                     <span class="text-primary ml15"
                         style="color: #dcdee5 !important; cursor: not-allowed;"
-                        v-if="row.set_instance_count && $isAuthorized($OPERATION.D_SET_TEMPLATE)"
+                        v-if="row.set_instance_count"
                         v-bk-tooltips.top="$t('不可删除')">
                         {{$t('删除')}}
                     </span>
-                    <span v-else
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.D_SET_TEMPLATE),
-                            auth: [$OPERATION.D_SET_TEMPLATE]
-                        }">
-                        <bk-button text class="ml15"
-                            :disabled="!$isAuthorized($OPERATION.D_SET_TEMPLATE)"
+                    <cmdb-auth v-else
+                        :auth="$authResources({
+                            resource_id: row.id,
+                            type: $OPERATION.D_SET_TEMPLATE
+                        })">
+                        <bk-button slot-scope="{ disabled }"
+                            text
+                            class="ml15"
+                            :disabled="disabled"
                             @click="handleDelete(row)"
                         >
                             {{$t('删除')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
-            <template slot="empty">
-                <i class="bk-table-empty-icon bk-icon icon-empty"></i>
-                <i18n path="空集群模板提示" tag="div">
-                    <span
-                        place="link"
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SET_TEMPLATE),
-                            auth: [$OPERATION.C_SET_TEMPLATE]
-                        }">
-                        <bk-button
-                            text
-                            :disabled="!$isAuthorized($OPERATION.C_SET_TEMPLATE)"
-                            @click="handleCreate"
-                        >
-                            {{$t('立即创建')}}
-                        </bk-button>
-                    </span>
-                </i18n>
-            </template>
+            <cmdb-table-stuff
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$OPERATION.C_SET_TEMPLATE"
+                @create="handleCreate"
+            ></cmdb-table-stuff>
         </bk-table>
     </div>
 </template>
@@ -99,7 +84,15 @@
             return {
                 list: [],
                 originList: [],
-                searchName: ''
+                searchName: '',
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.$t('集群模板')
+                        }
+                    }
+                }
             }
         },
         computed: {
@@ -139,7 +132,8 @@
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'edit',
-                        templateId: row.id
+                        templateId: row.id,
+                        isApplied: !!row.set_instance_count
                     }
                 })
             },
@@ -168,6 +162,8 @@
                 this.list = this.searchName
                     ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
                     : originList
+
+                this.table.stuff.type = 'search'
             },
             handleSelectable (row) {
                 return !row.set_instance_count
@@ -180,7 +176,8 @@
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'view',
-                        templateId: row.id
+                        templateId: row.id,
+                        isApplied: !!row.set_instance_count
                     }
                 })
             }

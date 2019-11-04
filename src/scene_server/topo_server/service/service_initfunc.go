@@ -95,6 +95,7 @@ func (s *Service) initBusiness() {
 	s.addAction(http.MethodGet, "/topo/internal/{owner_id}/{app_id}/with_statistics", s.GetInternalModuleWithStatistics, nil)
 	// find reduced business list with only few fields for business itself.
 	s.addAction(http.MethodGet, "/app/with_reduced", s.SearchReducedBusinessList, nil)
+	s.addAction(http.MethodGet, "/app/simplify", s.ListAllBusinessSimplify, nil)
 
 }
 
@@ -126,7 +127,7 @@ func (s *Service) initInst() {
 	s.addAction(http.MethodPost, "/inst/search/owner/{owner_id}/object/{bk_obj_id}", s.SearchInstByObject, nil)
 	s.addAction(http.MethodPost, "/inst/search/{owner_id}/{bk_obj_id}/{inst_id}", s.SearchInstByInstID, nil)
 	// 2019-09-30 废弃接口
-	//s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}", s.SearchInstAssociation, nil)
+	// s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}", s.SearchInstAssociation, nil)
 	s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}/web", s.SearchInstAssociationUI, nil)
 	s.addAction(http.MethodPost, "/findmany/inst/association/association_object/inst_base_info", s.SearchInstAssociationWithOtherObject, nil)
 

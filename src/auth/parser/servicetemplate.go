@@ -29,21 +29,21 @@ import (
 
 var ServiceTemplateAuthConfigs = []AuthConfig{
 	{
-		Name:                  "createServiceTemplatePattern",
-		Description:           "创建服务模板",
-		Pattern:               "/api/v3/create/proc/service_template",
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceTemplate,
-		ResourceAction:        meta.Create,
+		Name:           "createServiceTemplatePattern",
+		Description:    "创建服务模板",
+		Pattern:        "/api/v3/create/proc/service_template",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Create,
 	}, {
-		Name:                  "updateServiceTemplate",
-		Description:           "更新服务模板",
-		Pattern:               "/api/v3/update/proc/service_template",
-		HTTPMethod:            http.MethodPut,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceTemplate,
-		ResourceAction:        meta.Update,
+		Name:           "updateServiceTemplate",
+		Description:    "更新服务模板",
+		Pattern:        "/api/v3/update/proc/service_template",
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Update,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			templateID := gjson.GetBytes(request.Body, common.BKFieldID).Int()
 			if templateID <= 0 {
@@ -52,13 +52,13 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 			return []int64{templateID}, nil
 		},
 	}, {
-		Name:                  "getServiceTemplate",
-		Description:           "获取服务模板",
-		Regex:                 regexp.MustCompile(`^/api/v3/find/proc/service_template/([0-9]+)$`),
-		HTTPMethod:            http.MethodGet,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceTemplate,
-		ResourceAction:        meta.Find,
+		Name:           "getServiceTemplate",
+		Description:    "获取服务模板",
+		Regex:          regexp.MustCompile(`^/api/v3/find/proc/service_template/([0-9]+)$`),
+		HTTPMethod:     http.MethodGet,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Find,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			subMatch := re.FindStringSubmatch(request.URI)
 			for _, subStr := range subMatch {
@@ -75,13 +75,13 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 			return nil, errors.New("unexpected error: this code shouldn't be reached")
 		},
 	}, {
-		Name:                  "getServiceTemplateDetail",
-		Description:           "获取服务模板详情",
-		Regex:                 regexp.MustCompile(`^/api/v3/find/proc/service_template/([0-9]+)/detail$`),
-		HTTPMethod:            http.MethodGet,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceTemplate,
-		ResourceAction:        meta.Find,
+		Name:           "getServiceTemplateDetail",
+		Description:    "获取服务模板详情",
+		Regex:          regexp.MustCompile(`^/api/v3/find/proc/service_template/([0-9]+)/detail$`),
+		HTTPMethod:     http.MethodGet,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Find,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			subMatch := re.FindStringSubmatch(request.URI)
 			for _, subStr := range subMatch {
@@ -98,41 +98,41 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 			return nil, errors.New("unexpected error: this code shouldn't be reached")
 		},
 	}, {
-		Name:                  "listServiceTemplatePattern",
-		Description:           "查询服务模板",
-		Pattern:               "/api/v3/findmany/proc/service_template",
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceTemplate,
+		Name:         "listServiceTemplatePattern",
+		Description:  "查询服务模板",
+		Pattern:      "/api/v3/findmany/proc/service_template",
+		HTTPMethod:   http.MethodPost,
+		BizIDGetter:  DefaultBizIDGetter,
+		ResourceType: meta.ProcessServiceTemplate,
 		// authorization should implements in scene server
 		ResourceAction: meta.SkipAction,
 	}, {
-		Name:                  "listServiceTemplateDetailPattern",
-		Description:           "查询服务模板详情",
-		Pattern:               "/api/v3/findmany/proc/service_template/with_detail",
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceTemplate,
+		Name:         "listServiceTemplateDetailPattern",
+		Description:  "查询服务模板详情",
+		Pattern:      "/api/v3/findmany/proc/service_template/with_detail",
+		HTTPMethod:   http.MethodPost,
+		BizIDGetter:  DefaultBizIDGetter,
+		ResourceType: meta.ProcessServiceTemplate,
 		// authorization should implements in scene server
 		ResourceAction: meta.SkipAction,
 	}, {
-		Name:                  "listServiceTemplateDetailPattern",
-		Description:           "查询服务模板详情",
-		Pattern:               "/api/v3/delete/proc/template_binding_on_module",
-		HTTPMethod:            http.MethodDelete,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceTemplate,
+		Name:         "listServiceTemplateDetailPattern",
+		Description:  "查询服务模板详情",
+		Pattern:      "/api/v3/delete/proc/template_binding_on_module",
+		HTTPMethod:   http.MethodDelete,
+		BizIDGetter:  DefaultBizIDGetter,
+		ResourceType: meta.ProcessServiceTemplate,
 		// authorization should implements in scene server
 		// TODO: implement authorization on scene server
 		ResourceAction: meta.SkipAction,
 	}, {
-		Name:                  "deleteServiceTemplatePattern",
-		Description:           "删除服务模板",
-		Pattern:               "/api/v3/delete/proc/service_template",
-		HTTPMethod:            http.MethodDelete,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceTemplate,
-		ResourceAction:        meta.Delete,
+		Name:           "deleteServiceTemplatePattern",
+		Description:    "删除服务模板",
+		Pattern:        "/api/v3/delete/proc/service_template",
+		HTTPMethod:     http.MethodDelete,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Delete,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			templateID := gjson.GetBytes(request.Body, common.BKServiceTemplateIDField).Int()
 			if templateID <= 0 {
@@ -144,12 +144,5 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 }
 
 func (ps *parseStream) ServiceTemplate() *parseStream {
-	resources, err := MatchAndGenerateIAMResource(ServiceTemplateAuthConfigs, ps.RequestCtx)
-	if err != nil {
-		ps.err = err
-	}
-	if resources != nil {
-		ps.Attribute.Resources = resources
-	}
-	return ps
+	return ParseStreamWithFramework(ps, ServiceTemplateAuthConfigs)
 }

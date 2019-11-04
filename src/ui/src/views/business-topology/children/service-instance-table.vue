@@ -19,31 +19,27 @@
                     <li class="menu-item"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
-                        <span class="menu-span"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION[menu.auth]),
-                                auth: [$OPERATION[menu.auth]]
-                            }">
-                            <bk-button class="menu-button"
+                        <cmdb-auth class="menu-span" :auth="$authResources({ type: $OPERATION[menu.auth] })">
+                            <bk-button slot-scope="{ disabled }"
+                                class="menu-button"
                                 :text="true"
-                                :disabled="!$isAuthorized($OPERATION[menu.auth])"
+                                :disabled="disabled"
                                 @click="menu.handler">
                                 {{menu.name}}
                             </bk-button>
-                        </span>
+                        </cmdb-auth>
                     </li>
                 </ul>
             </cmdb-dot-menu>
             <div class="instance-label fr" @click.stop>
-                <div :class="['label-title', 'fl', { 'disabled': !$isAuthorized($OPERATION.U_SERVICE_INSTANCE) }]"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
-                        auth: [$OPERATION.U_SERVICE_INSTANCE]
-                    }"
-                    @click.stop="handleShowEditLabel">
-                    <i class="icon-cc-label"></i>
-                    <span v-if="!labelShowList.length"> + </span>
-                </div>
+                <cmdb-auth class="fl" :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                    <template slot-scope="{ disabled }">
+                        <div :class="['label-title', { 'disabled': disabled }]" @click.stop="handleShowEditLabel(disabled)">
+                            <i class="icon-cc-label"></i>
+                            <span v-if="!labelShowList.length"> + </span>
+                        </div>
+                    </template>
+                </cmdb-auth>
                 <div class="label-list fl">
                     <div class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelShowList">
                         <span>{{label.key}}</span>
@@ -78,53 +74,50 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
-                            auth: [$OPERATION.U_SERVICE_INSTANCE]
-                        }">
-                        <bk-button class="mr10"
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
                             :text="true"
-                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
+                            :disabled="disabled"
                             @click="handleEditProcess(row)">
                             {{$t('编辑')}}
                         </bk-button>
-                    </span>
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
-                            auth: [$OPERATION.U_SERVICE_INSTANCE]
-                        }">
-                        <bk-button v-if="!withTemplate"
-                            :text="true"
-                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
-                            @click="handleDeleteProcess(row)">
-                            {{$t('删除')}}
-                        </bk-button>
-                    </span>
+                    </cmdb-auth>
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                        <template slot-scope="{ disabled }">
+                            <bk-button v-if="!withTemplate"
+                                theme="primary"
+                                :text="true"
+                                :disabled="disabled"
+                                @click="handleDeleteProcess(row)">
+                                {{$t('删除')}}
+                            </bk-button>
+                        </template>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
             <template slot="empty">
                 <template v-if="withTemplate">
                     <i18n path="暂无模板进程">
-                        <button class="add-process-button text-primary" place="link"
+                        <bk-button class="add-process-button" place="link"
+                            theme="primary"
+                            text
                             @click.stop="handleAddProcessToTemplate">
                             {{$t('模板添加')}}
-                        </button>
+                        </bk-button>
                     </i18n>
                 </template>
-                <span style="display: inline-block;" v-else
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
-                        auth: [$OPERATION.U_SERVICE_INSTANCE]
-                    }">
-                    <button class="add-process-button text-primary"
-                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
+                <cmdb-auth v-else :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="add-process-button"
+                        theme="primary"
+                        text
+                        :disabled="disabled"
                         @click.stop="handleAddProcess">
                         <i class="bk-icon icon-plus"></i>
                         <span>{{$t('添加进程')}}</span>
-                    </button>
-                </span>
+                    </bk-button>
+                </cmdb-auth>
             </template>
         </bk-table>
         <bk-dialog class="bk-dialog-no-padding edit-label-dialog"
@@ -379,12 +372,13 @@
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
-                        templateId: this.instance.service_template_id
+                        templateId: this.instance.service_template_id,
+                        moduleId: this.module.bk_module_id
                     }
                 })
             },
-            handleShowEditLabel () {
-                if (!this.$isAuthorized(this.$OPERATION.U_SERVICE_INSTANCE)) return
+            handleShowEditLabel (disabled) {
+                if (disabled) return
                 this.editLabel.list = this.labelList
                 this.editLabel.show = true
                 this.editLabel.visiable = true

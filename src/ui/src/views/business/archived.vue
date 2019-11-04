@@ -5,7 +5,7 @@
                 <bk-input v-model="filter.name"
                     :placeholder="$t('请输入xx', { name: $t('业务') })"
                     right-icon="bk-icon icon-search"
-                    @enter="handlePageChange(1)">
+                    @enter="handlePageChange(1, $event)">
                 </bk-input>
             </div>
         </div>
@@ -22,19 +22,18 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <span class="inline-block-middle"
-                        v-cursor="{
-                            active: !$isAuthorized(archiveAuth),
-                            auth: [archiveAuth]
-                        }">
-                        <bk-button theme="primary" size="small"
-                            :disabled="!$isAuthorized(archiveAuth)"
+                    <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            size="small"
+                            :disabled="disabled"
                             @click="handleRecovery(row)">
                             {{$t('恢复业务')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
         </bk-table>
     </div>
 </template>
@@ -56,6 +55,14 @@
                     current: 1,
                     count: 0,
                     ...this.$tools.getDefaultPaginationConfig()
+                },
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 }
             }
         },
@@ -65,9 +72,6 @@
             ...mapGetters('objectBiz', ['bizId']),
             customBusinessColumns () {
                 return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
-            },
-            archiveAuth () {
-                return this.$OPERATION.BUSINESS_ARCHIVE
             }
         },
         async created () {
@@ -125,10 +129,11 @@
                     name: this.$t('更新时间')
                 }])
             },
-            getTableData () {
+            getTableData (event) {
                 this.searchBusiness({
                     params: this.getSearchParams(),
                     config: {
+                        globalPermission: false,
                         cancelPrevious: true,
                         requestId: 'searchArchivedBusiness'
                     }
@@ -142,6 +147,17 @@
                         biz['last_time'] = this.$tools.formatTime(biz['last_time'], 'YYYY-MM-DD HH:mm:ss')
                         return biz
                     }))
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+                }).catch(({ permission }) => {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 })
             },
             getSearchParams () {
@@ -194,9 +210,9 @@
                 this.pagination.limit = size
                 this.handlePageChange(1)
             },
-            handlePageChange (current) {
+            handlePageChange (current, event) {
                 this.pagination.current = current
-                this.getTableData()
+                this.getTableData(event)
             }
         }
     }

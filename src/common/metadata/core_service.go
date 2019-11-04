@@ -137,7 +137,7 @@ type SearchTopoModelNodeResult struct {
 	Data     TopoModelNode `json:"data"`
 }
 
-// LeftestObjectIDList extrac leftest node's id of each level, arrange as a list
+// LeftestObjectIDList extract leftest node's id of each level, arrange as a list
 // it's useful in model mainline topo case, as bk_mainline relationship degenerate to a list.
 func (tn *TopoModelNode) LeftestObjectIDList() []string {
 	objectIDs := make([]string, 0)
@@ -214,6 +214,16 @@ func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int6
 	}
 
 	return []*TopoInstanceNode{}
+}
+
+func (node *TopoInstanceNode) DeepFirstTraversal(f func(node *TopoInstanceNode)) {
+	if node == nil {
+		return
+	}
+	for _, child := range node.Children {
+		child.DeepFirstTraversal(f)
+	}
+	f(node)
 }
 
 type TopoInstance struct {
@@ -314,9 +324,19 @@ type OneServiceTemplateResult struct {
 	Data     ServiceTemplate `json:"data"`
 }
 
-type OneServiceTemplateDetailResult struct {
+type OneServiceTemplateWithStatisticsResult struct {
 	BaseResp `json:",inline"`
-	Data     ServiceTemplateDetail `json:"data"`
+	Data     ServiceTemplateWithStatistics `json:"data"`
+}
+
+type MultipleServiceTemplateDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceTemplateDetail `json:"data"`
+}
+
+type MultipleServiceTemplateDetail struct {
+	Count uint64                  `json:"count"`
+	Info  []ServiceTemplateDetail `json:"info"`
 }
 
 type MultipleServiceTemplate struct {
@@ -328,7 +348,7 @@ type ListServiceInstanceOption struct {
 	BusinessID         int64              `json:"bk_biz_id"`
 	ServiceTemplateID  int64              `json:"service_template_id"`
 	HostIDs            []int64            `json:"bk_host_ids"`
-	ModuleID           int64              `json:"bk_module_id"`
+	ModuleIDs          []int64            `json:"bk_module_ids"`
 	SearchKey          *string            `json:"search_key"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
 	Selectors          selector.Selectors `json:"selectors"`
@@ -386,7 +406,7 @@ type DeleteProcessInstanceRelationOption struct {
 type ListProcessTemplatesOption struct {
 	BusinessID         int64    `json:"bk_biz_id" bson:"bk_biz_id"`
 	ProcessTemplateIDs []int64  `json:"process_template_ids,omitempty" bson:"process_template_ids"`
-	ServiceTemplateID  int64    `json:"service_template_id,omitempty" bson:"service_template_id"`
+	ServiceTemplateIDs []int64  `json:"service_template_ids,omitempty" bson:"service_template_ids"`
 	Page               BasePage `json:"page" field:"page" bson:"page"`
 }
 type ListServiceCategoriesOption struct {

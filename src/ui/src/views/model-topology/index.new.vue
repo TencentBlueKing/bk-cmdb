@@ -1,21 +1,20 @@
 <template>
     <div :class="['topo-wrapper', { hover: isTopoHover }]">
         <div class="toolbar">
+            <cmdb-auth style="display: none;" :auth="$authResources({ type: $OPERATION.SYSTEM_TOPOLOGY })" @update-auth="handleReceiveAuth"></cmdb-auth>
             <template v-if="!topoEdit.isEdit">
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS),
-                        auth: [$OPERATION.SYSTEM_MODEL_GRAPHICS]
-                    }">
-                    <bk-button class="edit-button" theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS)"
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.SYSTEM_MODEL_GRAPHICS })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="edit-button"
+                        theme="primary"
+                        :disabled="disabled"
                         @click="handleEditTopo">
                         {{$t('编辑拓扑')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </template>
             <template v-else>
-                <bk-button theme="primary" @click="handleExitEdit">
+                <bk-button style="margin-top: -2px;" theme="primary" @click="handleExitEdit">
                     {{$t('返回')}}
                 </bk-button>
                 <p class="edit-cue">{{$t('所有更改已自动保存')}}</p>
@@ -215,7 +214,8 @@
                     parent: null
                 },
                 loading: true,
-                isTopoHover: false
+                isTopoHover: false,
+                createAuth: false
             }
         },
         computed: {
@@ -226,9 +226,6 @@
                 'classifications',
                 'getModelById'
             ]),
-            createAuth () {
-                return this.$isAuthorized(this.$OPERATION.SYSTEM_TOPOLOGY)
-            },
             noPositionModels () {
                 return this.localTopoModelList.filter(model => {
                     const position = model.position
@@ -1191,6 +1188,9 @@
                     cy.zoom(fitMaxZoom)
                     cy.center()
                 }
+            },
+            handleReceiveAuth (auth) {
+                this.createAuth = auth
             }
         }
     }

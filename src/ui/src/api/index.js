@@ -153,16 +153,16 @@ async function getPromise (method, url, data, userConfig = {}) {
  * @param {reject} promise拒绝函数
  * @return
  */
-
 const PermissionCode = 9900403
 function handleResponse ({ config, response, resolve, reject }) {
     const transformedResponse = response.data
+    const { bk_error_msg: message, permission } = transformedResponse
     if (transformedResponse.bk_error_code === PermissionCode) {
-        popupPermissionModal(transformedResponse.permission)
-        return reject({ message: transformedResponse['bk_error_msg'], code: PermissionCode })
+        config.globalPermission && popupPermissionModal(transformedResponse.permission)
+        return reject({ message, permission, code: PermissionCode })
     }
     if (!transformedResponse.result && config.globalError) {
-        reject({ message: transformedResponse['bk_error_msg'] })
+        reject({ message })
     } else {
         resolve(config.originalResponse ? response : config.transformData ? transformedResponse.data : transformedResponse)
     }
@@ -234,7 +234,9 @@ function initConfig (method, url, userConfig) {
         // 当路由变更时取消请求
         cancelWhenRouteChange: false,
         // 取消上次请求
-        cancelPrevious: false
+        cancelPrevious: false,
+        // 是否全局捕获权限异常
+        globalPermission: true
     }
     return Object.assign(defaultConfig, userConfig)
 }

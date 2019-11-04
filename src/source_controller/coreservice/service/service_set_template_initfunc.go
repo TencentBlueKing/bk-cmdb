@@ -27,4 +27,5 @@ func (s *coreService) initSetTemplate() {
 	s.addAction(http.MethodPut, "/update/topo/set_template_sync_status/bk_set_id/{bk_set_id}", s.UpdateSetTemplateSyncStatus, nil)
 	s.addAction(http.MethodPost, "/findmany/topo/set_template_sync_status/bk_biz_id/{bk_biz_id}", s.ListSetTemplateSyncStatus, nil)
 	s.addAction(http.MethodPost, "/findmany/topo/set_template_sync_history/bk_biz_id/{bk_biz_id}", s.ListSetTemplateSyncHistory, nil)
+	s.addAction(http.MethodDelete, "/deletemany/topo/set_template_sync_status/bk_biz_id/{bk_biz_id}", s.DeleteSetTemplateSyncStatus, nil)
 }

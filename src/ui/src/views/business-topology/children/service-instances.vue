@@ -8,24 +8,22 @@
                     :title="$t('全选本页')"
                     @change="handleCheckALL">
                 </bk-checkbox>
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
-                        auth: [$OPERATION.C_SERVICE_INSTANCE]
-                    }">
-                    <bk-button v-if="withTemplate && !templates.length"
-                        class="options-button"
-                        theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
-                        @click="visible = true">
-                        {{$t('添加主机')}}
-                    </bk-button>
-                    <bk-button v-else class="options-button" theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
-                        @click="handleCreateServiceInstance">
-                        {{$t('添加服务实例')}}
-                    </bk-button>
-                </span>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                    <template slot-scope="{ disabled }">
+                        <bk-button v-if="withTemplate && !templates.length"
+                            class="options-button"
+                            theme="primary"
+                            :disabled="disabled"
+                            @click="visible = true">
+                            {{$t('添加主机')}}
+                        </bk-button>
+                        <bk-button v-else class="options-button" theme="primary"
+                            :disabled="disabled"
+                            @click="handleCreateServiceInstance">
+                            {{$t('添加服务实例')}}
+                        </bk-button>
+                    </template>
+                </cmdb-auth>
                 <bk-dropdown-menu trigger="click" font-size="large">
                     <bk-button class="options-button clipboard-trigger" theme="default" slot="dropdown-trigger">
                         {{$t('更多')}}
@@ -33,34 +31,38 @@
                     </bk-button>
                     <ul class="clipboard-list" slot="dropdown-content">
                         <li v-for="(item, index) in menuItem"
-                            :class="['clipboard-item', { 'is-disabled': item.disabled || (item.auth && !$isAuthorized($OPERATION[item.auth])) }]"
-                            :key="index"
-                            @click="item.handler(item.disabled, item.auth)">
-                            <span v-if="item.auth"
-                                v-cursor="{
-                                    active: !$isAuthorized($OPERATION[item.auth]),
-                                    auth: [$OPERATION[item.auth]]
-                                }">
+                            class="clipboard-item"
+                            :key="index">
+                            <cmdb-auth v-if="item.auth" :auth="$authResources({ type: $OPERATION[item.auth] })">
+                                <bk-button slot-scope="{ disabled }"
+                                    class="item-btn"
+                                    text
+                                    :disabled="item.disabled || disabled"
+                                    @click="item.handler(item.disabled)">
+                                    {{item.name}}
+                                </bk-button>
+                            </cmdb-auth>
+                            <bk-button v-else text
+                                class="item-btn"
+                                :disabled="item.disabled"
+                                @click="item.handler(item.disabled)">
                                 {{item.name}}
-                            </span>
-                            <span v-else>{{item.name}}</span>
+                            </bk-button>
                         </li>
                     </ul>
                 </bk-dropdown-menu>
-                <span class="options-button sync-template-link"
+                <cmdb-auth class="options-button sync-template-link"
                     v-show="withTemplate"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
-                        auth: [$OPERATION.U_SERVICE_INSTANCE]
-                    }">
-                    <bk-button class="topo-sync"
-                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE) || !topoStatus"
+                    :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="topo-sync"
+                        :disabled="disabled || !topoStatus"
                         @click="handleSyncTemplate">
                         <i class="bk-icon icon-refresh"></i>
                         {{$t('同步模板')}}
                         <span class="topo-status" v-show="topoStatus"></span>
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <div class="options-right fr">
                     <bk-checkbox class="options-checkbox"
                         :size="16"
@@ -72,7 +74,7 @@
                         <bk-search-select
                             ref="searchSelect"
                             :show-condition="false"
-                            :placeholder="$t('实例名称/标签')"
+                            :placeholder="$t('请输入实例名称或选择标签')"
                             :data="searchSelect"
                             v-model="searchSelectData"
                             @menu-child-condition-select="handleConditionSelect"
@@ -752,8 +754,8 @@
                     return false
                 }
             },
-            batchDelete (disabled, auth) {
-                if (disabled || !this.$isAuthorized(this.$OPERATION[auth])) {
+            batchDelete (disabled) {
+                if (disabled) {
                     return false
                 }
                 this.$bkInfo({
@@ -802,8 +804,8 @@
                     }
                 })
             },
-            handleShowBatchLabel (disabled, auth) {
-                if (disabled || !this.$isAuthorized(this.$OPERATION[auth])) {
+            handleShowBatchLabel (disabled) {
+                if (disabled) {
                     return false
                 }
                 try {
@@ -1084,17 +1086,21 @@
         .clipboard-item{
             cursor: pointer;
             @include ellipsis;
-            span {
+            .item-btn {
                 display: block;
+                width: 100%;
                 padding: 0 15px;
-            }
-            &:not(.is-disabled):hover{
-                background-color: #ebf4ff;
-                color: #3c96ff;
-            }
-            &.is-disabled {
-                color: #c4c6cc;
-                cursor: not-allowed;
+                height: 40px;
+                line-height: 40px;
+                color: #737987;
+                text-align: left;
+                &:disabled {
+                    color: #dcdee5;
+                }
+                &:not(.is-disabled):hover {
+                    background-color: #ebf4ff;
+                    color: #3c96ff;
+                }
             }
         }
     }

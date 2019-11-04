@@ -15,39 +15,43 @@
                                 {{group.info['bk_group_name']}}
                                 <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('内置组不支持修改，排序')}}）</span>
                             </div>
-                            <div class="title-icon-btn" v-if="!(!isAdminView && isBuiltInGroup(group.info))">
-                                <i class="title-icon icon icon-cc-edit"
-                                    :class="{ authDisabled: !updateAuth, disabled: !isEditable(group.info) }"
-                                    v-cursor="{
-                                        active: !updateAuth,
-                                        auth: [$OPERATION.U_MODEL]
-                                    }"
-                                    @click.stop="handleEditGroup(group)">
-                                </i>
-                                <i class="title-icon bk-icon icon-cc-delete"
-                                    :class="{ authDisabled: !updateAuth, disabled: !isEditable(group.info) || ['default'].includes(group.info['bk_group_id']) }"
-                                    v-cursor="{
-                                        active: !updateAuth,
-                                        auth: [$OPERATION.U_MODEL]
-                                    }"
-                                    @click.stop="handleDeleteGroup(group, index)">
-                                </i>
-                                <i class="title-icon bk-icon icon-arrows-up"
-                                    :class="{ authDisabled: !updateAuth, disabled: !canRiseGroup(index, group) }"
-                                    v-cursor="{
-                                        active: !updateAuth,
-                                        auth: [$OPERATION.U_MODEL]
-                                    }"
-                                    @click.stop="handleRiseGroup(index, group)">
-                                </i>
-                                <i class="title-icon bk-icon icon-arrows-down"
-                                    :class="{ authDisabled: !updateAuth, disabled: !canDropGroup(index, group) }"
-                                    v-cursor="{
-                                        active: !updateAuth,
-                                        auth: [$OPERATION.U_MODEL]
-                                    }"
-                                    @click.stop="handleDropGroup(index, group)">
-                                </i>
+                            <div class="title-icon-btn" v-if="!(!isAdminView && isBuiltInGroup(group.info))" @click.stop>
+                                <cmdb-auth class="ml10" :auth="authResources" @update-auth="handleReceiveAuth">
+                                    <bk-button slot-scope="{ disabled }"
+                                        class="icon-btn"
+                                        :text="true"
+                                        :disabled="disabled || !isEditable(group.info)"
+                                        @click.stop="handleEditGroup(group)">
+                                        <i class="title-icon icon icon-cc-edit"></i>
+                                    </bk-button>
+                                </cmdb-auth>
+                                <cmdb-auth class="ml5" :auth="authResources">
+                                    <bk-button slot-scope="{ disabled }"
+                                        class="icon-btn"
+                                        :text="true"
+                                        :disabled="disabled || !isEditable(group.info) || ['default'].includes(group.info['bk_group_id'])"
+                                        @click.stop="handleDeleteGroup(group, index)">
+                                        <i class="title-icon bk-icon icon-cc-delete"></i>
+                                    </bk-button>
+                                </cmdb-auth>
+                                <cmdb-auth class="ml5" :auth="authResources">
+                                    <bk-button slot-scope="{ disabled }"
+                                        class="icon-btn"
+                                        :text="true"
+                                        :disabled="disabled || !isEditable(group.info) || !canRiseGroup(index, group)"
+                                        @click.stop="handleRiseGroup(index, group)">
+                                        <i class="title-icon bk-icon icon-arrows-up"></i>
+                                    </bk-button>
+                                </cmdb-auth>
+                                <cmdb-auth class="ml5" :auth="authResources">
+                                    <bk-button slot-scope="{ disabled }"
+                                        class="icon-btn"
+                                        :text="true"
+                                        :disabled="disabled || !isEditable(group.info) || !canDropGroup(index, group)"
+                                        @click.stop="handleDropGroup(index, group)">
+                                        <i class="title-icon bk-icon icon-arrows-down"></i>
+                                    </bk-button>
+                                </cmdb-auth>
                             </div>
                         </div>
                     </div>
@@ -69,9 +73,9 @@
                             @end="handleDragEnd">
                             <li class="property-item fl"
                                 v-for="(property, _index) in group.properties"
-                                :class="{ 'only-ready': !isFieldEditable(property) }"
+                                :class="{ 'only-ready': !updateAuth || !isFieldEditable(property) }"
                                 :key="_index"
-                                @click="handleFieldDetailsView(!isFieldEditable(property), property)">
+                                @click="handleFieldDetailsView(!updateAuth || !isFieldEditable(property), property)">
                                 <span class="drag-logo"></span>
                                 <div class="drag-content">
                                     <div class="field-name">
@@ -81,50 +85,53 @@
                                     <p>{{fieldTypeMap[property['bk_property_type']]}}</p>
                                 </div>
                                 <template v-if="!property['ispre']">
-                                    <i class="property-icon icon icon-cc-edit mr10"
-                                        :class="{ disabled: !isFieldEditable(property) }"
-                                        v-cursor="{
-                                            active: !updateAuth,
-                                            auth: [$OPERATION.U_MODEL]
-                                        }"
-                                        @click.stop="handleEditField(group, property)">
-                                    </i>
-                                    <i class="property-icon bk-icon icon-cc-delete"
-                                        :class="{ disabled: !isFieldEditable(property) }"
-                                        v-cursor="{
-                                            active: !updateAuth,
-                                            auth: [$OPERATION.U_MODEL]
-                                        }"
-                                        @click.stop="handleDeleteField({ property, index, _index })">
-                                    </i>
+                                    <cmdb-auth class="mr10" :auth="authResources" @click.native.stop>
+                                        <bk-button slot-scope="{ disabled }"
+                                            class="property-icon-btn"
+                                            :text="true"
+                                            :disabled="disabled || !isFieldEditable(property)"
+                                            @click.stop="handleEditField(group, property)">
+                                            <i class="property-icon icon-cc-edit"></i>
+                                        </bk-button>
+                                    </cmdb-auth>
+                                    <cmdb-auth class="mr10" :auth="authResources" @click.native.stop>
+                                        <bk-button slot-scope="{ disabled }"
+                                            class="property-icon-btn"
+                                            :text="true"
+                                            :disabled="disabled || !isFieldEditable(property)"
+                                            @click.stop="handleDeleteField({ property, index, _index })">
+                                            <i class="property-icon bk-icon icon-cc-delete"></i>
+                                        </bk-button>
+                                    </cmdb-auth>
                                 </template>
                             </li>
-                            <li class="property-add no-drag fl"
-                                :class="{ 'disabled': !updateAuth }"
-                                v-cursor="{
-                                    active: !updateAuth,
-                                    auth: [$OPERATION.U_MODEL]
-                                }"
-                                v-if="isEditable(group.info)"
-                                @click="handleAddField(group)">
-                                <i class="bk-icon icon-plus"></i>
-                                {{$t('添加')}}
+                            <li class="property-add no-drag fl" v-if="isEditable(group.info)">
+                                <cmdb-auth :auth="authResources" style="display: block;">
+                                    <bk-button slot-scope="{ disabled }"
+                                        class="property-add-btn"
+                                        :text="true"
+                                        :disabled="disabled"
+                                        @click.stop="handleAddField(group)">
+                                        <i class="bk-icon icon-plus"></i>
+                                        {{$t('添加')}}
+                                    </bk-button>
+                                </cmdb-auth>
                             </li>
                             <li class="property-empty" v-if="!isEditable(group.info) && !group.properties.length">{{$t('暂无字段')}}</li>
                         </vue-draggable>
                     </template>
                 </cmdb-collapse>
                 <div class="add-group" v-if="index === (groupedProperties.length - 1)">
-                    <a class="add-group-trigger" href="javascript:void(0)"
-                        :class="{ disabled: !updateAuth || activeModel['bk_ispaused'] }"
-                        v-cursor="{
-                            active: !updateAuth,
-                            auth: [$OPERATION.U_MODEL]
-                        }"
-                        @click="handleAddGroup">
-                        <i class="bk-icon icon-plus-circle"></i>
-                        {{$t('添加分组')}}
-                    </a>
+                    <cmdb-auth :auth="authResources">
+                        <bk-button slot-scope="{ disabled }"
+                            class="add-group-trigger"
+                            :text="true"
+                            :disabled="disabled || activeModel['bk_ispaused']"
+                            @click.stop="handleAddGroup">
+                            <i class="bk-icon icon-plus-circle"></i>
+                            {{$t('添加分组')}}
+                        </bk-button>
+                    </cmdb-auth>
                 </div>
             </div>
         </div>
@@ -254,6 +261,7 @@
         },
         data () {
             return {
+                updateAuth: false,
                 groupedProperties: [],
                 shouldUpdatePropertyIndex: false,
                 previewShow: false,
@@ -335,13 +343,16 @@
             metadataGroupedProperties () {
                 return this.groupedProperties.filter(group => !!this.$tools.getMetadataBiz(group.info))
             },
-            updateAuth () {
-                const cantEdit = ['process', 'plat']
-                if (cantEdit.includes(this.$route.params.modelId)) {
-                    return false
-                }
-                const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
+            modelId () {
+                if (!this.objId) return null
+                const model = this.$store.getters['objectModelClassify/getModelById'](this.objId)
+                return model.id
+            },
+            authResources () {
+                return this.$authResources({
+                    resource_id: this.modelId,
+                    type: this.$OPERATION.U_MODEL
+                })
             }
         },
         async created () {
@@ -368,7 +379,7 @@
                 return false
             },
             isFieldEditable (item) {
-                if (item.ispre || this.isReadOnly || !this.updateAuth) {
+                if (item.ispre || this.isReadOnly) {
                     return false
                 }
                 if (!this.isAdminView) {
@@ -400,9 +411,6 @@
                 return metadataIndex !== (this.metadataGroupedProperties.length - 1)
             },
             handleRiseGroup (index, group) {
-                if (!this.updateAuth || !this.canRiseGroup(index, group)) {
-                    return false
-                }
                 this.groupedProperties[index - 1]['info']['bk_group_index'] = index
                 group['info']['bk_group_index'] = index - 1
                 this.updateGroupIndex()
@@ -410,9 +418,6 @@
                 this.updatePropertyIndex()
             },
             handleDropGroup (index, group) {
-                if (!this.updateAuth || !this.canDropGroup(index, group)) {
-                    return false
-                }
                 this.groupedProperties[index + 1]['info']['bk_group_index'] = index
                 group.info['bk_group_index'] = index + 1
                 this.updateGroupIndex()
@@ -567,7 +572,6 @@
                 return property['bk_property_name'].toLowerCase().indexOf(this.dialog.filter.toLowerCase()) !== -1
             },
             handleEditGroup (group) {
-                if (!this.updateAuth || !this.isEditable(group.info)) return
                 this.groupDialog.isShow = true
                 this.groupDialog.isShowContent = true
                 this.groupDialog.type = 'update'
@@ -604,7 +608,6 @@
                 this.groupDialog.isShow = false
             },
             handleAddGroup () {
-                if (!this.updateAuth || this.activeModel['bk_ispaused']) return
                 this.groupDialog.isShow = true
                 this.groupDialog.isShowContent = true
                 this.groupDialog.type = 'create'
@@ -651,10 +654,6 @@
                 })
             },
             handleDeleteGroup (group, index) {
-                if (!this.updateAuth || !this.isEditable(group.info)) return
-                if (['default', 'none'].includes(group.info['bk_group_id'])) {
-                    return
-                }
                 if (group.properties.length) {
                     this.$error(this.$t('请先清空该分组下的字段'))
                     return
@@ -750,7 +749,6 @@
                 })
             },
             handleAddField (group) {
-                if (!this.updateAuth) return
                 this.slider.isEditField = false
                 this.slider.curField = {}
                 this.slider.curGroup = group.info
@@ -759,7 +757,6 @@
                 this.slider.isShow = true
             },
             handleEditField (group, property) {
-                if (!this.isFieldEditable(property)) return
                 this.slider.isEditField = true
                 this.slider.curField = property
                 this.slider.curGroup = group.info
@@ -773,7 +770,6 @@
                 this.slider.curGroup = {}
             },
             handleDeleteField ({ property: field, index, fieldIndex }) {
-                if (!this.isFieldEditable(field)) return
                 this.$bkInfo({
                     title: this.$tc('确定删除字段？', field['bk_property_name'], { name: field['bk_property_name'] }),
                     confirmFn: async () => {
@@ -824,6 +820,9 @@
             handleHideFieldDetailsView () {
                 this.fieldDetailsDialog.isShow = false
                 this.fieldDetailsDialog.field = {}
+            },
+            handleReceiveAuth (auth) {
+                this.updateAuth = auth
             }
         }
     }
@@ -895,31 +894,24 @@
             }
             .title-icon-btn {
                 @include inlineBlock;
-                .icon-cc-edit {
-                    margin: 0 4px;
+            }
+            .icon-btn {
+                @include inlineBlock;
+                display: none;
+                vertical-align: middle;
+                font-size: 0;
+                height: 21px;
+                color: $modelHighlightColor;
+                &.is-disabled {
+                    color: #c4c6cc;
                 }
             }
             .title-icon {
-                display: none;
-                vertical-align: middle;
-                width: 21px;
-                height: 21px;
-                line-height: 24px;
-                text-align: center;
                 font-size: 16px;
-                color: $modelHighlightColor;
-                cursor: pointer;
-                &.disabled, &.authDisabled {
-                    color: #C4C6CC;
-                }
-                &.disabled:hover, &.authDisabled:hover {
-                    color: #979BA5;
-                }
-                &.disabled {
-                    cursor: not-allowed;
-                }
+                width: 16px;
+                height: 16px;
             }
-            &:hover .title-icon {
+            &:hover .icon-btn {
                 display: inline-block;
             }
         }
@@ -960,7 +952,7 @@
                 .drag-logo {
                     display: block;
                 }
-                .property-icon {
+                .property-icon-btn {
                     display: inline-block;
                 }
                 &:not(.only-ready)::before {
@@ -972,7 +964,7 @@
                 background: #fff;
                 color: #fff;
                 border: 1px dashed $cmdbBorderFocusColor;
-                &::before, .drag-content, .property-icon {
+                &::before, .drag-content, .property-icon-btn {
                     display: none;
                 }
             }
@@ -1020,33 +1012,38 @@
                     @include ellipsis;
                 }
             }
-            .property-icon {
+            .property-icon-btn {
+                font-size: 0;
                 color: #3a84ff;
                 display: none;
-                cursor: pointer;
-                &.disabled {
+                .property-icon {
+                    font-size: 14px;
+                }
+                &.is-disabled {
                     color: #C4C6CC;
-                    cursor: not-allowed;
                 }
             }
         }
         .property-add {
             width: calc(20% - 10px);
-            height: 59px;
-            line-height: 59px;
             margin: 10px 5px;
-            text-align: center;
-            border: 1px dashed #dcdee5;
-            color: #979ba5;
-            background-color: #ffffff;
-            cursor: pointer;
+            .property-add-btn {
+                display: block;
+                width: 100%;
+                height: 59px;
+                line-height: 59px;
+                text-align: center;
+                border: 1px dashed #dcdee5;
+                color: #979ba5;
+                background-color: #ffffff;
+                &:not(.is-disabled):hover {
+                    color: #3a84ff;
+                    border-color: #3a84ff;
+                }
+            }
             .icon-plus {
                 font-weight: bold;
                 margin-top: -2px;
-            }
-            &:not(.disabled):hover {
-                color: #3a84ff;
-                border-color: #3a84ff;
             }
         }
         .property-empty {
@@ -1065,39 +1062,19 @@
         line-height: 29px;
         font-size: 0;
         .add-group-trigger {
-            display: inline-block;
-            vertical-align: middle;
             color: #3a84ff;
             font-size: 16px;
-            &.disabled {
+            &.is-disabled {
                 color: #000000;
                 .icon {
                     color: #63656E;
                 }
             }
             .icon-plus-circle {
-                margin: -2px 2px 0 0;
+                margin: -4px 2px 0 0;
                 display: inline-block;
                 vertical-align: middle;
             }
-        }
-        .add-group-input {
-            font-size: 0;
-            display: inline-block;
-            vertical-align: middle;
-            width: 180px;
-            /deep/ .bk-form-input {
-                font-size: 14px;
-                height: 30px;
-                line-height: 30px;
-            }
-        }
-        .add-group-button {
-            display: inline-block;
-            vertical-align: middle;
-            margin: 0 0 0 14px;
-            font-size: 14px;
-            color: $modelHighlightColor;
         }
     }
     .dialog-title {
