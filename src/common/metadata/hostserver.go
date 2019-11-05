@@ -354,7 +354,8 @@ type DeleteHostFromBizParameter struct {
 
 // CloudAreaParameter search cloud area parameter
 type CloudAreaParameter struct {
-	Page BasePage `json:"page" bson:"page" field:"page"`
+	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
+	Page      BasePage      `json:"page" bson:"page" field:"page"`
 }
 
 type TopoNode struct {
@@ -366,6 +367,9 @@ type TransferHostWithAutoClearServiceInstanceOption struct {
 	RemoveFromNode *TopoNode `field:"remove_from_node" json:"remove_from_node"`
 	HostIDs        []int64   `field:"bk_host_ids" json:"bk_host_ids"`
 	AddToModules   []int64   `field:"add_to_modules" json:"add_to_modules"`
+	// 主机从 RemoveFromNode 移除后如果不再属于其它模块， 默认转移到空闲机模块
+	// DefaultInternalModule 支持调整这种模型行为，可设置成待回收模块或者故障机模块
+	DefaultInternalModule int64 `field:"default_internal_module" json:"default_internal_module"`
 }
 
 type HostTransferPlan struct {
