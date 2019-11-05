@@ -212,9 +212,16 @@ type CreateServiceInstanceDetail struct {
 	Processes []ProcessInstanceDetail `json:"processes"`
 }
 
+type CreateServiceInstanceOption struct {
+	ModuleID int64 `json:"bk_module_id"`
+	HostID   int64 `json:"bk_host_id"`
+	// Processes parameter usable only when create instance with raw
+	Processes []ProcessInstanceDetail `json:"processes"`
+}
+
 type ProcessInstanceDetail struct {
-	// ProcessTemplateID int64   `json:"process_template_id"`
-	ProcessInfo Process `json:"process_info"`
+	ProcessTemplateID int64   `json:"process_template_id"`
+	ProcessInfo       Process `json:"process_info"`
 }
 
 type ListProcessTemplateWithServiceTemplateInput struct {
