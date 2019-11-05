@@ -136,6 +136,11 @@ var (
 	ModuleDiffUnchanged = "unchanged"
 )
 
+type DeleteSetTemplateSyncStatusOption struct {
+	SetIDs []int64 `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
+	BizID  int64   `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
+}
+
 type ListSetTemplateSyncStatusOption struct {
 	BizID         int64      `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
 	SetIDs        []int64    `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
