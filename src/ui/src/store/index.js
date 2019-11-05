@@ -53,6 +53,7 @@ import instanceLabel from './modules/api/instance-label.js'
 import fullTextSearch from './modules/api/full-text-search.js'
 import setSync from './modules/api/set-sync.js'
 import setTemplate from './modules/api/set-template.js'
+import cloudarea from './modules/api/cloudarea.js'
 
 Vue.use(Vuex)
 
@@ -110,6 +111,7 @@ export default new Vuex.Store({
         instanceLabel,
         fullTextSearch,
         setSync,
-        setTemplate
+        setTemplate,
+        cloudarea
     }
 })
