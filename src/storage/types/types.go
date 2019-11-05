@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	//"configcenter/src/storage/dal"
 
 	"github.com/rentiansheng/bk_bson/bson"
 )
@@ -45,6 +46,7 @@ type Transaction struct {
 	LastTime   time.Time `bson:"last_time"`     // 修改时间，作为统计信息存在
 	TMAddr     string    // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
 	SessionID string // 会话ID
+	SessionState string // 会话State
 	TxnNumber string // 事务Number
 }
 
@@ -56,8 +58,17 @@ func (t Transaction) IntoHeader(header http.Header) http.Header {
 	}
 	tar.Set(common.BKHTTPCCTransactionNumber, t.TxnNumber)
 	tar.Set(common.BKHTTPCCTxnSessionID, t.SessionID)
+	tar.Set(common.BKHTTPCCTxnSessionState, t.SessionState)
 	return tar
 }
+
+//func (t Transaction) IntoContext(ctx context.Context) context.Context {
+//	return context.WithValue(ctx, common.CCContextKeyJoinOption, dal.JoinOption{
+//		SessionID: t.SessionID,
+//		SessionState: t.SessionState,
+//		TxnNumber: t.TxnNumber,
+//	})
+//}
 
 //func (t Transaction) IntoHeader(header http.Header) http.Header {
 //	tar := http.Header{}

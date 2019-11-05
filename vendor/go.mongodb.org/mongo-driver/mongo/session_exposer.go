@@ -9,10 +9,12 @@ package mongo
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"go.mongodb.org/mongo-driver/x/bsonx"
-	"go.mongodb.org/mongo-driver/x/mongo/driver/description"
+	//"go.mongodb.org/mongo-driver/x/mongo/driver/description"
+	//"go.mongodb.org/mongo-driver/x/mongo/driver/session"
 )
 
 type SessionExposer struct{}
@@ -20,6 +22,7 @@ type SessionExposer struct{}
 type SessionInfo struct {
 	SessionID string
 	TxnNumber string
+	SessionState string
 }
 
 // GetSessionInfo get the session info from the param session
@@ -32,6 +35,7 @@ func (s *SessionExposer) GetSessionInfo(session Session) (*SessionInfo, error) {
 	sessionIDBytes, _ := i.clientSession.Server.SessionID.MarshalBSON()
 	info.SessionID = string(sessionIDBytes)
 	info.TxnNumber = strconv.FormatInt(i.clientSession.Server.TxnNumber, 10)
+	info.SessionState = fmt.Sprintf("%c", i.clientSession.GetState())
 	return info, nil
 }
 
@@ -48,8 +52,9 @@ func (s *SessionExposer) SetSessionInfo(session Session, info *SessionInfo) erro
 	}
 	i.clientSession.Server.SessionID = doc
 	i.clientSession.Server.TxnNumber, _ = strconv.ParseInt(info.TxnNumber, 10, 64)
+	i.clientSession.SetState([]byte(info.SessionState)[0])
 	// update the session state to InProgress
-	i.clientSession.ApplyCommand(description.Server{})
+	//i.clientSession.ApplyCommand(description.Server{})
 	return nil
 }
 
@@ -65,16 +70,5 @@ func (s *SessionExposer) EndSession(session Session) error {
 
 // SetContextSession set the session into context if context includes session info
 func (s *SessionExposer) ContextWithSession(ctx context.Context, sess Session) context.Context {
-
 	return contextWithSession(ctx, sess)
-
-	//// set txn
-	//opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
-	//if ok {
-	//	msg.RequestID = opt.RequestID
-	//	msg.TxnID = opt.TxnID
-	//}
-	//if c.TxnID != "" {
-	//	msg.TxnID = c.TxnID
-	//}
 }

@@ -15,6 +15,7 @@ package local
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -36,6 +37,7 @@ type Mongo struct {
 	dbc    *mongo.Client
 	dbname string
 	sess mongo.Session
+	tm *TxnManager
 }
 
 var _ dal.DB = new(Mongo)
@@ -59,6 +61,7 @@ func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
 	return &Mongo{
 		dbc:    client,
 		dbname: connStr.Database,
+		tm: &TxnManager{},
 	}, nil
 }
 
@@ -273,10 +276,23 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 // Count 统计数量(非事务)
 func (f *Find) Count(ctx context.Context) (uint64, error) {
 	// 设置ctx的Session对象,用来处理事务
-	ctx, err := f.Mongo.ContextWithSession(ctx)
-	if err != nil {
-		return uint64(0), err
+	se := &mongo.SessionExposer{}
+	if f.HasSession(ctx) {
+		sess, err := f.GetDistributedSession(ctx)
+		if err != nil {
+			return uint64(0), err
+		}
+		ctx = se.ContextWithSession(ctx, sess)
+		defer func() {
+			f.tm.SaveSession(sess)
+		}()
+	} else if f.sess != nil {
+		ctx = se.ContextWithSession(ctx, f.sess)
 	}
+	//ctx, err := f.ContextWithSession(ctx)
+	//if err != nil {
+	//	return uint64(0), err
+	//}
 
 	if f.filter == nil {
 		f.filter = bson.M{}
@@ -289,14 +305,23 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 	// 设置ctx的Session对象,用来处理事务
-	ctx, err := c.Mongo.ContextWithSession(ctx)
-	if err != nil {
-		return err
+	se := &mongo.SessionExposer{}
+	if c.HasSession(ctx) {
+		sess, err := c.GetDistributedSession(ctx)
+		if err != nil {
+			return err
+		}
+		ctx = se.ContextWithSession(ctx, sess)
+		defer func() {
+			c.tm.SaveSession(sess)
+		}()
+	} else if c.sess != nil {
+		ctx = se.ContextWithSession(ctx, c.sess)
 	}
 
 	rows := util.ConverToInterfaceSlice(docs)
 
-	_, err = c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)
+	_, err := c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)
 	return err
 
 }
@@ -380,7 +405,7 @@ func (c *Mongo) ContextWithSession(ctx context.Context) (context.Context, error)
 	}
 	// 如果context中有传递的事务信息，则用传递的会话
 	if opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption); ok {
-		info := &mongo.SessionInfo{SessionID:opt.SessionID, TxnNumber:opt.TxnNumber}
+		info := &mongo.SessionInfo{SessionID:opt.SessionID, SessionState:opt.SessionState, TxnNumber:opt.TxnNumber}
 		return c.GetSameSessionContext(ctx, info)
 	}
 	return ctx, nil
@@ -408,6 +433,46 @@ func (c *Mongo) GetSameSessionContext(ctx context.Context, info *mongo.SessionIn
 	return ctx, nil
 }
 
+// HasSession 判断context里是否有session信息
+func (c *Mongo) HasSession(ctx context.Context) bool {
+	_, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	return ok==true
+}
+
+// GetDistributedSession 获取context里用来做分布式事务的session
+func (c *Mongo) GetDistributedSession(ctx context.Context) (mongo.Session, error) {
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if !ok {
+		return nil, errors.New("context has no CCContextKeyJoinOption")
+	}
+	sess, err := c.dbc.StartSession()
+	if err != nil {
+		return nil, err
+	}
+	err = c.tm.ConvertToSameSession(sess, opt.SessionID)
+	if err != nil {
+		return nil, err
+	}
+	return sess, nil
+}
+
+// ChooseSession 选择session，优先选择context里用来做分布式事务的session，其次选择自身本地的
+func (c *Mongo) ChooseSession(ctx context.Context) (mongo.Session, error) {
+	var sess mongo.Session
+	var err error
+	if c.HasSession(ctx) {
+		sess, err = c.GetDistributedSession(ctx)
+		if err != nil {
+			return nil, err
+		}
+	} else if c.sess != nil {
+		sess = c.sess
+	} else {
+		return nil, dal.ErrSessionNotStarted
+	}
+	return sess, nil
+}
+
 // StartSession 开启新会话
 func (c *Mongo) StartSession() (dal.DB, error) {
 	sess, err := c.dbc.StartSession()
@@ -421,43 +486,51 @@ func (c *Mongo) StartSession() (dal.DB, error) {
 
 // EndSession 结束会话
 func (c *Mongo) EndSession(ctx context.Context) error {
-	if c.sess == nil {
-		return dal.ErrSessionNotStarted
+	sess, err := c.ChooseSession(ctx)
+	if err != nil {
+		return err
 	}
-	c.sess.EndSession(ctx)
+	sess.EndSession(ctx)
 	return nil
 }
 
 // StartTransaction 开启新事务
-func (c *Mongo) StartTransaction() error {
-	if c.sess == nil {
-		return dal.ErrSessionNotStarted
-	}
-	err := c.sess.StartTransaction()
+func (c *Mongo) StartTransaction(ctx context.Context) error {
+	sess, err := c.ChooseSession(ctx)
 	if err != nil {
 		return err
 	}
-	// activate transaction number in mongo server
-	coll := c.Table("111")
-	resultMany := make([]map[string]interface{}, 0)
-	coll.Find(nil).All(context.Background(), &resultMany)
-	return nil
+	defer func() {
+		c.tm.SaveSession(sess)
+	}()
+	se := &mongo.SessionExposer{}
+	info, err := se.GetSessionInfo(sess)
+	fmt.Printf("***StartTransaction***:%#v, err:%v\n",info, err)
+	return sess.StartTransaction()
 }
 
 // CommitTransaction 提交事务
 func (c *Mongo) CommitTransaction(ctx context.Context) error {
-	if c.sess == nil {
-		return dal.ErrSessionNotStarted
+	sess, err := c.ChooseSession(ctx)
+	if err != nil {
+		return err
 	}
-	return c.sess.CommitTransaction(ctx)
+	defer func() {
+		c.tm.SaveSession(sess)
+	}()
+	return sess.CommitTransaction(ctx)
 }
 
 // AbortTransaction 取消事务
 func (c *Mongo) AbortTransaction(ctx context.Context) error {
-	if c.sess == nil {
-		return dal.ErrSessionNotStarted
+	sess, err := c.ChooseSession(ctx)
+	if err != nil {
+		return err
 	}
-	return c.sess.AbortTransaction(ctx)
+	defer func() {
+		c.tm.SaveSession(sess)
+	}()
+	return sess.AbortTransaction(ctx)
 }
 
 // Start 开启新事务
@@ -486,7 +559,7 @@ func (c *Mongo) TxnInfo() (*types.Transaction, error) {
 		return nil, err
 	}
 
-	return &types.Transaction{SessionID:info.SessionID, TxnNumber:info.TxnNumber},nil
+	return &types.Transaction{SessionID:info.SessionID, SessionState:info.SessionState, TxnNumber:info.TxnNumber},nil
 }
 
 // HasTable 判断是否存在集合  TOOD test

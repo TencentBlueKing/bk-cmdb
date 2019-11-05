@@ -73,7 +73,7 @@ type DB interface {
 // Transcation db transcation interface
 type Transaction interface {
 	// StartTransaction 开启新事务
-	StartTransaction() error
+	StartTransaction(context.Context) error
 	// CommitTransaction 提交事务
 	CommitTransaction(context.Context) error
 	// AbortTransaction 取消事务
@@ -137,6 +137,7 @@ type JoinOption struct {
 	TMAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
 
 	SessionID string // 会话ID
+	SessionState string // 会话状态
 	TxnNumber string // 事务Number
 
 }
