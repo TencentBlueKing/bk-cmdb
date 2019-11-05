@@ -28,6 +28,7 @@ import (
 
 // createServiceInstances 创建服务实例
 // 支持直接创建和通过模板创建，用 module 是否绑定模版信息区分两种情况
+// 通过模板创建时，进程信息则表现为更新
 func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 	input := new(metadata.CreateServiceInstanceForServiceTemplateInput)
@@ -110,16 +111,59 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 			return
 		}
 
-		if module.ServiceTemplateID == 0 && len(inst.Processes) > 0 {
-			// if this service have process instance to create, then create it now.
-			createProcessInput := &metadata.CreateRawProcessInstanceInput{
-				BizID:             bizID,
-				ServiceInstanceID: serviceInstance.ID,
-				Processes:         inst.Processes,
-			}
-			if _, err = ps.createProcessInstances(ctx, createProcessInput); err != nil {
-				ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, create process instances failed, moduleID: %d, err: %s", input.ModuleID, err.Error())
-				return
+		if len(inst.Processes) > 0 {
+			if module.ServiceTemplateID == 0 {
+				// if this service have process instance to create, then create it now.
+				createProcessInput := &metadata.CreateRawProcessInstanceInput{
+					BizID:             bizID,
+					ServiceInstanceID: serviceInstance.ID,
+					Processes:         inst.Processes,
+				}
+				if _, err = ps.createProcessInstances(ctx, createProcessInput); err != nil {
+					ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, create process instances failed, moduleID: %d, err: %s", input.ModuleID, err.Error())
+					return
+				}
+			} else {
+				// update process instance by templateID
+				relationOption := &metadata.ListProcessInstanceRelationOption{
+					BusinessID:         bizID,
+					ServiceInstanceIDs: []int64{serviceInstance.ID},
+					Page: metadata.BasePage{
+						Limit: common.BKNoLimit,
+					},
+				}
+				relationResult, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
+				if err != nil {
+					ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, list process relation failed, moduleID: %d, err: %s", input.ModuleID, err.Error())
+					return
+				}
+				templateID2ProcessID := make(map[int64]int64)
+				for _, relation := range relationResult.Info {
+					templateID2ProcessID[relation.ProcessTemplateID] = relation.ProcessID
+				}
+
+				processes := make([]map[string]interface{}, 0)
+				for _, item := range inst.Processes {
+					templateID := item.ProcessTemplateID
+					processID, exist := templateID2ProcessID[templateID]
+					if exist == false {
+						continue
+					}
+					process := item.ProcessInfo
+					process.ProcessID = processID
+					processData := mapstr.NewFromStruct(process, "field")
+					processes = append(processes, processData)
+				}
+				input := metadata.UpdateRawProcessInstanceInput{
+					BizID: bizID,
+					Raw:   processes,
+				}
+				_, err = ps.updateProcessInstances(ctx, input)
+				if err != nil {
+					blog.ErrorJSON("CreateServiceInstances failed, updateProcessInstances failed, input: %s, err: %s, rid: %s", input, err.Error(), rid)
+					ctx.RespAutoError(err)
+					return
+				}
 			}
 		}
 		if module.ServiceTemplateID == 0 {

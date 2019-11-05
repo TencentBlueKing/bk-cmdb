@@ -85,7 +85,7 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 	return process, nil
 }
 
-func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr.MapStr) error {
+func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr.MapStr) errors.CCErrorCoder {
 	delete(info, common.BkSupplierAccount)
 	option := metadata.UpdateOption{
 		Data: info,
@@ -97,12 +97,13 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 
 	result, err := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
-		return err
+		blog.ErrorJSON("UpdateProcessInstance failed, UpdateInstance http request failed, option: %s, err: %s, rid: %s", option, err.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
-		blog.Errorf("rid: %s, update process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
-		return kit.CCError.New(result.Code, result.ErrMsg)
+		blog.ErrorJSON("UpdateProcessInstance failed, UpdateInstance failed, option: %s, response: %s, rid: %s", option, result, kit.Rid)
+		return errors.New(result.Code, result.ErrMsg)
 	}
 	return nil
 }
