@@ -203,9 +203,9 @@ const (
 
 	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
 	CCErrTopoUpdateBuiltInCloudForbidden                     = 1199076
-	CCErrCommModifyFieldForbidden = 1199077
-    CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199078
-    
+	CCErrCommModifyFieldForbidden                            = 1199077
+	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199078
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
@@ -436,6 +436,7 @@ const (
 	CCErrorTopoSyncModuleTaskIsRunning = 1101096
 
 	CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate = 1101097
+	CCErrorTopoForbiddenDeleteBuiltInSetModule                  = 1101098
 
 	// object controller 1102XXX
 

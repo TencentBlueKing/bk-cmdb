@@ -201,7 +201,7 @@ func (node *TopoInstanceNode) TraversalFindModule(targetID int64) []*TopoInstanc
 }
 
 func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int64) []*TopoInstanceNode {
-	if common.GetObjByType(node.ObjectID) == objectType && node.InstanceID == targetID {
+	if node.ObjectID == objectType && node.InstanceID == targetID {
 		return []*TopoInstanceNode{node}
 	}
 
