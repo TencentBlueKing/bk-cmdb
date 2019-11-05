@@ -182,6 +182,12 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 		return
 	}
 
+	if len(data.Info) == 0 {
+		result := meta.NewSuccessResponse(data)
+		_ = resp.WriteEntity(result)
+		return
+	}
+
 	// search all hosts' host module relations
 	hostIDs := make([]int64, 0)
 	for _, host := range data.Info {
