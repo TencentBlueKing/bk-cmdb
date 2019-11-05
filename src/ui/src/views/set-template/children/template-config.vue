@@ -10,7 +10,7 @@
                 <i class="row-symbol required">*</i>
                 <bk-input class="row-content"
                     data-vv-name="name"
-                    font-size="large"
+                    font-size="medium"
                     v-validate="'required|singlechar|length:20'"
                     v-model.trim="templateName"
                     :placeholder="$t('集群模板名称占位符')">
