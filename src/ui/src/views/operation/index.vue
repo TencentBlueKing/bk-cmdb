@@ -437,7 +437,7 @@
                         showline: true,
                         linecolor: '#BFBFBF',
                         type: layConfig.type,
-                        nticks: 24 * 60 * 60 * 1000,
+                        nticks: item.x_axis_count,
                         range: layConfig.range,
                         showgrid: false,
                         autorange: false,
