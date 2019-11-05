@@ -207,6 +207,19 @@ type ServiceDifferenceDetails struct {
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
 }
 
+type CreateServiceInstanceOption struct {
+	ModuleID int64 `json:"bk_module_id"`
+	HostID   int64 `json:"bk_host_id"`
+	// Processes parameter usable only when create instance with raw
+	Processes []ProcessCreateOrUpdateInfo `json:"processes"`
+}
+
+type ProcessCreateOrUpdateInfo struct {
+	// ProcessTemplateID indicate which process to update if service instance bound with a template
+	ProcessTemplateID int64                  `json:"process_template_id"`
+	ProcessInfo       map[string]interface{} `json:"process_info"`
+}
+
 type CreateServiceInstanceDetail struct {
 	HostID int64 `json:"bk_host_id"`
 	// Processes parameter usable only when create instance with raw
@@ -214,8 +227,9 @@ type CreateServiceInstanceDetail struct {
 }
 
 type ProcessInstanceDetail struct {
-	// ProcessTemplateID int64   `json:"process_template_id"`
-	ProcessInfo Process `json:"process_info"`
+	// ProcessTemplateID indicate which process to update if service instance bound with a template
+	ProcessTemplateID int64   `json:"process_template_id"`
+	ProcessInfo       Process `json:"process_info"`
 }
 
 type ListProcessTemplateWithServiceTemplateInput struct {
