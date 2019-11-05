@@ -73,18 +73,14 @@ func (m *operationManager) ModelInst(ctx core.ContextParams, wg *sync.WaitGroup)
 	}
 
 	for _, model := range modelInfo {
-		matched := false
-		info := metadata.IDStringCountInt64{}
-		for _, countInfo := range modelInstCount {
-			if countInfo.Id == model.ObjectID {
-				info.Id = model.ObjectName
-				info.Count = countInfo.Count
-				matched = true
-			}
+		info := metadata.IDStringCountInt64{
+			Id:    model.ObjectName,
+			Count: 0,
 		}
-		if !matched {
-			info.Id = model.ObjectName
-			info.Count = 0
+		for _, instCount := range modelInstCount {
+			if instCount.Id == model.ObjectID {
+				info.Count = instCount.Count
+			}
 		}
 		modelInstNumber = append(modelInstNumber, info)
 	}
@@ -246,18 +242,14 @@ func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.Str
 
 	rData := make([]metadata.StringIDCount, 0)
 	for _, biz := range bizInfo {
-		matched := false
-		info := metadata.StringIDCount{}
+		info := metadata.StringIDCount{
+			Id:    biz.BizName,
+			Count: 0,
+		}
 		for _, host := range bizHostCount {
 			if host.Id == biz.BizID {
-				info.Id = biz.BizName
 				info.Count = int64(len(host.Count))
-				matched = true
 			}
-		}
-		if !matched {
-			info.Id = biz.BizName
-			info.Count = 0
 		}
 		rData = append(rData, info)
 	}
@@ -271,25 +263,10 @@ func (m *operationManager) HostCloudChartData(ctx core.ContextParams, inputParam
 
 	respData := make([]metadata.StringIDCount, 0)
 	opt := mapstr.MapStr{}
-	hostCount, err := m.dbProxy.Table(common.BKTableNameBaseHost).Find(opt).Count(ctx)
-	if err != nil {
-		blog.Errorf("search hostCloudChartData fail, get host count fail, err: %v, rid: %v", err, ctx.ReqID)
-		return nil, err
-	}
 	cloudMapping := make([]metadata.CloudMapping, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBasePlat).Find(opt).All(ctx, &cloudMapping); err != nil {
 		blog.Errorf("hostCloudChartData, search cloud mapping fail, err: %v, rid: %v", err, ctx.ReqID)
 		return nil, err
-	}
-	if hostCount == 0 {
-		for _, cloud := range cloudMapping {
-			info := metadata.StringIDCount{
-				Id:    cloud.CloudName,
-				Count: 0,
-			}
-			respData = append(respData, info)
-		}
-		return respData, nil
 	}
 	pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
 	if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(ctx, pipeline, &commonCount); err != nil {
@@ -298,17 +275,14 @@ func (m *operationManager) HostCloudChartData(ctx core.ContextParams, inputParam
 	}
 
 	for _, cloud := range cloudMapping {
-		matched := false
-		info := metadata.StringIDCount{}
-		info.Id = cloud.CloudName
+		info := metadata.StringIDCount{
+			Id:    cloud.CloudName,
+			Count: 0,
+		}
 		for _, data := range commonCount {
 			if data.Id == cloud.CloudID {
-				matched = true
 				info.Count = data.Count
 			}
-		}
-		if !matched {
-			info.Count = 0
 		}
 		respData = append(respData, info)
 	}
