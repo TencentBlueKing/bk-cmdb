@@ -103,7 +103,7 @@
                 this.setTableHeader()
             },
             selectedNode (node) {
-                node && this.handlePageChange()
+                node && this.handlePageChange(1)
             },
             filterParams () {
                 this.handlePageChange(1)
@@ -173,17 +173,16 @@
             getParams () {
                 const params = {
                     bk_biz_id: this.bizId,
-                    ip: {
-                        data: [],
-                        exact: 0,
-                        flag: 'bk_host_innerip|bk_host_outerip'
-                    },
+                    ip: this.filterParams.ip,
                     page: {
                         ...this.$tools.getPageParams(this.table.pagination),
                         sort: this.table.sort
                     },
                     condition: this.getDefaultSearchCondition()
                 }
+                params.condition.forEach(modleCondition => {
+                    modleCondition.condition = this.filterParams[modleCondition.bk_obj_id] || []
+                })
                 const idMap = {
                     host: 'bk_host_id',
                     set: 'bk_set_id',
