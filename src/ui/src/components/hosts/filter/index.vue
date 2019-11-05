@@ -74,6 +74,11 @@
                             v-else-if="['date', 'time'].includes(filterItem.bk_property_type)"
                             v-model="filterItem.value">
                         </cmdb-form-date-range>
+                        <cmdb-cloud-selector
+                            v-else-if="filterItem.bk_property_id === 'bk_cloud_id'"
+                            class="filter-value"
+                            v-model="filterItem.value">
+                        </cmdb-cloud-selector>
                         <component class="filter-value"
                             v-else
                             :is="`cmdb-form-${filterItem.bk_property_type}`"
