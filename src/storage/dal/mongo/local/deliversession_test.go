@@ -13,21 +13,19 @@
 package local
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/storage/dal"
 	"context"
 	"net/http"
 	"testing"
-	"time"
-
-	"configcenter/src/common"
-	"configcenter/src/storage/dal"
 
 	"github.com/stretchr/testify/require"
 )
 
-func GetClient() (*Mongo, error) {
-	uri := "mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb"
-	return NewMgo(uri, time.Minute)
-}
+//func GetClient() (*Mongo, error) {
+//	uri := "mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb"
+//	return NewMgo(uri, time.Minute)
+//}
 
 func TestDeliverSession(t *testing.T) {
 	// client1 start tranction
