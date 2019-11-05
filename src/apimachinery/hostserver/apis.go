@@ -734,3 +734,18 @@ func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, params *met
 		Into(resp)
 	return
 }
+
+func (hs *hostServer) ListBizHostsTopo(ctx context.Context, h http.Header, bizID int64, params *metadata.ListHostsWithNoBizParameter) (resp *metadata.SuccessResponse, err error) {
+
+	resp = new(metadata.SuccessResponse)
+	subPath := fmt.Sprintf("/hosts/app/%d/list_hosts_topo", bizID)
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
