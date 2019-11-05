@@ -41,7 +41,7 @@
     import ModuleSelector from './module-selector.vue'
     import MoveToResourceConfirm from './move-to-resource-confirm.vue'
     import hostValueFilter from '@/filters/host'
-    import { mapGetters } from 'vuex'
+    import { mapGetters, mapState } from 'vuex'
     import {
         MENU_BUSINESS_HOST_DETAILS,
         MENU_BUSINESS_TRANSFER_HOST
@@ -89,6 +89,7 @@
                 'getDefaultSearchCondition',
                 'commonRequest'
             ]),
+            ...mapState('hosts', ['filterParams']),
             customColumns () {
                 const customColumnKey = this.$route.meta.customInstanceColumn
                 return this.usercustom[customColumnKey] || []
@@ -102,7 +103,10 @@
                 this.setTableHeader()
             },
             selectedNode (node) {
-                node && this.getHostList()
+                node && this.handlePageChange()
+            },
+            filterParams () {
+                this.handlePageChange(1)
             }
         },
         methods: {
@@ -131,7 +135,10 @@
                 this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
-            handleRowClick (row) {
+            handleRowClick (row, event, column) {
+                if (column.type === 'selection') {
+                    return false
+                }
                 this.$router.push({
                     name: MENU_BUSINESS_HOST_DETAILS,
                     params: {

@@ -13,7 +13,7 @@
         <div class="wrapper-right fl">
             <div class="selected-count">
                 <i18n path="已选择N台主机">
-                    <span class="count">{{selected.length}}</span>
+                    <span class="count" place="count">{{selected.length}}</span>
                 </i18n>
             </div>
             <bk-table
@@ -23,7 +23,10 @@
                 :header-cell-style="{ background: '#fff' }"
                 :height="367">
                 <bk-table-column :label="$t('内网IP')">
-                    <template slot-scope="{ row }">{{row.host.bk_host_innerip}}</template>
+                    <template slot-scope="{ row }">
+                        {{row.host.bk_host_innerip}}
+                        <span class="repeat-row" v-if="repeatSelected.includes(row)">{{$t('IP重复')}}</span>
+                    </template>
                 </bk-table-column>
                 <bk-table-column :label="$t('云区域')">
                     <template slot-scope="{ row }">{{row.host.bk_cloud_id | foreignkey}}</template>
@@ -36,7 +39,7 @@
         <div class="clearfix"></div>
         <div class="wrapper-footer">
             <bk-button class="mr10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-            <bk-button theme="primary">{{$t('下一步')}}</bk-button>
+            <bk-button theme="primary" :disabled="!!repeatSelected.length || !uniqueSelected.length" @click="handleNextStep">{{$t('下一步')}}</bk-button>
         </div>
     </div>
 </template>
@@ -54,6 +57,12 @@
         filters: {
             foreignkey
         },
+        props: {
+            exist: {
+                type: Array,
+                default: () => ([])
+            }
+        },
         data () {
             return {
                 components: {
@@ -63,12 +72,18 @@
                 activeComponent: null,
                 type: 'topology',
                 filter: '',
-                selected: [],
+                repeatSelected: [],
+                uniqueSelected: [],
                 request: {
                     internal: Symbol('topology'),
                     instance: Symbol('instance'),
                     host: Symbol('host')
                 }
+            }
+        },
+        computed: {
+            selected () {
+                return [...this.repeatSelected, ...this.uniqueSelected]
             }
         },
         watch: {
@@ -79,11 +94,15 @@
                 }
             }
         },
+        created () {
+            this.setSelected(this.exist)
+        },
         methods: {
             handleRemove (hosts) {
                 const removeData = Array.isArray(hosts) ? hosts : [hosts]
                 const ids = [...new Set(removeData.map(data => data.host.bk_host_id))]
-                this.selected = this.selected.filter(target => !ids.includes(target.host.bk_host_id))
+                const selected = this.selected.filter(target => !ids.includes(target.host.bk_host_id))
+                this.setSelected(selected)
             },
             handleSelect (hosts) {
                 const selectData = Array.isArray(hosts) ? hosts : [hosts]
@@ -97,11 +116,36 @@
                     }
                 })
                 if (newSelectData.length) {
-                    this.selected = [...this.selected, ...newSelectData]
+                    this.setSelected([...this.selected, ...newSelectData])
                 }
+            },
+            setSelected (selected) {
+                const ipMap = {}
+                const repeat = []
+                const unique = []
+                selected.forEach(data => {
+                    const ip = data.host.bk_host_innerip
+                    if (ipMap.hasOwnProperty(ip)) {
+                        ipMap[ip].push(data)
+                    } else {
+                        ipMap[ip] = [data]
+                    }
+                })
+                Object.values(ipMap).forEach(value => {
+                    if (value.length > 1) {
+                        repeat.push(...value)
+                    } else {
+                        unique.push(...value)
+                    }
+                })
+                this.repeatSelected = repeat
+                this.uniqueSelected = unique
             },
             handleCancel () {
                 this.$emit('cancel')
+            },
+            handleNextStep () {
+                this.$emit('confirm', this.selected)
             }
         }
     }
@@ -144,6 +188,14 @@
             font-size: 12px;
             font-weight: bold;
             color: $textColor;
+        }
+        .repeat-row {
+            padding: 0 2px;
+            line-height: 18px;
+            background-color: #FE9C00;
+            border-radius: 2px;
+            color: #FFF;
+            font-size: 12px;
         }
     }
     .wrapper-footer {

@@ -6,8 +6,9 @@
                 @click="handleAddHost">
                 {{$t('新增')}}
             </bk-button>
+            <bk-button class="option ml10" @click="handleMultipleEdit">{{$t('编辑')}}</bk-button>
             <bk-dropdown-menu class="option ml10" trigger="click"
-                font-size="large"
+                font-size="medium"
                 :disabled="!hasSelection"
                 @show="isTransferMenuOpen = true"
                 @hide="isTransferMenuOpen = false">
@@ -28,7 +29,6 @@
                     </li>
                 </ul>
             </bk-dropdown-menu>
-            <bk-button class="option ml10" @click="handleMultipleEdit">{{$t('编辑')}}</bk-button>
             <cmdb-clipboard-selector class="options-button ml10"
                 label-key="bk_property_name"
                 :list="clipboardList"
@@ -36,7 +36,7 @@
                 @on-copy="handleCopy">
             </cmdb-clipboard-selector>
             <bk-dropdown-menu class="option ml10" trigger="click"
-                font-size="large"
+                font-size="medium"
                 @show="isMoreMenuOpen = true"
                 @hide="isMoreMenuOpen = false">
                 <bk-button slot="dropdown-trigger">
@@ -53,7 +53,7 @@
             <bk-select class="option option-collection bgc-white"
                 ref="collectionSelector"
                 v-model="selectedCollection"
-                font-size="14"
+                font-size="medium"
                 :loading="$loading(request.collection)"
                 :placeholder="$t('请选择收藏条件')"
                 @selected="handleCollectionSelect"
@@ -73,7 +73,7 @@
                     </a>
                 </div>
             </bk-select>
-            <icon-button class="option ml10" icon="icon-cc-funnel"></icon-button>
+            <host-filter class="ml10" ref="hostFilter" :properties="filterProperties" :section-height="$APP.height - 250"></host-filter>
             <icon-button class="option ml10" icon="icon-cc-setting" @click="handleSetColumn"></icon-button>
         </div>
         <edit-multiple-host ref="editMultipleHost"
@@ -84,6 +84,7 @@
             <component
                 :is="dialog.component"
                 v-bind="dialog.componentProps"
+                @confirm="handleDialogConfirm"
                 @cancel="handleDialogCancel">
             </component>
         </cmdb-dialog>
@@ -95,7 +96,7 @@
             <cmdb-columns-config slot="content"
                 v-if="sideslider.render"
                 :properties="columnsConfigProperties"
-                :selected="displayProperties"
+                :selected="columnDisplayProperties"
                 :disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']"
                 @on-cancel="sideslider.show = false"
                 @on-apply="handleApplyColumnsConfig"
@@ -106,6 +107,7 @@
 </template>
 
 <script>
+    import HostFilter from '@/components/hosts/filter'
     import EditMultipleHost from './edit-multiple-host.vue'
     import HostSelector from './host-selector.vue'
     import CmdbColumnsConfig from '@/components/columns-config/columns-config'
@@ -117,6 +119,7 @@
     import Formatter from '@/filters/formatter.js'
     export default {
         components: {
+            HostFilter,
             EditMultipleHost,
             CmdbColumnsConfig,
             [HostSelector.name]: HostSelector
@@ -161,8 +164,19 @@
                 const hostProperties = this.getProperties('host')
                 return [...setProperties, ...moduleProperties, ...hostProperties]
             },
-            displayProperties () {
+            columnDisplayProperties () {
                 return this.$parent.table.header.map(property => property.bk_property_id)
+            },
+            filterProperties () {
+                const setProperties = this.getProperties('set')
+                const moduleProperties = this.getProperties('module')
+                const removeProperties = ['bk_host_innerip', 'bk_host_outerip', 'bk_cloud_id']
+                const hostProperties = this.hostProperties.filter(property => !removeProperties.includes(property.bk_property_id))
+                return {
+                    set: setProperties,
+                    module: moduleProperties,
+                    host: hostProperties
+                }
             },
             hasSelection () {
                 return !!this.$parent.table.selection.length
@@ -183,7 +197,7 @@
             }
         },
         created () {
-            // this.getCollectionList()
+            this.getCollectionList()
         },
         methods: {
             async getCollectionList () {
@@ -204,20 +218,68 @@
                     console.error(e)
                 }
             },
-            handleCollectionSelect () {
-
+            handleCollectionSelect (value) {
+                const collection = this.collectionList.find(collection => collection.id === value)
+                try {
+                    const filterList = JSON.parse(collection.query_params).map(condition => {
+                        return {
+                            bk_obj_id: condition.bk_obj_id,
+                            bk_property_id: condition.field,
+                            operator: condition.operator,
+                            value: condition.value
+                        }
+                    })
+                    const info = JSON.parse(collection.info)
+                    const filterIP = {
+                        text: info.ip_list.join('\n'),
+                        exact: info.exact_search,
+                        inner: info.bk_host_innerip,
+                        outer: info.bk_host_outerip
+                    }
+                    this.$store.commit('hosts/setFilterList', filterList)
+                    this.$store.commit('hosts/setFilterIP', filterIP)
+                    this.$store.commit('hosts/setCollection', collection)
+                    setTimeout(() => {
+                        this.$refs.hostFilter.handleSearch(false)
+                    }, 0)
+                } catch (e) {
+                    this.$error(this.$t('应用收藏条件失败，转换数据错误'))
+                    console.error(e.message)
+                }
             },
             handleCollectionClear () {
-
+                this.$store.commit('hosts/clearFilter')
+                this.$refs.hostFilter.handleReset()
+                this.$refs.hostFilter.$refs.filterPopper.instance.hide()
+                const key = this.$route.meta.customFilterProperty
+                const customData = this.$store.getters['userCustom/getCustomData'](key, [])
+                this.$store.commit('hosts/setFilterList', customData)
             },
-            handleCollectionToggle () {
-
+            handleCollectionToggle (isOpen) {
+                if (isOpen) {
+                    this.$refs.hostFilter.$refs.filterPopper.instance.hide()
+                }
             },
-            handleDeleteCollection () {
-
+            async handleDeleteCollection (collection) {
+                try {
+                    await this.$store.dispatch('hostFavorites/deleteFavorites', {
+                        id: collection.id,
+                        config: {
+                            requestId: 'deleteFavorites'
+                        }
+                    })
+                    this.$success(this.$t('删除成功'))
+                    this.selectedCollection = ''
+                    this.$store.commit('hosts/deleteCollection', collection.id)
+                    this.handleCollectionClear()
+                } catch (e) {
+                    console.error(e)
+                }
             },
             handleCreateCollection () {
-
+                this.$store.commit('hosts/clearFilter')
+                this.$refs.collectionSelector.close()
+                this.$refs.hostFilter.handleToggleFilter()
             },
             handleTransfer (event, type, disabled) {
                 if (disabled) {
@@ -295,6 +357,23 @@
                 } else {
                     this.$info(this.$t('该字段无可复制的值'))
                 }
+            },
+            handleDialogConfirm () {
+                if (this.dialog.component === HostSelector.name) {
+                    this.gotoTransferPage(...arguments)
+                }
+            },
+            gotoTransferPage (selected) {
+                this.$router.push({
+                    name: 'createServiceInstance',
+                    params: {
+                        setId: this.selectedNode.parent.data.bk_inst_id,
+                        moduleId: this.selectedNode.data.bk_inst_id
+                    },
+                    query: {
+                        resources: selected.map(item => item.host.bk_host_id).join(',')
+                    }
+                })
             },
             handleDialogCancel () {
                 this.dialog.show = false

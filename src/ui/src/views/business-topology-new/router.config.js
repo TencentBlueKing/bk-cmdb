@@ -51,7 +51,8 @@ export default [{
         menu: {
             i18n: '业务拓扑'
         },
-        customInstanceColumn: 'business_topology_table_column_config'
+        customInstanceColumn: 'business_topology_table_column_config',
+        customFilterProperty: 'business_topology_filter_property_config'
     })
 }, {
     name: MENU_BUSINESS_TRANSFER_HOST,

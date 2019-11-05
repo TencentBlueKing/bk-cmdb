@@ -32,7 +32,7 @@
         <bk-dropdown-menu
             v-else
             trigger="click"
-            font-size="large"
+            font-size="medium"
             @show="toggleDropdownState(true)"
             @hide="toggleDropdownState(false)">
             <bk-button slot="dropdown-trigger">

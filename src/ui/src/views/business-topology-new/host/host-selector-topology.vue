@@ -11,7 +11,7 @@
                     childrenKey: 'child'
                 }"
                 :style="{
-                    'min-width': `calc(100% + ${deepestExpandedLevel * 30}px)`
+                    'min-width': `calc(100% + ${deepestExpandedLevel * 60}px)`
                 }"
                 @node-click="handleNodeClick"
                 @check-change="handleCheckedChange"
@@ -110,6 +110,7 @@
                     this.$refs.tree.setData(topology)
                     this.$refs.tree.setExpanded(defaultNodeId)
                     this.appendHostNode(allHost)
+                    this.syncState(this.$parent.selected, [])
                 } catch (e) {
                     console.error(e)
                 }
