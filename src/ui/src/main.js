@@ -17,10 +17,9 @@ import api from './api'
 import './setup/validate'
 import './setup/cookie'
 import './setup/permission'
-import 'bk-icon-bk-cmdb'
+import '@icon-cool/bk-icon-cmdb'
 import './assets/scss/common.scss'
 import './assets/scss/admin-view.scss'
-// import './assets/icon/cc-icon/style.css'
 
 Vue.use(cmdbUI)
 Vue.use(clipboard)

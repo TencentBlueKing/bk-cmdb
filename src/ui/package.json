@@ -14,8 +14,8 @@
     "sync-magicbox": "node build/sync-magicbox.js"
   },
   "dependencies": {
+    "@icon-cool/bk-icon-cmdb": "0.0.3",
     "axios": "0.18.0",
-    "bk-icon-bk-cmdb": "0.0.2",
     "bk-magic-vue": "2.1.7-beta.1",
     "cytoscape": "3.10.0",
     "cytoscape-dagre": "2.2.2",
