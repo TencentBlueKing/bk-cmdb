@@ -289,7 +289,6 @@
                 this.$store.commit('hosts/setFilterList', list)
             },
             handleSearch (toggle = true) {
-                console.log('fuck')
                 const params = this.getParams()
                 this.$store.commit('hosts/setFilterParams', params)
                 if (toggle) {
@@ -367,7 +366,6 @@
                     filterItem.value = ''
                 })
                 const params = this.getParams()
-                console.log('fuck2')
                 this.$store.commit('hosts/setFilterParams', params)
             },
             getParams () {
