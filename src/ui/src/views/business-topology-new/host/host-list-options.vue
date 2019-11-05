@@ -170,12 +170,12 @@
             filterProperties () {
                 const setProperties = this.getProperties('set')
                 const moduleProperties = this.getProperties('module')
-                const removeProperties = ['bk_host_innerip', 'bk_host_outerip', 'bk_cloud_id']
+                const removeProperties = ['bk_host_innerip', 'bk_host_outerip']
                 const hostProperties = this.hostProperties.filter(property => !removeProperties.includes(property.bk_property_id))
                 return {
+                    host: hostProperties,
                     set: setProperties,
-                    module: moduleProperties,
-                    host: hostProperties
+                    module: moduleProperties
                 }
             },
             hasSelection () {
