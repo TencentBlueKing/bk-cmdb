@@ -17,11 +17,11 @@
                 <template slot-scope="{ row }">
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_SERVICE_TEMPLATE),
-                            auth: [$OPERATION.U_SERVICE_TEMPLATE]
+                            active: !$isAuthorized(auth),
+                            auth: [auth]
                         }">
                         <bk-button class="mr10"
-                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_TEMPLATE)"
+                            :disabled="!$isAuthorized(auth)"
                             :text="true"
                             @click.stop="handleEdite(row['originData'])">
                             {{$t('编辑')}}
@@ -29,11 +29,11 @@
                     </span>
                     <span
                         v-cursor="{
-                            active: !$isAuthorized($OPERATION.D_SERVICE_TEMPLATE),
-                            auth: [$OPERATION.D_SERVICE_TEMPLATE]
+                            active: !$isAuthorized(auth),
+                            auth: [auth]
                         }">
                         <bk-button
-                            :disabled="!$isAuthorized($OPERATION.D_SERVICE_TEMPLATE)"
+                            :disabled="!$isAuthorized(auth)"
                             :text="true"
                             @click.stop="handleDelete(row['originData'])">
                             {{$t('删除')}}
@@ -57,6 +57,10 @@
             }
         },
         props: {
+            auth: {
+                type: String,
+                default: ''
+            },
             list: {
                 type: Array,
                 default: () => {
