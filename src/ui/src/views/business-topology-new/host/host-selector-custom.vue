@@ -67,7 +67,7 @@
                 const results = await Promise.all(validateQueue)
                 const validList = []
                 const invalidList = []
-                results.forEach((valid, index) => {
+                results.forEach(({ valid }, index) => {
                     if (valid) {
                         validList.push(list[index])
                     } else {

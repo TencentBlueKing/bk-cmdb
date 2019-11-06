@@ -46,7 +46,7 @@
             </div>
         </div>
         <div class="options" :class="{ 'is-sticky': hasScrollbar }">
-            <bk-button theme="primary" @click="handleConfrim">{{$t('确认移除')}}</bk-button>
+            <bk-button theme="primary" @click="handleConfrim">{{confirmText}}</bk-button>
             <bk-button class="ml10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
         <cmdb-dialog v-model="dialog.show" :width="dialog.width">
@@ -132,6 +132,14 @@
             type () {
                 return this.$route.params.type || 'remove'
             },
+            confirmText () {
+                const textMap = {
+                    remove: this.$t('确认移除'),
+                    idle: this.$t('确认转移'),
+                    business: this.$t('确认转移')
+                }
+                return textMap[this.type]
+            },
             availableTabList () {
                 const map = {
                     remove: ['deletedServiceInstance', 'moveToIdleHost'],
@@ -208,7 +216,6 @@
                         `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}/preview`,
                         this.confirmParams,
                         {
-                            globalError: false,
                             requestId: this.request.preview
                         }
                     )

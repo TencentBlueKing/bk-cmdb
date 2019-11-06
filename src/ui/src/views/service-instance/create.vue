@@ -334,7 +334,7 @@
         margin: 22px 0 0 0;
         @include scrollbar-y;
         .buttons {
-            padding: 18px 0 0 0;
+            padding: 8px 0 0 0;
         }
     }
     .service-instance-table {
