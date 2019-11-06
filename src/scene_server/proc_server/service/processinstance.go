@@ -74,21 +74,21 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 	}
 
 	processIDs := make([]int64, 0)
-	for _, process := range input.Processes {
-		process.ProcessData[common.BKProcessIDField] = int64(0)
-		process.ProcessData[common.BKAppIDField] = bizID
-		process.ProcessData[common.BkSupplierAccount] = ctx.Kit.SupplierAccount
+	for _, item := range input.Processes {
 		now := time.Now()
-		process.ProcessData[common.CreateTimeField] = now
-		process.ProcessData[common.LastTimeField] = now
+		item.ProcessData[common.BKProcessIDField] = int64(0)
+		item.ProcessData[common.BKAppIDField] = bizID
+		item.ProcessData[common.BkSupplierAccount] = ctx.Kit.SupplierAccount
+		item.ProcessData[common.CreateTimeField] = now
+		item.ProcessData[common.LastTimeField] = now
 
-		if err := ps.validateRawInstanceUnique(ctx, serviceInstance.ID, process.ProcessData); err != nil {
+		if err := ps.validateRawInstanceUnique(ctx, serviceInstance.ID, item.ProcessData); err != nil {
 			return nil, err
 		}
 
-		processID, err := ps.Logic.CreateProcessInstance(ctx.Kit, process.ProcessData)
+		processID, err := ps.Logic.CreateProcessInstance(ctx.Kit, item.ProcessData)
 		if err != nil {
-			blog.Errorf("create process instance failed, create process failed, serviceInstanceID: %d, process: %+v, err: %v, rid: %s", input.ServiceInstanceID, process, err, ctx.Kit.Rid)
+			blog.Errorf("create process instance failed, create process failed, serviceInstanceID: %d, process: %+v, err: %v, rid: %s", input.ServiceInstanceID, item, err, ctx.Kit.Rid)
 			return nil, err
 		}
 

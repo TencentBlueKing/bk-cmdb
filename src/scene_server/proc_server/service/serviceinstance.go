@@ -31,19 +31,28 @@ import (
 // 支持直接创建和通过模板创建，用 module 是否绑定模版信息区分两种情况
 // 通过模板创建时，进程信息则表现为更新
 func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
-	rid := ctx.Kit.Rid
-	input := new(metadata.CreateServiceInstanceForServiceTemplateInput)
-	if err := ctx.DecodeInto(input); err != nil {
+	input := metadata.CreateServiceInstanceForServiceTemplateInput{}
+	if err := ctx.DecodeInto(&input); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+	serviceInstanceIDs, err := ps.createServiceInstances(ctx, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(serviceInstanceIDs)
+}
+
+func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.CreateServiceInstanceForServiceTemplateInput) ([]int64, errors.CCErrorCoder) {
+	rid := ctx.Kit.Rid
 	bizID := input.BizID
 	if bizID == 0 && input.Metadata != nil {
 		var err error
 		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
 		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service instance with template : %d, moduleID: %d, but get business id failed, err: %v", input.ModuleID, err)
-			return
+			blog.Errorf("createServiceInstances failed, parse bizID failed, metadata: %+v, err: %s, rid: %s", input.Metadata, err.Error(), rid)
+			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
 		}
 	}
 
@@ -57,27 +66,26 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		}
 	}
 	if err := ps.CheckHostInBusiness(ctx, bizID, hostIDs); err != nil {
-		ctx.RespWithError(err, common.CCErrCoreServiceHostNotBelongBusiness, "create service instance failed, host %+v not belong to business %d, hostIDs: %+v, err: %v", hostIDs, bizID, err)
-		return
+		blog.ErrorJSON("createServiceInstances failed, CheckHostInBusiness failed, bizID: %s, hostIDs: %s, err: %s, rid: %s", bizID, hostIDs, err.Error(), rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotBelongBusiness, hostIDs, bizID)
 	}
 
 	module, err := ps.getModule(ctx, input.ModuleID)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrTopoGetModuleFailed, "create service instance failed, get module failed, moduleID: %d, err: %v", input.ModuleID, err)
-		return
+		blog.Errorf("createServiceInstances failed, get module failed, moduleID: %d, err: %v, rid: %s", input.ModuleID, err, rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, err.Error())
 	}
 
 	if bizID != module.BizID {
-		err := ctx.Kit.CCError.Errorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, module.ModuleID, bizID)
-		ctx.RespWithError(err, common.CCErrCoreServiceHasModuleNotBelongBusiness, "create service instance failed, module %d not belongs to biz %d, err: %v", input.ModuleID, bizID, err)
-		return
+		blog.Errorf("createServiceInstances failed, module %d not belongs to biz %d, rid: %s", input.ModuleID, bizID, rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, module.ModuleID, bizID)
 	}
 
 	header := ctx.Kit.Header
 	tx, e := ps.TransactionClient.Start(context.Background())
 	if e != nil {
-		blog.Errorf("start transaction failed, err: %+v", e)
-		return
+		blog.Errorf("createServiceInstances failed, start transaction failed, err: %+v, rid: %s", e, rid)
+		return nil, ctx.Kit.CCError.CCError(common.CCErrCommStartTransactionFailed)
 	}
 	header = tx.TxnInfo().IntoHeader(header)
 	ctx.Kit.Header = header
@@ -85,11 +93,13 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 	defer func() {
 		if err != nil {
 			if txErr := tx.Abort(ctx.Kit.Ctx); txErr != nil {
-				blog.Errorf("create service instance failed, abort translation failed, err: %v, rid: %s", txErr, rid)
+				blog.Errorf("createServiceInstances failed, abort translation failed, err: %v, rid: %s", txErr, rid)
+				return
 			}
 		} else {
 			if txErr := tx.Commit(ctx.Kit.Ctx); txErr != nil {
-				blog.Errorf("create service instance failed, transaction commit failed, err: %v, rid: %s", txErr, rid)
+				blog.Errorf("createServiceInstances failed, commit transaction failed, err: %v, rid: %s", txErr, rid)
+				return
 			}
 		}
 	}()
@@ -108,8 +118,8 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		// create service instance at first
 		serviceInstance, err = ps.CoreAPI.CoreService().Process().CreateServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instance)
 		if err != nil {
-			ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, moduleID: %d, err: %s", input.ModuleID, err.Error())
-			return
+			blog.ErrorJSON("createServiceInstances failed, core service CreateServiceInstance failed, option: %s, err: %s, rid: %s", instance, err.Error(), rid)
+			return nil, err
 		}
 
 		if len(inst.Processes) > 0 {
@@ -121,8 +131,8 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 					Processes:         inst.Processes,
 				}
 				if _, err = ps.createProcessInstances(ctx, createProcessInput); err != nil {
-					ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, create process instances failed, moduleID: %d, err: %s", input.ModuleID, err.Error())
-					return
+					blog.ErrorJSON("createServiceInstances failed, createProcessInstances failed, input: %s, err: %s, rid: %s", createProcessInput, err.Error(), rid)
+					return nil, err
 				}
 			} else {
 				// update process instance by templateID
@@ -135,8 +145,8 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 				}
 				relationResult, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
 				if err != nil {
-					ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, list process relation failed, moduleID: %d, err: %s", input.ModuleID, err.Error())
-					return
+					blog.ErrorJSON("createServiceInstances failed, ListProcessInstanceRelation failed, option: %s, err: %s, rid: %s", relationOption, err.Error(), rid)
+					return nil, err
 				}
 				templateID2ProcessID := make(map[int64]int64)
 				for _, relation := range relationResult.Info {
@@ -161,22 +171,20 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 				_, err = ps.updateProcessInstances(ctx, input)
 				if err != nil {
 					blog.ErrorJSON("CreateServiceInstances failed, updateProcessInstances failed, input: %s, err: %s, rid: %s", input, err.Error(), rid)
-					ctx.RespAutoError(err)
-					return
+					return nil, err
 				}
 			}
 		}
-		if module.ServiceTemplateID == 0 {
-			if err = ps.CoreAPI.CoreService().Process().ReconstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstance.ID); err != nil {
-				ctx.RespWithError(err, common.CCErrProcReconstructServiceInstanceNameFailed, "create service instance failed, reconstruct service instance name failed, instanceID: %d, err: %s", serviceInstance.ID, err.Error())
-				return
-			}
+
+		if err = ps.CoreAPI.CoreService().Process().ReconstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstance.ID); err != nil {
+			blog.ErrorJSON("createServiceInstances failed, reconstruct service instance name failed, instanceID: %d, err: %s, rid:  %s", serviceInstance.ID, err.Error(), rid)
+			return nil, err
 		}
 
 		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
 	}
 
-	ctx.RespEntity(serviceInstanceIDs)
+	return serviceInstanceIDs, nil
 }
 
 func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
