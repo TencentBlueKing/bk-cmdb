@@ -1431,8 +1431,13 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = make([]meta.ResourceAttribute, 0)
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
+		ps.Attribute.Resources = make([]meta.ResourceAttribute, 0)
 		for _, group := range groups {
 			model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: group.Condition.ObjectID})
 			if err != nil {
@@ -1450,8 +1455,11 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Update,
 				},
-				BusinessID: 0,
-				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				BusinessID: bizID,
+				Layers: []meta.Item{{
+					Type:       meta.Model,
+					InstanceID: model[0].ID,
+				}},
 			})
 		}
 
