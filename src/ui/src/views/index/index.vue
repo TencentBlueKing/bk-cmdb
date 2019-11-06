@@ -60,8 +60,11 @@
         },
         created () {
             this.inSearchPaddingTop = this.paddingTop
-            const queryLen = Object.keys(this.$route.query).length
-            !!queryLen && (this.activeName = 'fullText')
+            const query = this.$route.query
+            const showFullText = ['keywords', 'show'].every(key => query.hasOwnProperty(key))
+            if (showFullText && this.isFullTextSearch) {
+                this.activeName = 'fullText'
+            }
         },
         methods: {
             handleChangeTab (name) {
