@@ -13,8 +13,6 @@
 package logics
 
 import (
-	"encoding/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -152,17 +150,9 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) err
 	return nil
 }
 
-func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, process *metadata.Process) (int64, errors.CCErrorCoder) {
-	processBytes, err := json.Marshal(process)
-	if err != nil {
-		return 0, kit.CCError.CCError(common.CCErrCommJsonEncode)
-	}
-	mData := mapstr.MapStr{}
-	if err := json.Unmarshal(processBytes, &mData); nil != err && 0 != len(processBytes) {
-		return 0, kit.CCError.CCError(common.CCErrCommJsonDecode)
-	}
+func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, processData map[string]interface{}) (int64, errors.CCErrorCoder) {
 	inputParam := metadata.CreateModelInstance{
-		Data: mData,
+		Data: processData,
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &inputParam)
 	if err != nil {
@@ -171,7 +161,7 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, process *metadata.Process
 	}
 
 	if !result.Result {
-		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, process, result.ErrMsg)
+		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, processData, result.ErrMsg)
 		return 0, errors.New(result.Code, result.ErrMsg)
 	}
 

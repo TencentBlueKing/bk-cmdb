@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -149,9 +150,8 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 					if exist == false {
 						continue
 					}
-					process := item.ProcessInfo
-					process.ProcessID = processID
-					processData := mapstr.NewFromStruct(process, "field")
+					processData := item.ProcessData
+					processData[common.BKProcessIDField] = processID
 					processes = append(processes, processData)
 				}
 				input := metadata.UpdateRawProcessInstanceInput{
@@ -790,6 +790,7 @@ func (ps *ProcServer) CalculateModuleAttributeDifference(ctx context.Context, he
 // 2. update a process
 // 3. removed a process
 func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
+	rid := ctx.Kit.Rid
 	syncOption := new(metadata.SyncServiceInstanceByTemplateOption)
 	if err := ctx.DecodeInto(syncOption); err != nil {
 		ctx.RespAutoError(err)
@@ -896,7 +897,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 		if !exist {
 			// something is wrong, but can this process instance,
 			// but we can find it in the process instance relation.
-			blog.Warnf("force sync service instance according to service template: %d, but can not find the process instance: %d, rid: %s", module.ServiceTemplateID, r.ProcessID, ctx.Kit.Rid)
+			blog.Warnf("force sync service instance according to service template: %d, but can not find the process instance: %d, rid: %s", module.ServiceTemplateID, r.ProcessID, rid)
 			continue
 		}
 		serviceInstance2ProcessMap[r.ServiceInstanceID] = append(serviceInstance2ProcessMap[r.ServiceInstanceID], p)
@@ -952,8 +953,14 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 
 			// we can not find this process template in all this service instance,
 			// which means that a new process template need to be added to this service instance
-			newProcessData := processTemplate.NewProcess(bizID, ctx.Kit.SupplierAccount)
-			newProcessID, err := ps.Logic.CreateProcessInstance(ctx.Kit, newProcessData)
+			newProcess := processTemplate.NewProcess(bizID, ctx.Kit.SupplierAccount)
+			processData, err := mapstruct.Struct2Map(newProcess)
+			if err != nil {
+				blog.ErrorJSON("SyncServiceInstanceByTemplate failed, Struct2Map failed, process: %s, err: %s, rid: %s", newProcess, err.Error(), rid)
+				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed, "sync service instance according service template: %d, but create process instance with template: %d failed, err: %v", module.ServiceTemplateID, processTemplateID, err)
+				return
+			}
+			newProcessID, err := ps.Logic.CreateProcessInstance(ctx.Kit, processData)
 			if err != nil {
 				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed, "force sync service instance according to service template: %d, but create process instance with template: %d failed, err: %v", module.ServiceTemplateID, processTemplateID, err)
 				return
@@ -1059,6 +1066,7 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 // ListServiceInstancesWithHostWeb will return topo level info for each service instance
 // api only for web frontend
 func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
+	rid := ctx.Kit.Rid
 	input := new(metadata.ListServiceInstancesWithHostInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -1095,7 +1103,7 @@ func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
 
 	topoRoot, e := ps.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, bizID, false)
 	if e != nil {
-		blog.Errorf("ListServiceInstancesWithHostWeb failed, search mainline instance topo failed, bizID: %d, err: %+v, riz: %s", bizID, e, ctx.Kit.Rid)
+		blog.Errorf("ListServiceInstancesWithHostWeb failed, search mainline instance topo failed, bizID: %d, err: %+v, riz: %s", bizID, e, rid)
 		err := ctx.Kit.CCError.Errorf(common.CCErrTopoMainlineSelectFailed)
 		ctx.RespAutoError(err)
 		return
