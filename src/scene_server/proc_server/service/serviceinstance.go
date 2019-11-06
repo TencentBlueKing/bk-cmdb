@@ -447,11 +447,22 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 // add: a new process template is added, compared to the service instance belongs to this service template.
 // deleted: a process is already deleted, compared to the service instance belongs to this service template.
 func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
-	diffOption := new(metadata.DiffModuleWithTemplateOption)
-	if err := ctx.DecodeInto(diffOption); err != nil {
+	diffOption := metadata.DiffModuleWithTemplateOption{}
+	if err := ctx.DecodeInto(&diffOption); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+	result, err := ps.diffServiceInstanceWithTemplate(ctx, diffOption)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
+	return
+}
+
+func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOption metadata.DiffModuleWithTemplateOption) (*metadata.ModuleDiffWithTemplateDetail, errors.CCErrorCoder) {
+	rid := ctx.Kit.Rid
 
 	// why we need validate metadata here?
 	bizID := diffOption.BizID
@@ -459,20 +470,20 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		var err error
 		bizID, err = metadata.BizIDFromMetadata(*diffOption.Metadata)
 		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "find difference between service template and process instances, but parse biz id failed, err: %v", err)
-			return
+			blog.ErrorJSON("diffServiceInstanceWithTemplate failed, parse biz id failed, metadata: %s, err: %v, rid: %s", diffOption.Metadata, err, rid)
+			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
 		}
 	}
 	diffOption.BizID = bizID
 
 	if diffOption.ModuleID == 0 {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "find difference between service template and process instances, but got empty service template id or module id")
-		return
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, module id empty, option: %s, rid: %s", diffOption, rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 	module, err := ps.getModule(ctx, diffOption.ModuleID)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrTopoGetModuleFailed, "find difference between service template and process instances failed, get module by id:%d failed, err: %+v", diffOption.ModuleID, err)
-		return
+		blog.Errorf("diffServiceInstanceWithTemplate failed, getModule failed, moduleID: %d, err: %+v, rid: %s", diffOption.ModuleID, err, rid)
+		return nil, err
 	}
 
 	// step 1:
@@ -484,10 +495,8 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	}
 	attrResult, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, cond)
 	if e != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed,
-			"find difference between service template: %d and process instances, bizID: %d, but get process attributes failed, err: %v",
-			module.ServiceTemplateID, module.BizID, e)
-		return
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ReadModelAttr failed, option: %s, err: %s, rid: %s", cond, e, rid)
+		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	attributeMap := make(map[string]metadata.Attribute)
 	for _, attr := range attrResult.Data.Info {
@@ -499,10 +508,10 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		BusinessID:         module.BizID,
 		ServiceTemplateIDs: []int64{module.ServiceTemplateID},
 	}
-	processTemplates, e := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, listProcessTemplateOption)
-	if e != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed, "find difference between service template: %d and process instances, bizID: %d, but get process templates failed, err: %v", module.ServiceTemplateID, module.BizID, e)
-		return
+	processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, listProcessTemplateOption)
+	if err != nil {
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ListProcessTemplates failed, option: %s, err: %s, rid: %s", listProcessTemplateOption, err, rid)
+		return nil, err
 	}
 
 	// step 3:
@@ -521,12 +530,10 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		ServiceTemplateID: module.ServiceTemplateID,
 		ModuleIDs:         []int64{diffOption.ModuleID},
 	}
-	serviceInstances, e := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
-	if e != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed,
-			"find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but get service instance failed, err: %v",
-			module.ServiceTemplateID, module.BizID, diffOption.ModuleID, e)
-		return
+	serviceInstances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
+	if err != nil {
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ListServiceInstance failed, option: %s, err: %s, rid: %s", serviceOption, err, rid)
+		return nil, err
 	}
 
 	// step 5:
@@ -542,10 +549,8 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed,
-			"find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but get service instance relations failed, err: %v",
-			module.ServiceTemplateID, module.BizID, diffOption.ModuleID, err)
-		return
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ListProcessInstanceRelation failed, option: %s, err: %s, rid: %s", option, err.Error(), rid)
+		return nil, err
 	}
 	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
 	for _, r := range relations.Info {
@@ -577,9 +582,8 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				if err.GetCode() == common.CCErrCommNotFound {
 					process = new(metadata.Process)
 				} else {
-					ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
-						"get difference between with process template and process instance in a service instance, but get process instance: %d failed, %v", err)
-					return
+					blog.Errorf("diffServiceInstanceWithTemplate failed, GetProcessInstanceWithID failed, processID: %d, err: %s, rid: %s", relation.ProcessID, err.Error(), rid)
+					return nil, err
 				}
 			}
 			processName := ""
@@ -716,9 +720,8 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 
 	moduleChangedAttributes, err := ps.CalculateModuleAttributeDifference(ctx.Kit.Ctx, ctx.Kit.Header, *module)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed,
-			"get difference between with module and service template failed, diff module attributes failed, moduleID: %d, %v", module.ModuleID, err)
-		return
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, CalculateModuleAttributeDifference failed, module: %s, err: %s, rid: %s", module, err.Error(), rid)
+		return nil, err
 	}
 	moduleDifference.ChangedAttributes = moduleChangedAttributes
 
@@ -729,7 +732,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		moduleDifference.HasDifference = true
 	}
 
-	ctx.RespEntity(moduleDifference)
+	return &moduleDifference, nil
 }
 
 func (ps *ProcServer) CalculateModuleAttributeDifference(ctx context.Context, header http.Header, module metadata.ModuleInst) ([]metadata.ModuleChangedAttribute, errors.CCErrorCoder) {
