@@ -10,7 +10,7 @@
                     v-model.trim="keywords"
                     @input="handleInputSearch"
                     @focus="handleShowHistory"
-                    @blur="$emit('focus-status', false)"
+                    @blur="$emit('focus', false)"
                     @enter="handleShowResult">
                 </bk-input>
                 <i class="bk-icon search-btn icon-search" ref="searchBtn" v-show="!keywords" @click="handleShowResult"></i>
@@ -353,7 +353,7 @@
                 }, 300)
             },
             handleShowHistory () {
-                this.$emit('focus-status', true)
+                this.$emit('focus', true)
                 this.showHistory = !this.keywords && this.historyList.length
             },
             handlClearHistory () {
@@ -539,6 +539,7 @@
                 background-color: #ffffff;
                 box-shadow: 0px 2px 6px 0px rgba(0,0,0,0.15);
                 border: 1px solid #DCDEE5;
+                overflow: hidden;
                 z-index: 99;
                 ul li {
                     color: #63656E;

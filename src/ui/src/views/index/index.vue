@@ -12,12 +12,12 @@
                 </span>
             </div>
             <div class="tab-content">
-                <host-search v-show="activeName === 'host'" @focus-status="handleFocusStatus"></host-search>
+                <host-search v-show="activeName === 'host'" @focus="handleFocus"></host-search>
                 <search-input v-show="activeName === 'fullText'"
                     v-if="isFullTextSearch"
                     :is-full-text-search="isFullTextSearch"
                     @search-status="handleSearchStatus"
-                    @focus-status="handleFocusStatus">
+                    @focus="handleFocus">
                 </search-input>
             </div>
         </div>
@@ -60,6 +60,8 @@
         },
         created () {
             this.inSearchPaddingTop = this.paddingTop
+            const queryLen = Object.keys(this.$route.query).length
+            !!queryLen && (this.activeName = 'fullText')
         },
         methods: {
             handleChangeTab (name) {
@@ -74,7 +76,7 @@
                     this.showSearchTab = true
                 }
             },
-            handleFocusStatus (status) {
+            handleFocus (status) {
                 this.isFocus = status
             }
         }

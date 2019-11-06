@@ -67,12 +67,12 @@
                 })
             },
             handleFocus () {
-                this.$emit('focus-status', true)
+                this.$emit('focus', true)
                 this.setRows()
             },
             handleBlur () {
-                this.$emit('focus-status', false)
-                const data = this.searchContent.split('\n').filter(text => text)
+                this.$emit('focus', false)
+                const data = this.searchContent.split('\n').map(text => text.trim()).filter(text => text)
                 if (data.length) {
                     this.showEllipsis = true
                     this.searchText = data.join(',')
@@ -87,7 +87,7 @@
                 this.textareaDom && this.textareaDom.focus()
             },
             async handleSearch () {
-                const searchList = this.searchContent.split('\n').filter(ip => ip)
+                const searchList = this.searchContent.split('\n').map(text => text.trim()).filter(text => text)
                 if (searchList.length) {
                     const validateQueue = []
                     searchList.forEach(text => {
@@ -95,11 +95,11 @@
                     })
                     const results = await Promise.all(validateQueue)
                     const isPassValidate = results.every(res => res.valid)
-                    if (!isPassValidate) {
-                        this.$warn('请输入完整IP进行搜索，多个IP用换行分割')
-                        return
-                    } else if (results.length > 500) {
+                    if (results.length > 500) {
                         this.$warn('目前最多支持搜索500个IP')
+                        return
+                    } else if (!isPassValidate) {
+                        this.$warn('请输入完整IP进行搜索，多个IP用换行分割')
                         return
                     }
                     this.$store.commit('hosts/setFilterIP', {
