@@ -138,7 +138,7 @@
             handleCreateSet () {
                 this.$validator.validateAll().then(isValid => {
                     if (isValid) {
-                        const nameList = this.setName.split('\n').filter(name => name)
+                        const nameList = this.setName.split('\n').filter(name => name.trim().length).map(name => name.trim())
                         const sets = nameList.map(name => ({
                             set_template_id: this.setTemplate,
                             bk_set_name: name

@@ -106,7 +106,7 @@
                 node && this.handlePageChange(1)
             },
             filterParams () {
-                this.handlePageChange(1)
+                this.selectedNode && this.handlePageChange(1)
             }
         },
         methods: {

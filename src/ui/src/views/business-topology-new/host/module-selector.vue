@@ -6,20 +6,23 @@
             <bk-input class="tree-filter" right-icon="icon-search" v-model="filter"></bk-input>
             <bk-big-tree ref="tree" class="topology-tree"
                 :default-expand-all="moduleType === 'idle'"
+                :check-on-click="true"
                 :options="{
                     idKey: getNodeId,
                     nameKey: 'bk_inst_name',
                     childrenKey: 'child'
                 }"
-                @node-click="handleNodeClick">
+                :show-checkbox="isShowCheckbox"
+                @node-click="handleNodeClick"
+                @check-change="handleNodeCheck">
                 <template slot-scope="{ node, data }">
                     <i class="internal-node-icon fl"
                         v-if="data.default !== 0"
                         :class="getInternalNodeClass(node, data)">
                     </i>
-                    <i v-else class="node-icon fl">{{data.bk_obj_name[0]}}</i>
+                    <i v-else :class="['node-icon fl', { 'is-template': isTemplate(data) }]">{{data.bk_obj_name[0]}}</i>
                     <span :class="['node-checkbox fr', { 'is-checked': checked.includes(node) }]"
-                        v-if="data.bk_obj_id === 'module'">
+                        v-if="moduleType === 'idle' && data.bk_obj_id === 'module'">
                     </span>
                     <span class="node-name">{{node.name}}</span>
                 </template>
@@ -53,7 +56,11 @@
         <i class="clearfix"></i>
         <div class="wrapper-footer">
             <bk-button class="mr10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-            <bk-button theme="primary" @click="handleNextStep">{{$t('下一步')}}</bk-button>
+            <bk-button theme="primary"
+                :disabled="!checked.length"
+                @click="handleNextStep">
+                {{$t('下一步')}}
+            </bk-button>
         </div>
     </div>
 </template>
@@ -171,7 +178,7 @@
                 })
             },
             getBusinessModules () {
-                return this.$store.dispatch('objectMainLineModule/getInstTopo', {
+                return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
                     bizId: this.bizId,
                     config: {
                         requestId: this.request.instance
@@ -190,25 +197,30 @@
                 const parents = node.parents
                 return parents.map(parent => parent.data.bk_inst_name).join(' / ')
             },
+            // 选择空闲模块
             handleNodeClick (node) {
                 const data = node.data
-                if (data.bk_obj_id !== 'module') {
+                if (this.moduleType !== 'idle' || data.bk_obj_id !== 'module') {
                     return false
                 }
-                if (this.checked.includes(node)) {
-                    this.checked = this.checked.filter(exist => exist !== node)
-                } else {
-                    if (this.moduleType === 'idle') {
-                        this.checked = [node]
-                    } else {
-                        this.checked.push(node)
-                    }
+                this.checked = [node]
+            },
+            handleNodeCheck (checked, node) {
+                if (node.data.bk_obj_id !== 'module') {
+                    return false
                 }
+                this.checked = checked.map(id => this.$refs.tree.getNodeById(id))
             },
             handleDeleteModule (node) {
                 this.checked = this.checked.filter(exist => exist !== node)
+                if (this.moduleType === 'business') {
+                    this.$refs.tree.setChecked(node.id, { checked: false })
+                }
             },
             handleClearModule () {
+                if (this.moduleType === 'business') {
+                    this.$refs.tree.setChecked(this.checked.map(node => node.id), { checked: false })
+                }
                 this.checked = []
             },
             handleCancel () {
@@ -220,6 +232,15 @@
                     return false
                 }
                 this.$emit('confirm', this.checked)
+            },
+            isTemplate (data) {
+                return data.service_template_id || data.set_template_id
+            },
+            isShowCheckbox (data) {
+                if (this.moduleType === 'idle') {
+                    return false
+                }
+                return data.bk_obj_id === 'module'
             }
         }
     }
@@ -274,6 +295,9 @@
             font-size: 12px;
             font-style: normal;
             color: #FFF;
+            &.is-template {
+                background-color: #97AED6;
+            }
             &.is-selected {
                 background-color: #3A84FF;
             }
@@ -314,6 +338,11 @@
             font-size: 14px;
             line-height: 20px;
             color: $textColor;
+            .count {
+                padding: 0 4px;
+                font-weight: bold;
+                color: #2DCB56;
+            }
         }
     }
     .module-list {

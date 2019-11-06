@@ -1066,6 +1066,7 @@
     "移除": "Remove",
     "主机列表": "Host List",
     "已选择N台主机": "{count} host(s) selected",
+    "已选择N个模块": "{count} module(s) selected",
     "无": "none",
     "创建实例": "创建实例",
     "抱歉您没有查看权限": "Sorry, you don't have permission to view, {link}",

@@ -973,7 +973,6 @@
     }
     .options-button {
         height: 32px;
-        padding: 0 8px;
         margin: 0 0 0 6px;
         line-height: 30px;
     }
