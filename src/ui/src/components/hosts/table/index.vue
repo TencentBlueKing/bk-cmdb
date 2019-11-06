@@ -308,7 +308,7 @@
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapState('hosts', ['collectionList']),
+            ...mapState('hosts', ['collectionList', 'isHostSearch']),
             transferAuthResources () {
                 const auth = this.transferAuth
                 if (!auth) return {}
@@ -353,6 +353,7 @@
                 this.setTableHeader()
             },
             scope () {
+                if (this.isHostSearch) return
                 this.handlePageChange(1, true)
             }
         },
@@ -364,6 +365,9 @@
                 ])
                 if (this.showCollection) {
                     this.getCollectionList()
+                }
+                if (this.isHostSearch) {
+                    this.scope = 'all'
                 }
             } catch (e) {
                 console.log(e)

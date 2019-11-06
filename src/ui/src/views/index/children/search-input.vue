@@ -1,9 +1,7 @@
 <template>
-    <div class="search-layout" ref="searchLayout"
-        :style="{ 'background-color': setStyle.backgroundColor }">
-        <div :class="{ 'sticky-layout': result.isShow }" :style="{ 'padding-top': (setStyle.marginTop || inputMarginTop) + 'px' }">
-            <div class="search-bar"
-                v-click-outside="handleHideLenovo">
+    <div class="search-layout" ref="searchLayout" :style="{ 'background-color': setStyle.backgroundColor }">
+        <div :class="{ 'sticky-layout': result.isShow }" :style="{ 'padding-top': (setStyle.paddingTop) + 'px' }">
+            <div class="search-bar" v-click-outside="handleHideLenovo">
                 <bk-input ref="searchInput"
                     class="search-input"
                     autocomplete="off"
@@ -12,6 +10,7 @@
                     v-model.trim="keywords"
                     @input="handleInputSearch"
                     @focus="handleShowHistory"
+                    @blur="$emit('focus-status', false)"
                     @enter="handleShowResult">
                 </bk-input>
                 <i class="bk-icon search-btn icon-search" ref="searchBtn" v-show="!keywords" @click="handleShowResult"></i>
@@ -161,9 +160,6 @@
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-            inputMarginTop () {
-                return parseInt((this.$APP.height - 58) / 3, 10)
-            },
             placeholder () {
                 return this.isFullTextSearch ? this.$t('请输入关键字') : this.$t('请输入IP开始搜索')
             },
@@ -226,8 +222,9 @@
             '$route' (to, from) {
                 const queryLen = Object.keys(to.query).length
                 if (to.path === '/index' && !queryLen) {
+                    this.$emit('search-status', 0)
                     this.keywords = ''
-                    this.setStyle.marginTop = null
+                    this.setStyle.paddingTop = 0
                     this.setStyle.backgroundColor = 'transparent'
                     this.result.isShow = false
                 }
@@ -356,6 +353,7 @@
                 }, 300)
             },
             handleShowHistory () {
+                this.$emit('focus-status', true)
                 this.showHistory = !this.keywords && this.historyList.length
             },
             handlClearHistory () {
@@ -372,10 +370,11 @@
                     this.resetIndex()
                     return
                 }
+                this.$emit('search-status', 1)
                 this.query.trigger = 'input'
                 this.updating = true
                 await this.getFullTextSearch(0)
-                this.setStyle.marginTop = 50
+                this.setStyle.paddingTop = 50
                 this.setStyle.backgroundColor = '#FAFBFD'
                 this.showLenovo = false
                 const total = this.curPagination.total
@@ -492,8 +491,8 @@
 <style lang="scss" scoped>
     .search-layout {
         position: relative;
+        width: 100%;
         height: calc(100% + 50px);
-        overflow: auto;
         z-index: 3;
         .sticky-layout {
             transition: all .3s;
@@ -505,8 +504,8 @@
         }
         .search-bar {
             position: relative;
-            width: 50%;
-            max-width: 700px;
+            width: 100%;
+            max-width: 640px;
             margin: 0 auto 38px;
             .search-input {
                 font-size: 0;
@@ -537,7 +536,6 @@
                 top: 47px;
                 left: 0;
                 width: 100%;
-                padding: 5px 0;
                 background-color: #ffffff;
                 box-shadow: 0px 2px 6px 0px rgba(0,0,0,0.15);
                 border: 1px solid #DCDEE5;
@@ -569,7 +567,7 @@
                 font-size: 14px;
                 line-height: 36px;
                 color: #C4C6CC;
-                margin: 0 20px;
+                margin: 5px 20px 0;
                 border-bottom: 1px solid #F0F1F5;
                 display: flex;
                 justify-content: space-between;
@@ -582,6 +580,9 @@
                         margin-top: -2px;
                     }
                 }
+            }
+            .history-list {
+                margin-bottom: 5px;
             }
         }
         .classify {
