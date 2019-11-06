@@ -1054,5 +1054,10 @@
     "创建实例": "创建实例",
     "抱歉您没有查看权限": "Sorry, you don't have permission to view, {link}",
     "您还未XXX": "You have not yet {action} {resource}, {link}",
-    "搜索内容为空": "Search result is empty"
+    "搜索内容为空": "Search result is empty",
+    "主机搜索": "Host search",
+    "全文检索": "Full Text Search",
+    "请输入IP，多个值换行分隔": "Please enter IP, multiple values are separated by line breaks",
+    "请输入完整IP进行搜索，多个IP用换行分割": "Please enter the full IP to search, multiple IPs are broken by line break",
+    "目前最多支持搜索500个IP": "Currently supports up to 500 IP searches"
 }
