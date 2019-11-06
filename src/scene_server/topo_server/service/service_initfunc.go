@@ -25,7 +25,7 @@ func (s *Service) initHealth() {
 func (s *Service) initAssociation() {
 
 	// mainline topo methods
-	s.addAction(http.MethodPost, "/topo/model/mainline", s.CreateMainLineObject, nil)
+	s.addAction(http.MethodPost, "/topo/model/mainline", s.CreateMainLineModel, nil)
 	s.addAction(http.MethodDelete, "/topo/model/mainline/owners/{owner_id}/objectids/{bk_obj_id}", s.DeleteMainLineObject, nil)
 	s.addAction(http.MethodGet, "/topo/model/{owner_id}", s.SearchMainLineObjectTopo, nil)
 	s.addAction(http.MethodGet, "/topo/model/{owner_id}/{cls_id}/{bk_obj_id}", s.SearchObjectByClassificationID, nil)
@@ -126,7 +126,7 @@ func (s *Service) initInst() {
 	s.addAction(http.MethodPost, "/inst/search/owner/{owner_id}/object/{bk_obj_id}", s.SearchInstByObject, nil)
 	s.addAction(http.MethodPost, "/inst/search/{owner_id}/{bk_obj_id}/{inst_id}", s.SearchInstByInstID, nil)
 	// 2019-09-30 废弃接口
-	//s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}", s.SearchInstAssociation, nil)
+	// s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}", s.SearchInstAssociation, nil)
 	s.addAction(http.MethodPost, "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}/web", s.SearchInstAssociationUI, nil)
 	s.addAction(http.MethodPost, "/findmany/inst/association/association_object/inst_base_info", s.SearchInstAssociationWithOtherObject, nil)
 

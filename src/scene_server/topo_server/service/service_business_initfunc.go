@@ -67,7 +67,7 @@ func (s *Service) initBusinessGraphics() {
 func (s *Service) initBusinessAssociation() {
 
 	// mainline topo methods
-	s.addAction(http.MethodPost, "/create/topomodelmainline", s.CreateMainLineObject, nil)
+	s.addAction(http.MethodPost, "/create/topomodelmainline", s.CreateMainLineModel, nil)
 	s.addAction(http.MethodDelete, "/delete/topomodelmainline/object/{bk_obj_id}", s.DeleteMainLineObject, nil)
 	s.addAction(http.MethodPost, "/find/topomodelmainline", s.SearchMainLineObjectTopo, nil)
 	s.addAction(http.MethodPost, "/find/topoinst/biz/{bk_biz_id}", s.SearchBusinessTopo, nil)
