@@ -106,7 +106,8 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 	return nil
 }
 
-func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) error {
+func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) errors.CCErrorCoder {
+	rid := kit.Rid
 	option := metadata.DeleteOption{
 		Condition: map[string]interface{}{
 			common.BKProcessIDField: procID,
@@ -115,12 +116,13 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) error {
 
 	result, err := lgc.CoreAPI.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
-		return err
+		blog.ErrorJSON("DeleteProcessInstance failed, DeleteInstance failed, option: %s, err: %s, rid: %s", option, err.Error(), rid)
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
 		blog.Errorf("rid: %s, delete process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
-		return kit.CCError.Error(result.Code)
+		return errors.New(result.Code, result.ErrMsg)
 	}
 
 	return nil
