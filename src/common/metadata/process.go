@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -1290,6 +1291,23 @@ type PropertyString struct {
 }
 
 func (ti *PropertyString) Validate() error {
+	if ti == nil {
+		return nil
+	}
+	if ti.Value != nil {
+		value := *ti.Value
+		if len(value) == 0 {
+			return nil
+		}
+		matched, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
+		if err != nil {
+			blog.Errorf("Validate failed, regex:[%s], value:[%s]", common.FieldTypeSingleCharRegexp, value)
+		}
+		if matched == false {
+			return fmt.Errorf("value:[%s] doesn't match regex:[%s]", value, common.FieldTypeSingleCharRegexp)
+		}
+
+	}
 	return nil
 }
 
