@@ -1,6 +1,6 @@
 <template>
     <section class="tree-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-        <bk-input class="tree-search" v-model="filter"></bk-input>
+        <bk-input class="tree-search" :placeholder="$t('请输入关键词')" v-model="filter"></bk-input>
         <bk-big-tree ref="tree" class="topology-tree"
             selectable
             :expand-on-click="false"
@@ -159,6 +159,7 @@
                         host_count: internal.host_count,
                         service_instance_count: internal.service_instance_count,
                         default: internal.default,
+                        is_idle_set: true,
                         child: (internal.module || []).map(module => ({
                             bk_obj_id: 'module',
                             bk_inst_id: module.bk_module_id,
@@ -226,7 +227,8 @@
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
-                return !isModule && !this.isBlueKing
+                const isIdleSet = data.is_idle_set
+                return !isModule && !this.isBlueKing && !isIdleSet
             },
             async showCreateDialog (node) {
                 const nodeModel = this.topologyModels.find(data => data.bk_obj_id === node.data.bk_obj_id)
@@ -441,6 +443,7 @@
             }
         }
         .node-name {
+            display: block;
             height: 36px;
             line-height: 36px;
             overflow: hidden;

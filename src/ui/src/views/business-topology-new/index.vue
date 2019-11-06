@@ -15,7 +15,7 @@
                 <bk-tab-panel name="serviceInstance" :label="$t('服务实例')" :visible="showServiceInstance">
                     <service-instance></service-instance>
                 </bk-tab-panel>
-                <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
+                <bk-tab-panel name="nodeInfo" :label="$t('节点信息')" :visible="showNodeInfo">
                     <service-node-info></service-node-info>
                 </bk-tab-panel>
             </bk-tab>
@@ -50,7 +50,10 @@
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('businessHost', ['selectedNode']),
             showServiceInstance () {
-                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
+                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module' && this.selectedNode.data.default === 0
+            },
+            showNodeInfo () {
+                return this.selectedNode && this.selectedNode.data.default === 0
             }
         },
         watch: {

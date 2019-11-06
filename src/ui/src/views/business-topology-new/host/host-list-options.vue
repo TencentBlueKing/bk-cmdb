@@ -3,10 +3,11 @@
         <div class="options fl">
             <bk-button class="option" theme="primary"
                 :disabled="!isNormalModuleNode"
+                :title="isNormalModuleNode ? '' : $t('仅能在业务模块下新增')"
                 @click="handleAddHost">
                 {{$t('新增')}}
             </bk-button>
-            <bk-button class="option ml10" @click="handleMultipleEdit">{{$t('编辑')}}</bk-button>
+            <bk-button class="option ml10" :disabled="!hasSelection" @click="handleMultipleEdit">{{$t('编辑')}}</bk-button>
             <bk-dropdown-menu class="option ml10" trigger="click"
                 font-size="medium"
                 :disabled="!hasSelection"
@@ -44,7 +45,11 @@
                     <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
                 </bk-button>
                 <ul class="bk-dropdown-list" slot="dropdown-content">
-                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleRemove">{{$t('移除')}}</li>
+                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]"
+                        v-if="showRemove"
+                        @click="handleRemove">
+                        {{$t('移除')}}
+                    </li>
                     <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport">{{$t('导出')}}</li>
                 </ul>
             </bk-dropdown-menu>
@@ -194,6 +199,9 @@
             },
             clipboardList () {
                 return this.$parent.table.header
+            },
+            showRemove () {
+                return this.selectedNode && !this.selectedNode.data.is_idle_set && this.selectedNode.data.default === 0
             }
         },
         created () {
