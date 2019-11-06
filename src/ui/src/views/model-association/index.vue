@@ -8,18 +8,17 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <p class="operation-box">
-            <span v-if="isAdminView" class="inline-block-middle"
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.C_RELATION),
-                    auth: [$OPERATION.C_RELATION]
-                }">
-                <bk-button theme="primary"
+            <cmdb-auth v-if="isAdminView"
+                class="inline-block-middle"
+                :auth="$authResources({ type: $OPERATION.C_RELATION })">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
                     class="create-btn"
-                    :disabled="!$isAuthorized($OPERATION.C_RELATION)"
+                    :disabled="disabled"
                     @click="createRelation">
                     {{$t('新建')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <label class="search-input">
                 <!-- <i class="bk-icon icon-search" @click="searchRelation(true)"></i> -->
                 <bk-input type="text" class="cmdb-form-input"
@@ -55,34 +54,32 @@
                 prop="operation"
                 :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <span class="text-primary disabled mr10"
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_RELATION),
-                            auth: [$OPERATION.U_RELATION]
-                        }"
-                        v-if="row.ispre || !$isAuthorized($OPERATION.U_RELATION)">
-                        {{$t('编辑')}}
-                    </span>
-                    <span class="text-primary mr10"
-                        v-else
-                        @click.stop="editRelation(row)">
-                        {{$t('编辑')}}
-                    </span>
-                    <span class="text-primary disabled"
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.D_RELATION),
-                            auth: [$OPERATION.D_RELATION]
-                        }"
-                        v-if="row.ispre || !$isAuthorized($OPERATION.D_RELATION)">
-                        {{$t('删除')}}
-                    </span>
-                    <span class="text-primary"
-                        v-else
-                        @click.stop="deleteRelation(row)">
-                        {{$t('删除')}}
-                    </span>
+                    <cmdb-auth class="mr10" :auth="$authResources({ resource_id: row.id, type: $OPERATION.U_RELATION })">
+                        <bk-button slot-scope="{ disabled }"
+                            text
+                            theme="primary"
+                            :disabled="row.ispre || disabled"
+                            @click.stop="editRelation(row)">
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </cmdb-auth>
+                    <cmdb-auth :auth="$authResources({ resource_id: row.id, type: $OPERATION.D_RELATION })">
+                        <bk-button slot-scope="{ disabled }"
+                            text
+                            theme="primary"
+                            :disabled="row.ispre || disabled"
+                            @click.stop="deleteRelation(row)">
+                            {{$t('删除')}}
+                        </bk-button>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$OPERATION.C_RELATION"
+                @create="createRelation"
+            ></cmdb-table-stuff>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -134,7 +131,13 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-ispre',
-                    sort: '-ispre'
+                    sort: '-ispre',
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.$t('关联类型')
+                        }
+                    }
                 },
                 sendSearchText: ''
             }
@@ -175,6 +178,7 @@
                 if (fromClick) {
                     this.sendSearchText = this.searchText
                     this.table.pagination.current = 1
+                    this.table.stuff.type = 'search'
                 }
                 this.searchAssociationType({
                     params: this.searchParams,

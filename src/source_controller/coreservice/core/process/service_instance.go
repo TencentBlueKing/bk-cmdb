@@ -115,8 +115,8 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 
 	if instance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
 		listProcessTemplateOption := metadata.ListProcessTemplatesOption{
-			BusinessID:        module.BizID,
-			ServiceTemplateID: module.ServiceTemplateID,
+			BusinessID:         module.BizID,
+			ServiceTemplateIDs: []int64{module.ServiceTemplateID},
 			Page: metadata.BasePage{
 				Limit: common.BKNoLimit,
 				Sort:  "id",
@@ -228,8 +228,10 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 		}
 	}
 
-	if option.ModuleID != 0 {
-		filter[common.BKModuleIDField] = option.ModuleID
+	if len(option.ModuleIDs) != 0 {
+		filter[common.BKModuleIDField] = map[string]interface{}{
+			common.BKDBIN: option.ModuleIDs,
+		}
 	}
 
 	if option.ServiceInstanceIDs != nil {
@@ -723,7 +725,7 @@ func (p *processOperation) RemoveTemplateBindingOnModule(ctx core.ContextParams,
 
 	listOption := metadata.ListServiceInstanceOption{
 		BusinessID:         moduleSimple.BizID,
-		ModuleID:           moduleID,
+		ModuleIDs:          []int64{moduleID},
 		SearchKey:          nil,
 		ServiceInstanceIDs: nil,
 		Page: metadata.BasePage{

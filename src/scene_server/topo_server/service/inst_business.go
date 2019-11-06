@@ -28,6 +28,8 @@ import (
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 // CreateBusiness create a new business
@@ -538,4 +540,40 @@ func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pa
 	}
 	set["module"] = modules
 	return set, nil
+}
+
+// ListAllBusinessSimplify list all businesses with return only several fields
+func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	if nil != err {
+		blog.Errorf("ListAllBusinessSimplify failed, FindSingleObject failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	fields := []string{
+		common.BKAppIDField,
+		common.BKAppNameField,
+	}
+	filter := condition.CreateCondition()
+	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, fields, filter)
+	if nil != err {
+		blog.Errorf("ListAllBusinessSimplify failed, FindBusiness failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
+	businesses := make([]metadata.BizBasicInfo, 0)
+	for _, item := range instItems {
+		business := metadata.BizBasicInfo{}
+		if err := mapstructure.Decode(item.ToMapStr(), &business); err != nil {
+			blog.Errorf("ListAllBusinessSimplify failed, decode biz from db failed, err: %s, rid: %s", err.Error(), params.ReqID)
+			return nil, params.Err.CCError(common.CCErrCommParseDBFailed)
+		}
+		businesses = append(businesses, business)
+	}
+
+	result := map[string]interface{}{
+		"count": cnt,
+		"info":  businesses,
+	}
+
+	return result, nil
 }

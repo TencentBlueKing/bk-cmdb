@@ -19,8 +19,13 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
+
+var ForbiddenModifyMainlineObjectUniqueWhiteList = []string{
+	common.BKInnerObjIDHost,
+}
 
 // CreateObjectUnique create a new object unique
 func (s *Service) CreateObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -39,7 +44,9 @@ func (s *Service) CreateObjectUnique(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 	if yes {
-		return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+		if util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) == false {
+			return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+		}
 	}
 
 	id, err := s.Core.UniqueOperation().Create(params, objectID, request)
@@ -92,7 +99,9 @@ func (s *Service) UpdateObjectUnique(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 	if yes {
-		return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+		if util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) == false {
+			return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+		}
 	}
 
 	err = s.Core.UniqueOperation().Update(params, objectID, id, request)
@@ -123,7 +132,9 @@ func (s *Service) DeleteObjectUnique(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 	if yes {
-		return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+		if util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) == false {
+			return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+		}
 	}
 
 	uniques, err := s.Core.UniqueOperation().Search(params, objectID)

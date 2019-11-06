@@ -10,7 +10,7 @@
                 right-icon="icon-search"
                 v-model="searchName"
                 :placeholder="$t('集群名称')"
-                @enter="getData">
+                @enter="getData(true)">
             </bk-input>
         </div>
         <bk-table class="history-table"
@@ -58,6 +58,7 @@
                     <span>{{row.creator || '--'}}</span>
                 </template>
             </bk-table-column>
+            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
         </bk-table>
     </div>
 </template>
@@ -76,6 +77,14 @@
                     count: 0,
                     current: 1,
                     ...this.$tools.getDefaultPaginationConfig()
+                },
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 },
                 listSort: 'last_time'
             }
@@ -165,8 +174,13 @@
                 }
                 return '--'
             },
-            async getData () {
+            async getData (event) {
                 await this.getHistoryList()
+
+                if (event) {
+                    this.table.stuff.type = 'search'
+                }
+
                 this.setsId.length && this.getSetInstancesWithTopo()
             },
             async getSetTemplateInfo () {
@@ -236,7 +250,7 @@
                 this.searchDate = daterange.map((date, index) => {
                     return index === 0 ? (date + ' 00:00:00') : (date + ' 23:59:59')
                 })
-                this.getData()
+                this.getData(true)
             }
         }
     }

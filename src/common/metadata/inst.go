@@ -43,6 +43,7 @@ type ModuleInst struct {
 	ServiceTemplateID int64  `bson:"service_template_id" json:"service_template_id" field:"service_template_id" mapstructure:"service_template_id"`
 	ParentID          int64  `bson:"bk_parent_id" json:"bk_parent_id" field:"bk_parent_id" mapstructure:"bk_parent_id"`
 	SetTemplateID     int64  `bson:"set_template_id" json:"set_template_id" field:"set_template_id" mapstructure:"set_template_id"`
+	Default           int64  `bson:"default" json:"default" field:"default" mapstructure:"default"`
 }
 
 type BizInst struct {
@@ -53,8 +54,8 @@ type BizInst struct {
 }
 
 type BizBasicInfo struct {
-	BizID   int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id"`
-	BizName string `bson:"bk_biz_name" json:"bk_biz_name" field:"bk_biz_name"`
+	BizID   int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
+	BizName string `bson:"bk_biz_name" json:"bk_biz_name" field:"bk_biz_name" mapstructure:"bk_biz_name"`
 }
 
 type CloudInst struct {
