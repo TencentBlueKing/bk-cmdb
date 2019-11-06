@@ -1302,6 +1302,7 @@ func (ti *PropertyString) Validate() error {
 		matched, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
 		if err != nil {
 			blog.Errorf("Validate failed, regex:[%s], value:[%s]", common.FieldTypeSingleCharRegexp, value)
+			return fmt.Errorf("value:[%s] doesn't match regex:[%s], err: %+v", value, common.FieldTypeSingleCharRegexp, err)
 		}
 		if matched == false {
 			return fmt.Errorf("value:[%s] doesn't match regex:[%s]", value, common.FieldTypeSingleCharRegexp)
