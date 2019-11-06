@@ -63,6 +63,7 @@ var (
 )
 
 const findReducedBusinessList = `/api/v3/biz/with_reduced`
+const findSimplifiedBusinessList = `/api/v3/biz/simplify`
 
 func (ps *parseStream) business() *parseStream {
 	if ps.shouldReturn() {
@@ -71,6 +72,19 @@ func (ps *parseStream) business() *parseStream {
 
 	// find reduced business list for the user with any business resources
 	if ps.hitPattern(findReducedBusinessList, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find simplified business list with limited fields return
+	if ps.hitPattern(findSimplifiedBusinessList, http.MethodGet) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

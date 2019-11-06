@@ -326,7 +326,7 @@
             },
             filterProperties () {
                 const { module, set, host } = this.properties
-                const filterProperty = ['bk_host_innerip', 'bk_host_outerip', 'bk_cloud_id']
+                const filterProperty = ['bk_host_innerip', 'bk_host_outerip']
                 return {
                     host: host.filter(property => !filterProperty.includes(property.bk_property_id)),
                     module,
