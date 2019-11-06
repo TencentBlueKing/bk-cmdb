@@ -3,7 +3,7 @@
         <div class="wrapper-left fl">
             <h2 class="title">{{title}}</h2>
             <h3 class="subtitle">{{$t('请勾选需要转到的模块')}}</h3>
-            <bk-input class="tree-filter" right-icon="icon-search" v-model="filter"></bk-input>
+            <bk-input class="tree-filter" right-icon="icon-search" v-model="filter" :placeholder="$t('请输入关键词')"></bk-input>
             <bk-big-tree ref="tree" class="topology-tree"
                 :default-expand-all="moduleType === 'idle'"
                 :check-on-click="true"
