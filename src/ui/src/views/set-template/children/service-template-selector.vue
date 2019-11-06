@@ -1,5 +1,12 @@
 <template>
     <section>
+        <bk-input class="search"
+            type="text"
+            :placeholder="$t('请输入xx', { name: $t('服务模板') })"
+            right-icon="bk-icon icon-search"
+            v-model.trim="searchName"
+            @enter="hanldeFilterTemplates">
+        </bk-input>
         <ul class="template-list clearfix"
             v-bkloading="{ isLoading: $loading('getServiceTemplate') }"
             :class="{ 'is-loading': $loading('getServiceTemplate') }">
@@ -41,8 +48,10 @@
         },
         data () {
             return {
+                allTemplates: [],
                 templates: [],
-                localSelected: [...this.selected]
+                localSelected: [...this.selected],
+                searchName: ''
             }
         },
         created () {
@@ -64,6 +73,7 @@
                         const weightB = this.selected.includes(B.id) ? 1 : 0
                         return weightB - weightA
                     })
+                    this.allTemplates = this.templates
                 } catch (e) {
                     console.error(e)
                     this.templates = []
@@ -78,18 +88,25 @@
                 }
             },
             getSelectedServices () {
-                return this.localSelected.map(id => this.templates.find(template => template.id === id))
+                return this.localSelected.map(id => this.allTemplates.find(template => template.id === id))
             },
             handleLinkClick () {
                 this.$router.push({
                     name: 'operationalTemplate'
                 })
+            },
+            hanldeFilterTemplates () {
+                this.templates = this.allTemplates.filter(template => template.name.indexOf(this.searchName) > -1)
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
+    .search {
+        width: 240px;
+        margin-bottom: 10px;
+    }
     .template-list {
         max-height: 340px;
         @include scrollbar-y;

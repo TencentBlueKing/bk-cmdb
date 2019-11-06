@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/mapstruct"
 	"strconv"
 
 	"configcenter/src/common"
@@ -58,7 +59,7 @@ func (s *coreService) GetServiceTemplate(params core.ContextParams, pathParams, 
 	return result, nil
 }
 
-func (s *coreService) GetServiceTemplateDetail(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) GetServiceTemplateWithStatistics(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	serviceTemplateIDStr := pathParams(common.BKServiceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {
 		blog.Errorf("GetServiceTemplate failed, path parameter `%s` empty, rid: %s", common.BKServiceTemplateIDField, params.ReqID)
@@ -96,10 +97,86 @@ func (s *coreService) GetServiceTemplateDetail(params core.ContextParams, pathPa
 		blog.Errorf("GetServiceCategory failed, filter: %+v, err: %+v, rid: %s", serviceInstanceFilter, err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
-	result := metadata.ServiceTemplateDetail{
+	result := metadata.ServiceTemplateWithStatistics{
 		Template:             *template,
 		ServiceInstanceCount: int64(serviceInstanceCount),
 		ProcessInstanceCount: int64(processRelationCount),
+	}
+	return result, nil
+}
+
+func (s *coreService) ListServiceTemplateDetail(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	if len(bizIDStr) == 0 {
+		blog.Errorf("ListServiceTemplateDetail failed, path parameter `%s` empty, rid: %s", common.BKAppIDField, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	}
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("ListServiceTemplateDetail failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKAppIDField, bizIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	input := struct {
+		ServiceTemplateIDs []int64 `json:"service_template_ids" mapstructure:"service_template_ids"`
+	}{}
+	if err := mapstruct.Decode2Struct(data, &input); err != nil {
+		blog.ErrorJSON("ListServiceTemplateDetail failed, unmarshal request body failed, value: %s, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	option := metadata.ListServiceTemplateOption{
+		BusinessID:         bizID,
+		ServiceTemplateIDs: input.ServiceTemplateIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	serviceTemplateResult, ccErr := s.core.ProcessOperation().ListServiceTemplates(params, option)
+	if ccErr != nil {
+		blog.Errorf("ListServiceTemplateDetail failed, ListServiceTemplate failed, err: %+v, rid: %s", ccErr, params.ReqID)
+		return nil, ccErr
+	}
+	srvTplIDs := make([]int64, 0)
+	for _, item := range serviceTemplateResult.Info {
+		srvTplIDs = append(srvTplIDs, item.ID)
+	}
+
+	listProcessTemplateOption := metadata.ListProcessTemplatesOption{
+		BusinessID:         bizID,
+		ServiceTemplateIDs: srvTplIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	listProcResult, ccErr := s.core.ProcessOperation().ListProcessTemplates(params, listProcessTemplateOption)
+	if ccErr != nil {
+		blog.Errorf("ListServiceTemplateDetail failed, ListProcessTemplates failed, err: %+v, rid: %s", ccErr, params.ReqID)
+		return nil, ccErr
+	}
+	serviceProcessTemplateMap := make(map[int64][]metadata.ProcessTemplate)
+	for _, item := range listProcResult.Info {
+		if _, exist := serviceProcessTemplateMap[item.ServiceTemplateID]; exist == false {
+			serviceProcessTemplateMap[item.ServiceTemplateID] = make([]metadata.ProcessTemplate, 0)
+		}
+		serviceProcessTemplateMap[item.ServiceTemplateID] = append(serviceProcessTemplateMap[item.ServiceTemplateID], item)
+	}
+
+	templateDetails := make([]metadata.ServiceTemplateDetail, 0)
+	for _, item := range serviceTemplateResult.Info {
+		templateDetail := metadata.ServiceTemplateDetail{
+			ServiceTemplate:  item,
+			ProcessTemplates: make([]metadata.ProcessTemplate, 0),
+		}
+		processTemplates, exist := serviceProcessTemplateMap[item.ID]
+		if exist == true {
+			templateDetail.ProcessTemplates = processTemplates
+		}
+		templateDetails = append(templateDetails, templateDetail)
+	}
+	result := metadata.MultipleServiceTemplateDetail{
+		Count: serviceTemplateResult.Count,
+		Info:  templateDetails,
 	}
 	return result, nil
 }

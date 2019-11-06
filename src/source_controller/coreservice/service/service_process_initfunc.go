@@ -28,7 +28,8 @@ func (s *coreService) initProcess() {
 	// service template
 	s.addAction(http.MethodPost, "/create/process/service_template", s.CreateServiceTemplate, nil)
 	s.addAction(http.MethodGet, "/find/process/service_template/{service_template_id}", s.GetServiceTemplate, nil)
-	s.addAction(http.MethodGet, "/find/process/service_template/{service_template_id}/detail", s.GetServiceTemplateDetail, nil)
+	s.addAction(http.MethodGet, "/find/process/service_template/{service_template_id}/with_statistics", s.GetServiceTemplateWithStatistics, nil)
+	s.addAction(http.MethodPost, "/findmany/process/service_template/detail/bk_biz_id/{bk_biz_id}", s.ListServiceTemplateDetail, nil)
 	s.addAction(http.MethodPost, "/findmany/process/service_template", s.ListServiceTemplates, nil)
 	s.addAction(http.MethodPut, "/update/process/service_template/{service_template_id}", s.UpdateServiceTemplate, nil)
 	s.addAction(http.MethodDelete, "/delete/process/service_template/{service_template_id}", s.DeleteServiceTemplate, nil)

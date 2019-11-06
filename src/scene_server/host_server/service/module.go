@@ -13,11 +13,11 @@
 package service
 
 import (
-	"configcenter/src/auth"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"configcenter/src/auth"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -257,7 +257,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		mConds.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 		mConds.Set(common.BKModuleNameField, common.DefaultResModuleName)
 		mConds.Set(common.BKAppIDField, ownerAppID)
-		ownerModuleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, mConds)
+		ownerModuleID, err := srvData.lgc.GetResourcePoolModuleID(srvData.ctx, mConds)
 		if nil != err {
 			blog.Errorf("assign host to app module, but get unused host pool failed, ownerid[%v], err: %v,input:%+v,param:%+v,rid:%s", ownerModuleID, err, data, mConds, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrAddHostToModuleFailStr, err.Error())})
@@ -454,7 +454,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 		action = authmeta.MoveHostToBizFaultModule
 	}
 	conds[common.BKAppIDField] = conf.ApplicationID
-	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds)
+	moduleID, err := srvData.lgc.GetResourcePoolModuleID(srvData.ctx, conds)
 	if err != nil {
 		blog.Errorf("move host to module %s, get module id err: %v, rid: %s", moduleName, err, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")})
@@ -534,7 +534,7 @@ func (s *Service) GetAppHostTopoRelation(req *restful.Request, resp *restful.Res
 
 	result, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, *data)
 	if err != nil {
-		blog.Errorf("GetHostModuleRelation logcis err:%s,cond:%#v,rid:%s", err.Error(), data, srvData.rid)
+		blog.Errorf("GetHostModuleRelation logic failed, cond:%#v, err:%s, rid:%s", data, err.Error(), srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
 		return
 	}

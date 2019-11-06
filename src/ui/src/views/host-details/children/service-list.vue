@@ -8,17 +8,14 @@
                 :title="$t('全选本页')"
                 @change="handleCheckALL">
             </bk-checkbox>
-            <span style="display: inline-block;"
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.D_SERVICE_INSTANCE),
-                    auth: [$OPERATION.D_SERVICE_INSTANCE]
-                }">
-                <bk-button class="ml10"
-                    :disabled="!$isAuthorized($OPERATION.D_SERVICE_INSTANCE) || !checked.length"
+            <cmdb-auth :auth="$authResources({ type: $OPERATION.D_SERVICE_INSTANCE })">
+                <bk-button slot-scope="{ disabled }"
+                    class="ml10"
+                    :disabled="disabled || !checked.length"
                     @click="batchDelete(!checked.length)">
                     {{$t('批量删除')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <div class="option-right fr">
                 <bk-checkbox class="options-checkbox"
                     :size="16"
@@ -31,7 +28,7 @@
                     <bk-search-select
                         ref="searchSelect"
                         :show-condition="false"
-                        :placeholder="$t('实例名称/标签')"
+                        :placeholder="$t('请输入实例名称或选择标签')"
                         :data="searchSelect"
                         v-model="searchSelectData"
                         @menu-child-condition-select="handleConditionSelect"

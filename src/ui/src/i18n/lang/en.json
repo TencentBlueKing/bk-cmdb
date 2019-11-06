@@ -805,7 +805,7 @@
     "删除模块提示": "Need to confirm that there is no service instance and host under the module.",
     "模块名称提示": "The module name must be the same as the service template name.",
     "请为主机添加进程": "Please add process to the host",
-    "实例名称/标签": "Instance name / Tag",
+    "请输入实例名称或选择标签": "Enter instance name or select tag",
     "标签键": "Label key, English / number",
     "标签值": "Label value, English / number",
     "已有标签": "Existing tag",
@@ -902,7 +902,7 @@
     "应用收藏条件失败，转换数据错误": "Application collection condition failed, conversion data error",
     "请选择收藏条件": "Please select condition",
     "新增条件": "Add condition",
-    "收藏此条件": "Collect this condition",
+    "收藏此条件": "Collect",
     "添加节点已选择": "Selected",
     "新建集群": "New Set",
     "内置模型组不支持添加和修改": "Built-in model groups do not support adding and modifying",
@@ -984,7 +984,7 @@
     "已完成": "completed",
     "正在同步中请等待": "Being synced, please be patient...",
     "同步进度提示": "Synchronized {completedCount}, remaining {remainingCount}",
-    "已选集群实例": "{count} set instances have been selected",
+    "已选集群实例": "Selected instances: {count}",
     "集群模板名称占位符": "Please input template name, 20 letters max",
     "模板配置": "Template config",
     "模板实例": "Template instance",
@@ -1050,6 +1050,9 @@
     "提交同步成功": "Submit is successful, please wait for execution to complete",
     "去同步": "Go to sync",
     "模板集群添加模块提示": "The accumulated template is currently configured, and modules cannot be added.",
-    "请编辑": "Please edit",
-    "无": "none"
+    "无": "none",
+    "创建实例": "创建实例",
+    "抱歉您没有查看权限": "Sorry, you don't have permission to view, {link}",
+    "您还未XXX": "You have not yet {action} {resource}, {link}",
+    "搜索内容为空": "Search result is empty"
 }

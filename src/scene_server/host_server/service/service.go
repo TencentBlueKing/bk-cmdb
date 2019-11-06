@@ -105,6 +105,8 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/modules/resource").To(s.MoveHostToResourcePool))
 	api.Route(api.POST("/hosts/modules/resource/idle").To(s.AssignHostToApp))
 	api.Route(api.POST("/host/add/module").To(s.AssignHostToAppModule))
+	api.Route(api.POST("/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/").To(s.TransferHostWithAutoClearServiceInstance))
+	api.Route(api.POST("/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview/").To(s.TransferHostWithAutoClearServiceInstancePreview))
 	api.Route(api.POST("/usercustom").To(s.SaveUserCustom))
 	api.Route(api.POST("/usercustom/user/search").To(s.GetUserCustom))
 	api.Route(api.POST("/usercustom/default/search").To(s.GetDefaultCustom))
@@ -152,6 +154,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/openapi/host/getGitServerIp").To(s.GetGitServerIp))
 	api.Route(api.GET("/plat").To(s.GetPlat))
 	api.Route(api.POST("/plat").To(s.CreatePlat))
+	api.Route(api.PUT("/plat/{bk_cloud_id}").To(s.UpdatePlat))
 	api.Route(api.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
 
 	api.Route(api.POST("/findmany/modulehost").To(s.FindModuleHost))
@@ -171,6 +174,7 @@ func (s *Service) WebService() *restful.Container {
 
 	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
 	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
+	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
 	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
 
 	container.Add(api)

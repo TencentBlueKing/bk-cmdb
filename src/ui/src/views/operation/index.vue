@@ -51,7 +51,7 @@
         </div>
         <div class="operation-top">
             <span class="operation-title">{{$t('主机统计')}}</span>
-            <i class="icon icon-cc-operate-add" @click="openNew('add', 'host')">
+            <i class="icon icon-cc-add-line" @click="openNew('add', 'host')">
                 <div class="title-block">{{$t('添加主机图表')}}</div>
             </i>
         </div>
@@ -96,7 +96,7 @@
         </div>
         <div class="operation-top">
             <span class="operation-title">{{$t('实例统计')}}</span>
-            <i class="icon icon-cc-operate-add" @click="openNew('add', 'inst')">
+            <i class="icon icon-cc-add-line" @click="openNew('add', 'inst')">
                 <div class="title-block">{{$t('添加实例图表')}}</div>
             </i>
         </div>
