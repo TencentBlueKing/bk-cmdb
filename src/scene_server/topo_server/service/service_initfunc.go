@@ -25,7 +25,7 @@ func (s *Service) initHealth() {
 func (s *Service) initAssociation() {
 
 	// mainline topo methods
-	s.addAction(http.MethodPost, "/topo/model/mainline", s.CreateMainLineModel, nil)
+	s.addAction(http.MethodPost, "/topo/model/mainline", s.CreateMainLineObject, nil)
 	s.addAction(http.MethodDelete, "/topo/model/mainline/owners/{owner_id}/objectids/{bk_obj_id}", s.DeleteMainLineObject, nil)
 	s.addAction(http.MethodGet, "/topo/model/{owner_id}", s.SearchMainLineObjectTopo, nil)
 	s.addAction(http.MethodGet, "/topo/model/{owner_id}/{cls_id}/{bk_obj_id}", s.SearchObjectByClassificationID, nil)

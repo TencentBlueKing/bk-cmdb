@@ -25,7 +25,7 @@ import (
 )
 
 // CreateMainLineObject create a new model in the main line topo
-func (s *Service) CreateMainLineModel(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
 	tx, err := s.Txn.Start(context.Background())
 	if err != nil {
 		blog.Errorf("create mainline model failed, start transaction failed, err: %v, rid: %s", err, params.ReqID)
