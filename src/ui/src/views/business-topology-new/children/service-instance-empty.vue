@@ -1,62 +1,70 @@
 <template>
     <div class="empty">
-        <template v-bkloading="{ isLoading: $loading('getBatchProcessTemplate') }">
-            <div class="empty-content" v-if="withTemplate && !templates.length && !isSearching">
-                <img src="../../../../static/svg/cc-empty.svg" alt="">
-                <p class="empty-text">{{$t('模板未定义进程', { template: (moduleNode || {}).name })}}</p>
-                <p class="empty-tips">{{$t('模板未定义进程提示')}}</p>
-                <div class="empty-options">
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_SERVICE_TEMPLATE })">
-                        <bk-button slot-scope="{ disabled }"
-                            class="empty-button"
-                            theme="primary"
-                            :disabled="disabled"
-                            @click="goToTemplate">
-                            {{$t('跳转模板添加进程')}}
-                        </bk-button>
-                    </cmdb-auth>
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
-                        <bk-button slot-scope="{ disabled }"
-                            class="empty-button"
-                            theme="default"
-                            :disabled="disabled"
-                            @click="handleAddHost">
-                            {{$t('添加主机')}}
-                        </bk-button>
-                    </cmdb-auth>
-                </div>
+        <div class="empty-content" v-if="withTemplate && !templates.length">
+            <img src="../../../../static/svg/cc-empty.svg" alt="">
+            <p class="empty-text">{{$t('模板未定义进程', { template: (moduleNode || {}).name })}}</p>
+            <p class="empty-tips">{{$t('模板未定义进程提示')}}</p>
+            <div class="empty-options">
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_SERVICE_TEMPLATE })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="empty-button"
+                        theme="primary"
+                        :disabled="disabled"
+                        @click="goToTemplate">
+                        {{$t('跳转模板添加进程')}}
+                    </bk-button>
+                </cmdb-auth>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="empty-button"
+                        theme="default"
+                        :disabled="disabled"
+                        @click="handleAddHost">
+                        {{$t('添加主机')}}
+                    </bk-button>
+                </cmdb-auth>
             </div>
-            <cmdb-auth v-else-if="!isSearching" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
-                <template slot-scope="{ disabled }">
-                    <i class="bk-icon icon-plus empty-plus"
-                        @click="handleCreateServiceInstance(disabled)">
-                    </i>
-                    <p class="empty-tips">
-                        {{$t('创建实例提示')}}
-                        <a class="text-primary" href="javascript:void(0)" @click="handleCreateServiceInstance(disabled)">{{$t('立即添加')}}</a>
-                    </p>
-                </template>
-            </cmdb-auth>
-        </template>
-        <host-selector
-            :visible.sync="visible"
-            :module-instance="moduleInstance"
-            @host-selected="handleSelectHost">
-        </host-selector>
+        </div>
+        <cmdb-auth v-else :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+            <template slot-scope="{ disabled }">
+                <i class="bk-icon icon-plus empty-plus"
+                    @click="handleCreateServiceInstance(disabled)">
+                </i>
+                <p class="empty-tips">
+                    {{$t('创建实例提示')}}
+                    <a class="text-primary" href="javascript:void(0)" @click="handleCreateServiceInstance(disabled)">{{$t('立即添加')}}</a>
+                </p>
+            </template>
+        </cmdb-auth>
+        <cmdb-dialog v-model="dialog.show" :width="850">
+            <component
+                :is="dialog.component"
+                v-bind="dialog.componentProps"
+                @confirm="handleDialogConfirm"
+                @cancel="handleDialogCancel">
+            </component>
+        </cmdb-dialog>
     </div>
 </template>
 
 <script>
-    import hostSelector from '@/components/ui/selector/host.vue'
+    import HostSelector from '../host/host-selector.vue'
     export default {
         components: {
-            hostSelector
+            [HostSelector.name]: HostSelector
+        },
+        props: {
+            active: Boolean
         },
         data () {
             return {
                 visible: false,
-                templates: [],
-                isSearching: true
+                isSearching: true,
+                dialog: {
+                    show: false,
+                    component: null,
+                    componentProps: {}
+                }
             }
         },
         computed: {
@@ -73,15 +81,8 @@
                 }
                 return null
             },
-            moduleInstance () {
-                const instance = this.$store.state.businessHost.selectedNodeInstance
-                if (this.moduleNode && instance) {
-                    return instance
-                }
-                return {}
-            },
             withTemplate () {
-                return this.moduleNode && this.moduleInstance.service_template_id
+                return this.moduleNode && this.moduleNode.data.service_template_id
             },
             isBlueKing () {
                 const node = this.$store.state.businessHost.selectedNode
@@ -89,93 +90,24 @@
                     return node.tree.nodes[0].data.bk_inst_name === '蓝鲸'
                 }
                 return false
-            }
-        },
-        watch: {
-            withTemplate (withTemplate) {
-                if (withTemplate) {
-                    this.getTemplate()
-                } else {
-                    this.isSearching = false
-                }
-            }
-        },
-        created () {
-            if (this.withTemplate) {
-                this.getTemplate()
-            } else {
-                this.isSearching = false
+            },
+            templates () {
+                return this.$parent.templates
             }
         },
         methods: {
-            async getTemplate () {
-                try {
-                    this.isSearching = true
-                    const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
-                        params: this.$injectMetadata({
-                            service_template_id: this.moduleInstance.service_template_id
-                        }, { injectBizId: true }),
-                        config: {
-                            requestId: 'getBatchProcessTemplate',
-                            cancelPrevious: true
-                        }
-                    })
-                    this.templates = data.info
-                    this.isSearching = false
-                } catch (e) {
-                    console.error(e)
-                    this.isSearching = false
-                }
-            },
             goToTemplate () {
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
-                        templateId: this.moduleInstance.service_template_id,
+                        templateId: this.moduleNode.data.service_template_id,
                         moduleId: this.moduleNode.data.bk_inst_id
                     }
                 })
             },
             handleAddHost () {
-                this.visible = true
-            },
-            async handleSelectHost (checked) {
-                try {
-                    const addNum = checked.length
-                    const data = await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
-                        params: this.$injectMetadata({
-                            name: this.moduleInstance.bk_module_name,
-                            bk_module_id: this.moduleInstance.bk_module_id,
-                            service_template_id: this.moduleInstance.service_template_id,
-                            instances: checked.map(hostId => {
-                                return {
-                                    bk_host_id: hostId,
-                                    processes: this.templates.map(template => {
-                                        const processInfo = {}
-                                        Object.keys(template.property).forEach(key => {
-                                            processInfo[key] = template.property[key].value
-                                        })
-                                        return {
-                                            process_template_id: template.id,
-                                            process_info: processInfo
-                                        }
-                                    })
-                                }
-                            })
-                        }, { injectBizId: true })
-                    })
-                    if (this.withTemplate) {
-                        this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count + addNum
-                        this.currentNode.parents.forEach(node => {
-                            node.data.service_instance_count = node.data.service_instance_count + addNum
-                        })
-                    }
-                    this.visible = false
-                    this.$success(this.$t('添加成功'))
-                    this.$emit('create-instance-success', data)
-                } catch (e) {
-                    console.error(e)
-                }
+                this.dialog.component = HostSelector.name
+                this.dialog.show = true
             },
             handleCreateServiceInstance (disabled) {
                 if (disabled) return
@@ -193,6 +125,22 @@
                         }
                     })
                 }
+            },
+            handleDialogConfirm (selected) {
+                this.dialog.show = false
+                this.$router.push({
+                    name: 'createServiceInstance',
+                    params: {
+                        setId: this.currentNode.parent.data.bk_inst_id,
+                        moduleId: this.currentNode.data.bk_inst_id
+                    },
+                    query: {
+                        resources: selected.map(item => item.host.bk_host_id).join(',')
+                    }
+                })
+            },
+            handleDialogCancel () {
+                this.dialog.show = false
             }
         }
     }

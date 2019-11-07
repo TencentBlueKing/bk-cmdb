@@ -33,23 +33,15 @@
                 </div>
             </div>
         </div>
-        <host-selector
-            :visible.sync="hostSelectorVisible"
-            :module-instance="module"
-            :exclude="[hostId]"
-            @host-selected="handleSelectHost">
-        </host-selector>
     </div>
 </template>
 
 <script>
-    import hostSelector from '@/components/ui/selector/host.vue'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
     import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
     export default {
         name: 'clone-to-other',
         components: {
-            hostSelector,
             serviceInstanceTable
         },
         props: {

@@ -19,12 +19,13 @@
                     <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
                 </bk-button>
                 <ul class="bk-dropdown-list" slot="dropdown-content">
-                    <li :class="['bk-dropdown-item', { disabled: isIdleSet }]"
-                        @click="handleTransfer($event, 'idle', isIdleSet)">
+                    <li class="bk-dropdown-item"
+                        @click="handleTransfer($event, 'idle', false)">
                         {{$t('空闲模块')}}
                     </li>
                     <li class="bk-dropdown-item" @click="handleTransfer($event, 'business', false)">{{$t('业务模块')}}</li>
                     <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]"
+                        v-bk-tooltips="isIdleModule ? '' : $t('仅空闲机模块才能转移到资源池')"
                         @click="handleTransfer($event, 'resource', !isIdleModule)">
                         {{$t('资源池')}}
                     </li>
@@ -47,10 +48,10 @@
                 <ul class="bk-dropdown-list" slot="dropdown-content">
                     <li :class="['bk-dropdown-item', { disabled: !hasSelection }]"
                         v-if="showRemove"
-                        @click="handleRemove">
+                        @click="handleRemove($event)">
                         {{$t('移除')}}
                     </li>
-                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport">{{$t('导出')}}</li>
+                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">{{$t('导出')}}</li>
                 </ul>
             </bk-dropdown-menu>
         </div>
@@ -303,8 +304,9 @@
                 this.dialog.component = HostSelector.name
                 this.dialog.show = true
             },
-            handleRemove () {
+            handleRemove (event) {
                 if (!this.hasSelection) {
+                    event.stopPropagation()
                     return false
                 }
                 this.$router.push({
@@ -319,8 +321,9 @@
                     }
                 })
             },
-            async handleExport () {
+            async handleExport (event) {
                 if (!this.hasSelection) {
+                    event.stopPropagation()
                     return false
                 }
                 try {
@@ -398,6 +401,7 @@
                 })
             },
             handleSetColumn () {
+                this.$refs.hostFilter.$refs.filterPopper.instance.hide()
                 this.sideslider.render = true
                 this.sideslider.show = true
             }
@@ -441,13 +445,12 @@
             line-height: 32px;
             cursor: pointer;
             @include ellipsis;
-            &:hover {
+            &:not(.disabled):hover {
                 background-color: #EAF3FF;
                 color: $primaryColor;
             }
             &.disabled {
-                background-color: #F4F6FA;
-                color: $textColor;
+                color: $textDisabledColor;
                 cursor: not-allowed;
             }
         }

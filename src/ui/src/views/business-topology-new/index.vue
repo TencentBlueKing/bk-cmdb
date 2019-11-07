@@ -1,22 +1,26 @@
 <template>
     <div class="layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-        <cmdb-resize-layout class="resize-layout fl"
+        <cmdb-resize-layout :class="['resize-layout fl', { 'is-collapse': layout.topologyCollapse }]"
             direction="right"
             :handler-offset="3"
             :min="200"
-            :max="480">
+            :max="480"
+            :disabled="layout.topologyCollapse">
             <topology-tree ref="topologyTree" :active="activeTab"></topology-tree>
+            <i class="topology-collapse-icon bk-icon icon-angle-left"
+                @click="layout.topologyCollapse = !layout.topologyCollapse">
+            </i>
         </cmdb-resize-layout>
         <div class="tab-layout">
-            <bk-tab class="topology-tab" type="unborder-card" :active.sync="activeTab">
+            <bk-tab class="topology-tab" type="unborder-card" :active.sync="activeTab" :validate-active="false">
                 <bk-tab-panel name="hostList" :label="$t('主机列表')">
-                    <host-list></host-list>
+                    <host-list :active="activeTab === 'hostList'"></host-list>
                 </bk-tab-panel>
                 <bk-tab-panel name="serviceInstance" :label="$t('服务实例')" :visible="showServiceInstance">
                     <service-instance></service-instance>
                 </bk-tab-panel>
                 <bk-tab-panel name="nodeInfo" :label="$t('节点信息')" :visible="showNodeInfo">
-                    <service-node-info></service-node-info>
+                    <service-node-info :active="activeTab === 'nodeInfo'"></service-node-info>
                 </bk-tab-panel>
             </bk-tab>
         </div>
@@ -38,7 +42,10 @@
         },
         data () {
             return {
-                activeTab: 'hostList',
+                activeTab: this.$route.query.tab || 'hostList',
+                layout: {
+                    topologyCollapse: false
+                },
                 request: {
                     mainline: Symbol('mainline'),
                     properties: Symbol('properties')
@@ -59,6 +66,11 @@
         watch: {
             showServiceInstance (value) {
                 if (!value && this.activeTab === 'serviceInstance') {
+                    this.activeTab = 'hostList'
+                }
+            },
+            showNodeInfo (value) {
+                if (!value) {
                     this.activeTab = 'hostList'
                 }
             }
@@ -107,10 +119,37 @@
         border-top: 1px solid $cmdbLayoutBorderColor;
     }
     .resize-layout {
+        position: relative;
         width: 280px;
         height: 100%;
         padding-top: 10px;
         border-right: 1px solid $cmdbLayoutBorderColor;
+        &.is-collapse {
+            width: 0 !important;
+            border-right: none;
+            .topology-collapse-icon:before {
+                display: inline-block;
+                transform: rotate(180deg);
+            }
+        }
+        .topology-collapse-icon {
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            width: 16px;
+            height: 100px;
+            line-height: 100px;
+            background: $cmdbLayoutBorderColor;
+            border-radius: 0px 12px 12px 0px;
+            transform: translateY(-50%);
+            text-align: center;
+            font-size: 12px;
+            color: #fff;
+            cursor: pointer;
+            &:hover {
+                background: #699DF4;
+            }
+        }
     }
     .tab-layout {
         height: calc(100vh - 120px);

@@ -2,7 +2,7 @@
     <div class="list-layout">
         <host-list-options @transfer="handleTransfer"></host-list-options>
         <bk-table class="host-table"
-            v-bkloading="{ isLoading: $loading(request.table) }"
+            v-bkloading="{ isLoading: $loading(Object.values(request.table)) || !commonRequestFinished }"
             :data="table.data"
             :pagination="table.pagination"
             :row-style="{ cursor: 'pointer' }"
@@ -57,6 +57,7 @@
         },
         data () {
             return {
+                commonRequestFinished: false,
                 table: {
                     data: [],
                     header: [],
@@ -156,6 +157,7 @@
             async getHostList () {
                 try {
                     await this.commonRequest
+                    this.commonRequestFinished = true
                     const result = await this.$store.dispatch('hostSearch/searchHost', {
                         params: this.getParams(),
                         config: {

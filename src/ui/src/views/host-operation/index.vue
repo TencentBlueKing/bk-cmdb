@@ -11,12 +11,30 @@
         <div class="info clearfix mb20" v-if="type !== 'remove'">
             <label class="info-label fl">{{$t('转移到')}}：</label>
             <div class="info-content">
+                <div class="info-options" v-if="type === 'business'">
+                    <bk-button @click="handleChangeModule">
+                        <i class="bk-icon icon-plus"></i>
+                        {{$t('选择业务模块')}}
+                    </bk-button>
+                </div>
                 <ul class="module-list">
                     <li class="module-item" v-for="(id, index) in targetModules"
                         :key="index"
-                        @click="handleModuleClick">
+                        :class="{
+                            'is-business-module': type === 'business',
+                            'has-remove-icon': type === 'business' && targetModules.length > 1
+                        }">
+                        <span class="module-icon" v-if="type === 'business'">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
                         {{getModuleName(id)}}
-                        <span class="module-mask" v-if="type === 'idle'">{{$t('点击修改')}}</span>
+                        <span class="module-remove bk-icon icon-close"
+                            v-if="type === 'business' && targetModules.length > 1"
+                            @click="handleRemoveModule(id)">
+                        </span>
+                        <span class="module-mask"
+                            v-if="type === 'idle'"
+                            @click="handleChangeModule">
+                            {{$t('点击修改')}}
+                        </span>
                     </li>
                 </ul>
             </div>
@@ -66,7 +84,8 @@
     import MoveToIdleHost from './children/move-to-idle-host.vue'
     import ModuleSelector from '@/views/business-topology-new/host/module-selector.vue'
     import {
-        MENU_BUSINESS_TRANSFER_HOST
+        MENU_BUSINESS_TRANSFER_HOST,
+        MENU_BUSINESS_HOST_AND_SERVICE
     } from '@/dictionary/menu-symbol'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { mapGetters } from 'vuex'
@@ -121,7 +140,11 @@
                     mainline: Symbol('mainline'),
                     host: Symbol('host'),
                     internal: Symbol('internal')
-                }
+                },
+                targetModules: [],
+                resources: [],
+                type: '',
+                confirmParams: {}
             }
         },
         computed: {
@@ -129,9 +152,6 @@
             ...mapGetters('businessHost', [
                 'getDefaultSearchCondition'
             ]),
-            type () {
-                return this.$route.params.type || 'remove'
-            },
             confirmText () {
                 const textMap = {
                     remove: this.$t('确认移除'),
@@ -151,23 +171,42 @@
             },
             activeTab () {
                 return this.tabList.find(tab => tab.id === this.tab.active) || this.availableTabList[0]
-            },
-            targetModules () {
-                const targetModules = this.$route.query.targetModules
+            }
+        },
+        async created () {
+            this.resolveData(this.$route)
+            await this.getTopologyModels()
+            this.getPreviewData()
+        },
+        mounted () {
+            addResizeListener(this.$refs.changeInfo, this.resizeHandler)
+        },
+        beforeDestroy () {
+            removeResizeListener(this.$refs.changeInfo, this.resizeHandler)
+        },
+        beforeRouteUpdate (to, from, next) {
+            this.resolveData(to)
+            this.getPreviewData()
+            next()
+        },
+        methods: {
+            resolveData (route) {
+                this.type = route.params.type
+                const query = route.query || {}
+                const targetModules = query.targetModules
                 if (!targetModules) {
-                    return []
+                    this.targetModules = []
+                } else {
+                    this.targetModules = targetModules.split(',').map(id => Number(id))
                 }
-                return targetModules.split(',').map(id => Number(id))
-            },
-            resources () {
-                const resources = this.$route.query.resources
+
+                const resources = query.resources
                 if (!resources) {
-                    return []
+                    this.resources = []
+                } else {
+                    this.resources = resources.split(',').map(id => Number(id))
                 }
-                return resources.split(',').map(id => Number(id))
-            },
-            confirmParams () {
-                const query = this.$route.query || {}
+
                 const params = {
                     bk_host_ids: this.resources,
                     remove_from_node: {
@@ -180,24 +219,8 @@
                 } else if (this.targetModules.length) {
                     params.add_to_modules = this.targetModules
                 }
-                return params
-            }
-        },
-        async created () {
-            await this.getTopologyModels()
-            this.getPreviewData()
-        },
-        mounted () {
-            addResizeListener(this.$refs.changeInfo, this.resizeHandler)
-        },
-        beforeDestroy () {
-            removeResizeListener(this.$refs.changeInfo, this.resizeHandler)
-        },
-        beforeRouteUpdate (to, from, next) {
-            this.getPreviewData()
-            next()
-        },
-        methods: {
+                this.confirmParams = params
+            },
             async getTopologyModels () {
                 try {
                     const topologyModels = await this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
@@ -335,6 +358,19 @@
                     }
                 })
             },
+            handleRemoveModule (id) {
+                const targetModules = this.targetModules.filter(exist => exist !== id)
+                this.$router.replace({
+                    name: MENU_BUSINESS_TRANSFER_HOST,
+                    params: {
+                        type: 'business'
+                    },
+                    query: {
+                        ...this.$route.query,
+                        targetModules: targetModules.join(',')
+                    }
+                })
+            },
             resizeHandler () {
                 this.$nextTick(() => {
                     const scroller = this.$el.parentElement
@@ -344,13 +380,10 @@
             handleTabClick (tab) {
                 this.tab.active = tab.id
             },
-            handleModuleClick () {
-                if (this.type !== 'idle') {
-                    return false
-                }
+            handleChangeModule () {
                 this.dialog.props = {
-                    moduleType: 'idle',
-                    title: this.$t('转移主机到业务模块'),
+                    moduleType: this.type,
+                    title: this.type === 'idle' ? this.$t('转移主机到空闲模块') : this.$t('转移主机到业务模块'),
                     defaultChecked: this.targetModules
                 }
                 this.dialog.width = 720
@@ -398,7 +431,7 @@
             },
             redirect () {
                 this.$router.replace({
-                    name: 'businessTopologyNew',
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
                         node: `${this.$route.query.sourceModel}-${this.$route.query.sourceId}`
                     }
@@ -426,6 +459,14 @@
                 font-weight: bold;
             }
         }
+        .info-options {
+            margin-bottom: 8px;
+            .option-icon {
+                font-size: 14px;
+                display: inline;
+                vertical-align: initial;
+            }
+        }
     }
     .module-list {
         font-size: 0;
@@ -441,8 +482,13 @@
             border-radius: 13px;
             color: $textColor;
             font-size: 12px;
-            cursor: pointer;
             @include ellipsis;
+            &.is-business-module {
+                padding: 0 20px 0 25px;
+                &.has-remove-icon {
+                    padding: 0 30px 0 25px;
+                }
+            }
             & + .module-item {
                 margin-left: 10px;
             }
@@ -459,6 +505,40 @@
                 color: #fff;
                 background-color: rgba(0, 0, 0, 0.53);
                 text-align: center;
+                cursor: pointer;
+            }
+            .module-icon {
+                position: absolute;
+                left: 2px;
+                top: 2px;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                line-height: 20px;
+                text-align: center;
+                color: #FFF;
+                font-size: 12px;
+                background-color: #C4C6CC;
+            }
+            .module-remove {
+                position: absolute;
+                right: 4px;
+                top: 4px;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                text-align: center;
+                line-height: 16px;
+                color: #FFF;
+                font-size: 0px;
+                background-color: #C4C6CC;
+                cursor: pointer;
+                &:before {
+                    display: inline-block;
+                    vertical-align: middle;
+                    font-size: 20px;
+                    transform: translateX(-2px) scale(.5);
+                }
             }
         }
     }
