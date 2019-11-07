@@ -64,7 +64,7 @@ func (ih *IAMHandler) diffAndSyncInstances(header http.Header, taskName string, 
 	if blog.V(5) {
 		blog.InfoJSON("task: %s, count: %d, iam realResources is: %v", taskName, len(realResources), realResources)
 	}
-	return ih.diffAndSyncCore(taskName, realResources, iamIDPrefix, resources, skipDeregister)
+	return ih.diffAndSyncCore(taskName, realResources, resources, skipDeregister)
 }
 
 func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribute, iamIDPrefix string, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
@@ -76,10 +76,10 @@ func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribut
 	if blog.V(5) {
 		blog.InfoJSON("getIamResources by %s result is: %s", ra, iamResources)
 	}
-	return ih.diffAndSyncCore(taskName, iamResources, iamIDPrefix, resources, skipDeregister)
+	return ih.diffAndSyncCore(taskName, iamResources, resources, skipDeregister)
 }
 
-func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.BackendResource, iamIDPrefix string, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
+func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.BackendResource, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
 	// check final resource type related with resourceID
 	dryRunResources, err := ih.authManager.Authorize.DryRunRegisterResource(context.Background(), resources...)
 	if err != nil {
@@ -140,7 +140,7 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 			}
 		} else {
 			needRegister = append(needRegister, resource)
-            blog.Infof("need register resource, type: %s, name: %s, id: %d", resource.Type, resource.Name, resource.InstanceID)
+			blog.Infof("need register resource, type: %s, name: %s, id: %d", resource.Type, resource.Name, resource.InstanceID)
 		}
 	}
 
@@ -177,9 +177,9 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 		if iamResourceKeyMap[resourceKey] == 0 {
 			needDeregister = append(needDeregister, iamResource)
 			if len(iamResource) != 0 {
-			    blog.Infof("need deregister, type: %s, name: %s, id: %d", iamResource[0].ResourceType, 
-			        iamResource[0].ResourceName, iamResource[0].ResourceID)
-            }
+				blog.Infof("need deregister, type: %s, name: %s, id: %d", iamResource[0].ResourceType,
+					iamResource[0].ResourceName, iamResource[0].ResourceID)
+			}
 		}
 	}
 

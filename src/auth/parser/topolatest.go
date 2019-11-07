@@ -77,6 +77,12 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
+		if len(model) != 1 {
+			ps.err = fmt.Errorf("got mismatch object[%s] count: %d, should be 1", ps.RequestCtx.Elements[5], len(model))
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -1325,6 +1331,10 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()})
 		if err != nil {
 			ps.err = err
+			return ps
+		}
+		if len(model) != 1 {
+			ps.err = fmt.Errorf("got mismatch object count: %d, should be 1", len(model))
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{

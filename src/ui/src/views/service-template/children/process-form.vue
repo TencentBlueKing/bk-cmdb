@@ -238,19 +238,6 @@
             hasChange () {
                 return !!Object.keys(this.changedValues()).length
             },
-            filterChangedValues () {
-                const filterValues = {}
-                const changedData = this.changedValues()
-                for (const propertyId in changedData) {
-                    filterValues[propertyId] = {}
-                    Object.keys(changedData[propertyId]).forEach(key => {
-                        if (changedData[propertyId][key] !== this.refrenceValues[propertyId][key]) {
-                            filterValues[propertyId][key] = changedData[propertyId][key]
-                        }
-                    })
-                }
-                return filterValues
-            },
             checkScrollbar () {
                 const $layout = this.$el
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
@@ -363,7 +350,7 @@
                             })
                         }
                     } else if (result) {
-                        this.$emit('on-submit', this.values, this.filterChangedValues(), this.type)
+                        this.$emit('on-submit', this.values, this.changedValues(), this.type)
                     } else {
                         this.uncollapseGroup()
                     }
@@ -404,6 +391,8 @@
                         this.values[property['bk_property_id']]['value'] = defaultValue
                     } else if (['bool'].includes(type)) {
                         this.values[property['bk_property_id']]['value'] = false
+                    } else if (['int'].includes(type)) {
+                        this.values[property['bk_property_id']]['value'] = null
                     } else {
                         this.values[property['bk_property_id']]['value'] = ''
                     }

@@ -28,20 +28,14 @@
                     v-bk-tooltips="$t('拓扑显示设置')"
                     @click="showSlider('theDisplay')">
                 </i>
-                <div class="topo-example" v-if="!isAdminView">
-                    <p class="example-item">
-                        <i></i>
-                        <span>{{$t('业务私有模型')}}</span>
-                    </p>
-                    <p class="example-item">
-                        <i></i>
-                        <span>{{$t('公有模型')}}</span>
-                    </p>
-                </div>
-                <div class="topo-example" v-else>
-                    <p class="example-item">
+                <div class="topo-example">
+                    <p class="example-item built-in">
                         <i></i>
                         <span>{{$t('内置模型')}}</span>
+                    </p>
+                    <p class="example-item custom">
+                        <i></i>
+                        <span>{{$t('自定义模型')}}</span>
                     </p>
                 </div>
             </div>
@@ -68,7 +62,7 @@
                                     <i :class="[
                                         model['bk_obj_icon'],
                                         {
-                                            'is-public': !$tools.getMetadataBiz(model)
+                                            'is-public': model.ispre
                                         }
                                     ]">
                                     </i>
@@ -903,7 +897,7 @@
                             image: {
                                 unselected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                     name: node.data['node_name'],
-                                    iconColor: this.$tools.getMetadataBiz(model) ? '#3c96ff' : '#868b97',
+                                    iconColor: model.ispre ? '#868b97' : '#3c96ff',
                                     backgroundColor: '#fff'
                                 }))}`,
                                 selected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
@@ -1150,11 +1144,11 @@
             .example-item {
                 line-height: 30px;
                 font-size: 0;
-                &:first-child i{
-                    background: $cmdbBorderFocusColor;
-                }
-                &:last-child i{
+                &.built-in i{
                     background: #868b97;
+                }
+                &.custom i{
+                    background: $cmdbBorderFocusColor;
                 }
                 i {
                     display: inline-block;
