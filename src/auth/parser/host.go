@@ -304,11 +304,8 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
-		var bizID int64
-		bizIDVal := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField)
-		if bizIDVal.Exists() {
-			bizID = bizIDVal.Int()
-		} else {
+		bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
+		if bizID == 0 {
 			var err error
 			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 			if err != nil {
