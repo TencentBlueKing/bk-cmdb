@@ -275,6 +275,7 @@ const (
 	findBizHostsWithoutAppPattern     = "/api/v3/hosts/list_hosts_without_app"
 	findHostsDetailsPattern           = "/api/v3/hosts/search/asstdetail"
 	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
+	updateHostPropertyBatchPattern    = "/api/v3/hosts/property/batch"
 	findHostsWithModulesPattern       = "/api/v3/hosts/findmany/modulehost"
 )
 
@@ -622,6 +623,21 @@ func (ps *parseStream) host() *parseStream {
 	if ps.hitPattern(updateHostInfoBatchPattern, http.MethodPut) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type: meta.HostInstance,
+					// Action: meta.UpdateMany,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// update hosts property batch. but can not get the exactly host id.
+	if ps.hitPattern(updateHostPropertyBatchPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type: meta.HostInstance,
 					// Action: meta.UpdateMany,

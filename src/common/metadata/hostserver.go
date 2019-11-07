@@ -357,3 +357,13 @@ type CloudAreaParameter struct {
 	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
 	Page      BasePage      `json:"page" bson:"page" field:"page"`
 }
+
+// UpdateHostPropertyBatchParameter batch update host property parameter
+type UpdateHostPropertyBatchParameter struct {
+	Update []updateHostProperty `json:"update"`
+}
+
+type updateHostProperty struct {
+	HostID     int64                  `json:"bk_host_id"`
+	Properties map[string]interface{} `json:"properties"`
+}
