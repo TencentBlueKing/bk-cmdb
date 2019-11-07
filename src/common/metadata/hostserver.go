@@ -401,3 +401,9 @@ type HostTransferPreview struct {
 	ToRemoveFromModules []RemoveFromModuleInfo `field:"to_remove_from_modules" json:"to_remove_from_modules"`
 	ToAddToModules      []AddToModuleInfo      `field:"to_add_to_modules" json:"to_add_to_modules"`
 }
+
+type UpdateHostCloudAreaFieldOption struct {
+	BizID   int64   `field:"bk_biz_id" json:"bk_biz_id" mapstructure:"bk_biz_id"`
+	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" mapstructure:"bk_host_ids"`
+	CloudID int64   `field:"bk_cloud_id" json:"bk_cloud_id" mapstructure:"bk_cloud_id"`
+}

@@ -91,6 +91,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/add").To(s.AddHost))
 	// api.Route(api.POST("/host/add/agent").To(s.AddHostFromAgent))
 	api.Route(api.POST("/hosts/sync/new/host").To(s.NewHostSyncAppTopo))
+	api.Route(api.POST("/updatemany/hosts/cloudarea_field").To(s.UpdateHostCloudAreaField))
 
 	// host favorites
 	api.Route(api.POST("/hosts/favorites/search").To(s.ListHostFavourites))
