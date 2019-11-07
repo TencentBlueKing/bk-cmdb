@@ -77,7 +77,7 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 	}
 	if parameter.Page.Limit > common.BKMaxPageLimit {
 		blog.Errorf("ListBizHosts failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageLimit, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommPageLimitIsExceeded)})
 		return
 	}
 	option := meta.ListHosts{
@@ -118,7 +118,7 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 	}
 	if parameter.Page.Limit > common.BKMaxPageLimit {
 		blog.Errorf("ListHostsWithNoBiz failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageLimit, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommPageLimitIsExceeded)})
 		return
 	}
 	option := meta.ListHosts{
@@ -165,7 +165,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	}
 	if parameter.Page.Limit > common.BKMaxPageLimit {
 		blog.Errorf("ListBizHosts failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageLimit, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommPageLimitIsExceeded)})
 		return
 	}
 
@@ -175,22 +175,22 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Page:               parameter.Page,
 	}
-	data, err := s.CoreAPI.CoreService().Host().ListHosts(ctx, header, option)
+	hosts, err := s.CoreAPI.CoreService().Host().ListHosts(ctx, header, option)
 	if err != nil {
 		blog.Errorf("find host failed, err: %s, input:%#v, rid:%s", err.Error(), parameter, rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
 		return
 	}
 
-	if len(data.Info) == 0 {
-		result := meta.NewSuccessResponse(data)
+	if len(hosts.Info) == 0 {
+		result := meta.NewSuccessResponse(hosts)
 		_ = resp.WriteEntity(result)
 		return
 	}
 
 	// search all hosts' host module relations
 	hostIDs := make([]int64, 0)
-	for _, host := range data.Info {
+	for _, host := range hosts.Info {
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			blog.ErrorJSON("host: %s bk_host_id field invalid, rid:%s", host, rid)
@@ -205,7 +205,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	}
 	relations, err := srvData.lgc.GetConfigByCond(srvData.ctx, relationCond)
 	if nil != err {
-		blog.ErrorJSON("read host module relation error: %s, input: %s, rid: %s", err, data, srvData.rid)
+		blog.ErrorJSON("read host module relation error: %s, input: %s, rid: %s", err, hosts, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
@@ -270,7 +270,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
-	moduleMap := make(map[int64]interface{})
+	moduleMap := make(map[int64]string)
 	for _, module := range modules.Data.Info {
 		moduleID, err := module.Int64(common.BKModuleIDField)
 		if err != nil {
@@ -288,34 +288,37 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	}
 
 	// format the output
-	hosts := meta.ListHostResult{
-		Count: data.Count,
+	hostTopos := meta.HostTopoResult{
+		Count: hosts.Count,
 	}
-	for _, host := range data.Info {
-		hostTopo := make(map[string]interface{})
-		hostTopo["host"] = host
-		topos := make([]interface{}, 0)
+	for _, host := range hosts.Info {
+		hostTopo := meta.HostTopo{
+			Host: host,
+		}
+		topos := make([]meta.Topo, 0)
 		hostID, _ := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if setModule, ok := relation[hostID]; ok {
 			for setID, moduleIDs := range setModule {
-				topo := make(map[string]interface{})
-				topo[common.BKSetIDField] = setID
-				topo[common.BKSetNameField] = setMap[setID]
-				modules := make([]interface{}, 0)
+				topo := meta.Topo{
+					SetID:   setID,
+					SetName: setMap[setID],
+				}
+				modules := make([]meta.Module, 0)
 				for _, moduleID := range moduleIDs {
-					module := make(map[string]interface{})
-					module[common.BKModuleIDField] = moduleID
-					module[common.BKModuleNameField] = moduleMap[moduleID]
+					module := meta.Module{
+						ModuleID:   moduleID,
+						ModuleName: moduleMap[moduleID],
+					}
 					modules = append(modules, module)
 				}
-				topo["module"] = modules
+				topo.Module = modules
 				topos = append(topos, topo)
 			}
 		}
-		hostTopo["topo"] = topos
-		hosts.Info = append(hosts.Info, hostTopo)
+		hostTopo.Topo = topos
+		hostTopos.Info = append(hostTopos.Info, hostTopo)
 	}
 
-	result := meta.NewSuccessResponse(hosts)
+	result := meta.NewSuccessResponse(hostTopos)
 	_ = resp.WriteEntity(result)
 }
