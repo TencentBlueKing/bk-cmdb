@@ -2,6 +2,7 @@ package host_server_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -1060,6 +1061,115 @@ var _ = Describe("host test", func() {
 	})
 })
 
+var _ = Describe("list_hosts_topo test", func() {
+	It("list_hosts_topo", func() {
+		test.ClearDatabase()
+
+		By("create biz cc_biz_test")
+		bizInput := map[string]interface{}{
+			"life_cycle":        "2",
+			"language":          "1",
+			"bk_biz_maintainer": "admin",
+			"bk_biz_name":       "cc_biz_test",
+			"time_zone":         "Africa/Accra",
+		}
+		bizRsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, bizInput)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(bizRsp.Result).To(Equal(true))
+		bizId := int64(bizRsp.Data[common.BKAppIDField].(float64))
+
+		By("create set cc_set")
+		setInput := mapstr.MapStr{
+			"bk_set_name":         "cc_set",
+			"bk_parent_id":        bizId,
+			"bk_supplier_account": "0",
+			"bk_biz_id":           bizId,
+			"bk_service_status":   "1",
+			"bk_set_env":          "3",
+		}
+		setRsp, err := instClient.CreateSet(context.Background(), strconv.FormatInt(bizId, 10), header, setInput)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(setRsp.Result).To(Equal(true))
+		setId := int64(setRsp.Data[common.BKSetIDField].(float64))
+
+		By("create module cc_module")
+		moduleInput := map[string]interface{}{
+			"bk_module_name":      "cc_module",
+			"bk_parent_id":        setId,
+			"service_category_id": 2,
+			"service_template_id": 0,
+		}
+		moduleRsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, moduleInput)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(moduleRsp.Result).To(Equal(true))
+		moduleId1 := int64(moduleRsp.Data[common.BKModuleIDField].(float64))
+
+		By("create module cc_module1")
+		moduleInput1 := map[string]interface{}{
+			"bk_module_name":      "cc_module1",
+			"bk_parent_id":        setId,
+			"service_category_id": 2,
+			"service_template_id": 0,
+		}
+		moduleRsp1, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, moduleInput1)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(moduleRsp1.Result).To(Equal(true))
+		moduleId2 := int64(moduleRsp1.Data[common.BKModuleIDField].(float64))
+
+		By("add host using api")
+		hostInput := map[string]interface{}{
+			"bk_biz_id": bizId,
+			"host_info": map[string]interface{}{
+				"4": map[string]interface{}{
+					"bk_host_innerip": "1.0.0.1",
+				},
+				"5": map[string]interface{}{
+					"bk_host_innerip": "1.0.0.2",
+				},
+			},
+		}
+		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(true))
+
+		By("search hosts")
+		searchInput := &params.HostCommonSearch{
+			AppID: int(bizId),
+			Page: params.PageInfo{
+				Sort: common.BKHostIDField,
+			},
+		}
+		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		hostId1 := int64(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"].(float64))
+		hostId2 := int64(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"].(float64))
+
+		By("transfer host module")
+		transferInput := map[string]interface{}{
+			"bk_biz_id": bizId,
+			"bk_host_id": []int64{
+				hostId1,
+			},
+			"bk_module_id": []int64{
+				moduleId1,
+				moduleId2,
+			},
+			"is_increment": true,
+		}
+		transferRsp, err := hostServerClient.HostModuleRelation(context.Background(), header, transferInput)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(transferRsp.Result).To(Equal(true))
+
+		By("list hosts topo")
+		rsp, err := hostServerClient.ListBizHostsTopo(context.Background(), header, bizId, &metadata.ListHostsWithNoBizParameter{Page: metadata.BasePage{Sort: common.BKHostIDField}})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		j, err := json.Marshal(rsp.Data)
+		Expect(j).To(MatchRegexp(fmt.Sprintf(`\{"count":2,"info":\[\{"host":\{.*"bk_host_id":%d.*\},"topo":\[\{"bk_set_id":%d,"bk_set_name":"cc_set","module":\[\{"bk_module_id":%d,"bk_module_name":"cc_module"\},\{"bk_module_id":%d,"bk_module_name":"cc_module1"\}\]\}\]\},\{"host":\{.*"bk_host_id":%d.*\}\]\}`, hostId1, setId, moduleId1, moduleId2, hostId2)))
+	})
+})
+
 var _ = Describe("batch_update_host test", func() {
 	It("batch_update_host", func() {
 		test.ClearDatabase()
@@ -1098,7 +1208,7 @@ var _ = Describe("batch_update_host test", func() {
 					common.BKHostIDField: hostId1,
 					"properties": map[string]interface{}{
 						"bk_host_name": "batch_update1",
-						"operator":  "admin",
+						"operator":     "admin",
 						"bk_comment":   "test",
 						"bk_isp_name":  "1",
 					},
