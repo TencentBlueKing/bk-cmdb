@@ -147,7 +147,7 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/findmany/meta/hosts/modules/search", s.GetHostModulesIDs, nil)
 
 	s.addAction(http.MethodPost, "/findmany/hosts/list_hosts", s.ListHosts, nil)
-	s.addAction(http.MethodPost, "/updatemany/hosts/cloudarea_field", s.UpdateHostCloudAreaField, nil)
+	s.addAction(http.MethodPut, "/updatemany/hosts/cloudarea_field", s.UpdateHostCloudAreaField, nil)
 }
 
 func (s *coreService) initCloudSync() {
