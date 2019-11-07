@@ -276,7 +276,7 @@ const (
 	findHostsDetailsPattern           = "/api/v3/hosts/search/asstdetail"
 	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
 	updateHostPropertyBatchPattern    = "/api/v3/hosts/property/batch"
-	findHostsWithModulesPattern       = "/api/v3/hosts/findmany/modulehost"
+	findHostsWithModulesPattern       = "/api/v3/findmany/modulehost"
 )
 
 var (
@@ -304,13 +304,20 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
-			return ps
+		var bizID int64
+		bizIDVal := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField)
+		if bizIDVal.Exists() {
+			bizID = bizIDVal.Int()
+		} else {
+			var err error
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
+				return ps
+			}
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
