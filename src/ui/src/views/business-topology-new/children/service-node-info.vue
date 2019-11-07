@@ -72,9 +72,15 @@
                 </cmdb-auth>
                 <cmdb-auth :auth="$authResources({ type: $OPERATION.D_TOPO })">
                     <template slot-scope="{ disabled }">
-                        <bk-button class="btn-delete"
+                        <span class="inline-block-middle" v-if="moduleFromSetTemplate"
+                            v-bk-tooltips="$t('由集群模板创建的模块无法删除')">
+                            <bk-button class="btn-delete" disabled>
+                                {{$t('删除节点')}}
+                            </bk-button>
+                        </span>
+                        <bk-button class="btn-delete" v-else
                             theme="default"
-                            :disabled="disabled || moduleFromSetTemplate"
+                            :disabled="disabled"
                             @click="handleDelete">
                             {{$t('删除节点')}}
                         </bk-button>
@@ -117,8 +123,12 @@
 
 <script>
     export default {
+        props: {
+            active: Boolean
+        },
         data () {
             return {
+                needRefresh: false,
                 type: 'details',
                 properties: [],
                 disabledProperties: [],
@@ -193,28 +203,42 @@
             modelId: {
                 immediate: true,
                 handler (modelId) {
-                    if (modelId) {
-                        this.type = 'details'
-                        this.init()
+                    if (modelId && this.active) {
+                        this.needRefresh = false
+                        this.initProperties()
+                    } else {
+                        this.needRefresh = true
                     }
                 }
             },
             selectedNode: {
                 immediate: true,
-                async handler (node) {
-                    if (node) {
-                        this.type = 'details'
-                        await this.getInstance()
-                        if (this.withSetTemplate) {
-                            this.getDiffTemplateAndInstances()
-                        }
-                        this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
+                handler (node) {
+                    if (node && this.active) {
+                        this.needRefresh = false
+                        this.getNodeDetails()
+                    } else {
+                        this.needRefresh = true
+                    }
+                }
+            },
+            active: {
+                immediate: true,
+                handler (value) {
+                    if (value && this.needRefresh) {
+                        this.needRefresh = false
+                        this.refresh()
                     }
                 }
             }
         },
         methods: {
-            async init () {
+            refresh () {
+                this.initProperties()
+                this.getNodeDetails()
+            },
+            async initProperties () {
+                this.type = 'details'
                 try {
                     const [
                         properties,
@@ -230,6 +254,14 @@
                     this.properties = []
                     this.propertyGroups = []
                 }
+            },
+            async getNodeDetails () {
+                this.type = 'details'
+                await this.getInstance()
+                if (this.withSetTemplate) {
+                    this.getDiffTemplateAndInstances()
+                }
+                this.disabledProperties = this.selectedNode.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
             },
             async getProperties () {
                 let properties = []
@@ -694,9 +726,8 @@
     .template-info {
         font-size: 14px;
         color: #63656e;
-        padding: 10px 0 26px 36px;
-        margin: 10px 0 4px;
-        border-bottom: 1px solid #dcdee5;
+        padding: 20px 0 20px 36px;
+        border-bottom: 1px solid #F0F1F5;
         .info-item {
             width: 50%;
             max-width: 400px;

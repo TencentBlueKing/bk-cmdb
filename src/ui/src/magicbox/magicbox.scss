@@ -140,6 +140,7 @@
             height: 58px;
             .bk-tab-label-item {
                 line-height: 58px;
+                min-width: auto;
                 &.active {
                     background-color: transparent;
                 }

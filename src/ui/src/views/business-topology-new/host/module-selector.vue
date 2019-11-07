@@ -6,7 +6,6 @@
             <bk-input class="tree-filter" right-icon="icon-search" v-model="filter" :placeholder="$t('请输入关键词')"></bk-input>
             <bk-big-tree ref="tree" class="topology-tree"
                 :default-expand-all="moduleType === 'idle'"
-                :check-on-click="true"
                 :options="{
                     idKey: getNodeId,
                     nameKey: 'bk_inst_name',
@@ -200,13 +199,17 @@
             // 选择空闲模块
             handleNodeClick (node) {
                 const data = node.data
-                if (this.moduleType !== 'idle' || data.bk_obj_id !== 'module') {
+                if (data.bk_obj_id !== 'module') {
                     return false
                 }
-                this.checked = [node]
+                if (this.moduleType === 'idle') {
+                    this.checked = [node]
+                } else {
+                    this.$refs.tree.setChecked(node.id, { checked: !node.checked, emitEvent: true })
+                }
             },
             handleNodeCheck (checked, node) {
-                if (node.data.bk_obj_id !== 'module') {
+                if (this.moduleType === 'idle' || node.data.bk_obj_id !== 'module') {
                     return false
                 }
                 this.checked = checked.map(id => this.$refs.tree.getNodeById(id))

@@ -1,7 +1,9 @@
 import Meta from '@/router/meta'
 import {
     MENU_BUSINESS,
-    MENU_BUSINESS_TRANSFER_HOST
+    MENU_BUSINESS_TRANSFER_HOST,
+    MENU_BUSINESS_HOST_AND_SERVICE,
+    MENU_BUSINESS_HOST_DETAILS
 } from '@/dictionary/menu-symbol'
 
 import {
@@ -39,8 +41,8 @@ const OPERATION = {
 }
 
 export default [{
-    name: 'businessTopologyNew',
-    path: 'topologyNew',
+    name: MENU_BUSINESS_HOST_AND_SERVICE,
+    path: 'index',
     component: () => import('./index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
@@ -60,5 +62,23 @@ export default [{
     component: () => import('@/views/host-operation/index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS
+    })
+}, {
+    name: MENU_BUSINESS_HOST_DETAILS,
+    path: ':business/host/:id',
+    component: () => import('@/views/host-details/index'),
+    meta: new Meta({
+        owner: MENU_BUSINESS,
+        menu: {
+            i18n: '主机详情'
+        },
+        auth: {
+            view: null,
+            operation: { U_HOST, D_SERVICE_INSTANCE },
+            authScope: 'business'
+        },
+        checkAvailable: (to, from, app) => {
+            return parseInt(to.params.business) === app.$store.getters['objectBiz/bizId']
+        }
     })
 }]

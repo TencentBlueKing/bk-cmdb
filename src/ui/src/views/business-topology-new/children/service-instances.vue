@@ -1,6 +1,6 @@
 <template>
-    <div class="service-layout" v-bkloading="{ isLoading: $loading('getModuleServiceInstances') }">
-        <template v-if="instances.length || inSearch">
+    <div class="service-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) || inSearch }">
+        <template v-if="instances.length">
             <div class="options">
                 <bk-checkbox class="options-checkall"
                     :size="16"
@@ -103,8 +103,7 @@
                 </div>
             </div>
         </template>
-        <service-instance-empty v-else
-            @create-instance-success="handleCreateInstanceSuccess">
+        <service-instance-empty v-else>
         </service-instance-empty>
         <bk-sideslider
             v-transfer-dom
@@ -158,12 +157,6 @@
                 <bk-button theme="default" class="ml5" @click.stop="handleCloseBatchLable">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
-
-        <host-selector
-            :visible.sync="visible"
-            :module-instance="currentModule || {}"
-            @host-selected="handleSelectHost">
-        </host-selector>
     </div>
 </template>
 
@@ -172,14 +165,12 @@
     import serviceInstanceEmpty from './service-instance-empty.vue'
     import batchEditLabel from './batch-edit-label.vue'
     import cmdbEditLabel from './edit-label.vue'
-    import hostSelector from '@/components/ui/selector/host.vue'
     export default {
         components: {
             serviceInstanceTable,
             serviceInstanceEmpty,
             batchEditLabel,
-            cmdbEditLabel,
-            hostSelector
+            cmdbEditLabel
         },
         data () {
             return {
@@ -234,13 +225,19 @@
                     visiable: false,
                     list: []
                 },
-                isCarryParams: false,
                 topoStatus: false,
                 historyLabels: {},
                 processBindIp: [],
                 bindIp: '',
-                visible: false,
-                templates: []
+                templates: [],
+                hasInitFilter: false,
+                needRefresh: false,
+                request: {
+                    property: Symbol('property'),
+                    propertyGroups: Symbol('propertyGroups'),
+                    instance: Symbol('instance'),
+                    label: Symbol('label')
+                }
             }
         },
         computed: {
@@ -308,18 +305,7 @@
         watch: {
             async currentNode (node) {
                 if (node && node.data.bk_obj_id === 'module') {
-                    if (!this.isCarryParams) {
-                        this.searchSelectData = []
-                    }
-                    this.pagination.current = 1
-                    await this.getServiceInstances()
-                    this.getTemplate(node.data.service_template_id)
-                    const timer = setTimeout(() => {
-                        if (node.data.service_template_id && this.instances.length) {
-                            this.getServiceInstanceDifferences()
-                        }
-                        clearTimeout(timer)
-                    }, 0)
+                    this.getData()
                 }
             },
             bindIp (value) {
@@ -334,7 +320,7 @@
             this.getProcessProperties()
             this.getProcessPropertyGroups()
             if (this.targetInstanceName) {
-                this.isCarryParams = true
+                this.hasInitFilter = true
                 this.searchSelectData.push({
                     'name': '服务实例名',
                     'id': 0,
@@ -347,6 +333,21 @@
             }
         },
         methods: {
+            async getData () {
+                this.needRefresh = false
+                const node = this.currentNode
+                if (!this.hasInitFilter) {
+                    this.searchSelectData = []
+                }
+                this.pagination.current = 1
+                await this.getServiceInstances()
+                if (this.withTemplate) {
+                    this.getTemplate(node.data.service_template_id)
+                }
+                if (this.instances.length) {
+                    this.getServiceInstanceDifferences()
+                }
+            },
             async getProcessProperties () {
                 try {
                     const action = 'objectModelProperty/searchObjectAttribute'
@@ -356,7 +357,7 @@
                             bk_supplier_account: this.$store.getters.supplierAccount
                         },
                         config: {
-                            requestId: 'get_service_process_properties',
+                            requestId: this.request.property,
                             fromCache: true
                         }
                     })
@@ -372,7 +373,7 @@
                         objId: 'process',
                         params: {},
                         config: {
-                            requestId: 'get_service_process_property_groups',
+                            requestId: this.request.propertyGroups,
                             fromCache: true
                         }
                     })
@@ -413,7 +414,7 @@
                             selectors: this.getSelectorParams()
                         }, { injectBizId: true }),
                         config: {
-                            requestId: 'getModuleServiceInstances',
+                            requestId: this.request.instance,
                             cancelPrevious: true
                         }
                     })
@@ -421,7 +422,7 @@
                         this.pagination.current -= 1
                         this.getServiceInstances()
                     }
-                    this.isCarryParams = false
+                    this.hasInitFilter = false
                     this.checked = []
                     this.isCheckAll = false
                     this.isExpandAll = false
@@ -479,7 +480,7 @@
                     const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
                         params: this.$injectMetadata({}, { injectBizId: true }),
                         config: {
-                            requestId: 'getHistoryLabel',
+                            requestId: this.request.label,
                             cancelPrevious: true
                         }
                     })
@@ -723,9 +724,6 @@
                     }
                 })
             },
-            handleCreateInstanceSuccess () {
-                this.getServiceInstances()
-            },
             handleCheckALL (checked) {
                 this.searchSelectData = []
                 this.isCheckAll = checked
@@ -917,44 +915,6 @@
                         }
                     })
                     this.templates = data.info
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            async handleSelectHost (checked) {
-                try {
-                    const addNum = checked.length
-                    await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
-                        params: this.$injectMetadata({
-                            name: this.currentModule.bk_module_name,
-                            bk_module_id: this.currentModule.bk_module_id,
-                            service_template_id: this.currentModule.service_template_id,
-                            instances: checked.map(hostId => {
-                                return {
-                                    bk_host_id: hostId,
-                                    processes: this.templates.map(template => {
-                                        const processInfo = {}
-                                        Object.keys(template.property).forEach(key => {
-                                            processInfo[key] = template.property[key].value
-                                        })
-                                        return {
-                                            process_template_id: template.id,
-                                            process_info: processInfo
-                                        }
-                                    })
-                                }
-                            })
-                        }, { injectBizId: true })
-                    })
-                    if (this.withTemplate) {
-                        this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count + addNum
-                        this.currentNode.parents.forEach(node => {
-                            node.data.service_instance_count = node.data.service_instance_count + addNum
-                        })
-                    }
-                    this.visible = false
-                    this.$success(this.$t('添加成功'))
-                    this.getServiceInstances()
                 } catch (e) {
                     console.error(e)
                 }

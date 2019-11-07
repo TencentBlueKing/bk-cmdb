@@ -799,7 +799,7 @@
     "克隆到": "Clone to",
     "当前主机": "Current host",
     "其他主机": "Other host",
-    "模板未定义进程": "Template named with {template} has not difine process, can not create service.",
+    "模板未定义进程": "Template named with {template} has not difine process.",
     "模板未定义进程提示": "You can add process in template fist or add host directly",
     "暂无符合条件的实例": "There are no matched instances with input condition",
     "删除模块提示": "Need to confirm that there is no service instance and host under the module.",

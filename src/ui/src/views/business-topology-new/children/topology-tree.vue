@@ -412,6 +412,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .tree-layout {
+        overflow: hidden;
+    }
     .tree-search {
         display: block;
         width: auto;

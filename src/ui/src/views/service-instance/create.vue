@@ -25,6 +25,7 @@
                     :source-processes="sourceProcesses"
                     :templates="templates"
                     :show-tips="showTips"
+                    :addible="!withTemplate"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
@@ -228,10 +229,6 @@
             async handleConfirm () {
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
-                    if (serviceInstanceTables.some(table => !table.processList.length)) {
-                        this.showTips = true
-                        return
-                    }
                     if (this.withTemplate) {
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
                             params: this.$injectMetadata({
@@ -250,6 +247,10 @@
                             }, { injectBizId: true })
                         })
                     } else {
+                        if (serviceInstanceTables.some(table => !table.processList.length)) {
+                            this.showTips = true
+                            return
+                        }
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
                             params: this.$injectMetadata({
                                 name: this.moduleInstance.bk_module_name,

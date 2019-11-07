@@ -4,9 +4,14 @@ import {
     MENU_RESOURCE,
     MENU_MODEL,
     MENU_ANALYSIS,
-    MENU_BUSINESS_HOST,
-    MENU_BUSINESS_SERVICE,
-    MENU_BUSINESS_ADVANCED,
+
+    MENU_BUSINESS_HOST_AND_SERVICE,
+    MENU_BUSINESS_CUSTOM_QUERY,
+    MENU_BUSINESS_SERVICE_TEMPLATE,
+    MENU_BUSINESS_SET_TEMPLATE,
+    MENU_BUSINESS_SERVICE_CATEGORY,
+    MENU_BUSINESS_CUSTOM_FIELDS,
+
     MENU_RESOURCE_EVENTPUSH,
     MENU_RESOURCE_MANAGEMENT,
     MENU_MODEL_MANAGEMENT,
@@ -24,6 +29,7 @@ import {
     analysisViews
 } from '@/views'
 
+/* eslint-disable-next-line */
 const getSubmenu = (views, symbol, pathPrefix = '') => {
     let temp
     try {
@@ -66,25 +72,35 @@ const menus = [{
     id: MENU_BUSINESS,
     i18n: '业务',
     menu: [{
-        id: 'businessTopologyNew',
+        id: MENU_BUSINESS_HOST_AND_SERVICE,
         i18n: '业务拓扑',
-        icon: 'icon-cc-square',
-        route: getMenuRoute(businessViews, 'businessTopologyNew', 'business')
-    }, {
-        id: MENU_BUSINESS_HOST,
-        i18n: '主机',
         icon: 'icon-cc-host',
-        submenu: getSubmenu(businessViews, MENU_BUSINESS_HOST, 'business')
+        route: getMenuRoute(businessViews, MENU_BUSINESS_HOST_AND_SERVICE, 'business')
     }, {
-        id: MENU_BUSINESS_SERVICE,
-        i18n: '服务',
-        icon: 'icon-cc-template-management',
-        submenu: getSubmenu(businessViews, MENU_BUSINESS_SERVICE, 'business')
+        id: MENU_BUSINESS_SERVICE_TEMPLATE,
+        i18n: '服务模板',
+        icon: 'icon-cc-service-template',
+        route: getMenuRoute(businessViews, MENU_BUSINESS_SERVICE_TEMPLATE, 'business')
     }, {
-        id: MENU_BUSINESS_ADVANCED,
-        i18n: '高级功能',
-        icon: 'icon-cc-nav-advanced-features',
-        submenu: getSubmenu(businessViews, MENU_BUSINESS_ADVANCED, 'business')
+        id: MENU_BUSINESS_SET_TEMPLATE,
+        i18n: '集群模板',
+        icon: 'icon-cc-set-template',
+        route: getMenuRoute(businessViews, MENU_BUSINESS_SET_TEMPLATE, 'business')
+    }, {
+        id: MENU_BUSINESS_SERVICE_CATEGORY,
+        i18n: '服务分类',
+        icon: 'icon-cc-nav-service-topo',
+        route: getMenuRoute(businessViews, MENU_BUSINESS_SERVICE_CATEGORY, 'business')
+    }, {
+        id: MENU_BUSINESS_CUSTOM_QUERY,
+        i18n: '动态分组',
+        icon: 'icon-cc-custom-query',
+        route: getMenuRoute(businessViews, MENU_BUSINESS_CUSTOM_QUERY, 'business')
+    }, {
+        id: MENU_BUSINESS_CUSTOM_FIELDS,
+        i18n: '自定义字段',
+        icon: 'icon-cc-custom-field',
+        route: getMenuRoute(businessViews, MENU_BUSINESS_CUSTOM_FIELDS, 'business')
     }]
 }, {
     id: MENU_RESOURCE,
