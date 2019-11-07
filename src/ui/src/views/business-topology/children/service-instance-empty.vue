@@ -122,7 +122,7 @@
                             service_template_id: this.moduleInstance.service_template_id
                         }),
                         config: {
-                            requestId: 'getBatchProcessTemplate',
+                            requestId: 'getBatchProcessTemplate_empty',
                             cancelPrevious: true
                         }
                     })
