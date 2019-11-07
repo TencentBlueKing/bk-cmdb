@@ -283,8 +283,7 @@
                             }
                         },
                         config: {
-                            requestId: 'getSourceAssocaition',
-                            fromCache: true
+                            requestId: 'getSourceAssocaition'
                         }
                     }),
                     this.searchObjectAssociation({
@@ -294,14 +293,12 @@
                             }
                         },
                         config: {
-                            requestId: 'getTargetAssocaition',
-                            fromCache: true
+                            requestId: 'getTargetAssocaition'
                         }
                     }),
                     this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
                         config: {
-                            requestId: 'getMainLineModels',
-                            fromCache: true
+                            requestId: 'getMainLineModels'
                         }
                     })
                 ]).then(([dataAsSource, dataAsTarget, mainLineModels]) => {

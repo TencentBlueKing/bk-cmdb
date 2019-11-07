@@ -427,6 +427,7 @@
                     params: this.$injectMetadata({
                         service_template_id: this.formData.templateId,
                         processes: this.processList.map(process => {
+                            delete process.sign_id
                             return {
                                 spec: process
                             }

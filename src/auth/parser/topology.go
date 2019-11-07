@@ -13,6 +13,7 @@
 package parser
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"github.com/tidwall/gjson"
 )
 
 func (ps *parseStream) topology() *parseStream {
@@ -1416,14 +1418,53 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 	}
 
 	if ps.hitPattern(updateObjectAttributeGroupPropertyPattern, http.MethodPut) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
+
+		if !gjson.GetBytes(ps.RequestCtx.Body, "data").Exists() {
+			ps.err = errors.New("invalid request format")
+			return ps
+		}
+
+		data := gjson.GetBytes(ps.RequestCtx.Body, "data").String()
+		groups := make([]metadata.PropertyGroupObjectAtt, 0)
+		if err := json.Unmarshal([]byte(data), &groups); err != nil {
+			ps.err = err
+			return ps
+		}
+
+		// TODO: confirm this later. especially with frontend.
+		// when biz's model auth is settled down, then revise this.
+		// bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		// if err != nil {
+		// 	ps.err = err
+		// 	return ps
+		// }
+
+		ps.Attribute.Resources = make([]meta.ResourceAttribute, 0)
+		for _, group := range groups {
+			model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: group.Condition.ObjectID})
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+
+			if len(model) != 1 {
+				ps.err = fmt.Errorf("got mismatch object[%s] count: %d, should be 1", group.Condition.ObjectID, len(model))
+				return ps
+			}
+
+			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Update,
 				},
-			},
+				// BusinessID: bizID,
+				Layers: []meta.Item{{
+					Type:       meta.Model,
+					InstanceID: model[0].ID,
+				}},
+			})
 		}
+
 		return ps
 	}
 
