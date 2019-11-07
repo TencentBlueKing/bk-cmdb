@@ -226,6 +226,17 @@ func (node *TopoInstanceNode) DeepFirstTraversal(f func(node *TopoInstanceNode))
 	f(node)
 }
 
+func (node *TopoInstanceNode) ToSimplify() *TopoInstanceNodeSimplify {
+	if node == nil {
+		return nil
+	}
+	return &TopoInstanceNodeSimplify{
+		ObjectID:     node.ObjectID,
+		InstanceID:   node.InstanceID,
+		InstanceName: node.InstanceName,
+	}
+}
+
 type TopoInstance struct {
 	ObjectID         string
 	InstanceID       int64
