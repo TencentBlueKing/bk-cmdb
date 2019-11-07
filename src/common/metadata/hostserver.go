@@ -359,8 +359,8 @@ type CloudAreaParameter struct {
 }
 
 type TopoNode struct {
-	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id"`
-	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" mapstructure:"bk_obj_id"`
+	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id" mapstructure:"bk_inst_id"`
 }
 
 type TransferHostWithAutoClearServiceInstanceOption struct {
