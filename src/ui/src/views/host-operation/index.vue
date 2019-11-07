@@ -23,7 +23,8 @@
                         :class="{
                             'is-business-module': type === 'business',
                             'has-remove-icon': type === 'business' && targetModules.length > 1
-                        }">
+                        }"
+                        :title="getModulePath(id)">
                         <span class="module-icon" v-if="type === 'business'">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
                         {{getModuleName(id)}}
                         <span class="module-remove bk-icon icon-close"
@@ -144,7 +145,8 @@
                 targetModules: [],
                 resources: [],
                 type: '',
-                confirmParams: {}
+                confirmParams: {},
+                moduleMap: {}
             }
         },
         computed: {
@@ -242,6 +244,7 @@
                             requestId: this.request.preview
                         }
                     )
+                    this.setModulePathInfo(data)
                     this.setCreateServiceInstance(data)
                     this.setDeletedServiceInstance(data)
                     if (this.type === 'remove') {
@@ -250,6 +253,31 @@
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            async setModulePathInfo (data) {
+                try {
+                    const moduleIds = []
+                    data.forEach(datum => {
+                        moduleIds.push(...datum.to_add_to_modules.map(datum => datum.bk_module_id))
+                        moduleIds.push(...datum.to_remove_from_modules.map(datum => datum.bk_module_id))
+                    })
+                    const uniqueModules = [...new Set(moduleIds)]
+                    const result = await this.$http.post(`find/topopath/biz/${this.bizId}`, {
+                        topo_nodes: uniqueModules.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
+                    })
+                    const moduleMap = {}
+                    result.nodes.forEach(node => {
+                        moduleMap[node.topo_node.bk_inst_id] = node.topo_path
+                    })
+                    this.moduleMap = Object.freeze(moduleMap)
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            getModulePath (id) {
+                const info = this.moduleMap[id] || []
+                const path = info.map(node => node.InstanceName).reverse().join(' / ')
+                return path
             },
             setCreateServiceInstance (data) {
                 const instanceInfo = []
@@ -302,7 +330,7 @@
                 })
                 const tab = this.tabList.find(tab => tab.id === 'deletedServiceInstance')
                 tab.props.info = Object.freeze(deletedServiceInstance)
-                this.setModuleInfo(deletedServiceInstance)
+                // this.setModuleInfo(deletedServiceInstance)
             },
             async setModuleInfo (data) {
                 try {
@@ -329,7 +357,9 @@
                 }
             },
             getModuleName (id) {
-                return (this.moduleInfo.find(module => module.bk_module_id === id) || {}).bk_module_name
+                const topoInfo = this.moduleMap[id] || []
+                const target = topoInfo.find(target => target.ObjectID === 'module' && target.InstanceID === id) || {}
+                return target.InstanceName
             },
             async setMoveToIdleHost (data) {
                 try {
@@ -475,13 +505,14 @@
             display: inline-block;
             vertical-align: middle;
             height: 26px;
-            max-width: 100px;
+            max-width: 150px;
             line-height: 24px;
             padding: 0 15px;
             border: 1px solid #C4C6CC;
             border-radius: 13px;
             color: $textColor;
             font-size: 12px;
+            cursor: default;
             @include ellipsis;
             &.is-business-module {
                 padding: 0 20px 0 25px;
