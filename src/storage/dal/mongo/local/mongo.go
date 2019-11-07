@@ -15,7 +15,7 @@ package local
 import (
 	"context"
 	"errors"
-	"fmt"
+	//"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -36,8 +36,8 @@ import (
 type Mongo struct {
 	dbc    *mongo.Client
 	dbname string
-	sess mongo.Session
-	tm *TxnManager
+	sess   mongo.Session
+	tm     *TxnManager
 }
 
 var _ dal.DB = new(Mongo)
@@ -61,7 +61,7 @@ func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
 	return &Mongo{
 		dbc:    client,
 		dbname: connStr.Database,
-		tm: &TxnManager{},
+		tm:     &TxnManager{},
 	}, nil
 }
 
@@ -81,6 +81,7 @@ func (c *Mongo) Clone() dal.DB {
 	nc := Mongo{
 		dbc:    c.dbc,
 		dbname: c.dbname,
+		tm:     c.tm,
 	}
 	return &nc
 }
@@ -196,9 +197,18 @@ func (f *Find) Limit(limit uint64) dal.Find {
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
 	// 设置ctx的Session对象,用来处理事务
-	ctx, err := f.Mongo.ContextWithSession(ctx)
-	if err != nil {
-		return err
+	se := &mongo.SessionExposer{}
+	if f.HasSession(ctx) {
+		sess, err := f.GetDistributedSession(ctx)
+		if err != nil {
+			return err
+		}
+		ctx = se.ContextWithSession(ctx, sess)
+		defer func() {
+			f.tm.SaveSession(sess)
+		}()
+	} else if f.sess != nil {
+		ctx = se.ContextWithSession(ctx, f.sess)
 	}
 
 	start := time.Now()
@@ -234,9 +244,18 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
 	// 设置ctx的Session对象,用来处理事务
-	ctx, err := f.Mongo.ContextWithSession(ctx)
-	if err != nil {
-		return err
+	se := &mongo.SessionExposer{}
+	if f.HasSession(ctx) {
+		sess, err := f.GetDistributedSession(ctx)
+		if err != nil {
+			return err
+		}
+		ctx = se.ContextWithSession(ctx, sess)
+		defer func() {
+			f.tm.SaveSession(sess)
+		}()
+	} else if f.sess != nil {
+		ctx = se.ContextWithSession(ctx, f.sess)
 	}
 
 	start := time.Now()
@@ -289,10 +308,6 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 	} else if f.sess != nil {
 		ctx = se.ContextWithSession(ctx, f.sess)
 	}
-	//ctx, err := f.ContextWithSession(ctx)
-	//if err != nil {
-	//	return uint64(0), err
-	//}
 
 	if f.filter == nil {
 		f.filter = bson.M{}
@@ -328,6 +343,21 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 
 // Update 更新数据
 func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
+	// 设置ctx的Session对象,用来处理事务
+	se := &mongo.SessionExposer{}
+	if c.HasSession(ctx) {
+		sess, err := c.GetDistributedSession(ctx)
+		if err != nil {
+			return err
+		}
+		ctx = se.ContextWithSession(ctx, sess)
+		defer func() {
+			c.tm.SaveSession(sess)
+		}()
+	} else if c.sess != nil {
+		ctx = se.ContextWithSession(ctx, c.sess)
+	}
+
 	data := bson.M{"$set": doc}
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
 	return err
@@ -335,6 +365,21 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 
 // Upsert 数据存在更新数据，否则新加数据
 func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interface{}) error {
+	// 设置ctx的Session对象,用来处理事务
+	se := &mongo.SessionExposer{}
+	if c.HasSession(ctx) {
+		sess, err := c.GetDistributedSession(ctx)
+		if err != nil {
+			return err
+		}
+		ctx = se.ContextWithSession(ctx, sess)
+		defer func() {
+			c.tm.SaveSession(sess)
+		}()
+	} else if c.sess != nil {
+		ctx = se.ContextWithSession(ctx, c.sess)
+	}
+
 	// set upsert option
 	upsert := true
 	replaceOpt := &options.UpdateOptions{
@@ -348,6 +393,21 @@ func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interfac
 
 // UpdateMultiModel 根据不同的操作符去更新数据
 func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
+	// 设置ctx的Session对象,用来处理事务
+	se := &mongo.SessionExposer{}
+	if c.HasSession(ctx) {
+		sess, err := c.GetDistributedSession(ctx)
+		if err != nil {
+			return err
+		}
+		ctx = se.ContextWithSession(ctx, sess)
+		defer func() {
+			c.tm.SaveSession(sess)
+		}()
+	} else if c.sess != nil {
+		ctx = se.ContextWithSession(ctx, c.sess)
+	}
+
 	data := bson.M{}
 	for _, item := range updateModel {
 		if _, ok := data[item.Op]; ok {
@@ -362,6 +422,21 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, up
 
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
+	// 设置ctx的Session对象,用来处理事务
+	se := &mongo.SessionExposer{}
+	if c.HasSession(ctx) {
+		sess, err := c.GetDistributedSession(ctx)
+		if err != nil {
+			return err
+		}
+		ctx = se.ContextWithSession(ctx, sess)
+		defer func() {
+			c.tm.SaveSession(sess)
+		}()
+	} else if c.sess != nil {
+		ctx = se.ContextWithSession(ctx, c.sess)
+	}
+
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).DeleteMany(ctx, filter)
 	return err
 }
@@ -405,7 +480,7 @@ func (c *Mongo) ContextWithSession(ctx context.Context) (context.Context, error)
 	}
 	// 如果context中有传递的事务信息，则用传递的会话
 	if opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption); ok {
-		info := &mongo.SessionInfo{SessionID:opt.SessionID, SessionState:opt.SessionState, TxnNumber:opt.TxnNumber}
+		info := &mongo.SessionInfo{SessionID: opt.SessionID, SessionState: opt.SessionState, TxnNumber: opt.TxnNumber}
 		return c.GetSameSessionContext(ctx, info)
 	}
 	return ctx, nil
@@ -436,7 +511,7 @@ func (c *Mongo) GetSameSessionContext(ctx context.Context, info *mongo.SessionIn
 // HasSession 判断context里是否有session信息
 func (c *Mongo) HasSession(ctx context.Context) bool {
 	_, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
-	return ok==true
+	return ok == true
 }
 
 // GetDistributedSession 获取context里用来做分布式事务的session
@@ -445,7 +520,12 @@ func (c *Mongo) GetDistributedSession(ctx context.Context) (mongo.Session, error
 	if !ok {
 		return nil, errors.New("context has no CCContextKeyJoinOption")
 	}
+
 	sess, err := c.dbc.StartSession()
+	if err != nil {
+		return nil, err
+	}
+	err = sess.StartTransaction()
 	if err != nil {
 		return nil, err
 	}
@@ -481,6 +561,7 @@ func (c *Mongo) StartSession() (dal.DB, error) {
 	}
 	m := c.Clone().(*Mongo)
 	m.sess = sess
+	c.tm.SaveSession(sess)
 	return m, err
 }
 
@@ -500,12 +581,11 @@ func (c *Mongo) StartTransaction(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		c.tm.SaveSession(sess)
-	}()
-	se := &mongo.SessionExposer{}
-	info, err := se.GetSessionInfo(sess)
-	fmt.Printf("***StartTransaction***:%#v, err:%v\n",info, err)
+	if c.HasSession(ctx) {
+		defer func() {
+			c.tm.SaveSession(sess)
+		}()
+	}
 	return sess.StartTransaction()
 }
 
@@ -515,9 +595,11 @@ func (c *Mongo) CommitTransaction(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		c.tm.SaveSession(sess)
-	}()
+	if c.HasSession(ctx) {
+		defer func() {
+			c.tm.SaveSession(sess)
+		}()
+	}
 	return sess.CommitTransaction(ctx)
 }
 
@@ -527,9 +609,11 @@ func (c *Mongo) AbortTransaction(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		c.tm.SaveSession(sess)
-	}()
+	if c.HasSession(ctx) {
+		defer func() {
+			c.tm.SaveSession(sess)
+		}()
+	}
 	return sess.AbortTransaction(ctx)
 }
 
@@ -559,7 +643,7 @@ func (c *Mongo) TxnInfo() (*types.Transaction, error) {
 		return nil, err
 	}
 
-	return &types.Transaction{SessionID:info.SessionID, SessionState:info.SessionState, TxnNumber:info.TxnNumber},nil
+	return &types.Transaction{SessionID: info.SessionID, SessionState: info.SessionState, TxnNumber: info.TxnNumber}, nil
 }
 
 // HasTable 判断是否存在集合  TOOD test
@@ -663,9 +747,18 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 // AggregateAll aggregate all operation
 func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
 	// 设置ctx的Session对象,用来处理事务
-	ctx, err := c.Mongo.ContextWithSession(ctx)
-	if err != nil {
-		return err
+	se := &mongo.SessionExposer{}
+	if c.HasSession(ctx) {
+		sess, err := c.GetDistributedSession(ctx)
+		if err != nil {
+			return err
+		}
+		ctx = se.ContextWithSession(ctx, sess)
+		defer func() {
+			c.tm.SaveSession(sess)
+		}()
+	} else if c.sess != nil {
+		ctx = se.ContextWithSession(ctx, c.sess)
 	}
 
 	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)
@@ -679,9 +772,18 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 // AggregateOne aggregate one operation
 func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
 	// 设置ctx的Session对象,用来处理事务
-	ctx, err := c.Mongo.ContextWithSession(ctx)
-	if err != nil {
-		return err
+	se := &mongo.SessionExposer{}
+	if c.HasSession(ctx) {
+		sess, err := c.GetDistributedSession(ctx)
+		if err != nil {
+			return err
+		}
+		ctx = se.ContextWithSession(ctx, sess)
+		defer func() {
+			c.tm.SaveSession(sess)
+		}()
+	} else if c.sess != nil {
+		ctx = se.ContextWithSession(ctx, c.sess)
 	}
 
 	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)

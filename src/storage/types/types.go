@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	//"configcenter/src/storage/dal"
 
 	"github.com/rentiansheng/bk_bson/bson"
 )
@@ -61,14 +60,6 @@ func (t Transaction) IntoHeader(header http.Header) http.Header {
 	tar.Set(common.BKHTTPCCTxnSessionState, t.SessionState)
 	return tar
 }
-
-//func (t Transaction) IntoContext(ctx context.Context) context.Context {
-//	return context.WithValue(ctx, common.CCContextKeyJoinOption, dal.JoinOption{
-//		SessionID: t.SessionID,
-//		SessionState: t.SessionState,
-//		TxnNumber: t.TxnNumber,
-//	})
-//}
 
 //func (t Transaction) IntoHeader(header http.Header) http.Header {
 //	tar := http.Header{}
