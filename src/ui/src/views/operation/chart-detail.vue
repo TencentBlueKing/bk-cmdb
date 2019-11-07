@@ -119,9 +119,8 @@
                     </div>
                     <div class="content-item">
                         <label class="label-text-x">
-                            <bk-popover placement="right" :content="$t('该图表可视区横轴坐标数量')">
-                                <span class="text-underline">{{$t('横轴坐标数量')}}</span>
-                            </bk-popover>
+                            {{$t('横轴坐标数量')}}
+                            <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('图标可视区横轴坐标数量，建议不超过20个')"></i>
                         </label>
                         <label class="cmdb-form-item">
                             <div class="axis-picker">
@@ -134,9 +133,7 @@
                                     <i class="bk-icon icon-angle-up" @click="calculate('up')"></i>
                                 </bk-popover>
                             </div>
-                            <span class="tips">{{$t('考虑显示效果，上限为25个，100%宽度建议显示20个，50%宽度10个')}}
-                                <span class="form-error">{{errors.first('chartNumber')}}</span>
-                            </span>
+                            <span class="form-error">{{errors.first('chartNumber')}}</span>
                         </label>
                     </div>
                 </div>
@@ -375,14 +372,15 @@
                 padding: 10px;
                 .label-text {
                     width: 150px;
-                    margin-right: 50px;
+                    margin-right: 64px;
                 }
                 .label-text-x{
                     width: 150px;
                     margin-right: 20px;
-                    .text-underline {
-                        border-bottom: 1px dashed #63656E;
-                    }
+                }
+                .icon-cc-exclamation-tips {
+                    margin-top: -2px;
+                    cursor: pointer;
                 }
                 .cmdb-form-radio {
                     width: 114px;
@@ -437,16 +435,6 @@
                         margin-left:5px;
                         border:1px dashed grey;
                     }
-                }
-                .tips{
-                    display:block;
-                    width:380px;
-                    height:15px;
-                    font-size:11px;
-                    color:rgba(151,155,165,1);
-                    line-height:15px;
-                    margin-top: 6px;
-                    position: absolute;
                 }
             }
         }
