@@ -21,7 +21,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('服务实例')" prop="name"></bk-table-column>
             <bk-table-column :label="$t('所属模块')" prop="bk_module_id">
-                <template slot-scope="{ row }">{{getModuleName(row)}}</template>
+                <template slot-scope="{ row }">{{$parent.getModulePath(row.bk_module_id)}}</template>
             </bk-table-column>
         </bk-table>
     </section>
@@ -43,13 +43,6 @@
                     }
                 }
                 return {}
-            },
-            getModuleName (row) {
-                const module = this.$parent.moduleInfo.find(module => module.bk_module_id === row.bk_module_id)
-                if (module) {
-                    return module.bk_module_name
-                }
-                return '--'
             }
         }
     }
