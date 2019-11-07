@@ -296,3 +296,30 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 		Data:     "",
 	})
 }
+
+func (s *Service) UpdateHostCloudAreaField(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	rid := srvData.rid
+
+	// decode request body
+	input := metadata.UpdateHostCloudAreaFieldOption{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
+		blog.Errorf("UpdateHostCloudAreaField failed, decode request body failed, err:%+v, rid:%s", err, rid)
+		ccErr := srvData.ccErr.Errorf(common.CCErrCommPostInputParseError)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+		return
+	}
+
+	ccErr := s.CoreAPI.CoreService().Host().UpdateHostCloudAreaField(srvData.ctx, srvData.header, input)
+	if ccErr != nil {
+		blog.ErrorJSON("UpdateHostCloudAreaField failed, core service UpdateHostCloudAreaField failed, input: %s, err: %s, rid: %s", input, ccErr.Error(), rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+		return
+	}
+
+	// response success
+	_ = resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     "",
+	})
+}
