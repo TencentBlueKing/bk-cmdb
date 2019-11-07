@@ -97,7 +97,7 @@
         height: calc(100% + 50px);
         transition: all 0.4s;
         .search-tab {
-            max-width: 640px;
+            max-width: 726px;
             margin: 0 auto;
             font-size: 0;
             &.is-focus .tab-item.active {
