@@ -1431,11 +1431,13 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 			return ps
 		}
 
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
+		// TODO: confirm this later. especially with frontend.
+		// when biz's model auth is settled down, then revise this.
+		// bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		// if err != nil {
+		// 	ps.err = err
+		// 	return ps
+		// }
 
 		ps.Attribute.Resources = make([]meta.ResourceAttribute, 0)
 		for _, group := range groups {
@@ -1455,7 +1457,7 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Update,
 				},
-				BusinessID: bizID,
+				// BusinessID: bizID,
 				Layers: []meta.Item{{
 					Type:       meta.Model,
 					InstanceID: model[0].ID,
