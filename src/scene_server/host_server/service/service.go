@@ -111,6 +111,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/search").To(s.SearchHost))
 	api.Route(api.POST("/hosts/search/asstdetail").To(s.SearchHostWithAsstDetail))
 	api.Route(api.PUT("/hosts/batch").To(s.UpdateHostBatch))
+	api.Route(api.PUT("/hosts/property/batch").To(s.UpdateHostPropertyBatch))
 	api.Route(api.PUT("/hosts/property/clone").To(s.CloneHostProperty))
 	api.Route(api.POST("/hosts/modules/idle/set").To(s.MoveSetHost2IdleModule))
 	// get host module relation in app

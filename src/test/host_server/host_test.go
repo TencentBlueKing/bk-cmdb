@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
@@ -1056,5 +1057,74 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
 		})
+	})
+})
+
+var _ = Describe("batch_update_host test", func() {
+	It("batch_update_host", func() {
+		test.ClearDatabase()
+
+		By("add host using api")
+		hostInput := map[string]interface{}{
+			"host_info": map[string]interface{}{
+				"4": map[string]interface{}{
+					"bk_host_innerip": "1.0.0.1",
+				},
+				"5": map[string]interface{}{
+					"bk_host_innerip": "1.0.0.2",
+				},
+			},
+		}
+		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(true))
+
+		By("search hosts")
+		searchInput := &params.HostCommonSearch{
+			Page: params.PageInfo{
+				Sort: common.BKHostIDField,
+			},
+		}
+		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		hostId1 := int64(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"].(float64))
+		hostId2 := int64(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"].(float64))
+
+		By("update host property batch")
+		updateInput := map[string]interface{}{
+			"update": []map[string]interface{}{
+				{
+					common.BKHostIDField: hostId1,
+					"properties": map[string]interface{}{
+						"bk_host_name": "batch_update1",
+						"operator":  "admin",
+						"bk_comment":   "test",
+						"bk_isp_name":  "1",
+					},
+				},
+				{
+					common.BKHostIDField: hostId2,
+					"properties": map[string]interface{}{
+						"bk_bak_operator": "admin",
+						"bk_host_outerip": "1.2.3.4",
+					},
+				},
+			},
+		}
+		updateRsp, err := hostServerClient.UpdateHostPropertyBatch(context.Background(), header, updateInput)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(updateRsp.Result).To(Equal(true))
+
+		By("search updated host property")
+		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, searchInput)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_name"].(string)).To(Equal("batch_update1"))
+		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["operator"].(string)).To(Equal("admin"))
+		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_comment"].(string)).To(Equal("test"))
+		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_isp_name"].(string)).To(Equal("1"))
+		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_bak_operator"].(string)).To(Equal("admin"))
+		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_outerip"].(string)).To(Equal("1.2.3.4"))
 	})
 })
