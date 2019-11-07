@@ -280,7 +280,8 @@ const (
 )
 
 var (
-	findBizHostsRegex = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts`)
+	findBizHostsRegex     = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts`)
+	findBizHostsTopoRegex = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts_topo`)
 	// find host instance's object properties info
 	findHostInstanceObjectPropertiesRegexp = regexp.MustCompile(`^/api/v3/hosts/[^\s/]+/[0-9]+/?$`)
 )
@@ -589,6 +590,26 @@ func (ps *parseStream) host() *parseStream {
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// find hosts under business specified by path parameter with their topology information
+	if ps.hitRegexp(findBizHostsTopoRegex, http.MethodPost) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("list business's hosts with topo, but got invalid business id: %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,

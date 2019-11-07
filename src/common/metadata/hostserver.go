@@ -189,6 +189,27 @@ type ListHostResult struct {
 	Info  []map[string]interface{} `json:"info"`
 }
 
+type HostTopoResult struct {
+	Count int        `json:"count"`
+	Info  []HostTopo `json:"info"`
+}
+
+type HostTopo struct {
+	Host map[string]interface{} `json:"host"`
+	Topo []Topo                 `json:"topo"`
+}
+
+type Topo struct {
+	SetID   int64    `json:"bk_set_id"`
+	SetName string   `json:"bk_set_name"`
+	Module  []Module `json:"module"`
+}
+
+type Module struct {
+	ModuleID   int64  `json:"bk_module_id"`
+	ModuleName string `json:"bk_module_name"`
+}
+
 func (sh SearchHost) ExtractHostIDs() *[]int64 {
 	hostIDArray := make([]int64, 0)
 	for _, h := range sh.Info {
