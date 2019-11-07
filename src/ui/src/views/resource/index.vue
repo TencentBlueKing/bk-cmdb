@@ -26,7 +26,7 @@
                     v-if="isAdminView"
                     :font-size="14"
                     :popover-width="180"
-                    :searchable="authorizedBusiness.length > 7"
+                    :searchable="businessList.length > 7"
                     :disabled="!table.checked.length"
                     :placeholder="$t('分配到')"
                     v-model="assignBusiness"
@@ -34,7 +34,7 @@
                     <bk-button class="select-btn" slot="trigger" :disabled="!table.checked.length">
                         {{$t('分配到')}}
                     </bk-button>
-                    <bk-option v-for="option in authorizedBusiness"
+                    <bk-option v-for="option in businessList"
                         :key="option.bk_biz_id"
                         :id="option.bk_biz_id"
                         :name="option.bk_biz_name">
@@ -116,13 +116,14 @@
                     importUrl: `${window.API_HOST}hosts/import`
                 },
                 isDropdownShow: false,
-                ready: false
+                ready: false,
+                businessList: []
             }
         },
         computed: {
             ...mapGetters(['userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapGetters('objectBiz', ['authorizedBusiness', 'bizId']),
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapState('hosts', ['filterParams']),
             buttons () {
                 return [{
@@ -177,7 +178,7 @@
         async created () {
             try {
                 this.setDynamicBreadcrumbs()
-                this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+                await this.getFullAmountBusiness()
                 await this.getProperties()
                 this.getHostList()
                 this.ready = true
@@ -203,6 +204,15 @@
                 }, {
                     label: this.$t('主机')
                 }])
+            },
+            async getFullAmountBusiness () {
+                try {
+                    const data = await this.$store.dispatch('objectBiz/getFullAmountBusiness')
+                    this.businessList = data.info || []
+                } catch (e) {
+                    console.error(e)
+                    this.businessList = []
+                }
             },
             getProperties () {
                 return this.batchSearchObjectAttribute({
