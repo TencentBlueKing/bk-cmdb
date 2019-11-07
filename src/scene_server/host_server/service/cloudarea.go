@@ -309,6 +309,11 @@ func (s *Service) UpdateHostCloudAreaField(req *restful.Request, resp *restful.R
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
+	if len(input.HostIDs) > common.BKMaxRecordsAtOnce {
+		ccErr := srvData.ccErr.CCErrorf(common.CCErrExceedMaxOperationRecordsAtOnce, common.BKMaxRecordsAtOnce)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+		return
+	}
 
 	ccErr := s.CoreAPI.CoreService().Host().UpdateHostCloudAreaField(srvData.ctx, srvData.header, input)
 	if ccErr != nil {

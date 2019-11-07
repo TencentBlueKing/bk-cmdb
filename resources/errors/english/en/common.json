@@ -72,6 +72,7 @@
     "1199074": "forbidden operate inner model instance with common instance API",
     "1199075": "forbidden operate mainline model instance with common instance API",
     "1199076": "forbidden update built in cloud area",
+    "1199077": "operate too many records at once, max: %s",
 
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",
