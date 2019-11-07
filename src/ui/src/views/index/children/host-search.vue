@@ -1,17 +1,19 @@
 <template>
     <div class="host-search-layout">
-        <div :class="['search-bar', { 'has-scroll': hasScroll && !showEllipsis }]">
+        <div class="search-bar">
             <bk-input class="search-input"
                 ref="searchInput"
                 type="textarea"
-                :placeholder="$t('请输入IP，多个值换行分隔')"
+                :placeholder="$t('请输入IP，多个值换行分隔，点击搜索')"
                 :rows="rows"
                 v-model="searchContent"
                 @focus="handleFocus"
-                @blur="handleBlur"
-                @keydown="handleKeydown">
+                @blur="handleBlur">
             </bk-input>
-            <i class="bk-icon search-btn icon-search" @click="handleSearch"></i>
+            <bk-button theme="primary" class="search-btn" @click="handleSearch">
+                <i class="bk-icon icon-search"></i>
+                {{$t('搜索')}}
+            </bk-button>
             <span v-if="showEllipsis" class="search-text" @click="handleSearchInput">{{searchText}}</span>
         </div>
     </div>
@@ -26,14 +28,15 @@
                 searchText: '',
                 searchContent: '',
                 textarea: '',
-                hasScroll: false,
                 showEllipsis: false,
                 textareaDom: null
             }
         },
         watch: {
             searchContent () {
-                this.handleObserverScroll()
+                this.$nextTick(() => {
+                    this.setRows()
+                })
             }
         },
         mounted () {
@@ -45,27 +48,6 @@
                 const rows = this.searchContent.split('\n').length || 1
                 this.rows = Math.min(10, rows)
             },
-            handleKeydown (value, keyEvent) {
-                if (['Enter', 'NumpadEnter'].includes(keyEvent.code)) {
-                    this.$nextTick(() => {
-                        this.rows = Math.min(this.rows + 1, 10)
-                    })
-                } else if (keyEvent.code === 'Backspace') {
-                    this.$nextTick(() => {
-                        this.setRows()
-                    })
-                }
-            },
-            handleObserverScroll () {
-                this.$nextTick(() => {
-                    if (this.textareaDom) {
-                        this.hasScroll = this.textareaDom.scrollHeight > this.textareaDom.offsetHeight
-                        this.$nextTick(() => {
-                            this.setRows()
-                        })
-                    }
-                })
-            },
             handleFocus () {
                 this.$emit('focus', true)
                 this.setRows()
@@ -76,6 +58,8 @@
                 if (data.length) {
                     this.showEllipsis = true
                     this.searchText = data.join(',')
+                } else {
+                    this.searchContent = ''
                 }
                 this.$nextTick(() => {
                     this.rows = 1
@@ -120,18 +104,15 @@
 <style lang="scss" scoped>
     .host-search-layout {
         width: 100%;
-        max-width: 640px;
+        max-width: 726px;
         margin: 0 auto;
     }
     .search-bar {
         position: relative;
-        &.has-scroll {
-            .search-btn {
-                margin-right: 17px !important;
-            }
-        }
+        display: flex;
     }
     .search-input {
+        flex: 1;
         /deep/ {
             .bk-textarea-wrapper {
                 border: 0;
@@ -141,38 +122,35 @@
                 line-height: 30px;
                 font-size: 14px;
                 border: 1px solid #C4C6CC;
-                padding: 5px 50px 5px 16px;
+                padding: 5px 16px;
             }
         }
     }
     .search-btn {
-        position: absolute;
-        right: 0;
-        top: 0;
-        width: 50px;
+        width: 86px;
         height: 42px;
         line-height: 42px;
-        color: #C3CDD7;
-        font-size: 18px;
-        text-align: center;
-        z-index: 5;
-        cursor: pointer;
-        &.icon-close-circle-shape:hover {
-            color: #979BA5;
+        padding: 0;
+        .icon-search {
+            width: 18px;
+            height: 18px;
+            font-size: 18px;
+            margin: -2px 4px 0 0;
         }
     }
     .search-text {
         position: absolute;
-        right: 0;
+        left: 0;
         top: 0;
         width: 100%;
+        max-width: 640px;
         height: 42px;
         line-height: 30px;
         font-size: 14px;
         color: #63656E;
         border: 1px solid #C4C6CC;
         background-color: #FFFFFF;
-        padding: 5px 50px 5px 16px;
+        padding: 5px 16px;
         z-index: 1;
         cursor: text;
         @include ellipsis;
