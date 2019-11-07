@@ -15,8 +15,6 @@ package local
 import (
 	//"context"
 	"errors"
-	"fmt"
-
 	//"reflect"
 	//"strings"
 	//"time"
@@ -33,17 +31,14 @@ import (
 	//"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
-
 // Errors defined
 var (
 	ErrSessionInfoNotFound = errors.New("session info not found in storage")
-
 )
 
 type TxnManager struct{}
 
-var redis = map[string][]string{}  //{sessionID: [sessionState, txnNumber]}
-
+var redis = map[string][]string{} //{sessionID: [sessionState, txnNumber]}
 
 func (t *TxnManager) SaveSession(sess mongo.Session) error {
 	se := mongo.SessionExposer{}
@@ -55,22 +50,20 @@ func (t *TxnManager) SaveSession(sess mongo.Session) error {
 	return nil
 }
 
-
-func (t *TxnManager) GetSessionInfoFromStorage(sessionID string) (*mongo.SessionInfo, error){
+func (t *TxnManager) GetSessionInfoFromStorage(sessionID string) (*mongo.SessionInfo, error) {
 	v, ok := redis[sessionID]
 	if !ok {
 		return nil, ErrSessionInfoNotFound
 	}
-	return &mongo.SessionInfo{SessionID:sessionID, SessionState:v[0], TxnNumber:v[1]}, nil
+	return &mongo.SessionInfo{SessionID: sessionID, SessionState: v[0], TxnNumber: v[1]}, nil
 }
-
 
 func (t *TxnManager) ConvertToSameSession(sess mongo.Session, sessionID string) error {
 	sessInfo, err := t.GetSessionInfoFromStorage(sessionID)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("*****ConvertToSameSession***, sessInfo:%#v\n", sessInfo)
+	//fmt.Printf("*****ConvertToSameSession***, sessInfo:%#v\n", sessInfo)
 	se := &mongo.SessionExposer{}
 	return se.SetSessionInfo(sess, sessInfo)
 }
