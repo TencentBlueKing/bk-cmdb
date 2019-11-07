@@ -453,7 +453,7 @@ func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 	result := metadata.BaseResp{}
 	subPath := "/updatemany/hosts/cloudarea_field"
 
-	err := h.client.Post().
+	err := h.client.Put().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).

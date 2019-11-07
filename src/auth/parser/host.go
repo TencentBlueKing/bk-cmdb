@@ -8,6 +8,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/framework/core/errors"
 
@@ -268,6 +269,7 @@ const (
 	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts/host/add/module"
 	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
 	findHostTopoRelationPattern               = "/api/v3/host/topo/relation/read"
+	updateHostCloudAreaFieldPattern           = "/api/v3/updatemany/hosts/cloudarea_field"
 
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
@@ -331,6 +333,28 @@ func (ps *parseStream) host() *parseStream {
 					Action: meta.SkipAction,
 				},
 			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(updateHostCloudAreaFieldPattern, http.MethodPut) {
+		input := metadata.UpdateHostCloudAreaFieldOption{}
+		if err := json.Unmarshal(ps.RequestCtx.Body, &input); err != nil {
+			ps.err = fmt.Errorf("unmarshal request body failed, err: %+v", err)
+			return ps
+		}
+
+		ps.Attribute.Resources = make([]meta.ResourceAttribute, 0)
+		for _, hostID := range input.HostIDs {
+			iamResource := meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       meta.HostInstance,
+					Action:     meta.UpdateMany,
+					InstanceID: hostID,
+				},
+				BusinessID: input.BizID,
+			}
+			ps.Attribute.Resources = append(ps.Attribute.Resources, iamResource)
 		}
 		return ps
 	}
