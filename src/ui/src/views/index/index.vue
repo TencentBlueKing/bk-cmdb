@@ -15,7 +15,7 @@
                 <host-search v-show="activeName === 'host'" @focus="handleFocus"></host-search>
                 <search-input v-show="activeName === 'fullText'"
                     v-if="isFullTextSearch"
-                    :is-full-text-search="isFullTextSearch"
+                    :is-full-text-search="true"
                     @search-status="handleSearchStatus"
                     @focus="handleFocus">
                 </search-input>
@@ -71,13 +71,8 @@
                 this.activeName = name
             },
             handleSearchStatus (status) {
-                if (status) {
-                    this.inSearchPaddingTop = 0
-                    this.showSearchTab = false
-                } else {
-                    this.inSearchPaddingTop = this.paddingTop
-                    this.showSearchTab = true
-                }
+                this.inSearchPaddingTop = status ? 0 : this.paddingTop
+                this.showSearchTab = !status
             },
             handleFocus (status) {
                 this.isFocus = status
@@ -97,7 +92,7 @@
         height: calc(100% + 50px);
         transition: all 0.4s;
         .search-tab {
-            max-width: 640px;
+            max-width: 726px;
             margin: 0 auto;
             font-size: 0;
             &.is-focus .tab-item.active {
