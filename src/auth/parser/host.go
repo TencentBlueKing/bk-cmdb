@@ -275,11 +275,13 @@ const (
 	findBizHostsWithoutAppPattern     = "/api/v3/hosts/list_hosts_without_app"
 	findHostsDetailsPattern           = "/api/v3/hosts/search/asstdetail"
 	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
-	findHostsWithModulesPattern       = "/api/v3/hosts/findmany/modulehost"
+	updateHostPropertyBatchPattern    = "/api/v3/hosts/property/batch"
+	findHostsWithModulesPattern       = "/api/v3/findmany/modulehost"
 )
 
 var (
-	findBizHostsRegex = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts`)
+	findBizHostsRegex     = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts`)
+	findBizHostsTopoRegex = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts_topo`)
 	// find host instance's object properties info
 	findHostInstanceObjectPropertiesRegexp = regexp.MustCompile(`^/api/v3/hosts/[^\s/]+/[0-9]+/?$`)
 )
@@ -302,13 +304,17 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
-			return ps
+		bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
+		if bizID == 0 {
+			var err error
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
+				return ps
+			}
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
@@ -599,6 +605,26 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
+	// find hosts under business specified by path parameter with their topology information
+	if ps.hitRegexp(findBizHostsTopoRegex, http.MethodPost) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("list business's hosts with topo, but got invalid business id: %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
 	if ps.hitPattern(findHostsDetailsPattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil {
@@ -622,6 +648,21 @@ func (ps *parseStream) host() *parseStream {
 	if ps.hitPattern(updateHostInfoBatchPattern, http.MethodPut) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type: meta.HostInstance,
+					// Action: meta.UpdateMany,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// update hosts property batch. but can not get the exactly host id.
+	if ps.hitPattern(updateHostPropertyBatchPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type: meta.HostInstance,
 					// Action: meta.UpdateMany,
