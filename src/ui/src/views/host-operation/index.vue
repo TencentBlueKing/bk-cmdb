@@ -177,6 +177,7 @@
         },
         async created () {
             this.resolveData(this.$route)
+            this.setBreadcrumbs()
             await this.getTopologyModels()
             this.getPreviewData()
         },
@@ -222,6 +223,22 @@
                     params.add_to_modules = this.targetModules
                 }
                 this.confirmParams = params
+            },
+            setBreadcrumbs () {
+                const titleMap = {
+                    idle: this.$t('转移到空闲模块'),
+                    business: this.$t('转移到业务模块'),
+                    remove: this.$t('移除主机')
+                }
+                this.$store.commit('setTitle', titleMap[this.type])
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('业务拓扑'),
+                    route: {
+                        name: MENU_BUSINESS_HOST_AND_SERVICE
+                    }
+                }, {
+                    label: titleMap[this.type]
+                }])
             },
             async getTopologyModels () {
                 try {
