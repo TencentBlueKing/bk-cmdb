@@ -77,7 +77,7 @@ type NgVersion struct {
 	Patch string
 }
 
-var PatchRegex = regexp.MustCompile(`^\d{8}$`)
+var PatchRegex = regexp.MustCompile(`^\d{12}$`)
 
 func ParseNgVersion(version string) NgVersion {
 	invalidMessage := fmt.Errorf("invalid version [%s]", version)
