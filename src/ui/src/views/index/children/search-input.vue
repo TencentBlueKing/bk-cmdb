@@ -497,8 +497,10 @@
     .search-layout {
         position: relative;
         width: 100%;
-        height: calc(100% + 50px);
+        height: 100%;
         z-index: 3;
+        overflow-y: auto;
+        overflow-x: hidden;
         .sticky-layout {
             transition: all .3s;
             position: sticky;

@@ -34,14 +34,11 @@
         },
         watch: {
             searchContent () {
-                this.$nextTick(() => {
-                    this.setRows()
-                })
+                this.$nextTick(this.setRows())
             }
         },
         mounted () {
-            const textarea = this.$refs.searchInput && this.$refs.searchInput.$refs.textarea
-            this.textareaDom = textarea
+            this.textareaDom = this.$refs.searchInput && this.$refs.searchInput.$refs.textarea
         },
         methods: {
             setRows () {
@@ -53,6 +50,7 @@
                 this.setRows()
             },
             handleBlur () {
+                this.textareaDom && this.textareaDom.blur()
                 this.$emit('focus', false)
                 const data = this.searchContent.split('\n').map(text => text.trim()).filter(text => text)
                 if (data.length) {
@@ -72,26 +70,26 @@
             },
             async handleSearch () {
                 const searchList = this.searchContent.split('\n').map(text => text.trim()).filter(text => text)
-                if (searchList.length) {
-                    const validateQueue = []
-                    searchList.forEach(text => {
-                        validateQueue.push(this.$validator.verify(text, 'ip'))
-                    })
-                    const results = await Promise.all(validateQueue)
-                    const isPassValidate = results.every(res => res.valid)
-                    if (results.length > 500) {
-                        this.$warn('目前最多支持搜索500个IP')
-                        return
-                    } else if (!isPassValidate) {
-                        this.$warn('请输入完整IP进行搜索，多个IP用换行分割')
-                        return
+                if (searchList.length > 500) {
+                    this.$warn(this.$t('目前最多支持搜索500个IP'))
+                } else if (searchList.length) {
+                    try {
+                        const validateQueue = searchList.map(text => this.$validator.verify(text, 'ip'))
+                        const results = await Promise.all(validateQueue)
+                        const isPassValidate = results.every(res => res.valid)
+                        if (!isPassValidate) {
+                            this.$warn(this.$t('请输入完整IP进行搜索，多个IP用换行分割'))
+                            return
+                        }
+                        this.$store.commit('hosts/setFilterIP', {
+                            text: searchList.join('\n'),
+                            exact: true
+                        })
+                        this.$store.commit('hosts/setIsHostSearch', true)
+                        this.$router.push({ name: MENU_RESOURCE_HOST })
+                    } catch (e) {
+                        console.error(e)
                     }
-                    this.$store.commit('hosts/setFilterIP', {
-                        text: searchList.join('\n'),
-                        exact: true
-                    })
-                    this.$store.commit('hosts/setIsHostSearch', true)
-                    this.$router.push({ name: MENU_RESOURCE_HOST })
                 } else {
                     this.searchContent = ''
                     this.textareaDom && this.textareaDom.focus()
