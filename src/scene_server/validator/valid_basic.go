@@ -460,7 +460,7 @@ func (valid *ValidMap) validDate(val interface{}, key string) error {
 	}
 	valStr, ok := val.(string)
 	if false == ok {
-		blog.Error("date can shoule be string")
+		blog.Error("date can should be string")
 		return valid.errif.Errorf(common.CCErrCommParamsShouldBeString, key)
 
 	}
