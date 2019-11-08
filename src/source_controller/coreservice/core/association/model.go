@@ -60,16 +60,6 @@ func (m *associationModel) createModelAssociation(ctx core.ContextParams, inputP
 		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.AssociationName)
 	}
 
-	exists, err = m.isExistsAssociationObjectWithAnotherObject(ctx, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to create a new association, because of it is failed to check if the association (%s=>%s) is exists, error info is %s", ctx.ReqID, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID, err.Error())
-		return &metadata.CreateOneDataResult{}, err
-	}
-	if exists {
-		blog.Warnf("request(%s): it is failed to create a new association, because of it (%s=>%s) is exists", ctx.ReqID, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
-		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrTopoAssociationAlreadyExist, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
-	}
-
 	asstKindID := inputParam.Spec.AsstKindID
 	if enableMainlineAssociationType == false {
 		// AsstKindID shouldn't be use bk_mainline

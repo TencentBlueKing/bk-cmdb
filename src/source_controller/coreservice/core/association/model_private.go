@@ -59,21 +59,6 @@ func (m *associationModel) isExistsAssociationID(ctx core.ContextParams, associa
 	return 0 != cnt, err
 }
 
-func (m *associationModel) isExistsAssociationObjectWithAnotherObject(ctx core.ContextParams, targetObjectID, anotherObjectID string) (bool, error) {
-
-	existsCheckCond := mongo.NewCondition()
-	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
-	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldObjectID, Val: targetObjectID})
-	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAssociationObjectID, Val: anotherObjectID})
-
-	cnt, err := m.count(ctx, existsCheckCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is to failed to check whether the association (%s=>%s) is exists by the condition (%#v), error info is %s", ctx.ReqID, targetObjectID, anotherObjectID, existsCheckCond.ToMapStr(), err.Error())
-		return false, err
-	}
-	return 0 != cnt, err
-}
-
 func (m *associationModel) usedInSomeInstanceAssociation(ctx core.ContextParams, associationIDS []string) (bool, error) {
 	// TODO: need to implement
 	return false, nil
