@@ -203,6 +203,9 @@ const (
 	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
 	CCErrTopoUpdateBuiltInCloudForbidden                     = 1199076
 
+	// one argument: maxValue
+	CCErrExceedMaxOperationRecordsAtOnce = 1199077
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
