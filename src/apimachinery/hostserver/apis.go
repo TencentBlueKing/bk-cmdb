@@ -636,6 +636,20 @@ func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat in
 	return
 }
 
+func (hs *hostServer) UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/property/batch"
+
+	err = hs.client.Put().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (hs *hostServer) AddUserCustomQuery(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/userapi"
@@ -724,6 +738,21 @@ func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, params *met
 
 	resp = new(metadata.QueryInstResult)
 	subPath := fmt.Sprintf("hosts/search")
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) ListBizHostsTopo(ctx context.Context, h http.Header, bizID int64, params *metadata.ListHostsWithNoBizParameter) (resp *metadata.SuccessResponse, err error) {
+
+	resp = new(metadata.SuccessResponse)
+	subPath := fmt.Sprintf("/hosts/app/%d/list_hosts_topo", bizID)
 
 	err = hs.client.Post().
 		WithContext(ctx).
