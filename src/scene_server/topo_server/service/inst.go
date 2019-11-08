@@ -94,7 +94,7 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 		}
 
 		// auth update registered instances
-		if len(setInst.SuccessUpdated) == 0 {
+		if len(setInst.SuccessUpdated) != 0 {
 			if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, objID, setInst.SuccessUpdated...); err != nil {
 				blog.Errorf("update registered instances to iam failed, err: %+v, rid: %s", err, params.ReqID)
 				return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
