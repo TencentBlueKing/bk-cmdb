@@ -207,9 +207,6 @@
                 }
                 return menu
             },
-            module () {
-                return this.$store.state.businessHost.selectedNodeInstance
-            },
             flattenList () {
                 return this.$tools.flattenList(this.properties, this.list.map(data => data.property || {}))
             },
@@ -334,7 +331,7 @@
                         instanceId: this.instance.id,
                         hostId: this.instance.bk_host_id,
                         setId: this.currentNode.parent.data.bk_inst_id,
-                        moduleId: this.module.bk_module_id
+                        moduleId: this.currentNode.data.bk_inst_id
                     },
                     query: {
                         title: this.instance.name

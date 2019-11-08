@@ -70,7 +70,8 @@ export default [{
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            i18n: '主机详情'
+            i18n: '主机详情',
+            relative: MENU_BUSINESS_HOST_AND_SERVICE
         },
         auth: {
             view: null,

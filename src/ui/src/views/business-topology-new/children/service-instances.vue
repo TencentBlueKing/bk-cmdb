@@ -720,7 +720,7 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        title: this.currentNode.name
+                        title: this.currentNode.data.bk_inst_name
                     }
                 })
             },

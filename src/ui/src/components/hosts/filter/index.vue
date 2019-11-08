@@ -154,7 +154,7 @@
     import filterOperator from './_filter-field-operator.vue'
     import propertySelector from './filter-property-selector.vue'
     import { mapState, mapGetters } from 'vuex'
-    import { MENU_BUSINESS_HOST_MANAGEMENT } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         components: {
             filterOperator,
@@ -206,7 +206,7 @@
                 return hasIP || hasField || this.isShow
             },
             isBusinessHost () {
-                return this.$route.name === MENU_BUSINESS_HOST_MANAGEMENT
+                return this.$route.name === MENU_BUSINESS_HOST_AND_SERVICE
             }
         },
         watch: {

@@ -2,6 +2,7 @@
     <div>
         <div class="tree-wrapper">
             <bk-big-tree ref="tree" class="tree"
+                :lazy-method="loadHost"
                 :show-checkbox="shouldShowCheckbox"
                 :selectable="false"
                 :show-link-line="true"
@@ -82,10 +83,9 @@
             },
             async initTopology () {
                 try {
-                    const [topology, internal, allHost] = await Promise.all([
+                    const [topology, internal] = await Promise.all([
                         this.getInstanceTopology(),
-                        this.getInternalTopology(),
-                        this.getAllHost()
+                        this.getInternalTopology()
                     ])
                     const root = topology[0] || {}
                     const children = root.child || []
@@ -109,52 +109,10 @@
                     const defaultNodeId = this.getNodeId(topology[0])
                     this.$refs.tree.setData(topology)
                     this.$refs.tree.setExpanded(defaultNodeId)
-                    this.appendHostNode(allHost)
                     this.syncState(this.$parent.selected, [])
                 } catch (e) {
                     console.error(e)
                 }
-            },
-            appendHostNode (hostList) {
-                const dataMap = {}
-                hostList.forEach(item => {
-                    item.module.map(module => {
-                        const moduleId = module.bk_module_id
-                        if (dataMap.hasOwnProperty(moduleId)) {
-                            dataMap[moduleId].push(item)
-                        } else {
-                            dataMap[moduleId] = [item]
-                        }
-                    })
-                })
-                Object.keys(dataMap).forEach(moduleId => {
-                    const moduleNodeId = this.getNodeId({ bk_obj_id: 'module', bk_inst_id: moduleId })
-                    this.$refs.tree.addNode(dataMap[moduleId].map(item => ({
-                        bk_obj_id: 'host',
-                        bk_inst_id: `${moduleNodeId}-${item.host.bk_host_id}`,
-                        bk_inst_name: item.host.bk_host_innerip,
-                        bk_host_id: item.host.bk_host_id,
-                        item: item
-                    })), {
-                        parentId: moduleNodeId,
-                        expandParent: false
-                    })
-                })
-            },
-            async getAllHost () {
-                const params = {
-                    bk_biz_id: this.bizId,
-                    ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
-                    page: {},
-                    condition: this.getDefaultSearchCondition()
-                }
-                const result = await this.$store.dispatch('hostSearch/searchHost', {
-                    params: params,
-                    config: {
-                        requestId: this.$parent.request.host
-                    }
-                })
-                return result.info
             },
             getInstanceTopology () {
                 return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
@@ -176,10 +134,7 @@
                 return `${data.bk_obj_id}-${data.bk_inst_id}`
             },
             shouldShowCheckbox (data) {
-                if (data.bk_obj_id === 'host') {
-                    return true
-                }
-                return data.bk_obj_id !== 'biz' && data.host_count > 0
+                return data.bk_obj_id === 'host'
             },
             async loadHost (node) {
                 try {
@@ -191,7 +146,8 @@
                             bk_obj_id: 'host',
                             bk_inst_id: `${node.id}-${item.host.bk_host_id}`, // 额外加上父节点id，防止不同模块下的主机id重复
                             bk_inst_name: item.host.bk_host_innerip,
-                            bk_host_id: item.host.bk_host_id
+                            bk_host_id: item.host.bk_host_id,
+                            item: item
                         }
                         data.push(nodeData)
                         leaf.push(this.getNodeId(nodeData))
