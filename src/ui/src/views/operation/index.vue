@@ -25,7 +25,7 @@
                 <div class="item-left">
                     <span v-if="navData.model">{{ navData.model }}</span>
                     <span v-if="!navData.model">0</span>
-                    <span>{{$t('模型总数')}}</span>
+                    <span>{{$t('自定义模型总数')}}</span>
                 </div>
                 <div class="item-right item-right-left">
                     <i class="menu-icon icon-cc-model-total icon-size"></i>
