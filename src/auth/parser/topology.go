@@ -611,6 +611,7 @@ const (
 
 var (
 	deleteObjectInstanceAssociationRegexp = regexp.MustCompile("/api/v3/inst/association/[0-9]+/action/delete")
+	importObjectInstanceAssociationRegexp = regexp.MustCompile("/api/v3/inst/association/action/\\w*/import")
 )
 
 func (ps *parseStream) objectInstanceAssociation() *parseStream {
@@ -663,6 +664,24 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 					Type:       meta.ModelInstanceAssociation,
 					Action:     meta.Delete,
 					InstanceID: assoID,
+				},
+			},
+		}
+		return ps
+	}
+
+	// import object's instance association operation.
+	if ps.hitRegexp(importObjectInstanceAssociationRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("import object instance association, but got invalid url")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.SkipAction,
 				},
 			},
 		}
