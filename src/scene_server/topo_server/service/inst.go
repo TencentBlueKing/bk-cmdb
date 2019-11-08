@@ -36,7 +36,7 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 	objID := pathParams("bk_obj_id")
 
 	// forbidden create inner model instance with common api
-	if common.IsInnerModel(objID) == true && util.InArray(objID, whiteList) == false {
+	if common.IsInnerModel(objID) == true {
 		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
 	}
@@ -127,8 +127,8 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objID := pathParams("bk_obj_id")
 
-	// forbidden create inner model instance with common api
-	if common.IsInnerModel(objID) == true && util.InArray(objID, whiteList) == false {
+	// forbidden delete inner model instance with common api
+	if common.IsInnerModel(objID) == true {
 		blog.V(5).Infof("DeleteInsts failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
 	}
@@ -167,8 +167,8 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objID := pathParams("bk_obj_id")
 
-	// forbidden create inner model instance with common api
-	if common.IsInnerModel(objID) == true && util.InArray(objID, whiteList) == false {
+	// forbidden delete inner model instance with common api
+	if common.IsInnerModel(objID) == true {
 		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
 	}
@@ -279,7 +279,7 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objID := pathParams("bk_obj_id")
 
-	// forbidden create inner model instance with common api
+	// forbidden update inner model instance with common api
 	if common.IsInnerModel(objID) == true && util.InArray(objID, whiteList) == false {
 		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)

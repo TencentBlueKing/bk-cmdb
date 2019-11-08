@@ -24,11 +24,11 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// CreateMainLineObject create a new object in the main line topo
+// CreateMainLineObject create a new model in the main line topo
 func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
 	tx, err := s.Txn.Start(context.Background())
 	if err != nil {
-		blog.Errorf("create mainline object failed, start transaction failed, err: %v, rid: %s", err, params.ReqID)
+		blog.Errorf("create mainline model failed, start transaction failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 	}
 	params.Header = tx.TxnInfo().IntoHeader(params.Header)

@@ -110,9 +110,10 @@ type HostCommonSearch struct {
 }
 
 type HostModuleFind struct {
-	ModuleIDS []int64  `json:"bk_module_ids"`
-	Metadata  Metadata `json:"metadata"`
-	Page      BasePage `json:"page"`
+	ModuleIDS []int64   `json:"bk_module_ids"`
+	Metadata  *Metadata `json:"metadata"`
+	AppID     int64     `json:"bk_biz_id"`
+	Page      BasePage  `json:"page"`
 }
 
 type ListHostsParameter struct {
@@ -187,6 +188,27 @@ type SearchHost struct {
 type ListHostResult struct {
 	Count int                      `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
+}
+
+type HostTopoResult struct {
+	Count int        `json:"count"`
+	Info  []HostTopo `json:"info"`
+}
+
+type HostTopo struct {
+	Host map[string]interface{} `json:"host"`
+	Topo []Topo                 `json:"topo"`
+}
+
+type Topo struct {
+	SetID   int64    `json:"bk_set_id"`
+	SetName string   `json:"bk_set_name"`
+	Module  []Module `json:"module"`
+}
+
+type Module struct {
+	ModuleID   int64  `json:"bk_module_id"`
+	ModuleName string `json:"bk_module_name"`
 }
 
 func (sh SearchHost) ExtractHostIDs() *[]int64 {
@@ -356,4 +378,14 @@ type DeleteHostFromBizParameter struct {
 type CloudAreaParameter struct {
 	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
 	Page      BasePage      `json:"page" bson:"page" field:"page"`
+}
+
+// UpdateHostPropertyBatchParameter batch update host property parameter
+type UpdateHostPropertyBatchParameter struct {
+	Update []updateHostProperty `json:"update"`
+}
+
+type updateHostProperty struct {
+	HostID     int64                  `json:"bk_host_id"`
+	Properties map[string]interface{} `json:"properties"`
 }
