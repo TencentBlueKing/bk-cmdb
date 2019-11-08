@@ -17,6 +17,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"configcenter/src/common/blog"
 )
 
 /*
@@ -58,8 +60,15 @@ func StringCompare(s1, s2 string) int {
 }
 
 func V36VersionCmp(version1, version2 string) int {
-	ngVersion1 := ParseNgVersion(version1)
-	ngVersion2 := ParseNgVersion(version2)
+	// version format should be validate before compare
+	ngVersion1, err := ParseNgVersion(version1)
+	if err != nil {
+		blog.Fatalf(err.Error())
+	}
+	ngVersion2, err := ParseNgVersion(version2)
+	if err != nil {
+		blog.Fatalf(err.Error())
+	}
 	result := Int64Compare(ngVersion1.Major, ngVersion2.Major)
 	if result != 0 {
 		return result
@@ -79,32 +88,32 @@ type NgVersion struct {
 
 var PatchRegex = regexp.MustCompile(`^\d{12}$`)
 
-func ParseNgVersion(version string) NgVersion {
+func ParseNgVersion(version string) (NgVersion, error) {
+	ngVersion := NgVersion{}
 	invalidMessage := fmt.Errorf("invalid version [%s]", version)
 	version = strings.TrimLeft(version, VersionNgPrefix)
 	fields := strings.Split(version, ".")
 	if len(fields) != 3 {
-		panic(invalidMessage)
+		return ngVersion, invalidMessage
 	}
 
-	ngVersion := NgVersion{}
 	major, err := strconv.ParseInt(fields[0], 10, 64)
 	if err != nil {
-		panic(invalidMessage)
+		return ngVersion, invalidMessage
 	}
 	ngVersion.Major = major
 
 	minor, err := strconv.ParseInt(fields[1], 10, 64)
 	if err != nil {
-		panic(invalidMessage)
+		return ngVersion, invalidMessage
 	}
 	ngVersion.Minor = minor
 
 	patch := fields[2]
 	match := PatchRegex.MatchString(patch)
 	if match == false {
-		panic(invalidMessage)
+		return ngVersion, invalidMessage
 	}
 	ngVersion.Patch = patch
-	return ngVersion
+	return ngVersion, nil
 }

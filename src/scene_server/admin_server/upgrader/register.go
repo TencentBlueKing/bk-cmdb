@@ -17,7 +17,9 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strings"
 	"sync"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -125,18 +127,44 @@ func ValidateMigrationVersionFormat(version string) error {
 	if util.InStrArr(LegacyMigrationVersion, version) == true {
 		return nil
 	}
+	match := false
 	for _, re := range ValidMigrationVersionFormat {
 		if re.MatchString(version) == true {
-			return nil
+			match = true
+			break
 		}
 	}
-	err := fmt.Errorf(`
+	if match == false {
+		err := fmt.Errorf(`
 	invalid migration version: %s,
     please use a valid format:
       x19_09_03_02(v3.5.x)
       y3.6.201911081042(>=v3.6.x)
 	`, version)
-	return err
+		return err
+	}
+
+	// since v3.6.x migration version must
+	if strings.HasPrefix(version, VersionNgPrefix) {
+		ngVersion, err := ParseNgVersion(version)
+		if err != nil {
+			return err
+		}
+
+		// third field in version split by `.` shouldn't greater than tomorrow
+		timeFormat := "200601021504"
+		maxMigrationTime := time.Now().AddDate(0, 0, 1)
+		maxVersionCurrently := maxMigrationTime.Format(timeFormat)
+		if ngVersion.Patch >= maxVersionCurrently {
+			err := fmt.Errorf(`
+	invalid time field of migration version: %s,
+    please use current time as part of migration version:
+      ex: y3.6.%s
+	`, version, time.Now().Format(timeFormat))
+			return err
+		}
+	}
+	return nil
 }
 
 // RegistUpgrader register upgrader
