@@ -1,6 +1,7 @@
 <template>
     <section>
-        <bk-input class="search"
+        <bk-input v-if="templates.length"
+            class="search"
             type="text"
             :placeholder="$t('请输入xx', { name: $t('服务模板') })"
             right-icon="bk-icon icon-search"
@@ -108,7 +109,7 @@
         margin-bottom: 10px;
     }
     .template-list {
-        max-height: 340px;
+        height: 264px;
         @include scrollbar-y;
         &.is-loading {
             min-height: 144px;
