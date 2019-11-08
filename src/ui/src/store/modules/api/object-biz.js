@@ -121,6 +121,9 @@ const actions = {
         }, config).then(data => {
             return data.info[0] || {}
         })
+    },
+    getFullAmountBusiness ({ commit }, config = {}) {
+        return $http.get('biz/simplify', config)
     }
 }
 

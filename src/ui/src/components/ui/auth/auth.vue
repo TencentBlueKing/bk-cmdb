@@ -48,10 +48,7 @@
         },
         methods: {
             updateAuth (auths) {
-                const passData = auths.map(auth => {
-                    return auth.is_pass
-                })
-                const isPass = passData.every(pass => pass)
+                const isPass = auths.every(auth => auth.is_pass)
                 this.isAuthorized = isPass
                 this.disabled = !isPass
                 this.$emit('update-auth', isPass)
