@@ -193,7 +193,7 @@
             }
         },
         computed: {
-            ...mapState('hosts', ['filterList', 'filterIP', 'collection']),
+            ...mapState('hosts', ['filterList', 'filterIP', 'collection', 'isHostSearch']),
             ...mapGetters('hosts', ['isCollection']),
             isFilterActive () {
                 const hasIP = !!this.ip.text.replace(/\n|;|；|,|，/g, '').length
@@ -230,15 +230,9 @@
                     resolve()
                 }
             })
-            // const formFullTextSearch = Object.keys(this.$route.params).length
-            // if (formFullTextSearch) {
-            //     this.defaultIpConfig = Object.assign(this.defaultIpConfig, this.$route.params)
-            // }
             await this.initCustomFilterIP()
             await this.initCustomFilterList()
-            // if (formFullTextSearch) {
-            //     this.handleSearch()
-            // }
+            this.isHostSearch && this.handleSearch()
         },
         beforeDestroy () {
             this.$store.commit('hosts/clearFilter')

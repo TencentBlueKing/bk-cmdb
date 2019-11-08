@@ -1,21 +1,25 @@
 <template>
-    <div class="search-layout" ref="searchLayout"
-        :style="{ 'background-color': setStyle.backgroundColor }">
-        <div :class="{ 'sticky-layout': result.isShow }" :style="{ 'padding-top': (setStyle.marginTop || inputMarginTop) + 'px' }">
-            <div class="search-bar"
-                v-click-outside="handleHideLenovo">
-                <bk-input ref="searchInput"
-                    class="search-input"
-                    autocomplete="off"
-                    maxlength="32"
-                    :placeholder="placeholder"
-                    v-model.trim="keywords"
-                    @input="handleInputSearch"
-                    @focus="handleShowHistory"
-                    @enter="handleShowResult">
-                </bk-input>
-                <i class="bk-icon search-btn icon-search" ref="searchBtn" v-show="!keywords" @click="handleShowResult"></i>
-                <i class="bk-icon search-btn icon-close-circle-shape" v-show="keywords" @click="handleClear"></i>
+    <div class="search-layout" ref="searchLayout" :style="{ 'background-color': setStyle.backgroundColor }">
+        <div :class="{ 'sticky-layout': result.isShow }" :style="{ 'padding-top': (setStyle.paddingTop) + 'px' }">
+            <div class="search-bar" v-click-outside="handleHideLenovo">
+                <div class="input-box">
+                    <bk-input ref="searchInput"
+                        class="search-input"
+                        autocomplete="off"
+                        maxlength="32"
+                        :placeholder="placeholder"
+                        v-model.trim="keywords"
+                        @input="handleInputSearch"
+                        @focus="handleShowHistory"
+                        @blur="$emit('focus', false)"
+                        @enter="handleShowResult">
+                    </bk-input>
+                    <i class="bk-icon search-clear icon-close-circle-shape" v-show="keywords" @click="handleClear"></i>
+                    <bk-button theme="primary" class="search-btn" @click="handleShowResult">
+                        <i class="bk-icon icon-search"></i>
+                        {{$t('搜索')}}
+                    </bk-button>
+                </div>
                 <transition name="slide">
                     <div class="lenovo selectTips" v-show="showLenovo && lenovoList.length">
                         <ul class="lenovo-result">
@@ -161,11 +165,8 @@
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-            inputMarginTop () {
-                return parseInt((this.$APP.height - 58) / 3, 10)
-            },
             placeholder () {
-                return this.isFullTextSearch ? this.$t('请输入关键字') : this.$t('请输入IP开始搜索')
+                return this.isFullTextSearch ? this.$t('请输入关键字，点击或回车搜索') : this.$t('请输入IP开始搜索')
             },
             params () {
                 const keywords = this.keywords
@@ -226,8 +227,9 @@
             '$route' (to, from) {
                 const queryLen = Object.keys(to.query).length
                 if (to.path === '/index' && !queryLen) {
+                    this.$emit('search-status', 0)
                     this.keywords = ''
-                    this.setStyle.marginTop = null
+                    this.setStyle.paddingTop = 0
                     this.setStyle.backgroundColor = 'transparent'
                     this.result.isShow = false
                 }
@@ -356,6 +358,7 @@
                 }, 300)
             },
             handleShowHistory () {
+                this.$emit('focus', true)
                 this.showHistory = !this.keywords && this.historyList.length
             },
             handlClearHistory () {
@@ -372,10 +375,11 @@
                     this.resetIndex()
                     return
                 }
+                this.$emit('search-status', 1)
                 this.query.trigger = 'input'
                 this.updating = true
                 await this.getFullTextSearch(0)
-                this.setStyle.marginTop = 50
+                this.setStyle.paddingTop = 50
                 this.setStyle.backgroundColor = '#FAFBFD'
                 this.showLenovo = false
                 const total = this.curPagination.total
@@ -492,9 +496,11 @@
 <style lang="scss" scoped>
     .search-layout {
         position: relative;
-        height: calc(100% + 50px);
-        overflow: auto;
+        width: 100%;
+        height: 100%;
         z-index: 3;
+        overflow-y: auto;
+        overflow-x: hidden;
         .sticky-layout {
             transition: all .3s;
             position: sticky;
@@ -505,10 +511,15 @@
         }
         .search-bar {
             position: relative;
-            width: 50%;
-            max-width: 700px;
+            width: 100%;
+            max-width: 726px;
             margin: 0 auto 38px;
+            .input-box {
+                width: 100%;
+                display: flex;
+            }
             .search-input {
+                flex: 1;
                 font-size: 0;
                 /deep/ .bk-form-input {
                     font-size: 14px;
@@ -518,8 +529,20 @@
                 }
             }
             .search-btn {
+                width: 86px;
+                height: 42px;
+                line-height: 42px;
+                padding: 0;
+                .icon-search {
+                    width: 18px;
+                    height: 18px;
+                    font-size: 18px;
+                    margin: -2px 4px 0 0;
+                }
+            }
+            .search-clear {
                 position: absolute;
-                right: 0;
+                right: 86px;
                 top: 0;
                 width: 50px;
                 height: 42px;
@@ -528,7 +551,7 @@
                 font-size: 18px;
                 text-align: center;
                 cursor: pointer;
-                &.icon-close-circle-shape:hover {
+                &:hover {
                     color: #979BA5;
                 }
             }
@@ -536,11 +559,11 @@
                 position: absolute;
                 top: 47px;
                 left: 0;
-                width: 100%;
-                padding: 5px 0;
+                width: calc(100% - 86px);
                 background-color: #ffffff;
                 box-shadow: 0px 2px 6px 0px rgba(0,0,0,0.15);
                 border: 1px solid #DCDEE5;
+                overflow: hidden;
                 z-index: 99;
                 ul li {
                     color: #63656E;
@@ -569,7 +592,7 @@
                 font-size: 14px;
                 line-height: 36px;
                 color: #C4C6CC;
-                margin: 0 20px;
+                margin: 5px 20px 0;
                 border-bottom: 1px solid #F0F1F5;
                 display: flex;
                 justify-content: space-between;
@@ -582,6 +605,9 @@
                         margin-top: -2px;
                     }
                 }
+            }
+            .history-list {
+                margin-bottom: 5px;
             }
         }
         .classify {
