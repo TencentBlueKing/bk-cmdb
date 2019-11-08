@@ -2,24 +2,30 @@
     <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading() }">
         <label class="create-label fl">{{$t('添加主机')}}</label>
         <div class="create-hosts">
-            <bk-button class="select-host-button" theme="default"
-                @click="hostSelectorVisible = true">
-                <i class="bk-icon icon-plus"></i>
-                {{$t('添加主机')}}
-            </bk-button>
+            <div>
+                <bk-button class="select-host-button" theme="default"
+                    @click="handleSelectHost">
+                    <i class="bk-icon icon-plus"></i>
+                    {{$t('添加主机')}}
+                </bk-button>
+                <i18n class="select-host-count" path="已选择N台主机" v-show="hosts.length">
+                    <span place="count" class="count-number">{{hosts.length}}</span>
+                </i18n>
+            </div>
             <div class="create-tables">
                 <service-instance-table class="service-instance-table"
-                    v-for="(host, index) in hosts"
+                    v-for="(item, index) in hosts"
                     ref="serviceInstanceTable"
                     deletable
                     expanded
-                    :key="index"
+                    :key="item.host.bk_host_id"
                     :index="index"
-                    :id="host.bk_host_id"
-                    :name="host.bk_host_innerip"
+                    :id="item.host.bk_host_id"
+                    :name="item.host.bk_host_innerip"
                     :source-processes="sourceProcesses"
                     :templates="templates"
                     :show-tips="showTips"
+                    :addible="!withTemplate"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
@@ -35,22 +41,26 @@
                 </div>
             </div>
         </div>
-        <host-selector
-            :visible.sync="hostSelectorVisible"
-            :module-instance="moduleInstance"
-            @host-selected="handleSelectHost">
-        </host-selector>
+        <cmdb-dialog v-model="dialog.show" v-bind="dialog.props">
+            <component
+                :is="dialog.component"
+                v-bind="dialog.componentProps"
+                @confirm="handleDialogConfirm"
+                @cancel="handleDialogCancel">
+            </component>
+        </cmdb-dialog>
     </div>
 </template>
 
 <script>
-    import hostSelector from '@/components/ui/selector/host.vue'
+    import HostSelector from '@/views/business-topology-new/host/host-selector.vue'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import { mapGetters } from 'vuex'
     export default {
         name: 'create-service-instance',
         components: {
-            hostSelector,
+            [HostSelector.name]: HostSelector,
             serviceInstanceTable
         },
         data () {
@@ -60,10 +70,23 @@
                 moduleInstance: {},
                 hosts: [],
                 templates: [],
-                showTips: false
+                showTips: false,
+                dialog: {
+                    show: false,
+                    props: {
+                        width: 850,
+                        showCloseIcon: false
+                    },
+                    component: null,
+                    componentProps: {}
+                },
+                request: {
+                    hostInfo: Symbol('hostInfo')
+                }
             }
         },
         computed: {
+            ...mapGetters('businessHost', ['getDefaultSearchCondition']),
             business () {
                 return this.$store.getters['objectBiz/bizId']
             },
@@ -98,19 +121,20 @@
                 }
             }
         },
-        created () {
+        async created () {
             this.$store.commit('setBreadcrumbs', [{
                 label: this.$t('服务拓扑'),
                 route: {
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.$route.params.moduleId
+                        node: 'module-' + this.$route.params.moduleId
                     }
                 }
             }, {
                 label: this.$route.query.title
             }])
-            this.getModuleInstance()
+            await this.getModuleInstance()
+            this.initSelectedHost()
         },
         methods: {
             async getModuleInstance () {
@@ -139,6 +163,38 @@
                     console.error(e)
                 }
             },
+            async initSelectedHost () {
+                try {
+                    const resources = this.$route.query.resources
+                    if (resources) {
+                        const hostIds = resources.split(',').map(id => Number(id))
+                        const result = await this.getHostInfo(hostIds)
+                        this.hosts = result.info
+                    }
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            getHostInfo (hostIds) {
+                const params = {
+                    bk_biz_id: this.business,
+                    ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
+                    page: {},
+                    condition: this.getDefaultSearchCondition()
+                }
+                const hostCondition = params.condition.find(target => target.bk_obj_id === 'host')
+                hostCondition.condition.push({
+                    field: 'bk_host_id',
+                    operator: '$in',
+                    value: hostIds
+                })
+                return this.$store.dispatch('hostSearch/searchHost', {
+                    params,
+                    config: {
+                        requestId: this.request.hostInfo
+                    }
+                })
+            },
             async getTemplate () {
                 try {
                     const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
@@ -155,9 +211,17 @@
                     console.error(e)
                 }
             },
-            handleSelectHost (checked, hosts) {
-                this.hosts.push(...hosts)
-                this.hostSelectorVisible = false
+            handleSelectHost () {
+                this.dialog.componentProps.exist = this.hosts
+                this.dialog.component = HostSelector.name
+                this.dialog.show = true
+            },
+            handleDialogConfirm (selected) {
+                this.hosts = selected
+                this.dialog.show = false
+            },
+            handleDialogCancel () {
+                this.dialog.show = false
             },
             handleDeleteInstance (index) {
                 this.hosts.splice(index, 1)
@@ -165,10 +229,6 @@
             async handleConfirm () {
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
-                    if (serviceInstanceTables.some(table => !table.processList.length)) {
-                        this.showTips = true
-                        return
-                    }
                     if (this.withTemplate) {
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
                             params: this.$injectMetadata({
@@ -187,6 +247,10 @@
                             }, { injectBizId: true })
                         })
                     } else {
+                        if (serviceInstanceTables.some(table => !table.processList.length)) {
+                            this.showTips = true
+                            return
+                        }
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
                             params: this.$injectMetadata({
                                 name: this.moduleInstance.bk_module_name,
@@ -212,9 +276,9 @@
             },
             handleBackToModule () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.moduleId
+                        node: 'module-' + this.moduleId
                     }
                 })
             }
@@ -260,12 +324,18 @@
             font-size: 14px;
         }
     }
+    .select-host-count {
+        color: $textColor;
+        .count-number {
+            font-weight: bold;
+        }
+    }
     .create-tables {
         height: calc(100% - 54px);
         margin: 22px 0 0 0;
         @include scrollbar-y;
         .buttons {
-            padding: 18px 0 0 0;
+            padding: 8px 0 0 0;
         }
     }
     .service-instance-table {

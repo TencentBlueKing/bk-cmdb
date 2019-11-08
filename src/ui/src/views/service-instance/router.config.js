@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { MENU_BUSINESS, MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+import { MENU_BUSINESS, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
 import {
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
@@ -22,7 +22,7 @@ export default [{
         owner: MENU_BUSINESS,
         menu: {
             i18n: '添加服务实例',
-            relative: MENU_BUSINESS_SERVICE_TOPOLOGY
+            relative: MENU_BUSINESS_HOST_AND_SERVICE
         },
         auth: {
             operation: OPERATION,
@@ -38,7 +38,7 @@ export default [{
         owner: MENU_BUSINESS,
         menu: {
             i18n: '克隆服务实例',
-            relative: MENU_BUSINESS_SERVICE_TOPOLOGY
+            relative: MENU_BUSINESS_HOST_AND_SERVICE
         },
         auth: {
             operation: OPERATION,
