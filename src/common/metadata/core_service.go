@@ -153,9 +153,9 @@ func (tn *TopoModelNode) LeftestObjectIDList() []string {
 }
 
 type TopoInstanceNodeSimplify struct {
-	ObjectID     string
-	InstanceID   int64
-	InstanceName string
+	ObjectID     string `json:"bk_obj_id" field:"bk_obj_id" mapstructure:"bk_obj_id"`
+	InstanceID   int64  `json:"bk_inst_id" field:"bk_inst_id" mapstructure:"bk_inst_id"`
+	InstanceName string `json:"bk_inst_name" field:"bk_inst_name" mapstructure:"bk_inst_name"`
 }
 
 type TopoInstanceNode struct {
