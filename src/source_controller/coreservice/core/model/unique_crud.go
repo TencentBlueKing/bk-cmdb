@@ -13,9 +13,12 @@
 package model
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -69,7 +72,7 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 		}
 	}
 
-	err := m.recheckUniqueForExistsInsts(ctx, objID, inputParam.Data.Keys, inputParam.Data.MustCheck, inputParam.Data.Metadata)
+	err := m.recheckUniqueForExistsInstances(ctx, objID, inputParam.Data.Keys, inputParam.Data.MustCheck, inputParam.Data.Metadata)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v err: %#v, rid: %s", objID, inputParam, err, ctx.ReqID)
 		return 0, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "instance")
@@ -133,7 +136,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 		}
 	}
 
-	err := m.recheckUniqueForExistsInsts(ctx, objID, unique.Keys, unique.MustCheck, unique.Metadata)
+	err := m.recheckUniqueForExistsInstances(ctx, objID, unique.Keys, unique.MustCheck, unique.Metadata)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v, rid: %s", objID, unique, err, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommDuplicateItem, "instance")
@@ -212,7 +215,10 @@ func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID st
 	return nil
 }
 
-func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, objID string, keys []metadata.UniqueKey, mustCheck bool, meta metadata.Metadata) error {
+// for create or update a model instance unique check usage.
+// the must_check is true, must be check exactly, no matter the check filed is empty or not.
+// the must_check is false, only when all the filed is not empty, then it's check exactly, otherwise, skip this check.
+func (m *modelAttrUnique) recheckUniqueForExistsInstances(ctx core.ContextParams, objID string, keys []metadata.UniqueKey, mustCheck bool, meta metadata.Metadata) error {
 	propertyIDs := make([]uint64, 0)
 	for _, key := range keys {
 		switch key.Kind {
@@ -242,15 +248,7 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 		return err
 	}
 
-	keynames := make([]string, 0)
-	for _, property := range properties {
-		keynames = append(keynames, property.PropertyID)
-	}
-	if len(keynames) <= 0 {
-		blog.Warnf("[ObjectUnique] recheckUniqueForExistsInsts keys empty for [%s] %+v, rid: %s", objID, keys, ctx.ReqID)
-		return nil
-	}
-
+	// now, set the pipeline.
 	pipeline := make([]interface{}, 0)
 
 	instCond := mapstr.MapStr{}
@@ -264,17 +262,33 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 		instCond.Set(common.BKObjIDField, objID)
 	}
 
+	if len(properties) <= 0 {
+		blog.Warnf("[ObjectUnique] recheckUniqueForExistsInsts keys empty for [%s] %+v, rid: %s", objID, keys, ctx.ReqID)
+		return nil
+	}
+
+	// if a unique is not a "must check", then it has two scenarios:
+	// 1. if all the object's instance's this key is all empty, then it's acceptable, which means that
+	//    it matched the unique rules.
+	// 2. if one of the object's instance's unique key is set, then unique rules must be check. only when all
+	//    the unique rules is matched, then it's acceptable.
 	if !mustCheck {
-		for _, key := range keynames {
-			instCond.Set(key, mapstr.MapStr{common.BKDBNE: nil})
+		for _, property := range properties {
+			basic, err := getBasicDataType(property.PropertyType)
+			if err != nil {
+				return err
+			}
+			// exclude fields that are null(not exist) and "ZERO" value.
+			exclude := []interface{}{nil, basic}
+			instCond.Set(property.PropertyID, mapstr.MapStr{common.BKDBExists: true, common.BKDBNIN: exclude})
 		}
 	}
 
 	pipeline = append(pipeline, mapstr.MapStr{common.BKDBMatch: instCond})
 
 	group := mapstr.MapStr{}
-	for _, key := range keynames {
-		group.Set(key, "$"+key)
+	for _, property := range properties {
+		group.Set(property.PropertyID, "$"+property.PropertyID)
 	}
 	pipeline = append(pipeline, mapstr.MapStr{
 		common.BKDBGroup: mapstr.MapStr{
@@ -284,14 +298,17 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 	})
 
 	pipeline = append(pipeline, mapstr.MapStr{common.BKDBMatch: mapstr.MapStr{
-		"_id":   mapstr.MapStr{common.BKDBNE: nil},
+		// "_id":   mapstr.MapStr{common.BKDBNE: nil},
 		"total": mapstr.MapStr{common.BKDBGT: 1},
 	}})
 
-	pipeline = append(pipeline, mapstr.MapStr{common.BKDBCount: "finded"})
+	pipeline = append(pipeline, mapstr.MapStr{common.BKDBCount: "unique_count"})
+
+	js, _ := json.Marshal(pipeline)
+	fmt.Println("pipeline: ", string(js))
 
 	result := struct {
-		Finded uint64 `bson:"finded"`
+		UniqueCount uint64 `bson:"unique_count"`
 	}{}
 	err = m.dbProxy.Table(common.GetInstTableName(objID)).AggregateOne(ctx, pipeline, &result)
 	if err != nil && !m.dbProxy.IsNotFoundError(err) {
@@ -299,14 +316,14 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 		return err
 	}
 
-	if result.Finded > 0 {
+	if result.UniqueCount > 0 {
 		return dal.ErrDuplicated
 	}
 
 	return nil
 }
 
-// checkUniqueRequireExist  check if ehter is arequired qnique check
+// checkUniqueRequireExist  check if either is a required unique check
 // ignoreUnqiqueIDS 除ignoreUnqiqueIDS之外是否有唯一校验项目
 func (m *modelAttrUnique) checkUniqueRequireExist(ctx core.ContextParams, objID string, ignoreUnqiqueIDS []uint64) (bool, error) {
 	cond := condition.CreateCondition()
@@ -326,4 +343,32 @@ func (m *modelAttrUnique) checkUniqueRequireExist(ctx core.ContextParams, objID 
 	}
 
 	return false, nil
+}
+
+func getBasicDataType(propertyType string) (interface{}, error) {
+	switch propertyType {
+	case common.FieldTypeSingleChar:
+		return "", nil
+	case common.FieldTypeLongChar:
+		return "", nil
+	case common.FieldTypeInt:
+		return 0, nil
+	case common.FieldTypeEnum:
+		return "", nil
+	case common.FieldTypeDate:
+		return "", nil
+	case common.FieldTypeTime:
+		return "", nil
+	case common.FieldTypeTimeZone:
+		return "", nil
+	case common.FieldTypeBool:
+		return false, nil
+	case common.FieldTypeFloat:
+		return 0.0, nil
+	case common.FieldTypeUser:
+		return "", nil
+	default:
+		return nil, fmt.Errorf("unsupported type: %s", propertyType)
+	}
+
 }
