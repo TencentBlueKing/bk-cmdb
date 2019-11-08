@@ -39,7 +39,7 @@
         <div class="clearfix"></div>
         <div class="wrapper-footer">
             <bk-button class="mr10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-            <bk-button theme="primary" :disabled="!!repeatSelected.length || !uniqueSelected.length" @click="handleNextStep">{{$t('下一步')}}</bk-button>
+            <bk-button theme="primary" :disabled="!selected.length" @click="handleNextStep">{{$t('下一步')}}</bk-button>
         </div>
     </div>
 </template>
@@ -59,6 +59,10 @@
         },
         props: {
             exist: {
+                type: Array,
+                default: () => ([])
+            },
+            exclude: {
                 type: Array,
                 default: () => ([])
             }

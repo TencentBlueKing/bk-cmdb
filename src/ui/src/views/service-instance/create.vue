@@ -55,7 +55,7 @@
 <script>
     import HostSelector from '@/views/business-topology-new/host/host-selector.vue'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import { mapGetters } from 'vuex'
     export default {
         name: 'create-service-instance',
@@ -125,9 +125,9 @@
             this.$store.commit('setBreadcrumbs', [{
                 label: this.$t('服务拓扑'),
                 route: {
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.$route.params.moduleId
+                        node: 'module-' + this.$route.params.moduleId
                     }
                 }
             }, {
@@ -276,9 +276,9 @@
             },
             handleBackToModule () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.moduleId
+                        node: 'module-' + this.moduleId
                     }
                 })
             }

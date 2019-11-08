@@ -94,7 +94,7 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SET_TEMPLATE, MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_SET_TEMPLATE, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import cmdbSetTemplateTree from './template-tree.vue'
     export default {
         components: {
@@ -242,7 +242,7 @@
                     okText: this.$t('创建实例'),
                     cancelText: this.$t('返回列表'),
                     confirmFn: () => {
-                        this.$router.replace({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
+                        this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })
                     },
                     cancelFn: () => {
                         this.$router.replace({ name: MENU_BUSINESS_SET_TEMPLATE })
@@ -285,7 +285,7 @@
                 this.$router.replace({ name: MENU_BUSINESS_SET_TEMPLATE })
             },
             handleToCreateInstance () {
-                this.$router.replace({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
+                this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             },
             handleToSyncInstance () {
                 this.$router.replace({

@@ -78,7 +78,7 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         props: {
             instance: {
@@ -251,9 +251,9 @@
             },
             goTopologyInstance () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.instance.bk_module_id,
+                        node: 'module-' + this.instance.bk_module_id,
                         instanceName: this.instance.name
                     }
                 })
