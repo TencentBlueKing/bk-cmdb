@@ -469,7 +469,8 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		}
 		// clear association
 		dc := &metadata.DeleteOption{Condition: delCond.ToMapStr()}
-		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(params.Context, params.Header, objectID, dc)
+		instObjID := delInst.obj.GetObjectID()
+		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(params.Context, params.Header, instObjID, dc)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
