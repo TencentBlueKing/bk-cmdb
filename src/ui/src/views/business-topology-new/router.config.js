@@ -61,7 +61,10 @@ export default [{
     path: 'host/transfer/:type',
     component: () => import('@/views/host-operation/index.vue'),
     meta: new Meta({
-        owner: MENU_BUSINESS
+        owner: MENU_BUSINESS,
+        menu: {
+            relative: MENU_BUSINESS_HOST_AND_SERVICE
+        }
     })
 }, {
     name: MENU_BUSINESS_HOST_DETAILS,
