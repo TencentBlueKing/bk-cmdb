@@ -293,7 +293,7 @@
             },
             getModulePath (id) {
                 const info = this.moduleMap[id] || []
-                const path = info.map(node => node.InstanceName).reverse().join(' / ')
+                const path = info.map(node => node.bk_inst_name).reverse().join(' / ')
                 return path
             },
             setCreateServiceInstance (data) {
@@ -375,8 +375,8 @@
             },
             getModuleName (id) {
                 const topoInfo = this.moduleMap[id] || []
-                const target = topoInfo.find(target => target.ObjectID === 'module' && target.InstanceID === id) || {}
-                return target.InstanceName
+                const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
+                return target.bk_inst_name
             },
             async setMoveToIdleHost (data) {
                 try {
