@@ -353,10 +353,17 @@
                 const copyList = this.$parent.table.selection
                 const copyText = []
                 copyList.forEach(item => {
-                    const value = item[target.bk_obj_id][target.bk_property_id]
-                    const formattedValue = Formatter(value, target)
-                    if (formattedValue !== '--') {
-                        copyText.push(formattedValue)
+                    const modelData = Array.isArray(item[target.bk_obj_id]) ? item[target.bk_obj_id] : [item[target.bk_obj_id]]
+                    const curCopyText = []
+                    modelData.forEach(data => {
+                        const value = data[target.bk_property_id]
+                        const formattedValue = Formatter(value, target)
+                        if (formattedValue !== '--') {
+                            curCopyText.push(formattedValue)
+                        }
+                    })
+                    if (curCopyText.length) {
+                        copyText.push(curCopyText.join(','))
                     }
                 })
                 if (copyText.length) {
