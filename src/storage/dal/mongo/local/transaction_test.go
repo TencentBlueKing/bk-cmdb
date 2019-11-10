@@ -1179,6 +1179,440 @@ func TestDistributedUpdateAbort(t *testing.T) {
 	require.Equal(t, uint64(0), cnt)
 }
 
+// 测试分布式事务的Upsert提交
+func TestDistributedUpsertCommit(t *testing.T) {
+	client1, err := GetClient()
+	require.NoError(t, err)
+	tablename := "cc_tranTest"
+
+	//事务操作前，清空数据
+	clearData(t, tablename)
+
+	// 准备一些数据
+	insertDataMany := []map[string]interface{}{
+		map[string]interface{}{
+			"k1": "v1",
+		},
+		map[string]interface{}{
+			"k2": "v2",
+		},
+	}
+	err = client1.Table(tablename).Insert(context.Background(), insertDataMany)
+	require.NoError(t, err)
+
+	cnt, err := client1.Table(tablename).Find(nil).Count(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, uint64(2), cnt)
+
+	sess1, err := client1.StartSession()
+	require.NoError(t, err)
+
+	// 获取事务信息，将其存入context中
+	tnxInfo, err := sess1.TxnInfo()
+	require.NoError(t, err)
+	ctx := TnxIntoContext(tnxInfo)
+
+	defer sess1.EndSession(ctx)
+
+	err = sess1.StartTransaction(ctx)
+	require.NoError(t, err)
+
+	err = sess1.Table(tablename).Upsert(ctx, map[string]string{"k1": "v1"}, map[string]string{"k1": "update1"})
+	require.NoError(t, err)
+
+	client2, err := GetClient()
+	require.NoError(t, err)
+
+	err = client2.Table(tablename).Upsert(ctx, map[string]string{"k2": "v5"}, map[string]string{"k9": "update2"})
+	require.NoError(t, err)
+
+	err = client2.CommitTransaction(ctx)
+	require.NoError(t, err)
+
+	//校验结果
+	cnt, err = client1.Table(tablename).Find(map[string]string{"k1": "v1"}).Count(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), cnt)
+
+	cnt, err = client1.Table(tablename).Find(map[string]string{"k2": "v2"}).Count(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), cnt)
+
+	cnt, err = client1.Table(tablename).Find(map[string]string{"k1": "update1"}).Count(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), cnt)
+
+	resultOne := make(map[string]string, 0)
+	err = client1.Table(tablename).Find(map[string]string{"k2": "v5"}).One(context.Background(), &resultOne)
+	require.NoError(t, err)
+	require.Equal(t, map[string]string{"k2": "v5", "k9": "update2"}, resultOne)
+}
+
+// 测试分布式事务的Upsert取消
+func TestDistributedUpsertAbort(t *testing.T) {
+	client1, err := GetClient()
+	require.NoError(t, err)
+	tablename := "cc_tranTest"
+
+	//事务操作前，清空数据
+	clearData(t, tablename)
+
+	// 准备一些数据
+	insertDataMany := []map[string]interface{}{
+		map[string]interface{}{
+			"k1": "v1",
+		},
+		map[string]interface{}{
+			"k2": "v2",
+		},
+	}
+	err = client1.Table(tablename).Insert(context.Background(), insertDataMany)
+	require.NoError(t, err)
+
+	cnt, err := client1.Table(tablename).Find(nil).Count(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, uint64(2), cnt)
+
+	sess1, err := client1.StartSession()
+	require.NoError(t, err)
+
+	// 获取事务信息，将其存入context中
+	tnxInfo, err := sess1.TxnInfo()
+	require.NoError(t, err)
+	ctx := TnxIntoContext(tnxInfo)
+
+	defer sess1.EndSession(ctx)
+
+	err = sess1.StartTransaction(ctx)
+	require.NoError(t, err)
+
+	err = sess1.Table(tablename).Upsert(ctx, map[string]string{"k1": "v1"}, map[string]string{"k1": "update1"})
+	require.NoError(t, err)
+
+	client2, err := GetClient()
+	require.NoError(t, err)
+
+	err = client2.Table(tablename).Upsert(ctx, map[string]string{"k2": "v5"}, map[string]string{"k9": "update2"})
+	require.NoError(t, err)
+
+	err = client2.AbortTransaction(ctx)
+	require.NoError(t, err)
+
+	//校验结果
+	cnt, err = client1.Table(tablename).Find(map[string]string{"k1": "v1"}).Count(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), cnt)
+
+	cnt, err = client1.Table(tablename).Find(map[string]string{"k2": "v2"}).Count(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), cnt)
+
+	cnt, err = client1.Table(tablename).Find(map[string]string{"k1": "update1"}).Count(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), cnt)
+
+	resultOne := make(map[string]string, 0)
+	err = client1.Table(tablename).Find(map[string]string{"k2": "v5"}).One(context.Background(), &resultOne)
+	require.EqualError(t, err, "document not found")
+}
+
+// 测试分布式事务的UpdateMultiModel提交
+func TestDistributedUpdateMultiModelCommit(t *testing.T) {
+	client1, err := GetClient()
+	require.NoError(t, err)
+	tablename := "cc_tranTest"
+
+	//事务操作前，清空数据
+	clearData(t, tablename)
+
+	// 准备一些数据
+	type RowStruct struct {
+		A     string  `bson:"a"`
+		B     string  `bson:"b"`
+		Ext   string  `bson:"ext"`
+		Sort  string  `bson:"sort"`
+		Inc   int64   `bson:"inc"`
+		Unset *string `bson:"unset"`
+	}
+	unsetVal := "test_val"
+	insertData := RowStruct{
+		A:     "a",
+		B:     "b",
+		Ext:   "ext",
+		Sort:  "2",
+		Inc:   1,
+		Unset: &unsetVal,
+	}
+	err = client1.Table(tablename).Insert(context.Background(), insertData)
+	require.NoError(t, err)
+
+	resultData := RowStruct{
+		A:     "a_update_multi_model",
+		B:     "b_update_multi_model",
+		Ext:   "ext",
+		Sort:  "2",
+		Inc:   5,
+		Unset: nil,
+	}
+
+	filter := map[string]string{"ext": "ext"}
+	update1 := []dal.ModeUpdate{
+		dal.ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
+		dal.ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
+		dal.ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
+	}
+	update2 := []dal.ModeUpdate{
+		dal.ModeUpdate{Op: "set", Doc: map[string]string{"b": "b_update_multi_model"}},
+		dal.ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 3}},
+	}
+
+	sess1, err := client1.StartSession()
+	require.NoError(t, err)
+
+	// 获取事务信息，将其存入context中
+	tnxInfo, err := sess1.TxnInfo()
+	require.NoError(t, err)
+	ctx := TnxIntoContext(tnxInfo)
+
+	defer sess1.EndSession(ctx)
+
+	err = sess1.StartTransaction(ctx)
+	require.NoError(t, err)
+
+	err = sess1.Table(tablename).UpdateMultiModel(ctx, filter, update1...)
+	require.NoError(t, err)
+
+	client2, err := GetClient()
+	require.NoError(t, err)
+
+	err = client2.Table(tablename).UpdateMultiModel(ctx, filter, update2...)
+	require.NoError(t, err)
+
+	err = client2.CommitTransaction(ctx)
+	require.NoError(t, err)
+
+	//校验结果
+	resultOne := RowStruct{}
+	err = client1.Table(tablename).Find(nil).One(context.Background(), &resultOne)
+	require.NoError(t, err)
+	require.Equal(t, resultData, resultOne)
+}
+
+// 测试分布式事务的UpdateMultiModel取消
+func TestDistributedUpdateMultiModelAbort(t *testing.T) {
+	client1, err := GetClient()
+	require.NoError(t, err)
+	tablename := "cc_tranTest"
+
+	//事务操作前，清空数据
+	clearData(t, tablename)
+
+	// 准备一些数据
+	type RowStruct struct {
+		A     string  `bson:"a"`
+		B     string  `bson:"b"`
+		Ext   string  `bson:"ext"`
+		Sort  string  `bson:"sort"`
+		Inc   int64   `bson:"inc"`
+		Unset *string `bson:"unset"`
+	}
+	unsetVal := "test_val"
+	insertData := RowStruct{
+		A:     "a",
+		B:     "b",
+		Ext:   "ext",
+		Sort:  "2",
+		Inc:   1,
+		Unset: &unsetVal,
+	}
+	err = client1.Table(tablename).Insert(context.Background(), insertData)
+	require.NoError(t, err)
+
+	filter := map[string]string{"ext": "ext"}
+	update1 := []dal.ModeUpdate{
+		dal.ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
+		dal.ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
+		dal.ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
+	}
+	update2 := []dal.ModeUpdate{
+		dal.ModeUpdate{Op: "set", Doc: map[string]string{"b": "b_update_multi_model"}},
+		dal.ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 3}},
+	}
+
+	sess1, err := client1.StartSession()
+	require.NoError(t, err)
+
+	// 获取事务信息，将其存入context中
+	tnxInfo, err := sess1.TxnInfo()
+	require.NoError(t, err)
+	ctx := TnxIntoContext(tnxInfo)
+
+	defer sess1.EndSession(ctx)
+
+	err = sess1.StartTransaction(ctx)
+	require.NoError(t, err)
+
+	err = sess1.Table(tablename).UpdateMultiModel(ctx, filter, update1...)
+	require.NoError(t, err)
+
+	client2, err := GetClient()
+	require.NoError(t, err)
+
+	err = client2.Table(tablename).UpdateMultiModel(ctx, filter, update2...)
+	require.NoError(t, err)
+
+	err = client2.AbortTransaction(ctx)
+	require.NoError(t, err)
+
+	//校验结果
+	resultOne := RowStruct{}
+	err = client1.Table(tablename).Find(nil).One(context.Background(), &resultOne)
+	require.NoError(t, err)
+	require.Equal(t, insertData, resultOne)
+}
+
+// 测试分布式事务的Aggregate提交
+func TestDistributedAggregateCommit(t *testing.T) {
+	client1, err := GetClient()
+	require.NoError(t, err)
+	tablename := "cc_tranTest"
+
+	//事务操作前，清空数据
+	clearData(t, tablename)
+
+	sess1, err := client1.StartSession()
+	require.NoError(t, err)
+
+	// 获取事务信息，将其存入context中
+	tnxInfo, err := sess1.TxnInfo()
+	require.NoError(t, err)
+	ctx := TnxIntoContext(tnxInfo)
+
+	defer sess1.EndSession(ctx)
+
+	err = sess1.StartTransaction(ctx)
+	require.NoError(t, err)
+
+	err = sess1.Table(tablename).Insert(ctx, map[string]string{"aa": "aa"})
+	require.NoError(t, err)
+
+	client2, err := GetClient()
+	require.NoError(t, err)
+
+	aggregateCond := []interface{}{
+		map[string]interface{}{
+			"$group": map[string]interface{}{
+				"_id": "$aa",
+				"num": map[string]interface{}{"$sum": 1},
+			},
+		},
+	}
+
+	type aggregateRowStruct struct {
+		ID  string `bson:"_id"`
+		Num int64  `bson:"num"`
+	}
+	resultOne := &aggregateRowStruct{}
+	err = sess1.Table(tablename).AggregateOne(ctx, aggregateCond, resultOne)
+	require.NoError(t, err)
+	require.Equal(t, aggregateRowStruct{
+		ID:  "aa",
+		Num: 1,
+	}, *resultOne)
+
+	resultAll := make([]aggregateRowStruct, 0)
+	err = client2.Table(tablename).AggregateAll(ctx, aggregateCond, &resultAll)
+	require.NoError(t, err)
+	if len(resultAll) == 0 {
+		t.Errorf("AggregateOne error")
+		return
+	}
+	require.Equal(t, aggregateRowStruct{
+		ID:  "aa",
+		Num: 1,
+	}, resultAll[0])
+
+	err = client2.CommitTransaction(ctx)
+	require.NoError(t, err)
+
+	//校验结果
+	err = client1.Table(tablename).AggregateOne(context.Background(), aggregateCond, resultOne)
+	require.NoError(t, err)
+	require.Equal(t, aggregateRowStruct{
+		ID:  "aa",
+		Num: 1,
+	}, *resultOne)
+}
+
+// 测试分布式事务的Aggregate取消
+func TestDistributedAggregateAbort(t *testing.T) {
+	client1, err := GetClient()
+	require.NoError(t, err)
+	tablename := "cc_tranTest"
+
+	//事务操作前，清空数据
+	clearData(t, tablename)
+
+	sess1, err := client1.StartSession()
+	require.NoError(t, err)
+
+	// 获取事务信息，将其存入context中
+	tnxInfo, err := sess1.TxnInfo()
+	require.NoError(t, err)
+	ctx := TnxIntoContext(tnxInfo)
+
+	defer sess1.EndSession(ctx)
+
+	err = sess1.StartTransaction(ctx)
+	require.NoError(t, err)
+
+	err = sess1.Table(tablename).Insert(ctx, map[string]string{"aa": "aa"})
+	require.NoError(t, err)
+
+	client2, err := GetClient()
+	require.NoError(t, err)
+
+	aggregateCond := []interface{}{
+		map[string]interface{}{
+			"$group": map[string]interface{}{
+				"_id": "$aa",
+				"num": map[string]interface{}{"$sum": 1},
+			},
+		},
+	}
+
+	type aggregateRowStruct struct {
+		ID  string `bson:"_id"`
+		Num int64  `bson:"num"`
+	}
+	resultOne := &aggregateRowStruct{}
+	err = sess1.Table(tablename).AggregateOne(ctx, aggregateCond, resultOne)
+	require.NoError(t, err)
+	require.Equal(t, aggregateRowStruct{
+		ID:  "aa",
+		Num: 1,
+	}, *resultOne)
+
+	resultAll := make([]aggregateRowStruct, 0)
+	err = client2.Table(tablename).AggregateAll(ctx, aggregateCond, &resultAll)
+	require.NoError(t, err)
+	if len(resultAll) == 0 {
+		t.Errorf("AggregateOne error")
+		return
+	}
+	require.Equal(t, aggregateRowStruct{
+		ID:  "aa",
+		Num: 1,
+	}, resultAll[0])
+
+	err = client2.AbortTransaction(ctx)
+	require.NoError(t, err)
+
+	//校验结果
+	err = client1.Table(tablename).AggregateOne(context.Background(), aggregateCond, resultOne)
+	require.EqualError(t, err, "document not found")
+}
+
 // 测试分布式事务的隔离性
 // context里包含事务信息则是事务内操作，否则为事务外操作
 func TestDistributedIsolation(t *testing.T) {
