@@ -8,6 +8,7 @@ import cmdbAuthMixin from './mixins/auth'
 import cmdbInjectMixin from './mixins/inject'
 import cmdbAppMixin from './mixins/app.js'
 import cmdbFormatter from './filters/formatter.js'
+import cmdbUnitFilter from './filters/unit.js'
 import cmdbUI from './components/ui'
 import tools from './utils/tools'
 import clipboard from 'vue-clipboard2'
@@ -28,6 +29,7 @@ Vue.mixin(cmdbAuthMixin)
 Vue.mixin(cmdbInjectMixin)
 Vue.mixin(cmdbAppMixin)
 Vue.filter('formatter', cmdbFormatter)
+Vue.filter('unit', cmdbUnitFilter)
 Vue.prototype.$http = api
 Vue.prototype.$tools = tools
 /* eslint-disable no-new */

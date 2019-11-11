@@ -4,7 +4,7 @@
             <div class="group-content" v-if="isAdminView">
                 <span class="title-name" :title="$t('业务')">{{$t('业务')}}</span>
                 <div class="selector-content">
-                    <bk-select v-model="filter.bizId" searchable font-size="14">
+                    <bk-select v-model="filter.bizId" searchable font-size="medium">
                         <bk-option v-for="business in authorizedBusiness"
                             :key="business.bk_biz_id"
                             :id="business.bk_biz_id"
@@ -17,7 +17,7 @@
                 <span class="title-name" title="IP">IP</span>
                 <div class="selector-content">
                     <bk-input class="cmdb-form-input" type="text"
-                        font-size="large"
+                        font-size="medium"
                         :placeholder="$t('使用逗号分隔')"
                         v-model.trim="filter.bkIP">
                     </bk-input>
@@ -26,7 +26,7 @@
             <div class="group-content">
                 <span class="title-name" :title="$t('模型')">{{$t('模型')}}</span>
                 <div class="selector-content">
-                    <bk-select v-model="filter.classify" searchable font-size="14">
+                    <bk-select v-model="filter.classify" searchable font-size="medium">
                         <bk-option-group v-for="group in filterClassifications"
                             :key="group.id"
                             :name="group.name">
@@ -43,7 +43,7 @@
                 <span class="title-name" :title="$t('类型')">{{$t('类型')}}</span>
                 <div class="selector-content">
                     <bk-select
-                        font-size="14"
+                        font-size="medium"
                         v-model="filter.bkOpType"
                         :clearable="false">
                         <bk-option v-for="option in operateTypeList"
@@ -60,7 +60,7 @@
                     <cmdb-form-date-range
                         class="date-range"
                         :clearable="false"
-                        font-size="14"
+                        font-size="medium"
                         v-model="filter.bkCreateTime">
                     </cmdb-form-date-range>
                 </div>

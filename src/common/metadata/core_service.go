@@ -153,9 +153,9 @@ func (tn *TopoModelNode) LeftestObjectIDList() []string {
 }
 
 type TopoInstanceNodeSimplify struct {
-	ObjectID     string
-	InstanceID   int64
-	InstanceName string
+	ObjectID     string `json:"bk_obj_id" field:"bk_obj_id" mapstructure:"bk_obj_id"`
+	InstanceID   int64  `json:"bk_inst_id" field:"bk_inst_id" mapstructure:"bk_inst_id"`
+	InstanceName string `json:"bk_inst_name" field:"bk_inst_name" mapstructure:"bk_inst_name"`
 }
 
 type TopoInstanceNode struct {
@@ -201,7 +201,7 @@ func (node *TopoInstanceNode) TraversalFindModule(targetID int64) []*TopoInstanc
 }
 
 func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int64) []*TopoInstanceNode {
-	if common.GetObjByType(node.ObjectID) == objectType && node.InstanceID == targetID {
+	if node.ObjectID == objectType && node.InstanceID == targetID {
 		return []*TopoInstanceNode{node}
 	}
 
@@ -224,6 +224,17 @@ func (node *TopoInstanceNode) DeepFirstTraversal(f func(node *TopoInstanceNode))
 		child.DeepFirstTraversal(f)
 	}
 	f(node)
+}
+
+func (node *TopoInstanceNode) ToSimplify() *TopoInstanceNodeSimplify {
+	if node == nil {
+		return nil
+	}
+	return &TopoInstanceNodeSimplify{
+		ObjectID:     node.ObjectID,
+		InstanceID:   node.InstanceID,
+		InstanceName: node.InstanceName,
+	}
 }
 
 type TopoInstance struct {

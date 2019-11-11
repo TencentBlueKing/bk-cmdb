@@ -50,7 +50,7 @@
             },
             fontSize: {
                 type: [String, Number],
-                default: 12
+                default: 'medium'
             }
         },
         data () {
