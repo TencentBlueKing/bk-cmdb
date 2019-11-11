@@ -28,6 +28,7 @@
         </div>
         <service-instance-table class="service-instance-table"
             v-for="(instance, index) in instances"
+            ref="serviceInstance"
             :key="`${instance.bk_module_id}-${instance.bk_host_id}`"
             :index="index"
             :id="instance.bk_host_id"

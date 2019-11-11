@@ -1,13 +1,21 @@
 <template>
     <div class="options-layout clearfix">
         <div class="options fl">
-            <bk-button class="option" theme="primary"
-                :disabled="!isNormalModuleNode"
-                :title="isNormalModuleNode ? '' : $t('仅能在业务模块下新增')"
-                @click="handleAddHost">
-                {{$t('新增')}}
-            </bk-button>
-            <bk-button class="option ml10" :disabled="!hasSelection" @click="handleMultipleEdit">{{$t('编辑')}}</bk-button>
+            <cmdb-auth class="option" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                <bk-button theme="primary" slot-scope="{ disabled }"
+                    :disabled="disabled || !isNormalModuleNode"
+                    :title="isNormalModuleNode ? '' : $t('仅能在业务模块下新增')"
+                    @click="handleAddHost">
+                    {{$t('新增')}}
+                </bk-button>
+            </cmdb-auth>
+            <cmdb-auth class="option ml10" :auth="$authResources({ type: $OPERATION.U_HOST })">
+                <bk-button slot-scope="{ disabled }"
+                    :disabled="disabled || !hasSelection"
+                    @click="handleMultipleEdit">
+                    {{$t('编辑')}}
+                </bk-button>
+            </cmdb-auth>
             <bk-dropdown-menu class="option ml10" trigger="click"
                 font-size="medium"
                 :disabled="!hasSelection"
@@ -24,11 +32,15 @@
                         {{$t('空闲模块')}}
                     </li>
                     <li class="bk-dropdown-item" @click="handleTransfer($event, 'business', false)">{{$t('业务模块')}}</li>
-                    <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]"
-                        v-bk-tooltips="isIdleModule ? '' : $t('仅空闲机模块才能转移到资源池')"
-                        @click="handleTransfer($event, 'resource', !isIdleModule)">
-                        {{$t('资源池')}}
-                    </li>
+                    <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
+                        :auth="$authResources({ type: $OPERATION.HOST_TO_RESOURCE })">
+                        <span href="javascript:void(0)" slot-scope="{ disabled }"
+                            v-bk-tooltips="isIdleModule ? '' : $t('仅空闲机模块才能转移到资源池')"
+                            :class="{ disabled: !isIdleModule || disabled }"
+                            @click="handleTransfer($event, 'resource', !isIdleModule)">
+                            {{$t('资源池')}}
+                        </span>
+                    </cmdb-auth>
                 </ul>
             </bk-dropdown-menu>
             <cmdb-clipboard-selector class="options-button ml10"
@@ -46,11 +58,16 @@
                     <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
                 </bk-button>
                 <ul class="bk-dropdown-list" slot="dropdown-content">
-                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]"
+                    <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
                         v-if="showRemove"
-                        @click="handleRemove($event)">
-                        {{$t('移除')}}
-                    </li>
+                        :auth="$authResources({ type: $OPERATION.D_SERVICE_INSTANCE })">
+                        <span href="javascript:void(0)"
+                            slot-scope="{ disabled }"
+                            :class="{ disabled: !hasSelection || disabled }"
+                            @click="handleRemove($event)">
+                            {{$t('移除')}}
+                        </span>
+                    </cmdb-auth>
                     <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">{{$t('导出')}}</li>
                 </ul>
             </bk-dropdown-menu>
@@ -193,10 +210,10 @@
                     && this.selectedNode.data.default === 0
             },
             isIdleModule () {
-                return this.selectedNode && this.selectedNode.data.default === 1
-            },
-            isIdleSet () {
-                return this.selectedNode && this.selectedNode.data.default !== 0
+                return this.$parent.table.selection.every(data => {
+                    const modules = data.module
+                    return modules.every(module => module.default === 1)
+                })
             },
             clipboardList () {
                 return this.$parent.table.header
@@ -452,13 +469,28 @@
             line-height: 32px;
             cursor: pointer;
             @include ellipsis;
-            &:not(.disabled):hover {
+            &:not(.disabled):not(.with-auth):hover {
                 background-color: #EAF3FF;
                 color: $primaryColor;
             }
             &.disabled {
                 color: $textDisabledColor;
                 cursor: not-allowed;
+            }
+            &.with-auth {
+                padding: 0;
+                span {
+                    display: block;
+                    padding: 0 20px;
+                    &:not(.disabled):hover {
+                        background-color: #EAF3FF;
+                        color: $primaryColor;
+                    }
+                    &.disabled {
+                        color: $textDisabledColor;
+                        cursor: not-allowed;
+                    }
+                }
             }
         }
     }
