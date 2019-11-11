@@ -13,8 +13,6 @@
 package logics
 
 import (
-	"encoding/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -85,7 +83,7 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 	return process, nil
 }
 
-func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr.MapStr) error {
+func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr.MapStr) errors.CCErrorCoder {
 	delete(info, common.BkSupplierAccount)
 	option := metadata.UpdateOption{
 		Data: info,
@@ -97,17 +95,19 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 
 	result, err := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
-		return err
+		blog.ErrorJSON("UpdateProcessInstance failed, UpdateInstance http request failed, option: %s, err: %s, rid: %s", option, err.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
-		blog.Errorf("rid: %s, update process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
-		return kit.CCError.New(result.Code, result.ErrMsg)
+		blog.ErrorJSON("UpdateProcessInstance failed, UpdateInstance failed, option: %s, response: %s, rid: %s", option, result, kit.Rid)
+		return errors.New(result.Code, result.ErrMsg)
 	}
 	return nil
 }
 
-func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) error {
+func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) errors.CCErrorCoder {
+	rid := kit.Rid
 	option := metadata.DeleteOption{
 		Condition: map[string]interface{}{
 			common.BKProcessIDField: procID,
@@ -116,12 +116,13 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) error {
 
 	result, err := lgc.CoreAPI.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
-		return err
+		blog.ErrorJSON("DeleteProcessInstance failed, DeleteInstance failed, option: %s, err: %s, rid: %s", option, err.Error(), rid)
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
 		blog.Errorf("rid: %s, delete process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
-		return kit.CCError.Error(result.Code)
+		return errors.New(result.Code, result.ErrMsg)
 	}
 
 	return nil
@@ -151,17 +152,9 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) err
 	return nil
 }
 
-func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, process *metadata.Process) (int64, errors.CCErrorCoder) {
-	processBytes, err := json.Marshal(process)
-	if err != nil {
-		return 0, kit.CCError.CCError(common.CCErrCommJsonEncode)
-	}
-	mData := mapstr.MapStr{}
-	if err := json.Unmarshal(processBytes, &mData); nil != err && 0 != len(processBytes) {
-		return 0, kit.CCError.CCError(common.CCErrCommJsonDecode)
-	}
+func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, processData map[string]interface{}) (int64, errors.CCErrorCoder) {
 	inputParam := metadata.CreateModelInstance{
-		Data: mData,
+		Data: processData,
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &inputParam)
 	if err != nil {
@@ -170,7 +163,7 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, process *metadata.Process
 	}
 
 	if !result.Result {
-		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, process, result.ErrMsg)
+		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, processData, result.ErrMsg)
 		return 0, errors.New(result.Code, result.ErrMsg)
 	}
 

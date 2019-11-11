@@ -359,8 +359,8 @@ type CloudAreaParameter struct {
 }
 
 type TopoNode struct {
-	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id"`
-	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" mapstructure:"bk_obj_id"`
+	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id" mapstructure:"bk_inst_id"`
 }
 
 type TransferHostWithAutoClearServiceInstanceOption struct {
@@ -369,7 +369,12 @@ type TransferHostWithAutoClearServiceInstanceOption struct {
 	AddToModules   []int64   `field:"add_to_modules" json:"add_to_modules"`
 	// 主机从 RemoveFromNode 移除后如果不再属于其它模块， 默认转移到空闲机模块
 	// DefaultInternalModule 支持调整这种模型行为，可设置成待回收模块或者故障机模块
-	DefaultInternalModule int64 `field:"default_internal_module" json:"default_internal_module"`
+	DefaultInternalModule int64           `field:"default_internal_module" json:"default_internal_module"`
+	Options               TransferOptions `field:"options" json:"options"`
+}
+
+type TransferOptions struct {
+	ServiceInstanceOptions []CreateServiceInstanceOption `field:"service_instance_options" json:"service_instance_options"`
 }
 
 type HostTransferPlan struct {
