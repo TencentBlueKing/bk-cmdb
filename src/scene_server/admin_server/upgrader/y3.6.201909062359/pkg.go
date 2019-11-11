@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package x19_09_06_01
+package y3_6_201909062359
 
 import (
 	"context"
@@ -20,31 +20,31 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19_09_06_01", upgrade)
+	upgrader.RegistUpgrader("y3.6.201909062359", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = createSetTemplateTables(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19.09.06.01] create tables failed, err: %s", err.Error())
+		blog.Errorf("[upgrade y3.6.201909062359] create tables failed, err: %s", err.Error())
 		return err
 	}
 
 	err = addSetProperty(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19.09.06.01] addSetProperty failed, err: %s", err.Error())
+		blog.Errorf("[upgrade y3.6.201909062359] addSetProperty failed, err: %s", err.Error())
 		return err
 	}
 
 	err = addModuleProperty(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19.09.06.01] addModuleProperty failed, err: %s", err.Error())
+		blog.Errorf("[upgrade y3.6.201909062359] addModuleProperty failed, err: %s", err.Error())
 		return err
 	}
 
 	err = initializeSetTemplateField(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19.09.06.01] initializeSetTemplateField failed, err: %s", err.Error())
+		blog.Errorf("[upgrade y3.6.201909062359] initializeSetTemplateField failed, err: %s", err.Error())
 		return err
 	}
 

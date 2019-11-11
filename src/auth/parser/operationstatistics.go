@@ -30,7 +30,7 @@ var OperationStatisticAuthConfigs = []AuthConfig{
 	{
 		Name:           "CreateOperationStatisticRegex",
 		Description:    "创建创建运营统计",
-		Regex:          regexp.MustCompile(`^/api/v3/create/operation/chart$`),
+		Regex:          regexp.MustCompile(`^/api/v3/create/operation/chart/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    nil,
 		ResourceType:   meta.OperationStatistic,
@@ -39,7 +39,7 @@ var OperationStatisticAuthConfigs = []AuthConfig{
 	{
 		Name:           "DeleteOperationStatisticRegex",
 		Description:    "删除运营统计",
-		Regex:          regexp.MustCompile(`^/api/v3/delete/operation/chart/([0-9]+)$`),
+		Regex:          regexp.MustCompile(`^/api/v3/delete/operation/chart/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodDelete,
 		BizIDGetter:    nil,
 		ResourceType:   meta.OperationStatistic,
@@ -48,7 +48,7 @@ var OperationStatisticAuthConfigs = []AuthConfig{
 	{
 		Name:           "UpdateOperationStatisticRegex",
 		Description:    "更新运营统计",
-		Regex:          regexp.MustCompile(`^/api/v3/update/operation/chart$`),
+		Regex:          regexp.MustCompile(`^/api/v3/update/operation/chart/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    nil,
 		ResourceType:   meta.OperationStatistic,
@@ -57,7 +57,7 @@ var OperationStatisticAuthConfigs = []AuthConfig{
 	{
 		Name:           "UpdateOperationStatisticRegex",
 		Description:    "查看运营统计图表配置",
-		Regex:          regexp.MustCompile(`^/api/v3/search/operation/chart$`),
+		Regex:          regexp.MustCompile(`^/api/v3/search/operation/chart/?$`),
 		HTTPMethod:     http.MethodGet,
 		BizIDGetter:    nil,
 		ResourceType:   meta.OperationStatistic,
@@ -66,7 +66,7 @@ var OperationStatisticAuthConfigs = []AuthConfig{
 	{
 		Name:           "UpdateOperationStatisticRegex",
 		Description:    "查看运营统计数据",
-		Regex:          regexp.MustCompile(`^/api/v3/search/operation/chart/data$`),
+		Regex:          regexp.MustCompile(`^/api/v3/search/operation/chart/data/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    nil,
 		ResourceType:   meta.OperationStatistic,

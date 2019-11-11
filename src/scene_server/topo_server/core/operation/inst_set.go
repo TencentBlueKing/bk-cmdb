@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/common/errors"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -165,6 +166,29 @@ func (s *set) DeleteSet(params types.ContextParams, setModel model.Object, bizID
 		setCond.Field(common.BKSetIDField).In(setIDS)
 	}
 
+	// 检查是否时内置集群
+	qc := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: setCond.ToMapStr(),
+	}
+	qc.Condition[common.BKDefaultField] = map[string]interface{}{
+		common.BKDBNE: 0,
+	}
+	rsp, err := s.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, qc)
+	if nil != err {
+		blog.Errorf("[operation-set] failed read set instance, err: %s, rid: %s", err.Error(), params.ReqID)
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if rsp.Result == false || rsp.Code != 0 {
+		blog.ErrorJSON("[operation-set] failed read set instance, option: %s, response: %s, rid: %s", qc, rsp, params.ReqID)
+		return errors.New(rsp.Code, rsp.ErrMsg)
+	}
+	if rsp.Data.Count > 0 {
+		return params.Err.CCError(common.CCErrorTopoForbiddenDeleteBuiltInSetModule)
+	}
+
 	exists, err := s.hasHost(params, bizID, setIDS)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to check the host, error info is %s, rid: %s", err.Error(), params.ReqID)
@@ -190,7 +214,7 @@ func (s *set) DeleteSet(params types.ContextParams, setModel model.Object, bizID
 
 	// clear set template sync status
 	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(params.Context, params.Header, bizID, setIDS); ccErr != nil {
-		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDS, err.Error(), params.ReqID)
+		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDS, ccErr.Error(), params.ReqID)
 		return ccErr
 	}
 
