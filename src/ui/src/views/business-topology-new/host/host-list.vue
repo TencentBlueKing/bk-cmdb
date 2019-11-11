@@ -18,6 +18,7 @@
                 :label="column.bk_property_name"
                 :sortable="getColumnSortable(column)"
                 :prop="column.bk_property_id"
+                :width="column.bk_property_id === 'bk_host_innerip' ? 130 : 'auto'"
                 :fixed="column.bk_property_id === 'bk_host_innerip'"
                 :class-name="column.bk_property_id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">

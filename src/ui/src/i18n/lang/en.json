@@ -1080,5 +1080,16 @@
     "请输入IP，多个值换行分隔，点击搜索": "Please enter IP, multiple values are separated by line and click to search",
     "请输入完整IP进行搜索，多个IP用换行分割": "Please enter the full IP to search, multiple IPs are broken by line break",
     "目前最多支持搜索500个IP": "Currently supports up to 500 IP searches",
-    "请输入关键字，点击或回车搜索": "Please enter a keyword and click or enter to search"
+    "请输入关键字，点击或回车搜索": "Please enter a keyword and click or enter to search",
+    "仅空闲机模块才能转移到资源池": "Only idle modules can be transferred to the resource pool",
+    "由集群模板创建的模块无法删除": "Modules created by Set templates cannot be deleted",
+    "转移主机到业务模块": "Transfer host to business module",
+    "请勾选需要转到的模块": "Please tick the module you want to go to",
+    "下一步": "Next",
+    "新增服务实例": "New service instance",
+    "按IP排序": "Sort by IP",
+    "选择业务模块": "Select business module",
+    "按模块路径排序": "Sort by module path",
+    "转移到空闲模块": "Transfer to idle module",
+    "移除主机": "Remove host"
 }
