@@ -15,6 +15,7 @@ package local
 import (
 	"context"
 	"errors"
+
 	//"fmt"
 	"reflect"
 	"strings"
@@ -420,6 +421,31 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, up
 	return err
 }
 
+// UpdateModifyCount 更新数据,返回更新的条数
+func (c *Collection) UpdateModifyCount(ctx context.Context, filter dal.Filter, doc interface{}) (int64, error) {
+	// 设置ctx的Session对象,用来处理事务
+	se := &mongo.SessionExposer{}
+	if c.HasSession(ctx) {
+		sess, err := c.GetDistributedSession(ctx)
+		if err != nil {
+			return 0, err
+		}
+		ctx = se.ContextWithSession(ctx, sess)
+		defer func() {
+			c.tm.SaveSession(sess)
+		}()
+	} else if c.sess != nil {
+		ctx = se.ContextWithSession(ctx, c.sess)
+	}
+
+	data := bson.M{"$set": doc}
+	result, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
+	if err != nil {
+		return 0, nil
+	}
+	return result.ModifiedCount, nil
+}
+
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 	// 设置ctx的Session对象,用来处理事务
@@ -617,17 +643,17 @@ func (c *Mongo) AbortTransaction(ctx context.Context) error {
 	return sess.AbortTransaction(ctx)
 }
 
-// Start 开启新事务
+// Start 开启新事务 TODO delete
 func (c *Mongo) Start(ctx context.Context) (dal.Transaction, error) {
 	return c, nil
 }
 
-// Commit 提交事务
+// Commit 提交事务 TODO delete
 func (c *Mongo) Commit(ctx context.Context) error {
 	return nil
 }
 
-// Abort 取消事务
+// Abort 取消事务 TODO delete
 func (c *Mongo) Abort(ctx context.Context) error {
 	return nil
 }
