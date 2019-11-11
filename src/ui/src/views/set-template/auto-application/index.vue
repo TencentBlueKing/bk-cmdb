@@ -17,7 +17,7 @@
         data () {
             return {
                 conflict: {
-                    show: false,
+                    show: true,
                     host: '192.168.0.1'
                 }
             }

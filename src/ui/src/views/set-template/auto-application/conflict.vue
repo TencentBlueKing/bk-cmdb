@@ -1,5 +1,14 @@
 <template>
     <div class="conflict-layout">
+        <cmdb-tips class="resolve-tips"
+            :tips-style="{
+                height: '32px',
+                'line-height': '32px',
+                'font-size': '12px'
+            }"
+            :icon-style="{ 'font-size': '16px' }">
+            {{$t('解决冲突：同一主机的属性在不同的模块下需保持一致')}}
+        </cmdb-tips>
         <div class="conflict-table" ref="conflictTable">
             <bk-table :data="list">
                 <bk-table-column :label="$t('字段名称')" width="160">
@@ -207,6 +216,9 @@
     .conflict-layout {
         height: 100%;
         @include scrollbar-y;
+    }
+    .resolve-tips {
+        margin: 12px 20px;
     }
     .conflict-table {
         padding: 0 20px;
