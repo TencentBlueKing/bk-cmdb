@@ -1,12 +1,14 @@
 <template>
     <div class="resize-layout" :class="localDirections">
         <slot></slot>
-        <i v-for="(_direction, index) in localDirections"
-            :key="index"
-            :class="['resize-handler', _direction]"
-            :style="getHandlerStyle(_direction)"
-            @mousedown.left="handleMousedown($event, _direction)">
-        </i>
+        <template v-if="!disabled">
+            <i v-for="(_direction, index) in localDirections"
+                :key="index"
+                :class="['resize-handler', _direction]"
+                :style="getHandlerStyle(_direction)"
+                @mousedown.left="handleMousedown($event, _direction)">
+            </i>
+        </template>
         <i :class="['resize-proxy', state.direction]" ref="resizeProxy"></i>
         <div class="resize-mask" ref="resizeMask"></div>
     </div>
@@ -59,7 +61,8 @@
             handlerOffset: {
                 type: Number,
                 default: 0
-            }
+            },
+            disabled: Boolean
         },
         data () {
             return {

@@ -104,7 +104,7 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import { mapState } from 'vuex'
     import serviceInstanceTable from './service-instance-table.vue'
     export default {
@@ -426,7 +426,7 @@
             },
             handleGoAddInstance () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY
+                    name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             },
             handleShowProcessDetails (inst) {

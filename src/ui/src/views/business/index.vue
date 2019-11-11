@@ -31,7 +31,7 @@
                     class="filter-selector fl"
                     v-model="filter.id"
                     searchable
-                    font-size="14"
+                    font-size="medium"
                     :clearable="false">
                     <bk-option v-for="(option, index) in filter.options"
                         :key="index"
@@ -45,20 +45,20 @@
                     :allow-clear="true"
                     :auto-select="false"
                     v-model="filter.value"
-                    font-size="14"
+                    font-size="medium"
                     @on-selected="handleFilterData">
                 </cmdb-form-enum>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
-                    font-size="large"
+                    font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
-                    font-size="large"
+                    font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>

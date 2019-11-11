@@ -117,5 +117,6 @@
     "1101095": "sync set template failed",
     "1101096": "sync set template task is running",
     "1101097": "forbidden add/remove module on set initialized by set template",
+    "1101098": "forbidden remove built in set or module",
     "": "" 
 }

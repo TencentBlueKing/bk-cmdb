@@ -2,19 +2,24 @@
     <div class="search-layout" ref="searchLayout" :style="{ 'background-color': setStyle.backgroundColor }">
         <div :class="{ 'sticky-layout': result.isShow }" :style="{ 'padding-top': (setStyle.paddingTop) + 'px' }">
             <div class="search-bar" v-click-outside="handleHideLenovo">
-                <bk-input ref="searchInput"
-                    class="search-input"
-                    autocomplete="off"
-                    maxlength="32"
-                    :placeholder="placeholder"
-                    v-model.trim="keywords"
-                    @input="handleInputSearch"
-                    @focus="handleShowHistory"
-                    @blur="$emit('focus', false)"
-                    @enter="handleShowResult">
-                </bk-input>
-                <i class="bk-icon search-btn icon-search" ref="searchBtn" v-show="!keywords" @click="handleShowResult"></i>
-                <i class="bk-icon search-btn icon-close-circle-shape" v-show="keywords" @click="handleClear"></i>
+                <div class="input-box">
+                    <bk-input ref="searchInput"
+                        class="search-input"
+                        autocomplete="off"
+                        maxlength="32"
+                        :placeholder="placeholder"
+                        v-model.trim="keywords"
+                        @input="handleInputSearch"
+                        @focus="handleShowHistory"
+                        @blur="$emit('focus', false)"
+                        @enter="handleShowResult">
+                    </bk-input>
+                    <i class="bk-icon search-clear icon-close-circle-shape" v-show="keywords" @click="handleClear"></i>
+                    <bk-button theme="primary" class="search-btn" @click="handleShowResult">
+                        <i class="bk-icon icon-search"></i>
+                        {{$t('搜索')}}
+                    </bk-button>
+                </div>
                 <transition name="slide">
                     <div class="lenovo selectTips" v-show="showLenovo && lenovoList.length">
                         <ul class="lenovo-result">
@@ -161,7 +166,7 @@
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             placeholder () {
-                return this.isFullTextSearch ? this.$t('请输入关键字') : this.$t('请输入IP开始搜索')
+                return this.isFullTextSearch ? this.$t('请输入关键字，点击或回车搜索') : this.$t('请输入IP开始搜索')
             },
             params () {
                 const keywords = this.keywords
@@ -492,8 +497,10 @@
     .search-layout {
         position: relative;
         width: 100%;
-        height: calc(100% + 50px);
+        height: 100%;
         z-index: 3;
+        overflow-y: auto;
+        overflow-x: hidden;
         .sticky-layout {
             transition: all .3s;
             position: sticky;
@@ -505,20 +512,39 @@
         .search-bar {
             position: relative;
             width: 100%;
-            max-width: 640px;
+            max-width: 726px;
             margin: 0 auto 38px;
+            .input-box {
+                width: 100%;
+                display: flex;
+            }
             .search-input {
+                flex: 1;
                 font-size: 0;
                 /deep/ .bk-form-input {
                     font-size: 14px;
                     height: 42px;
                     line-height: 42px;
                     padding: 0 56px 0 16px;
+                    border-radius: 2px 0 0 2px;
                 }
             }
             .search-btn {
+                width: 86px;
+                height: 42px;
+                line-height: 42px;
+                padding: 0;
+                border-radius: 0 2px 2px 0;
+                .icon-search {
+                    width: 18px;
+                    height: 18px;
+                    font-size: 18px;
+                    margin: -2px 4px 0 0;
+                }
+            }
+            .search-clear {
                 position: absolute;
-                right: 0;
+                right: 86px;
                 top: 0;
                 width: 50px;
                 height: 42px;
@@ -527,7 +553,7 @@
                 font-size: 18px;
                 text-align: center;
                 cursor: pointer;
-                &.icon-close-circle-shape:hover {
+                &:hover {
                     color: #979BA5;
                 }
             }
@@ -535,7 +561,7 @@
                 position: absolute;
                 top: 47px;
                 left: 0;
-                width: 100%;
+                width: calc(100% - 86px);
                 background-color: #ffffff;
                 box-shadow: 0px 2px 6px 0px rgba(0,0,0,0.15);
                 border: 1px solid #DCDEE5;

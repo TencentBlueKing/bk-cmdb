@@ -1719,6 +1719,7 @@ const (
 var (
 	deleteMainlineObjectLatestRegexp                       = regexp.MustCompile(`^/api/v3/delete/topomodelmainline/object/[^\s/]+/?$`)
 	findBusinessInstanceTopologyLatestRegexp               = regexp.MustCompile(`^/api/v3/find/topoinst/biz/[0-9]+/?$`)
+	findBusinessInstanceTopologyPathRegexp                 = regexp.MustCompile(`^/api/v3/find/topopath/biz/[0-9]+/?$`)
 	findBusinessInstanceTopologyWithStatisticsLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst_with_statistics/biz/[0-9]+/?$`)
 	// TODO remove it, interface implementation not found
 	findMainlineSubInstanceTopoLatestRegexp = regexp.MustCompile(`^/api/v3/topoinstchild/object/[^\s/]+/biz/[0-9]+/inst/[0-9]+/?$`)
@@ -1841,6 +1842,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 	// find business instance topology operation.
 	// also is find mainline instance topology operation.
 	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) ||
+		ps.hitRegexp(findBusinessInstanceTopologyPathRegexp, http.MethodPost) ||
 		ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find business instance topology, but got invalid url")
