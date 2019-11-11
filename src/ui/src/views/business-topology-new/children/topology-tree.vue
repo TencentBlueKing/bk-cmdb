@@ -3,6 +3,7 @@
         <bk-input class="tree-search" :placeholder="$t('请输入关键词')" v-model="filter"></bk-input>
         <bk-big-tree ref="tree" class="topology-tree"
             selectable
+            :expand-on-click="false"
             :options="{
                 idKey: getNodeId,
                 nameKey: 'bk_inst_name',
@@ -81,6 +82,7 @@
     import CreateNode from './create-node.vue'
     import CreateSet from './create-set.vue'
     import CreateModule from './create-module.vue'
+    import Bus from '@/utils/bus'
     export default {
         components: {
             CreateNode,
@@ -223,6 +225,10 @@
             },
             handleSelectChange (node) {
                 this.$store.commit('businessHost/setSelectedNode', node)
+                Bus.$emit('toggle-host-filter', false)
+                if (!node.expanded) {
+                    this.$refs.tree.setExpanded(node.id)
+                }
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'

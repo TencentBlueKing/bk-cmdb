@@ -1,11 +1,12 @@
 <template>
-    <span class="auth-box"
+    <component class="auth-box"
+        :is="tag"
         v-cursor="{
             active: !isAuthorized,
             auth: resources
         }">
         <slot :disabled="disabled"></slot>
-    </span>
+    </component>
 </template>
 
 <script>
@@ -16,6 +17,10 @@
             auth: {
                 type: Object,
                 required: true
+            },
+            tag: {
+                type: String,
+                default: 'span'
             }
         },
         data () {

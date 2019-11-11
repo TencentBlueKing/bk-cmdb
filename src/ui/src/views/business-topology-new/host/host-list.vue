@@ -2,7 +2,7 @@
     <div class="list-layout">
         <host-list-options @transfer="handleTransfer"></host-list-options>
         <bk-table class="host-table"
-            v-bkloading="{ isLoading: $loading(Object.values(request.table)) || !commonRequestFinished }"
+            v-bkloading="{ isLoading: $loading(Object.values(request)) || !commonRequestFinished }"
             :data="table.data"
             :pagination="table.pagination"
             :row-style="{ cursor: 'pointer' }"
@@ -78,7 +78,8 @@
                 },
                 request: {
                     table: Symbol('table'),
-                    moveToResource: Symbol('moveToResource')
+                    moveToResource: Symbol('moveToResource'),
+                    moveToIdleModule: Symbol('moveToIdleModule')
                 }
             }
         },
@@ -226,9 +227,42 @@
             handleDialogConfirm () {
                 this.dialog.show = false
                 if (this.dialog.component === ModuleSelector.name) {
-                    this.gotoTransferPage(...arguments)
+                    if (this.dialog.props.moduleType === 'idle') {
+                        const isAllIdleSetHost = this.table.selection.every(data => {
+                            const modules = data.module
+                            return modules.every(module => module.default !== 0)
+                        })
+                        if (isAllIdleSetHost) {
+                            this.transferDirectly(...arguments)
+                        } else {
+                            this.gotoTransferPage(...arguments)
+                        }
+                    } else {
+                        this.gotoTransferPage(...arguments)
+                    }
                 } else if (this.dialog.component === MoveToResourceConfirm.name) {
                     this.moveHostToResource()
+                }
+            },
+            async transferDirectly (modules) {
+                try {
+                    const internalModule = modules[0]
+                    await this.$http.post(
+                        `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, {
+                            bk_host_ids: this.table.selection.map(data => data.host.bk_host_id),
+                            default_internal_module: internalModule.data.bk_inst_id,
+                            remove_from_node: {
+                                bk_inst_id: this.selectedNode.data.bk_inst_id,
+                                bk_obj_id: this.selectedNode.data.bk_obj_id
+                            }
+                        }, {
+                            requestId: this.request.moveToIdleModule
+                        }
+                    )
+                    this.handlePageChange(1)
+                    this.$success('转移成功')
+                } catch (e) {
+                    console.error(e)
                 }
             },
             gotoTransferPage (modules) {
