@@ -41,6 +41,7 @@
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
                                         :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                        :auto-select="false"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]['value']">
                                     </component>
@@ -394,11 +395,7 @@
             handleResetValue (status, property) {
                 if (!status) {
                     const type = property['bk_property_type']
-                    if (['enum'].includes(type)) {
-                        const option = property['option']
-                        const defaultValue = option[0]['id'] ? option[0]['id'] : ''
-                        this.values[property['bk_property_id']]['value'] = defaultValue
-                    } else if (['bool'].includes(type)) {
+                    if (['bool'].includes(type)) {
                         this.values[property['bk_property_id']]['value'] = false
                     } else {
                         this.values[property['bk_property_id']]['value'] = ''

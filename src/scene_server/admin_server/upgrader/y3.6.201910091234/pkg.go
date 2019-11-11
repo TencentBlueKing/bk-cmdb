@@ -9,7 +9,8 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package x19_09_06_01
+
+package y3_6_201910091234
 
 import (
 	"context"
@@ -20,33 +21,14 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19_09_06_01", upgrade)
+	upgrader.RegistUpgrader("y3.6.201910091234", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = createSetTemplateTables(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x19.09.06.01] create tables failed, err: %s", err.Error())
+	blog.Infof("start execute y3.6.201910091234")
+	if err := SetTemplateSyncStatusMigrate(ctx, db, conf); err != nil {
+		blog.Errorf("migrate y3.6.201910091234 failed, SetTemplateSyncStatusMigrate failed, err: %+v", err)
 		return err
 	}
-
-	err = addSetProperty(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x19.09.06.01] addSetProperty failed, err: %s", err.Error())
-		return err
-	}
-
-	err = addModuleProperty(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x19.09.06.01] addModuleProperty failed, err: %s", err.Error())
-		return err
-	}
-
-	err = initializeSetTemplateField(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x19.09.06.01] initializeSetTemplateField failed, err: %s", err.Error())
-		return err
-	}
-
 	return nil
 }
