@@ -37,7 +37,7 @@ func TestDeliverSession(t *testing.T) {
 	defer func() {
 		tnx1.EndSession(ctx1)
 	}()
-	err = tnx1.StartTransaction()
+	err = tnx1.StartTransaction(ctx1)
 	require.NoError(t, err)
 
 	// client2 op

@@ -28,7 +28,7 @@ var (
 	ErrDocumentNotFound    = errors.New("document not found")
 	ErrNotImplemented      = errors.New("not implemented")
 	ErrDuplicated          = errors.New("duplicated")
-	ErrSessionNotStarted = errors.New("session is not started")
+	ErrSessionNotStarted   = errors.New("session is not started")
 
 	UpdateOpAddToSet = "addToSet"
 	UpdateOpPull     = "pull"
@@ -67,7 +67,6 @@ type DB interface {
 	EndSession(ctx context.Context) error
 
 	Transaction
-
 }
 
 // Transcation db transcation interface
@@ -78,7 +77,6 @@ type Transaction interface {
 	CommitTransaction(context.Context) error
 	// AbortTransaction 取消事务
 	AbortTransaction(context.Context) error
-
 
 	// Start 开启新事务
 	Start(ctx context.Context) (Transaction, error)
@@ -110,6 +108,9 @@ type Table interface {
 	Upsert(ctx context.Context, filter Filter, doc interface{}) error
 	// UpdateMultiModel  data based on operators.
 	UpdateMultiModel(ctx context.Context, filter Filter, updateModel ...ModeUpdate) error
+	// UpdateModifyCount 更新数据,返回更新的条数
+	UpdateModifyCount(ctx context.Context, filter Filter, doc interface{}) (int64, error)
+
 	// Delete 删除数据
 	Delete(ctx context.Context, filter Filter) error
 
@@ -136,9 +137,9 @@ type JoinOption struct {
 
 	TMAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
 
-	SessionID string // 会话ID
+	SessionID    string // 会话ID
 	SessionState string // 会话状态
-	TxnNumber string // 事务Number
+	TxnNumber    string // 事务Number
 
 }
 

@@ -810,3 +810,76 @@ func TestAggregate(t *testing.T) {
 	}, resultAll[0])
 
 }
+
+func TestUpdateModifyCount(t *testing.T) {
+
+	ctx := context.Background()
+	tableName := "tmptest_update_modify_count"
+
+	db := dbCleint(t)
+	// 清理数据
+	err := db.DropTable(ctx, tableName)
+	require.NoError(t, err)
+
+	table := db.Table(tableName)
+
+	insertDataMany := []map[string]interface{}{
+		map[string]interface{}{
+			"a1":             "a1",
+			"ext":            "ext",
+			"sort":           "1",
+			"change_version": "1",
+		},
+		map[string]interface{}{
+			"a2":   "a2",
+			"ext":  "ext",
+			"sort": "2",
+		},
+	}
+	err = table.Insert(ctx, insertDataMany)
+	require.NoError(t, err)
+
+	// update one
+	filter := map[string]string{"ext": "ext"}
+	update := map[string]string{"change_version": "2"}
+	var modifyCount int64 = 0
+	modifyCount, err = table.UpdateModifyCount(ctx, filter, update)
+	require.NoError(t, err)
+	require.NotEqual(t, 1, modifyCount)
+
+	filter = map[string]string{"change_version": "2"}
+	cnt, err := table.Find(filter).Count(ctx)
+	require.NoError(t, err)
+	if cnt != 2 {
+		t.Errorf("update error.")
+		return
+	}
+
+	//  update may
+	filterMay := map[string]string{}
+	update = map[string]string{"change_modify_count_many": "4"}
+	modifyCount, err = table.UpdateModifyCount(ctx, filterMay, update)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, modifyCount)
+	filter = map[string]string{"change_modify_count_many": "4"}
+	cnt, err = table.Find(filter).Count(ctx)
+	require.NoError(t, err)
+	if cnt != 2 {
+		t.Errorf("update error.")
+		return
+	}
+
+	// not row update
+	filterNotFound := map[string]string{"ext_not_found": "ext"}
+	update = map[string]string{"change_modify_count_not_found": "4"}
+	modifyCount, err = table.UpdateModifyCount(ctx, filterNotFound, update)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, modifyCount)
+	filter = map[string]string{"change_modify_count_not_found": "4"}
+	cnt, err = table.Find(filter).Count(ctx)
+	require.NoError(t, err)
+	if cnt != 2 {
+		t.Errorf("update error.")
+		return
+	}
+}
