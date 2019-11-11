@@ -61,7 +61,7 @@
 
 <script>
     import { mapGetters, mapActions, mapState } from 'vuex'
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import cmdbHostsTable from '@/components/hosts/table'
     export default {
         components: {
@@ -247,7 +247,7 @@
             },
             handleTopologyTipsClick () {
                 this.$router.push({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY
+                    name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             },
             handleCloseTopologyTips () {

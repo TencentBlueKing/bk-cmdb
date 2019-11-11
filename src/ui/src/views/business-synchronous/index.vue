@@ -129,7 +129,7 @@
 
 <script>
     import { mapGetters, mapActions, mapMutations } from 'vuex'
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import instanceDetails from './children/details.vue'
     import featureTips from '@/components/feature-tips/index'
     export default {
@@ -253,9 +253,9 @@
                 this.$store.commit('setBreadcrumbs', [{
                     label: this.$t('服务拓扑'),
                     route: {
-                        name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                        name: MENU_BUSINESS_HOST_AND_SERVICE,
                         query: {
-                            module: this.$route.params.moduleId
+                            node: 'module-' + this.$route.params.moduleId
                         }
                     }
                 }, {
@@ -497,9 +497,9 @@
             },
             handleGoBackModule () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.routerParams.moduleId
+                        node: 'module-' + this.routerParams.moduleId
                     }
                 })
             },

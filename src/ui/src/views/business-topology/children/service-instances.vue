@@ -24,7 +24,7 @@
                         </bk-button>
                     </template>
                 </cmdb-auth>
-                <bk-dropdown-menu trigger="click" font-size="large">
+                <bk-dropdown-menu trigger="click" font-size="medium">
                     <bk-button class="options-button clipboard-trigger" theme="default" slot="dropdown-trigger">
                         {{$t('更多')}}
                         <i class="bk-icon icon-angle-down"></i>
