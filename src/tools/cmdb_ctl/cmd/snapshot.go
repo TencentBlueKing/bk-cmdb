@@ -13,13 +13,13 @@
 package cmd
 
 import (
-	"configcenter/src/common"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"
 	ccRedis "configcenter/src/storage/dal/redis"
@@ -41,7 +41,7 @@ func NewSnapshotCheckCommand() *cobra.Command {
 	conf := new(snapshotCheckConf)
 
 	cmd := &cobra.Command{
-		Use:   "snapshot-check",
+		Use:   "snapshot",
 		Short: "check host snapshot",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSnapshotCheck(conf)
