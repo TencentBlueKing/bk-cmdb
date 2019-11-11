@@ -231,7 +231,7 @@
                 display: flex;
                 line-height: 22px;
                 span {
-                    max-width: calc(50% - 30px);
+                    max-width: 50%;
                     padding-right: 10px;
                     @include ellipsis;
                     &:first-child {
