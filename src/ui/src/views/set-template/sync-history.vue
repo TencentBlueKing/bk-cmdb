@@ -169,8 +169,8 @@
                     if (setIndex > -1) {
                         topoPath.splice(setIndex, 1)
                     }
-                    const sortPath = topoPath.sort((prev, next) => prev.InstanceID - next.InstanceID)
-                    return sortPath.map(path => path.InstanceName).join(' / ')
+                    const sortPath = topoPath.sort((prev, next) => prev.bk_inst_id - next.bk_inst_id)
+                    return sortPath.map(path => path.bk_inst_name).join(' / ')
                 }
                 return '--'
             },
