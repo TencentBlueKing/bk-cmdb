@@ -3,7 +3,6 @@
         <bk-input class="tree-search" :placeholder="$t('请输入关键词')" v-model="filter"></bk-input>
         <bk-big-tree ref="tree" class="topology-tree"
             selectable
-            :expand-on-click="false"
             :options="{
                 idKey: getNodeId,
                 nameKey: 'bk_inst_name',
