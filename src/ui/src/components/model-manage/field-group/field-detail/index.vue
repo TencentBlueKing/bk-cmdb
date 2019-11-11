@@ -56,6 +56,7 @@
             <the-config
                 :type="fieldInfo['bk_property_type']"
                 :is-read-only="isReadOnly"
+                :is-main-line-model="isMainLineModel"
                 :editable.sync="fieldInfo['editable']"
                 :isrequired.sync="fieldInfo['isrequired']"
             ></the-config>
@@ -129,6 +130,10 @@
             propertyIndex: {
                 type: Number,
                 default: 0
+            },
+            isMainLineModel: {
+                type: Boolean,
+                default: false
             }
         },
         data () {

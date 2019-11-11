@@ -57,7 +57,7 @@
                 <bk-select class="filter-selector fl"
                     v-model="filter.id"
                     searchable
-                    font-size="14"
+                    font-size="medium"
                     :clearable="false">
                     <bk-option v-for="(option, index) in filter.options"
                         :key="index"
@@ -70,28 +70,28 @@
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     :auto-select="false"
-                    font-size="14"
+                    font-size="medium"
                     v-model="filter.value"
                     @on-selected="getTableData(true)">
                 </cmdb-form-enum>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
-                    font-size="large"
+                    font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData(true)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
-                    font-size="large"
+                    font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData(true)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
-                    font-size="large"
+                    font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData(true)">
                 </bk-input>

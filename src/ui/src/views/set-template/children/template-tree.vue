@@ -1,5 +1,5 @@
 <template>
-    <div class="template-tree">
+    <div :class="['template-tree', mode]">
         <div class="node-root clearfix">
             <i class="folder-icon bk-icon icon-down-shape fl" @click="handleCollapse"></i>
             <i class="node-icon fl">{{setName[0]}}</i>
@@ -107,6 +107,9 @@
             },
             services (value) {
                 this.$emit('service-selected', value)
+            },
+            mode () {
+                this.selected = null
             }
         },
         created () {
@@ -147,6 +150,9 @@
                 this.collapse = !this.collapse
             },
             handleChildClick (service) {
+                if (this.mode === 'view') {
+                    return false
+                }
                 this.selected = service.id
             },
             handleAddService () {
@@ -196,6 +202,21 @@
         padding: 10px 0 10px 20px;
         border: 1px solid #C4C6CC;
         background-color: #fff;
+        &:not(.view) {
+            .node-child:hover {
+                background-color: rgba(240,241,245, .6);
+                .node-icon {
+                    background-color: $highlightColor;
+                    color: #FFF;
+                }
+                .child-name {
+                    color: $highlightColor;
+                }
+                .child-options {
+                    display: block;
+                }
+            }
+        }
     }
     .node-icon {
         position: relative;
@@ -238,13 +259,9 @@
         .node-child {
             padding: 0 10px 0 32px;
             position: relative;
-            &:hover {
-                background-color: rgba(240,241,245, .6);
-            }
             &.selected {
                 background-color: #F0F1F5;
             }
-            &:hover,
             &.selected {
                 .node-icon {
                     background-color: $highlightColor;

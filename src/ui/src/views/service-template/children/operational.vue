@@ -145,7 +145,7 @@
     import processForm from './process-form.vue'
     import processTable from './process'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
-    import { MENU_BUSINESS_SERVICE_TEMPLATE, MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_SERVICE_TEMPLATE, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         components: {
             processTable,
@@ -486,15 +486,15 @@
                 })
             },
             handleGoInstance () {
-                this.$router.replace({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
+                this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             },
             handleReturn () {
                 const moduleId = this.$route.params['moduleId']
                 if (moduleId) {
                     this.$router.replace({
-                        name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                        name: MENU_BUSINESS_HOST_AND_SERVICE,
                         query: {
-                            module: this.$route.params.moduleId
+                            node: 'module-' + this.$route.params.moduleId
                         }
                     })
                 } else {

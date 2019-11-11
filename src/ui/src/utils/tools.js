@@ -346,7 +346,18 @@ const defaultPaginationConfig = window.innerHeight > 750
     ? { limit: 20, 'limit-list': [20, 50, 100, 500] }
     : { limit: 10, 'limit-list': [10, 50, 100, 500] }
 export function getDefaultPaginationConfig () {
-    return { ...defaultPaginationConfig }
+    return {
+        current: 1,
+        count: 0,
+        ...defaultPaginationConfig
+    }
+}
+
+export function getPageParams (pagination) {
+    return {
+        start: (pagination.current - 1) * pagination.limit,
+        limit: pagination.limit
+    }
 }
 
 export default {
@@ -369,5 +380,6 @@ export default {
     getSort,
     getValue,
     transformHostSearchParams,
-    getDefaultPaginationConfig
+    getDefaultPaginationConfig,
+    getPageParams
 }

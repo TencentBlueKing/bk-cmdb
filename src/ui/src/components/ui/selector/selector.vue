@@ -80,7 +80,7 @@
             },
             fontSize: {
                 type: String,
-                default: '12px'
+                default: 'medium'
             }
         },
         data () {

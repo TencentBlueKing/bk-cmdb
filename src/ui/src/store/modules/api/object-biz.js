@@ -20,6 +20,7 @@ const state = {
 const getters = {
     business: state => state.business,
     bizId: state => state.bizId,
+    currentBusiness: state => state.authorizedBusiness.find(business => business.bk_biz_id === state.bizId),
     authorizedBusiness: state => state.authorizedBusiness
 }
 
