@@ -256,6 +256,25 @@ func (c *MockCollection) Update(ctx context.Context, filter dal.Filter, doc inte
 	return nil
 }
 
+// UpdateModifyCount 更新数据,返回更新的条数
+func (c *MockCollection) UpdateModifyCount(ctx context.Context, filter dal.Filter, doc interface{}) (int64, error) {
+	bsonout, err := bson.Marshal([]interface{}{filter, doc})
+	if err != nil {
+		return 0, err
+	}
+
+	key := "UPDATE:" + c.collName + ":" + string(bsonout)
+	retval, ok := c.Mock.cache[key]
+	if ok {
+		return 0, retval.Err
+	}
+
+	c.Mock.cache[key] = c.Mock.retval
+	c.Mock.retval = nil
+
+	return retval.Count, nil
+}
+
 // Update or insert data
 func (c *MockCollection) Upsert(ctx context.Context, filter dal.Filter, doc interface{}) error {
 	panic("unimplemented operation")
@@ -313,7 +332,7 @@ func (c *Mock) EndSession(ctx context.Context) error {
 }
 
 // StartTransaction 开启新事务
-func (c *Mock) StartTransaction() error {
+func (c *Mock) StartTransaction(ctx context.Context) error {
 	key := "StartTransaction"
 	if retval, ok := c.cache[key]; ok {
 		return retval.Err
