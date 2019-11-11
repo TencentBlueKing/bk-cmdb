@@ -21,7 +21,8 @@
         data () {
             return {
                 isAuthorized: true,
-                disabled: true
+                disabled: true,
+                turnOnVerify: window.Site.authscheme === 'iam'
             }
         },
         computed: {
@@ -35,7 +36,7 @@
                 immediate: true,
                 deep: true,
                 handler (value, oldValue) {
-                    if (!Object.keys(this.auth).length) {
+                    if (!this.turnOnVerify || !Object.keys(this.auth).length) {
                         this.disabled = false
                     } else if (!deepEqual(value, oldValue)) {
                         resourceOperation.pushQueue({
