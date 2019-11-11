@@ -121,7 +121,7 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         props: {
             templateId: {
@@ -352,7 +352,7 @@
                 }
             },
             handleLinkServiceTopo () {
-                this.$router.push({ name: MENU_BUSINESS_SERVICE_TOPOLOGY })
+                this.$router.push({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             },
             async handleFilter (current = 1, event) {
                 this.pagination.current = current

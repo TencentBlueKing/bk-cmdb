@@ -18,7 +18,7 @@
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
-                    font-size="14"
+                    font-size="medium"
                     :placeholder="$t('所有一级分类')"
                     :auto-select="false"
                     :allow-clear="true"
@@ -28,7 +28,7 @@
                 </cmdb-selector>
                 <cmdb-selector
                     class="fl"
-                    font-size="14px"
+                    font-size="medium"
                     :placeholder="$t('所有二级分类')"
                     :auto-select="false"
                     :allow-clear="true"
@@ -41,7 +41,7 @@
                     class="filter-search fl"
                     :placeholder="$t('模板名称搜索')"
                     :right-icon="'bk-icon icon-search'"
-                    font-size="large"
+                    font-size="medium"
                     v-model.trim="filter.templateName"
                     @enter="getTableData(true)">
                 </bk-input>
@@ -52,9 +52,11 @@
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 229"
+            :row-style="{ cursor: 'pointer' }"
+            @row-click="handleRowClick"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="name" :label="$t('模板名称')"></bk-table-column>
+            <bk-table-column prop="name" :label="$t('模板名称')" class-name="is-highlight"></bk-table-column>
             <bk-table-column prop="service_category" :label="$t('服务分类')"></bk-table-column>
             <bk-table-column prop="process_template_count" :label="$t('进程数量')"></bk-table-column>
             <bk-table-column prop="module_count" :label="$t('应用模块数')"></bk-table-column>
@@ -292,6 +294,10 @@
             handlePageChange (page) {
                 this.table.pagination.current = page
                 this.getTableData()
+            },
+            handleRowClick (row, event, column) {
+                if (column.property === 'operation') return
+                this.operationTemplate(row.id)
             }
         }
     }

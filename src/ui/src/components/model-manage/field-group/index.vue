@@ -207,6 +207,7 @@
                 ref="fieldForm"
                 slot="content"
                 v-if="slider.isShow"
+                :is-main-line-model="isMainLineModel"
                 :is-read-only="isReadOnly"
                 :is-edit-field="slider.isEditField"
                 :field="slider.curField"
@@ -343,10 +344,15 @@
             metadataGroupedProperties () {
                 return this.groupedProperties.filter(group => !!this.$tools.getMetadataBiz(group.info))
             },
+            curModel () {
+                if (!this.objId) return {}
+                return this.$store.getters['objectModelClassify/getModelById'](this.objId)
+            },
             modelId () {
-                if (!this.objId) return null
-                const model = this.$store.getters['objectModelClassify/getModelById'](this.objId)
-                return model.id
+                return this.curModel.id || null
+            },
+            isMainLineModel () {
+                return ['bk_host_manage', 'bk_biz_topo', 'bk_organization'].includes(this.curModel.bk_classification_id)
             },
             authResources () {
                 return this.$authResources({

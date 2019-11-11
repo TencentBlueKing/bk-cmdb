@@ -24,7 +24,7 @@
                 </cmdb-auth>
                 <bk-select class="options-business-selector"
                     v-if="isAdminView"
-                    :font-size="14"
+                    font-size="medium"
                     :popover-width="180"
                     :searchable="businessList.length > 7"
                     :disabled="!table.checked.length"
