@@ -303,6 +303,29 @@ func (m *module) DeleteModule(params types.ContextParams, moduleModel model.Obje
 		innerCond.Field(common.BKModuleIDField).In(moduleIDS)
 	}
 
+	// 检查是否时内置集群
+	qc := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: 0,
+		},
+		Condition: innerCond.ToMapStr(),
+	}
+	qc.Condition[common.BKDefaultField] = map[string]interface{}{
+		common.BKDBNE: 0,
+	}
+	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, qc)
+	if nil != err {
+		blog.Errorf("[operation-module] failed read module instance, err: %s, rid: %s", err.Error(), params.ReqID)
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if rsp.Result == false || rsp.Code != 0 {
+		blog.ErrorJSON("[operation-set] failed read module instance, option: %s, response: %s, rid: %s", qc, rsp, params.ReqID)
+		return errors.New(rsp.Code, rsp.ErrMsg)
+	}
+	if rsp.Data.Count > 0 {
+		return params.Err.CCError(common.CCErrorTopoForbiddenDeleteBuiltInSetModule)
+	}
+
 	// auth: deregister module to iam
 	iamResources, err := m.authManager.MakeResourcesByModuleIDs(params.Context, params.Header, meta.EmptyAction, moduleIDS...)
 	if err != nil {

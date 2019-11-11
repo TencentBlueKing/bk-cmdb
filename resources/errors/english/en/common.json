@@ -27,7 +27,7 @@
     "1199027": "'%s' authorization information query failed",
     "1199028": "Field value check does not pass",
     "1199029": "Function return value format problem",
-    "1199030": "HTTP POST parsing failed",
+    "1199030": "request parameter invalid, parse HTTP body failed",
     "1199031": "'%s' initialization failed",
     "1199032": "param '%s' should be a string",
     "1199033": "Failed to get field property, error: %s",

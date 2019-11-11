@@ -18,9 +18,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/emicklei/go-restful"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // URLPath url path filter
@@ -138,6 +139,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.Contains(string(*u), "/topoinst"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/topopath"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.Contains(string(*u), "/topoassociationtype"):
