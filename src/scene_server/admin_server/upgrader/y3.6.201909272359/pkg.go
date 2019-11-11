@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package x19_10_09_01
+package y3_6_201909272359
 
 import (
 	"context"
@@ -21,14 +21,10 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19_10_09_01", upgrade)
+	upgrader.RegistUpgrader("y3.6.201909272359", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute x19_10_09_01")
-	if err := SetTemplateSyncStatusMigrate(ctx, db, conf); err != nil {
-		blog.Errorf("migrate x19_10_09_01 failed, SetTemplateSyncStatusMigrate failed, err: %+v", err)
-		return err
-	}
-	return nil
+	blog.Infof("start execute y3.6.201909272359")
+	return taskMigrate(ctx, db, conf)
 }

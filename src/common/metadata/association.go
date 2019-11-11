@@ -479,3 +479,17 @@ type InstBaseInfo struct {
 	ID   int64  `json:"bk_inst_id"`
 	Name string `json:"bk_inst_name"`
 }
+
+type FindTopoPathRequest struct {
+	Nodes []TopoNode `json:"topo_nodes" mapstructure:"topo_nodes"`
+}
+
+type TopoPathResult struct {
+	Nodes []NodeTopoPath `json:"nodes" mapstructure:"nodes"`
+}
+
+type NodeTopoPath struct {
+	BizID int64                       `json:"bk_biz_id" mapstructure:"bk_biz_id"`
+	Node  TopoNode                    `json:"topo_node" mapstructure:"topo_node"`
+	Path  []*TopoInstanceNodeSimplify `json:"topo_path" mapstructure:"topo_path"`
+}
