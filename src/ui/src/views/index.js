@@ -22,6 +22,8 @@ import operation from '@/views/operation/router.config'
 import setSync from '@/views/set-sync/router.config'
 import setTemplate from '@/views/set-template/router.config'
 
+import hostApply from '@/views/host-apply/router.config'
+
 import statusPermission from '@/views/status/permission'
 import statusError from '@/views/status/error'
 
@@ -58,7 +60,8 @@ export const businessViews = injectStatusComponents(flatternViews([
     serviceSynchronous,
     customFields,
     setSync,
-    setTemplate
+    setTemplate,
+    hostApply
 ]))
 
 export const resourceViews = injectStatusComponents(flatternViews([

@@ -12,11 +12,22 @@ const state = {
         ...defaultParams
     },
     collection: null,
-    collectionList: []
+    collectionList: [],
+    propertyList: []
 }
 
 const getters = {
-    isCollection: state => !!state.collection
+    isCollection: state => !!state.collection,
+    configPropertyList: state => {
+        const disableList = ['bk_cpu']
+        state.propertyList.forEach(property => {
+            property['__extra__'] = {
+                disabled: disableList.includes(property.bk_property_id)
+            }
+        })
+
+        return state.propertyList
+    }
 }
 
 const mutations = {
@@ -51,6 +62,9 @@ const mutations = {
             ...defaultParams
         }
         state.collection = null
+    },
+    setPropertyList (state, list) {
+        state.propertyList = list
     }
 }
 
