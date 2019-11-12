@@ -1100,6 +1100,8 @@ const (
 	DeleteObject         = "delete object"
 	UpdateObject         = "update object"
 	OperationDescription = "op_desc"
+	OptionOther          = "其他"
+	TimerPattern         = "[\\d]+\\:[\\d]+"
 	SyncSetTaskName      = "sync-settemplate2set"
 )
 
