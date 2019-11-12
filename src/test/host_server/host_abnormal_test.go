@@ -1767,8 +1767,7 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		// although the host noExistID cause the op result is false,the hostId1's bk_host_name will be updated successfully
-		// so currently, the hostId1's bk_host_name is update_host_name
+		// the hostId1's bk_host_name will be updated successfully, noExistID is ignored
 		It("update host one nonexist hostid", func() {
 			input := map[string]interface{}{
 				"bk_host_id":   fmt.Sprintf("%v,%v", hostId1, noExistID),
@@ -1776,7 +1775,7 @@ var _ = Describe("host abnormal test", func() {
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("update host one nonexist attr", func() {

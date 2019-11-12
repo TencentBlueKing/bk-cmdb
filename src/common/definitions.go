@@ -36,6 +36,9 @@ const (
 	BKMaxPageLimit = 2000
 	BKMaxPageSize  = 500
 
+	// 一次最大操作记录数
+	BKMaxRecordsAtOnce = 2000
+
 	// BKDefaultLimit the default limit definition
 	BKDefaultLimit = 20
 
@@ -716,7 +719,7 @@ const (
 	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
 
 	//FieldTypeSingleCharRegexp the single char regex expression
-	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:\."'\/\\\+\-\s#@\(\)])+$`
+	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
 
 	//FieldTypeLongCharRegexp the single char regex expression
 	FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`

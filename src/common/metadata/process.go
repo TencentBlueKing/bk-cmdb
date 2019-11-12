@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -212,9 +213,16 @@ type CreateServiceInstanceDetail struct {
 	Processes []ProcessInstanceDetail `json:"processes"`
 }
 
+type CreateServiceInstanceOption struct {
+	ModuleID int64 `json:"bk_module_id"`
+	HostID   int64 `json:"bk_host_id"`
+	// Processes parameter usable only when create instance with raw
+	Processes []ProcessInstanceDetail `json:"processes"`
+}
+
 type ProcessInstanceDetail struct {
-	// ProcessTemplateID int64   `json:"process_template_id"`
-	ProcessInfo Process `json:"process_info"`
+	ProcessTemplateID int64   `json:"process_template_id"`
+	ProcessInfo       Process `json:"process_info"`
 }
 
 type ListProcessTemplateWithServiceTemplateInput struct {
@@ -1290,6 +1298,24 @@ type PropertyString struct {
 }
 
 func (ti *PropertyString) Validate() error {
+	if ti == nil {
+		return nil
+	}
+	if ti.Value != nil {
+		value := *ti.Value
+		if len(value) == 0 {
+			return nil
+		}
+		matched, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
+		if err != nil {
+			blog.Errorf("Validate failed, regex:[%s], value:[%s]", common.FieldTypeSingleCharRegexp, value)
+			return fmt.Errorf("value:[%s] doesn't match regex:[%s], err: %+v", value, common.FieldTypeSingleCharRegexp, err)
+		}
+		if matched == false {
+			return fmt.Errorf("value:[%s] doesn't match regex:[%s]", value, common.FieldTypeSingleCharRegexp)
+		}
+
+	}
 	return nil
 }
 

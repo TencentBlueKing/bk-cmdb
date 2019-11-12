@@ -683,6 +683,7 @@
                     }
                 }).then(() => {
                     this.$success(this.$t('修改成功'))
+                    this.slider.show = false
                     this.handlePageChange(1)
                 })
             },

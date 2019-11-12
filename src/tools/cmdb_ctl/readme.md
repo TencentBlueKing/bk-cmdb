@@ -88,7 +88,7 @@
 - 使用方式
 
   ```
-  ./tool_ctl echo [command]
+  ./tool_ctl echo [flags]
   ```
 
 - 命令行参数
@@ -100,3 +100,62 @@
   - ```
     ./tool_ctl echo --url=127.0.0.1:8080/echo
     ```
+### 检查主机快照
+- 使用方式
+
+  ```
+  ./tool_ctl snapshot [flags]
+  ```
+
+- 命令行参数
+  ```
+  --bizId=2: blueking business id. e.g: 2
+  --zkaddr="": the ip address and port for the zookeeper hosts, separated by ',', corresponding environment variable is ZK_ADDR
+  ```
+- 示例
+
+  - ```
+    ./tool_ctl snapshot --bizId=2 --zkaddr=127.0.0.1:2181
+    ```
+
+ ### 权限中心资源操作
+ - 使用方式
+ 
+   ```
+   ./tool_ctl auth [command]
+   ```
+
+ - 子命令
+   ```
+   register    register resource to auth center
+   deregister  deregister resource from auth center
+   update      update resource in auth center
+   check       check if user has the authority to operate resources
+
+ - 命令行参数
+   ```
+   --app-code="": the app code used for authorize
+   --app-secret="": the app secret used for authorize
+   --auth-address="": auth center addresses, separated by comma
+   --resource="": the resource for authorize
+   --supplier-account="0": the supplier id that this user belongs to（仅用于check命令）
+   --user-name="": the name of the user（仅用于check命令）
+   ```
+
+ - 示例
+ 
+   - ```
+     ./tool_ctl auth register --app-code=test --app-secret=test --auth-address=127.0.0.1 --resource=[{"basic":{"type":"test","action":"test"}}]
+     ```
+   
+   - ```
+     ./tool_ctl auth deregister --app-code=test --app-secret=test --auth-address=127.0.0.1 --resource=[{"basic":{"type":"test","action":"test"}}]
+     ```
+ 
+   - ```
+     ./tool_ctl auth update --app-code=test --app-secret=test --auth-address=127.0.0.1 --resource=[{"basic":{"type":"test","action":"test"}}]
+     ```
+ 
+   - ```
+     ./tool_ctl auth check --app-code=test --app-secret=test --auth-address=127.0.0.1 --resource=[{"basic":{"type":"test","action":"test"}}] --supplier-account=0 --user-name=test
+     ```
