@@ -15,6 +15,7 @@ package local
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	//"fmt"
 	"reflect"
@@ -28,6 +29,7 @@ import (
 	"configcenter/src/storage/types"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
@@ -536,8 +538,8 @@ func (c *Mongo) GetSameSessionContext(ctx context.Context, info *mongo.SessionIn
 
 // HasSession 判断context里是否有session信息
 func (c *Mongo) HasSession(ctx context.Context) bool {
-	_, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
-	return ok == true
+	v, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	return ok == true && v.SessionID != ""
 }
 
 // GetDistributedSession 获取context里用来做分布式事务的session
@@ -833,7 +835,8 @@ func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result inte
 	slice := reflect.MakeSlice(resultv.Elem().Type(), 0, 10)
 	for cursor.Next(ctx) {
 		elemp := reflect.New(elemt)
-		if err := cursor.Decode(elemp.Interface()); nil != err {
+		err := decodeCursorElement(ctx, cursor, elemp.Interface())
+		if err != nil {
 			return err
 		}
 		slice = reflect.Append(slice, elemp.Elem())
@@ -844,4 +847,193 @@ func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result inte
 
 	resultv.Elem().Set(slice)
 	return nil
+}
+
+func decodeCursorElement(ctx context.Context, cursor *mongo.Cursor, result interface{}) error {
+	resultv := reflect.TypeOf(result)
+	if resultv.Kind() != reflect.Ptr {
+		return errors.New("result argument must be  address")
+	}
+	rowInfos, err := cursor.Current.Elements()
+	if err != nil {
+		return err
+	}
+	resultMap, err := decodeCursorElementInfo(ctx, rowInfos)
+	if err != nil {
+		return err
+	}
+
+	if resultv.Elem().Kind() == reflect.Struct {
+		return decodeCursorMapToStruct(ctx, resultMap, result)
+	} else {
+		reflect.ValueOf(result).Elem().Set(reflect.ValueOf(resultMap))
+		return nil
+	}
+}
+
+func decodeCursorMapToStruct(ctx context.Context, info map[string]interface{}, result interface{}) error {
+	resultType := reflect.TypeOf(result)
+	resultv := reflect.ValueOf(result)
+
+	if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Struct {
+		return errors.New("result argument must be struct address")
+	}
+	for fieldIdx := 0; fieldIdx < resultType.Elem().NumField(); fieldIdx++ {
+		fieldValueOf := resultv.Elem().Field(fieldIdx)
+		field := resultType.Elem().Field(fieldIdx)
+
+		fieldName := field.Tag.Get("bson")
+		// not struct bson tag, use struct field name
+		if fieldName == "" {
+			fieldName = field.Name
+		}
+		value, ok := info[fieldName]
+		if !ok {
+			// not found value, skip
+			continue
+		}
+		if value == nil {
+			// not value, skip
+			continue
+		}
+
+		switch field.Type.Kind() {
+		case reflect.Struct:
+			subStruct := reflect.New(field.Type)
+			subInfo, ok := value.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("key %s unmarshal error. %s into Go value of type %s", field.Name, reflect.ValueOf(value).Kind().String(), field.Type.Kind().String())
+			}
+			if err := decodeCursorMapToStruct(ctx, subInfo, subStruct.Interface()); err != nil {
+				return err
+			}
+
+			fieldValueOf.Set(subStruct.Elem())
+		case reflect.Ptr:
+			if field.Type.Elem().Kind() == reflect.Struct {
+				subInfo, ok := value.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("key %s unmarshal error. %s into Go value of type %s", field.Name, reflect.ValueOf(value).Kind().String(), field.Type.Kind().String())
+				}
+				subStruct := reflect.New(field.Type.Elem())
+				if err := decodeCursorMapToStruct(ctx, subInfo, subStruct.Interface()); err != nil {
+					return err
+				}
+				fieldValueOf.Set(subStruct)
+
+			} else {
+				val, err := util.DecodeIntoTypeValue(field.Type.Elem(), value)
+				if err != nil {
+					return fmt.Errorf("key %s unmarshal error. %s into Go value of type %s", field.Name, reflect.ValueOf(value).Kind().String(), field.Type.Kind().String())
+				}
+
+				fieldValueOf.Set(reflect.New(field.Type.Elem()))
+				fieldValueOf.Elem().Set(val)
+			}
+
+		default:
+
+			val, err := util.DecodeIntoTypeValue(field.Type, value)
+			if err != nil {
+				return fmt.Errorf("key %s unmarshal error. %s into Go value of type %s", field.Name, reflect.ValueOf(value).Kind().String(), field.Type.Kind().String())
+			}
+
+			fieldValueOf.Set(val)
+		}
+
+	}
+	return nil
+}
+
+func decodeCursorElementInfo(ctx context.Context, rowInfos []bson.RawElement) (map[string]interface{}, error) {
+	resultMap := make(map[string]interface{}, 0)
+	for _, info := range rowInfos {
+		key := info.Key()
+		value := info.Value()
+
+		switch value.Type {
+
+		case bsontype.EmbeddedDocument:
+			subInfos, err := value.Document().Elements()
+			if err != nil {
+				return nil, err
+			}
+			resultMap[key], err = decodeCursorElementInfo(ctx, subInfos)
+			if err != nil {
+				return nil, err
+			}
+		case bsontype.Array:
+			subInfos, err := value.Array().Elements()
+			if err != nil {
+				return nil, err
+			}
+			var valArr []interface{}
+			for _, item := range subInfos {
+				val, err := getBsoBaseRawValue(item.Value())
+				if err != nil {
+					return nil, err
+				}
+				valArr = append(valArr, val)
+			}
+			resultMap[key] = valArr
+
+		default:
+			val, err := getBsoBaseRawValue(value)
+			if err != nil {
+				return nil, err
+			}
+			resultMap[key] = val
+		}
+
+	}
+	return resultMap, nil
+}
+
+func getBsoBaseRawValue(value bson.RawValue) (interface{}, error) {
+
+	var result interface{}
+	switch value.Type {
+	case bsontype.Double:
+		result = value.Double()
+	case bsontype.String:
+		result = value.StringValue()
+	case bsontype.Binary: // not support
+		result = value.StringValue()
+	case bsontype.Boolean:
+		result = value.Boolean()
+	case bsontype.DateTime:
+		result = value.DateTime()
+	case bsontype.Null:
+		result = nil
+	case bsontype.Regex:
+		result = value.StringValue()
+	case bsontype.JavaScript:
+		result = value.StringValue()
+	case bsontype.Symbol:
+		result = value.StringValue()
+	case bsontype.Int32:
+		result = value.Int32()
+	case bsontype.Timestamp:
+		result = value.Int64()
+	case bsontype.Int64:
+		result = value.Int64()
+	case bsontype.Decimal128:
+		result = value.Decimal128()
+	case bsontype.MinKey:
+		result = value.StringValue()
+	case bsontype.MaxKey:
+		result = value.StringValue()
+	case bsontype.Undefined:
+		result = nil
+	case bsontype.ObjectID:
+		result = value.ObjectID().String()
+	case bsontype.DBPointer:
+		result = value.StringValue()
+	case bsontype.CodeWithScope:
+		result = value.StringValue()
+	default:
+		return nil, errors.New("bson unmarshal type(" + value.Type.String() + ") not support ")
+
+	}
+	return result, nil
 }

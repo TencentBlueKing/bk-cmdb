@@ -63,10 +63,16 @@ func GetInt64ByInterface(a interface{}) (int64, error) {
 	switch a.(type) {
 	case int:
 		id = int64(a.(int))
+	case uint:
+		id = int64(a.(uint))
 	case int32:
 		id = int64(a.(int32))
+	case uint32:
+		id = int64(a.(uint32))
 	case int64:
 		id = int64(a.(int64))
+	case uint64:
+		id = int64(a.(uint64))
 	case json.Number:
 		var tmpID int64
 		tmpID, err = a.(json.Number).Int64()
@@ -261,4 +267,146 @@ func SplitStrField(str, sep string) []string {
 		return nil
 	}
 	return strings.Split(str, sep)
+}
+
+func DecodeIntoTypeValue(fieldType reflect.Type, value interface{}) (reflect.Value, error) {
+	var retVal reflect.Value
+	switch fieldType.Kind() {
+	case reflect.Bool:
+		bl, ok := value.(bool)
+		if !ok {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(bl)
+	case reflect.Int:
+
+		val, err := GetInt64ByInterface(value)
+		if err != nil {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(int(val))
+
+	case reflect.Int8:
+		val, err := GetInt64ByInterface(value)
+		if err != nil {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(int8(val))
+	case reflect.Int16:
+		val, err := GetInt64ByInterface(value)
+		if err != nil {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(int16(val))
+	case reflect.Int32:
+		val, err := GetInt64ByInterface(value)
+		if err != nil {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(int32(val))
+	case reflect.Int64:
+		val, err := GetInt64ByInterface(value)
+		if err != nil {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(int64(val))
+
+	case reflect.Uint:
+		val, ok := GetTypeSensitiveUInt64(value)
+		if !ok {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(uint(val))
+	case reflect.Uint8:
+		val, ok := GetTypeSensitiveUInt64(value)
+		if !ok {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(uint8(val))
+	case reflect.Uint16:
+		val, ok := GetTypeSensitiveUInt64(value)
+		if !ok {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(uint16(val))
+	case reflect.Uint32:
+		val, ok := GetTypeSensitiveUInt64(value)
+		if !ok {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(uint32(val))
+	case reflect.Uint64:
+		val, ok := GetTypeSensitiveUInt64(value)
+		if !ok {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(uint64(val))
+	case reflect.Float32:
+		val, err := GetFloat64ByInterface(value)
+		if err != nil {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(float32(val))
+	case reflect.Float64:
+		val, err := GetFloat64ByInterface(value)
+		if err != nil {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		retVal = reflect.ValueOf(float64(val))
+	// case reflect.Complex64:
+	// case reflect.Complex128:
+	case reflect.Array:
+		valArr, ok := value.([]interface{})
+		if !ok {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		setValArr := reflect.MakeSlice(fieldType.Elem(), 0, 10)
+		for _, valItem := range valArr {
+			tmpVal, err := DecodeIntoTypeValue(fieldType.Elem(), valItem)
+			if err != nil {
+				return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+			}
+			retVal.Set(reflect.Append(setValArr, tmpVal))
+		}
+	//case reflect.Chan:
+	//case reflect.Func:
+	case reflect.Interface:
+		retVal = reflect.ValueOf(value)
+	case reflect.Map:
+		valMap, ok := value.(map[string]interface{})
+		if !ok {
+			return retVal, fmt.Errorf("%s into Go value of type %s", reflect.TypeOf(value).Kind().String(), fieldType.Kind().String())
+		}
+		fmt.Println("\n \n test code", fieldType, fieldType.Elem().Kind().String(), fieldType.Elem().Elem().Kind().String())
+		///setValMap := reflect.MakeMap(fieldType)
+		for key, val := range valMap {
+			fmt.Println(key, val)
+		}
+	case reflect.Slice:
+		valArr, ok := value.([]interface{})
+		if !ok {
+			return retVal, fmt.Errorf("%s into Go value of type %s", fieldType.Kind().String(), reflect.TypeOf(value).Kind().String())
+		}
+		setValArr := reflect.MakeSlice(fieldType, 0, len(valArr))
+		for _, valItem := range valArr {
+			tmpVal, err := DecodeIntoTypeValue(fieldType.Elem(), valItem)
+			if err != nil {
+				return retVal, fmt.Errorf("%s into Go value of type %s", fieldType.Kind().String(), reflect.TypeOf(value).Kind().String())
+			}
+			setValArr = reflect.Append(setValArr, tmpVal)
+		}
+
+		retVal = setValArr
+
+	case reflect.String:
+		val, ok := value.(string)
+		if !ok {
+			return retVal, fmt.Errorf("%s into Go value of type %s", fieldType.Kind().String(), reflect.TypeOf(value).Kind().String())
+		}
+		retVal = reflect.ValueOf(val)
+	default:
+		return retVal, fmt.Errorf("%s into Go value of type %s", fieldType.Kind().String(), reflect.TypeOf(value).Kind().String())
+	}
+
+	return retVal, nil
 }
