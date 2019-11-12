@@ -205,6 +205,8 @@ const (
 	DefaultResModuleName string = "空闲机"
 	// DefaultFaultModuleName the default fault module name
 	DefaultFaultModuleName string = "故障机"
+	// DefaultRecycleModuleName the default fault module name
+	DefaultRecycleModuleName string = "待回收"
 )
 
 const (
@@ -670,7 +672,15 @@ const (
 
 	// DefaultFaultModuleFlag the default fault module flag
 	DefaultFaultModuleFlag int = 2
+
+	// default recycle module flat
+	DefaultRecycleModuleFlag int = 3
 )
+
+const (
+	DefaultModuleType = "1"
+)
+
 const (
 	// FieldTypeSingleChar the single char filed type
 	FieldTypeSingleChar string = "singlechar"
