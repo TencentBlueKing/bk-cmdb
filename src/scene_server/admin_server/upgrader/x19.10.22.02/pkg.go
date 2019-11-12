@@ -10,24 +10,25 @@
  * limitations under the License.
  */
 
-package app
+package x19_10_22_02
 
 import (
 	"context"
 
-	//"configcenter/src/common/blog"
-	"configcenter/src/tools/snapshot_check/app/options"
-	"configcenter/src/tools/snapshot_check/service"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func init() {
+	upgrader.RegistUpgrader("x19_10_22_02", upgrade)
+}
 
-	srv := service.NewService(op.ServConf.RegDiscover, op.ServConf.DefaultAppID)
-
-	if op.ServConf.TriggerInterval < 10 {
-		op.ServConf.TriggerInterval = 10
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	if err := addHostIndex(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade to version x19_10_22_02 failed, addHostIndex failed, err: %+v", err)
+		return err
 	}
-	srv.TriggerTicker(op.ServConf.TriggerInterval)
-	select {}
+
 	return nil
 }

@@ -68,9 +68,9 @@
                             @change="handleDragChange"
                             @end="handleDragEnd">
                             <li class="property-item fl"
-                                v-for="(property, _index) in group.properties"
+                                v-for="(property, fieldIndex) in group.properties"
                                 :class="{ 'only-ready': !isFieldEditable(property) }"
-                                :key="_index"
+                                :key="fieldIndex"
                                 @click="handleFieldDetailsView(!isFieldEditable(property), property)">
                                 <span class="drag-logo"></span>
                                 <div class="drag-content">
@@ -95,7 +95,7 @@
                                             active: !updateAuth,
                                             auth: [$OPERATION.U_MODEL]
                                         }"
-                                        @click.stop="handleDeleteField({ property, index, _index })">
+                                        @click.stop="handleDeleteField({ property, index, fieldIndex })">
                                     </i>
                                 </template>
                             </li>

@@ -71,6 +71,7 @@
                     v-if="processList.length"
                     :loading="processLoading"
                     :properties="properties"
+                    :auth="auth"
                     @on-edit="handleUpdateProcess"
                     @on-delete="handleDeleteProcess"
                     :list="processList">
@@ -426,6 +427,7 @@
                     params: this.$injectMetadata({
                         service_template_id: this.formData.templateId,
                         processes: this.processList.map(process => {
+                            delete process.sign_id
                             return {
                                 spec: process
                             }

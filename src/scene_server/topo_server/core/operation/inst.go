@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -468,7 +469,8 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		}
 		// clear association
 		dc := &metadata.DeleteOption{Condition: delCond.ToMapStr()}
-		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(params.Context, params.Header, objectID, dc)
+		instObjID := delInst.obj.GetObjectID()
+		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(params.Context, params.Header, instObjID, dc)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -890,9 +892,24 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		for _, objCondition := range objs {
 			if objCondition.Operator != common.BKDBEQ {
 				if object.ObjectID == keyObjID {
-					// deal self condition
-					instCond[objCondition.Field] = map[string]interface{}{
-						objCondition.Operator: objCondition.Value,
+					if objCondition.Operator == common.BKDBLIKE ||
+						objCondition.Operator == common.BKDBMULTIPLELike {
+						switch t := objCondition.Value.(type) {
+						case string:
+							instCond[objCondition.Field] = map[string]interface{}{
+								objCondition.Operator: gparams.SpecialCharChange(t),
+							}
+						default:
+							// deal self condition
+							instCond[objCondition.Field] = map[string]interface{}{
+								objCondition.Operator: objCondition.Value,
+							}
+						}
+					} else {
+						// deal self condition
+						instCond[objCondition.Field] = map[string]interface{}{
+							objCondition.Operator: objCondition.Value,
+						}
 					}
 				} else {
 					// deal association condition

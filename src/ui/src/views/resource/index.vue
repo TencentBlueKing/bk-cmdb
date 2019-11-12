@@ -29,6 +29,7 @@
                     :popover-width="180"
                     :searchable="authorizedBusiness.length > 7"
                     :disabled="!table.checked.length"
+                    :clearable="false"
                     :placeholder="$t('分配到')"
                     v-model="assignBusiness"
                     @selected="handleAssignHosts">
