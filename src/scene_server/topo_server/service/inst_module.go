@@ -99,6 +99,36 @@ func (s *Service) CreateModule(params types.ContextParams, pathParams, queryPara
 	return module, nil
 }
 
+func (s *Service) CheckIsBuiltInModule(params types.ContextParams, moduleIDs ...int64) errors.CCErrorCoder {
+	// 检查是否时内置集群
+	qc := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: 0,
+		},
+		Condition: map[string]interface{}{
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBIN: moduleIDs,
+			},
+			common.BKDefaultField: map[string]interface{}{
+				common.BKDBNE: 0,
+			},
+		},
+	}
+	rsp, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, qc)
+	if nil != err {
+		blog.Errorf("[operation-module] failed read module instance, err: %s, rid: %s", err.Error(), params.ReqID)
+		return params.Err.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if rsp.Result == false || rsp.Code != 0 {
+		blog.ErrorJSON("[operation-set] failed read module instance, option: %s, response: %s, rid: %s", qc, rsp, params.ReqID)
+		return errors.New(rsp.Code, rsp.ErrMsg)
+	}
+	if rsp.Data.Count > 0 {
+		return params.Err.CCError(common.CCErrorTopoForbiddenDeleteBuiltInSetModule)
+	}
+	return nil
+}
+
 // DeleteModule delete the module
 func (s *Service) DeleteModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
@@ -135,6 +165,12 @@ func (s *Service) DeleteModule(params types.ContextParams, pathParams, queryPara
 	if nil != err {
 		blog.Errorf("[api-module]failed to parse the module id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "module id")
+	}
+
+	// 不允许直接删除内置模块
+	if err := s.CheckIsBuiltInModule(params, moduleID); err != nil {
+		blog.Errorf("[api-module]DeleteModule failed, CheckIsBuiltInModule failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
 	}
 
 	err = s.Core.ModuleOperation().DeleteModule(params, obj, bizID, []int64{setID}, []int64{moduleID})
