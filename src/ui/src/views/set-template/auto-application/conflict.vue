@@ -7,7 +7,7 @@
                 'font-size': '12px'
             }"
             :icon-style="{ 'font-size': '16px' }">
-            {{$t('解决冲突：同一主机的属性在不同的模块下需保持一致')}}
+            {{$t('解决应用字段冲突提示')}}
         </cmdb-tips>
         <div class="conflict-table" ref="conflictTable">
             <bk-table :data="list">
