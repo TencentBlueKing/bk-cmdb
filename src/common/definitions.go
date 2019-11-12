@@ -678,7 +678,7 @@ const (
 )
 
 const (
-	DefaultModuleType = "1"
+	DefaultModuleType string = "1"
 )
 
 const (

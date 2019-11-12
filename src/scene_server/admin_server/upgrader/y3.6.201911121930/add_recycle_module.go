@@ -36,9 +36,8 @@ func AddRecycleModule(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		return fmt.Errorf("getDefaultServiceCategoryID failed, err: %s", err.Error())
 	}
 
-	bizFilter := map[string]interface{}{
-		common.BKDefaultField: 0,
-	}
+	// 资源池业务也有空闲机模块
+	bizFilter := map[string]interface{}{}
 	businessList := make([]BizSimplify, 0)
 
 	start := uint64(0)
