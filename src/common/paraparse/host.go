@@ -136,6 +136,8 @@ func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) er
 			} else if IOBOTH == flag {
 				exactOr = append(exactOr, mapstr.MapStr{common.BKHostInnerIPField: exactIP})
 				exactOr = append(exactOr, mapstr.MapStr{common.BKHostOuterIPField: exactIP})
+			} else {
+				return fmt.Errorf("unsupported ip.flag %s", flag)
 			}
 		}
 		output[common.BKDBOR] = exactOr
@@ -160,6 +162,8 @@ func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) er
 				ipiCon[common.BKHostInnerIPField] = c
 				orCond = append(orCond, ipoCon)
 				orCond = append(orCond, ipiCon)
+			} else {
+				return fmt.Errorf("unsupported ip.flag %s", flag)
 			}
 		}
 		output[common.BKDBOR] = orCond
