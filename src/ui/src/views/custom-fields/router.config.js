@@ -1,21 +1,13 @@
 import Meta from '@/router/meta'
-import { U_MODEL } from '@/dictionary/auth'
-import { MENU_BUSINESS_ADVANCED } from '@/dictionary/menu-symbol'
-
-export const OPERATION = { U_MODEL }
+import { MENU_BUSINESS_CUSTOM_FIELDS } from '@/dictionary/menu-symbol'
 
 export default {
-    name: 'customFields',
+    name: MENU_BUSINESS_CUSTOM_FIELDS,
     path: 'custom-fields',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
-            i18n: '自定义字段',
-            parent: MENU_BUSINESS_ADVANCED
-        },
-        auth: {
-            operation: { U_MODEL },
-            authScope: 'business'
+            i18n: '自定义字段'
         }
     })
 }

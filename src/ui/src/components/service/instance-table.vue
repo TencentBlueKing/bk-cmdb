@@ -5,9 +5,10 @@
                 <i class="bk-icon icon-down-shape" v-if="localExpanded"></i>
                 <i class="bk-icon icon-right-shape" v-else></i>
                 {{name}}
-                <i class="bk-icon icon-exclamation" v-if="showTips && !processList.length" v-bk-tooltips="tooltips"></i>
+                <i class="title-tips" v-if="showTips && !processList.length">{{tooltips.content}}</i>
             </div>
             <div class="fr">
+                <span v-if="topology" class="service-topology">{{topology}}</span>
                 <i class="bk-icon icon-close" v-if="deletable" @click.stop="handleDelete"></i>
             </div>
         </div>
@@ -31,14 +32,14 @@
                     </a>
                 </template>
             </bk-table-column>
-            <template slot="empty">
+            <template slot="empty" v-if="addible">
                 <button class="add-process-button text-primary" @click="handleAddProcess">
                     <i class="bk-icon icon-plus"></i>
                     <span>{{$t('添加进程')}}</span>
                 </button>
             </template>
         </bk-table>
-        <div class="add-process-options" v-if="!sourceProcesses.length && processList.length">
+        <div class="add-process-options" v-if="addible && !sourceProcesses.length && processList.length">
             <button class="add-process-button text-primary" @click="handleAddProcess">
                 <i class="bk-icon icon-plus"></i>
                 <span>{{$t('添加进程')}}</span>
@@ -106,6 +107,14 @@
             showTips: {
                 type: Boolean,
                 default: false
+            },
+            addible: {
+                type: Boolean,
+                default: true
+            },
+            topology: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -347,6 +356,23 @@
             background: #f0b659;
             border-radius: 50%;
             transform: scale(.6);
+        }
+        .service-topology {
+            padding: 0 5px;
+            line-height: 40px;
+            font-size: 12px;
+            color: $textColor;
+            cursor: default;
+        }
+        .title-tips {
+            display: inline-block;
+            padding: 0 10px;
+            vertical-align: 1px;
+            color: $dangerColor;
+            font-style: normal;
+            font-size: 12px;
+            line-height: 20px;
+            outline: 0;
         }
     }
     .add-process-options {

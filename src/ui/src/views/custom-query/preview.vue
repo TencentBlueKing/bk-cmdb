@@ -1,6 +1,7 @@
 <template>
     <div class="userapi-preview-wrapper">
-        <div class="userapi-preview" v-click-outside="closePreview">
+        <div class="mask" @click="closePreview"></div>
+        <div class="userapi-preview">
             <h3 class="preview-title">{{$t('预览查询')}}</h3>
             <i class="bk-icon icon-close" @click="closePreview"></i>
             <div class="preview-table">
@@ -8,7 +9,7 @@
                     v-bkloading="{ isLoading: $loading('searchHost') }"
                     :data="table.list"
                     :pagination="table.pagination"
-                    :max-height="379"
+                    :height="379"
                     @page-change="handlePageChange"
                     @page-limit-change="handleSizeChange"
                     @sort-change="handleSortChange">
@@ -196,8 +197,16 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.6);
-        z-index: 9999;
+        z-index: 2400;
+        .mask {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1;
+        }
         .userapi-preview {
             position: absolute;
             width: 880px;
@@ -206,6 +215,7 @@
             margin: 20px auto;
             top: 50%;
             left: 50%;
+            z-index: 2;
             transform: translate(-50%, -50%);
             background: #fff;
             box-shadow: 0 0 8px 4px rgba(0, 0, 0, 0.1);

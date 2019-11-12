@@ -33,9 +33,9 @@
             @sort-change="setCurrentSort">
             <bk-table-column :prop="instanceIdKey" label="ID"></bk-table-column>
             <bk-table-column :prop="instanceNameKey" :label="instanceName"></bk-table-column>
-            <bk-table-column v-if="filter.id !== instanceNameKey"
+            <bk-table-column v-if="filter.id !== instanceNameKey && getLabelText"
                 :prop="filter.id"
-                :label="(getProperty(filter.id) || {}).bk_property_name">
+                :label="getLabelText">
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
@@ -181,6 +181,9 @@
             },
             isSource () {
                 return this.currentOption['bk_obj_id'] === this.objId
+            },
+            getLabelText () {
+                return (this.getProperty(this.filter.id) || {}).bk_property_name
             }
         },
         async created () {
@@ -249,8 +252,7 @@
                             }
                         }),
                         config: {
-                            requestId: 'getSourceAssocaition',
-                            fromCache: true
+                            requestId: 'getSourceAssocaition'
                         }
                     }),
                     this.searchObjectAssociation({
@@ -260,14 +262,12 @@
                             }
                         }),
                         config: {
-                            requestId: 'getTargetAssocaition',
-                            fromCache: true
+                            requestId: 'getTargetAssocaition'
                         }
                     }),
                     this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
                         config: {
-                            requestId: 'getMainLineModels',
-                            fromCache: true
+                            requestId: 'getMainLineModels'
                         }
                     })
                 ]).then(([dataAsSource, dataAsTarget, mainLineModels]) => {

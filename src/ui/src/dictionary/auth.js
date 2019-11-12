@@ -120,64 +120,6 @@ export const C_SET_TEMPLATE = 'setTemplate.create'
 export const U_SET_TEMPLATE = 'setTemplate.update'
 export const D_SET_TEMPLATE = 'setTemplate.delete'
 
-export const STATIC_BUSINESS_MODE = [
-    C_MODEL,
-    R_MODEL,
-
-    C_MODEL_GROUP,
-    U_MODEL_GROUP,
-    D_MODEL_GROUP,
-
-    C_CUSTOM_QUERY,
-    U_CUSTOM_QUERY,
-    D_CUSTOM_QUERY,
-    R_CUSTOM_QUERY,
-
-    C_PROCESS,
-    U_PROCESS,
-    D_PROCESS,
-    R_PROCESS,
-    PROCESS_BIND_MODULE,
-    PROCESS_UNBIND_MODULE,
-    PROCESS_SEARCH_MODULE,
-
-    C_HOST,
-    U_HOST,
-    D_HOST,
-    HOST_TO_RESOURCE,
-
-    C_SERVICE_CATEGORY,
-    U_SERVICE_CATEGORY,
-    D_SERVICE_CATEGORY,
-    R_SERVICE_CATEGORY,
-
-    C_SERVICE_TEMPLATE,
-    U_SERVICE_TEMPLATE,
-    D_SERVICE_TEMPLATE,
-    R_SERVICE_TEMPLATE,
-
-    C_SERVICE_INSTANCE,
-    U_SERVICE_INSTANCE,
-    D_SERVICE_INSTANCE,
-    R_SERVICE_INSTANCE,
-
-    C_TOPO,
-    U_TOPO,
-    D_TOPO,
-    R_TOPO,
-
-    C_SET_TEMPLATE,
-    U_SET_TEMPLATE,
-    D_SET_TEMPLATE
-]
-
-export const DYNAMIC_BUSINESS_MODE = [
-    C_INST,
-    U_INST,
-    D_INST,
-    R_INST
-]
-
 export const RESOURCE_TYPE_NAME = {
     modelClassification: i18n.t('模型分类'),
     model: i18n.t('模型'),
@@ -222,9 +164,8 @@ export const RESOURCE_ACTION_NAME = {
 const AUTH_META_KEYS = ['bk_biz_id', 'parent_layers', 'resource_id']
 
 export const GET_AUTH_META = (auth, options = {}) => {
-    const [type, action, scope] = auth.split('.')
+    const [type, action] = auth.split('.')
     const meta = {
-        scope: scope || 'global',
         resource_type: type,
         action: action
     }
