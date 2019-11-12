@@ -14,12 +14,14 @@ package local
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 	"testing"
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 
 	"github.com/stretchr/testify/require"
@@ -882,4 +884,176 @@ func TestUpdateModifyCount(t *testing.T) {
 		t.Errorf("update error.")
 		return
 	}
+}
+
+func TestConvInterface(t *testing.T) {
+
+	ctx := context.Background()
+	tableName := "tmptest_decode_interface"
+
+	db := dbCleint(t)
+	// 清理数据
+	err := db.DropTable(ctx, tableName)
+	require.NoError(t, err)
+
+	table := db.Table(tableName)
+
+	insertDataMany := []map[string]interface{}{
+		map[string]interface{}{
+			"str":         "str",
+			"bool":        true,
+			"int":         int(1),
+			"int8":        int8(8),
+			"int16":       int16(8),
+			"int32":       int32(8),
+			"int64":       int64(8),
+			"uint":        uint(8),
+			"uint8":       uint8(8),
+			"uint16":      uint16(8),
+			"uint32":      uint32(8),
+			"uint64":      uint64(8),
+			"float32":     float32(8),
+			"float64":     float64(8),
+			"str_ptr":     "str",
+			"bool_ptr":    true,
+			"int_ptr":     int(1),
+			"int8_ptr":    int8(8),
+			"int16_ptr":   int16(8),
+			"int32_ptr":   int32(8),
+			"int64_ptr":   int64(8),
+			"uint_ptr":    uint(8),
+			"uint8_ptr":   uint8(8),
+			"uint16_ptr":  uint16(8),
+			"uint32_ptr":  uint32(8),
+			"uint64_ptr":  uint64(8),
+			"float32_ptr": float32(8),
+			"float64_ptr": float64(8),
+			"str_arr_ptr": []string{"1", "2"},
+			"int_arr_ptr": []int{1, 2},
+
+			"struct": map[string]interface{}{
+				"sub_int": int64(1),
+				"aa":      "struct",
+			},
+			"struct_ptr": map[string]interface{}{
+				"sub_int": int64(11),
+				"sub_aa":  "ptr",
+			},
+			"tag_test": "11",
+			"sub_int":  int64(8888888),
+			"sub_aa":   "inline",
+		},
+		map[string]interface{}{
+			"str":         "str",
+			"bool":        true,
+			"int":         int(12),
+			"int8":        int8(82),
+			"int16":       int16(82),
+			"int32":       int32(82),
+			"int64":       int64(82),
+			"uint":        uint(82),
+			"uint8":       uint8(82),
+			"uint16":      uint16(82),
+			"uint32":      uint32(82),
+			"uint64":      uint64(82),
+			"float32":     float32(82),
+			"float64":     float64(82),
+			"str_arr_ptr": []string{"1", "2"},
+			"int_arr_ptr": []int{1, 2},
+
+			"struct": map[string]interface{}{
+				"sub_int": int64(1),
+				"sub_aa":  "struct",
+			},
+			"struct_ptr": map[string]interface{}{
+				"sub_int": int64(11),
+				"sub_aa":  "struct ptr",
+			},
+			"tag_test": "11",
+		},
+	}
+
+	type SubStruct struct {
+		Int int    `bson:"sub_int" json:"sub_int"`
+		Str string `bson:"sub_aa" json:"sub_aa"`
+	}
+
+	// inline , inline ptr
+	type resultStruct struct {
+		Str        string      `bson:"str" json:"str"`
+		Bool       bool        `bson:"bool" json:"bool"`
+		Int        int         `bson:"int" json:"int"`
+		Int8       int8        `bson:"int8" json:"int8"`
+		Int16      int16       `bson:"int16" json:"int16"`
+		Int32      int32       `bson:"int32" json:"int32"`
+		Int64      int64       `bson:"int64" json:"int64"`
+		Uint       uint        `bson:"uint" json:"uint"`
+		Uint8      uint8       `bson:"uint8" json:"uint8"`
+		Uint16     uint16      `bson:"uint16" json:"uint16"`
+		Uint32     uint32      `bson:"uint32" json:"uint32"`
+		Uint64     uint64      `bson:"uint64" json:"uint64"`
+		Float32    float32     `bson:"float32" json:"float32"`
+		Float64    float64     `bson:"float64" json:"float64"`
+		StrPtr     *string     `bson:"str_ptr" json:"str_ptr"`
+		BoolPtr    *bool       `bson:"bool_ptr" json:"bool_ptr"`
+		IntPtr     *int        `bson:"int_ptr" json:"int_ptr"`
+		Int8Ptr    *int8       `bson:"int8_ptr" json:"int8_ptr"`
+		Int16Ptr   *int16      `bson:"int16_ptr" json:"int16_ptr"`
+		Int32Ptr   *int32      `bson:"int32_ptr" json:"int32_ptr"`
+		Int64Ptr   *int64      `bson:"int64_ptr" json:"int64_ptr"`
+		UintPtr    *uint       `bson:"uint_ptr" json:"uint_ptr"`
+		Uint8Ptr   *uint8      `bson:"uint8_ptr" json:"uint8_ptr"`
+		Uint16Ptr  *uint16     `bson:"uint16_ptr" json:"uint16_ptr"`
+		Uint32Ptr  *uint32     `bson:"uint32_ptr" json:"uint32_ptr"`
+		Uint64Ptr  *uint64     `bson:"uint64_ptr" json:"uint64_ptr"`
+		Float32Ptr *float32    `bson:"float32_ptr" json:"float32_ptr"`
+		Float64Ptr *float64    `bson:"float64_ptr" json:"float64_ptr"`
+		StrArr     []string    `bson:"str_arr" json:"str_arr"`
+		IntArr     []int       `bson:"int_arr" json:"int_arr"`
+		Struct     SubStruct   `bson:"struct" json:"struct"`
+		TagTest    interface{} `bson:"tag_test" json:"tag_test"`
+		StructPtr  *SubStruct  `bson:"struct_ptr" json:"struct_ptr"`
+		*SubStruct
+	}
+
+	err = table.Insert(ctx, insertDataMany)
+	require.NoError(t, err)
+	resultStructMany := make([]resultStruct, 0)
+	err = table.Find(nil).Limit(2).All(ctx, &resultStructMany)
+	require.NoError(t, err)
+	dbDataByteArr, err := json.Marshal(resultStructMany)
+	resultMapMany := make([]map[string]interface{}, 0)
+	err = json.Unmarshal(dbDataByteArr, &resultMapMany)
+	require.NoError(t, err)
+
+	resultInterfaceMany := make([]interface{}, 0)
+	err = table.Find(nil).Limit(2).All(ctx, &resultInterfaceMany)
+	require.NoError(t, err)
+	dbDataByteArr, err = json.Marshal(resultInterfaceMany)
+	resultMapMany = make([]map[string]interface{}, 0)
+	err = json.Unmarshal(dbDataByteArr, &resultMapMany)
+	require.NoError(t, err)
+
+	resultMapMany = make([]map[string]interface{}, 0)
+	err = table.Find(nil).Limit(2).All(ctx, &resultMapMany)
+	require.NoError(t, err)
+	byteArr, err := json.Marshal(insertDataMany)
+	require.NoError(t, err)
+	dbByteArr, err := json.Marshal(resultMapMany)
+	require.NoError(t, err)
+	require.Equal(t, byteArr, dbByteArr)
+	blog.InfoJSON("%s  %s", insertDataMany, resultMapMany)
+
+	/*
+		err = table.Insert(ctx, insertDataMany)
+		require.NoError(t, err)
+		resultMany := make([]interface{}, 0)
+		err = table.Find(nil).Limit(1).All(ctx, &resultMany)
+		require.NoError(t, err)
+		blog.InfoJSON("%s  \n %s", insertDataMany, resultMany)
+
+		resultStruct := make([]tmp, 0)
+		err = table.Find(nil).Limit(1).All(ctx, &resultStruct)
+		require.NoError(t, err)
+		blog.InfoJSON("%s  \n %s", insertDataMany, resultStruct)*/
 }
