@@ -47,20 +47,16 @@ var createIgnoreKeys = []string{
 func FetchBizIDFromInstance(objID string, instanceData mapstr.MapStr) (int64, error) {
 	switch objID {
 	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc:
-		biz, exist := instanceData[common.BKAppIDField]
-		if exist == false {
-			return 0, nil
-		}
-		bizID, err := util.GetInt64ByInterface(biz)
-		if err != nil {
-			return 0, err
-		}
-		return bizID, nil
+		return util.GetInt64ByInterface(instanceData[common.BKAppIDField])
 	case common.BKInnerObjIDPlat:
 		return 0, nil
 	default:
 		if _, exist := instanceData[common.MetadataField]; exist == false {
-			return 0, nil
+			biz, exist := instanceData[common.BKAppIDField]
+			if !exist {
+				return 0, nil
+			}
+			return util.GetInt64ByInterface(biz)
 		}
 		return metadata.ParseBizIDFromData(instanceData)
 	}
@@ -120,7 +116,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		if metadata.BKMetadata == key {
 			bizID := metadata.GetBusinessIDFromMeta(val)
 			if "" != bizID {
-				instMedataData.Label.Set(metadata.LabelBusinessID, metadata.GetBusinessIDFromMeta(val))
+				instMedataData.Label.Set(metadata.LabelBusinessID, bizID)
 			}
 			continue
 		}
