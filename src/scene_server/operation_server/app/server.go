@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -63,7 +62,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if false == configReady {
 		return fmt.Errorf("configuration item not found")
 	}
-	authConf, err := authcenter.ParseConfigFromKV("auth", operationSvr.ConfigMap)
+	authConf := operationSvr.Config.Auth
 	if err != nil {
 		return err
 	}

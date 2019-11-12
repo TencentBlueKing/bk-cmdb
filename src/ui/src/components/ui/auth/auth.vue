@@ -1,11 +1,12 @@
 <template>
-    <span class="auth-box"
+    <component class="auth-box"
+        :is="tag"
         v-cursor="{
             active: !isAuthorized,
             auth: resources
         }">
         <slot :disabled="disabled"></slot>
-    </span>
+    </component>
 </template>
 
 <script>
@@ -16,12 +17,17 @@
             auth: {
                 type: Object,
                 required: true
+            },
+            tag: {
+                type: String,
+                default: 'span'
             }
         },
         data () {
             return {
                 isAuthorized: true,
-                disabled: true
+                disabled: true,
+                turnOnVerify: window.Site.authscheme === 'iam'
             }
         },
         computed: {
@@ -35,7 +41,7 @@
                 immediate: true,
                 deep: true,
                 handler (value, oldValue) {
-                    if (!Object.keys(this.auth).length) {
+                    if (!this.turnOnVerify || !Object.keys(this.auth).length) {
                         this.disabled = false
                     } else if (!deepEqual(value, oldValue)) {
                         resourceOperation.pushQueue({
@@ -48,10 +54,7 @@
         },
         methods: {
             updateAuth (auths) {
-                const passData = auths.map(auth => {
-                    return auth.is_pass
-                })
-                const isPass = passData.every(pass => pass)
+                const isPass = auths.every(auth => auth.is_pass)
                 this.isAuthorized = isPass
                 this.disabled = !isPass
                 this.$emit('update-auth', isPass)

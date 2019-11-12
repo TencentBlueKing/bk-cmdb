@@ -18,9 +18,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/emicklei/go-restful"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // URLPath url path filter
@@ -140,6 +141,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.Contains(string(*u), "/topoinst"):
 		from, to, isHit = rootPath, topoRoot, true
 
+	case strings.Contains(string(*u), "/topopath"):
+		from, to, isHit = rootPath, topoRoot, true
+
 	case strings.Contains(string(*u), "/topoassociationtype"):
 		from, to, isHit = rootPath, topoRoot, true
 
@@ -180,6 +184,7 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 
 // hostCloudAreaURLRegexp host server opeator cloud area api regex
 var hostCloudAreaURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(cloudarea|cloudarea/.*)$", verbs))
+var hostURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(host|hosts/.*)$", verbs))
 
 // WithHost transform the host's url
 func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
@@ -209,6 +214,9 @@ func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, hostRoot, true
 
 	case hostCloudAreaURLRegexp.MatchString(string(*u)):
+		from, to, isHit = rootPath, hostRoot, true
+
+	case hostURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, hostRoot, true
 
 	default:

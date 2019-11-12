@@ -41,6 +41,7 @@
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
                                         :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                        :auto-select="false"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]['value']">
                                     </component>
@@ -234,19 +235,6 @@
             hasChange () {
                 return !!Object.keys(this.changedValues()).length
             },
-            filterChangedValues () {
-                const filterValues = {}
-                const changedData = this.changedValues()
-                for (const propertyId in changedData) {
-                    filterValues[propertyId] = {}
-                    Object.keys(changedData[propertyId]).forEach(key => {
-                        if (changedData[propertyId][key] !== this.refrenceValues[propertyId][key]) {
-                            filterValues[propertyId][key] = changedData[propertyId][key]
-                        }
-                    })
-                }
-                return filterValues
-            },
             checkScrollbar () {
                 const $layout = this.$el
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
@@ -308,35 +296,7 @@
                 return output
             },
             getValidateRules (property) {
-                const rules = {}
-                const {
-                    bk_property_type: propertyType,
-                    option,
-                    isrequired
-                } = property
-                if (isrequired) {
-                    rules.required = true
-                }
-                if (option) {
-                    if (propertyType === 'int') {
-                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
-                            rules['min_value'] = option.min
-                        }
-                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
-                            rules['max_value'] = option.max
-                        }
-                    } else if (['singlechar', 'longchar'].includes(propertyType)) {
-                        rules['regex'] = option
-                    }
-                }
-                if (['singlechar', 'longchar'].includes(propertyType)) {
-                    rules[propertyType] = true
-                    rules.length = propertyType === 'singlechar' ? 256 : 2000
-                }
-                if (propertyType === 'float') {
-                    rules['float'] = true
-                }
-                return rules
+                return this.$tools.getValidateRules(property)
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {
@@ -359,7 +319,7 @@
                             })
                         }
                     } else if (result) {
-                        this.$emit('on-submit', this.values, this.filterChangedValues(), this.type)
+                        this.$emit('on-submit', this.values, this.changedValues(), this.type)
                     } else {
                         this.uncollapseGroup()
                     }
@@ -394,12 +354,10 @@
             handleResetValue (status, property) {
                 if (!status) {
                     const type = property['bk_property_type']
-                    if (['enum'].includes(type)) {
-                        const option = property['option']
-                        const defaultValue = option[0]['id'] ? option[0]['id'] : ''
-                        this.values[property['bk_property_id']]['value'] = defaultValue
-                    } else if (['bool'].includes(type)) {
+                    if (['bool'].includes(type)) {
                         this.values[property['bk_property_id']]['value'] = false
+                    } else if (['int'].includes(type)) {
+                        this.values[property['bk_property_id']]['value'] = null
                     } else {
                         this.values[property['bk_property_id']]['value'] = ''
                     }

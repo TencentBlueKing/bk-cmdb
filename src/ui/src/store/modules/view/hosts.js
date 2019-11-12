@@ -12,7 +12,8 @@ const state = {
         ...defaultParams
     },
     collection: null,
-    collectionList: []
+    collectionList: [],
+    isHostSearch: null
 }
 
 const getters = {
@@ -35,6 +36,9 @@ const mutations = {
     setCollection (state, collection) {
         state.collection = collection
     },
+    setIsHostSearch (state, boolean) {
+        state.isHostSearch = boolean
+    },
     addCollection (state, collection) {
         state.collectionList.push(collection)
     },
@@ -51,6 +55,7 @@ const mutations = {
             ...defaultParams
         }
         state.collection = null
+        state.isHostSearch = false
     }
 }
 
