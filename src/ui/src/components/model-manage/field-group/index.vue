@@ -72,9 +72,9 @@
                             @change="handleDragChange"
                             @end="handleDragEnd">
                             <li class="property-item fl"
-                                v-for="(property, _index) in group.properties"
+                                v-for="(property, fieldIndex) in group.properties"
                                 :class="{ 'only-ready': !updateAuth || !isFieldEditable(property) }"
-                                :key="_index"
+                                :key="fieldIndex"
                                 @click="handleFieldDetailsView(!updateAuth || !isFieldEditable(property), property)">
                                 <span class="drag-logo"></span>
                                 <div class="drag-content">

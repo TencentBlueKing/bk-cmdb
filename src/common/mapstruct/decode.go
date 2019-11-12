@@ -13,7 +13,10 @@
 package mapstruct
 
 import (
+	"encoding/json"
+
 	"configcenter/src/common/metadata"
+
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -31,4 +34,16 @@ func Decode2Struct(m map[string]interface{}, st interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func Struct2Map(v interface{}) (map[string]interface{}, error) {
+	bytes, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	data := make(map[string]interface{})
+	if err := json.Unmarshal(bytes, &data); err != nil {
+		return nil, err
+	}
+	return data, nil
 }

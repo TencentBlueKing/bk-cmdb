@@ -45,7 +45,7 @@ func (lgc *Logics) NewHostLog(ctx context.Context, ownerID string) *HostLog {
 
 func (h *HostLog) WithPrevious(ctx context.Context, hostID string, headers []metadata.Header) errors.CCError {
 	var err error
-	if headers != nil || len(headers) != 0 {
+	if headers != nil && len(headers) != 0 {
 		h.Content.Headers = headers
 	} else {
 		h.Content.Headers, err = h.logic.GetHostAttributes(ctx, h.ownerID, nil)

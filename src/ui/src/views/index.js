@@ -1,6 +1,5 @@
 import audit from '@/views/audit/router.config'
 import business from '@/views/business/router.config'
-import businessModel from '@/views/business-model/router.config'
 import customQuery from '@/views/custom-query/router.config'
 import eventpush from '@/views/eventpush/router.config'
 import resourceHostDetails from '@/views/host-details/router.config'
@@ -20,7 +19,7 @@ import operation from '@/views/operation/router.config'
 import setSync from '@/views/set-sync/router.config'
 import setTemplate from '@/views/set-template/router.config'
 
-import businessTopologyNew from '@/views/business-topology-new/router.config'
+import businessTopology from '@/views/business-topology/router.config'
 
 import statusPermission from '@/views/status/permission'
 import statusError from '@/views/status/error'
@@ -50,7 +49,7 @@ const injectStatusComponents = (views, status = ['permission', 'error']) => {
 
 export const businessViews = injectStatusComponents(flatternViews([
     customQuery,
-    businessTopologyNew,
+    businessTopology,
     serviceTemplate,
     serviceCategory,
     serviceInstance,
@@ -71,7 +70,6 @@ export const resourceViews = injectStatusComponents(flatternViews([
 
 export const modelViews = injectStatusComponents(flatternViews([
     model,
-    businessModel,
     modelAssociation,
     modelTopology
 ]))

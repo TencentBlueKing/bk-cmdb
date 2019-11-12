@@ -1,18 +1,5 @@
 import Meta from '@/router/meta'
 import { MENU_BUSINESS, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
-import {
-    C_SERVICE_INSTANCE,
-    U_SERVICE_INSTANCE,
-    D_SERVICE_INSTANCE,
-    R_SERVICE_INSTANCE
-} from '@/dictionary/auth'
-
-export const OPERATION = {
-    C_SERVICE_INSTANCE,
-    U_SERVICE_INSTANCE,
-    D_SERVICE_INSTANCE,
-    R_SERVICE_INSTANCE
-}
 
 export default [{
     name: 'createServiceInstance',
@@ -23,10 +10,6 @@ export default [{
         menu: {
             i18n: '添加服务实例',
             relative: MENU_BUSINESS_HOST_AND_SERVICE
-        },
-        auth: {
-            operation: OPERATION,
-            authScope: 'business'
         }
     })
 }, {
@@ -39,10 +22,6 @@ export default [{
         menu: {
             i18n: '克隆服务实例',
             relative: MENU_BUSINESS_HOST_AND_SERVICE
-        },
-        auth: {
-            operation: OPERATION,
-            authScope: 'business'
         }
     })
 }]

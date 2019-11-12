@@ -123,6 +123,7 @@
             async confirm () {
                 try {
                     const isValid = await this.$validator.validateAll()
+                    console.log(isValid)
                     if (!isValid) {
                         return false
                     }
