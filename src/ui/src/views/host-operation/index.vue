@@ -55,13 +55,14 @@
                         </li>
                     </template>
                 </ul>
-                <keep-alive>
-                    <component class="tab-component"
-                        v-if="activeTab"
-                        v-bind="activeTab.props"
-                        :is="activeTab.component">
-                    </component>
-                </keep-alive>
+                <component class="tab-component"
+                    v-for="item in availableTabList"
+                    v-bind="item.props"
+                    v-show="activeTab === item"
+                    :ref="item.id"
+                    :key="item.id"
+                    :is="item.component">
+                </component>
             </div>
         </div>
         <div class="options" :class="{ 'is-sticky': hasScrollbar }">
@@ -83,7 +84,7 @@
     import CreateServiceInstance from './children/create-service-instance.vue'
     import DeletedServiceInstance from './children/deleted-service-instance.vue'
     import MoveToIdleHost from './children/move-to-idle-host.vue'
-    import ModuleSelector from '@/views/business-topology-new/host/module-selector.vue'
+    import ModuleSelector from '@/views/business-topology/host/module-selector.vue'
     import {
         MENU_BUSINESS_TRANSFER_HOST,
         MENU_BUSINESS_HOST_AND_SERVICE
@@ -101,7 +102,6 @@
             return {
                 hasScrollbar: false,
                 hostCount: 108,
-                moduleInfo: [],
                 hostInfo: [],
                 tab: {
                     active: null
@@ -200,14 +200,14 @@
                 if (!targetModules) {
                     this.targetModules = []
                 } else {
-                    this.targetModules = targetModules.split(',').map(id => Number(id))
+                    this.targetModules = String(targetModules).split(',').map(id => Number(id))
                 }
 
                 const resources = query.resources
                 if (!resources) {
                     this.resources = []
                 } else {
-                    this.resources = resources.split(',').map(id => Number(id))
+                    this.resources = String(resources).split(',').map(id => Number(id))
                 }
 
                 const params = {
@@ -347,31 +347,6 @@
                 })
                 const tab = this.tabList.find(tab => tab.id === 'deletedServiceInstance')
                 tab.props.info = Object.freeze(deletedServiceInstance)
-                // this.setModuleInfo(deletedServiceInstance)
-            },
-            async setModuleInfo (data) {
-                try {
-                    const instanceModules = data.map(instance => instance.bk_module_id)
-                    const moduleIds = [...new Set([...instanceModules, ...this.targetModules])]
-                    const result = await this.$store.dispatch('objectCommonInst/searchInst', {
-                        objId: 'module',
-                        params: {
-                            condition: {
-                                module: [{
-                                    field: 'bk_module_id',
-                                    operator: '$in',
-                                    value: moduleIds
-                                }]
-                            }
-                        },
-                        config: {
-                            requestId: this.request.module
-                        }
-                    })
-                    this.moduleInfo = result.info
-                } catch (e) {
-                    console.error(e)
-                }
             },
             getModuleName (id) {
                 const topoInfo = this.moduleMap[id] || []
@@ -460,10 +435,25 @@
             },
             async handleConfrim () {
                 try {
+                    const params = { ...this.confirmParams }
+                    const createComponent = this.$refs.createServiceInstance && this.$refs.createServiceInstance[0]
+                    if (createComponent) {
+                        params.options = {
+                            service_instance_options: createComponent.$refs.serviceInstance.map((component, index) => {
+                                const instance = createComponent.instances[index]
+                                return {
+                                    bk_module_id: instance.bk_module_id,
+                                    bk_host_id: instance.bk_host_id,
+                                    processes: component.processList.map((process, listIndex) => ({
+                                        process_template_id: component.templates[listIndex].id,
+                                        process_info: process
+                                    }))
+                                }
+                            })
+                        }
+                    }
                     await this.$http.post(
-                        `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`,
-                        this.confirmParams,
-                        {
+                        `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, params, {
                             requestId: this.request.confirm
                         }
                     )

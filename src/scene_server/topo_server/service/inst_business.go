@@ -555,6 +555,11 @@ func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams
 		common.BKAppNameField,
 	}
 	filter := condition.CreateCondition()
+	filter.AddConditionItem(condition.ConditionItem{
+		Field:    "bk_data_status",
+		Operator: condition.BKDBNE,
+		Value:    "disabled",
+	})
 	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, fields, filter)
 	if nil != err {
 		blog.Errorf("ListAllBusinessSimplify failed, FindBusiness failed, err: %s, rid: %s", err.Error(), params.ReqID)

@@ -145,6 +145,7 @@ type HostOperation interface {
 	DeleteFromSystem(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
 	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error)
 	Identifier(ctx ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
+	UpdateHostCloudAreaField(ctx ContextParams, input metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
 
 	LockHost(params ContextParams, input *metadata.HostLockRequest) errors.CCError
 	UnlockHost(params ContextParams, input *metadata.HostLockRequest) errors.CCError

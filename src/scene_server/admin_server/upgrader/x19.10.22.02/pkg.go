@@ -10,10 +10,25 @@
  * limitations under the License.
  */
 
-package logics
+package x19_10_22_02
 
-import "configcenter/src/common/backbone"
+import (
+	"context"
 
-type Logic struct {
-	*backbone.Engine
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
+)
+
+func init() {
+	upgrader.RegistUpgrader("x19_10_22_02", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	if err := addHostIndex(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade to version x19_10_22_02 failed, addHostIndex failed, err: %+v", err)
+		return err
+	}
+
+	return nil
 }

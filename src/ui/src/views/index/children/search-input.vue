@@ -526,6 +526,7 @@
                     height: 42px;
                     line-height: 42px;
                     padding: 0 56px 0 16px;
+                    border-radius: 2px 0 0 2px;
                 }
             }
             .search-btn {
@@ -533,6 +534,7 @@
                 height: 42px;
                 line-height: 42px;
                 padding: 0;
+                border-radius: 0 2px 2px 0;
                 .icon-search {
                     width: 18px;
                     height: 18px;

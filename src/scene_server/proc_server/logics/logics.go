@@ -25,6 +25,10 @@ import (
 	"configcenter/src/thirdpartyclient/esbserver"
 )
 
+type Logic struct {
+	*backbone.Engine
+}
+
 type Logics struct {
 	*backbone.Engine
 	esbServ      esbserver.EsbClientInterface
