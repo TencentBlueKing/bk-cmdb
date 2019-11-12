@@ -1,6 +1,6 @@
 <template>
     <div class="layout" v-bkloading="{
-        isLoading: $loading(Object.values(request))
+        isLoading: $loading(Object.values(request)) || loading
     }">
         <div class="info clearfix mb20">
             <label class="info-label fl">{{$t('已选主机')}}：</label>
@@ -11,33 +11,28 @@
         <div class="info clearfix mb20" v-if="type !== 'remove'">
             <label class="info-label fl">{{$t('转移到')}}：</label>
             <div class="info-content">
-                <div class="info-options" v-if="type === 'business'">
-                    <bk-button @click="handleChangeModule">
-                        <i class="bk-icon icon-plus"></i>
-                        {{$t('选择业务模块')}}
-                    </bk-button>
-                </div>
                 <ul class="module-list">
                     <li class="module-item" v-for="(id, index) in targetModules"
                         :key="index"
                         :class="{
-                            'is-business-module': type === 'business',
-                            'has-remove-icon': type === 'business' && targetModules.length > 1
+                            'is-business-module': type === 'business'
                         }"
-                        :title="getModulePath(id)">
-                        <span class="module-icon" v-if="type === 'business'">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
+                        v-bk-tooltips="getModulePath(id)">
+                        <span class="module-icon">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
                         {{getModuleName(id)}}
-                        <span class="module-remove bk-icon icon-close"
-                            v-if="type === 'business' && targetModules.length > 1"
-                            @click="handleRemoveModule(id)">
-                        </span>
                         <span class="module-mask"
                             v-if="type === 'idle'"
                             @click="handleChangeModule">
                             {{$t('点击修改')}}
                         </span>
                     </li>
+                    <li class="module-item is-trigger"
+                        v-if="type === 'business'"
+                        @click="handleChangeModule">
+                        <i class="icon-cc-plus"></i>
+                    </li>
                 </ul>
+                <div class="module-grep"></div>
             </div>
         </div>
         <div class="info clearfix mb10" ref="changeInfo">
@@ -51,7 +46,9 @@
                             :key="item.id"
                             @click="handleTabClick(item)">
                             <span class="tab-label">{{item.label}}</span>
-                            <span class="tab-count">{{item.props.info.length}}</span>
+                            <span :class="['tab-count', { 'has-badge': !item.confirmed }]">
+                                {{item.props.info.length}}
+                            </span>
                         </li>
                     </template>
                 </ul>
@@ -93,10 +90,10 @@
     import { mapGetters } from 'vuex'
     export default {
         components: {
-            CreateServiceInstance,
-            DeletedServiceInstance,
-            MoveToIdleHost,
-            ModuleSelector
+            [CreateServiceInstance.name]: CreateServiceInstance,
+            [DeletedServiceInstance.name]: DeletedServiceInstance,
+            [MoveToIdleHost.name]: MoveToIdleHost,
+            [ModuleSelector.name]: ModuleSelector
         },
         data () {
             return {
@@ -115,21 +112,24 @@
                 tabList: [{
                     id: 'createServiceInstance',
                     label: this.$t('新增服务实例'),
-                    component: CreateServiceInstance,
+                    confirmed: false,
+                    component: CreateServiceInstance.name,
                     props: {
                         info: []
                     }
                 }, {
                     id: 'deletedServiceInstance',
                     label: this.$t('删除服务实例'),
-                    component: DeletedServiceInstance,
+                    confirmed: false,
+                    component: DeletedServiceInstance.name,
                     props: {
                         info: []
                     }
                 }, {
                     id: 'moveToIdleHost',
                     label: this.$t('移动到空闲机的主机'),
-                    component: MoveToIdleHost,
+                    confirmed: false,
+                    component: MoveToIdleHost.name,
                     props: {
                         info: []
                     }
@@ -144,9 +144,10 @@
                 },
                 targetModules: [],
                 resources: [],
-                type: '',
+                type: this.$route.params.type,
                 confirmParams: {},
-                moduleMap: {}
+                moduleMap: {},
+                loading: true
             }
         },
         computed: {
@@ -175,6 +176,18 @@
                 return this.tabList.find(tab => tab.id === this.tab.active) || this.availableTabList[0]
             }
         },
+        watch: {
+            availableTabList (tabList) {
+                tabList.forEach(tab => {
+                    if (tab !== this.activeTab) {
+                        tab.confirmed = false
+                    }
+                })
+            },
+            activeTab (tab) {
+                tab.confirmed = true
+            }
+        },
         async created () {
             this.resolveData(this.$route)
             this.setBreadcrumbs()
@@ -189,6 +202,7 @@
         },
         beforeRouteUpdate (to, from, next) {
             this.resolveData(to)
+            this.setBreadcrumbs()
             this.getPreviewData()
             next()
         },
@@ -254,6 +268,7 @@
             },
             async getPreviewData () {
                 try {
+                    this.loading = true
                     const data = await this.$http.post(
                         `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}/preview`,
                         this.confirmParams,
@@ -267,8 +282,10 @@
                     if (this.type === 'remove') {
                         this.setMoveToIdleHost(data)
                     }
+                    this.loading = false
                 } catch (e) {
                     console.error(e)
+                    this.loading = false
                 }
             },
             async setModulePathInfo (data) {
@@ -409,14 +426,14 @@
                     defaultChecked: this.targetModules
                 }
                 this.dialog.width = 720
-                this.dialog.component = ModuleSelector
+                this.dialog.component = ModuleSelector.name
                 this.dialog.show = true
             },
             handleDialogCancel () {
                 this.dialog.show = false
             },
             handleDialogConfirm () {
-                if (this.dialog.component === ModuleSelector) {
+                if (this.dialog.component === ModuleSelector.name) {
                     this.gotoTransferPage(...arguments)
                     this.dialog.show = false
                 }
@@ -467,12 +484,16 @@
                 this.redirect()
             },
             redirect () {
-                this.$router.replace({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    query: {
-                        node: `${this.$route.query.sourceModel}-${this.$route.query.sourceId}`
-                    }
-                })
+                if (this.$route.query.from) {
+                    this.$router.replace(this.$route.query.from)
+                } else {
+                    this.$router.replace({
+                        name: MENU_BUSINESS_HOST_AND_SERVICE,
+                        query: {
+                            node: `${this.$route.query.sourceModel}-${this.$route.query.sourceId}`
+                        }
+                    })
+                }
             }
         }
     }
@@ -495,13 +516,9 @@
             .info-count {
                 font-weight: bold;
             }
-        }
-        .info-options {
-            margin-bottom: 8px;
-            .option-icon {
-                font-size: 14px;
-                display: inline;
-                vertical-align: initial;
+            .module-grep {
+                border-top: 1px solid $borderColor;
+                margin-top: 10px;
             }
         }
     }
@@ -515,23 +532,36 @@
             max-width: 150px;
             line-height: 24px;
             padding: 0 15px;
+            margin: 0 10px 8px 0;
             border: 1px solid #C4C6CC;
             border-radius: 13px;
             color: $textColor;
             font-size: 12px;
+            outline: none;
             cursor: default;
             @include ellipsis;
             &.is-business-module {
-                padding: 0 20px 0 25px;
-                &.has-remove-icon {
-                    padding: 0 30px 0 25px;
+                padding: 0 12px 0 25px;
+            }
+            &.is-trigger {
+                width: 40px;
+                padding: 0;
+                text-align: center;
+                font-size: 0;
+                cursor: pointer;
+                .icon-cc-plus {
+                    font-size: 14px;
                 }
             }
-            & + .module-item {
-                margin-left: 10px;
-            }
-            &:hover .module-mask {
-                display: block;
+            &:hover {
+                border-color: $primaryColor;
+                color: $primaryColor;
+                .module-mask {
+                    display: block;
+                }
+                .module-icon {
+                    background-color: $primaryColor;
+                }
             }
             .module-mask {
                 display: none;
@@ -615,6 +645,7 @@
                 font-size: 14px;
             }
             .tab-count {
+                position: relative;
                 display: inline-block;
                 vertical-align: middle;
                 height: 16px;
@@ -624,6 +655,17 @@
                 font-size: 12px;
                 color: #FFF;
                 background-color: #979BA5;
+                &.has-badge:after {
+                    position: absolute;
+                    top: -3px;
+                    right: -3px;
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 50%;
+                    border: 1px solid #FFF;
+                    background-color: $dangerColor;
+                    content: "";
+                }
             }
         }
     }

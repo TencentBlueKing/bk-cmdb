@@ -110,10 +110,6 @@
             }
         },
         computed: {
-            isModuleNode () {
-                const node = this.$store.state.businessTopology.selectedNode
-                return node && node.data.bk_obj_id === 'module'
-            },
             withTemplate () {
                 return this.isModuleNode && !!this.instance.service_template_id
             },
@@ -124,9 +120,6 @@
                     auth: 'D_SERVICE_INSTANCE'
                 }]
                 return menu
-            },
-            module () {
-                return this.$store.state.businessTopology.selectedNodeInstance
             },
             flattenList () {
                 return this.$tools.flattenList(this.properties, this.list.map(data => data.property))

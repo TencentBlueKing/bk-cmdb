@@ -24,7 +24,7 @@
                         </bk-option>
                     </bk-select>
                     <bk-input class="filter-item" right-icon="bk-icon icon-search"
-                        :placeholder="$t('集群名称')"
+                        :placeholder="$t('请输入集群名称搜索')"
                         @enter="handleSearch">
                     </bk-input>
                     <icon-button class="ml10"

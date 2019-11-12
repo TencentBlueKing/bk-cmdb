@@ -288,6 +288,8 @@
                 this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             },
             handleToSyncInstance () {
+                this.showUpdateInfo = false
+                this.insideMode = null
                 this.$router.replace({
                     name: 'setTemplateConfig',
                     params: {

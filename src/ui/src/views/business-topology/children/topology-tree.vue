@@ -426,10 +426,10 @@
         margin: 0 20px;
     }
     .topology-tree {
-        width: 100%;
-        height: calc(100vh - 180px);
+        height: calc(100vh - 160px);
         padding: 10px 0;
-        @include scrollbar-y;
+        margin-right: 4px;
+        @include scrollbar-y(6px);
         .node-icon {
             display: block;
             width: 20px;

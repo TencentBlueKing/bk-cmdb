@@ -991,7 +991,8 @@
     "模板实例": "Template instance",
     "模板信息": "Template info",
     "批量同步": "Batch Sync",
-    "集群名称": "set name",
+    "集群名称": "Set Name",
+    "请输入集群名称搜索": "Please input set name to start search",
     "主机数量": "Host count",
     "同步": "sync",
     "重试": "Retry",
@@ -1093,5 +1094,8 @@
     "选择业务模块": "Select business module",
     "按模块路径排序": "Sort by module path",
     "转移到空闲模块": "Transfer to idle module",
-    "移除主机": "Remove host"
+    "移除主机": "Remove host",
+    "部分IP不正确或主机不存在": "Some IP is invalid or host not exist",
+    "请选择业务模块": "Please select module",
+    "请选择非内置节点": "Please select node that is not internal"
 }
