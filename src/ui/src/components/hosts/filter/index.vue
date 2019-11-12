@@ -155,6 +155,7 @@
     import propertySelector from './filter-property-selector.vue'
     import { mapState, mapGetters } from 'vuex'
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import Bus from '@/utils/bus'
     export default {
         components: {
             filterOperator,
@@ -224,6 +225,7 @@
             }
         },
         async created () {
+            Bus.$on('toggle-host-filter', this.handleToggleFilter)
             this.propertyPromise = new Promise((resolve, reject) => {
                 this.propertyResolver = () => {
                     this.propertyResolver = null
@@ -235,6 +237,7 @@
             this.isHostSearch && this.handleSearch()
         },
         beforeDestroy () {
+            Bus.$off('toggle-host-filter', this.handleToggleFilter)
             this.$store.commit('hosts/clearFilter')
         },
         methods: {
@@ -250,13 +253,17 @@
                 const customData = this.$store.getters['userCustom/getCustomData'](key, [])
                 this.$store.commit('hosts/setFilterList', customData)
             },
-            handleToggleFilter () {
+            handleToggleFilter (visible) {
                 const instance = this.$refs.filterPopper.instance
-                const state = instance.state
-                if (state.isVisible) {
-                    instance.hide()
+                if (typeof visible === 'boolean') {
+                    visible ? instance.show() : instance.hide(0)
                 } else {
-                    instance.show()
+                    const state = instance.state
+                    if (state.isVisible) {
+                        instance.hide()
+                    } else {
+                        instance.show()
+                    }
                 }
             },
             handleAddFilter () {
@@ -487,6 +494,12 @@
                     return 'char'
                 }
                 return 'common'
+            },
+            hide () {
+                try {
+                    const instance = this.$refs.filterPopper.instance
+                    instance.hide()
+                } catch (e) {}
             }
         }
     }
