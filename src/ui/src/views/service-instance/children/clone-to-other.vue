@@ -45,7 +45,7 @@
 </template>
 
 <script>
-    import HostSelector from '@/views/business-topology-new/host/host-selector'
+    import HostSelector from '@/views/business-topology/host/host-selector'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {

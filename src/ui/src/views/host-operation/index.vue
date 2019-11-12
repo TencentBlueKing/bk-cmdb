@@ -84,7 +84,7 @@
     import CreateServiceInstance from './children/create-service-instance.vue'
     import DeletedServiceInstance from './children/deleted-service-instance.vue'
     import MoveToIdleHost from './children/move-to-idle-host.vue'
-    import ModuleSelector from '@/views/business-topology-new/host/module-selector.vue'
+    import ModuleSelector from '@/views/business-topology/host/module-selector.vue'
     import {
         MENU_BUSINESS_TRANSFER_HOST,
         MENU_BUSINESS_HOST_AND_SERVICE
