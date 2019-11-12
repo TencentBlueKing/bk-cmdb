@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -225,6 +226,7 @@ type CreateServiceInstanceDetail struct {
 	// Processes parameter usable only when create instance with raw
 	Processes []ProcessInstanceDetail `json:"processes"`
 }
+
 
 type ProcessInstanceDetail struct {
 	// ProcessTemplateID indicate which process to update if service instance bound with a template
@@ -1310,6 +1312,24 @@ type PropertyString struct {
 }
 
 func (ti *PropertyString) Validate() error {
+	if ti == nil {
+		return nil
+	}
+	if ti.Value != nil {
+		value := *ti.Value
+		if len(value) == 0 {
+			return nil
+		}
+		matched, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
+		if err != nil {
+			blog.Errorf("Validate failed, regex:[%s], value:[%s]", common.FieldTypeSingleCharRegexp, value)
+			return fmt.Errorf("value:[%s] doesn't match regex:[%s], err: %+v", value, common.FieldTypeSingleCharRegexp, err)
+		}
+		if matched == false {
+			return fmt.Errorf("value:[%s] doesn't match regex:[%s]", value, common.FieldTypeSingleCharRegexp)
+		}
+
+	}
 	return nil
 }
 

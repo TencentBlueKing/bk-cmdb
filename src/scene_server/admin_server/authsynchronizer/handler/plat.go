@@ -52,7 +52,7 @@ func (ih *IAMHandler) HandlePlatSync(task *meta.WorkRequest) error {
 	}
 
 	taskName := "sync all plat"
-	iamIDPrefix := ""
+	iamIDPrefix := "plat:"
 	skipDeregister := false
 	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }
