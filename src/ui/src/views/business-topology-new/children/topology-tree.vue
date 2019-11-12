@@ -82,6 +82,7 @@
     import CreateNode from './create-node.vue'
     import CreateSet from './create-set.vue'
     import CreateModule from './create-module.vue'
+    import Bus from '@/utils/bus'
     export default {
         components: {
             CreateNode,
@@ -224,6 +225,10 @@
             },
             handleSelectChange (node) {
                 this.$store.commit('businessHost/setSelectedNode', node)
+                Bus.$emit('toggle-host-filter', false)
+                if (!node.expanded) {
+                    this.$refs.tree.setExpanded(node.id)
+                }
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'

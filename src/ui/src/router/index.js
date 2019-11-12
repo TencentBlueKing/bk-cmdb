@@ -88,47 +88,18 @@ const router = new Router({
     ]
 })
 
-const getAuth = to => {
-    const auth = to.meta.auth || {}
-    const view = auth.view || {}
-    const operation = auth.operation || {}
-    const routerAuth = Object.values({ ...view, ...operation })
-    if (routerAuth.length) {
-        return router.app.$store.dispatch('auth/getAuth', {
-            type: 'operation',
-            list: routerAuth
-        })
-    }
-    return Promise.resolve([])
-}
-
-const checkViewAuthorized = to => {
+const checkViewAuthorize = async to => {
     const auth = to.meta.auth || {}
     const view = auth.view
     if (view) {
-        const viewAuth = router.app.$isAuthorized(Object.values(view))
-        if (!viewAuth) {
-            to.meta.view = 'permission'
-        }
+        const viewAuthData = typeof view === 'function' ? view(to, router.app) : view
+        const viewAuth = await router.app.$store.dispatch('auth/getViewAuth', viewAuthData)
+        to.meta.view = viewAuth ? 'default' : 'permission'
     }
+    return Promise.resolve()
 }
 
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
-
-const setAuthScope = (to, from) => {
-    const auth = to.meta.auth || {}
-    if (typeof auth.setAuthScope === 'function') {
-        auth.setAuthScope(to, from, router.app)
-    }
-}
-const checkAuthDynamicMeta = (to, from) => {
-    router.app.$store.commit('auth/clearDynamicMeta')
-    const auth = to.meta.auth || {}
-    const setDynamicMeta = auth.setDynamicMeta
-    if (typeof setDynamicMeta === 'function') {
-        setDynamicMeta(to, from, router.app)
-    }
-}
 
 const checkAvailable = (to, from) => {
     if (typeof to.meta.checkAvailable === 'function') {
@@ -139,6 +110,7 @@ const checkAvailable = (to, from) => {
     return true
 }
 
+// 因产品形态调整，去掉了管理模式与业务模式，为避免修改过多逻辑，此处做兼容处理
 const setAdminView = to => {
     const isAdminView = to.matched.length && to.matched[0].name !== MENU_BUSINESS
     router.app.$store.commit('setAdminView', isAdminView)
@@ -172,15 +144,12 @@ router.beforeEach((to, from, next) => {
             }
             await checkOwner(to)
             setAdminView(to)
-            setAuthScope(to, from)
-            checkAuthDynamicMeta(to, from)
 
             const isAvailable = checkAvailable(to, from)
             if (!isAvailable) {
                 throw new StatusError({ name: '404' })
             }
-            await getAuth(to)
-            checkViewAuthorized(to)
+            await checkViewAuthorize(to)
             return next()
         } catch (e) {
             if (e.__CANCEL__) {

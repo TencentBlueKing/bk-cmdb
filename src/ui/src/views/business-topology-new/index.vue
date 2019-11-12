@@ -12,7 +12,10 @@
             </i>
         </cmdb-resize-layout>
         <div class="tab-layout">
-            <bk-tab class="topology-tab" type="unborder-card" :active.sync="activeTab" :validate-active="false">
+            <bk-tab class="topology-tab" type="unborder-card"
+                :active.sync="activeTab"
+                :validate-active="false"
+                :before-toggle="handleTabToggle">
                 <bk-tab-panel name="hostList" :label="$t('主机列表')">
                     <host-list :active="activeTab === 'hostList'"></host-list>
                 </bk-tab-panel>
@@ -33,6 +36,7 @@
     import ServiceInstance from './children/service-instances.vue'
     import ServiceNodeInfo from './children/service-node-info.vue'
     import { mapGetters } from 'vuex'
+    import Bus from '@/utils/bus.js'
     export default {
         components: {
             TopologyTree,
@@ -90,6 +94,10 @@
             this.$store.commit('businessHost/clear')
         },
         methods: {
+            handleTabToggle () {
+                Bus.$emit('toggle-host-filter', false)
+                return true
+            },
             getTopologyModels () {
                 return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
                     config: {
