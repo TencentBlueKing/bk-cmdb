@@ -13,7 +13,12 @@ package service
 
 import (
 	"context"
+	goErr "errors"
+	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
@@ -52,7 +57,6 @@ type OperationServer struct {
 	Config      *options.Config
 	ConfigMap   map[string]string
 	AuthManager *extensions.AuthManager
-	Logic       *logics.Logic
 }
 
 func (o *OperationServer) newSrvComm(header http.Header) *srvComm {
@@ -70,7 +74,7 @@ func (o *OperationServer) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(o.Engine, header, o.AuthManager),
+		lgc:           logics.NewLogics(o.Engine, header, o.AuthManager, o.Config.Timer),
 	}
 }
 
@@ -170,4 +174,48 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 	if err != nil {
 		blog.Warnf("parse auth center config failed: %v", err)
 	}
+
+	o.Config.Timer, err = o.ParseTimerConfigFromKV("timer", current.ConfigMap)
+	if err != nil {
+		blog.Errorf("parse timer config failed, err: %v", err)
+	}
+}
+
+func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {
+	specStr, ok := configMap[prefix+".spec"]
+	if !ok {
+		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer")
+		return "", goErr.New("missing 'spec' configuration for timer")
+	}
+
+	matched, err := regexp.MatchString(common.TimerPattern, specStr)
+	if err != nil || !matched {
+		blog.Errorf("parse timer config failed: %v", err)
+		return "", goErr.New("'spec' not match required rules")
+	}
+
+	numArray := strings.Split(specStr, ":")
+	hour := numArray[0]
+	intHour, err := strconv.Atoi(hour)
+	if err != nil {
+		blog.Errorf("parse timer config failed: %v", err)
+		return "", goErr.New("convert 'spec' to int failed")
+	}
+	if intHour < 0 || intHour > 23 {
+		blog.Errorf("parse timer config failed: %v", err)
+		return "", goErr.New("'spec' hour field not agree to the time type")
+	}
+	minute := numArray[1]
+	intMinute, err := strconv.Atoi(minute)
+	if err != nil {
+		blog.Errorf("parse timer config failed: %v", err)
+		return "", goErr.New("convert 'spec' to int failed")
+	}
+	if intMinute < 0 || intMinute > 59 {
+		blog.Errorf("parse timer config failed: %v", err)
+		return "", goErr.New("'spec' minute field not agree to the time type")
+	}
+
+	spec := fmt.Sprintf("%d %d * * *", intMinute, intHour)
+	return spec, nil
 }
