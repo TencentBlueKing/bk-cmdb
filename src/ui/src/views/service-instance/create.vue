@@ -53,7 +53,7 @@
 </template>
 
 <script>
-    import HostSelector from '@/views/business-topology-new/host/host-selector.vue'
+    import HostSelector from '@/views/business-topology/host/host-selector.vue'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import { mapGetters } from 'vuex'

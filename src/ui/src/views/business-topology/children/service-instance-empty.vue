@@ -96,6 +96,25 @@
             }
         },
         methods: {
+            async getTemplate () {
+                try {
+                    this.isSearching = true
+                    const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
+                        params: this.$injectMetadata({
+                            service_template_id: this.moduleInstance.service_template_id
+                        }),
+                        config: {
+                            requestId: 'getBatchProcessTemplate_empty',
+                            cancelPrevious: true
+                        }
+                    })
+                    this.templates = data.info
+                    this.isSearching = false
+                } catch (e) {
+                    console.error(e)
+                    this.isSearching = false
+                }
+            },
             goToTemplate () {
                 this.$router.push({
                     name: 'operationalTemplate',
