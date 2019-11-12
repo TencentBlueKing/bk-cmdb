@@ -206,6 +206,9 @@ const (
 	CCErrCommModifyFieldForbidden                            = 1199077
 	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199078
 
+	// one argument: maxValue
+	CCErrExceedMaxOperationRecordsAtOnce = 1199077
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
