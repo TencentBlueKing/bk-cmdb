@@ -74,7 +74,7 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         name: 'clone-to-source',
         props: {
@@ -352,9 +352,9 @@
             },
             backToModule () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.$route.params.moduleId
+                        node: 'module-' + this.$route.params.moduleId
                     }
                 })
             }

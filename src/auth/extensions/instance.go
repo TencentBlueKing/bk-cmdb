@@ -309,7 +309,7 @@ func (am *AuthManager) UpdateRegisteredInstances(ctx context.Context, header htt
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
-			return err
+			return fmt.Errorf("update resource %s/%d to iam failed, err: %v", resource.Type, resource.InstanceID, err)
 		}
 	}
 

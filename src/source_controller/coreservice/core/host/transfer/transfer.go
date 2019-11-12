@@ -255,6 +255,7 @@ func (t *genericTransfer) validParameterModule(ctx core.ContextParams) errors.CC
 	}
 	bizID := t.bizID
 
+	t.moduleIDArr = util.IntArrayUnique(t.moduleIDArr)
 	moduleInfoArr, err := t.getModuleInfoByModuleID(ctx, bizID, t.moduleIDArr, []string{common.BKModuleIDField, common.BKDefaultField, common.BKSetIDField})
 	if err != nil {
 		return err

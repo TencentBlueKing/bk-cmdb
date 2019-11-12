@@ -32,15 +32,6 @@ func getString(val interface{}) string {
 	}
 	return ""
 }
-func getBool(val interface{}) bool {
-	if val == nil {
-		return false
-	}
-	if ret, ok := val.(bool); ok {
-		return ret
-	}
-	return false
-}
 
 // FillLostedFieldValue fill the value in inst map data
 func FillLostedFieldValue(valData map[string]interface{}, propertys []metadata.Attribute, ignorefields []string) {

@@ -20,7 +20,7 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19.08.19.01", upgrade)
+	upgrader.RegistUpgrader("x19_08_19_01", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {

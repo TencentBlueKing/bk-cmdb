@@ -255,6 +255,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 		property, ok := valid.propertys[key]
 		if !ok {
 			delete(instanceData, key)
+			continue
 		}
 		fieldType := property.PropertyType
 		switch fieldType {

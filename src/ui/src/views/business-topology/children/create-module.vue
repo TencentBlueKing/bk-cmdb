@@ -135,13 +135,13 @@
                 return this.$store.getters['objectBiz/bizId']
             },
             serviceTemplateMap () {
-                return this.$store.state.businessTopology.serviceTemplateMap
+                return this.$store.state.businessHost.serviceTemplateMap
             },
             currentTemplate () {
                 return this.templateList.find(item => item.id === this.template) || {}
             },
             categoryMap () {
-                return this.$store.state.businessTopology.categoryMap
+                return this.$store.state.businessHost.categoryMap
             },
             currentCategory () {
                 return this.firstClassList.find(category => category.id === this.firstClass) || {}
@@ -182,7 +182,7 @@
                         })
                         const templates = data.info.map(item => item.service_template)
                         this.templateList = templates
-                        this.$store.commit('businessTopology/setServiceTemplate', {
+                        this.$store.commit('businessHost/setServiceTemplate', {
                             id: this.business,
                             templates: templates
                         })
@@ -203,7 +203,7 @@
                         })
                         const categories = this.collectServiceCategories(data.info)
                         this.firstClassList = categories
-                        this.$store.commit('businessTopology/setCategories', {
+                        this.$store.commit('businessHost/setCategories', {
                             id: this.business,
                             categories: categories
                         })

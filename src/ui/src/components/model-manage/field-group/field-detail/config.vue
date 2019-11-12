@@ -5,7 +5,7 @@
             <input type="checkbox" v-model="localValue.editable" :disabled="isReadOnly">
             <span class="cmdb-checkbox-text">{{$t('可编辑')}}</span>
         </label>
-        <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isRequiredShow">
+        <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isRequiredShow && !isMainLineModel">
             <input type="checkbox" v-model="localValue.isrequired" :disabled="isReadOnly">
             <span class="cmdb-checkbox-text">{{$t('必填')}}</span>
         </label>
@@ -28,6 +28,10 @@
                 default: true
             },
             isrequired: {
+                type: Boolean,
+                default: false
+            },
+            isMainLineModel: {
                 type: Boolean,
                 default: false
             }

@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"github.com/robfig/cron"
 	"time"
 
 	"configcenter/src/common"
@@ -56,6 +55,11 @@ func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64
 
 func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
 	cond := &metadata.QueryCondition{}
+	condition := mapstr.MapStr{
+		"ispre":       false,
+		"bk_ispaused": false,
+	}
+	cond.Condition = condition
 	result, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("GetModelAndInstCount fail, search model fail , err: %v, rid: %v", err, kit.Rid)
@@ -65,7 +69,7 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCount
 	info := make([]metadata.IDStringCountInt64, 0)
 	info = append(info, metadata.IDStringCountInt64{
 		Id:    "model",
-		Count: result.Data.Count - 6, // 去除内置的模型(主机、集群等)
+		Count: result.Data.Count, // 去除内置的模型(主机、集群等)
 	})
 
 	opt := make(map[string]interface{})
@@ -102,7 +106,6 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 
 func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	opt := mapstr.MapStr{}
-
 	// 检测cc_chartData集合是否存在
 	for {
 		resp, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
@@ -119,9 +122,9 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 		blog.V(3).Info("waiting collection cc_ChartData init")
 	}
 
-	c := cron.New()
-	spec := "0 0 2 * * ?" // 每天凌晨两点，更新定时统计图表数据
-	err := c.AddFunc(spec, func() {
+	ticker := time.NewTicker(24 * time.Hour)
+	for range ticker.C {
+		blog.V(3).Info("begin statistic chart data, time: %v", time.Now())
 		// 主服务器跑定时
 		isMaster := lgc.Engine.ServiceManageInterface.IsMaster()
 		if isMaster {
@@ -129,14 +132,7 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 				blog.Error("start statistic chart data timer fail, err: %v", err)
 			}
 		}
-	})
-
-	if err != nil {
-		blog.Error("start statistic chart data timer fail, err: %v", err)
 	}
-	c.Start()
-
-	select {}
 }
 
 func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig) (interface{}, error) {

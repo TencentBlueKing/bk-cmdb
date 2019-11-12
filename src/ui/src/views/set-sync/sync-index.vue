@@ -68,7 +68,7 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SET_TEMPLATE, MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_SET_TEMPLATE, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import setInstance from './set-instance'
     export default {
         components: {
@@ -212,9 +212,9 @@
                 const moduleId = this.$route.params['moduleId']
                 if (moduleId) {
                     this.$router.replace({
-                        name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                        name: MENU_BUSINESS_HOST_AND_SERVICE,
                         query: {
-                            module: moduleId
+                            node: 'module-' + moduleId
                         }
                     })
                 } else {
