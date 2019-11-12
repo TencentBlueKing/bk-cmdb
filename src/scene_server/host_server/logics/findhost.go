@@ -30,9 +30,17 @@ func (lgc *Logics) FindHostByModuleIDs(ctx context.Context, data *metadata.HostM
 	moduleFindCond := metadata.SearchCondition{ObjectID: common.BKInnerObjIDModule, Condition: []metadata.ConditionItem{condItem}, Fields: []string{}}
 	setFindCond := metadata.SearchCondition{ObjectID: common.BKInnerObjIDSet, Condition: []metadata.ConditionItem{}, Fields: []string{}}
 	bizFindCond := metadata.SearchCondition{ObjectID: common.BKInnerObjIDApp, Condition: []metadata.ConditionItem{}, Fields: []string{}}
-	bizID, err := data.Metadata.Label.GetBusinessID()
-	if nil != err {
-		return retHostInfo, err
+	bizID := data.AppID
+	var err error
+	if bizID == 0 {
+		// if bk_biz_id and metadata are both not set, then return error
+		if data.Metadata == nil {
+			return retHostInfo, lgc.ccErr.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField+", "+common.MetadataField)
+		}
+		bizID, err = data.Metadata.Label.GetBusinessID()
+		if nil != err {
+			return retHostInfo, err
+		}
 	}
 	hostSearchParam.AppID = bizID
 

@@ -13,6 +13,7 @@
 package parser
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"github.com/tidwall/gjson"
 )
 
 func (ps *parseStream) topology() *parseStream {
@@ -658,6 +660,7 @@ const (
 
 var (
 	deleteObjectInstanceAssociationRegexp = regexp.MustCompile("/api/v3/inst/association/[0-9]+/action/delete")
+	importObjectInstanceAssociationRegexp = regexp.MustCompile("/api/v3/inst/association/action/\\w*/import")
 )
 
 func (ps *parseStream) objectInstanceAssociation() *parseStream {
@@ -728,6 +731,24 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 					Type:       meta.ModelInstanceAssociation,
 					Action:     meta.Delete,
 					InstanceID: assoID,
+				},
+			},
+		}
+		return ps
+	}
+
+	// import object's instance association operation.
+	if ps.hitRegexp(importObjectInstanceAssociationRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("import object instance association, but got invalid url")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -1572,20 +1593,48 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 	}
 
 	if ps.hitPattern(updateObjectAttributeGroupPropertyPattern, http.MethodPut) {
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = fmt.Errorf("parse bizID from metadata failed, err: %s", err.Error())
+
+		if !gjson.GetBytes(ps.RequestCtx.Body, "data").Exists() {
+			ps.err = errors.New("invalid request format")
 			return ps
 		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
+
+		data := gjson.GetBytes(ps.RequestCtx.Body, "data").String()
+		groups := make([]metadata.PropertyGroupObjectAtt, 0)
+		if err := json.Unmarshal([]byte(data), &groups); err != nil {
+			ps.err = err
+			return ps
+		}
+
+		// TODO: confirm this later. especially with frontend.
+		// when biz's model auth is settled down, then revise this.
+		// bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		// if err != nil {
+		// 	ps.err = err
+		// 	return ps
+		// }
+
+		ps.Attribute.Resources = make([]meta.ResourceAttribute, 0)
+		for _, group := range groups {
+			model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: group.Condition.ObjectID})
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+
+			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Update,
 				},
-			},
+				// BusinessID: bizID,
+				Layers: []meta.Item{{
+					Type:       meta.Model,
+					InstanceID: model.ID,
+				}},
+			})
 		}
+
 		return ps
 	}
 

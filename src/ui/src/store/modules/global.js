@@ -11,7 +11,7 @@ const state = {
     user: window.User,
     supplier: window.Supplier,
     language: language,
-    globalLoading: false,
+    globalLoading: true,
     nav: {
         stick: window.localStorage.getItem('navStick') !== 'false',
         fold: window.localStorage.getItem('navStick') === 'false'
