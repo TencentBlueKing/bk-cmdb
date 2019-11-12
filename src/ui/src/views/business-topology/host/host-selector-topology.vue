@@ -47,7 +47,7 @@
             ...mapGetters('businessHost', ['getDefaultSearchCondition']),
             deepestExpandedLevel () {
                 const maxLevel = Math.max.apply(null, [0, ...this.expandedNodes.map(node => node.level)])
-                return Math.max(2, maxLevel) - 2
+                return Math.max(4, maxLevel) - 4
             }
         },
         watch: {

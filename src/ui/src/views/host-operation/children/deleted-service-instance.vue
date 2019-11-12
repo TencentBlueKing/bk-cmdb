@@ -29,6 +29,7 @@
 
 <script>
     export default {
+        name: 'deleted-service-instance',
         props: {
             info: {
                 type: Array,

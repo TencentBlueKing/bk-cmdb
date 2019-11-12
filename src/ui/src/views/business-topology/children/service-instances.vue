@@ -333,6 +333,9 @@
             }
         },
         methods: {
+            refresh () {
+                this.getData()
+            },
             async getData () {
                 this.needRefresh = false
                 const node = this.currentNode

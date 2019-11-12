@@ -32,6 +32,7 @@
 <script>
     import { foreignkey, singlechar } from '@/filters/formatter.js'
     export default {
+        name: 'move-to-idle-host',
         filters: { foreignkey, singlechar },
         props: {
             info: {

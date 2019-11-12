@@ -28,17 +28,17 @@
                     :addible="!withTemplate"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
-                <div class="buttons">
-                    <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
-                        <bk-button slot-scope="{ disabled }"
-                            theme="primary"
-                            :disabled="!hosts.length || disabled"
-                            @click="handleConfirm">
-                            {{$t('确定')}}
-                        </bk-button>
-                    </cmdb-auth>
-                    <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
-                </div>
+            </div>
+            <div class="buttons">
+                <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                    <bk-button slot-scope="{ disabled }"
+                        theme="primary"
+                        :disabled="!hosts.length || disabled"
+                        @click="handleConfirm">
+                        {{$t('确定')}}
+                    </bk-button>
+                </cmdb-auth>
+                <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
             </div>
         </div>
         <cmdb-dialog v-model="dialog.show" v-bind="dialog.props">
@@ -331,14 +331,14 @@
         }
     }
     .create-tables {
-        height: calc(100% - 54px);
+        height: calc(100% - 120px);
         margin: 22px 0 0 0;
         @include scrollbar-y;
-        .buttons {
-            padding: 8px 0 0 0;
-        }
     }
-    .service-instance-table {
-        margin-bottom: 12px;
+    .service-instance-table +  .service-instance-table {
+        margin-top: 12px;
+    }
+    .buttons {
+        padding: 20px 0;
     }
 </style>
