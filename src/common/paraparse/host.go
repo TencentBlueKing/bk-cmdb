@@ -17,7 +17,6 @@ import (
 	"strings"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -129,7 +128,7 @@ func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) er
 		exactOr := make([]map[string]interface{}, 0)
 		for _, ip := range ipArr {
 			exactIP := make(map[string]interface{})
-			exactIP[common.BKDBLIKE] = strings.ReplaceAll(exactIPRegexp, "IP_PLACEHOLDER", SpecialCharChange(ip))
+			exactIP[common.BKDBLIKE] = strings.Replace(exactIPRegexp, "IP_PLACEHOLDER", SpecialCharChange(ip), -1)
 			if INNERONLY == flag {
 				exactOr = append(exactOr, mapstr.MapStr{common.BKHostInnerIPField: exactIP})
 			} else if OUTERONLY == flag {
@@ -165,7 +164,5 @@ func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) er
 		}
 		output[common.BKDBOR] = orCond
 	}
-
-	blog.InfoJSON("\n\nqeury cond -> : %s\n\n", output)
 	return nil
 }
