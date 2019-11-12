@@ -46,7 +46,7 @@
                     <i class="options-split"></i>
                     <bk-select class="options-collection"
                         v-model="scope"
-                        font-size="14"
+                        font-size="medium"
                         :clearable="false">
                         <bk-option id="all" :name="$t('全部主机')"></bk-option>
                         <bk-option :id="0" :name="$t('已分配主机')"></bk-option>
@@ -58,7 +58,7 @@
                         v-if="showCollection"
                         ref="collectionSelector"
                         v-model="selectedCollection"
-                        font-size="14"
+                        font-size="medium"
                         :loading="$loading('searchCollection')"
                         :placeholder="$t('请选择收藏条件')"
                         @selected="handleCollectionSelect"
@@ -308,7 +308,7 @@
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapState('hosts', ['collectionList']),
+            ...mapState('hosts', ['collectionList', 'isHostSearch']),
             transferAuthResources () {
                 const auth = this.transferAuth
                 if (!auth) return {}
@@ -326,7 +326,7 @@
             },
             filterProperties () {
                 const { module, set, host } = this.properties
-                const filterProperty = ['bk_host_innerip', 'bk_host_outerip', 'bk_cloud_id']
+                const filterProperty = ['bk_host_innerip', 'bk_host_outerip']
                 return {
                     host: host.filter(property => !filterProperty.includes(property.bk_property_id)),
                     module,
@@ -353,6 +353,7 @@
                 this.setTableHeader()
             },
             scope () {
+                if (this.isHostSearch) return
                 this.handlePageChange(1, true)
             }
         },
@@ -364,6 +365,9 @@
                 ])
                 if (this.showCollection) {
                     this.getCollectionList()
+                }
+                if (this.isHostSearch) {
+                    this.scope = 'all'
                 }
             } catch (e) {
                 console.log(e)

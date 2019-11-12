@@ -72,9 +72,15 @@
                 </cmdb-auth>
                 <cmdb-auth :auth="$authResources({ type: $OPERATION.D_TOPO })">
                     <template slot-scope="{ disabled }">
-                        <bk-button class="btn-delete"
+                        <span class="inline-block-middle" v-if="moduleFromSetTemplate"
+                            v-bk-tooltips="$t('由集群模板创建的模块无法删除')">
+                            <bk-button class="btn-delete" disabled>
+                                {{$t('删除节点')}}
+                            </bk-button>
+                        </span>
+                        <bk-button class="btn-delete" v-else
                             theme="default"
-                            :disabled="disabled || moduleFromSetTemplate"
+                            :disabled="disabled"
                             @click="handleDelete">
                             {{$t('删除节点')}}
                         </bk-button>
@@ -117,8 +123,12 @@
 
 <script>
     export default {
+        props: {
+            active: Boolean
+        },
         data () {
             return {
+                needRefresh: false,
                 type: 'details',
                 properties: [],
                 disabledProperties: [],
@@ -139,13 +149,13 @@
                 return this.$store.getters['objectBiz/bizId']
             },
             propertyMap () {
-                return this.$store.state.businessTopology.propertyMap
+                return this.$store.state.businessHost.propertyMap
             },
             propertyGroupMap () {
-                return this.$store.state.businessTopology.propertyGroupMap
+                return this.$store.state.businessHost.propertyGroupMap
             },
             categoryMap () {
-                return this.$store.state.businessTopology.categoryMap
+                return this.$store.state.businessHost.categoryMap
             },
             firstCategories () {
                 return this.categoryMap[this.business] || []
@@ -155,7 +165,7 @@
                 return firstCategory.secondCategory || []
             },
             selectedNode () {
-                return this.$store.state.businessTopology.selectedNode
+                return this.$store.state.businessHost.selectedNode
             },
             isModuleNode () {
                 return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
@@ -193,28 +203,42 @@
             modelId: {
                 immediate: true,
                 handler (modelId) {
-                    if (modelId) {
-                        this.type = 'details'
-                        this.init()
+                    if (modelId && this.active) {
+                        this.needRefresh = false
+                        this.initProperties()
+                    } else {
+                        this.needRefresh = true
                     }
                 }
             },
             selectedNode: {
                 immediate: true,
-                async handler (node) {
-                    if (node) {
-                        this.type = 'details'
-                        await this.getInstance()
-                        if (this.withSetTemplate) {
-                            this.getDiffTemplateAndInstances()
-                        }
-                        this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
+                handler (node) {
+                    if (node && this.active) {
+                        this.needRefresh = false
+                        this.getNodeDetails()
+                    } else {
+                        this.needRefresh = true
+                    }
+                }
+            },
+            active: {
+                immediate: true,
+                handler (value) {
+                    if (value && this.needRefresh) {
+                        this.needRefresh = false
+                        this.refresh()
                     }
                 }
             }
         },
         methods: {
-            async init () {
+            refresh () {
+                this.initProperties()
+                this.getNodeDetails()
+            },
+            async initProperties () {
+                this.type = 'details'
                 try {
                     const [
                         properties,
@@ -230,6 +254,14 @@
                     this.properties = []
                     this.propertyGroups = []
                 }
+            },
+            async getNodeDetails () {
+                this.type = 'details'
+                await this.getInstance()
+                if (this.withSetTemplate) {
+                    this.getDiffTemplateAndInstances()
+                }
+                this.disabledProperties = this.selectedNode.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
             },
             async getProperties () {
                 let properties = []
@@ -247,7 +279,7 @@
                             requestId: 'getModelProperties'
                         }
                     })
-                    this.$store.commit('businessTopology/setProperties', {
+                    this.$store.commit('businessHost/setProperties', {
                         id: modelId,
                         properties: properties
                     })
@@ -268,7 +300,7 @@
                             requestId: 'getModelPropertyGroups'
                         }
                     })
-                    this.$store.commit('businessTopology/setPropertyGroups', {
+                    this.$store.commit('businessHost/setPropertyGroups', {
                         id: modelId,
                         groups: groups
                     })
@@ -284,7 +316,7 @@
                         module: this.getModuleInstance
                     }
                     this.instance = await (promiseMap[modelId] || this.getCustomInstance)()
-                    this.$store.commit('businessTopology/setSelectedNodeInstance', this.instance)
+                    this.$store.commit('businessHost/setSelectedNodeInstance', this.instance)
                 } catch (e) {
                     console.error(e)
                     this.instance = {}
@@ -375,7 +407,7 @@
                             params: this.$injectMetadata({}, { injectBizId: true })
                         })
                         const categories = this.collectServiceCategories(data.info)
-                        this.$store.commit('businessTopology/setCategories', {
+                        this.$store.commit('businessHost/setCategories', {
                             id: this.business,
                             categories: categories
                         })
@@ -694,9 +726,8 @@
     .template-info {
         font-size: 14px;
         color: #63656e;
-        padding: 10px 0 26px 36px;
-        margin: 10px 0 4px;
-        border-bottom: 1px solid #dcdee5;
+        padding: 20px 0 20px 36px;
+        border-bottom: 1px solid #F0F1F5;
         .info-item {
             width: 50%;
             max-width: 400px;

@@ -23,7 +23,7 @@
         </icon-button>
         <section class="filter-content" slot="content"
             :style="{
-                height: $APP.height - 200 + 'px'
+                height: (sectionHeight ? sectionHeight : ($APP.height - 200)) + 'px'
             }">
             <h2 class="filter-title">
                 {{$t('高级筛选')}}
@@ -74,6 +74,11 @@
                             v-else-if="['date', 'time'].includes(filterItem.bk_property_type)"
                             v-model="filterItem.value">
                         </cmdb-form-date-range>
+                        <cmdb-cloud-selector
+                            v-else-if="filterItem.bk_property_id === 'bk_cloud_id'"
+                            class="filter-value"
+                            v-model="filterItem.value">
+                        </cmdb-cloud-selector>
                         <component class="filter-value"
                             v-else
                             :is="`cmdb-form-${filterItem.bk_property_type}`"
@@ -149,7 +154,8 @@
     import filterOperator from './_filter-field-operator.vue'
     import propertySelector from './filter-property-selector.vue'
     import { mapState, mapGetters } from 'vuex'
-    import { MENU_BUSINESS_HOST_MANAGEMENT } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import Bus from '@/utils/bus'
     export default {
         components: {
             filterOperator,
@@ -161,6 +167,10 @@
                 default () {
                     return {}
                 }
+            },
+            sectionHeight: {
+                type: Number,
+                default: null
             }
         },
         data () {
@@ -184,7 +194,7 @@
             }
         },
         computed: {
-            ...mapState('hosts', ['filterList', 'filterIP', 'collection']),
+            ...mapState('hosts', ['filterList', 'filterIP', 'collection', 'isHostSearch']),
             ...mapGetters('hosts', ['isCollection']),
             isFilterActive () {
                 const hasIP = !!this.ip.text.replace(/\n|;|；|,|，/g, '').length
@@ -197,7 +207,7 @@
                 return hasIP || hasField || this.isShow
             },
             isBusinessHost () {
-                return this.$route.name === MENU_BUSINESS_HOST_MANAGEMENT
+                return this.$route.name === MENU_BUSINESS_HOST_AND_SERVICE
             }
         },
         watch: {
@@ -215,23 +225,19 @@
             }
         },
         async created () {
+            Bus.$on('toggle-host-filter', this.handleToggleFilter)
             this.propertyPromise = new Promise((resolve, reject) => {
                 this.propertyResolver = () => {
                     this.propertyResolver = null
                     resolve()
                 }
             })
-            // const formFullTextSearch = Object.keys(this.$route.params).length
-            // if (formFullTextSearch) {
-            //     this.defaultIpConfig = Object.assign(this.defaultIpConfig, this.$route.params)
-            // }
             await this.initCustomFilterIP()
             await this.initCustomFilterList()
-            // if (formFullTextSearch) {
-            //     this.handleSearch()
-            // }
+            this.isHostSearch && this.handleSearch()
         },
         beforeDestroy () {
+            Bus.$off('toggle-host-filter', this.handleToggleFilter)
             this.$store.commit('hosts/clearFilter')
         },
         methods: {
@@ -247,13 +253,17 @@
                 const customData = this.$store.getters['userCustom/getCustomData'](key, [])
                 this.$store.commit('hosts/setFilterList', customData)
             },
-            handleToggleFilter () {
+            handleToggleFilter (visible) {
                 const instance = this.$refs.filterPopper.instance
-                const state = instance.state
-                if (state.isVisible) {
-                    instance.hide()
+                if (typeof visible === 'boolean') {
+                    visible ? instance.show() : instance.hide(0)
                 } else {
-                    instance.show()
+                    const state = instance.state
+                    if (state.isVisible) {
+                        instance.hide()
+                    } else {
+                        instance.show()
+                    }
                 }
             },
             handleAddFilter () {
@@ -484,6 +494,12 @@
                     return 'char'
                 }
                 return 'common'
+            },
+            hide () {
+                try {
+                    const instance = this.$refs.filterPopper.instance
+                    instance.hide()
+                } catch (e) {}
             }
         }
     }

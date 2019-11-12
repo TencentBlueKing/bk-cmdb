@@ -20,6 +20,7 @@ const state = {
 const getters = {
     business: state => state.business,
     bizId: state => state.bizId,
+    currentBusiness: state => state.authorizedBusiness.find(business => business.bk_biz_id === state.bizId),
     authorizedBusiness: state => state.authorizedBusiness
 }
 
@@ -120,6 +121,9 @@ const actions = {
         }, config).then(data => {
             return data.info[0] || {}
         })
+    },
+    getFullAmountBusiness ({ commit }, config = {}) {
+        return $http.get('biz/simplify', config)
     }
 }
 

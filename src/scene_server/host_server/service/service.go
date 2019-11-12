@@ -91,6 +91,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/add").To(s.AddHost))
 	// api.Route(api.POST("/host/add/agent").To(s.AddHostFromAgent))
 	api.Route(api.POST("/hosts/sync/new/host").To(s.NewHostSyncAppTopo))
+	api.Route(api.PUT("/updatemany/hosts/cloudarea_field").To(s.UpdateHostCloudAreaField))
 
 	// host favorites
 	api.Route(api.POST("/hosts/favorites/search").To(s.ListHostFavourites))
@@ -113,6 +114,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/search").To(s.SearchHost))
 	api.Route(api.POST("/hosts/search/asstdetail").To(s.SearchHostWithAsstDetail))
 	api.Route(api.PUT("/hosts/batch").To(s.UpdateHostBatch))
+	api.Route(api.PUT("/hosts/property/batch").To(s.UpdateHostPropertyBatch))
 	api.Route(api.PUT("/hosts/property/clone").To(s.CloneHostProperty))
 	api.Route(api.POST("/hosts/modules/idle/set").To(s.MoveSetHost2IdleModule))
 	// get host module relation in app
@@ -126,6 +128,7 @@ func (s *Service) WebService() *restful.Container {
 	// next generation host search api
 	api.Route(api.POST("/hosts/list_hosts_without_app").To(s.ListHostsWithNoBiz))
 	api.Route(api.POST("/hosts/app/{appid}/list_hosts").To(s.ListBizHosts))
+	api.Route(api.POST("/hosts/app/{bk_biz_id}/list_hosts_topo").To(s.ListBizHostsTopo))
 
 	api.Route(api.POST("/userapi").To(s.AddUserCustomQuery))
 	api.Route(api.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))

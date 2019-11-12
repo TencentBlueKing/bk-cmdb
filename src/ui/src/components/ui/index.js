@@ -1,6 +1,7 @@
 import businessSelector from './selector/business.vue'
 import clipboardSelector from './selector/clipboard.vue'
 import selector from './selector/selector.vue'
+import cloudSelector from './selector/cloud.vue'
 import details from './details/details.vue'
 import form from './form/form.vue'
 import formMultiple from './form/form-multiple.vue'
@@ -25,6 +26,7 @@ import searchInput from './form/search-input.vue'
 import inputSelect from './selector/input-select.vue'
 import iconButton from './button/icon-button.vue'
 import tips from './other/tips.vue'
+import dialog from './dialog/dialog.vue'
 import auth from './auth/auth.vue'
 import tableStuff from './table-stuff/table-stuff.vue'
 const install = (Vue, opts = {}) => {
@@ -56,6 +58,8 @@ const install = (Vue, opts = {}) => {
         inputSelect,
         iconButton,
         tips,
+        dialog,
+        cloudSelector,
         auth,
         tableStuff
     ]
@@ -92,5 +96,8 @@ export default {
     inputSelect,
     iconButton,
     tips,
-    auth
+    dialog,
+    cloudSelector,
+    auth,
+    tableStuff
 }

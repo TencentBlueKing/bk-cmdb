@@ -179,10 +179,10 @@
         },
         computed: {
             currentNode () {
-                return this.$store.state.businessTopology.selectedNode
+                return this.$store.state.businessHost.selectedNode
             },
             isModuleNode () {
-                const node = this.$store.state.businessTopology.selectedNode
+                const node = this.$store.state.businessHost.selectedNode
                 return node && node.data.bk_obj_id === 'module'
             },
             withTemplate () {
@@ -206,9 +206,6 @@
                     })
                 }
                 return menu
-            },
-            module () {
-                return this.$store.state.businessTopology.selectedNodeInstance
             },
             flattenList () {
                 return this.$tools.flattenList(this.properties, this.list.map(data => data.property || {}))
@@ -334,7 +331,7 @@
                         instanceId: this.instance.id,
                         hostId: this.instance.bk_host_id,
                         setId: this.currentNode.parent.data.bk_inst_id,
-                        moduleId: this.module.bk_module_id
+                        moduleId: this.currentNode.data.bk_inst_id
                     },
                     query: {
                         title: this.instance.name
@@ -372,8 +369,8 @@
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
-                        templateId: this.instance.service_template_id,
-                        moduleId: this.module.bk_module_id
+                        templateId: this.currentNode.data.service_template_id,
+                        moduleId: this.currentNode.data.bk_inst_id
                     }
                 })
             },

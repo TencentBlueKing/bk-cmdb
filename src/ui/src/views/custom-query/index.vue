@@ -21,7 +21,7 @@
                 <bk-input type="text" class="cmdb-form-input"
                     right-icon="bk-icon icon-search"
                     v-model="filter.name"
-                    font-size="large"
+                    font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="getUserAPIList">
                 </bk-input>

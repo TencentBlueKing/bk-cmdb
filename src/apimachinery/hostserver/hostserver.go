@@ -73,6 +73,7 @@ type HostServerClientInterface interface {
 	SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)
 	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)
 	UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	AddUserCustomQuery(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	UpdateUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.Response, err error)
@@ -80,6 +81,7 @@ type HostServerClientInterface interface {
 	GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.UserCustomQueryDetailResult, err error)
 	GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h http.Header) (resp *metadata.Response, err error)
 	HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error)
+	ListBizHostsTopo(ctx context.Context, h http.Header, bizID int64, params *metadata.ListHostsWithNoBizParameter) (resp *metadata.SuccessResponse, err error)
 }
 
 func NewHostServerClientInterface(c *util.Capability, version string) HostServerClientInterface {
