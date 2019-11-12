@@ -292,6 +292,23 @@ func (o *object) FindObjectBatch(params types.ContextParams, data mapstr.MapStr)
 			return nil, err
 		}
 
+		for _, attr := range attrs {
+			attribute := attr.Attribute()
+			grpCond := condition.CreateCondition()
+			grpCond.Field(metadata.GroupFieldGroupID).Eq(attribute.PropertyGroup)
+			grpCond.Field(metadata.GroupFieldSupplierAccount).Eq(attribute.OwnerID)
+			grpCond.Field(metadata.GroupFieldObjectID).Eq(attribute.ObjectID)
+			grps, err := o.grp.FindObjectGroup(params, grpCond)
+			if nil != err {
+				return nil, err
+			}
+
+			for _, grp := range grps {
+				// should be only one
+				attribute.PropertyGroupName = grp.Group().GroupName
+			}
+		}
+
 		result.Set(objID, mapstr.MapStr{
 			"attr": attrs,
 		})

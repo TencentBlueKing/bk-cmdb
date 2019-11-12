@@ -285,7 +285,11 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	attrArr, err := obj.GetAttributes()
+	attrCond := condition.CreateCondition()
+	attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
+	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
+	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
+	attrArr, err := s.Core.AttributeOperation().FindObjectAttribute(params, attrCond)
 	if nil != err {
 		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), util.GetHTTPCCRequestID(params.Header))
 		return nil, err
@@ -293,10 +297,7 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 	// userFieldArr Fields in the business are user-type fields
 	var userFieldArr []string
 	for _, attrInterface := range attrArr {
-		attr := attrInterface.Attribute()
-		if attr.PropertyType == common.FieldTypeUser {
-			userFieldArr = append(userFieldArr, attr.PropertyID)
-		}
+		userFieldArr = append(userFieldArr, attrInterface.Attribute().PropertyID)
 	}
 
 	innerCond := condition.CreateCondition()
