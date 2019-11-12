@@ -11,25 +11,30 @@
         </cmdb-tips>
         <div class="conflict-table" ref="conflictTable">
             <bk-table :data="list">
-                <bk-table-column :label="$t('字段名称')" width="160">
+                <bk-table-column :label="$t('字段名称')" width="160" :resizable="false">
                     <template slot-scope="{ row }">
                         <span class="conflict-name">{{row.name}}</span>
                     </template>
                 </bk-table-column>
-                <bk-table-column :label="$t('所属模块')" :render-header="hanldeColumnRender">
+                <bk-table-column :label="$t('所属模块')" :render-header="hanldeColumnRender" :resizable="false">
                     <template slot-scope="{ row }">
                         <div class="conflict-modules">
                             <div v-for="(module, index) in row.conflictList"
                                 :class="['module-item', { 'selected': module.selected }]"
                                 :key="index">
-                                <span>{{module.path || '--'}}</span>
-                                <span>{{module.value | formatter(row.property.bk_property_type, row.property.option)}}</span>
+                                <span :title="module.path || '--'">{{module.path || '--'}}</span>
+                                <span :title="module.value | formatter(row.property.bk_property_type, row.property.option)">
+                                    {{module.value | formatter(row.property.bk_property_type, row.property.option)}}
+                                </span>
                                 <i class="check-model-value" @click="handleSelectDefaultValue(row, index, module.value)">选定</i>
                             </div>
                         </div>
                     </template>
                 </bk-table-column>
-                <bk-table-column :label="$t('修改后')" width="230" class-name="conflict-custom-column">
+                <bk-table-column :label="$t('修改后')"
+                    width="230"
+                    class-name="conflict-custom-column"
+                    :resizable="false">
                     <template slot-scope="{ row: { property = {} } = {} }">
                         <component class="property-component"
                             :is="`cmdb-form-${property.bk_property_type}`"
