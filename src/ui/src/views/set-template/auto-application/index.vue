@@ -1,8 +1,8 @@
 <template>
-    <div class="edit-application-fields">
-        <div ref="mainBox">
+    <div class="edit-application-fields" ref="applicationFields">
+        <div class="main-box">
             <div class="info">
-                <label class="info-label">{{$t('已选择模块', modules.length)}}</label>
+                <label class="info-label">{{$t('已选择模块', { num: modules.length })}}</label>
                 <div class="main">
                     <ul class="module-list" ref="moduleList" :style="{
                         height: listHeight()
@@ -57,13 +57,14 @@
             v-transfer-dom
             :is-show.sync="conflict.show"
             :width="795"
-            :title="$t('处理冲突', conflict.host)">
+            :title="$t('处理冲突', { host: conflict.host })">
             <resolve-conflict slot="content"></resolve-conflict>
         </bk-sideslider>
     </div>
 </template>
 
 <script>
+    import RESIZE_EVENTS from '@/utils/resize-events'
     import resolveConflict from './conflict.vue'
     export default {
         components: {
@@ -135,13 +136,30 @@
             }
         },
         async created () {
+            this.setBreadcrumbs()
             const [list] = await Promise.all([
                 this.getApplicationData(),
                 this.getProperties()
             ])
             this.getPropertyInfo(list)
         },
+        mounted () {
+            RESIZE_EVENTS.addResizeListener(this.$refs.applicationFields, this.listHeight)
+        },
+        beforeDestroy () {
+            RESIZE_EVENTS.removeResizeListener(this.$refs.applicationFields, this.listHeight)
+        },
         methods: {
+            setBreadcrumbs () {
+                this.$store.commit('setBreadcrumbs', [{
+                    label: this.$t('主机属性自动应用'),
+                    route: {
+                        name: ''
+                    }
+                }, {
+                    label: this.$t('批量删除')
+                }])
+            },
             listHeight () {
                 const moduleItem = this.$refs.moduleItem
                 const moduleList = this.$refs.moduleList
@@ -253,7 +271,7 @@
                 return new Promise((resolve, reject) => {
                     this.$bkInfo({
                         title: this.$t('确认删除自动应用字段'),
-                        subTitle: this.$t('删除后，将会移除字段在对应模块中的配置'),
+                        subTitle: this.$t('自动应用字段删除提示'),
                         extCls: 'bk-dialog-sub-header-center',
                         confirmFn: () => { }
                     })
