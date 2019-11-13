@@ -467,9 +467,10 @@ type MultipleProcessInstanceRelationResult struct {
 }
 
 type BusinessDefaultSetModuleInfo struct {
-	IdleSetID     int64 `json:"idle_set_id"`
-	IdleModuleID  int64 `json:"idle_module_id"`
-	FaultModuleID int64 `json:"fault_module_id"`
+	IdleSetID       int64 `json:"idle_set_id"`
+	IdleModuleID    int64 `json:"idle_module_id"`
+	FaultModuleID   int64 `json:"fault_module_id"`
+	RecycleModuleID int64 `json:"recycle_module_id"`
 }
 
 type BusinessDefaultSetModuleInfoResult struct {

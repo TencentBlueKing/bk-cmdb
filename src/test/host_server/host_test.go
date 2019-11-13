@@ -283,7 +283,7 @@ var _ = Describe("host test", func() {
 		It("transfer resourcehost to idlemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId,
 				},
 			}
@@ -311,7 +311,7 @@ var _ = Describe("host test", func() {
 		It("transfer host to resourcemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 				},
 			}
@@ -516,7 +516,7 @@ var _ = Describe("host test", func() {
 		It("transfer host to fault module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId2,
 				},
 			}
@@ -617,7 +617,7 @@ var _ = Describe("host test", func() {
 		It("transfer host to idle module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId2,
 				},
 			}
@@ -707,7 +707,7 @@ var _ = Describe("host test", func() {
 		It("transfer host to resourcemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId2,
 				},
 			}
