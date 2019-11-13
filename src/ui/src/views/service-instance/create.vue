@@ -202,8 +202,7 @@
                             service_template_id: this.moduleInstance.service_template_id
                         }, { injectBizId: true }),
                         config: {
-                            requestId: 'getBatchProcessTemplate',
-                            cancelPrevious: true
+                            requestId: 'getBatchProcessTemplate'
                         }
                     })
                     this.templates = data.info
