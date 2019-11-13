@@ -321,7 +321,8 @@
                         })
                     })
                     const data = await this.createSet(formData)
-                    data && data.forEach(set => {
+                    const insertBasic = parentNode.data.bk_obj_id === 'biz' ? 1 : 0
+                    data && data.forEach((set, index) => {
                         if (set.data) {
                             const nodeData = {
                                 default: 0,
@@ -335,7 +336,7 @@
                                 bk_inst_name: set.data.bk_set_name,
                                 set_template_id: value.set_template_id
                             }
-                            this.$refs.tree.addNode(nodeData, parentNode.id, 0)
+                            this.$refs.tree.addNode(nodeData, parentNode.id, insertBasic + index)
                             if (value.set_template_id) {
                                 this.addModulesInSetTemplate(nodeData, set.data.bk_set_id)
                             }

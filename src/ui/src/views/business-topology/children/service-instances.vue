@@ -1,6 +1,6 @@
 <template>
     <div class="service-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-        <template v-if="instances.length">
+        <template v-if="instances.length || inSearch">
             <div class="options">
                 <bk-checkbox class="options-checkall"
                     :size="16"
@@ -87,7 +87,7 @@
                     @check-change="handleCheckChange">
                 </service-instance-table>
             </div>
-            <bk-pagination class="pagination"
+            <bk-pagination class="pagination" v-show="instances.length"
                 align="right"
                 size="small"
                 :current="pagination.current"
@@ -316,8 +316,6 @@
         },
         async created () {
             await this.getHistoryLabel()
-            this.getProcessProperties()
-            this.getProcessPropertyGroups()
             if (this.targetInstanceName) {
                 this.hasInitFilter = true
                 this.searchSelectData.push({
@@ -330,9 +328,12 @@
                 })
                 this.searchSelect.shift()
             }
+            this.getProcessProperties()
+            this.getProcessPropertyGroups()
         },
         methods: {
             refresh () {
+                this.inSearch = false
                 this.getData()
             },
             async getData () {
