@@ -34,7 +34,7 @@
         },
         watch: {
             searchContent () {
-                this.$nextTick(this.setRows())
+                this.$nextTick(this.setRows)
             }
         },
         mounted () {

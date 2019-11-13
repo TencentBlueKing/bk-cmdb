@@ -304,25 +304,30 @@
                 })
             },
             async getSingleServiceTemplate () {
-                this.originTemplateValues = await this.findServiceTemplate({
-                    id: this.templateId,
-                    config: {
-                        requestId: 'getSingleServiceTemplate',
-                        globalError: false,
-                        cancelPrevious: true,
-                        transformData: false
-                    }
-                }).then(res => {
-                    if (!res.result) {
-                        this.$router.replace({ name: '404' })
-                    } else {
-                        return {
-                            service_instance_count: res.data.service_instance_count,
-                            process_instance_count: res.data.process_instance_count,
-                            ...res.data.template
+                try {
+                    this.originTemplateValues = await this.findServiceTemplate({
+                        id: this.templateId,
+                        config: {
+                            requestId: 'getSingleServiceTemplate',
+                            globalError: false,
+                            cancelPrevious: true,
+                            transformData: false
                         }
-                    }
-                })
+                    }).then(res => {
+                        if (!res.result) {
+                            this.$router.replace({ name: '404' })
+                        } else {
+                            return {
+                                service_instance_count: res.data.service_instance_count,
+                                process_instance_count: res.data.process_instance_count,
+                                ...res.data.template
+                            }
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                    this.$router.replace({ name: '404' })
+                }
             },
             async getServiceClassification () {
                 const result = await this.searchServiceCategory({
@@ -360,12 +365,16 @@
                 }
             },
             handleSaveProcess (values, changedValues, type) {
+                const processValues = type === 'create' ? values : changedValues
+                if (processValues.hasOwnProperty('protocol') && !processValues.protocol.value) {
+                    processValues.protocol.value = null
+                }
                 if (type === 'create') {
                     this.createProcessTemplate({
                         params: this.$injectMetadata({
                             service_template_id: this.originTemplateValues['id'],
                             processes: [{
-                                spec: values
+                                spec: processValues
                             }]
                         }, { injectBizId: true })
                     }).then(() => {
@@ -376,7 +385,7 @@
                     this.updateProcessTemplate({
                         params: this.$injectMetadata({
                             process_template_id: values['process_id'],
-                            process_property: changedValues
+                            process_property: processValues
                         }, { injectBizId: true })
                     }).then(() => {
                         this.getProcessList()
@@ -430,6 +439,9 @@
                     params: this.$injectMetadata({
                         service_template_id: this.formData.templateId,
                         processes: this.processList.map(process => {
+                            if (process.hasOwnProperty('protocol') && !process.protocol.value) {
+                                process.protocol.value = null
+                            }
                             delete process.sign_id
                             return {
                                 spec: process

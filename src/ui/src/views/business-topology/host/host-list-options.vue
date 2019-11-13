@@ -406,7 +406,8 @@
                         moduleId: this.selectedNode.data.bk_inst_id
                     },
                     query: {
-                        resources: selected.map(item => item.host.bk_host_id).join(',')
+                        resources: selected.map(item => item.host.bk_host_id).join(','),
+                        title: this.selectedNode.data.bk_inst_name
                     }
                 })
             },
