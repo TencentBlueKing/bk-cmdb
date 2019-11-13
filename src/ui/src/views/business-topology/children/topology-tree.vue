@@ -321,7 +321,7 @@
                         })
                     })
                     const data = await this.createSet(formData)
-                    data && data.forEach(set => {
+                    data.reverse().forEach(set => {
                         if (set.data) {
                             const nodeData = {
                                 default: 0,
