@@ -254,8 +254,7 @@
                 return this.currentNode && this.currentNode.data.bk_obj_id === 'module'
             },
             withTemplate () {
-                const nodeInstance = this.$store.state.businessHost.selectedNodeInstance
-                return this.isModuleNode && nodeInstance && nodeInstance.service_template_id
+                return this.isModuleNode && this.currentNode && this.currentNode.data.service_template_id
             },
             currentModule () {
                 if (this.currentNode && this.currentNode.data.bk_obj_id === 'module') {
@@ -910,8 +909,7 @@
                             service_template_id: id
                         }, { injectBizId: true }),
                         config: {
-                            requestId: 'getBatchProcessTemplate',
-                            cancelPrevious: true
+                            requestId: 'getBatchProcessTemplate'
                         }
                     })
                     this.templates = data.info

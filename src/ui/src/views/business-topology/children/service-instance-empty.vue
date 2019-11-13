@@ -14,15 +14,6 @@
                         {{$t('跳转模板添加进程')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
-                    <bk-button slot-scope="{ disabled }"
-                        class="empty-button"
-                        theme="default"
-                        :disabled="disabled"
-                        @click="handleAddHost">
-                        {{$t('添加主机')}}
-                    </bk-button>
-                </cmdb-auth>
             </div>
         </div>
         <cmdb-auth v-else :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
@@ -104,8 +95,7 @@
                             service_template_id: this.moduleInstance.service_template_id
                         }),
                         config: {
-                            requestId: 'getBatchProcessTemplate_empty',
-                            cancelPrevious: true
+                            requestId: 'getBatchProcessTemplate_empty'
                         }
                     })
                     this.templates = data.info
