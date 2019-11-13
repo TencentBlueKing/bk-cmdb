@@ -26,7 +26,6 @@ import (
 	"github.com/rentiansheng/bk_bson/bson"
 	"github.com/rentiansheng/bk_bson/bson/bsontype"
 	"github.com/rentiansheng/bk_bson/x/bsonx"
-	mgobson "gopkg.in/mgo.v2/bson"
 )
 
 type Time struct {
@@ -79,25 +78,6 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		*t = Time{time.Unix(timestamp, 0)}
 	}
 	return fmt.Errorf("parse unknow time format: %s, %v", data, err)
-}
-
-// GetBSON implements bson.GetBSON interface
-func (t Time) GetBSON() (interface{}, error) {
-	return t.Time, nil
-}
-
-// SetBSON implements bson.SetBSON interface
-func (t *Time) SetBSON(raw mgobson.Raw) error {
-	if raw.Kind == 0x09 {
-		// 0x09 timestamp
-		return raw.Unmarshal(&t.Time)
-	}
-
-	// for compatibility purpose
-	tt := tmptime{}
-	err := raw.Unmarshal(&tt)
-	t.Time = tt.Time
-	return err
 }
 
 // MarshalBSONValue implements bson.MarshalBSON interface
