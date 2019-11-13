@@ -312,6 +312,9 @@
             },
             checked () {
                 this.isCheckAll = (this.checked.length === this.instances.length) && this.checked.length !== 0
+            },
+            searchSelectData (searchSelectData) {
+                if (!searchSelectData.length && this.inSearch) this.inSearch = false
             }
         },
         async created () {
