@@ -102,7 +102,7 @@
                 const path = this.instance.topo_path
                 if (path.length) {
                     const topoPath = this.$tools.clone(path)
-                    return topoPath.reverse().map(path => path.InstanceName).join(' / ')
+                    return topoPath.reverse().map(path => path.bk_inst_name).join(' / ')
                 }
                 return '--'
             }
@@ -200,7 +200,7 @@
             text-align: center;
             color: #FFFFFF;
             border-radius: 50%;
-            background-color: #C4C6CC;
+            background-color: #97AED6;
             margin-right: 7px;
         }
         .sync-title {
