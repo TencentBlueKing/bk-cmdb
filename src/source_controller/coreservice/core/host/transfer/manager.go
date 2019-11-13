@@ -109,14 +109,17 @@ func (manager *TransferManager) TransferToNormalModule(ctx core.ContextParams, i
 		common.BKDefaultField: map[string]interface{}{
 			common.BKDBNE: common.DefaultFlagDefaultValue,
 		},
+		common.BKModuleIDField: map[string]interface{}{
+			common.BKDBIN: input.ModuleID,
+		},
 	}
 	defaultModuleCount, err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(ctx.Context)
 	if err != nil {
-		blog.ErrorJSON("TransferToNormalModule failed, filter default module failed, filter:%s, hostID:%s, err:%s, rid:%s", defaultModuleFilter, common.BKTableNameBaseModule, err.Error(), ctx.ReqID)
+		blog.ErrorJSON("TransferToNormalModule failed, filter default module failed, filter:%s, err:%s, rid:%s", defaultModuleFilter, common.BKTableNameBaseModule, err.Error(), ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if defaultModuleCount > 0 {
-		blog.ErrorJSON("TransferToNormalModule failed, target module shouldn't be default module, input:%s, err:%s, rid:%s", input, err.Error(), ctx.ReqID)
+		blog.ErrorJSON("TransferToNormalModule failed, target module shouldn't be default module, input:%s, defaultModuleCount:%s, rid:%s", input, defaultModuleCount, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCoreServiceTransferToDefaultModuleUseWrongMethod)
 	}
 
