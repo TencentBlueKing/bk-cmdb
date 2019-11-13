@@ -11,7 +11,7 @@
             ])
         }"
     >
-        <div class="template-info clearfix" v-if="( isSetNode || isModuleNode) && type === 'details'">
+        <div class="template-info mb10 clearfix" v-if="( isSetNode || isModuleNode) && type === 'details'">
             <template v-if="isModuleNode">
                 <div class="info-item fl" :title="`${$t('服务模板')} : ${templateInfo.serviceTemplateName}`">
                     <span class="name fl">{{$t('服务模板')}}</span>

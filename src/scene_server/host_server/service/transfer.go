@@ -129,10 +129,14 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 		transferResult = append(transferResult, hostTransferResult)
 	}
 	if firstErr != nil {
-		response := metadata.RespError{
-			Msg:     firstErr,
-			ErrCode: firstErr.GetCode(),
-			Data:    transferResult,
+		response := metadata.Response{
+			BaseResp: metadata.BaseResp{
+				Result:      false,
+				Code:        firstErr.GetCode(),
+				ErrMsg:      firstErr.Error(),
+				Permissions: nil,
+			},
+			Data: transferResult,
 		}
 		_ = resp.WriteEntity(response)
 		return

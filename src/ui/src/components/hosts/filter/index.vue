@@ -7,8 +7,8 @@
         :width="350"
         :on-show="handleShow"
         :on-hide="handleHide"
+        :z-index="1001"
         :tippy-options="{
-            zIndex: 1001,
             interactive: true,
             hideOnClick: false,
             onShown: checkIsScrolling
@@ -110,8 +110,8 @@
                             theme="light"
                             trigger="manual"
                             :width="280"
+                            :z-index="1002"
                             :tippy-options="{
-                                zIndex: 1002,
                                 interactive: true,
                                 hideOnClick: false
                             }">
