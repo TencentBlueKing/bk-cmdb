@@ -1,43 +1,46 @@
 <template>
-    <div class="layout clearfix" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-        <div class="wrapper-left fl">
-            <h2 class="title">{{$t('选择主机')}}</h2>
-            <bk-select class="selector-type" v-model="type" :clearable="false">
-                <bk-option id="topology" :name="$t('业务拓扑')"></bk-option>
-                <bk-option id="custom" name="IP"></bk-option>
-            </bk-select>
-            <keep-alive>
-                <component :is="activeComponent" class="selector-component" ref="dynamic"></component>
-            </keep-alive>
-        </div>
-        <div class="wrapper-right fl">
-            <div class="selected-count">
-                <i18n path="已选择N台主机">
-                    <span class="count" place="count">{{selected.length}}</span>
-                </i18n>
+    <div class="layout clearfix"
+        :style="{ height: $APP.height * 0.45 + 'px' }"
+        v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+        <div class="wrapper">
+            <div class="wrapper-column wrapper-left">
+                <h2 class="title">{{$t('选择主机')}}</h2>
+                <bk-select class="selector-type" v-model="type" :clearable="false">
+                    <bk-option id="topology" :name="$t('业务拓扑')"></bk-option>
+                    <bk-option id="custom" name="IP"></bk-option>
+                </bk-select>
+                <keep-alive>
+                    <component :is="activeComponent" class="selector-component" ref="dynamic"></component>
+                </keep-alive>
             </div>
-            <bk-table
-                :data="selected"
-                :outer-border="false"
-                :header-border="false"
-                :header-cell-style="{ background: '#fff' }"
-                :height="367">
-                <bk-table-column :label="$t('内网IP')">
-                    <template slot-scope="{ row }">
-                        {{row.host.bk_host_innerip}}
-                        <span class="repeat-row" v-if="repeatSelected.includes(row)">{{$t('IP重复')}}</span>
-                    </template>
-                </bk-table-column>
-                <bk-table-column :label="$t('云区域')">
-                    <template slot-scope="{ row }">{{row.host.bk_cloud_id | foreignkey}}</template>
-                </bk-table-column>
-                <bk-table-column :label="$t('操作')">
-                    <bk-button slot-scope="{ row }" text @click="handleRemove(row)">{{$t('移除')}}</bk-button>
-                </bk-table-column>
-            </bk-table>
+            <div class="wrapper-column wrapper-right">
+                <div class="selected-count">
+                    <i18n path="已选择N台主机">
+                        <span class="count" place="count">{{selected.length}}</span>
+                    </i18n>
+                </div>
+                <bk-table
+                    :data="selected"
+                    :outer-border="false"
+                    :header-border="false"
+                    :header-cell-style="{ background: '#fff' }"
+                    :height="Math.max($APP.height * 0.45 - 92, 208)">
+                    <bk-table-column :label="$t('内网IP')">
+                        <template slot-scope="{ row }">
+                            {{row.host.bk_host_innerip}}
+                            <span class="repeat-row" v-if="repeatSelected.includes(row)">{{$t('IP重复')}}</span>
+                        </template>
+                    </bk-table-column>
+                    <bk-table-column :label="$t('云区域')">
+                        <template slot-scope="{ row }">{{row.host.bk_cloud_id | foreignkey}}</template>
+                    </bk-table-column>
+                    <bk-table-column :label="$t('操作')">
+                        <bk-button slot-scope="{ row }" text @click="handleRemove(row)">{{$t('移除')}}</bk-button>
+                    </bk-table-column>
+                </bk-table>
+            </div>
         </div>
-        <div class="clearfix"></div>
-        <div class="wrapper-footer">
+        <div class="layout-footer">
             <bk-button class="mr10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
             <bk-button theme="primary" :disabled="!selected.length" @click="handleNextStep">{{$t('下一步')}}</bk-button>
         </div>
@@ -157,57 +160,67 @@
 
 <style lang="scss" scoped>
     .layout {
-        width: 850px;
-        height: 460px;
-    }
-    .wrapper-left {
-        width: 240px;
-        height: 410px;
-        border-right: 1px solid $borderColor;
-        .title {
-            padding: 0 20px;
-            margin: 15px 0 20px 0;
-            line-height:26px;
-            font-size:20px;
-            font-weight: normal;
-            color: $textColor;
-        }
-        .selector-type {
-            display: block;
-            margin: 0px 20px;
-        }
-        .selector-component {
-            margin-top: 10px;
-            height: 307px;
-        }
-    }
-    .wrapper-right {
-        width: 610px;
-        height: 410px;
-        .selected-count {
-            height: 42px;
-            line-height: 42px;
-            padding: 0 12px;
+        position: relative;
+        max-height: 460px;
+        min-height: 300px;
+        padding: 0 0 50px;
+        .layout-footer {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            height: 50px;
+            border-top: 1px solid $borderColor;
+            font-size: 0;
+            text-align: right;
             background-color: #FAFBFD;
-            font-size: 12px;
-            font-weight: bold;
-            color: $textColor;
-        }
-        .repeat-row {
-            padding: 0 2px;
-            line-height: 18px;
-            background-color: #FE9C00;
-            border-radius: 2px;
-            color: #FFF;
-            font-size: 12px;
+            padding: 8px 20px 9px;
+            z-index: 100;
         }
     }
-    .wrapper-footer {
-        height: 50px;
-        border-top: 1px solid $borderColor;
-        font-size: 0;
-        text-align: right;
-        background-color: #FAFBFD;
-        padding: 8px 20px 9px;
+    .wrapper {
+        display: flex;
+        height: 100%;
+        .wrapper-left {
+            flex: 340px 0 0;
+            height: 100%;
+            border-right: 1px solid $borderColor;
+            .title {
+                padding: 0 20px;
+                margin: 15px 0 20px 0;
+                line-height:26px;
+                font-size:20px;
+                font-weight: normal;
+                color: $textColor;
+            }
+            .selector-type {
+                display: block;
+                margin: 0px 20px;
+            }
+            .selector-component {
+                margin-top: 10px;
+                height: calc(100% - 105px);
+            }
+        }
+        .wrapper-right {
+            flex: 1;
+            height: 100%;
+            .selected-count {
+                height: 42px;
+                line-height: 42px;
+                padding: 0 12px;
+                background-color: #FAFBFD;
+                font-size: 12px;
+                font-weight: bold;
+                color: $textColor;
+            }
+            .repeat-row {
+                padding: 0 2px;
+                line-height: 18px;
+                background-color: #FE9C00;
+                border-radius: 2px;
+                color: #FFF;
+                font-size: 12px;
+            }
+        }
     }
 </style>

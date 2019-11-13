@@ -258,7 +258,7 @@
             },
             async getInstanceIpByHost (hostId) {
                 try {
-                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    const instanceIpMap = this.$store.state.businessHost.instanceIpMap
                     let res = null
                     if (instanceIpMap.hasOwnProperty(hostId)) {
                         res = instanceIpMap[hostId]
@@ -269,7 +269,7 @@
                                 requestId: 'getInstanceIpByHost'
                             }
                         })
-                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                        this.$store.commit('businessHost/setInstanceIp', { hostId, res })
                     }
                     this.processBindIp = res.options.map(ip => {
                         return {

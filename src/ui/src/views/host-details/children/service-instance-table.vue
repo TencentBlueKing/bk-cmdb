@@ -110,10 +110,6 @@
             }
         },
         computed: {
-            isModuleNode () {
-                const node = this.$store.state.businessTopology.selectedNode
-                return node && node.data.bk_obj_id === 'module'
-            },
             withTemplate () {
                 return this.isModuleNode && !!this.instance.service_template_id
             },
@@ -124,9 +120,6 @@
                     auth: 'D_SERVICE_INSTANCE'
                 }]
                 return menu
-            },
-            module () {
-                return this.$store.state.businessTopology.selectedNodeInstance
             },
             flattenList () {
                 return this.$tools.flattenList(this.properties, this.list.map(data => data.property))
@@ -158,7 +151,7 @@
             },
             topologyPath () {
                 const pathArr = this.$tools.clone(this.instance.topo_path).reverse()
-                const path = pathArr.map(path => path.InstanceName).join(' / ')
+                const path = pathArr.map(path => path.bk_inst_name).join(' / ')
                 return path
             }
         },
@@ -253,6 +246,7 @@
                 this.$router.replace({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
+                        tab: 'serviceInstance',
                         node: 'module-' + this.instance.bk_module_id,
                         instanceName: this.instance.name
                     }

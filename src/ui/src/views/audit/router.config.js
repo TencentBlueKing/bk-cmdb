@@ -13,6 +13,9 @@ export default {
         auth: {
             view: {
                 ...GET_AUTH_META(R_AUDIT)
+            },
+            operation: {
+                R_AUDIT
             }
         }
     })

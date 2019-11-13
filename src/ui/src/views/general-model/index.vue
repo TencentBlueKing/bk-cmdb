@@ -2,7 +2,7 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_INST })">
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_INST, parent_layers: parentLayers })">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         :disabled="disabled"
@@ -10,7 +10,7 @@
                         {{$t('新建')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: [$OPERATION.C_INST, $OPERATION.U_INST] })">
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: [$OPERATION.C_INST, $OPERATION.U_INST], parent_layers: parentLayers })">
                     <bk-button slot-scope="{ disabled }"
                         class="models-button"
                         :disabled="disabled"
@@ -32,7 +32,7 @@
                         {{$t('批量更新')}}
                     </bk-button>
                 </div>
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST })">
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST, parent_layers: parentLayers })">
                     <bk-button slot-scope="{ disabled }"
                         class="models-button button-delete"
                         :disabled="!table.checked.length || disabled"
@@ -123,13 +123,15 @@
                     <span>{{row[column.id] | addUnit(getPropertyUnit(column.id))}}</span>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff
+            <cmdb-table-empty
                 slot="empty"
-                :auth="$OPERATION.C_INST"
+                :auth="$authResources({
+                    type: $OPERATION.C_INST,
+                    parent_layers: parentLayers
+                })"
                 :stuff="table.stuff"
-                @create="handleCreate"
-            >
-            </cmdb-table-stuff>
+                @create="handleCreate">
+            </cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -316,6 +318,12 @@
             isPublicModel () {
                 const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
                 return !this.$tools.getMetadataBiz(model)
+            },
+            parentLayers () {
+                return [{
+                    resource_id: this.model.id,
+                    resource_type: 'model'
+                }]
             }
         },
         watch: {
