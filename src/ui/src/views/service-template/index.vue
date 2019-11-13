@@ -102,12 +102,12 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff
+            <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$OPERATION.C_SERVICE_TEMPLATE"
+                :auth="$authResources({ type: $OPERATION.C_SERVICE_TEMPLATE })"
                 @create="operationTemplate"
-            ></cmdb-table-stuff>
+            ></cmdb-table-empty>
         </bk-table>
     </div>
 </template>

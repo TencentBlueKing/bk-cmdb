@@ -30,7 +30,7 @@
                     {{$tools.formatTime(row['op_time'])}}
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom

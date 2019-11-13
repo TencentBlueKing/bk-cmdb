@@ -89,12 +89,14 @@
 </script>
 
 <style lang="scss" scoped>
-    .ip-input,
-    .ip-list {
+    .custom-layout {
+        padding: 0 20px;
+        position: relative;
+    }
+    .ip-input {
         display: block;
-        width:200px;
-        height:200px;
-        margin: 0 auto;
+        width: 100%;
+        height: calc(100% - 60px);
         padding: 5px 10px;
         font-size: 12px;
         line-height: 20px;
@@ -111,14 +113,16 @@
         }
     }
     .ip-error {
-        margin: 0 20px;
+        position: absolute;
+        bottom: 45px;
+        left: 20px;
         line-height: 16px;
         font-size: 12px;
         color: $dangerColor;
     }
     .ip-confirm {
         display: block;
-        width: 200px;
-        margin: 10px auto;
+        width: 100%;
+        margin: 15px 0;
     }
 </style>

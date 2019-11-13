@@ -42,7 +42,7 @@
                     }],
                     'name': [{
                         id: '$in',
-                        name: 'IN'
+                        name: this.$t('等于')
                     }, {
                         id: '$eq',
                         name: this.$t('等于')
