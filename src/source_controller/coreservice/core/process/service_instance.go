@@ -583,7 +583,7 @@ func (p *processOperation) GetBusinessDefaultSetModuleInfo(ctx core.ContextParam
 	defaultModuleCond := map[string]interface{}{
 		common.BKAppIDField: bizID,
 		common.BKDefaultField: map[string]interface{}{
-			common.BKDBIN: []int64{int64(common.DefaultResModuleFlag), int64(common.DefaultFaultModuleFlag)},
+			common.BKDBNE: common.DefaultFlagDefaultValue,
 		},
 	}
 	modules := make([]struct {
@@ -602,6 +602,9 @@ func (p *processOperation) GetBusinessDefaultSetModuleInfo(ctx core.ContextParam
 		}
 		if module.ModuleFlag == common.DefaultFaultModuleFlag {
 			defaultSetModuleInfo.FaultModuleID = module.ModuleID
+		}
+		if module.ModuleFlag == common.DefaultRecycleModuleFlag {
+			defaultSetModuleInfo.RecycleModuleID = module.ModuleID
 		}
 	}
 

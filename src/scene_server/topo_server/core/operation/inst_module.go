@@ -122,7 +122,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	data.Set(common.BKSetIDField, setID)
 	data.Set(common.BKAppIDField, bizID)
 	if !data.Exists(common.BKDefaultField) {
-		data.Set(common.BKDefaultField, 0)
+		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	}
 
 	if err := m.validBizSetID(params, bizID, setID); err != nil {

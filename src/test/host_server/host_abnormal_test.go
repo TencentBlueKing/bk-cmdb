@@ -681,7 +681,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer resourcehost to nonexist biz's idlemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: noExistID,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId4,
 				},
 			}
@@ -693,7 +693,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer biz host to other biz's idlemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId,
 				},
 			}
@@ -704,7 +704,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("transfer resourcehost to idlemodule less biz id", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId,
 				},
 			}
@@ -725,7 +725,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer resourcehost to idlemodule noexist host ids", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId4,
 					noExistID,
 				},
@@ -986,7 +986,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer host to idle module nonexist biz", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: noExistID,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 				},
 			}
@@ -998,7 +998,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer host to idle module one nonexist host", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 					noExistID,
 				},
@@ -1077,7 +1077,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer host to idle module empty hostid", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
-				HostID:        []int64{},
+				HostIDs:       []int64{},
 			}
 			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
@@ -1086,7 +1086,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("transfer host to idle module less bizid", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 				},
 			}
@@ -1098,7 +1098,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer host to nonexist biz's fault module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: noExistID,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 				},
 			}
@@ -1110,7 +1110,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer nonexist host to fault module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
-				HostID: []int64{
+				HostIDs: []int64{
 					noExistID,
 				},
 			}
@@ -1123,7 +1123,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer a nonexist host to fault module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 					noExistID,
 				},
@@ -1165,7 +1165,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("transfer host to fault module less bizid", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 				},
 			}
@@ -1177,7 +1177,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer multiple hosts to fault module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 					hostId3,
 				},
@@ -1212,7 +1212,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer unmatching biz host to resourcemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 				},
 			}
@@ -1224,7 +1224,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer nonexist biz host to resourcemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: noExistID,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId,
 				},
 			}
@@ -1236,7 +1236,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer a nonexist host to resourcemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId,
 					noExistID,
 				},
@@ -1249,7 +1249,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer nonidle host to resourcemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 				},
 			}
@@ -1269,7 +1269,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("transfer host to resourcemodule less bizid", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 				},
 			}
@@ -1281,7 +1281,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer multiple hosts to idle module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 					hostId3,
 				},
@@ -1315,7 +1315,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer multiple hosts to resource module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 					hostId3,
 				},
@@ -2008,7 +2008,7 @@ func clearData() {
 				// 将业务下的主机全部转到该业务下的空闲模块
 				input1 := &metadata.DefaultModuleHostConfigParams{
 					ApplicationID: bizId,
-					HostID:        hostIds,
+					HostIDs:       hostIds,
 				}
 				rsp1, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input1)
 				Expect(err).NotTo(HaveOccurred())
@@ -2017,7 +2017,7 @@ func clearData() {
 				// 将业务下的空闲模块主机全部转到资源池
 				input2 := &metadata.DefaultModuleHostConfigParams{
 					ApplicationID: bizId,
-					HostID:        hostIds,
+					HostIDs:       hostIds,
 				}
 				rsp2, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input2)
 				Expect(err).NotTo(HaveOccurred())

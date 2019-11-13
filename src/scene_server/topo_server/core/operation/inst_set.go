@@ -81,7 +81,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 	data.Set(common.BKAppIDField, bizID)
 
 	if !data.Exists(common.BKDefaultField) {
-		data.Set(common.BKDefaultField, 0)
+		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	}
 
 	setTemplate := metadata.SetTemplate{}

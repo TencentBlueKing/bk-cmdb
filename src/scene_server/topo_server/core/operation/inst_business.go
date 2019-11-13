@@ -304,7 +304,7 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 
 func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error) {
 	query := &metadata.QueryInput{}
-	cond.Field(common.BKDefaultField).Eq(0)
+	cond.Field(common.BKDefaultField).Eq(common.DefaultFlagDefaultValue)
 	query.Condition = cond.ToMapStr()
 	query.Limit = int(cond.GetLimit())
 	query.Fields = strings.Join(fields, ",")
@@ -342,7 +342,7 @@ func (b *business) GetInternalModule(params types.ContextParams, obj model.Objec
 	queryModule := &metadata.QueryInput{}
 	cond = condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKDefaultField).NotEq(0)
+	cond.Field(common.BKDefaultField).NotEq(common.DefaultFlagDefaultValue)
 	queryModule.Condition = cond.ToMapStr()
 	_, modules, err := b.module.FindModule(params, moduleObj, queryModule)
 	if nil != err {

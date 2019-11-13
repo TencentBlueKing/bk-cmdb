@@ -110,7 +110,7 @@ func (s *Service) CheckIsBuiltInModule(params types.ContextParams, moduleIDs ...
 				common.BKDBIN: moduleIDs,
 			},
 			common.BKDefaultField: map[string]interface{}{
-				common.BKDBNE: 0,
+				common.BKDBNE: common.DefaultFlagDefaultValue,
 			},
 		},
 	}

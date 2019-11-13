@@ -142,7 +142,7 @@ func (s *Service) CheckIsBuiltInSet(params types.ContextParams, setIDs ...int64)
 				common.BKDBIN: setIDs,
 			},
 			common.BKDefaultField: map[string]interface{}{
-				common.BKDBNE: 0,
+				common.BKDBNE: common.DefaultFlagDefaultValue,
 			},
 		},
 	}

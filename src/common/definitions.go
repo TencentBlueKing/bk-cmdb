@@ -642,6 +642,8 @@ const (
 // DefaultResSetFlag the default resource set flat
 const DefaultResSetFlag int = 1
 
+const DefaultFlagDefaultValue int = 0
+
 // DefaultAppFlag the default app flag
 const DefaultAppFlag int = 1
 
