@@ -43,6 +43,5 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
-
 	resp.WriteEntity(metadata.NewSuccessResp("migrate success"))
 }

@@ -215,10 +215,13 @@ func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (err error) {
 		}
 		blog.Infof("upgrade to version %s success", v.version)
 	}
+
 	if "" == cmdbVersion.InitVersion {
 		cmdbVersion.InitVersion = lastVersion
 		cmdbVersion.InitDistroVersion = ccversion.CCDistroVersion
-		saveVersion(ctx, db, cmdbVersion)
+		if err := saveVersion(ctx, db, cmdbVersion); err != nil {
+			return err
+		}
 	}
 	return nil
 }
