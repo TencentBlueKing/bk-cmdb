@@ -19,7 +19,7 @@
                 <bk-tab-panel name="hostList" :label="$t('主机列表')">
                     <host-list :active="activeTab === 'hostList'" ref="hostList"></host-list>
                 </bk-tab-panel>
-                <bk-tab-panel name="serviceInstance" :label="$t('服务实例')" :disabled="showServiceInstance">
+                <bk-tab-panel name="serviceInstance" :label="$t('服务实例')" :disabled="!showServiceInstance">
                     <span slot="label"
                         v-bk-tooltips="{
                             content: $t('请选择业务模块'),
@@ -29,7 +29,7 @@
                     </span>
                     <service-instance ref="serviceInstance"></service-instance>
                 </bk-tab-panel>
-                <bk-tab-panel name="nodeInfo" :disabled="showNodeInfo">
+                <bk-tab-panel name="nodeInfo" :disabled="!showNodeInfo">
                     <span slot="label"
                         v-bk-tooltips="{
                             content: $t('请选择非内置节点'),

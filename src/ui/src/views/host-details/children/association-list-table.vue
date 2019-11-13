@@ -44,7 +44,7 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.show">
             <p class="tips-content">{{$t('确认取消')}}</p>

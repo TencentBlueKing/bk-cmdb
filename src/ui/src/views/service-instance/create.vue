@@ -199,11 +199,11 @@
                 try {
                     const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
                         params: this.$injectMetadata({
-                            service_template_id: this.moduleInstance.service_template_id
+                            service_template_id: this.moduleInstance.service_template_id,
+                            page: { sort: 'id' }
                         }, { injectBizId: true }),
                         config: {
-                            requestId: 'getBatchProcessTemplate',
-                            cancelPrevious: true
+                            requestId: 'getBatchProcessTemplate'
                         }
                     })
                     this.templates = data.info
@@ -237,9 +237,10 @@
                                 instances: serviceInstanceTables.map(table => {
                                     return {
                                         bk_host_id: table.id,
-                                        processes: table.processList.map(item => {
+                                        processes: table.processList.map((item, index) => {
                                             return {
-                                                process_info: item
+                                                process_info: item,
+                                                process_template_id: table.templates[index].id
                                             }
                                         })
                                     }
@@ -331,7 +332,7 @@
         }
     }
     .create-tables {
-        height: calc(100% - 120px);
+        max-height: calc(100% - 120px);
         margin: 22px 0 0 0;
         @include scrollbar-y;
     }
