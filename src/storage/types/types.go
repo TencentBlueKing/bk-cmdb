@@ -22,7 +22,7 @@ import (
 
 	"configcenter/src/common"
 
-	"github.com/rentiansheng/bk_bson/bson"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 //type Transaction struct {
