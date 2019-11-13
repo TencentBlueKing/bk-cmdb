@@ -6,7 +6,11 @@
                 <h2 class="path">{{topoPath}}</h2>
                 <span :class="['count', { 'is-read': hasRead }]">{{changeCount}}</span>
             </div>
-            <i v-show="iconClose" :title="$t('本次不同步')" class="bk-icon icon-close" @click.stop="handleClose"></i>
+            <i class="bk-icon icon-close"
+                v-if="iconClose"
+                v-bk-tooltips="$t('本次不同步')"
+                @click.stop="handleClose">
+            </i>
         </div>
         <cmdb-collapse-transition>
             <div class="main clearfix" v-show="localExpand">
@@ -102,7 +106,7 @@
                 const path = this.instance.topo_path
                 if (path.length) {
                     const topoPath = this.$tools.clone(path)
-                    return topoPath.reverse().map(path => path.InstanceName).join(' / ')
+                    return topoPath.reverse().map(path => path.bk_inst_name).join(' / ')
                 }
                 return '--'
             }

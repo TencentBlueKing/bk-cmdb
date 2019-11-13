@@ -2,6 +2,7 @@
     <div class="classify-layout clearfix">
         <div class="classify-filter">
             <bk-input class="filter-input"
+                clearable
                 :placeholder="$t('名称')"
                 right-icon="icon-search"
                 v-model.trim="filter">

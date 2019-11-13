@@ -510,6 +510,7 @@
     }
     .add-process-button {
         line-height: 32px;
+        opacity: .7;
         .bk-icon,
         span {
             @include inlineBlock;
