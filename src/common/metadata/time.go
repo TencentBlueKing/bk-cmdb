@@ -23,9 +23,9 @@ import (
 
 	"github.com/coccyx/timeparser"
 	"github.com/mitchellh/mapstructure"
-	"github.com/rentiansheng/bk_bson/bson"
-	"github.com/rentiansheng/bk_bson/bson/bsontype"
-	"github.com/rentiansheng/bk_bson/x/bsonx"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 type Time struct {
