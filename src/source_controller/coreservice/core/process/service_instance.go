@@ -610,10 +610,8 @@ func (p *processOperation) GetBusinessDefaultSetModuleInfo(ctx core.ContextParam
 
 	// find and fill default set
 	defaultSetCond := map[string]interface{}{
-		common.BKAppIDField: bizID,
-		common.BKDefaultField: map[string]interface{}{
-			common.BKDBIN: []int64{int64(common.DefaultResSetFlag)},
-		},
+		common.BKAppIDField:   bizID,
+		common.BKDefaultField: common.DefaultResSetFlag,
 	}
 	sets := make([]struct {
 		SetID int64 `bson:"bk_set_id"`

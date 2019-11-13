@@ -123,20 +123,57 @@ func (phpapi *PHPAPI) AddHost(ctx context.Context, data map[string]interface{}) 
 }
 
 func (phpapi *PHPAPI) AddModuleHostConfig(ctx context.Context, hostID, appID int64, moduleIDs []int64) errors.CCError {
-	data := &meta.HostsModuleRelation{
-		ApplicationID: appID,
-		HostID:        []int64{hostID},
-		ModuleID:      moduleIDs,
+	if len(moduleIDs) == 0 {
+		return phpapi.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
-	blog.V(5).Infof("addModuleHostConfig start, data: %+v,rid:%s", data, phpapi.rid)
+	defaultModuleInfo, ccErr := phpapi.logic.CoreAPI.CoreService().Process().GetBusinessDefaultSetModuleInfo(ctx, phpapi.logic.header, appID)
+	if ccErr != nil {
+		blog.Errorf("AddModuleHostConfig failed, get default module info failed, bizID: %d, err: %s, rid:%s", appID, ccErr.Error(), phpapi.rid)
+		return ccErr
+	}
+	isInternalModule := make([]bool, 0)
+	for _, moduleID := range moduleIDs {
+		isInternalModule = append(isInternalModule, defaultModuleInfo.IsInternalModule(moduleID))
+	}
+	isInternalModule = util.BoolArrayUnique(isInternalModule)
+	if len(isInternalModule) > 1 {
+		return phpapi.ccErr.CCError(common.CCErrHostTransferFinalModuleConflict)
+	}
+	toInternalModule := isInternalModule[0]
 
-	res, err := phpapi.logic.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, phpapi.header, data)
+	var res *meta.OperaterException
+	var err error
+	var option interface{}
+	if toInternalModule == true {
+		if len(moduleIDs) == 0 {
+			return phpapi.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+		}
+		data := &meta.TransferHostToInnerModule{
+			ApplicationID: appID,
+			HostID:        []int64{hostID},
+			ModuleID:      moduleIDs[0],
+		}
+		option = data
+		blog.V(5).Infof("addModuleHostConfig start, data: %+v,rid:%s", data, phpapi.rid)
+
+		res, err = phpapi.logic.CoreAPI.CoreService().Host().TransferToInnerModule(ctx, phpapi.header, data)
+	} else {
+		data := &meta.HostsModuleRelation{
+			ApplicationID: appID,
+			HostID:        []int64{hostID},
+			ModuleID:      moduleIDs,
+		}
+		option = data
+		blog.V(5).Infof("addModuleHostConfig start, data: %+v,rid:%s", data, phpapi.rid)
+
+		res, err = phpapi.logic.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, phpapi.header, data)
+	}
 	if nil != err {
-		blog.Errorf("AddModuleHostConfig http do error.err:%s,param:%+v,rid:%s", err.Error(), data, phpapi.rid)
+		blog.Errorf("AddModuleHostConfig http do error.err:%s,param:%+v,rid:%s", err.Error(), option, phpapi.rid)
 		return phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !res.Result {
-		blog.Errorf("AddModuleHostConfig http response error. reply:%#v,param:%+v,rid:%s", res, data, phpapi.rid)
+		blog.Errorf("AddModuleHostConfig http response error. reply:%#v,param:%+v,rid:%s", res, option, phpapi.rid)
 		if len(res.Data) != 0 {
 			return phpapi.ccErr.New(int(res.Data[0].Code), res.Data[0].Message)
 		}

@@ -473,6 +473,15 @@ type BusinessDefaultSetModuleInfo struct {
 	RecycleModuleID int64 `json:"recycle_module_id"`
 }
 
+func (b BusinessDefaultSetModuleInfo) IsInternalModule(moduleID int64) bool {
+	if moduleID == b.IdleModuleID ||
+		moduleID == b.FaultModuleID ||
+		moduleID == b.RecycleModuleID {
+		return true
+	}
+	return false
+}
+
 type BusinessDefaultSetModuleInfoResult struct {
 	BaseResp `json:",inline"`
 	Data     BusinessDefaultSetModuleInfo `json:"data"`
