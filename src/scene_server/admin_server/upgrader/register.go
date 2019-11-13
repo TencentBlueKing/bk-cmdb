@@ -223,7 +223,7 @@ func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (currentVersion stri
 		cmdbVersion.InitVersion = lastVersion
 		cmdbVersion.InitDistroVersion = ccversion.CCDistroVersion
 		if err := saveVersion(ctx, db, cmdbVersion); err != nil {
-			return err
+			return currentVersion, finishedMigrations, err
 		}
 	}
 	return currentVersion, finishedMigrations, nil
