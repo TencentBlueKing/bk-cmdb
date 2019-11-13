@@ -547,6 +547,11 @@ func TestUpdate(t *testing.T) {
 		t.Errorf("update error.")
 		return
 	}
+
+	update = map[string]string{"change_version": "2"}
+	err = table.Update(ctx, nil, update)
+	require.NoError(t, err)
+
 }
 
 func TestUpdateMulti(t *testing.T) {
@@ -880,7 +885,7 @@ func TestUpdateModifyCount(t *testing.T) {
 	filter = map[string]string{"change_modify_count_not_found": "4"}
 	cnt, err = table.Find(filter).Count(ctx)
 	require.NoError(t, err)
-	if cnt != 2 {
+	if cnt != 0 {
 		t.Errorf("update error.")
 		return
 	}
@@ -897,6 +902,11 @@ func TestConvInterface(t *testing.T) {
 	require.NoError(t, err)
 
 	table := db.Table(tableName)
+
+	type SubStruct struct {
+		Int int    `bson:"sub_int" json:"sub_int"`
+		Str string `bson:"sub_aa" json:"sub_aa"`
+	}
 
 	insertDataMany := []map[string]interface{}{
 		map[string]interface{}{
@@ -928,20 +938,27 @@ func TestConvInterface(t *testing.T) {
 			"uint64_ptr":  uint64(8),
 			"float32_ptr": float32(8),
 			"float64_ptr": float64(8),
-			"str_arr_ptr": []string{"1", "2"},
-			"int_arr_ptr": []int{1, 2},
+			"str_arr":     []string{"1", "2"},
+			"int_arr":     []int{1, 2},
 
 			"struct": map[string]interface{}{
-				"sub_int": int64(1),
-				"aa":      "struct",
+				"sub_int": int(1),
+				"sub_aa":  "struct",
 			},
 			"struct_ptr": map[string]interface{}{
-				"sub_int": int64(11),
+				"sub_int": int(11),
 				"sub_aa":  "ptr",
 			},
 			"tag_test": "11",
-			"sub_int":  int64(8888888),
-			"sub_aa":   "inline",
+			//"sub_int":  (8888888),
+			//"sub_aa":   "inline",
+			"struct_arr": []SubStruct{
+
+				SubStruct{
+					Int: 1,
+					Str: "sub_arr_str",
+				},
+			},
 		},
 		map[string]interface{}{
 			"str":         "str",
@@ -962,20 +979,15 @@ func TestConvInterface(t *testing.T) {
 			"int_arr_ptr": []int{1, 2},
 
 			"struct": map[string]interface{}{
-				"sub_int": int64(1),
+				"sub_int": int(1),
 				"sub_aa":  "struct",
 			},
 			"struct_ptr": map[string]interface{}{
-				"sub_int": int64(11),
+				"sub_int": int(11),
 				"sub_aa":  "struct ptr",
 			},
 			"tag_test": "11",
 		},
-	}
-
-	type SubStruct struct {
-		Int int    `bson:"sub_int" json:"sub_int"`
-		Str string `bson:"sub_aa" json:"sub_aa"`
 	}
 
 	// inline , inline ptr
@@ -1013,37 +1025,89 @@ func TestConvInterface(t *testing.T) {
 		Struct     SubStruct   `bson:"struct" json:"struct"`
 		TagTest    interface{} `bson:"tag_test" json:"tag_test"`
 		StructPtr  *SubStruct  `bson:"struct_ptr" json:"struct_ptr"`
-		*SubStruct
+		//*SubStruct
+		StructArr []SubStruct `bson:"struct_arr" json:"struct_arr"`
 	}
+
+	inserJSONByte, err := json.Marshal(insertDataMany)
+	require.NoError(t, err)
+	insertJSONUnmarshal := make([]resultStruct, 0)
+	err = json.Unmarshal(inserJSONByte, &insertJSONUnmarshal)
+	require.NoError(t, err)
+	dbJSONUnmarshal := make([]resultStruct, 0)
 
 	err = table.Insert(ctx, insertDataMany)
 	require.NoError(t, err)
 	resultStructMany := make([]resultStruct, 0)
 	err = table.Find(nil).Limit(2).All(ctx, &resultStructMany)
 	require.NoError(t, err)
-	dbDataByteArr, err := json.Marshal(resultStructMany)
-	resultMapMany := make([]map[string]interface{}, 0)
-	err = json.Unmarshal(dbDataByteArr, &resultMapMany)
-	require.NoError(t, err)
+	require.Equal(t, insertDataMany[0]["bool"], resultStructMany[0].Bool)
+	require.Equal(t, insertDataMany[0]["bool_ptr"], *resultStructMany[0].BoolPtr)
+	require.Equal(t, insertDataMany[0]["int"], resultStructMany[0].Int)
+	require.Equal(t, insertDataMany[0]["int_ptr"], *resultStructMany[0].IntPtr)
+	require.Equal(t, insertDataMany[0]["int16"], resultStructMany[0].Int16)
+	require.Equal(t, insertDataMany[0]["int16_ptr"], *resultStructMany[0].Int16Ptr)
+	require.Equal(t, insertDataMany[0]["int32"], resultStructMany[0].Int32)
+	require.Equal(t, insertDataMany[0]["int32_ptr"], *resultStructMany[0].Int32Ptr)
+	require.Equal(t, insertDataMany[0]["int64"], resultStructMany[0].Int64)
+	require.Equal(t, insertDataMany[0]["int64_ptr"], *resultStructMany[0].Int64Ptr)
+	require.Equal(t, insertDataMany[0]["uint"], resultStructMany[0].Uint)
+	require.Equal(t, insertDataMany[0]["uint_ptr"], *resultStructMany[0].UintPtr)
+	require.Equal(t, insertDataMany[0]["uint32"], resultStructMany[0].Uint32)
+	require.Equal(t, insertDataMany[0]["uint32_ptr"], *resultStructMany[0].Uint32Ptr)
+	require.Equal(t, insertDataMany[0]["uint64"], resultStructMany[0].Uint64)
+	require.Equal(t, insertDataMany[0]["uint64_ptr"], *resultStructMany[0].Uint64Ptr)
+	require.Empty(t, resultStructMany[1].Uint64Ptr)
 
+	require.Equal(t, insertDataMany[0]["struct"], map[string]interface{}{
+		"sub_int": resultStructMany[0].Struct.Int,
+		"sub_aa":  resultStructMany[0].Struct.Str,
+	})
+	require.Equal(t, insertDataMany[0]["struct_ptr"], map[string]interface{}{
+		"sub_int": resultStructMany[0].StructPtr.Int,
+		"sub_aa":  resultStructMany[0].StructPtr.Str,
+	})
+	require.Equal(t, insertDataMany[0]["str_arr"], resultStructMany[0].StrArr)
+	require.Equal(t, insertDataMany[0]["int_arr"], resultStructMany[0].IntArr)
+	require.Equal(t, insertDataMany[0]["struct_arr"], resultStructMany[0].StructArr)
+
+	dbJSON, err := json.Marshal(resultStructMany)
+	require.NoError(t, err)
+	dbJSONUnmarshal = make([]resultStruct, 0)
+	err = json.Unmarshal(dbJSON, &dbJSONUnmarshal)
+	require.NoError(t, err)
+	blog.ErrorJSON("%s  %s", insertJSONUnmarshal, resultStructMany)
+	require.Equal(t, insertJSONUnmarshal, dbJSONUnmarshal)
+
+	// test interface
 	resultInterfaceMany := make([]interface{}, 0)
 	err = table.Find(nil).Limit(2).All(ctx, &resultInterfaceMany)
 	require.NoError(t, err)
-	dbDataByteArr, err = json.Marshal(resultInterfaceMany)
-	resultMapMany = make([]map[string]interface{}, 0)
-	err = json.Unmarshal(dbDataByteArr, &resultMapMany)
+	dbRow := resultInterfaceMany[0].(map[string]interface{})
+	require.Equal(t, insertDataMany[0]["bool"], dbRow["bool"])
+	require.Equal(t, insertDataMany[0]["bool_ptr"], dbRow["bool_ptr"])
+	require.Equal(t, insertDataMany[0]["sub_aa"], dbRow["sub_aa"])
+
+	dbJSON, err = json.Marshal(resultInterfaceMany)
 	require.NoError(t, err)
 
-	resultMapMany = make([]map[string]interface{}, 0)
+	dbJSONUnmarshal = make([]resultStruct, 0)
+	err = json.Unmarshal(dbJSON, &dbJSONUnmarshal)
+	require.NoError(t, err)
+	require.Equal(t, insertJSONUnmarshal, dbJSONUnmarshal)
+
+	// test map
+	resultMapMany := make([]map[string]interface{}, 0)
 	err = table.Find(nil).Limit(2).All(ctx, &resultMapMany)
 	require.NoError(t, err)
-	byteArr, err := json.Marshal(insertDataMany)
-	require.NoError(t, err)
-	dbByteArr, err := json.Marshal(resultMapMany)
-	require.NoError(t, err)
-	require.Equal(t, byteArr, dbByteArr)
-	blog.InfoJSON("%s  %s", insertDataMany, resultMapMany)
 
+	dbJSON, err = json.Marshal(resultMapMany)
+	require.NoError(t, err)
+
+	dbJSONUnmarshal = make([]resultStruct, 0)
+	err = json.Unmarshal(dbJSON, &dbJSONUnmarshal)
+	require.NoError(t, err)
+	require.Equal(t, insertJSONUnmarshal, dbJSONUnmarshal)
 	/*
 		err = table.Insert(ctx, insertDataMany)
 		require.NoError(t, err)
@@ -1056,4 +1120,170 @@ func TestConvInterface(t *testing.T) {
 		err = table.Find(nil).Limit(1).All(ctx, &resultStruct)
 		require.NoError(t, err)
 		blog.InfoJSON("%s  \n %s", insertDataMany, resultStruct)*/
+}
+
+func TestConvInterfaceMap(t *testing.T) {
+
+	ctx := context.Background()
+	tableName := "tmptest_decode_interface_map"
+
+	db := dbCleint(t)
+	// 清理数据
+	err := db.DropTable(ctx, tableName)
+	require.NoError(t, err)
+
+	table := db.Table(tableName)
+
+	insertDataMany := []map[string]string{
+		map[string]string{
+			"str":  "str",
+			"str2": "str2",
+		},
+		map[string]string{
+			"str":  "str22",
+			"str2": "str2222",
+		},
+	}
+
+	type strMapStruct struct {
+		Str  string `bson:"str"`
+		Str2 string `bson:"str2"`
+	}
+
+	err = table.Insert(ctx, insertDataMany)
+	require.NoError(t, err)
+	resultMapMany := make([]map[string]string, 0)
+	err = table.Find(nil).Limit(2).All(ctx, &resultMapMany)
+	require.NoError(t, err)
+	require.Equal(t, insertDataMany, resultMapMany)
+
+	resultStructMany := make([]strMapStruct, 0)
+	err = table.Find(nil).Limit(2).All(ctx, &resultStructMany)
+	require.NoError(t, err)
+	require.Equal(t, insertDataMany[0], map[string]string{
+		"str":  resultStructMany[0].Str,
+		"str2": resultStructMany[0].Str2,
+	})
+
+	require.Equal(t, insertDataMany[1], map[string]string{
+		"str":  resultStructMany[1].Str,
+		"str2": resultStructMany[1].Str2,
+	})
+
+}
+
+func TestConvInterfaceStructInline(t *testing.T) {
+
+	ctx := context.Background()
+	tableName := "tmptest_decode_interface_map"
+
+	db := dbCleint(t)
+	// 清理数据
+	err := db.DropTable(ctx, tableName)
+	require.NoError(t, err)
+
+	table := db.Table(tableName)
+
+	insertDataMany := []map[string]string{
+		map[string]string{
+			"str":  "str",
+			"str2": "str2",
+		},
+		map[string]string{
+			"str":  "str22",
+			"str2": "str2222",
+		},
+	}
+
+	type StrMapStruct struct {
+		Str  string `bson:"str"`
+		Str2 string `bson:"str2"`
+	}
+
+	type resultStruct struct {
+		StrMapStruct
+	}
+
+	err = table.Insert(ctx, insertDataMany)
+	require.NoError(t, err)
+	resultStructMany := make([]resultStruct, 0)
+	err = table.Find(nil).Limit(2).All(ctx, &resultStructMany)
+	require.NoError(t, err)
+	require.Equal(t, insertDataMany[0], map[string]string{
+		"str":  resultStructMany[0].Str,
+		"str2": resultStructMany[0].Str2,
+	})
+
+	require.Equal(t, insertDataMany[1], map[string]string{
+		"str":  resultStructMany[1].Str,
+		"str2": resultStructMany[1].Str2,
+	})
+
+}
+
+func TestConvInterfaceStructTagInline(t *testing.T) {
+
+	ctx := context.Background()
+	db := dbCleint(t)
+
+	tableName := "tmptest_decode_interface_struct_tag"
+
+	// 清理数据
+	err := db.DropTable(ctx, tableName)
+	require.NoError(t, err)
+	table := db.Table(tableName)
+
+	insertDataMany := []map[string]string{
+		map[string]string{
+			"str":  "str",
+			"str2": "str2",
+		},
+		map[string]string{
+			"str":  "str22",
+			"str2": "str2222",
+		},
+	}
+
+	type StrMapStruct struct {
+		Str  string `bson:"str"`
+		Str2 string `bson:"str2"`
+	}
+
+	type resultStruct struct {
+		StrMapStruct
+	}
+
+	err = table.Insert(ctx, insertDataMany)
+	require.NoError(t, err)
+	resultStructMany := make([]resultStruct, 0)
+	err = table.Find(nil).Limit(2).All(ctx, &resultStructMany)
+	require.NoError(t, err)
+	require.Equal(t, insertDataMany[0], map[string]string{
+		"str":  resultStructMany[0].Str,
+		"str2": resultStructMany[0].Str2,
+	})
+
+	require.Equal(t, insertDataMany[1], map[string]string{
+		"str":  resultStructMany[1].Str,
+		"str2": resultStructMany[1].Str2,
+	})
+
+}
+
+func TestNextSequence(t *testing.T) {
+
+	ctx := context.Background()
+
+	db := dbCleint(t)
+
+	// 清理数据
+	err := db.DropTable(ctx, "cc_idgenerator")
+	require.NoError(t, err)
+
+	id, err := db.NextSequence(ctx, "test")
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), id)
+	id, err = db.NextSequence(ctx, "test")
+	require.NoError(t, err)
+	require.Equal(t, uint64(2), id)
 }
