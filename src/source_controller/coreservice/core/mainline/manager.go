@@ -308,8 +308,8 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, wi
 			} else {
 				// parent id not found, ignore node
 				blog.Warnf("found unexpected count of missedInstances: %#v, cond: %#v, rid: %s", missedInstances, mongoCondition.ToMapStr(), rid)
-				continue
 				// return fmt.Errorf("SearchMainlineInstanceTopo found %d missedInstances with instanceID=%d", len(missedInstances), topoInstance.ParentInstanceID)
+				continue
 			}
 		}
 		if len(missedInstances) > 1 {

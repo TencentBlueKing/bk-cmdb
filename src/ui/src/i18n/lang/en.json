@@ -1093,5 +1093,7 @@
     "选择业务模块": "Select business module",
     "按模块路径排序": "Sort by module path",
     "转移到空闲模块": "Transfer to idle module",
-    "移除主机": "Remove host"
+    "移除主机": "Remove host",
+    "请输入模板名称搜索": "Please enter template name search",
+    "选择主机": "Select host"
 }

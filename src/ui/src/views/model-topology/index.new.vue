@@ -1,7 +1,7 @@
 <template>
     <div :class="['topo-wrapper', { hover: isTopoHover }]">
         <div class="toolbar">
-            <cmdb-auth style="display: none;" :auth="$authResources({ type: $OPERATION.SYSTEM_TOPOLOGY })" @update-auth="handleReceiveAuth"></cmdb-auth>
+            <cmdb-auth style="display: none;" ref="addBusinessLevel" :auth="$authResources({ type: $OPERATION.SYSTEM_TOPOLOGY })" @update-auth="handleReceiveAuth"></cmdb-auth>
             <template v-if="!topoEdit.isEdit">
                 <cmdb-auth :auth="$authResources({ type: $OPERATION.SYSTEM_MODEL_GRAPHICS })">
                     <bk-button slot-scope="{ disabled }"
@@ -1128,6 +1128,11 @@
                 if (this.createAuth) {
                     this.addBusinessLevel.parent = model
                     this.addBusinessLevel.showDialog = true
+                } else {
+                    const addBusinessLevel = this.$refs.addBusinessLevel
+                    if (addBusinessLevel) {
+                        addBusinessLevel.$el && addBusinessLevel.$el.click()
+                    }
                 }
             },
             async handleCreateBusinessLevel (data) {

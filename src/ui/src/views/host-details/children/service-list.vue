@@ -39,7 +39,7 @@
                     ref="popoverCheckView"
                     :always="true"
                     :width="224"
-                    :tippy-options="{ zIndex: 999 }"
+                    :z-index="999"
                     theme="check-view-color"
                     placement="bottom-end">
                     <div slot="content" class="popover-main">

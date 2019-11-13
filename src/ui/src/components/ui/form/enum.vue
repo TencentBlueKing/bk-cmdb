@@ -94,6 +94,7 @@
                         this.selected = this.value
                     }
                 }
+                this.selected = this.value
             }
         }
     }
