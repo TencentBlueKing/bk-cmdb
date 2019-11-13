@@ -191,7 +191,7 @@
                 if (this.processForm.type === 'create') {
                     return false
                 }
-                return !property.editable || property.isreadonly
+                return !property.editable || property.isreadonly || this.immutableProperties.includes('bind_ip')
             }
         },
         watch: {

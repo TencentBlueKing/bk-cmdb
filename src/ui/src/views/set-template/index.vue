@@ -13,7 +13,8 @@
                 </cmdb-auth>
             </div>
             <div class="fr">
-                <bk-input :placeholder="$t('模板名称搜索')"
+                <bk-input :style="{ width: '210px' }"
+                    :placeholder="$t('模板名称搜索')"
                     right-icon="icon-search"
                     v-model="searchName"
                     @enter="handleFilterTemplate">
