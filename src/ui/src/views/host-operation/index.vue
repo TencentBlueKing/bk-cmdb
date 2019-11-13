@@ -514,7 +514,6 @@
             text-align: right;
         }
         .info-content {
-            max-width: 945px;
             overflow: hidden;
             padding: 0 20px 0 8px;
             font-size: 14px;

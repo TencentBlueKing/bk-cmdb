@@ -151,7 +151,7 @@
             },
             topologyPath () {
                 const pathArr = this.$tools.clone(this.instance.topo_path).reverse()
-                const path = pathArr.map(path => path.InstanceName).join(' / ')
+                const path = pathArr.map(path => path.bk_inst_name).join(' / ')
                 return path
             }
         },
@@ -246,6 +246,7 @@
                 this.$router.replace({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
+                        tab: 'serviceInstance',
                         node: 'module-' + this.instance.bk_module_id,
                         instanceName: this.instance.name
                     }

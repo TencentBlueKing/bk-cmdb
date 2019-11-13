@@ -1,6 +1,12 @@
 import Meta from '@/router/meta'
 import { MENU_RESOURCE_EVENTPUSH } from '@/dictionary/menu-symbol'
-import { R_EVENT, GET_AUTH_META } from '@/dictionary/auth'
+import {
+    C_EVENT,
+    U_EVENT,
+    D_EVENT,
+    R_EVENT,
+    GET_AUTH_META
+} from '@/dictionary/auth'
 export default {
     name: MENU_RESOURCE_EVENTPUSH,
     path: 'eventpush',
@@ -10,7 +16,13 @@ export default {
             i18n: '事件订阅'
         },
         auth: {
-            view: { ...GET_AUTH_META(R_EVENT) }
+            view: { ...GET_AUTH_META(R_EVENT) },
+            operation: {
+                C_EVENT,
+                U_EVENT,
+                D_EVENT,
+                R_EVENT
+            }
         }
     })
 }

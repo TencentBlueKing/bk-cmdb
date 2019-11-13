@@ -1,5 +1,5 @@
 <template>
-    <section class="layout">
+    <section class="move-layout">
         <cmdb-tips
             :tips-style="{
                 background: 'none',
@@ -76,6 +76,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .move-layout {
+        max-width: 945px;
+    }
     .table {
         margin-top: 8px;
     }
