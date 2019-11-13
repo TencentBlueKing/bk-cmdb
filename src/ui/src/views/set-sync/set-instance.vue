@@ -6,7 +6,11 @@
                 <h2 class="path">{{topoPath}}</h2>
                 <span :class="['count', { 'is-read': hasRead }]">{{changeCount}}</span>
             </div>
-            <i v-show="iconClose" :title="$t('本次不同步')" class="bk-icon icon-close" @click.stop="handleClose"></i>
+            <i class="bk-icon icon-close"
+                v-if="iconClose"
+                v-bk-tooltips="$t('本次不同步')"
+                @click.stop="handleClose">
+            </i>
         </div>
         <cmdb-collapse-transition>
             <div class="main clearfix" v-show="localExpand">

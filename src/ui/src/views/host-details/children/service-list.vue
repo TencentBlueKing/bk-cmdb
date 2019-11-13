@@ -482,7 +482,7 @@
         padding: 0 10px;
         border-radius: 2px;
         .view-btn {
-            color: #dcdee5;
+            color: #c4c6cc;
             font-size: 14px;
             height: 100%;
             line-height: 30px;

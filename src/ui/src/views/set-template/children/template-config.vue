@@ -29,7 +29,7 @@
                 @service-selected="handleServiceSelected">
             </cmdb-set-template-tree>
             <input type="hidden" :value="services.length" v-validate="'min_value:1'" data-vv-name="service">
-            <p class="row-error" v-if="errors.has('service')">{{$t('请添加服务模板')}}</p>
+            <p class="row-error static" v-if="errors.has('service')">{{$t('请添加服务模板')}}</p>
         </div>
         <div class="template-options">
             <template v-if="isViewMode">
@@ -288,6 +288,8 @@
                 this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             },
             handleToSyncInstance () {
+                this.showUpdateInfo = false
+                this.insideMode = null
                 this.$router.replace({
                     name: 'setTemplateConfig',
                     params: {
@@ -349,13 +351,16 @@
             padding-left: 145px;
             font-size: 12px;
             top: 100%;
+            &.static {
+                position: static;
+            }
         }
     }
     .template-row {
         margin-top: 39px;
     }
     .template-options {
-        padding:23px 0 0 144px;
+        padding: 20px 0 0 144px;
         font-size: 0;
         .options-confirm {
             margin-right: 10px;

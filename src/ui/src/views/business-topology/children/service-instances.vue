@@ -87,7 +87,7 @@
                     @check-change="handleCheckChange">
                 </service-instance-table>
             </div>
-            <bk-pagination class="pagination"
+            <bk-pagination class="pagination" v-show="instances.length"
                 align="right"
                 size="small"
                 :current="pagination.current"
@@ -319,8 +319,6 @@
         },
         async created () {
             await this.getHistoryLabel()
-            this.getProcessProperties()
-            this.getProcessPropertyGroups()
             if (this.targetInstanceName) {
                 this.hasInitFilter = true
                 this.searchSelectData.push({
@@ -333,8 +331,14 @@
                 })
                 this.searchSelect.shift()
             }
+            this.getProcessProperties()
+            this.getProcessPropertyGroups()
         },
         methods: {
+            refresh () {
+                this.inSearch = false
+                this.getData()
+            },
             async getData () {
                 this.needRefresh = false
                 const node = this.currentNode

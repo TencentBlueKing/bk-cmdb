@@ -7,7 +7,7 @@
             :pagination="table.pagination"
             :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 250"
-            @page-change="handlePageChange"
+            @page-change="refresh"
             @page-limit-change="handleLimitChange"
             @sort-change="handleSortChange"
             @row-click="handleRowClick"
@@ -42,6 +42,7 @@
     import ModuleSelector from './module-selector.vue'
     import MoveToResourceConfirm from './move-to-resource-confirm.vue'
     import hostValueFilter from '@/filters/host'
+    import debounce from 'lodash.debounce'
     import { mapGetters, mapState } from 'vuex'
     import {
         MENU_BUSINESS_HOST_DETAILS,
@@ -55,6 +56,9 @@
         },
         filters: {
             hostValueFilter
+        },
+        props: {
+            active: Boolean
         },
         data () {
             return {
@@ -80,7 +84,8 @@
                     table: Symbol('table'),
                     moveToResource: Symbol('moveToResource'),
                     moveToIdleModule: Symbol('moveToIdleModule')
-                }
+                },
+                refresh: null
             }
         },
         computed: {
@@ -106,11 +111,16 @@
                 this.setTableHeader()
             },
             selectedNode (node) {
-                node && this.handlePageChange(1)
+                node && this.active && this.refresh(1)
             },
             filterParams () {
-                this.selectedNode && this.handlePageChange(1)
+                this.selectedNode && this.refresh(1)
             }
+        },
+        created () {
+            this.refresh = debounce(current => {
+                this.handlePageChange(current)
+            }, 10)
         },
         methods: {
             setTableHeader () {
@@ -132,11 +142,11 @@
             },
             handleLimitChange (limit) {
                 this.table.pagination.limit = limit
-                this.handlePageChange(1)
+                this.refresh(1)
             },
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)
-                this.handlePageChange(1)
+                this.refresh(1)
             },
             handleRowClick (row, event, column) {
                 if (column.type === 'selection') {
@@ -259,7 +269,7 @@
                             requestId: this.request.moveToIdleModule
                         }
                     )
-                    this.handlePageChange(1)
+                    this.refresh(1)
                     this.$success('转移成功')
                 } catch (e) {
                     console.error(e)
@@ -290,7 +300,7 @@
                             requestId: this.request.moveToResource
                         }
                     })
-                    this.handlePageChange(1)
+                    this.refresh(1)
                     this.$success('转移成功')
                 } catch (e) {
                     console.error(e)
