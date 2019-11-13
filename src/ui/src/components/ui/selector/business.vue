@@ -1,7 +1,7 @@
 <template>
     <bk-select style="text-align: left;"
         v-model="localSelected"
-        :searchable="authorizedBusiness.length > 5"
+        :searchable="true"
         :clearable="false"
         :placeholder="$t('请选择业务')"
         :disabled="disabled"
