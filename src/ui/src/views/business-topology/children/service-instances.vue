@@ -1,5 +1,5 @@
 <template>
-    <div class="service-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) || inSearch }">
+    <div class="service-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <template v-if="instances.length">
             <div class="options">
                 <bk-checkbox class="options-checkall"

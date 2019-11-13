@@ -13,12 +13,13 @@
             {{$t('新增服务实例提示')}}
         </cmdb-tips>
         <bk-select class="sort-options"
+            :style="{ width: $i18n.locale === 'en' ? '110px' : '90px' }"
             :clearable="false"
             prefix-icon="bk-icon icon-sort"
             v-model="sort"
             @selected="sortInfo">
             <bk-option id="ip" name="IP"></bk-option>
-            <bk-option id="module" :name="$t('Module')"></bk-option>
+            <bk-option id="module" :name="$t('模块')"></bk-option>
         </bk-select>
         <service-instance-table class="service-instance-table"
             v-for="(instance, index) in instances"
@@ -113,7 +114,6 @@
         position: relative;
         .sort-options {
             position: absolute;
-            width: 100px;
             top: -4px;
             right: 0;
         }

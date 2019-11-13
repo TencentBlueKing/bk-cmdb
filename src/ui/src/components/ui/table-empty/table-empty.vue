@@ -30,7 +30,7 @@
                         <span place="action">{{action}}</span>
                         <span place="resource">{{resource}}</span>
                         <span place="link">
-                            <cmdb-auth :auth="$authResources(authParams)">
+                            <cmdb-auth :auth="auth">
                                 <bk-button
                                     text
                                     place="link"
@@ -54,10 +54,9 @@
 </template>
 
 <script>
-    import { mapState, mapGetters } from 'vuex'
     import permissionMixins from '@/mixins/permission'
     export default {
-        name: 'cmdb-table-stuff',
+        name: 'cmdb-table-empty',
         mixins: [permissionMixins],
         props: {
             stuff: {
@@ -68,8 +67,8 @@
                 })
             },
             auth: {
-                type: String,
-                default: ''
+                type: Object,
+                default: () => ({})
             }
         },
         data () {
@@ -78,8 +77,6 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['bizId']),
-            ...mapState('auth', ['parentMeta']),
             type () {
                 return this.stuff.type
             },
@@ -94,14 +91,6 @@
             },
             payload () {
                 return this.stuff.payload
-            },
-            authParams () {
-                return {
-                    resource_id: null,
-                    bk_biz_id: this.bizId,
-                    parent_layers: this.parentMeta.parent_layers,
-                    type: this.auth
-                }
             }
         },
         watch: {

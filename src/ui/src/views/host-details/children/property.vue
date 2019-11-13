@@ -47,6 +47,7 @@
                                 :data-vv-name="property.bk_property_id"
                                 :data-vv-as="property.bk_property_name"
                                 :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                :auto-check="false"
                                 v-validate="$tools.getValidateRules(property)"
                                 v-model.trim="editState.value"
                                 @enter="confirm">
@@ -123,7 +124,6 @@
             async confirm () {
                 try {
                     const isValid = await this.$validator.validateAll()
-                    console.log(isValid)
                     if (!isValid) {
                         return false
                     }

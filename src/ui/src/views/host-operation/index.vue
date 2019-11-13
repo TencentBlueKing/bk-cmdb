@@ -38,32 +38,37 @@
         <div class="info clearfix mb10" ref="changeInfo">
             <label class="info-label fl">{{$t('变更确认')}}：</label>
             <div class="info-content">
-                <ul class="tab clearfix">
-                    <template v-for="(item, index) in availableTabList">
-                        <li class="tab-grep fl" v-if="index" :key="index"></li>
-                        <li class="tab-item fl"
-                            :class="{ active: activeTab === item }"
-                            :key="item.id"
-                            @click="handleTabClick(item)">
-                            <span class="tab-label">{{item.label}}</span>
-                            <span :class="['tab-count', { 'has-badge': !item.confirmed }]">
-                                {{item.props.info.length}}
-                            </span>
-                        </li>
-                    </template>
-                </ul>
-                <component class="tab-component"
-                    v-for="item in availableTabList"
-                    v-bind="item.props"
-                    v-show="activeTab === item"
-                    :ref="item.id"
-                    :key="item.id"
-                    :is="item.component">
-                </component>
+                <template v-if="!loading && availableTabList.length">
+                    <ul class="tab clearfix">
+                        <template v-for="(item, index) in availableTabList">
+                            <li class="tab-grep fl" v-if="index" :key="index"></li>
+                            <li class="tab-item fl"
+                                :class="{ active: activeTab === item }"
+                                :key="item.id"
+                                @click="handleTabClick(item)">
+                                <span class="tab-label">{{item.label}}</span>
+                                <span :class="['tab-count', { 'has-badge': !item.confirmed }]">
+                                    {{item.props.info.length}}
+                                </span>
+                            </li>
+                        </template>
+                    </ul>
+                    <component class="tab-component"
+                        v-for="item in availableTabList"
+                        v-bind="item.props"
+                        v-show="activeTab === item"
+                        :ref="item.id"
+                        :key="item.id"
+                        :is="item.component">
+                    </component>
+                </template>
+                <div class="tab-empty" v-else-if="!loading">
+                    {{$t('无预览数据')}}
+                </div>
             </div>
         </div>
-        <div class="options" :class="{ 'is-sticky': hasScrollbar }">
-            <bk-button theme="primary" @click="handleConfrim">{{confirmText}}</bk-button>
+        <div class="options" :class="{ 'is-sticky': hasScrollbar }" v-show="!loading">
+            <bk-button theme="primary" :disabled="!availableTabList.length" @click="handleConfrim">{{confirmText}}</bk-button>
             <bk-button class="ml10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
         <cmdb-dialog v-model="dialog.show" :width="dialog.width">
@@ -290,7 +295,7 @@
             },
             async setModulePathInfo (data) {
                 try {
-                    const moduleIds = []
+                    const moduleIds = [...this.targetModules]
                     data.forEach(datum => {
                         moduleIds.push(...datum.to_add_to_modules.map(datum => datum.bk_module_id))
                         moduleIds.push(...datum.to_remove_from_modules.map(datum => datum.bk_module_id))
@@ -671,6 +676,25 @@
     }
     .tab-component {
         margin-top: 20px;
+    }
+    .tab-empty {
+        height: 60px;
+        padding: 0 28px;
+        line-height: 60px;
+        background-color: #F0F1F5;
+        color: $textColor;
+        &:before {
+            content: "!";
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            border-radius: 50%;
+            text-align: center;
+            color: #FFF;
+            font-size: 12px;
+            background-color: #C4C6CC;
+        }
     }
     .options {
         position: sticky;
