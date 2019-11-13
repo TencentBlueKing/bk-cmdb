@@ -1,6 +1,6 @@
 <template>
-    <div class="service-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) || inSearch }">
-        <template v-if="instances.length">
+    <div class="service-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+        <template v-if="instances.length || inSearch">
             <div class="options">
                 <bk-checkbox class="options-checkall"
                     :size="16"
@@ -312,6 +312,9 @@
             },
             checked () {
                 this.isCheckAll = (this.checked.length === this.instances.length) && this.checked.length !== 0
+            },
+            searchSelectData (searchSelectData) {
+                if (!searchSelectData.length && this.inSearch) this.inSearch = false
             }
         },
         async created () {
