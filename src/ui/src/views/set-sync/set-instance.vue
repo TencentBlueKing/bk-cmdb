@@ -204,7 +204,7 @@
             text-align: center;
             color: #FFFFFF;
             border-radius: 50%;
-            background-color: #C4C6CC;
+            background-color: #97AED6;
             margin-right: 7px;
         }
         .sync-title {

@@ -225,7 +225,7 @@
         font-size: 12px;
         font-style: normal;
         color: #fff;
-        background-color: $iconColor;
+        background-color: #97AED6;
         z-index: 2;
     }
     .node-root {
