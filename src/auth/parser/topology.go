@@ -702,7 +702,7 @@ var (
 	updateObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/batch$`)
 	deleteObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/batch$`)
 	deleteObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
-	findObjectInstanceSubTopologyRegexp = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
+	findObjectInstanceSubTopologyRegexp = regexp.MustCompile(`^/api/v3/inst/search/topo/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceTopologyRegexp    = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
 	findBusinessInstanceTopologyRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
 	findObjectInstancesRegexp           = regexp.MustCompile(`^/api/v3/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
@@ -901,7 +901,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 	// find object instance topology operation
 	if ps.hitRegexp(findObjectInstanceSubTopologyRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 12 {
+		if len(ps.RequestCtx.Elements) != 11 {
 			ps.err = errors.New("find object instance topology, but got invalid url")
 			return ps
 		}
@@ -912,9 +912,9 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[11], 10, 64)
+		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[10], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find object instance topology, but got invalid instance id %s", ps.RequestCtx.Elements[11])
+			ps.err = fmt.Errorf("find object instance topology, but got invalid instance id %s", ps.RequestCtx.Elements[10])
 			return ps
 		}
 
