@@ -105,7 +105,7 @@ func (c *authConf) addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&c.appSecret, "app-secret", "s", "", "the app secret used for authorize")
 	cmd.PersistentFlags().StringVarP(&c.resource, "resource", "r", "", "the resource for authorize")
 	cmd.PersistentFlags().StringVarP(&c.resourceFile, "rsc-file", "f", "", "the resource file path for authorize")
-	cmd.PersistentFlags().IntVarP(&c.logv, "logV", "v", 0, "the resource for authorize")
+	cmd.PersistentFlags().IntVarP(&c.logv, "logV", "v", 0, "the log level of request, default, request body log level is 4.")
 }
 
 type authService struct {
