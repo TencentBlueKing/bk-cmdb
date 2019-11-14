@@ -512,7 +512,7 @@ func (s *Service) SearchInstByInstID(params types.ContextParams, pathParams, que
 
 // SearchInstChildTopo search the child inst topo for a inst
 func (s *Service) SearchInstChildTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	objID := pathParams("bk_object_id")
+	objID := pathParams("bk_obj_id")
 
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
@@ -521,7 +521,7 @@ func (s *Service) SearchInstChildTopo(params types.ContextParams, pathParams, qu
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", objID, err.Error(), params.ReqID)
 		return nil, err
 	}
 
