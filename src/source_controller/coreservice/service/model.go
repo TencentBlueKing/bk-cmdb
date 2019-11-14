@@ -404,6 +404,9 @@ func (s *coreService) SearchModelAttributesByCondition(params core.ContextParams
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
 			dataResult.Info[index].Option = s.TranslateEnumName(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
+		if dataResult.Info[index].PropertyType == common.FieldTypeList {
+			dataResult.Info[index].Option = s.TranslateListFields(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
+		}
 	}
 
 	return dataResult, err
@@ -427,6 +430,9 @@ func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParam
 		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[index])
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
 			dataResult.Info[index].Option = s.TranslateEnumName(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
+		}
+		if dataResult.Info[index].PropertyType == common.FieldTypeList {
+			dataResult.Info[index].Option = s.TranslateListFields(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
 	}
 

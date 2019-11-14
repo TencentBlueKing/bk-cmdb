@@ -711,6 +711,9 @@ const (
 	// FieldTypeBool the bool type
 	FieldTypeBool string = "bool"
 
+	// FieldTypeList the lis type
+	FieldTypeList string = "list"
+
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256
 
@@ -1104,6 +1107,8 @@ const (
 	UpdateObject         = "update object"
 	OperationDescription = "op_desc"
 	SyncSetTaskName      = "sync-settemplate2set"
+
+	BKHostCurrentStatus = "bk_current_status"
 )
 
 // 云同步

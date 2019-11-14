@@ -150,7 +150,8 @@ func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 			return a.params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 
-		if option, exists := data.Get(metadata.AttributeFieldOption); exists && (propertyType == common.FieldTypeInt || propertyType == common.FieldTypeEnum) {
+		option, exists := data.Get(metadata.AttributeFieldOption)
+		if exists && a.isPropertyTypeIntEnumList(propertyType) {
 			if err := util.ValidPropertyOption(propertyType, option, a.params.Err); nil != err {
 				return err
 			}
@@ -335,4 +336,13 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 
 func (a *attribute) SetSupplierAccount(supplierAccount string) {
 	a.attr.OwnerID = supplierAccount
+}
+
+func (a *attribute) isPropertyTypeIntEnumList(propertyType string) bool {
+	switch propertyType {
+	case common.FieldTypeInt, common.FieldTypeEnum, common.FieldTypeList:
+		return true
+	default:
+		return false
+	}
 }
