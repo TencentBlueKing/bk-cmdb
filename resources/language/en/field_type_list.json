@@ -1,0 +1,9 @@
+{
+  "host_property_bk_current_status_list_0": "In operation [requires alarm]",
+  "host_property_bk_current_status_list_1": "In operation [no alarm]",
+  "host_property_bk_current_status_list_2": "In development [requires alarm]",
+  "host_property_bk_current_status_list_3": "Under development [no alarm]",
+  "host_property_bk_current_status_list_4": "Backup machine",
+  "host_property_bk_current_status_list_5": "Testing",
+  "host_property_bk_current_status_list_6": "In failure"
+}
