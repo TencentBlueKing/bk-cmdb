@@ -27,8 +27,13 @@
                     class="info-create-trigger fr"
                     :auth="$authResources({ type: $OPERATION.C_TOPO })">
                     <template slot-scope="{ disabled }">
-                        <i v-if="data.set_template_id"
-                            class="node-button set-template-button"
+                        <i v-if="isBlueKing"
+                            class="node-button disabled-node-button"
+                            v-bk-tooltips="{ content: $t('蓝鲸业务拓扑节点提示'), placement: 'top' }">
+                            {{$t('新建')}}
+                        </i>
+                        <i v-else-if="data.set_template_id"
+                            class="node-button disabled-node-button"
                             v-bk-tooltips="{ content: $t('模板集群添加模块提示'), placement: 'top' }">
                             {{$t('新建')}}
                         </i>
@@ -143,10 +148,14 @@
             }
         },
         created () {
+            Bus.$on('refresh-count', this.refreshCount)
             this.handleFilter = debounce(() => {
                 this.$refs.tree.filter(this.filter)
             }, 300)
             this.initTopology()
+        },
+        beforeDestroy () {
+            Bus.$off('refresh-count', this.refreshCount)
         },
         methods: {
             async initTopology () {
@@ -237,7 +246,7 @@
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
                 const isIdleSet = data.is_idle_set
-                return !isModule && !this.isBlueKing && !isIdleSet
+                return !isModule && !isIdleSet
             },
             async showCreateDialog (node) {
                 const nodeModel = this.topologyModels.find(data => data.bk_obj_id === node.data.bk_obj_id)
@@ -416,6 +425,17 @@
             },
             isTemplate (node) {
                 return node.data.service_template_id || node.data.set_template_id
+            },
+            refreshCount (options) {
+                const type = options.type
+                const node = options.node
+                const oldCount = node.data[type]
+                const newCount = options.count
+                const deltaCount = newCount - oldCount
+                node.data[type] = newCount
+                node.parents.forEach(parent => {
+                    parent.data[type] = parent.data[type] + deltaCount
+                })
             }
         }
     }
@@ -510,7 +530,7 @@
             border-radius: 4px;
             font-size: 12px;
             min-width: auto;
-            &.set-template-button {
+            &.disabled-node-button {
                 @include inlineBlock;
                 font-style: normal;
                 background-color: #dcdee5;
