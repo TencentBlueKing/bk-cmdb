@@ -13,13 +13,13 @@
 package operation
 
 import (
-	"configcenter/src/common/errors"
 	"context"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -108,6 +108,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 
 	// TODO: run in transaction
 	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
+	data.Remove(common.MetadataField)
 	setInstance, err := s.inst.CreateInst(params, obj, data)
 	if err != nil {
 		blog.Errorf("create set instance failed, object: %+v, data: %+v, err: %s, rid: %s", obj, data, err.Error(), params.ReqID)
@@ -143,7 +144,6 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 			common.BKParentIDField:          setID,
 			common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
 			common.BKAppIDField:             bizID,
-			common.MetadataField:            metadata.NewMetadata(bizID),
 		}
 		_, err := s.module.CreateModule(params, moduleObj, bizID, setID, createModuleParam)
 		if err != nil {
@@ -232,6 +232,10 @@ func (s *set) UpdateSet(params types.ContextParams, data mapstr.MapStr, obj mode
 
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 	innerCond.Field(common.BKSetIDField).Eq(setID)
+
+	data.Remove(common.MetadataField)
+	data.Remove(common.BKAppIDField)
+	data.Remove(common.BKSetIDField)
 
 	return s.inst.UpdateInst(params, data, obj, innerCond, setID)
 }
