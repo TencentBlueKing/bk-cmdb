@@ -14,6 +14,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -22,7 +23,7 @@ import (
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
-	"configcenter/src/common/json"
+	"configcenter/src/common/blog"
 
 	"github.com/spf13/cobra"
 )
@@ -32,10 +33,12 @@ func init() {
 }
 
 type authConf struct {
-	address   string
-	appCode   string
-	appSecret string
-	resource  string
+	address      string
+	appCode      string
+	appSecret    string
+	resource     string
+	resourceFile string
+	logv         int
 }
 
 func NewAuthCommand() *cobra.Command {
@@ -84,7 +87,7 @@ func NewAuthCommand() *cobra.Command {
 			return runAuthCheckCmd(conf, *userName, *supplierAccount)
 		},
 	}
-	checkCmd.Flags().StringVar(userName, "user-name", "", "the name of the user")
+	checkCmd.Flags().StringVar(userName, "user", "", "the name of the user")
 	checkCmd.Flags().StringVar(supplierAccount, "supplier-account", "0", "the supplier id that this user belongs to")
 	subCmds = append(subCmds, checkCmd)
 
@@ -97,10 +100,12 @@ func NewAuthCommand() *cobra.Command {
 }
 
 func (c *authConf) addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&c.address, "auth-address", "", "auth center addresses, separated by comma")
-	cmd.PersistentFlags().StringVar(&c.appCode, "app-code", "", "the app code used for authorize")
-	cmd.PersistentFlags().StringVar(&c.appSecret, "app-secret", "", "the app secret used for authorize")
-	cmd.PersistentFlags().StringVar(&c.resource, "resource", "", "the resource for authorize")
+	cmd.PersistentFlags().StringVarP(&c.address, "auth-address", "p", "http://iam.service.consul", "auth center addresses, separated by comma")
+	cmd.PersistentFlags().StringVarP(&c.appCode, "app-code", "c", "bk_cmdb", "the app code used for authorize")
+	cmd.PersistentFlags().StringVarP(&c.appSecret, "app-secret", "s", "", "the app secret used for authorize")
+	cmd.PersistentFlags().StringVarP(&c.resource, "resource", "r", "", "the resource for authorize")
+	cmd.PersistentFlags().StringVarP(&c.resourceFile, "rsc-file", "f", "", "the resource file path for authorize")
+	cmd.PersistentFlags().IntVarP(&c.logv, "logV", "v", 0, "the resource for authorize")
 }
 
 type authService struct {
@@ -108,20 +113,21 @@ type authService struct {
 	resource  []meta.ResourceAttribute
 }
 
-func newAuthService(address string, appCode string, appSecret string, resource string) (*authService, error) {
-	if address == "" {
-		return nil, errors.New("auth-path must be set")
+func newAuthService(c *authConf) (*authService, error) {
+	blog.SetV(int32(c.logv))
+	if c.address == "" {
+		return nil, errors.New("auth address must be set")
 	}
-	if appCode == "" {
+	if c.appCode == "" {
 		return nil, errors.New("app-code must be set")
 	}
-	if appSecret == "" {
+	if c.appSecret == "" {
 		return nil, errors.New("app-secret must be set")
 	}
-	if resource == "" {
+	if c.resource == "" {
 		return nil, errors.New("resource must be set")
 	}
-	addr := strings.Split(address, ",")
+	addr := strings.Split(c.address, ",")
 	for i := range addr {
 		if !strings.HasSuffix(addr[i], "/") {
 			addr[i] = addr[i] + "/"
@@ -129,8 +135,8 @@ func newAuthService(address string, appCode string, appSecret string, resource s
 	}
 	authConf := authcenter.AuthConfig{
 		Address:   addr,
-		AppCode:   appCode,
-		AppSecret: appSecret,
+		AppCode:   c.appCode,
+		AppSecret: c.appSecret,
 		SystemID:  authcenter.SystemIDCMDB,
 	}
 	authorize, err := auth.NewAuthorize(nil, authConf, nil)
@@ -140,7 +146,7 @@ func newAuthService(address string, appCode string, appSecret string, resource s
 	service := &authService{
 		authorize: authorize,
 	}
-	err = json.UnmarshalFromString(resource, service.resource)
+	err = json.Unmarshal([]byte(c.resource), &service.resource)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +154,7 @@ func newAuthService(address string, appCode string, appSecret string, resource s
 }
 
 func runAuthRegisterCmd(c *authConf) error {
-	srv, err := newAuthService(c.address, c.appCode, c.appSecret, c.resource)
+	srv, err := newAuthService(c)
 	if err != nil {
 		return err
 	}
@@ -156,12 +162,12 @@ func runAuthRegisterCmd(c *authConf) error {
 	if err != nil {
 		return err
 	}
-	_, _ = fmt.Fprintln(os.Stdout, "register auth resource successful")
+	_, _ = fmt.Fprintln(os.Stdout, WithBlueColor("Register successful"))
 	return nil
 }
 
 func runAuthDeregisterCmd(c *authConf) error {
-	srv, err := newAuthService(c.address, c.appCode, c.appSecret, c.resource)
+	srv, err := newAuthService(c)
 	if err != nil {
 		return err
 	}
@@ -169,12 +175,12 @@ func runAuthDeregisterCmd(c *authConf) error {
 	if err != nil {
 		return err
 	}
-	_, _ = fmt.Fprintln(os.Stdout, "deregister auth resource successful")
+	_, _ = fmt.Fprintln(os.Stdout, WithBlueColor("Deregister successful"))
 	return nil
 }
 
 func runAuthUpdateCmd(c *authConf) error {
-	srv, err := newAuthService(c.address, c.appCode, c.appSecret, c.resource)
+	srv, err := newAuthService(c)
 	if err != nil {
 		return err
 	}
@@ -185,12 +191,12 @@ func runAuthUpdateCmd(c *authConf) error {
 		}
 
 	}
-	_, _ = fmt.Fprintln(os.Stdout, "update auth resource successful")
+	_, _ = fmt.Fprintln(os.Stdout, WithBlueColor("Update successful"))
 	return nil
 }
 
 func runAuthCheckCmd(c *authConf, userName string, supplierAccount string) error {
-	srv, err := newAuthService(c.address, c.appCode, c.appSecret, c.resource)
+	srv, err := newAuthService(c)
 	if err != nil {
 		return err
 	}
@@ -206,9 +212,9 @@ func runAuthCheckCmd(c *authConf, userName string, supplierAccount string) error
 		return err
 	}
 	if decision.Authorized {
-		_, _ = fmt.Fprintln(os.Stdout, "user has resource permission")
+		_, _ = fmt.Fprintln(os.Stdout, WithGreenColor("Authorized"))
 	} else {
-		_, _ = fmt.Fprintf(os.Stdout, "user doesn't have resource permission, reason: %s", decision.Reason)
+		_, _ = fmt.Fprintln(os.Stdout, WithRedColor("Unauthorized"))
 	}
 	return nil
 }
