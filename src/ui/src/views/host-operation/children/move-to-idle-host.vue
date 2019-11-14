@@ -1,5 +1,5 @@
 <template>
-    <section class="layout">
+    <section class="move-layout">
         <cmdb-tips
             :tips-style="{
                 background: 'none',
@@ -32,6 +32,7 @@
 <script>
     import { foreignkey, singlechar } from '@/filters/formatter.js'
     export default {
+        name: 'move-to-idle-host',
         filters: { foreignkey, singlechar },
         props: {
             info: {
@@ -75,6 +76,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .move-layout {
+        max-width: 945px;
+    }
     .table {
         margin-top: 8px;
     }

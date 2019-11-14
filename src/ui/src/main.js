@@ -33,7 +33,7 @@ Vue.filter('unit', cmdbUnitFilter)
 Vue.prototype.$http = api
 Vue.prototype.$tools = tools
 /* eslint-disable no-new */
-new Vue({
+window.CMDB_APP = new Vue({
     el: '#app',
     router,
     store,

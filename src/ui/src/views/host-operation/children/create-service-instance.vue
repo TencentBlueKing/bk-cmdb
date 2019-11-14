@@ -12,20 +12,15 @@
             }">
             {{$t('新增服务实例提示')}}
         </cmdb-tips>
-        <div class="sort-options">
-            <i class="sort-item icon-cc-instance-path"
-                :class="{ active: sort === 'module' }"
-                v-bk-tooltips="$t('按模块路径排序')"
-                @click="setSort('module')">
-            </i>
-            <i class="sort-grep"></i>
-            <i class="sort-item"
-                :class="{ active: sort === 'ip' }"
-                v-bk-tooltips="$t('按IP排序')"
-                @click="setSort('ip')">
-                IP
-            </i>
-        </div>
+        <bk-select class="sort-options"
+            :style="{ width: $i18n.locale === 'en' ? '110px' : '90px' }"
+            :clearable="false"
+            prefix-icon="bk-icon icon-sort"
+            v-model="sort"
+            @selected="sortInfo">
+            <bk-option id="ip" name="IP"></bk-option>
+            <bk-option id="module" :name="$t('模块')"></bk-option>
+        </bk-select>
         <service-instance-table class="service-instance-table"
             v-for="(instance, index) in instances"
             ref="serviceInstance"
@@ -45,6 +40,7 @@
 <script>
     import ServiceInstanceTable from '@/components/service/instance-table'
     export default {
+        name: 'create-service-instance',
         components: {
             ServiceInstanceTable
         },
@@ -69,13 +65,6 @@
             }
         },
         methods: {
-            setSort (type) {
-                if (this.sort === type) {
-                    return false
-                }
-                this.sort = type
-                this.sortInfo()
-            },
             sortInfo () {
                 if (this.sort === 'module') {
                     const order = this.$parent.targetModules
@@ -127,31 +116,6 @@
             position: absolute;
             top: -4px;
             right: 0;
-            border: 1px solid #C4C6CC;
-            border-radius: 2px;
-            font-size: 0;
-            .sort-item {
-                width: 30px;
-                height: 30px;
-                line-height: 30px;
-                text-align: center;
-                display: inline-block;
-                vertical-align: middle;
-                font-size: 12px;
-                font-style: normal;
-                cursor: pointer;
-                outline: 0;
-                &.active {
-                    color: $primaryColor;
-                }
-            }
-            .sort-grep {
-                display: inline-block;
-                vertical-align: middle;
-                height: 14px;
-                width: 1px;
-                background-color: $borderColor;
-            }
         }
     }
     .service-instance-table {
