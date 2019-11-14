@@ -52,7 +52,12 @@ export const translateAuth = async (authList = []) => {
                 system_name: '配置平台',
                 resource_type: convertedAuth[index].type,
                 resource_type_name: RESOURCE_TYPE_NAME[resourceType],
-                resources: [[]]
+                resources: [[{
+                    resource_type_name: RESOURCE_TYPE_NAME[resourceType],
+                    resource_type: convertedAuth[index].type,
+                    resource_id: '',
+                    resource_name: ''
+                }]]
             }
         })
     } catch (e) {
