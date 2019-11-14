@@ -583,7 +583,7 @@ func (p *processOperation) GetBusinessDefaultSetModuleInfo(ctx core.ContextParam
 	defaultModuleCond := map[string]interface{}{
 		common.BKAppIDField: bizID,
 		common.BKDefaultField: map[string]interface{}{
-			common.BKDBIN: []int64{int64(common.DefaultResModuleFlag), int64(common.DefaultFaultModuleFlag)},
+			common.BKDBNE: common.DefaultFlagDefaultValue,
 		},
 	}
 	modules := make([]struct {
@@ -603,14 +603,15 @@ func (p *processOperation) GetBusinessDefaultSetModuleInfo(ctx core.ContextParam
 		if module.ModuleFlag == common.DefaultFaultModuleFlag {
 			defaultSetModuleInfo.FaultModuleID = module.ModuleID
 		}
+		if module.ModuleFlag == common.DefaultRecycleModuleFlag {
+			defaultSetModuleInfo.RecycleModuleID = module.ModuleID
+		}
 	}
 
 	// find and fill default set
 	defaultSetCond := map[string]interface{}{
-		common.BKAppIDField: bizID,
-		common.BKDefaultField: map[string]interface{}{
-			common.BKDBIN: []int64{int64(common.DefaultResSetFlag)},
-		},
+		common.BKAppIDField:   bizID,
+		common.BKDefaultField: common.DefaultResSetFlag,
 	}
 	sets := make([]struct {
 		SetID int64 `bson:"bk_set_id"`

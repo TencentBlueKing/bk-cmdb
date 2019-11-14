@@ -720,7 +720,7 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 
 func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.Header, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder) {
 	ret := new(metadata.BusinessDefaultSetModuleInfoResult)
-	subPath := "/find/process/business_default_set_module_info"
+	subPath := fmt.Sprintf("/find/process/business_default_set_module_info/%d", bizID)
 
 	emptyInfo := metadata.BusinessDefaultSetModuleInfo{}
 	err := p.client.Get().
