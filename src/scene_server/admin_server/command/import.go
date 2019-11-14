@@ -411,7 +411,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKOwnerIDField] = ipt.ownerID
 			node.Data[common.BKAppIDField] = ipt.bizID
 			node.Data[common.BKInstParentStr] = ipt.parentID
-			node.Data[common.BKDefaultField] = 0
+			node.Data[common.BKDefaultField] = common.DefaultFlagDefaultValue
 			cond := getModifyCondition(node.Data, []string{common.BKSetNameField, common.BKInstParentStr})
 			set := map[string]interface{}{}
 			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(cond).One(ipt.ctx, &set)
@@ -444,7 +444,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKAppIDField] = ipt.bizID
 			node.Data[common.BKSetIDField] = ipt.setID
 			node.Data[common.BKInstParentStr] = ipt.parentID
-			node.Data[common.BKDefaultField] = 0
+			node.Data[common.BKDefaultField] = common.DefaultFlagDefaultValue
 			cond := getModifyCondition(node.Data, []string{common.BKModuleNameField, common.BKInstParentStr})
 			module := map[string]interface{}{}
 			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(cond).One(ipt.ctx, &module)
@@ -516,7 +516,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			switch node.getChildObjID() {
 			case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
 				childFilter[common.BKDefaultField] = map[string]interface{}{
-					common.BKDBLTE: 0,
+					common.BKDBEQ: common.DefaultFlagDefaultValue,
 				}
 			default:
 				childFilter[common.BKObjIDField] = node.getChildObjID()

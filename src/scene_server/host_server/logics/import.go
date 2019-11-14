@@ -31,11 +31,30 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]int64, []string, []string, []string, error) {
+func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]int64, []string, []string, []string, error) {
+	if len(moduleIDs) == 0 {
+		err := lgc.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+		return nil, nil, nil, nil, err
+	}
+	var err error
+	defaultModule, err := lgc.CoreAPI.CoreService().Process().GetBusinessDefaultSetModuleInfo(ctx, lgc.header, appID)
+	if err != nil {
+		blog.Errorf("AddHost failed, get biz default module info failed, appID:%d, err:%s, rid:%s", appID, err.Error(), lgc.rid)
+		return nil, nil, nil, nil, err
+	}
+	isInternalModule := make([]bool, 0)
+	for _, moduleID := range moduleIDs {
+		isInternalModule = append(isInternalModule, defaultModule.IsInternalModule(moduleID))
+	}
+	isInternalModule = util.BoolArrayUnique(isInternalModule)
+	if len(isInternalModule) > 1 {
+		err := lgc.ccErr.CCError(common.CCErrHostTransferFinalModuleConflict)
+		return nil, nil, nil, nil, err
+	}
+	toInternalModule := isInternalModule[0]
 
 	hostIDs := make([]int64, 0)
 	instance := NewImportInstance(ctx, ownerID, lgc)
-	var err error
 	instance.defaultFields, err = lgc.getHostFields(ctx, ownerID)
 	if err != nil {
 		return nil, nil, nil, nil, err
@@ -113,7 +132,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 				continue
 			}
 		} else {
-			intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleID, host)
+			intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleIDs, toInternalModule, host)
 			if err != nil {
 				errMsg = append(errMsg, err.Error())
 				continue
@@ -244,7 +263,7 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 	return nil
 }
 
-func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID []int64, host map[string]interface{}) (int64, error) {
+func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs []int64, toInternalModule bool, host map[string]interface{}) (int64, error) {
 	ip, _ := host[common.BKHostInnerIPField].(string)
 	_, ok := host[common.BKCloudIDField]
 	if false == ok {
@@ -256,6 +275,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 	}
 
 	// (h.ctx, h.pheader, host)
+	var err error
 	result, err := h.CoreAPI.CoreService().Instance().CreateInstance(h.ctx, h.pheader, common.BKInnerObjIDHost, input)
 	if err != nil {
 		blog.Errorf("addHostInstance http do error,err:%s, input:%+v,rid:%s", err.Error(), host, h.rid)
@@ -267,19 +287,36 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 	}
 
 	hostID := int64(result.Data.Created.ID)
+	var hResult *metadata.OperaterException
+	var option interface{}
+	if toInternalModule == true {
+		if len(moduleIDs) == 0 {
+			err := h.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+			return 0, err
+		}
+		opt := &metadata.TransferHostToInnerModule{
+			ApplicationID: appID,
+			ModuleID:      moduleIDs[0],
+			HostID:        []int64{hostID},
+		}
+		option = opt
+		hResult, err = h.CoreAPI.CoreService().Host().TransferToInnerModule(h.ctx, h.pheader, opt)
+	} else {
+		opt := &metadata.HostsModuleRelation{
+			ApplicationID: appID,
+			ModuleID:      moduleIDs,
+			HostID:        []int64{hostID},
+		}
+		option = opt
+		hResult, err = h.CoreAPI.CoreService().Host().TransferToNormalModule(h.ctx, h.pheader, opt)
 
-	opt := &metadata.HostsModuleRelation{
-		ApplicationID: appID,
-		ModuleID:      moduleID,
-		HostID:        []int64{hostID},
 	}
-	hResult, err := h.CoreAPI.CoreService().Host().TransferToNormalModule(h.ctx, h.pheader, opt)
 	if err != nil {
-		blog.Errorf("add host module by ip:%s  err:%s,input:%+v,rid:%s", ip, err.Error(), opt, h.rid)
+		blog.Errorf("add host module by ip:%s  err:%s,input:%+v,rid:%s", ip, err.Error(), option, h.rid)
 		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
 	}
 	if !hResult.Result {
-		blog.Errorf("add host module by ip:%s , result:%#v, input:%#v, rid:%s", ip, hResult.Code, opt, h.rid)
+		blog.Errorf("add host module by ip:%s , result:%#v, input:%#v, rid:%s", ip, hResult.Code, option, h.rid)
 		if len(hResult.Data) > 0 {
 			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, hResult.Data[0].Message))
 		}

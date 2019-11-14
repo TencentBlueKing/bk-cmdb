@@ -40,7 +40,7 @@ func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
-	data.Set(common.BKDefaultField, 0)
+	data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	business, err := s.Core.BusinessOperation().CreateBusiness(params, obj, data)
 	if err != nil {
 		blog.Errorf("create business failed, err: %v, rid: %s", err, params.ReqID)
@@ -195,7 +195,7 @@ func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathPara
 	fields := []string{common.BKAppIDField, common.BKAppNameField, "business_dept_id", "business_dept_name"}
 	cond := condition.CreateCondition()
 	cond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
-	cond.Field(common.BKDefaultField).Eq(0)
+	cond.Field(common.BKDefaultField).Eq(common.DefaultFlagDefaultValue)
 	if s.AuthManager.Enabled() {
 		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
 		appList, err := s.AuthManager.Authorize.GetAnyAuthorizedBusinessList(params.Context, user)
@@ -378,7 +378,7 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 		innerCond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
 	}
 
-	innerCond.Field(common.BKDefaultField).Eq(0)
+	innerCond.Field(common.BKDefaultField).Eq(common.DefaultFlagDefaultValue)
 	innerCond.SetPage(searchCond.Page)
 	innerCond.SetFields(searchCond.Fields)
 

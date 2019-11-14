@@ -312,7 +312,7 @@ var _ = Describe("object test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.SetName).To(Equal("空闲机池"))
-			Expect(len(rsp.Data.Module)).To(Equal(2))
+			Expect(len(rsp.Data.Module)).To(Equal(3))
 		})
 	})
 
