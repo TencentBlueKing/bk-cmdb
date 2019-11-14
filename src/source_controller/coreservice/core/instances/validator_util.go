@@ -13,7 +13,6 @@
 package instances
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/rentiansheng/bk_bson/bson"
 	"github.com/tidwall/gjson"
@@ -205,17 +205,10 @@ func parseFloatOption(ctx context.Context, val interface{}) FloatOption {
 }
 
 // FillLostedFieldValue fill the value in inst map data
-func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute, ignorefields []string) {
+func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	ignores := map[string]bool{}
-	for _, field := range ignorefields {
-		ignores[field] = true
-	}
 	for _, field := range propertys {
 		if field.PropertyID == common.BKChildStr || field.PropertyID == common.BKParentStr {
-			continue
-		}
-		if ignores[field.PropertyID] {
 			continue
 		}
 		_, ok := valData[field.PropertyID]
