@@ -10,11 +10,11 @@
     align-items: center;
 }
 
-@mixin scrollbar {
+@mixin scrollbar ($width: 8px) {
     overflow: auto;
     &::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: $width;
+        height: $width;
         background: rgba(165, 165, 165, .1);
         &-thumb {
             border-radius: 20px;
@@ -24,14 +24,14 @@
     }
 }
 
-@mixin scrollbar-x{
+@mixin scrollbar-x ($width: 8px) {
     @include scrollbar;
     overflow-x: auto;
     overflow-y: hidden;
 }
 
-@mixin scrollbar-y{
-    @include scrollbar;
+@mixin scrollbar-y ($width: 8px) {
+    @include scrollbar($width);
     overflow-x: hidden;
     overflow-y: auto;
 }

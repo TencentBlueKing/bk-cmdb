@@ -86,12 +86,12 @@
                 :prop="column.id"
                 :label="column.name">
             </bk-table-column>
-            <cmdb-table-stuff
+            <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$OPERATION.C_BUSINESS"
+                :auth="$authResources({ type: $OPERATION.C_BUSINESS })"
                 @create="handleCreate"
-            ></cmdb-table-stuff>
+            ></cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
