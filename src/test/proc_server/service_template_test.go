@@ -717,7 +717,7 @@ var _ = Describe("service template test", func() {
 			j, err := json.Marshal(rsp.Data)
 			responseData := make([]metadata.ModuleDiffWithTemplateDetail, 0)
 			err = json.Unmarshal(j, &responseData)
-			Expect(err).NotTo(HaveOccurred(), err.Error())
+			Expect(err).NotTo(HaveOccurred())
 			Expect(responseData).To(HaveLen(1))
 			data := responseData[0]
 			Expect(len(data.Removed)).To(Equal(0))
@@ -1423,7 +1423,7 @@ var _ = Describe("service template test", func() {
 			j, err := json.Marshal(rsp.Data)
 			responseData := make([]metadata.ModuleDiffWithTemplateDetail, 0)
 			err = json.Unmarshal(j, &responseData)
-			Expect(err).NotTo(HaveOccurred(), err.Error())
+			Expect(err).NotTo(HaveOccurred())
 			Expect(responseData).To(HaveLen(1))
 			data := responseData[0]
 			Expect(len(data.Removed)).To(Equal(1))
