@@ -971,7 +971,8 @@
     "最新集群模板信息": "The set template is up to date and does not need to be updated.",
     "集群模板": "Set Template",
     "同步集群模板": "Sync Set Template",
-    "请确认以下模板修改信息": "Please confirm the following template modification information",
+    "请确认实例更改信息": "Please confirm {count} instance change information: ",
+    "请确认单个实例更改信息": "Please confirm instance change information:",
     "变更模块": "Change module",
     "删除模块": "Delete module",
     "确认同步": "Confirm sync",
@@ -1033,7 +1034,6 @@
     "删除历史": "Delete history",
     "模型显示设置": "Model display settings",
     "关系显示设置": "Relationship display setting",
-    "请编辑": "Please edit",
     "模型分类": "Model classification",
     "系统基础": "System basis",
     "云资源确认": "Cloud resource confirmation",
@@ -1054,7 +1054,6 @@
     "模板集群添加模块提示": "The accumulated template is currently configured, and modules cannot be added.",
     "蓝鲸业务拓扑节点提示": "Can not create node under BlueKing business.",
     "请编辑": "Please edit",
-    "无": "none",
     "归还资源池确认": "Transfer to resource pool confirm",
     "确认归还资源池主机数量": "Comfirm transfer {count} idle host(s) to resource pool?",
     "已选主机": "Host Count",
@@ -1103,5 +1102,8 @@
     "移动到空闲机的主机": "Host transfer to idle module",
     "转移到业务模块": "Transfer to business module",
     "请输入模板名称搜索": "Please enter template name search",
-    "选择主机": "Select host"
+    "选择主机": "Select host",
+    "存在主机不可同步提示": "Unsynchronizable, the module exists on the host, {btn}",
+    "跳转查看": "Details",
+    "请先删除不可同步的实例": "Please delete the unsynchronized instance first"
 }
