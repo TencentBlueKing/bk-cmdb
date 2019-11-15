@@ -335,6 +335,7 @@
                             service_template_id: this.serviceTemplateId
                         }, { injectBizId: true })
                     }).then(async res => {
+                        res = res[0] || {}
                         const differen = {
                             added: res.added,
                             changed: res.changed,
