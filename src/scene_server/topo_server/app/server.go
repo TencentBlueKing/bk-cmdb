@@ -32,6 +32,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/thirdpartyclient/elasticsearch"
 )
@@ -57,6 +58,7 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 		blog.Infof("config update with max topology level: %d", t.Config.BusinessTopoLevelMax)
 	}
 	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
 	t.Config.FullTextSearch = current.ConfigMap["es.full_text_search"]
 	t.Config.EsUrl = current.ConfigMap["es.url"]
 	t.Config.ConfigMap = current.ConfigMap
@@ -98,9 +100,20 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
+	cache, err := redis.NewFromConfig(server.Config.Redis)
+	if err != nil {
+		blog.Errorf("new redis client failed, err: %v", err)
+		return err
+	}
+
 	txn, err := local.NewMgo(server.Config.Mongo.BuildURI(), time.Second*5)
 	if err != nil {
 		blog.Errorf("failed to connect the txc server, error info is %v", err)
+		return err
+	}
+	err = txn.InitTxnManager(cache)
+	if err != nil {
+		blog.Errorf("failed to init txn manager, error info is %v", err)
 		return err
 	}
 

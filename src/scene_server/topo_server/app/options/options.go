@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/redis"
 )
 
 type ServerOption struct {
@@ -28,6 +29,7 @@ type ServerOption struct {
 type Config struct {
 	BusinessTopoLevelMax int `json:"level.businessTopoMax"`
 	Mongo                mongo.Config
+	Redis                redis.Config
 	ConfigMap            map[string]string
 	Auth                 authcenter.AuthConfig
 	FullTextSearch       string `json:"es.full_text_search"`

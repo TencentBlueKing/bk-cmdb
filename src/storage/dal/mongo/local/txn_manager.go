@@ -13,51 +13,89 @@
 package local
 
 import (
-	//"context"
 	"errors"
-	//"reflect"
-	//"strings"
-	//"time"
-	//
-	//"configcenter/src/common"
-	//"configcenter/src/common/blog"
-	//"configcenter/src/common/util"
-	//"configcenter/src/storage/dal"
-	//"configcenter/src/storage/types"
-	//
-	//"go.mongodb.org/mongo-driver/bson"
+	"fmt"
+	"strings"
+	"time"
+
 	"go.mongodb.org/mongo-driver/mongo"
-	//"go.mongodb.org/mongo-driver/mongo/options"
-	//"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
+	"gopkg.in/redis.v5"
 )
 
 // Errors defined
 var (
 	ErrSessionInfoNotFound = errors.New("session info not found in storage")
+	ErrRedisNotInited = errors.New("redis of TxnManager is not inited")
 )
+// a transaction manager
+type TxnManager struct{
+	cache *redis.Client
+}
 
-type TxnManager struct{}
+var redisCache = map[string][]string{} //{sessionID: [sessionState, txnNumber]}
+var Sep = "-_-"
+var SessPre = "sessinfo_"
 
-var redis = map[string][]string{} //{sessionID: [sessionState, txnNumber]}
+// InitTxnManager is to init txn manager, set the redis storage
+func (t *TxnManager) InitTxnManager(r *redis.Client) error {
+	t.cache = r
+	return nil
+}
 
-func (t *TxnManager) SaveSession(sess mongo.Session) error {
+// SaveSessionMock is to save session in a mock storage
+func (t *TxnManager) SaveSessionMock(sess mongo.Session) error {
 	se := mongo.SessionExposer{}
 	info, err := se.GetSessionInfo(sess)
 	if err != nil {
 		return err
 	}
-	redis[info.SessionID] = []string{info.SessionState, info.TxnNumber}
+	redisCache[info.SessionID] = []string{info.SessionState, info.TxnNumber}
 	return nil
 }
 
-func (t *TxnManager) GetSessionInfoFromStorage(sessionID string) (*mongo.SessionInfo, error) {
-	v, ok := redis[sessionID]
+// GetSessionInfoFromStorageMock is to get session info from a mock storage
+func (t *TxnManager) GetSessionInfoFromStorageMock(sessionID string) (*mongo.SessionInfo, error) {
+	v, ok := redisCache[sessionID]
 	if !ok {
 		return nil, ErrSessionInfoNotFound
 	}
 	return &mongo.SessionInfo{SessionID: sessionID, SessionState: v[0], TxnNumber: v[1]}, nil
 }
 
+// SaveSession is to save session in storage
+func (t *TxnManager) SaveSession(sess mongo.Session) error {
+	if t.cache == nil {
+		return ErrRedisNotInited
+	}
+	se := mongo.SessionExposer{}
+	info, err := se.GetSessionInfo(sess)
+	if err != nil {
+		return err
+	}
+	val := info.SessionState + Sep + info.TxnNumber
+	return t.cache.Set(SessPre+info.SessionID, val, time.Minute * 5).Err()
+}
+
+// GetSessionInfoFromStorage is to get session info from storage
+func (t *TxnManager) GetSessionInfoFromStorage(sessionID string) (*mongo.SessionInfo, error) {
+	if t.cache == nil {
+		return nil, ErrRedisNotInited
+	}
+	v, err := t.cache.Get(SessPre+sessionID).Result()
+	if err != nil {
+		return nil, err
+	}
+	if v == "" {
+		return nil, ErrSessionInfoNotFound
+	}
+	items := strings.Split(v, Sep)
+	if len(items) != 2 {
+		return nil, errors.New(fmt.Sprintf("the session info format in redis is wrong, value:%s", v))
+	}
+	return &mongo.SessionInfo{SessionID: sessionID, SessionState: items[0], TxnNumber: items[1]}, nil
+}
+
+// ConvertToSameSession is to convert a different session to a same session by setting the sessInfo
 func (t *TxnManager) ConvertToSameSession(sess mongo.Session, sessionID string) error {
 	sessInfo, err := t.GetSessionInfoFromStorage(sessionID)
 	if err != nil {

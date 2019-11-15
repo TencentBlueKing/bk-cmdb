@@ -13,24 +13,67 @@
 package local
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/types"
 	"context"
+	"flag"
 	"fmt"
-	"net/http"
 	"sync"
-
 	"testing"
 	"time"
 
+	"configcenter/src/common/util"
+	"configcenter/src/storage/dal"
+	redisdal "configcenter/src/storage/dal/redis"
+
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
+	"gopkg.in/redis.v5"
 )
 
+
+var (
+	mongoURI string
+	redisAdress string
+	redisPort string
+	redisPasswd string
+	redisDatabase string
+	redisMasterName string
+	redisClient *redis.Client
+)
+
+func init() {
+	flag.StringVar(&mongoURI, "mongo-addr", "mongodb://cc:cc@localhost:27011,localhost:27012,localhost:27013,localhost:27014/cmdb", "mongodb URI")
+	flag.StringVar(&redisAdress, "redisAdress", "127.0.0.1", "redis host address")
+	flag.StringVar(&redisPort, "redisPort", "6379", "redis host port")
+	flag.StringVar(&redisPasswd, "redisPasswd", "cc", "redis password")
+	flag.StringVar(&redisDatabase, "redisDatabase", "0", "redis database")
+	flag.StringVar(&redisMasterName, "redisMasterName", "", "redis master name")
+	flag.Parse()
+
+	redisCfg := redisdal.Config{
+		Address:    redisAdress,
+		Port:       redisPort,
+		Password:   redisPasswd,
+		Database:   redisDatabase,
+		MasterName: redisMasterName,
+	}
+
+	var err error
+	redisClient, err = redisdal.NewFromConfig(redisCfg)
+	if err != nil {
+		panic("redisdal.NewFromConfig err:%"+err.Error())
+	}
+}
+
 func GetClient() (*Mongo, error) {
-	uri := "mongodb://cc:cc@localhost:27011,localhost:27012,localhost:27013,localhost:27014/cmdb"
-	return NewMgo(uri, time.Minute)
+	m, err := NewMgo(mongoURI, time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	err = m.InitTxnManager(redisClient)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 //清空表数据
@@ -663,18 +706,6 @@ func PTestLocalServerTimeout(t *testing.T) {
 	require.Equal(t, uint64(0), cnt)
 }
 
-// 将事务信息存入context中
-func TnxIntoContext(txn *types.Transaction) context.Context {
-	header := txn.IntoHeader(http.Header{})
-	header.Set(common.BKHTTPCCRequestID, "xxxxx")
-	return context.WithValue(context.Background(), common.CCContextKeyJoinOption, dal.JoinOption{
-		RequestID:    header.Get(common.BKHTTPCCRequestID),
-		SessionID:    header.Get(common.BKHTTPCCTxnSessionID),
-		SessionState: header.Get(common.BKHTTPCCTxnSessionState),
-		TxnNumber:    header.Get(common.BKHTTPCCTransactionNumber),
-	})
-}
-
 // 测试分布式事务的重复开启
 func TestDistributedStartStart(t *testing.T) {
 	client1, err := GetClient()
@@ -686,7 +717,7 @@ func TestDistributedStartStart(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -711,7 +742,7 @@ func TestDistributedCommitAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -739,7 +770,7 @@ func TestDistributedAbortCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -767,7 +798,7 @@ func TestDistributedAbortAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -795,7 +826,7 @@ func TestDistributedCommitCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -828,7 +859,7 @@ func TestDistributedCommitOpCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -866,7 +897,7 @@ func TestDistributedInsertCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -906,7 +937,7 @@ func TestDistributedInsertAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -962,7 +993,7 @@ func TestDistributedDeleteCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1018,7 +1049,7 @@ func TestDistributedDeleteAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1074,7 +1105,7 @@ func TestDistributedUpdateCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1142,7 +1173,7 @@ func TestDistributedUpdateAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1210,7 +1241,7 @@ func TestDistributedUpsertCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1279,7 +1310,7 @@ func TestDistributedUpsertAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1372,7 +1403,7 @@ func TestDistributedUpdateMultiModelCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1445,7 +1476,7 @@ func TestDistributedUpdateMultiModelAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1486,7 +1517,7 @@ func TestDistributedAggregateCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1559,7 +1590,7 @@ func TestDistributedAggregateAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1629,7 +1660,7 @@ func TestDistributedIsolation(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1701,12 +1732,55 @@ func TestDistributedInsertEndSession(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := TnxIntoContext(tnxInfo)
+	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
 
 	sess1.EndSession(ctx)
 
 	err = sess1.StartTransaction(ctx)
 	require.NoError(t, err)
+}
+
+func BenchmarkDistributedCUD(b *testing.B) {
+	client1, err := GetClient()
+	require.NoError(b, err)
+	tablename := "cc_tranTest"
+
+	//事务操作前，清空数据
+	require.NoError(b, err)
+	err = client1.DropTable(context.Background(), tablename)
+	require.NoError(b, err)
+	err = client1.CreateTable(context.Background(), tablename)
+	require.NoError(b, err)
+
+	client2, err := GetClient()
+	require.NoError(b, err)
+
+	for i := 0; i < b.N; i++ {
+		sess1, err := client1.StartSession()
+		require.NoError(b, err)
+
+		// 获取事务信息，将其存入context中
+		tnxInfo, err := sess1.TxnInfo()
+		require.NoError(b, err)
+		ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+
+		defer sess1.EndSession(ctx)
+
+		err = sess1.StartTransaction(ctx)
+		require.NoError(b, err)
+
+		err = sess1.Table(tablename).Insert(ctx, map[string]interface{}{"name": "a"})
+		require.NoError(b, err)
+
+		err = client1.Table(tablename).Update(ctx, map[string]interface{}{"name": "a"}, map[string]interface{}{"name": "b"})
+		require.NoError(b, err)
+
+		err = client2.Table(tablename).Delete(ctx, map[string]interface{}{"name": "b"})
+		require.NoError(b, err)
+
+		err = client2.CommitTransaction(ctx)
+		require.NoError(b, err)
+	}
 }
 
 // 测试验证sessionID生成的唯一性，保证并发操作时，事务上下文信息不会相同冲突
