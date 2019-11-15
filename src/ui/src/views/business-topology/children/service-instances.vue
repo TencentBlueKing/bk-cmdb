@@ -396,7 +396,7 @@
                             service_template_id: this.withTemplate
                         }, { injectBizId: true })
                     }).then(res => {
-                        this.topoStatus = res.has_difference
+                        this.topoStatus = res[0] && res[0].has_difference
                     })
                 } catch (error) {
                     console.error(error)
