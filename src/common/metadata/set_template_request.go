@@ -122,6 +122,11 @@ func (sd *SetDiff) UpdateNeedSyncField() {
 	}
 }
 
+type SetTplDiffResult struct {
+	Difference      []SetDiff       `json:"difference"`
+	ModuleHostCount map[int64]int64 `json:"module_host_count"`
+}
+
 type SyncModuleTask struct {
 	Header      http.Header                `json:"header"`
 	Set         SetInst                    `json:"set"`
