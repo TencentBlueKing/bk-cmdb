@@ -127,7 +127,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		objID, exist := inst[common.BKObjIDField]
 		if exist == true && objID != object.ObjectID {
 			blog.Errorf("create object[%s] instance batch failed, because bk_obj_id field conflict with url field, rid: %s", object.ObjectID, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl, line)
+			return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceObjIDFieldConflictWithURL, line)
 		}
 	}
 
