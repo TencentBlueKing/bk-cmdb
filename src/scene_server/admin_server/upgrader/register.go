@@ -181,7 +181,7 @@ func RegistUpgrader(version string, handlerFunc func(context.Context, dal.RDB, *
 // Upgrade upgrade the db data to newest version
 // we use date instead of version later since 2018.09.04, because the version wasn't manage by the developer
 // ps: when use date instead of version, the date should add x prefix cause x > v
-func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (err error) {
+func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (currentVersion string, finishedMigrations []string, err error) {
 
 	sort.Slice(upgraderPool, func(i, j int) bool {
 		return VersionCmp(upgraderPool[i].version, upgraderPool[j].version) < 0
@@ -189,30 +189,33 @@ func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (err error) {
 
 	cmdbVersion, err := getVersion(ctx, db)
 	if err != nil {
-		return err
+		return "", nil, err
 	}
 	cmdbVersion.Distro = ccversion.CCDistro
 	cmdbVersion.DistroVersion = ccversion.CCDistroVersion
 
-	currentVision := remapVersion(cmdbVersion.CurrentVersion)
+	currentVersion = remapVersion(cmdbVersion.CurrentVersion)
 	lastVersion := ""
+	finishedMigrations = make([]string, 0)
 	for _, v := range upgraderPool {
 		lastVersion = remapVersion(v.version)
-		if VersionCmp(v.version, currentVision) <= 0 {
-			blog.Infof(`currentVision is "%s" skip upgrade "%s"`, currentVision, v.version)
+		if VersionCmp(v.version, currentVersion) <= 0 {
+			blog.Infof(`currentVision is "%s" skip upgrade "%s"`, currentVersion, v.version)
 			continue
 		}
+		blog.Infof(`run migration: %s`, v.version)
 		err = v.do(ctx, db, conf)
 		if err != nil {
 			blog.Errorf("upgrade version %s error: %s", v.version, err.Error())
-			return err
+			return currentVersion, finishedMigrations, err
 		}
 		cmdbVersion.CurrentVersion = v.version
 		err = saveVersion(ctx, db, cmdbVersion)
 		if err != nil {
 			blog.Errorf("save version %s error: %s", v.version, err.Error())
-			return err
+			return currentVersion, finishedMigrations, err
 		}
+		finishedMigrations = append(finishedMigrations, v.version)
 		blog.Infof("upgrade to version %s success", v.version)
 	}
 
@@ -220,10 +223,10 @@ func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (err error) {
 		cmdbVersion.InitVersion = lastVersion
 		cmdbVersion.InitDistroVersion = ccversion.CCDistroVersion
 		if err := saveVersion(ctx, db, cmdbVersion); err != nil {
-			return err
+			return currentVersion, finishedMigrations, err
 		}
 	}
-	return nil
+	return currentVersion, finishedMigrations, nil
 }
 
 func remapVersion(v string) string {

@@ -799,7 +799,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		moduleCond = append(moduleCond, meta.ConditionItem{
 			Field:    common.BKDefaultField,
 			Operator: common.BKDBEQ,
-			Value:    0,
+			Value:    common.DefaultFlagDefaultValue,
 		})
 	}
 	// srvData.lgc..NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())

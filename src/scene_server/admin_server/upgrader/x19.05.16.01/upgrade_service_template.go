@@ -143,7 +143,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 
 	allmodules := make([]metadata.ModuleInst, 0)
 	if err = db.Table(common.BKTableNameBaseModule).Find(condition.CreateCondition().
-		Field(common.BKDefaultField).NotGt(0).ToMapStr()).
+		Field(common.BKDefaultField).Eq(common.DefaultFlagDefaultValue).ToMapStr()).
 		All(ctx, &allmodules); err != nil {
 		return err
 	}

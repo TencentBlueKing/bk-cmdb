@@ -101,8 +101,9 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
 
 	api.Route(api.POST("/hosts/modules").To(s.TransferHostModule))
-	api.Route(api.POST("/hosts/modules/idle").To(s.MoveHost2EmptyModule))
+	api.Route(api.POST("/hosts/modules/idle").To(s.MoveHost2IdleModule))
 	api.Route(api.POST("/hosts/modules/fault").To(s.MoveHost2FaultModule))
+	api.Route(api.POST("/hosts/modules/recycle").To(s.MoveHost2RecycleModule))
 	api.Route(api.POST("/hosts/modules/resource").To(s.MoveHostToResourcePool))
 	api.Route(api.POST("/hosts/modules/resource/idle").To(s.AssignHostToApp))
 	api.Route(api.POST("/host/add/module").To(s.AssignHostToAppModule))

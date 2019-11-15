@@ -87,7 +87,7 @@ var _ = Describe("host test", func() {
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("search host created using api", func() {
@@ -283,7 +283,7 @@ var _ = Describe("host test", func() {
 		It("transfer resourcehost to idlemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId,
 				},
 			}
@@ -311,7 +311,7 @@ var _ = Describe("host test", func() {
 		It("transfer host to resourcemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId1,
 				},
 			}
@@ -408,7 +408,7 @@ var _ = Describe("host test", func() {
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("search cloned host", func() {
@@ -446,7 +446,7 @@ var _ = Describe("host test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.SetName).To(Equal("空闲机池"))
-			Expect(len(rsp.Data.Module)).To(Equal(2))
+			Expect(len(rsp.Data.Module)).To(Equal(3))
 			idleModuleId = rsp.Data.Module[0].ModuleID
 			faultModuleId = rsp.Data.Module[1].ModuleID
 		})
@@ -516,7 +516,7 @@ var _ = Describe("host test", func() {
 		It("transfer host to fault module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId2,
 				},
 			}
@@ -617,7 +617,7 @@ var _ = Describe("host test", func() {
 		It("transfer host to idle module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId2,
 				},
 			}
@@ -707,7 +707,7 @@ var _ = Describe("host test", func() {
 		It("transfer host to resourcemodule", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
-				HostID: []int64{
+				HostIDs: []int64{
 					hostId2,
 				},
 			}
@@ -873,7 +873,7 @@ var _ = Describe("host test", func() {
 			}
 			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("search idle host", func() {
@@ -1130,7 +1130,7 @@ var _ = Describe("list_hosts_topo test", func() {
 		}
 		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(hostRsp.Result).To(Equal(true))
+		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
 
 		By("search hosts")
 		searchInput := &params.HostCommonSearch{
@@ -1187,7 +1187,7 @@ var _ = Describe("batch_update_host test", func() {
 		}
 		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(hostRsp.Result).To(Equal(true))
+		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
 
 		By("search hosts")
 		searchInput := &params.HostCommonSearch{

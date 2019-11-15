@@ -127,7 +127,7 @@ func getTree(ctx context.Context, db dal.RDB, root *Node, pcmap map[string]*meta
 	switch asst.ObjectID {
 	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
 		childFilter[common.BKDefaultField] = map[string]interface{}{
-			common.BKDBLTE: 0,
+			common.BKDBEQ: common.DefaultFlagDefaultValue,
 		}
 	default:
 		childFilter[common.BKObjIDField] = asst.ObjectID
