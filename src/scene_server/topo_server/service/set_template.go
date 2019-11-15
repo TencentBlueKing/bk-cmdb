@@ -13,9 +13,9 @@
 package service
 
 import (
-	"configcenter/src/auth/meta"
 	"strconv"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
