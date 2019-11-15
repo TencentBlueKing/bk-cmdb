@@ -60,18 +60,19 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 
 	if data.Exists("BatchInfo") {
 		/*
-		   BatchInfo data format:
-		    {
-		      "BatchInfo": {
-		        "4": { // excel line number
-		          "bk_inst_id": 1,
-		          "bk_inst_key": "a22",
-		          "bk_inst_name": "a11",
-		          "bk_version": "121",
-		          "import_from": "1"
-		        },
-		      "input_type": "excel"
-		    }
+			   BatchInfo data format:
+			    {
+			      "BatchInfo": {
+			        "4": { // excel line number
+			          "bk_inst_id": 1,
+			          "bk_inst_key": "a22",
+			          "bk_inst_name": "a11",
+			          "bk_version": "121",
+			          "import_from": "1"
+					}
+				  },
+			      "input_type": "excel"
+			    }
 		*/
 		batchInfo := new(operation.InstBatchInfo)
 		if err := data.MarshalJSONInto(batchInfo); err != nil {
