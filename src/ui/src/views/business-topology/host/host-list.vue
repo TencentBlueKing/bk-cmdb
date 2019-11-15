@@ -21,9 +21,10 @@
                 :width="column.bk_property_id === 'bk_host_innerip' ? 130 : 'auto'"
                 :fixed="column.bk_property_id === 'bk_host_innerip'"
                 :class-name="column.bk_property_id === 'bk_host_innerip' ? 'is-highlight' : ''">
-                <template slot-scope="{ row }">
+                <div slot-scope="{ row }"
+                    :title="row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column) | unit(column.unit)">
                     {{ row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column) | unit(column.unit) }}
-                </template>
+                </div>
             </bk-table-column>
         </bk-table>
         <cmdb-dialog v-model="dialog.show" :width="dialog.width">
@@ -48,6 +49,7 @@
         MENU_BUSINESS_HOST_DETAILS,
         MENU_BUSINESS_TRANSFER_HOST
     } from '@/dictionary/menu-symbol'
+    import Bus from '@/utils/bus.js'
     export default {
         components: {
             HostListOptions,
@@ -68,7 +70,8 @@
                     header: [],
                     selection: [],
                     sort: 'bk_host_id',
-                    pagination: this.$tools.getDefaultPaginationConfig()
+                    pagination: this.$tools.getDefaultPaginationConfig(),
+                    refreshOptions: {}
                 },
                 columnsConfig: {
                     selected: [],
@@ -118,7 +121,8 @@
             }
         },
         created () {
-            this.refresh = debounce(current => {
+            this.refresh = debounce((current, options = {}) => {
+                this.table.refreshOptions = options
                 this.handlePageChange(current)
             }, 10)
         },
@@ -178,6 +182,13 @@
                     })
                     this.table.data = result.info
                     this.table.pagination.count = result.count
+                    if (this.table.refreshOptions.refresh) {
+                        Bus.$emit('refresh-count', {
+                            type: 'host_count',
+                            count: result.count,
+                            node: this.table.refreshOptions.node
+                        })
+                    }
                 } catch (e) {
                     console.error(e)
                     this.table.data = []
@@ -257,19 +268,24 @@
             async transferDirectly (modules) {
                 try {
                     const internalModule = modules[0]
+                    const selectedNode = this.selectedNode
                     await this.$http.post(
                         `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, {
                             bk_host_ids: this.table.selection.map(data => data.host.bk_host_id),
                             default_internal_module: internalModule.data.bk_inst_id,
                             remove_from_node: {
-                                bk_inst_id: this.selectedNode.data.bk_inst_id,
-                                bk_obj_id: this.selectedNode.data.bk_obj_id
+                                bk_inst_id: selectedNode.data.bk_inst_id,
+                                bk_obj_id: selectedNode.data.bk_obj_id
                             }
                         }, {
                             requestId: this.request.moveToIdleModule
                         }
                     )
-                    this.refresh(1)
+                    this.refresh(1, {
+                        refresh: true,
+                        node: selectedNode
+                    })
+                    this.table.selection = []
                     this.$success('转移成功')
                 } catch (e) {
                     console.error(e)
@@ -291,6 +307,7 @@
             },
             async moveHostToResource () {
                 try {
+                    const selectedNode = this.selectedNode
                     await this.$store.dispatch('hostRelation/transferHostToResourceModule', {
                         params: {
                             bk_biz_id: this.bizId,
@@ -300,7 +317,11 @@
                             requestId: this.request.moveToResource
                         }
                     })
-                    this.refresh(1)
+                    this.table.selection = []
+                    this.refresh(1, {
+                        refresh: true,
+                        node: selectedNode
+                    })
                     this.$success('转移成功')
                 } catch (e) {
                     console.error(e)

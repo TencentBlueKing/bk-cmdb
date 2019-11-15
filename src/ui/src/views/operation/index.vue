@@ -52,9 +52,17 @@
         <div class="main">
             <div class="operation-top">
                 <span class="operation-title">{{$t('主机统计')}}</span>
-                <i class="icon icon-cc-add-line" @click="openNew('add', 'host')">
-                    <div class="title-block">{{$t('添加主机图表')}}</div>
-                </i>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_STATISTICAL_REPORT })" @update-auth="handleReceiveAuth">
+                    <bk-button slot-scope="{ disabled }"
+                        class="icon-btn"
+                        theme="primary"
+                        text
+                        v-bk-tooltips="$t('添加主机图表')"
+                        :disabled="disabled"
+                        @click="openNew('add', 'host')">
+                        <i class="icon icon-cc-add-line"></i>
+                    </bk-button>
+                </cmdb-auth>
             </div>
             <div v-for="(item, key) in hostData.disList"
                 :key="item.report_type + item.config_id"
@@ -63,14 +71,21 @@
                 <div class="chart-child">
                     <div class="chart-title">
                         <span>{{item.name}}</span>
-                        <div class="charts-options">
-                            <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
-                                @click="moveChart('host', 'up', key, hostData.disList)">
-                                <div class="title-block">{{$t('已置顶，无法上移')}}</div>
+                        <div class="charts-options" v-if="updateAuth">
+                            <i class="bk-icon icon-arrows-up icon-weight icon-disable"
+                                v-if="key === 0"
+                                v-bk-tooltips="$t('已置顶，无法上移')">
                             </i>
-                            <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === hostData.disList.length - 1 }"
+                            <i class="bk-icon icon-arrows-up icon-weight" v-else
+                                @click="moveChart('host', 'up', key, hostData.disList)">
+                            </i>
+                            <i class="bk-icon icon-arrows-down icon-weight icon-disable"
+                                v-if="key === hostData.disList.length - 1"
+                                v-bk-tooltips="$t('已置底，无法下移')">
+                            </i>
+                            <i class="bk-icon icon-arrows-down icon-weight"
+                                v-else
                                 @click="moveChart('host', 'down', key, hostData.disList)">
-                                <div class="title-block">{{$t('已置底，无法下移')}}</div>
                             </i>
                             <i class="icon icon-cc-edit-shape"
                                 @click="openNew('edit', 'host', item, key)"></i>
@@ -98,9 +113,17 @@
             </div>
             <div class="operation-top">
                 <span class="operation-title">{{$t('实例统计')}}</span>
-                <i class="icon icon-cc-add-line" @click="openNew('add', 'inst')">
-                    <div class="title-block">{{$t('添加实例图表')}}</div>
-                </i>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_STATISTICAL_REPORT })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="icon-btn"
+                        theme="primary"
+                        text
+                        v-bk-tooltips="$t('添加实例图表')"
+                        :disabled="disabled"
+                        @click="openNew('add', 'inst')">
+                        <i class="icon icon-cc-add-line"></i>
+                    </bk-button>
+                </cmdb-auth>
             </div>
             <div v-for="(item, key) in instData.disList"
                 :key="item.report_type + item.config_id"
@@ -109,14 +132,22 @@
                 <div class="chart-child">
                     <div class="chart-title">
                         <span>{{item.name}}</span>
-                        <div class="charts-options">
-                            <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
-                                @click="moveChart('inst', 'up', key, instData.disList)">
-                                <div class="title-block">{{$t('已置顶，无法上移')}}</div>
+                        <div class="charts-options" v-if="updateAuth">
+                            <i class="bk-icon icon-arrows-up icon-weight icon-disable"
+                                v-if="key === 0"
+                                v-bk-tooltips="$t('已置顶，无法上移')">
                             </i>
-                            <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === instData.disList.length - 1 }"
+                            <i class="bk-icon icon-arrows-up icon-weight"
+                                v-else
+                                @click="moveChart('inst', 'up', key, instData.disList)">
+                            </i>
+                            <i class="bk-icon icon-arrows-down icon-weight icon-disable"
+                                v-if="key === instData.disList.length - 1"
+                                v-bk-tooltips="$t('已置底，无法下移')">
+                            </i>
+                            <i class="bk-icon icon-arrows-down icon-weight"
+                                v-else
                                 @click="moveChart('inst', 'down', key, instData.disList)">
-                                <div class="title-block">{{$t('已置底，无法下移')}}</div>
                             </i>
                             <i class="icon icon-cc-edit-shape" @click="openNew('edit', 'inst', item, key)"></i>
                             <i class="icon icon-cc-tips-close"
@@ -136,6 +167,7 @@
             :open-type="editType.openType"
             :host-type="editType.hostType"
             :chart-data="newChart"
+            :existed-charts="existedCharts"
             @transData="saveData"
             @closeChart="cancelData">
         </v-detail>
@@ -143,8 +175,6 @@
 </template>
 
 <script>
-    import Plotly from 'plotly.js'
-    import PlotlyCN from 'plotly.js/lib/locales/zh-cn.js'
     import moment from 'moment'
     import {
         MENU_RESOURCE_BUSINESS,
@@ -153,6 +183,8 @@
     } from '@/dictionary/menu-symbol'
     import { mapActions } from 'vuex'
     import vDetail from './chart-detail'
+    let Plotly
+    let PlotlyCN
     export default {
         name: 'index',
         components: {
@@ -195,10 +227,18 @@
                         const lastYears = moment().subtract(1, 'years').toDate()
                         return today < date || date < lastYears
                     }
-                }
+                },
+                existedCharts: [],
+                updateAuth: false
             }
         },
-        created () {
+        async created () {
+            const [plotly, plotlyCn] = await Promise.all([
+                import('plotly.js'),
+                import('plotly.js/lib/locales/zh-cn.js')
+            ])
+            Plotly = plotly
+            PlotlyCN = plotlyCn
             this.getChartList()
         },
         methods: {
@@ -308,7 +348,7 @@
                     const barModel = {
                         chart: {
                             delete: {
-                                name: 'delete',
+                                name: this.$t('删除'),
                                 type: 'bar',
                                 y: [],
                                 color: '#3A84FF',
@@ -317,7 +357,7 @@
                                 hoverlabel: hoverlabel
                             },
                             update: {
-                                name: 'update',
+                                name: this.$t('更新'),
                                 type: 'bar',
                                 y: [],
                                 color: '#38C1E2',
@@ -326,7 +366,7 @@
                                 hoverlabel: hoverlabel
                             },
                             create: {
-                                name: 'create',
+                                name: this.$t('新建'),
                                 type: 'bar',
                                 y: [],
                                 color: '#59D178',
@@ -457,7 +497,7 @@
                     displayModeBar: false,
                     responsive: true
                 }
-                if (this.$i18n.locale === 'zh-cn') {
+                if (this.$i18n.locale === 'zh_CN') {
                     Plotly.register(PlotlyCN)
                     options.locale = 'zh-CN'
                 }
@@ -547,6 +587,7 @@
                     this.newChart = this.$tools.clone(data)
                     this.newChart.title = data.name
                     this.newChart.bk_obj_id = data.bk_obj_id ? data.bk_obj_id : host
+                    this.existedCharts = []
                 } else {
                     this.newChart = {
                         report_type: 'custom',
@@ -558,6 +599,7 @@
                         width: '50',
                         x_axis_count: 10
                     }
+                    this.existedCharts = host === 'host' ? this.hostData.disList : this.instData.disList
                 }
                 this.isShow = true
             },
@@ -604,6 +646,9 @@
                 this.dateChart.data.minTime = date[0]
                 this.editType.openType = 'edit'
                 this.drawCharts(this.dateChart)
+            },
+            handleReceiveAuth (auth) {
+                this.updateAuth = auth
             }
         }
     }
@@ -655,18 +700,13 @@
             color: #313238;
             vertical-align: middle;
         }
-        i{
-            position: relative;
-            color: #3A84FF;
-            font-size: 22px;
-            cursor: pointer;
-            margin-left: 5px;
-            vertical-align: middle;
-        }
-        i:hover{
-            background:rgba(225,236,255,1);
-            .title-block {
-                display: block;
+        .icon-btn {
+            font-size: 0;
+            .icon {
+                font-size: 16px;
+                &:hover {
+                    background:rgba(225,236,255,1);
+                }
             }
         }
     }
