@@ -29,6 +29,8 @@
     "module_property_service_category_id": "服务分类ID",
     "module_property_service_template_id": "服务模板ID",
     "module_property_bk_bak_operator": "备份维护人",
+    "module_property_set_template_id": "集群模板ID",
+    "module_property_apply_host_property_enabled": "主机属性自动应用",
     "plat_property_bk_cloud_name": "云区域",
     "plat_property_bk_supplier_account": "供应商",
     "host_property_bk_host_id": "主机ID",
