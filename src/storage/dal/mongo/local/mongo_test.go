@@ -28,7 +28,8 @@ import (
 )
 
 func BenchmarkLocalCUD(b *testing.B) {
-	db, err := NewMgo("127.0.0.1:27010", time.Second*5)
+
+	db, err := NewMgo("mongodb://cc:cc@localhost:27011,localhost:27012,localhost:27013,localhost:27014/cmdb", time.Second*5)
 	require.NoError(b, err)
 
 	header := http.Header{}

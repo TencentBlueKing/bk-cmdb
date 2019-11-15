@@ -100,6 +100,12 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		return cacheRrr
 	}
 
+	initErr := db.InitTxnManager(cache)
+	if initErr != nil {
+		blog.Errorf("failed to init txn manager, error info is %v", initErr)
+		return initErr
+	}
+
 	s.db = db
 	s.cahce = cache
 

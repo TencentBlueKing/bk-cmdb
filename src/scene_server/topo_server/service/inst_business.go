@@ -32,6 +32,40 @@ import (
 
 // CreateBusiness create a new business
 func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	// 使用事务
+	sess, err := s.Txn.StartSession()
+	if err != nil {
+		blog.Errorf("StartSession err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
+	// 获取事务信息，将其存入context中
+	txnInfo, err := sess.TxnInfo()
+	if err != nil {
+		blog.Errorf("TxnInfo err: %+v", err)
+		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+	}
+	params.Header = txnInfo.IntoHeader(params.Header)
+	params.Context = util.TnxIntoContext(params.Context, txnInfo)
+	err = sess.StartTransaction(params.Context)
+	if err != nil {
+		blog.Errorf("StartTransaction err: %+v", err)
+		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+	}
+	defer func() {
+		if err == nil {
+			err = sess.CommitTransaction(params.Context)
+			if err != nil {
+				blog.Errorf("CommitTransaction err: %+v", err)
+			}
+		} else {
+			blog.Errorf("Occur err:%v, begin AbortTransaction", err)
+			err = sess.AbortTransaction(params.Context)
+			if err != nil {
+				blog.Errorf("AbortTransaction err: %+v", err)
+			}
+		}
+	}()
+
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
@@ -56,7 +90,6 @@ func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryPa
 		blog.Errorf("create business success, but register to iam failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
-
 	return business, nil
 }
 

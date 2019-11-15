@@ -85,7 +85,7 @@ func ClearDatabase() {
 	db, err := local.NewMgo(tConfig.MongoURI, time.Minute)
 	Expect(err).Should(BeNil())
 	for _, tableName := range common.AllTables {
-		db.DropTable(tableName)
+		db.DropTable(context.Background(), tableName)
 	}
 	db.Close()
 	clientSet.AdminServer().Migrate(context.Background(), "0", "community", header)

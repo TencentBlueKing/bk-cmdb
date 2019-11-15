@@ -43,7 +43,7 @@ import (
 
 type Service struct {
 	Engine      *backbone.Engine
-	Txn         dal.Transaction
+	Txn         dal.RDB
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager

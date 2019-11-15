@@ -63,10 +63,10 @@ appSecret = $auth_app_secret
     datacollection_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIdleConns = 1000
 mechanism = SCRAM-SHA-1
@@ -115,10 +115,10 @@ appSecret = $auth_app_secret
     eventserver_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
@@ -129,7 +129,6 @@ port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
-port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 '''
@@ -151,7 +150,6 @@ port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
-port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 [auth]
@@ -177,10 +175,10 @@ usr =
 pwd =
 [mongodb]
 host =$mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
@@ -208,10 +206,10 @@ enableSync = false
     coreservice_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
@@ -223,7 +221,6 @@ port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
-port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 '''
@@ -240,7 +237,6 @@ host = $redis_host
 port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
-port = $redis_port
 database = 0
 
 [auth]
@@ -250,10 +246,10 @@ appSecret = $auth_app_secret
 
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 enable = true
@@ -267,10 +263,10 @@ enable = true
     operation_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 enable = true
@@ -284,10 +280,10 @@ enable = true
     txcserver_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 [redis]
@@ -296,7 +292,6 @@ port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
-port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 [transaction]
@@ -313,14 +308,23 @@ transactionLifetimeSecond = 60
     topo_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
 enable = true
+
+[redis]
+host = $redis_host
+port = $redis_port
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+maxOpenConns = 3000
+maxIDleConns = 1000
 
 [level]
 businessTopoMax = 7
@@ -376,10 +380,10 @@ authscheme = $auth_scheme
     taskserver_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIdleConns = 1000
 mechanism = SCRAM-SHA-1
@@ -392,7 +396,6 @@ port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
-port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 '''

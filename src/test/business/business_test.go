@@ -17,9 +17,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
-	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/test"
 	"configcenter/src/test/run"
 
 	. "github.com/onsi/ginkgo"
@@ -35,12 +36,15 @@ func CopyHeader(h http.Header) http.Header {
 	return http.Header(hd)
 }
 
-var _ = Describe("GetBusinessList", func() {
-	// initialize http header
-	header := make(http.Header)
-	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKHTTPHeaderUser, "admin")
-	header.Add("Content-Type", "application/json")
+var _ = Describe("Business Test", func() {
+	//initialize http header
+	//header := make(http.Header)
+	//header.Add(common.BKHTTPOwnerID, "0")
+	//header.Add(common.BKHTTPHeaderUser, "admin")
+	//header.Add(common.BKSupplierIDField, "0")
+	//header.Add("Content-Type", "application/json")
+
+	header := test.GetHeader()
 
 	Describe("get business list load test", func() {
 		var cond map[string]interface{}
@@ -59,13 +63,69 @@ var _ = Describe("GetBusinessList", func() {
 				_, err := clientSet.ApiServer().GetUserPrivilegeApp(context.Background(), header, "0", "admin", cond)
 				Expect(err).Should(BeNil())
 			})
-			Expect(runtime.Seconds()).Should(BeNumerically("<", 0.05))
+			Expect(runtime.Seconds()).Should(BeNumerically("<", 0.07))
 		}, 10)
 
 		It("running load test", func() {
 			m := run.FireLoadTest(func() error {
-				h := CopyHeader(header)
-				rsp, err := clientSet.ApiServer().GetUserPrivilegeApp(context.Background(), h, "0", "admin", cond)
+				//h := CopyHeader(header)
+
+				rsp, err := clientSet.ApiServer().GetUserPrivilegeApp(context.Background(), header, "0", "admin", cond)
+				if err != nil {
+					return err
+				}
+				if !rsp.Result {
+					return errors.New("get app list failed")
+				}
+				return nil
+			})
+			fmt.Printf("get app list perform: \n" + m.Format())
+		})
+
+	})
+
+	Describe("create business load test", func() {
+		//var header = test.GetHeader()
+		Measure("emit the request", func(b Benchmarker) {
+			runtime := b.Time("runtime", func() {
+
+				ts := fmt.Sprintf("%d", time.Now().UnixNano())
+				morediff := fmt.Sprintf("%d", time.Now().UnixNano())
+				bizSuffix := ts+morediff
+				input := map[string]interface{}{
+					"life_cycle":        "2",
+					"language":          "1",
+					"bk_biz_maintainer": "admin",
+					"bk_biz_productor":  "",
+					"bk_biz_tester":     "",
+					"bk_biz_developer":  "",
+					"operator":          "",
+					"bk_biz_name":       "testBiz"+bizSuffix,
+					"time_zone":         "Africa/Accra",
+				}
+				_, err := clientSet.ApiServer().CreateBiz(context.Background(), "0", header, input)
+				Expect(err).Should(BeNil())
+			})
+			Expect(runtime.Seconds()).Should(BeNumerically("<", 0.9))
+		}, 10)
+
+		It("running load test", func() {
+			m := run.FireLoadTest(func() error {
+				ts := fmt.Sprintf("%d", time.Now().UnixNano())
+				morediff := fmt.Sprintf("%d", time.Now().UnixNano())
+				bizSuffix := ts+morediff
+				input := map[string]interface{}{
+					"life_cycle":        "2",
+					"language":          "1",
+					"bk_biz_maintainer": "admin",
+					"bk_biz_productor":  "",
+					"bk_biz_tester":     "",
+					"bk_biz_developer":  "",
+					"operator":          "",
+					"bk_biz_name":       "testBiz"+bizSuffix,
+					"time_zone":         "Africa/Accra",
+				}
+				rsp, err := clientSet.ApiServer().CreateBiz(context.Background(), "0", header, input)
 				if err != nil {
 					return err
 				}

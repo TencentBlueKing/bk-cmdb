@@ -31,6 +31,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
+	"gopkg.in/redis.v5"
 )
 
 // Mongo implement client.DALRDB interface
@@ -64,6 +65,11 @@ func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
 		dbname: connStr.Database,
 		tm:     &TxnManager{},
 	}, nil
+}
+
+// NewMgo returns new RDB
+func (c *Mongo) InitTxnManager(r *redis.Client) error {
+	return c.tm.InitTxnManager(r)
 }
 
 // Close replica client
@@ -328,9 +334,7 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 			return err
 		}
 		ctx = se.ContextWithSession(ctx, sess)
-		defer func() {
-			c.tm.SaveSession(sess)
-		}()
+		defer c.tm.SaveSession(sess)
 	} else if c.sess != nil {
 		ctx = se.ContextWithSession(ctx, c.sess)
 	}
@@ -352,9 +356,7 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 			return err
 		}
 		ctx = se.ContextWithSession(ctx, sess)
-		defer func() {
-			c.tm.SaveSession(sess)
-		}()
+		defer c.tm.SaveSession(sess)
 	} else if c.sess != nil {
 		ctx = se.ContextWithSession(ctx, c.sess)
 	}
@@ -377,9 +379,7 @@ func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interfac
 			return err
 		}
 		ctx = se.ContextWithSession(ctx, sess)
-		defer func() {
-			c.tm.SaveSession(sess)
-		}()
+		defer c.tm.SaveSession(sess)
 	} else if c.sess != nil {
 		ctx = se.ContextWithSession(ctx, c.sess)
 	}
@@ -405,9 +405,7 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, up
 			return err
 		}
 		ctx = se.ContextWithSession(ctx, sess)
-		defer func() {
-			c.tm.SaveSession(sess)
-		}()
+		defer c.tm.SaveSession(sess)
 	} else if c.sess != nil {
 		ctx = se.ContextWithSession(ctx, c.sess)
 	}
@@ -434,9 +432,7 @@ func (c *Collection) UpdateModifyCount(ctx context.Context, filter dal.Filter, d
 			return 0, err
 		}
 		ctx = se.ContextWithSession(ctx, sess)
-		defer func() {
-			c.tm.SaveSession(sess)
-		}()
+		defer c.tm.SaveSession(sess)
 	} else if c.sess != nil {
 		ctx = se.ContextWithSession(ctx, c.sess)
 	}
@@ -459,9 +455,7 @@ func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 			return err
 		}
 		ctx = se.ContextWithSession(ctx, sess)
-		defer func() {
-			c.tm.SaveSession(sess)
-		}()
+		defer c.tm.SaveSession(sess)
 	} else if c.sess != nil {
 		ctx = se.ContextWithSession(ctx, c.sess)
 	}
@@ -472,6 +466,9 @@ func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 
 // NextSequence 获取新序列号(非事务), TODO test
 func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
+	// 直接使用新的context，确保不会用到事务,不会因为context含有session而使用分布式事务，防止产生相同的序列号
+	ctx = context.Background()
+
 	coll := c.dbc.Database(c.dbname).Collection("cc_idgenerator")
 
 	Update := bson.M{
@@ -500,54 +497,18 @@ type Idgen struct {
 	SequenceID uint64 `bson:"SequenceID"`
 }
 
-// SetContextSession 设置context里的Session对象,事务的操作是在该Session上下文中进行的
-func (c *Mongo) ContextWithSession(ctx context.Context) (context.Context, error) {
-	se := &mongo.SessionExposer{}
-	// 如果当前Mongo对象自身开启了事务会话,则用自身会话
-	if c.sess != nil {
-		return se.ContextWithSession(ctx, c.sess), nil
-	}
-	// 如果context中有传递的事务信息，则用传递的会话
-	if opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption); ok {
-		info := &mongo.SessionInfo{SessionID: opt.SessionID, SessionState: opt.SessionState, TxnNumber: opt.TxnNumber}
-		return c.GetSameSessionContext(ctx, info)
-	}
-	return ctx, nil
-}
-
-// GetSameSessionContext 根据info获取具有一样session上下文的context
-func (c *Mongo) GetSameSessionContext(ctx context.Context, info *mongo.SessionInfo) (context.Context, error) {
-	sess, err := c.dbc.StartSession()
-	if err != nil {
-		return nil, err
-	}
-	err = sess.StartTransaction()
-	if err != nil {
-		return nil, err
-	}
-
-	// update session according info
-	se := &mongo.SessionExposer{}
-	err = se.SetSessionInfo(sess, info)
-	if err != nil {
-		return nil, err
-	}
-
-	ctx = se.ContextWithSession(ctx, sess)
-	return ctx, nil
-}
-
 // HasSession 判断context里是否有session信息
 func (c *Mongo) HasSession(ctx context.Context) bool {
-	_, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
-	return ok == true
+	v, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	//blog.Infof("Has session, joinoption:%#v", v)
+	return ok == true && v.SessionID != ""
 }
 
 // GetDistributedSession 获取context里用来做分布式事务的session
 func (c *Mongo) GetDistributedSession(ctx context.Context) (mongo.Session, error) {
 	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if !ok {
-		return nil, errors.New("context has no CCContextKeyJoinOption")
+		return nil, errors.New("Can't get distributed session, context has no CCContextKeyJoinOption")
 	}
 
 	sess, err := c.dbc.StartSession()
@@ -611,9 +572,7 @@ func (c *Mongo) StartTransaction(ctx context.Context) error {
 		return err
 	}
 	if c.HasSession(ctx) {
-		defer func() {
-			c.tm.SaveSession(sess)
-		}()
+		defer c.tm.SaveSession(sess)
 	}
 	return sess.StartTransaction()
 }
@@ -625,9 +584,7 @@ func (c *Mongo) CommitTransaction(ctx context.Context) error {
 		return err
 	}
 	if c.HasSession(ctx) {
-		defer func() {
-			c.tm.SaveSession(sess)
-		}()
+		defer c.tm.SaveSession(sess)
 	}
 	return sess.CommitTransaction(ctx)
 }
@@ -639,9 +596,7 @@ func (c *Mongo) AbortTransaction(ctx context.Context) error {
 		return err
 	}
 	if c.HasSession(ctx) {
-		defer func() {
-			c.tm.SaveSession(sess)
-		}()
+		defer c.tm.SaveSession(sess)
 	}
 	return sess.AbortTransaction(ctx)
 }
@@ -783,9 +738,7 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 			return err
 		}
 		ctx = se.ContextWithSession(ctx, sess)
-		defer func() {
-			c.tm.SaveSession(sess)
-		}()
+		defer c.tm.SaveSession(sess)
 	} else if c.sess != nil {
 		ctx = se.ContextWithSession(ctx, c.sess)
 	}
@@ -808,9 +761,7 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 			return err
 		}
 		ctx = se.ContextWithSession(ctx, sess)
-		defer func() {
-			c.tm.SaveSession(sess)
-		}()
+		defer c.tm.SaveSession(sess)
 	} else if c.sess != nil {
 		ctx = se.ContextWithSession(ctx, c.sess)
 	}
