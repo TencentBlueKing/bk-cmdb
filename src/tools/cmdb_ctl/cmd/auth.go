@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -38,7 +39,7 @@ type authConf struct {
 	appSecret    string
 	resource     string
 	resourceFile string
-	logv         int
+	logv         int32
 }
 
 func NewAuthCommand() *cobra.Command {
@@ -105,7 +106,7 @@ func (c *authConf) addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&c.appSecret, "app-secret", "s", "", "the app secret used for authorize")
 	cmd.PersistentFlags().StringVarP(&c.resource, "resource", "r", "", "the resource for authorize")
 	cmd.PersistentFlags().StringVarP(&c.resourceFile, "rsc-file", "f", "", "the resource file path for authorize")
-	cmd.PersistentFlags().IntVarP(&c.logv, "logV", "v", 0, "the log level of request, default, request body log level is 4.")
+	cmd.PersistentFlags().Int32VarP(&c.logv, "logV", "v", 0, "the log level of request, default request body log level is 4")
 }
 
 type authService struct {
@@ -114,7 +115,7 @@ type authService struct {
 }
 
 func newAuthService(c *authConf) (*authService, error) {
-	blog.SetV(int32(c.logv))
+	blog.SetV(c.logv)
 	if c.address == "" {
 		return nil, errors.New("auth address must be set")
 	}
@@ -124,8 +125,8 @@ func newAuthService(c *authConf) (*authService, error) {
 	if c.appSecret == "" {
 		return nil, errors.New("app-secret must be set")
 	}
-	if c.resource == "" {
-		return nil, errors.New("resource must be set")
+	if c.resource == "" && c.resourceFile == "" {
+		return nil, errors.New("resource must be set via resource flag or resource file specified by rsc-file flag")
 	}
 	addr := strings.Split(c.address, ",")
 	for i := range addr {
@@ -146,9 +147,26 @@ func newAuthService(c *authConf) (*authService, error) {
 	service := &authService{
 		authorize: authorize,
 	}
-	err = json.Unmarshal([]byte(c.resource), &service.resource)
-	if err != nil {
-		return nil, err
+	if c.resource != "" {
+		err = json.Unmarshal([]byte(c.resource), &service.resource)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		resourceFile, err := os.Open(c.resourceFile)
+		if err != nil {
+			return nil, fmt.Errorf("fail to open file(%s), err(%s)", c.resourceFile, err.Error())
+		}
+		defer resourceFile.Close()
+		resource, err := ioutil.ReadAll(resourceFile)
+		if err != nil {
+			blog.Errorf("fail to read ata from resource file(%s), err:%s", resourceFile, err.Error())
+			return nil, err
+		}
+		err = json.Unmarshal(resource, &service.resource)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return service, nil
 }
