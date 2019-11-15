@@ -103,6 +103,9 @@ const (
 	BKTableNameAPITask                    = "cc_APITask"
 	BKTableNameSetTemplateSyncStatus      = "cc_SetTemplateSyncStatus"
 	BKTableNameSetTemplateSyncHistory     = "cc_SetTemplateSyncHistory"
+
+	// host property auto apply
+	BKTableNameHostPropertyApplyRule = "cc_HostPropertyApplyRule"
 )
 
 // AllTables alltables
