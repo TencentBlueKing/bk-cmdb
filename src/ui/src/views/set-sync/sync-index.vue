@@ -1,5 +1,5 @@
 <template>
-    <div class="sync-set-layout" v-bkloading="{ isLoading: $loading('diffTemplateAndInstances') }">
+    <div class="sync-set-layout" ref="instancesInfo" v-bkloading="{ isLoading: $loading('diffTemplateAndInstances') }">
         <template v-if="noInfo">
             <div class="no-content">
                 <img src="../../assets/images/no-content.png" alt="no-content">
@@ -15,43 +15,45 @@
             </div>
         </template>
         <template v-else-if="diffList.length">
-            <i18n path="已选集群实例"
-                tag="div"
-                class="count"
-                v-if="!isSingleSync">
-                <span place="count">{{setInstancesId.length}}</span>
-            </i18n>
-            <div class="title clearfix">
-                <p class="fl">{{$t('请确认以下模板修改信息')}}：</p>
-                <div class="tips fr">
-                    <span class="mr30">
-                        <i class="dot"></i>
-                        {{$t('新增模块')}}
-                    </span>
-                    <span class="mr30">
-                        <i class="dot red"></i>
-                        {{$t('删除模块')}}
-                    </span>
-                    <bk-checkbox class="expand-all"
-                        v-if="!isSingleSync"
-                        v-model="expandAll"
-                        @change="handleExpandAll">
-                        {{$t('全部展开')}}
-                    </bk-checkbox>
+            <div class="main">
+                <i18n path="已选集群实例"
+                    tag="div"
+                    class="count"
+                    v-if="!isSingleSync">
+                    <span place="count">{{setInstancesId.length}}</span>
+                </i18n>
+                <div class="title clearfix">
+                    <p class="fl">{{$t('请确认以下模板修改信息')}}：</p>
+                    <div class="tips fr">
+                        <span class="mr30">
+                            <i class="dot"></i>
+                            {{$t('新增模块')}}
+                        </span>
+                        <span class="mr30">
+                            <i class="dot red"></i>
+                            {{$t('删除模块')}}
+                        </span>
+                        <bk-checkbox class="expand-all"
+                            v-if="!isSingleSync"
+                            v-model="expandAll"
+                            @change="handleExpandAll">
+                            {{$t('全部展开')}}
+                        </bk-checkbox>
+                    </div>
+                </div>
+                <div class="instance-list">
+                    <set-instance class="instance-item"
+                        ref="setInstance"
+                        v-for="(instance, index) in diffList"
+                        :key="instance.bk_set_id"
+                        :instance="instance"
+                        :icon-close="diffList.length > 1"
+                        :expand="index === 0"
+                        @close="handleCloseInstance">
+                    </set-instance>
                 </div>
             </div>
-            <div class="instance-list">
-                <set-instance class="instance-item"
-                    ref="setInstance"
-                    v-for="(instance, index) in diffList"
-                    :key="instance.bk_set_id"
-                    :instance="instance"
-                    :icon-close="diffList.length > 1"
-                    :expand="index === 0"
-                    @close="handleCloseInstance">
-                </set-instance>
-            </div>
-            <div class="footer">
+            <div class="options" :class="{ 'is-sticky': hasScrollbar }">
                 <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
                     <bk-button slot-scope="{ disabled }"
                         class="mr10"
@@ -68,6 +70,7 @@
 </template>
 
 <script>
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { MENU_BUSINESS_SET_TEMPLATE, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import setInstance from './set-instance'
     export default {
@@ -76,6 +79,7 @@
         },
         data () {
             return {
+                hasScrollbar: false,
                 expandAll: false,
                 diffList: [],
                 noInfo: false,
@@ -108,7 +112,19 @@
             this.getSetTemplateInfo()
             this.getDiffData()
         },
+        mounted () {
+            addResizeListener(this.$refs.instancesInfo, this.resizeHandler)
+        },
+        beforeDestroy () {
+            removeResizeListener(this.$refs.instancesInfo, this.resizeHandler)
+        },
         methods: {
+            resizeHandler () {
+                this.$nextTick(() => {
+                    const scroller = this.$el.parentElement
+                    this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
+                })
+            },
             setBreadcrumbs () {
                 this.$store.commit('setBreadcrumbs', [{
                     label: this.$t('集群模板'),
@@ -235,9 +251,6 @@
 </script>
 
 <style lang="scss" scoped>
-    .sync-set-layout {
-        padding: 0 20px;
-    }
     .no-content {
         position: absolute;
         top: 50%;
@@ -252,6 +265,9 @@
         p {
             padding: 20px 0 30px;
         }
+    }
+    .main {
+        padding: 0 20px;
     }
     .count {
         font-weight: bold;
@@ -287,13 +303,20 @@
             margin-bottom: 10px;
         }
     }
-    .footer {
+    .options {
         position: sticky;
+        left: 0;
         bottom: 0;
         display: flex;
         align-items: center;
-        padding: 10px 0 20px;
+        padding: 10px 20px;
+        border-top: 1px solid transparent;
         background-color: #fafbfd;
+        &.is-sticky {
+            background-color: #ffffff;
+            border-top-color: #dcdee5;
+            z-index: 100;
+        }
         > span {
             color: #979BA5;
             font-size: 14px;
