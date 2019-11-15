@@ -1,5 +1,5 @@
 <template>
-    <div class="host-apply-wrapper">
+    <div class="host-apply">
         <feature-tips
             :feature-name="'hostApply'"
             :show-tips="showFeatureTips"
@@ -18,88 +18,55 @@
             ></sidebar>
         </cmdb-resize-layout>
         <div class="main-layout">
-            <template>
-                <!-- <single-module></single-module> -->
-                <component :is="currentModeComponent" :data="selectedModule"></component>
+            <template v-if="selectedModule.bk_inst_id">
+                <single-module-config :data="selectedModule"></single-module-config>
             </template>
+            <div v-else>
+                {{$t('请先选择模块')}}
+            </div>
         </div>
     </div>
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapGetters } from 'vuex'
     import featureTips from '@/components/feature-tips/index'
     import sidebar from './children/sidebar.vue'
-    import singleModule from './children/single-module'
-    import multiModule from './children/multi-module'
+    import singleModuleConfig from './children/single-module-config'
     export default {
         components: {
             sidebar,
             featureTips,
-            singleModule,
-            multiModule
+            singleModuleConfig
         },
         data () {
             return {
                 actionMode: '',
                 selectedModule: {},
-                showFeatureTips: false,
-                currentModeComponent: singleModule
+                showFeatureTips: false
             }
         },
         computed: {
-            ...mapGetters(['featureTipsParams', 'supplierAccount'])
-        },
-        watch: {
+            ...mapGetters(['featureTipsParams'])
         },
         created () {
             this.showFeatureTips = this.featureTipsParams['hostApply']
-            this.getHostPropertyList()
-        },
-        beforeDestroy () {
-            this.$store.commit('businessTopology/resetState')
         },
         methods: {
-            ...mapActions('objectModelProperty', [
-                'searchObjectAttribute'
-            ]),
-            async getHostPropertyList () {
-                try {
-                    const data = await this.searchObjectAttribute({
-                        params: this.$injectMetadata({
-                            bk_obj_id: 'host',
-                            bk_supplier_account: this.supplierAccount
-                        }),
-                        config: {
-                            requestId: 'getHostPropertyList',
-                            fromCache: true
-                        }
-                    })
-
-                    this.$store.commit('hosts/setPropertyList', data)
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            handleAddNode () {
-                this.$refs.topologyTree.showCreateDialog(this.selectedNode)
-            },
             handleSelectModule (data) {
                 this.selectedModule = data
-                console.dir(data)
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .host-apply-wrapper {
+    .host-apply {
         padding: 0 20px;
     }
     .tree-layout {
         width: 280px;
         height: 100%;
-        padding: 10px 0;
         border: 1px solid #dcdee5;
     }
     .main-layout {

@@ -37,7 +37,8 @@ const state = {
         hostServiceInstanceCheckView: true,
         customFields: true,
         hostApply: true,
-        hostApplyConfirm: true
+        hostApplyConfirm: true,
+        hostApplyConflict: true
     },
     permission: [],
     appHeight: window.innerHeight,

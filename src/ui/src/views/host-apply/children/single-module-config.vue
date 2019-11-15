@@ -1,29 +1,25 @@
 <template>
-    <div class="single-module-panel">
-        <div class="panel-head">
-            <h2 class="panel-title">
+    <div class="single-module-config">
+        <div class="config-head">
+            <h2 class="config-title">
                 <i18n path="配置XXX模块主机属性">
                     <span class="module-name" place="module">{{data.bk_inst_name}}</span>
                 </i18n>
-                <small class="last-edit-time">( {{$t('上次编辑时间')}}：2017.09.13 )</small>
+                <small class="last-edit-time" v-if="hasConfig">( {{$t('上次编辑时间')}}：2017.09.13 )</small>
             </h2>
         </div>
-        <div class="panel-body">
+        <div class="config-body">
             <template v-if="hasConfig && !isEdit">
                 <div class="view-field">
                     <div class="view-bd">
                         <div class="field-list">
-                            <div class="field-list-table">
-                                <bk-table
-                                    :data="modulePropertyList"
+                            <div :class="['field-list-table', { disabled: !isConfigEnabled }]">
+                                <property-config-table
+                                    :readonly="true"
+                                    :checked-property-id-list="checkedPropertyIdList"
+                                    :init-data="initConfigData.config_list"
                                 >
-                                    <bk-table-column width="200" :label="$t('字段名称')" prop="bk_property_name"></bk-table-column>
-                                    <bk-table-column :label="$t('值')" class-name="table-cell-form-element">
-                                        <template slot-scope="{ row }">
-                                            <span>{{getDisplayValue(row)}}</span>
-                                        </template>
-                                    </bk-table-column>
-                                </bk-table>
+                                </property-config-table>
                             </div>
                             <div class="closed-mask" v-if="!isConfigEnabled">
                                 <div class="empty">
@@ -32,16 +28,23 @@
                                         <span>{{$t('该模块已关闭属性自动应用')}}</span>
                                     </div>
                                     <div class="action">
-                                        <bk-button theme="primary" :outline="true" @click="handleEdit">重新启用</bk-button>
+                                        <bk-button theme="primary" :outline="true" @click="handleEdit">{{$t('重新启用')}}</bk-button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="view-ft" v-if="isConfigEnabled">
-                        <bk-button theme="primary" @click="handleEdit">编辑</bk-button>
-                        <bk-button theme="default">查看冲突</bk-button>
-                        <bk-button theme="default">关闭自动应用</bk-button>
+                        <bk-button theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
+                        <bk-button theme="default" :disabled="!hasConflict" @click="handleViewConflict">
+                            <span v-bk-tooltips="{ content: $t('无冲突需处理') }" v-if="!hasConflict">
+                                {{$t('查看冲突')}}<em class="conflict-num">{{initConfigData.conflict_num}}</em>
+                            </span>
+                            <span v-else>
+                                {{$t('查看冲突')}}<em class="conflict-num">{{initConfigData.conflict_num}}</em>
+                            </span>
+                        </bk-button>
+                        <bk-button theme="default" @click="handleCloseApply">{{$t('关闭自动应用')}}</bk-button>
                     </div>
                 </div>
             </template>
@@ -55,42 +58,28 @@
                         <bk-button theme="primary" :outline="true" @click="handleEdit">立即启用</bk-button>
                     </div>
                 </div>
-                <div :class="['choose-field', { 'not-choose': !modulePropertyList.length }]" v-else>
+                <div :class="['choose-field', { 'not-choose': !checkedPropertyIdList.length }]" v-else>
                     <div class="choose-hd">
                         <span class="label">{{$t('请添加自动应用的字段')}}</span>
                         <bk-button theme="default" icon="plus" @click="handleChooseField">添加字段</bk-button>
                     </div>
-                    <div class="choose-bd" v-if="modulePropertyList.length">
-                        <bk-table
-                            :data="modulePropertyList"
+                    <div class="choose-bd" v-if="checkedPropertyIdList.length">
+                        <property-config-table
+                            ref="configEditTable"
+                            :checked-property-id-list="checkedPropertyIdList"
+                            :init-data="initConfigData.config_list"
+                            @property-value-change="handlePropertyValueChange"
                         >
-                            <bk-table-column width="200" :label="$t('字段名称')" prop="bk_property_name"></bk-table-column>
-                            <bk-table-column :label="$t('值')" class-name="table-cell-form-element">
-                                <template slot-scope="{ row }">
-                                    <div class="form-element-content">
-                                        <property-form-element :property="row" @value-change="handlePropertyValueChange"></property-form-element>
-                                    </div>
-                                </template>
-                            </bk-table-column>
-                            <bk-table-column width="200" :label="$t('操作')">
-                                <template slot-scope="{ row }">
-                                    <bk-button theme="primary" text @click="handlePropertyRowDel(row.bk_property_id)">删除</bk-button>
-                                </template>
-                            </bk-table-column>
-                        </bk-table>
+                        </property-config-table>
                     </div>
                     <div class="choose-ft">
                         <bk-button theme="primary" :disabled="nextDisabled" @click="handleNextStep">下一步</bk-button>
-                        <bk-button theme="default">取消</bk-button>
+                        <bk-button theme="default" @click="handleCancel">取消</bk-button>
                     </div>
                 </div>
             </template>
         </div>
-        <div class="panel-foot">
-
-        </div>
         <host-property-modal
-            :property-list="configPropertyList"
             :visiable.sync="propertyModalVisiable"
             :checked-list.sync="checkedPropertyIdList"
         >
@@ -101,11 +90,11 @@
 <script>
     import { mapGetters } from 'vuex'
     import hostPropertyModal from './host-property-modal'
-    import propertyFormElement from './property-form-element'
+    import propertyConfigTable from './property-config-table'
     export default {
         components: {
             hostPropertyModal,
-            propertyFormElement
+            propertyConfigTable
         },
         props: {
             data: {
@@ -116,10 +105,9 @@
         data () {
             return {
                 isEdit: false,
-                nextDisabled: true,
+                nextDisabled: false,
                 propertyModalVisiable: false,
-                initConfigData: [],
-                modulePropertyList: [],
+                initConfigData: {},
                 checkedPropertyIdList: []
             }
         },
@@ -130,6 +118,9 @@
             },
             isConfigEnabled () {
                 return false || this.data.enabled
+            },
+            hasConflict () {
+                return this.initConfigData.conflict_num > 0
             }
         },
         watch: {
@@ -140,10 +131,9 @@
                 immediate: true
             },
             checkedPropertyIdList () {
-                this.setModulePropertyList()
-            },
-            modulePropertyList () {
-                this.toggleNexButtonDisabled()
+                if (this.isEdit) {
+                    this.toggleNexButtonDisabled()
+                }
             }
         },
         created () {
@@ -151,35 +141,23 @@
         methods: {
             async initData () {
                 // 请求接口获取配置数据
-                this.initConfigData = await Promise.resolve([
-                    {
-                        bk_property_id: 'bk_asset_id',
-                        value: 'a123'
-                    },
-                    {
-                        bk_property_id: 'bk_state_name',
-                        value: 'BR'
-                    }
-                ])
+                if (this.hasConfig) {
+                    this.initConfigData = await Promise.resolve({
+                        config_list: [
+                            {
+                                bk_property_id: 'bk_asset_id',
+                                value: 'a12356'
+                            },
+                            {
+                                bk_property_id: 'bk_state_name',
+                                value: 'BR'
+                            }
+                        ],
+                        conflict_num: 12
+                    })
 
-                this.checkedPropertyIdList = this.initConfigData.map(item => item.bk_property_id)
-            },
-            setModulePropertyList () {
-                // 当前模块属性列表中不存在，则添加
-                this.checkedPropertyIdList.forEach(propertyId => {
-                    if (this.modulePropertyList.findIndex(property => propertyId === property.bk_property_id) === -1) {
-                        // 使用原始主机属性对象
-                        const findProperty = this.configPropertyList.find(item => propertyId === item.bk_property_id)
-                        if (findProperty) {
-                            // 初始化值
-                            findProperty.__extra__.value = (this.initConfigData.find(item => item.bk_property_id === findProperty.bk_property_id) || {}).value
-                            this.modulePropertyList.push(this.$tools.clone(findProperty))
-                        }
-                    }
-                })
-
-                // 删除或取消选择的，则去除
-                this.modulePropertyList = this.modulePropertyList.filter(property => this.checkedPropertyIdList.includes(property.bk_property_id))
+                    this.checkedPropertyIdList = this.initConfigData.config_list.map(item => item.bk_property_id)
+                }
             },
             getDisplayValue (property) {
                 const value = property.__extra__.value
@@ -196,18 +174,31 @@
                 return displayValue
             },
             toggleNexButtonDisabled () {
-                this.nextDisabled = !this.modulePropertyList.length || !this.modulePropertyList.every(property => property.__extra__.value)
+                const modulePropertyList = this.$refs.configEditTable.modulePropertyList
+                this.nextDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
             },
             handleNextStep () {
-                const configData = this.modulePropertyList.map(property => ({
+                const modulePropertyList = this.$refs.configEditTable.modulePropertyList
+                const configData = modulePropertyList.map(property => ({
                     key: property.bk_property_id,
                     value: property.__extra__.value
                 }))
 
                 this.$router.push({
-                    name: 'hostApplyConfirm'
+                    name: 'hostApplyConfirm',
+                    query: {
+                        batch: 0
+                    }
                 })
                 console.log(configData)
+            },
+            handleViewConflict () {
+                this.$router.push({
+                    name: 'hostApplyConflict'
+                })
+            },
+            handleCloseApply () {
+
             },
             handlePropertyValueChange () {
                 this.toggleNexButtonDisabled()
@@ -218,29 +209,28 @@
             handleChooseField () {
                 this.propertyModalVisiable = true
             },
-            handlePropertyRowDel (id) {
-                const checkedIndex = this.checkedPropertyIdList.findIndex(propertyId => propertyId === id)
-                this.checkedPropertyIdList.splice(checkedIndex, 1)
+            handleCancel (id) {
+                this.isEdit = false
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .single-module-panel {
+    .single-module-config {
         display: flex;
         flex-direction: column;
         height: 100%;
 
-        .panel-head,
-        .panel-foot {
+        .config-head,
+        .config-foot {
             flex: none;
         }
-        .panel-body {
+        .config-body {
             flex: auto;
         }
     }
-    .panel-title {
+    .config-title {
         height: 32px;
         line-height: 32px;
         font-size: 14px;
@@ -312,7 +302,9 @@
             }
 
             .field-list-table {
-                opacity: 0.2;
+                &.disabled {
+                    opacity: 0.2;
+                }
             }
             .closed-mask {
                 position: absolute;
@@ -327,21 +319,20 @@
         .view-bd,
         .view-ft {
             margin-top: 20px;
+            .bk-button {
+                min-width: 86px;
+            }
         }
     }
-</style>
 
-<style lang="scss">
-    .table-cell-form-element {
-        .cell {
-            overflow: unset;
-            display: block;
-        }
-        .search-input-wrapper {
-            position: relative;
-        }
-        .form-objuser .suggestion-list {
-            z-index: 1000;
-        }
+    .conflict-num {
+        font-size: 12px;
+        color: #fff;
+        background: #c4c6cc;
+        border-radius: 8px;
+        font-style: normal;
+        padding: 0px 4px;
+        font-family: arial;
+        margin-left: 4px;
     }
 </style>

@@ -12,7 +12,7 @@
     >
         <bk-checkbox-group v-model="localChecked">
             <ul class="property-list">
-                <li class="property-item" v-for="property in propertyList" :key="property.bk_property_id">
+                <li class="property-item" v-for="property in configPropertyList" :key="property.bk_property_id">
                     <bk-checkbox
                         :disabled="property.__extra__.disabled"
                         :value="property.bk_property_id"
@@ -35,15 +35,12 @@
 </template>
 
 <script>
+    import { mapGetters, mapActions } from 'vuex'
     export default {
         props: {
             visiable: {
                 type: Boolean,
                 default: false
-            },
-            propertyList: {
-                type: Array,
-                default: () => ([])
             },
             checkedList: {
                 type: Array,
@@ -53,9 +50,12 @@
         data () {
             return {
                 show: this.visiable,
-                properties: {},
+                propertyList: [],
                 localChecked: []
             }
+        },
+        computed: {
+            ...mapGetters('hosts', ['configPropertyList'])
         },
         watch: {
             visiable (val) {
@@ -69,8 +69,31 @@
             }
         },
         created () {
+            this.getHostPropertyList()
         },
         methods: {
+            ...mapActions('objectModelProperty', [
+                'searchObjectAttribute'
+            ]),
+            async getHostPropertyList () {
+                try {
+                    const data = await this.searchObjectAttribute({
+                        params: this.$injectMetadata({
+                            bk_obj_id: 'host',
+                            bk_supplier_account: this.supplierAccount
+                        }),
+                        config: {
+                            requestId: 'getHostPropertyList',
+                            fromCache: true
+                        }
+                    })
+
+                    // this.propertyList = data
+                    this.$store.commit('hosts/setPropertyList', data)
+                } catch (e) {
+                    console.error(e)
+                }
+            },
             handleVisiableChange (val) {
                 this.$emit('update:visiable', val)
             },

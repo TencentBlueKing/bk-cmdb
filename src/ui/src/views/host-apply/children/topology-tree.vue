@@ -12,7 +12,7 @@
                 childrenKey: 'child'
             }"
             selectable
-            :before-select="beforeSelect"
+            :before-select="isModule"
             @select-change="handleSelectChange"
             @check-change="handleCheckChange"
         >
@@ -25,7 +25,7 @@
                     }">
                     {{modelIconMap[data.bk_obj_id]}}
                 </i>
-                <span class="instance-num fr">√</span>
+                <span v-show="hasConfiged(node)" class="config-icon fr"><i class="bk-cc-icon icon-cc-selected"></i></span>
                 <div class="info-content">
                     <span class="node-name">{{data.bk_inst_name}}</span>
                 </div>
@@ -77,8 +77,17 @@
                 })
                 return map
             },
-            isBlueKing () {
-                return (this.treeData[0] || {}).bk_inst_name === '蓝鲸'
+            firstModule () {
+                const findModule = function (data) {
+                    for (const item of data) {
+                        if (item.bk_obj_id === 'module') {
+                            return item
+                        } else if (item.child) {
+                            return findModule(item.child)
+                        }
+                    }
+                }
+                return findModule(this.treeData)
             }
         },
         async created () {
@@ -86,7 +95,6 @@
                 this.getTopologyData(),
                 this.getMainLine()
             ])
-            this.getTopologyInstanceNum()
             this.treeData = data
             this.mainLine = mainLine
             this.$nextTick(() => {
@@ -96,21 +104,11 @@
         methods: {
             setDefaultState (data) {
                 this.$refs.tree.setData(data)
-                const businessData = data[0]
-                const businessNodeId = this.idGenerator(businessData)
-                const queryModule = parseInt(this.$route.query.module)
-                let defaultNodeId = businessNodeId
-                if (!isNaN(queryModule)) {
-                    const nodeId = `module_${queryModule}`
-                    const node = this.$refs.tree.getNodeById(nodeId)
-                    if (node) {
-                        defaultNodeId = nodeId
-                    }
-                } else if (Array.isArray(businessData.child) && businessData.child.length) {
-                    defaultNodeId = this.idGenerator(businessData.child[0])
+                if (this.firstModule) {
+                    const defaultNodeId = this.idGenerator(this.firstModule)
+                    this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
+                    this.$refs.tree.setExpanded(defaultNodeId)
                 }
-                this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
-                this.$refs.tree.setExpanded(defaultNodeId)
             },
             getTopologyData () {
                 return this.$store.dispatch('objectMainLineModule/getInstTopo', {
@@ -127,50 +125,22 @@
                     }
                 })
             },
-            getTopologyInstanceNum () {
-                this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
-                    bizId: this.business,
-                    config: {
-                        requestId: 'getTopologyInstanceNum'
-                    }
-                }).then(data => {
-                    this.setNodeNum(data)
-                })
-            },
-            setNodeNum (data) {
-                data.forEach((datum, index) => {
-                    const id = this.idGenerator(datum)
-                    const node = this.$refs.tree.getNodeById(id)
-                    if (node) {
-                        const num = datum.service_instance_count
-                        datum.service_instance_count = num > 999 ? '999+' : num || 0
-                        node.data = datum
-                    }
-                    const child = datum.child
-                    if (Array.isArray(child) && child.length) {
-                        this.setNodeNum(child)
-                    }
-                })
-            },
             idGenerator (data) {
                 return `${data.bk_obj_id}_${data.bk_inst_id}`
             },
-            showCreate (node, data) {
-                const isModule = data.bk_obj_id === 'module'
-                return !isModule && !this.isBlueKing
+            hasConfiged (node) {
+                return this.isModule(node) && !node.data.config_id
             },
             isTemplate (node) {
                 return node.data.service_template_id || node.data.set_template_id
             },
-            beforeSelect (node) {
+            isModule (node) {
                 return node.data.bk_obj_id === 'module'
             },
             handleSelectChange (node) {
                 this.$emit('selected', node)
-                this.$store.commit('businessTopology/setSelectedNode', node)
             },
             handleCheckChange (id, checked) {
-                console.log('handleCheckChange', id, checked)
                 this.$emit('checked', id, checked)
             }
         }
@@ -179,18 +149,10 @@
 
 <style lang="scss" scoped>
     .topology-tree-wrapper {
-        height: 100%;
+        height: calc(100% - 32px);
+        @include scrollbar-y;
     }
     .node-info {
-        &:hover,
-        &.is-selected {
-            .info-create-trigger {
-                display: inline-block;
-                & ~ .instance-num {
-                    display: none;
-                }
-            }
-        }
         .node-model-icon {
             width: 22px;
             height: 22px;
@@ -212,10 +174,6 @@
                 margin-left: 2px;
             }
         }
-        .info-create-trigger {
-            display: none;
-            font-size: 0;
-        }
         .node-button {
             height: 24px;
             padding: 0 6px;
@@ -233,16 +191,15 @@
                 cursor: not-allowed;
             }
         }
-        .instance-num {
-            margin: 9px 20px 9px 5px;
+        .config-icon {
+            margin: 6px 20px 6px 5px;
             padding: 0 5px;
             height: 18px;
             line-height: 17px;
-            border-radius: 2px;
-            background-color: #f0f1f5;
             color: #979ba5;
-            font-size: 12px;
+            font-size: 26px;
             text-align: center;
+            color: #2dcb56;
         }
         .info-content {
             display: flex;
@@ -252,15 +209,6 @@
             .node-name {
                 @include ellipsis;
                 margin-right: 8px;
-            }
-        }
-    }
-    .topology-tree {
-        height: 100%;
-        .bk-big-tree-node.is-selected {
-            .instance-num {
-                background-color: #a2c5fd;
-                color: #fff;
             }
         }
     }
