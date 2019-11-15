@@ -708,15 +708,18 @@ var _ = Describe("service template test", func() {
 		It("compare service instance and template after add and change process template", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
-				"bk_module_id":        moduleId,
+				"bk_module_ids":       []int64{moduleId},
 				"service_template_id": serviceTemplateId,
 			}
 			rsp, err := serviceClient.DiffServiceInstanceWithTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			j, err := json.Marshal(rsp.Data)
-			data := new(metadata.ModuleDiffWithTemplateDetail)
-			json.Unmarshal(j, data)
+			responseData := make([]metadata.ModuleDiffWithTemplateDetail, 0)
+			err = json.Unmarshal(j, &responseData)
+			Expect(err).NotTo(HaveOccurred(), err.Error())
+			Expect(responseData).To(HaveLen(1))
+			data := responseData[0]
 			Expect(len(data.Removed)).To(Equal(0))
 			Expect(len(data.Unchanged)).To(Equal(0))
 			Expect(len(data.Added)).To(Equal(1))
@@ -1411,15 +1414,18 @@ var _ = Describe("service template test", func() {
 		It("compare service instance and template after add and change process template", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
-				"bk_module_id":        moduleId,
+				"bk_module_ids":       []int64{moduleId},
 				"service_template_id": serviceTemplateId,
 			}
 			rsp, err := serviceClient.DiffServiceInstanceWithTemplate(context.Background(), header, input)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			j, err := json.Marshal(rsp.Data)
-			data := new(metadata.ModuleDiffWithTemplateDetail)
-			json.Unmarshal(j, data)
+			responseData := make([]metadata.ModuleDiffWithTemplateDetail, 0)
+			err = json.Unmarshal(j, &responseData)
+			Expect(err).NotTo(HaveOccurred(), err.Error())
+			Expect(responseData).To(HaveLen(1))
+			data := responseData[0]
 			Expect(len(data.Removed)).To(Equal(1))
 			Expect(len(data.Unchanged)).To(Equal(0))
 			Expect(len(data.Added)).To(Equal(0))
