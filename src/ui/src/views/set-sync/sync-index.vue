@@ -16,21 +16,21 @@
         </template>
         <template v-else-if="diffList.length">
             <div class="main">
-                <i18n path="已选集群实例"
-                    tag="div"
-                    class="count"
-                    v-if="!isSingleSync">
-                    <span place="count">{{setInstancesId.length}}</span>
-                </i18n>
                 <div class="title clearfix">
-                    <p class="fl">{{$t('请确认以下模板修改信息')}}：</p>
+                    <p class="fl" v-if="isSingleSync">{{$t('请确认单个实例更改信息')}}</p>
+                    <i18n path="请确认实例更改信息"
+                        tag="p"
+                        class="fl"
+                        v-else>
+                        <span place="count">{{setInstancesId.length}}</span>
+                    </i18n>
                     <div class="tips fr">
                         <span class="mr30">
                             <i class="dot"></i>
                             {{$t('新增模块')}}
                         </span>
                         <span class="mr30">
-                            <i class="dot red"></i>
+                            <i class="dot delete"></i>
                             {{$t('删除模块')}}
                         </span>
                         <bk-checkbox class="expand-all"
@@ -49,19 +49,23 @@
                         :instance="instance"
                         :icon-close="diffList.length > 1"
                         :expand="index === 0"
+                        :module-host-count="moduleHostCount"
                         @close="handleCloseInstance">
                     </set-instance>
                 </div>
             </div>
             <div class="options" :class="{ 'is-sticky': hasScrollbar }">
                 <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
-                    <bk-button slot-scope="{ disabled }"
-                        class="mr10"
-                        theme="primary"
-                        :disabled="disabled"
-                        @click="handleConfirmSync">
-                        {{$t('确认同步')}}
-                    </bk-button>
+                    <template slot-scope="{ disabled }">
+                        <bk-button v-if="canSyncStatus()"
+                            class="mr10"
+                            theme="primary"
+                            :disabled="disabled"
+                            @click="handleConfirmSync">
+                            {{$t('确认同步')}}
+                        </bk-button>
+                        <span class="text-btn mr10" v-else v-bk-tooltips="$t('请先删除不可同步的实例')">{{$t('确认同步')}}</span>
+                    </template>
                 </cmdb-auth>
                 <bk-button class="mr10" @click="handleGoback">{{$t('取消')}}</bk-button>
             </div>
@@ -84,7 +88,8 @@
                 diffList: [],
                 noInfo: false,
                 isLatestInfo: false,
-                templateName: ''
+                templateName: '',
+                moduleHostCount: {}
             }
         },
         computed: {
@@ -145,6 +150,15 @@
                     label: this.$t('同步集群模板')
                 }])
             },
+            canSyncStatus () {
+                let status = true
+                this.$refs.setInstance.forEach(instance => {
+                    if (!instance.canSyncStatus && status) {
+                        status = false
+                    }
+                })
+                return status
+            },
             async getSetTemplateInfo () {
                 try {
                     const info = await this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
@@ -164,7 +178,7 @@
                         this.noInfo = true
                         return
                     }
-                    this.diffList = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
+                    const data = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
                         bizId: this.business,
                         setTemplateId: this.setTemplateId,
                         params: {
@@ -172,6 +186,20 @@
                         },
                         config: {
                             requestId: 'diffTemplateAndInstances'
+                        }
+                    })
+                    this.moduleHostCount = data.module_host_count || {}
+                    const list = data.difference || []
+                    this.diffList = list.sort((prev, next) => {
+                        const prevEixstHostList = prev.module_diffs.filter(module => this.moduleHostCount[module.bk_module_id] > 0)
+                        const nextEixstHostList = next.module_diffs.filter(module => this.moduleHostCount[module.bk_module_id] > 0)
+                        if ((prevEixstHostList.length && nextEixstHostList.length)
+                            || (!prevEixstHostList.length && !nextEixstHostList.length)) {
+                            return 0
+                        } else if (prevEixstHostList.length) {
+                            return -1
+                        } else {
+                            return 1
                         }
                     })
                     const changeList = this.diffList.filter(set => {
@@ -183,6 +211,7 @@
                 } catch (e) {
                     console.error(e)
                     this.noInfo = true
+                    this.moduleHostCount = {}
                 }
             },
             async handleConfirmSync () {
@@ -269,12 +298,6 @@
     .main {
         padding: 0 20px;
     }
-    .count {
-        font-weight: bold;
-        font-size: 14px;
-        color: #63656E;
-        margin-bottom: 10px;
-    }
     .title {
         font-size: 14px;
         color: #63656E;
@@ -282,6 +305,7 @@
     .tips {
         display: flex;
         align-items: center;
+        font-size: 12px;
         .dot {
             display: inline-block;
             width: 10px;
@@ -289,13 +313,16 @@
             border-radius: 50%;
             background-color: #2DCB56;
             margin-right: 2px;
-            &.red {
-                background-color: #FF5656;
+            &.delete {
+                background-color: #C4C6CC;
             }
         }
     }
     .expand-all {
         color: #888991;
+        /deep/ .bk-checkbox-text {
+            font-size: 12px;
+        }
     }
     .instance-list {
         padding: 20px 0 0;
@@ -320,6 +347,19 @@
         > span {
             color: #979BA5;
             font-size: 14px;
+        }
+        .text-btn {
+            @include inlineBlock;
+            height: 32px;
+            line-height: 30px;
+            outline: none;
+            padding: 0 15px;
+            text-align: center;
+            font-size: 14px;
+            background-color: #DCDEE5;
+            border-radius: 2px;
+            color: #FFFFFF;
+            min-width: 68px;
         }
     }
 </style>
