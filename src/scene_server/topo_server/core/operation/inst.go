@@ -84,6 +84,7 @@ func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Facto
 	c.obj = obj
 }
 
+// CreateInstBatch
 func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error) {
 	var err error
 	var bizID int64
@@ -94,6 +95,25 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 	}
 
+	object := obj.Object()
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(object.ObjectID) == true {
+		blog.V(5).Infof("CreateInstBatch failed, create %s instance with common create api forbidden, rid: %s", object.ObjectID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrTopoImportMainlineForbidden)
+	}
+
+	isMainlin, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", object.ObjectID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if isMainlin {
+		blog.V(5).Infof("CreateInstBatch failed, create %s instance with common create api forbidden, rid: %s", object.ObjectID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrTopoImportMainlineForbidden)
+
+	}
+
 	results := &BatchResult{}
 	if batchInfo.InputType != common.InputTypeExcel {
 		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
@@ -102,12 +122,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		return results, fmt.Errorf("BatchInfo empty")
 	}
 
-	object := obj.Object()
-	isMainline, err := obj.IsMainlineObject()
-	if err != nil {
-		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
-		return results, err
-	}
 	// 1. 检查实例与URL参数指定的模型一致
 	for line, inst := range batchInfo.BatchInfo {
 		objID, exist := inst[common.BKObjIDField]
@@ -156,14 +170,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			continue
 		}
 
-		// is mianline . not allowed import
-		if isMainline {
-			if err := c.validMainLineParentID(params, obj, colInput); nil != err {
-				blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
-				return nil, err
-			}
-		}
-
 		delete(colInput, "import_from")
 		// create memory object
 		item := c.instFactory.CreateInst(params, obj)
@@ -198,6 +204,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 				continue
 			}
 			updatedInstanceIDs = append(updatedInstanceIDs, instID)
+			results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
 			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
 			continue

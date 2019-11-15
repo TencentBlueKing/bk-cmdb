@@ -430,6 +430,7 @@ const (
 	CCErrorTopoUpdateModuleFromTplNameForbidden            = 1101091
 	CCErrTopoCanNotAddRequiredAttributeForMainlineModel    = 1101092
 	CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl     = 1101093
+	CCErrTopoImportMainlineForbidden                       = 1101094
 
 	// object controller 1102XXX
 
