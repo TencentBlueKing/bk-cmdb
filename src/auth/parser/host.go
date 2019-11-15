@@ -267,6 +267,7 @@ const (
 	moveHostsToBizFaultModulePattern          = "/api/v3/hosts/modules/fault"
 	moveHostsFromModuleToResPoolPattern       = "/api/v3/hosts/modules/resource"
 	moveHostsToBizIdleModulePattern           = "/api/v3/hosts/modules/idle"
+	moveHostsToBizRecycleModulePattern        = "/api/v3/hosts/modules/recycle"
 	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
 	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts/host/add/module"
 	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
@@ -444,6 +445,27 @@ func (ps *parseStream) host() *parseStream {
 
 	// move host to a business fault module.
 	if ps.hitPattern(moveHostsToBizFaultModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type: meta.HostInstance,
+					// auth this resource in scene layer, as is host server
+					Action: meta.SkipAction,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// move host to a business recycle module.
+	if ps.hitPattern(moveHostsToBizRecycleModulePattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil {
 			ps.err = err

@@ -94,7 +94,7 @@
             },
             activeTab (tab) {
                 const refresh = this.$refs[tab].refresh
-                typeof refresh === 'function' && refresh()
+                typeof refresh === 'function' && refresh(1)
             }
         },
         async created () {

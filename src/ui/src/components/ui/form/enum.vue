@@ -93,8 +93,9 @@
                     } else {
                         this.selected = this.value
                     }
+                } else {
+                    this.selected = this.value
                 }
-                this.selected = this.value
             }
         }
     }

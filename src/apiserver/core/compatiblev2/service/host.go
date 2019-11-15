@@ -377,7 +377,7 @@ func (s *service) updateHostModule(req *restful.Request, resp *restful.Response)
 	input[common.BKAppIDField] = appIDInt
 	input[common.BKHostIDField] = HostIDArr
 	hostModuleParam.ApplicationID = int64(appIDInt)
-	hostModuleParam.HostID = HostID64Arr
+	hostModuleParam.HostIDs = HostID64Arr
 	if len(moduleIDArr) > 1 {
 		for _, moduleID := range moduleIDArr {
 			moduleInfo, ok := moduleMap[moduleID]

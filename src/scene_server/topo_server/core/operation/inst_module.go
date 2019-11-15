@@ -122,7 +122,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	data.Set(common.BKSetIDField, setID)
 	data.Set(common.BKAppIDField, bizID)
 	if !data.Exists(common.BKDefaultField) {
-		data.Set(common.BKDefaultField, 0)
+		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	}
 
 	if err := m.validBizSetID(params, bizID, setID); err != nil {
@@ -302,29 +302,6 @@ func (m *module) DeleteModule(params types.ContextParams, moduleModel model.Obje
 
 	if nil != moduleIDS {
 		innerCond.Field(common.BKModuleIDField).In(moduleIDS)
-	}
-
-	// 检查是否时内置集群
-	qc := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
-			Limit: 0,
-		},
-		Condition: innerCond.ToMapStr(),
-	}
-	qc.Condition[common.BKDefaultField] = map[string]interface{}{
-		common.BKDBNE: 0,
-	}
-	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, qc)
-	if nil != err {
-		blog.Errorf("[operation-module] failed read module instance, err: %s, rid: %s", err.Error(), params.ReqID)
-		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if rsp.Result == false || rsp.Code != 0 {
-		blog.ErrorJSON("[operation-set] failed read module instance, option: %s, response: %s, rid: %s", qc, rsp, params.ReqID)
-		return errors.New(rsp.Code, rsp.ErrMsg)
-	}
-	if rsp.Data.Count > 0 {
-		return params.Err.CCError(common.CCErrorTopoForbiddenDeleteBuiltInSetModule)
 	}
 
 	// auth: deregister module to iam

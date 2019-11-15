@@ -564,7 +564,7 @@ func (s *Service) getInnerModules(srvData srvComm, bizID int64) ([]metadata.Modu
 		Condition: map[string]interface{}{
 			common.BKAppIDField: bizID,
 			common.BKDefaultField: map[string]interface{}{
-				common.BKDBNE: 0,
+				common.BKDBNE: common.DefaultFlagDefaultValue,
 			},
 		},
 	}

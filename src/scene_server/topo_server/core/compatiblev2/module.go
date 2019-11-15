@@ -272,7 +272,7 @@ func (m *module) AddMultiModule(bizID, setID int64, moduleNames []string, data m
 
 		data.Set(common.BKModuleNameField, moduleName)
 		data.Set(common.BKAppIDField, bizID)
-		data.Set(common.BKDefaultField, 0)
+		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 		data.Set(common.BKInstParentStr, setID)
 
 		createParam := &metadata.CreateModelInstance{

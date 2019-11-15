@@ -5,10 +5,10 @@
             <span class="text">{{$t('搜索内容为空')}}</span>
         </div>
         <div class="content" v-else-if="type === 'permission'">
-            <i class="bk-cc-icon icon-cc-no-authority"></i>
+            <img class="img-empty" src="../../../assets/images/no-authority.png" alt="">
             <div>
                 <i18n path="抱歉您没有查看权限">
-                    <bk-button
+                    <bk-button class="text-btn"
                         place="link"
                         text
                         theme="primary"
@@ -31,7 +31,7 @@
                         <span place="resource">{{resource}}</span>
                         <span place="link">
                             <cmdb-auth :auth="auth">
-                                <bk-button
+                                <bk-button class="text-btn"
                                     text
                                     place="link"
                                     theme="primary"
@@ -112,13 +112,11 @@
     .table-stuff {
         color: #63656e;
         font-size: 14px;
-
-        .icon-cc-no-authority {
-            font-size: 90px;
-        }
-
         .img-empty {
             width: 90px;
+        }
+        .text-btn {
+            font-size: 14px;
         }
     }
 </style>
