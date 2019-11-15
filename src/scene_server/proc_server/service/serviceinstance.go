@@ -452,16 +452,37 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	result, err := ps.diffServiceInstanceWithTemplate(ctx, diffOption)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
+
+	// 暂时兼容 bk_module_ids 与 bk_module_id 两种参数格式，未来需要移除 bk_module_id 的支持
+	if len(diffOption.ModuleIDs) == 0 {
+		if diffOption.ModuleID == 0 {
+			err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
+			ctx.RespAutoError(err)
+			return
+		}
+		diffOption.ModuleIDs = []int64{diffOption.ModuleID}
 	}
+
+	result := make([]*metadata.ModuleDiffWithTemplateDetail, 0)
+	for _, moduleID := range diffOption.ModuleIDs {
+		option := metadata.DiffOneModuleWithTemplateOption{
+			Metadata: diffOption.Metadata,
+			BizID:    diffOption.BizID,
+			ModuleID: moduleID,
+		}
+		oneModuleResult, err := ps.diffServiceInstanceWithTemplate(ctx, option)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+		result = append(result, oneModuleResult)
+	}
+
 	ctx.RespEntity(result)
 	return
 }
 
-func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOption metadata.DiffModuleWithTemplateOption) (*metadata.ModuleDiffWithTemplateDetail, errors.CCErrorCoder) {
+func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOption metadata.DiffOneModuleWithTemplateOption) (*metadata.ModuleDiffWithTemplateDetail, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
 
 	// why we need validate metadata here?
@@ -732,6 +753,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		moduleDifference.HasDifference = true
 	}
 
+	moduleDifference.ModuleID = diffOption.ModuleID
 	return &moduleDifference, nil
 }
 
@@ -806,16 +828,34 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	err := ps.syncServiceInstanceByTemplate(ctx, syncOption)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
+
+	// 暂时兼容 bk_module_ids 与 bk_module_id 两种参数格式，未来需要移除 bk_module_id 的支持
+	if len(syncOption.ModuleIDs) == 0 {
+		if syncOption.ModuleID == 0 {
+			err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
+			ctx.RespAutoError(err)
+			return
+		}
+		syncOption.ModuleIDs = []int64{syncOption.ModuleID}
+	}
+
+	for _, moduleID := range syncOption.ModuleIDs {
+		option := metadata.SyncModuleServiceInstanceByTemplateOption{
+			Metadata: syncOption.Metadata,
+			BizID:    syncOption.BizID,
+			ModuleID: moduleID,
+		}
+		err := ps.syncServiceInstanceByTemplate(ctx, option)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
 	}
 	ctx.RespEntity(make(map[string]interface{}))
 	return
 }
 
-func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOption metadata.SyncServiceInstanceByTemplateOption) errors.CCErrorCoder {
+func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOption metadata.SyncModuleServiceInstanceByTemplateOption) errors.CCErrorCoder {
 	rid := ctx.Kit.Rid
 
 	bizID := syncOption.BizID
