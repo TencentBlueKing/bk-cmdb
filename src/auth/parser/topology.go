@@ -769,32 +769,51 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object instance, but got invalid instance id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
 
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[4]})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		var modelType = meta.ModelInstance
+		var bizID int64
+		bizID, err = metadata.BizIDFromMetadata(model[0].Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		isMainline, err := ps.isMainlineModel(model[0].ObjectID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if isMainline {
+			// only works for mainline instance update.
+			var err error
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			modelType = meta.MainlineInstance
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.ModelInstance,
+					Type:       modelType,
 					Action:     meta.Update,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[4],
-					},
-				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
