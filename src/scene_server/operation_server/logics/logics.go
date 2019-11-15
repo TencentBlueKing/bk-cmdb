@@ -136,24 +136,27 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	c := cron.New()
 	spec := lgc.timerSpec // 从配置文件读取的时间
 	_, err := c.AddFunc(spec, func() {
-		blog.V(3).Info("begin statistic chart data, time: %v", time.Now())
+		blog.V(3).Infof("begin statistic chart data, time: %v", time.Now())
 		// 主服务器跑定时
 		opt := mapstr.MapStr{}
 		isMaster := lgc.Engine.ServiceManageInterface.IsMaster()
 		if isMaster {
 			if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
-				blog.Error("start statistic chart data timer fail, err: %v", err)
+				blog.Error("statistic chart data fail, err: %v", err)
 			}
 		}
 	})
 
 	if err != nil {
-		blog.Errorf("new cron failed, please contact developer, err:  ", err)
+		blog.Errorf("new cron failed, please contact developer, err: %v", err)
 		return
 	}
 	c.Start()
 
-	select {}
+	select {
+	case <-ctx.Done():
+		return
+	}
 }
 
 // CheckTableExist 检测cc_chartData集合是否存在
@@ -162,7 +165,7 @@ func (lgc *Logics) CheckTableExist(ctx context.Context) {
 	for {
 		resp, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
 		if err != nil {
-			blog.Error("statistic chart data fail, err: %v, rid: %v", err)
+			blog.Error("statistic chart data fail, err: %v", err)
 			time.Sleep(10 * time.Second)
 			continue
 		}

@@ -1101,7 +1101,7 @@ const (
 	UpdateObject         = "update object"
 	OperationDescription = "op_desc"
 	OptionOther          = "其他"
-	TimerPattern         = "[\\d]+\\:[\\d]+"
+	TimerPattern         = "^[\\d]+\\:[\\d]+$"
 	SyncSetTaskName      = "sync-settemplate2set"
 )
 
