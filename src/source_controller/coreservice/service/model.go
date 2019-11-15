@@ -198,7 +198,7 @@ func (s *coreService) GetModelStatistics(params core.ContextParams, pathParams, 
 
 	appFilter := map[string]interface{}{
 		common.BKDefaultField: map[string]interface{}{
-			common.BKDBNE: 1,
+			common.BKDBNE: common.DefaultAppFlag,
 		},
 		common.BKDataStatusField: map[string]interface{}{
 			common.BKDBNE: common.DataStatusDisabled,
