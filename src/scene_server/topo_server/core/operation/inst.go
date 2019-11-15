@@ -149,24 +149,41 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 	updatedInstanceIDs := make([]int64, 0)
 	createdInstanceIDs := make([]int64, 0)
+	idFieldname := metadata.GetInstIDFieldByObjID(obj.GetObjectID())
 	for colIdx, colInput := range batchInfo.BatchInfo {
 		if colInput == nil {
 			// ignore empty excel line
 			continue
 		}
 
+		// is mianline . not allowed import
+		if isMainline {
+			if err := c.validMainLineParentID(params, obj, colInput); nil != err {
+				blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
+				return nil, err
+			}
+		}
+
 		delete(colInput, "import_from")
 		// create memory object
 		item := c.instFactory.CreateInst(params, obj)
+
 		item.SetValues(colInput)
 
-		existInDB, filter, err := item.CheckInstanceExists(nonInnerAttributes)
-		if nil != err {
-			blog.Errorf("[operation-inst] failed to get inst is exist, err: %s, rid: %s", err.Error(), params.ReqID)
-			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-			continue
+		// 实例id 为空，表示要新建实例
+		// 实例ID已经赋值，更新数据.  (已经赋值, value not equal 0 or nil)
+
+		// 是否存在实例ID字段
+		instID, existInstID := colInput[idFieldname]
+		// 实例ID字段是否设置值
+		if existInstID && (instID == "" || instID == nil) {
+			existInstID = false
 		}
-		if existInDB {
+		if existInstID {
+			delete(colInput, idFieldname)
+			filter := condition.CreateCondition()
+			filter = filter.Field(idFieldname).Eq(instID)
+
 			preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
 			err = item.UpdateInstance(filter, colInput, nonInnerAttributes)
 			if nil != err {
@@ -184,12 +201,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
 			continue
-		}
-		if isMainline {
-			if err := c.validMainLineParentID(params, obj, colInput); nil != err {
-				blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
-				return nil, err
-			}
 		}
 
 		// create with metadata
