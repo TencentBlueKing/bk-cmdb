@@ -417,34 +417,39 @@ func (s *Service) DiffSetTplWithInst(params types.ContextParams, pathParams, que
 			moduleIDs = append(moduleIDs, moduleDiff.ModuleID)
 		}
 	}
-	relationOption := &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		ModuleIDArr:   moduleIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	relationResult, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, relationOption)
-	if err != nil {
-		return setDiffs, err
-	}
-	moduleHostsCount := make(map[int64]int64, 0)
-	for _, item := range relationResult.Data.Info {
-		if _, exist := moduleHostsCount[item.ModuleID]; exist == false {
-			moduleHostsCount[item.ModuleID] = 0
-		}
-		moduleHostsCount[item.ModuleID] += 1
-	}
-	for _, moduleID := range moduleIDs {
-		if _, exist := moduleHostsCount[moduleID]; exist == false {
-			moduleHostsCount[moduleID] = 0
-		}
+
+	result := metadata.SetTplDiffResult{
+		Difference:      setDiffs,
+		ModuleHostCount: make(map[int64]int64),
 	}
 
-	result := map[string]interface{}{
-		"difference":        setDiffs,
-		"module_host_count": moduleHostsCount,
+	if len(moduleIDs) > 0 {
+		relationOption := &metadata.HostModuleRelationRequest{
+			ApplicationID: bizID,
+			ModuleIDArr:   moduleIDs,
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+		}
+		relationResult, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, relationOption)
+		if err != nil {
+			return setDiffs, err
+		}
+		moduleHostsCount := make(map[int64]int64)
+		for _, item := range relationResult.Data.Info {
+			if _, exist := moduleHostsCount[item.ModuleID]; exist == false {
+				moduleHostsCount[item.ModuleID] = 0
+			}
+			moduleHostsCount[item.ModuleID] += 1
+		}
+		for _, moduleID := range moduleIDs {
+			if _, exist := moduleHostsCount[moduleID]; exist == false {
+				moduleHostsCount[moduleID] = 0
+			}
+		}
+		result.ModuleHostCount = moduleHostsCount
 	}
+
 	return result, nil
 }
 
