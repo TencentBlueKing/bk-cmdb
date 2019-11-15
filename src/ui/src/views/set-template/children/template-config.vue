@@ -84,8 +84,8 @@
                 <i class="bk-icon icon-check-1"></i>
                 <h3>{{$t('修改成功')}}</h3>
                 <div class="btns">
-                    <bk-button class="mr10" theme="primary" v-if="isApplied" @click="handleToSyncInstance">{{$t('同步实例')}}</bk-button>
-                    <bk-button class="mr10" :theme="isApplied ? 'default' : 'primary'" @click="handleToCreateInstance">{{$t('创建实例')}}</bk-button>
+                    <bk-button class="mr10" theme="primary" v-if="isApplied" @click="handleToSyncInstance">{{$t('同步集群')}}</bk-button>
+                    <bk-button class="mr10" :theme="isApplied ? 'default' : 'primary'" @click="handleToCreateInstance">{{$t('创建集群')}}</bk-button>
                     <bk-button theme="default" @click="handleBackToList">{{$t('返回列表')}}</bk-button>
                 </div>
             </div>
@@ -239,7 +239,7 @@
                 this.$bkInfo({
                     type: 'success',
                     title: this.$t('创建成功'),
-                    okText: this.$t('创建实例'),
+                    okText: this.$t('创建集群'),
                     cancelText: this.$t('返回列表'),
                     confirmFn: () => {
                         this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })

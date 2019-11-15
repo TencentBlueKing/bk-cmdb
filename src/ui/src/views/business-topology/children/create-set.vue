@@ -35,7 +35,7 @@
                 <bk-input class="form-textarea"
                     type="textarea"
                     data-vv-name="setName"
-                    v-validate="'required|singlechar|setNameMap|length:256'"
+                    v-validate="'required|singlechar|emptySetName|setNameMap|length:256'"
                     v-model="setName"
                     :rows="rows"
                     :placeholder="$t('集群多个创建提示')"
