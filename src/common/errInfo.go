@@ -201,13 +201,14 @@ const (
 	CCErrCommValExceedMaxFailed          = 1199073
 	CCErrCommGlobalCCErrorNotInitialized = 1199074
 
-	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
-	CCErrTopoUpdateBuiltInCloudForbidden                     = 1199076
-	CCErrCommModifyFieldForbidden                            = 1199077
-	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199078
-
+	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI = 1199075
+	CCErrTopoUpdateBuiltInCloudForbidden                   = 1199076
 	// one argument: maxValue
-	CCErrExceedMaxOperationRecordsAtOnce = 1199077
+	CCErrExceedMaxOperationRecordsAtOnce                     = 1199077
+	CCErrCommModifyFieldForbidden                            = 1199078
+	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199079
+
+	CCErrCommUnexpectedFieldType = 1199080
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998

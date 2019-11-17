@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
@@ -98,7 +99,7 @@ func (valid *validator) validEnum(ctx context.Context, val interface{}, key stri
 		return nil
 	}
 	// validate within enum
-	enumOption, err := ParseEnumOption(ctx, option.Option)
+	enumOption, err := metadata.ParseEnumOption(ctx, option.Option)
 	if err != nil {
 		blog.Warnf("ParseEnumOption failed: %v, rid: %s", err, rid)
 		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
@@ -209,7 +210,7 @@ func (valid *validator) validInt(ctx context.Context, val interface{}, key strin
 	if !ok {
 		return nil
 	}
-	intObjOption := parseIntOption(ctx, property.Option)
+	intObjOption := metadata.ParseIntOption(ctx, property.Option)
 	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
 		return nil
 	}
@@ -252,7 +253,7 @@ func (valid *validator) validFloat(ctx context.Context, val interface{}, key str
 	if !ok {
 		return nil
 	}
-	intObjOption := parseFloatOption(ctx, property.Option)
+	intObjOption := metadata.ParseFloatOption(ctx, property.Option)
 	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
 		return nil
 	}
