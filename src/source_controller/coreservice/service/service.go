@@ -37,6 +37,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/auditlog"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/host"
+	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/label"
 	"configcenter/src/source_controller/coreservice/core/mainline"
@@ -123,6 +124,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		label.New(db),
 		settemplate.New(db),
 		operation.New(db),
+		hostapplyrule.New(db),
 	)
 	return nil
 }

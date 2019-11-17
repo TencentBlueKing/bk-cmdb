@@ -88,10 +88,10 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 	}
 
 	// check table exist
-	hasTable, err := db.HasTable(common.BKTableNameHostPropertyApplyRule)
+	hasTable, err := db.HasTable(common.BKTableNameHostApplyRule)
 	if err != nil {
 		blog.Errorf("InitHostPropertyApplyDataModel failed, check table exist failed, err: %s", err.Error())
-		return fmt.Errorf("check table exist failed, table: %s, err: %s", common.BKTableNameHostPropertyApplyRule, err.Error())
+		return fmt.Errorf("check table exist failed, table: %s, err: %s", common.BKTableNameHostApplyRule, err.Error())
 	}
 	if hasTable {
 		return nil
@@ -105,9 +105,9 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 		- bk_property_id
 		- value
 	*/
-	if err := db.CreateTable(common.BKTableNameHostPropertyApplyRule); err != nil {
-		blog.Errorf("InitHostPropertyApplyDataModel failed, create tabled failed, table: %s, err: %s", common.BKTableNameHostPropertyApplyRule, err.Error())
-		return fmt.Errorf("create table failed, table: %s, err: %s", common.BKTableNameHostPropertyApplyRule, err.Error())
+	if err := db.CreateTable(common.BKTableNameHostApplyRule); err != nil {
+		blog.Errorf("InitHostPropertyApplyDataModel failed, create tabled failed, table: %s, err: %s", common.BKTableNameHostApplyRule, err.Error())
+		return fmt.Errorf("create table failed, table: %s, err: %s", common.BKTableNameHostApplyRule, err.Error())
 	}
 
 	// add index
@@ -137,9 +137,9 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 		},
 	}
 	for _, index := range indexes {
-		if err := db.Table(common.BKTableNameHostPropertyApplyRule).CreateIndex(ctx, index); err != nil {
-			blog.Errorf("InitHostPropertyApplyDataModel failed, add index failed, table: %s, index: %+v, err: %s", common.BKTableNameHostPropertyApplyRule, index, err.Error())
-			return fmt.Errorf("add index failed, table: %s, index: %s, err: %s", common.BKTableNameHostPropertyApplyRule, index.Name, err.Error())
+		if err := db.Table(common.BKTableNameHostApplyRule).CreateIndex(ctx, index); err != nil {
+			blog.Errorf("InitHostPropertyApplyDataModel failed, add index failed, table: %s, index: %+v, err: %s", common.BKTableNameHostApplyRule, index, err.Error())
+			return fmt.Errorf("add index failed, table: %s, index: %s, err: %s", common.BKTableNameHostApplyRule, index.Name, err.Error())
 		}
 	}
 	return nil

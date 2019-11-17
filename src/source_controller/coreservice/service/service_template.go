@@ -13,12 +13,12 @@
 package service
 
 import (
-	"configcenter/src/common/mapstruct"
 	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )

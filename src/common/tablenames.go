@@ -104,8 +104,8 @@ const (
 	BKTableNameSetTemplateSyncStatus      = "cc_SetTemplateSyncStatus"
 	BKTableNameSetTemplateSyncHistory     = "cc_SetTemplateSyncHistory"
 
-	// host property auto apply
-	BKTableNameHostPropertyApplyRule = "cc_HostPropertyApplyRule"
+	// rule for host property auto apply
+	BKTableNameHostApplyRule = "cc_HostApplyRule"
 )
 
 // AllTables alltables
@@ -161,6 +161,7 @@ var AllTables = []string{
 	BKTableNameChartConfig,
 	BKTableNameChartPosition,
 	BKTableNameChartData,
+	BKTableNameHostApplyRule,
 }
 
 // GetInstTableName returns inst data table name
