@@ -74,3 +74,18 @@ var (
 	// 1199074 is CCErrCommGlobalCCErrorNotInitialized actually
 	GlobalCCErrorNotInitialized = New(1199074, "global cc error not initialized")
 )
+
+type RawErrorInfo struct {
+	ErrCode int
+	Args    []interface{}
+}
+
+func (rei *RawErrorInfo) ToCCError(ccErrorIF DefaultCCErrorIf) CCErrorCoder {
+	if rei.ErrCode == 0 {
+		return nil
+	}
+	if len(rei.Args) == 0 {
+		return ccErrorIF.CCError(rei.ErrCode)
+	}
+	return ccErrorIF.CCErrorf(rei.ErrCode, rei.Args...)
+}

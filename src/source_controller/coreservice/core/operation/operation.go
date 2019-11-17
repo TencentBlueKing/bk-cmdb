@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal"
 )
 
@@ -134,7 +133,7 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 		}
 	}
 
-	option, err := instances.ParseEnumOption(ctx, attribute.Option)
+	option, err := metadata.ParseEnumOption(ctx, attribute.Option)
 	if err != nil {
 		blog.Errorf("count model's instance, parse enum option fail, ObjID: %v, err:%v, rid: %v", inputParam.ObjID, err, ctx.ReqID)
 		return nil, err

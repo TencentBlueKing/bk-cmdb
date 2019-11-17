@@ -13,13 +13,13 @@
 package service
 
 import (
+	"context"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core/instances"
-	"context"
 )
 
 var defaultNameLanguagePkg = map[string]map[string][]string{
@@ -52,7 +52,7 @@ func (s *coreService) TranslatePlaceholder(defLang language.DefaultCCLanguageIf,
 
 func (s *coreService) TranslateEnumName(ctx context.Context, defLang language.DefaultCCLanguageIf, att *metadata.Attribute, val interface{}) interface{} {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	options, err := instances.ParseEnumOption(ctx, val)
+	options, err := metadata.ParseEnumOption(ctx, val)
 	if err != nil {
 		blog.Warnf("TranslateEnumName failed: %v, rid: %s", err, rid)
 		return val
