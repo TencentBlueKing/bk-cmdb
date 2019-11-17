@@ -27,7 +27,7 @@ func (p *hostApplyRule) CreateHostApplyRule(ctx context.Context, header http.Hea
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.HostApplyRule `json:"data"`
 	}{}
-	subPath := fmt.Sprintf("/create/topo/host_apply_rule/bk_biz_id/%d/", bizID)
+	subPath := fmt.Sprintf("/create/host_apply_rule/bk_biz_id/%d/", bizID)
 
 	err := p.client.Post().
 		WithContext(ctx).
@@ -53,7 +53,7 @@ func (p *hostApplyRule) UpdateHostApplyRule(ctx context.Context, header http.Hea
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.HostApplyRule `json:"data"`
 	}{}
-	subPath := fmt.Sprintf("/update/topo/host_apply_rule/%d/bk_biz_id/%d/", ruleID, bizID)
+	subPath := fmt.Sprintf("/update/host_apply_rule/%d/bk_biz_id/%d/", ruleID, bizID)
 
 	err := p.client.Put().
 		WithContext(ctx).
@@ -78,7 +78,7 @@ func (p *hostApplyRule) DeleteHostApplyRule(ctx context.Context, header http.Hea
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
 	}{}
-	subPath := fmt.Sprintf("/deletemany/topo/host_apply_rule/bk_biz_id/%d/", bizID)
+	subPath := fmt.Sprintf("/deletemany/host_apply_rule/bk_biz_id/%d/", bizID)
 
 	err := p.client.Delete().
 		WithContext(ctx).
@@ -104,7 +104,7 @@ func (p *hostApplyRule) GetHostApplyRule(ctx context.Context, header http.Header
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.HostApplyRule `json:"data"`
 	}{}
-	subPath := fmt.Sprintf("/find/topo/host_apply_rule/%d/bk_biz_id/%d/", ruleID, bizID)
+	subPath := fmt.Sprintf("/find/host_apply_rule/%d/bk_biz_id/%d/", ruleID, bizID)
 
 	err := p.client.Get().
 		WithContext(ctx).
@@ -129,7 +129,7 @@ func (p *hostApplyRule) ListHostApplyRule(ctx context.Context, header http.Heade
 		metadata.BaseResp
 		Data metadata.MultipleHostApplyRuleResult `json:"data"`
 	}{}
-	subPath := fmt.Sprintf("/findmany/topo/host_apply_rule/bk_biz_id/%d/", bizID)
+	subPath := fmt.Sprintf("/findmany/host_apply_rule/bk_biz_id/%d/", bizID)
 
 	err := p.client.Post().
 		WithContext(ctx).

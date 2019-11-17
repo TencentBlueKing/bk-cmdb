@@ -17,9 +17,9 @@ import (
 )
 
 func (s *coreService) initHostApplyRule() {
-	s.addAction(http.MethodPost, "/create/topo/host_apply_rule/bk_biz_id/{bk_biz_id}/", s.CreateHostApplyRule, nil)
-	s.addAction(http.MethodPut, "/update/topo/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/", s.UpdateHostApplyRule, nil)
-	s.addAction(http.MethodDelete, "/deletemany/topo/host_apply_rule/bk_biz_id/{bk_biz_id}/", s.DeleteHostApplyRule, nil)
-	s.addAction(http.MethodGet, "/find/topo/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/", s.GetHostApplyRule, nil)
-	s.addAction(http.MethodPost, "/findmany/topo/host_apply_rule/bk_biz_id/{bk_biz_id}/", s.ListHostApplyRule, nil)
+	s.addAction(http.MethodPost, "/create/host_apply_rule/bk_biz_id/{bk_biz_id}/", s.CreateHostApplyRule, nil)
+	s.addAction(http.MethodPut, "/update/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/", s.UpdateHostApplyRule, nil)
+	s.addAction(http.MethodDelete, "/deletemany/host_apply_rule/bk_biz_id/{bk_biz_id}/", s.DeleteHostApplyRule, nil)
+	s.addAction(http.MethodGet, "/find/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/", s.GetHostApplyRule, nil)
+	s.addAction(http.MethodPost, "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}/", s.ListHostApplyRule, nil)
 }

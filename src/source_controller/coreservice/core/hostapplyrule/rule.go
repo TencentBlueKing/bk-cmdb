@@ -46,20 +46,22 @@ func (p *hostApplyRule) validateModuleID(ctx core.ContextParams, bizID int64, mo
 		return ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count == 0 {
-		return ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+		return ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 	return nil
 }
 
 func (p *hostApplyRule) getHostAttribute(ctx core.ContextParams, bizID int64, hostAttributeID int64) (metadata.Attribute, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
-		metadata.MetadataBizField: map[string]interface{}{
-			common.BKDBOR: []map[string]interface{}{
-				{
-					// business private attribute
+		common.BKDBOR: []map[string]interface{}{
+			{
+				// business private attribute
+				metadata.MetadataBizField: map[string]interface{}{
 					common.BKDBEQ: strconv.FormatInt(bizID, 10),
-				}, {
-					// global attribute
+				},
+			}, {
+				// global attribute
+				metadata.MetadataBizField: map[string]interface{}{
 					common.BKDBExists: false,
 				},
 			},
