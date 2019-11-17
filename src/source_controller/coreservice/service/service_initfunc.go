@@ -213,4 +213,5 @@ func (s *coreService) initService() {
 	s.label()
 	s.topographics()
 	s.initSetTemplate()
+	s.initHostApplyRule()
 }
