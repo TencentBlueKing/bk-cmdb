@@ -467,6 +467,8 @@ const (
 
 	BKSetTemplateIDField = "set_template_id"
 
+	HostApplyRuleIDField = "host_apply_rule_id"
+
 	BKParentIDField = "bk_parent_id"
 	BKRootIDField   = "bk_root_id"
 

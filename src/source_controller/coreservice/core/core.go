@@ -198,6 +198,7 @@ type Core interface {
 	ProcessOperation() ProcessOperation
 	LabelOperation() LabelOperation
 	SetTemplateOperation() SetTemplateOperation
+	HostApplyRuleOperation() HostApplyRuleOperation
 }
 
 // ProcessOperation methods
@@ -266,6 +267,14 @@ type SetTemplateOperation interface {
 	DeleteSetTemplateSyncStatus(ctx ContextParams, option metadata.DeleteSetTemplateSyncStatusOption) errors.CCErrorCoder
 }
 
+type HostApplyRuleOperation interface {
+	CreateHostApplyRule(ctx ContextParams, bizID int64, option metadata.CreateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder)
+	UpdateHostApplyRule(ctx ContextParams, bizID int64, ruleID int64, option metadata.UpdateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder)
+	DeleteHostApplyRule(ctx ContextParams, bizID int64, ruleIDs ...int64) errors.CCErrorCoder
+	GetHostApplyRule(ctx ContextParams, bizID int64, ruleID int64) (metadata.HostApplyRule, errors.CCErrorCoder)
+	ListHostApplyRule(ctx ContextParams, bizID int64, option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder)
+}
+
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
@@ -278,12 +287,23 @@ type core struct {
 	process         ProcessOperation
 	label           LabelOperation
 	setTemplate     SetTemplateOperation
+	hostApplyRule   HostApplyRuleOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation,
-	dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation,
-	audit AuditOperation, process ProcessOperation, label LabelOperation, setTemplate SetTemplateOperation, operation StatisticOperation) Core {
+func New(
+	model ModelOperation,
+	instance InstanceOperation,
+	association AssociationOperation,
+	dataSynchronize DataSynchronizeOperation,
+	topo TopoOperation, host HostOperation,
+	audit AuditOperation,
+	process ProcessOperation,
+	label LabelOperation,
+	setTemplate SetTemplateOperation,
+	operation StatisticOperation,
+	hostApplyRule HostApplyRuleOperation,
+) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -296,6 +316,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		process:         process,
 		label:           label,
 		setTemplate:     setTemplate,
+		hostApplyRule:   hostApplyRule,
 	}
 }
 
@@ -341,4 +362,8 @@ func (m *core) LabelOperation() LabelOperation {
 
 func (m *core) SetTemplateOperation() SetTemplateOperation {
 	return m.setTemplate
+}
+
+func (m *core) HostApplyRuleOperation() HostApplyRuleOperation {
+	return m.hostApplyRule
 }

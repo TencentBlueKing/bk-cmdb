@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/auditlog"
 	"configcenter/src/apimachinery/coreservice/cloudsync"
 	"configcenter/src/apimachinery/coreservice/host"
+	"configcenter/src/apimachinery/coreservice/hostapplyrule"
 	"configcenter/src/apimachinery/coreservice/instance"
 	"configcenter/src/apimachinery/coreservice/label"
 	"configcenter/src/apimachinery/coreservice/mainline"
@@ -46,6 +47,7 @@ type CoreServiceClientInterface interface {
 	Label() label.LabelInterface
 	TopoGraphics() topographics.TopoGraphicsInterface
 	SetTemplate() settemplate.SetTemplateInterface
+	HostApplyRule() hostapplyrule.HostApplyRuleInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -110,4 +112,8 @@ func (c *coreService) TopoGraphics() topographics.TopoGraphicsInterface {
 
 func (c *coreService) SetTemplate() settemplate.SetTemplateInterface {
 	return settemplate.NewSetTemplateInterfaceClient(c.restCli)
+}
+
+func (c *coreService) HostApplyRule() hostapplyrule.HostApplyRuleInterface {
+	return hostapplyrule.NewHostApplyRuleClient(c.restCli)
 }
