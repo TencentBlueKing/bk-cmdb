@@ -47,50 +47,68 @@
                         <cmdb-auth style="display: block;"
                             :auth="authResources">
                             <template slot-scope="{ disabled }">
-                                <div class="filter-content clearfix" :class="{ disabled: disabled }">
-                                    <filter-field-operator class="filter-field-operator fl"
-                                        v-if="!['date', 'time'].includes(property.propertyType)"
-                                        :type="getOperatorType(property)"
-                                        :disabled="disabled"
-                                        v-model="property.operator">
-                                    </filter-field-operator>
-                                    <cmdb-form-enum class="filter-field-value filter-field-enum fl"
-                                        v-if="property.propertyType === 'enum'"
-                                        :allow-clear="true"
-                                        :options="getEnumOptions(property)"
-                                        :disabled="disabled"
-                                        v-model="property.value">
-                                    </cmdb-form-enum>
-                                    <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
-                                        v-else-if="property.propertyType === 'bool'"
-                                        v-model="property.value"
-                                        :disabled="disabled">
-                                    </cmdb-form-bool-input>
-                                    <cmdb-search-input class="filter-field-value filter-field-char fl" :style="{ '--index': 99 - index }"
-                                        v-else-if="['singlechar', 'longchar'].includes(property.propertyType)"
-                                        v-model="property.value"
-                                        :disabled="disabled">
-                                    </cmdb-search-input>
-                                    <cmdb-form-date-range class="filter-field-value"
-                                        v-else-if="['date', 'time'].includes(property.propertyType)"
-                                        v-model="property.value">
-                                    </cmdb-form-date-range>
-                                    <cmdb-cloud-selector
-                                        v-else-if="property.propertyId === 'bk_cloud_id'"
-                                        class="filter-field-value fl"
-                                        :allow-clear="true"
-                                        v-model="property.value">
-                                    </cmdb-cloud-selector>
-                                    <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
-                                        v-else
-                                        :is="`cmdb-form-${property.propertyType}`"
-                                        :disabled="disabled"
-                                        v-model="property.value">
-                                    </component>
-                                    <i class="userapi-delete fr bk-icon icon-close"
-                                        v-if="!disabled"
-                                        @click="deleteUserProperty(property, index)">
-                                    </i>
+                                <div class="filter-main">
+                                    <div class="filter-content clearfix" :class="{ disabled: disabled }">
+                                        <filter-field-operator class="filter-field-operator fl"
+                                            v-if="!['date', 'time'].includes(property.propertyType)"
+                                            :type="getOperatorType(property)"
+                                            :disabled="disabled"
+                                            v-model="property.operator">
+                                        </filter-field-operator>
+                                        <cmdb-form-enum class="filter-field-value filter-field-enum fl"
+                                            v-if="property.propertyType === 'enum'"
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            :allow-clear="true"
+                                            :options="getEnumOptions(property)"
+                                            :disabled="disabled"
+                                            v-model="property.value">
+                                        </cmdb-form-enum>
+                                        <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
+                                            v-else-if="property.propertyType === 'bool'"
+                                            v-model="property.value"
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            :disabled="disabled">
+                                        </cmdb-form-bool-input>
+                                        <cmdb-search-input class="filter-field-value filter-field-char fl" :style="{ '--index': 99 - index }"
+                                            v-else-if="['singlechar', 'longchar'].includes(property.propertyType)"
+                                            v-model="property.value"
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            :disabled="disabled">
+                                        </cmdb-search-input>
+                                        <cmdb-form-date-range class="filter-field-value"
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            v-else-if="['date', 'time'].includes(property.propertyType)"
+                                            v-model="property.value">
+                                        </cmdb-form-date-range>
+                                        <cmdb-cloud-selector
+                                            v-else-if="property.propertyId === 'bk_cloud_id'"
+                                            class="filter-field-value fl"
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            :allow-clear="true"
+                                            v-model="property.value">
+                                        </cmdb-cloud-selector>
+                                        <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
+                                            v-else
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            :is="`cmdb-form-${property.propertyType}`"
+                                            :disabled="disabled"
+                                            v-model="property.value">
+                                        </component>
+                                        <i class="userapi-delete fr bk-icon icon-close"
+                                            v-if="!disabled"
+                                            @click="deleteUserProperty(property, index)">
+                                        </i>
+                                    </div>
+                                    <span class="error-tips"
+                                        :style="{ 'margin-left': ['date', 'time'].includes(property.propertyType) ? '0' : '120px' }">
+                                        {{errors.first(property.propertyId)}}
+                                    </span>
                                 </div>
                             </template>
                         </cmdb-auth>
@@ -737,6 +755,12 @@
                 display: block;
                 margin-top: 20px;
                 line-height: 1;
+            }
+            .filter-main {
+                position: relative;
+                .error-tips {
+                    color: #ff5656;
+                }
             }
             .filter-content {
                 display: flex;
