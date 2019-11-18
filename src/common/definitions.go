@@ -593,6 +593,8 @@ const (
 	// BKGseOpProcTaskDetailField gse operate process return detail
 	BKGseOpProcTaskDetailField = "detail"
 	BKGroupField               = "group"
+
+	BKAttributeIDField = "bk_attribute_id"
 )
 
 const (
