@@ -81,6 +81,7 @@
                     :key="instance.id"
                     :instance="instance"
                     :expanded="index === 0"
+                    :can-sync="topoStatus"
                     @create-process="handleCreateProcess"
                     @update-process="handleUpdateProcess"
                     @delete-instance="handleDeleteInstance"
