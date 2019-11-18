@@ -51,7 +51,7 @@ func (p *hostApplyRule) validateModuleID(ctx core.ContextParams, bizID int64, mo
 	return nil
 }
 
-func (p *hostApplyRule) getHostAttribute(ctx core.ContextParams, bizID int64, hostAttributeID int64) (metadata.Attribute, errors.CCErrorCoder) {
+func (p *hostApplyRule) listHostAttributes(ctx core.ContextParams, bizID int64, hostAttributeIDs ...int64) ([]metadata.Attribute, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKDBOR: []map[string]interface{}{
 			{
@@ -66,19 +66,37 @@ func (p *hostApplyRule) getHostAttribute(ctx core.ContextParams, bizID int64, ho
 				},
 			},
 		},
-		common.BKFieldID: hostAttributeID,
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: hostAttributeIDs,
+		},
 	}
-	attribute := metadata.Attribute{}
-	err := p.dbProxy.Table(common.BKTableNameObjAttDes).Find(filter).One(ctx.Context, &attribute)
+	attributes := make([]metadata.Attribute, 0)
+	err := p.dbProxy.Table(common.BKTableNameObjAttDes).Find(filter).One(ctx.Context, &attributes)
 	if err != nil {
 		if p.dbProxy.IsNotFoundError(err) {
 			blog.Errorf("get host attribute failed, not found, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
-			return attribute, ctx.Error.CCError(common.CCErrCommNotFound)
+			return attributes, ctx.Error.CCError(common.CCErrCommNotFound)
 		}
 		blog.Errorf("get host attribute failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
-		return attribute, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+		return attributes, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
-	return attribute, nil
+	return attributes, nil
+}
+
+func (p *hostApplyRule) getHostAttribute(ctx core.ContextParams, bizID int64, hostAttributeID int64) (metadata.Attribute, errors.CCErrorCoder) {
+	attribute := metadata.Attribute{}
+	attributes, err := p.listHostAttributes(ctx, bizID, hostAttributeID)
+	if err != nil {
+		blog.Errorf("getHostAttribute failed, listHostAttributes failed, bizID: %d, attribute: %d, err: %s, rid: %s", bizID, hostAttributeID, err.Error(), ctx.ReqID)
+		return attribute, err
+	}
+	if len(attributes) == 0 {
+		return attribute, ctx.Error.CCError(common.CCErrCommNotFound)
+	}
+	if len(attributes) > 1 {
+		return attribute, ctx.Error.CCError(common.CCErrCommGetMultipleObject)
+	}
+	return attributes[0], nil
 }
 
 func (p *hostApplyRule) CreateHostApplyRule(ctx core.ContextParams, bizID int64, option metadata.CreateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
@@ -128,6 +146,10 @@ func (p *hostApplyRule) CreateHostApplyRule(ctx core.ContextParams, bizID int64,
 	rule.ID = int64(id)
 
 	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Insert(ctx.Context, rule); err != nil {
+		if p.dbProxy.IsDuplicatedError(err) {
+			blog.Errorf("CreateHostApplyRule failed, duplicated error, doc: %+v, err: %+v, rid: %s", rule, err, ctx.ReqID)
+			return rule, ctx.Error.CCErrorf(common.CCErrCommDuplicateItem, common.BKAttributeIDField)
+		}
 		blog.Errorf("CreateHostApplyRule failed, db insert failed, doc: %+v, err: %+v, rid: %s", rule, err, ctx.ReqID)
 		return rule, ctx.Error.CCError(common.CCErrCommDBInsertFailed)
 	}
