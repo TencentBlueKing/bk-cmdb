@@ -191,8 +191,9 @@
                     this.moduleHostCount = data.module_host_count || {}
                     const list = data.difference || []
                     this.diffList = list.sort((prev, next) => {
-                        const prevEixstHostList = prev.module_diffs.filter(module => this.moduleHostCount[module.bk_module_id] > 0)
-                        const nextEixstHostList = next.module_diffs.filter(module => this.moduleHostCount[module.bk_module_id] > 0)
+                        const res = (module) => (module.diff_type === 'remove' && this.moduleHostCount[module.bk_module_id] > 0)
+                        const prevEixstHostList = prev.module_diffs.filter(module => res(module))
+                        const nextEixstHostList = next.module_diffs.filter(module => res(module))
                         if ((prevEixstHostList.length && nextEixstHostList.length)
                             || (!prevEixstHostList.length && !nextEixstHostList.length)) {
                             return 0
@@ -351,7 +352,7 @@
         .text-btn {
             @include inlineBlock;
             height: 32px;
-            line-height: 30px;
+            line-height: 32px;
             outline: none;
             padding: 0 15px;
             text-align: center;
@@ -360,6 +361,7 @@
             border-radius: 2px;
             color: #FFFFFF;
             min-width: 68px;
+            cursor: not-allowed;
         }
     }
 </style>
