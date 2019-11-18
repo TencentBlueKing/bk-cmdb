@@ -42,7 +42,9 @@
             width: {
                 type: Number,
                 default: 720
-            }
+            },
+            height: Number,
+            minHeight: Number
         },
         data () {
             return {
@@ -53,10 +55,20 @@
             }
         },
         computed: {
+            autoResize () {
+                return typeof this.height !== 'number'
+            },
             bodyStyle () {
                 const style = {
                     width: this.width + 'px',
-                    '--height': this.bodyHeight + 'px'
+                    '--height': (this.autoResize ? this.bodyHeight : this.height) + 'px'
+                }
+                if (!this.autoResize) {
+                    style.height = this.height + 'px'
+                    style.maxHeight = 'initial'
+                }
+                if (this.minHeight) {
+                    style.minHeight = this.minHeight + 'px'
                 }
                 return style
             }
@@ -89,7 +101,7 @@
         methods: {
             resizeHandler () {
                 this.$nextTick(() => {
-                    this.bodyHeight = this.$refs.resizeTrigger.offsetHeight
+                    this.bodyHeight = Math.min(this.$APP.height, this.$refs.resizeTrigger.offsetHeight)
                 })
             },
             handleCloseDialog () {
@@ -108,7 +120,8 @@
         bottom: 0;
         left: 0;
         background-color: rgba(0, 0, 0, .6);
-        z-index: 1000;
+        z-index: 2000;
+        @include scrollbar;
         .dialog-body {
             position: relative;
             margin: 0 auto;

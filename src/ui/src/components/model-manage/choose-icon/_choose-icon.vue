@@ -1,6 +1,7 @@
 <template>
     <div class="choose-icon">
         <bk-input type="text" class="system-icon-search" v-show="activeTab === 'system'"
+            clearable
             right-icon="bk-icon icon-search"
             :placeholder="$t('请输入关键词')"
             v-model.trim="searchText">

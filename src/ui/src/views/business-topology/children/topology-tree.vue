@@ -1,6 +1,7 @@
 <template>
     <section class="tree-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <bk-input class="tree-search"
+            clearable
             right-icon="bk-icon icon-search"
             :placeholder="$t('请输入关键词')"
             v-model="filter">
@@ -426,16 +427,26 @@
             isTemplate (node) {
                 return node.data.service_template_id || node.data.set_template_id
             },
-            refreshCount (options) {
-                const type = options.type
-                const node = options.node
-                const oldCount = node.data[type]
-                const newCount = options.count
-                const deltaCount = newCount - oldCount
-                node.data[type] = newCount
-                node.parents.forEach(parent => {
-                    parent.data[type] = parent.data[type] + deltaCount
+            refreshCount ({ type, hosts, target }) {
+                hosts.forEach(data => {
+                    data.module.forEach(module => {
+                        if (!target || target.data.bk_inst_id !== module.bk_module_id) {
+                            const node = this.$refs.tree.getNodeById(`module-${module.bk_module_id}`)
+                            const nodes = node ? [node, ...node.parents] : []
+                            nodes.forEach(exist => {
+                                exist.data[type]--
+                            })
+                        }
+                    })
                 })
+                if (target) {
+                    const targetNode = this.$refs.tree.getNodeById(`module-${target.data.bk_inst_id}`)
+                    if (targetNode) {
+                        [targetNode, ...targetNode.parents].forEach(exist => {
+                            exist.data[type] = exist.data[type] + hosts.length
+                        })
+                    }
+                }
             }
         }
     }
@@ -532,6 +543,7 @@
             min-width: auto;
             &.disabled-node-button {
                 @include inlineBlock;
+                line-height: 24px;
                 font-style: normal;
                 background-color: #dcdee5;
                 color: #ffffff;

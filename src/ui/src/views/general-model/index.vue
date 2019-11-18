@@ -77,6 +77,8 @@
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
+                    clearable
+                    right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData(true)">
@@ -84,6 +86,8 @@
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
+                    clearable
+                    right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData(true)">
@@ -91,13 +95,12 @@
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
+                    clearable
+                    right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData(true)">
                 </bk-input>
-                <i class="filter-search bk-icon icon-search"
-                    v-show="filter.type !== 'enum'"
-                    @click="getTableData(true)"></i>
             </div>
         </div>
         <bk-table class="models-table" ref="table"
