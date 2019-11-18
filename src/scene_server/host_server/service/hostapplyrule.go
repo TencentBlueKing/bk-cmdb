@@ -127,3 +127,36 @@ func (s *Service) DeleteHostApplyRule(req *restful.Request, resp *restful.Respon
 
 	_ = resp.WriteEntity(meta.NewSuccessResp(make(map[string]interface{})))
 }
+
+func (s *Service) GetHostApplyRule(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	rid := srvData.rid
+
+	bizIDStr := req.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("GetHostApplyRule failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	ruleIDStr := req.PathParameter(common.HostApplyRuleIDField)
+	ruleID, err := strconv.ParseInt(ruleIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("GetHostApplyRule failed, parse biz id failed, ruleIDStr: %s, err: %v,rid:%s", ruleIDStr, err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, common.HostApplyRuleIDField)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	rule, err := s.CoreAPI.CoreService().HostApplyRule().GetHostApplyRule(srvData.ctx, srvData.header, bizID, ruleID)
+	if err != nil {
+		blog.ErrorJSON("GetHostApplyRule failed, core service GetHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, err.Error(), rid)
+		result := &meta.RespError{Msg: err}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	_ = resp.WriteEntity(meta.NewSuccessResp(rule))
+}
