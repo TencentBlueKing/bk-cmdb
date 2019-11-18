@@ -19,11 +19,9 @@
                 :show-tips="showFeatureTips"
                 :desc="$t('同步模板功能提示')">
             </feature-tips>
-            <p class="tips">
-                {{$t('请确认')}}
-                <span>{{treePath}}</span>
-                {{$t('模板更新信息')}}
-            </p>
+            <i18n path="服务实例同步确认提示" tag="p" class="tips">
+                <span place="path">{{treePath}}</span>
+            </i18n>
             <div class="info-tab">
                 <div class="tab-head">
                     <div class="tab-nav">
@@ -182,7 +180,7 @@
                 return this.$route.params
             },
             treePath () {
-                return this.$route.params.path
+                return this.$route.query.path
             },
             properties () {
                 const changedList = this.list.filter(process => process['operational_type'] === 'changed')

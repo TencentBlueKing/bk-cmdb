@@ -7,7 +7,7 @@
                 <bk-tab-panel name="setting" :label="$t('模板配置')">
                     <set-template-config class="template-config-view"></set-template-config>
                 </bk-tab-panel>
-                <bk-tab-panel name="instance" render-directive="if" :label="$t('模板实例')">
+                <bk-tab-panel name="instance" render-directive="if" :label="$t('已应用集群')">
                     <set-template-instance :template-id="templateId"></set-template-instance>
                 </bk-tab-panel>
             </bk-tab>

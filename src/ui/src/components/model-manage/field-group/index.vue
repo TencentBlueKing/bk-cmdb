@@ -191,8 +191,8 @@
                 </div>
             </div>
             <div class="group-dialog-footer" slot="footer">
-                <bk-button theme="primary" @click="handleCreateGroup" v-if="groupDialog.type === 'create'">{{$t('确定')}}</bk-button>
-                <bk-button theme="primary" @click="handleUpdateGroup" v-else>{{$t('确定')}}</bk-button>
+                <bk-button theme="primary" @click="handleCreateGroup" v-if="groupDialog.type === 'create'">{{$t('提交')}}</bk-button>
+                <bk-button theme="primary" @click="handleUpdateGroup" v-else>{{$t('保存')}}</bk-button>
                 <bk-button @click="groupDialog.isShow = false">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
