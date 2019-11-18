@@ -136,12 +136,10 @@ func (p *hostApplyRule) CreateHostApplyRule(ctx core.ContextParams, bizID int64,
 }
 
 func (p *hostApplyRule) UpdateHostApplyRule(ctx core.ContextParams, bizID int64, ruleID int64, option metadata.UpdateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
-	applyRule := metadata.HostApplyRule{}
-
 	rule, err := p.GetHostApplyRule(ctx, bizID, ruleID)
 	if err != nil {
 		blog.Errorf("UpdateHostApplyRule failed, rule not found, bizID: %d, id: %d, rid: %s", bizID, ruleID, ctx.ReqID)
-		return applyRule, ctx.Error.CCError(common.CCErrCommNotFound)
+		return rule, ctx.Error.CCError(common.CCErrCommNotFound)
 	}
 
 	attribute, err := p.getHostAttribute(ctx, bizID, rule.AttributeID)
@@ -152,19 +150,19 @@ func (p *hostApplyRule) UpdateHostApplyRule(ctx core.ContextParams, bizID int64,
 		return rule, ccErr
 	}
 
-	applyRule.LastTime = time.Now()
-	applyRule.Modifier = ctx.User
-	applyRule.PropertyValue = option.PropertyValue
+	rule.LastTime = time.Now()
+	rule.Modifier = ctx.User
+	rule.PropertyValue = option.PropertyValue
 
 	filter := map[string]interface{}{
 		common.BKFieldID: ruleID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Update(ctx.Context, filter, applyRule); err != nil {
-		blog.ErrorJSON("UpdateHostApplyRule failed, db update failed, filter: %s, doc: %s, err: %s, rid: %s", filter, applyRule, err, ctx.ReqID)
-		return applyRule, ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Update(ctx.Context, filter, rule); err != nil {
+		blog.ErrorJSON("UpdateHostApplyRule failed, db update failed, filter: %s, doc: %s, err: %s, rid: %s", filter, rule, err, ctx.ReqID)
+		return rule, ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
 	}
 
-	return applyRule, nil
+	return rule, nil
 }
 
 func (p *hostApplyRule) DeleteHostApplyRule(ctx core.ContextParams, bizID int64, ruleIDs ...int64) errors.CCErrorCoder {
