@@ -207,7 +207,7 @@
         },
         beforeRouteUpdate (to, from, next) {
             this.resolveData(to)
-            this.setBreadcrumbs()
+            this.$nextTick(this.setBreadcrumbs)
             this.getPreviewData()
             next()
         },
