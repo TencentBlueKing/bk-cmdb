@@ -183,8 +183,8 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/create/host_apply_rule/bk_biz_id/{bk_biz_id}").To(s.CreateHostApplyRule))
 	api.Route(api.PUT("/update/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}").To(s.UpdateHostApplyRule))
 	api.Route(api.DELETE("/deletemany/host_apply_rule/bk_biz_id/{bk_biz_id}").To(s.DeleteHostApplyRule))
+	api.Route(api.GET("/find/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/").To(s.GetHostApplyRule))
 	/*
-		api.Route(api.GET("/find/topo/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/").To(s.GetHostApplyRule))
 		api.Route(api.POST("/findmany/topo/host_apply_rule/bk_biz_id/{bk_biz_id}/").To(s.ListHostApplyRule))
 	*/
 
