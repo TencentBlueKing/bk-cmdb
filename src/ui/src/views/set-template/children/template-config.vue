@@ -69,7 +69,7 @@
                         theme="primary"
                         :disabled="disabled || !hasChange"
                         @click="handleConfirm">
-                        {{$t('确定')}}
+                        {{mode === 'create' ? $t('提交') : $t('保存')}}
                     </bk-button>
                 </cmdb-auth>
                 <bk-button class="options-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>

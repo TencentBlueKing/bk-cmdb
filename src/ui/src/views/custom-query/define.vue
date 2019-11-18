@@ -118,7 +118,7 @@
                     :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
                     :disabled="errors.any() || disabled"
                     @click="saveUserAPI">
-                    {{$t('保存')}}
+                    {{type === 'create' ? $t('提交') : $t('保存')}}
                 </bk-button>
             </cmdb-auth>
             <bk-button class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
