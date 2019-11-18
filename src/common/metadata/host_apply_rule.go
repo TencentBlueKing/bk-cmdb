@@ -81,3 +81,43 @@ type CreateOrUpdateHostApplyRuleResult struct {
 	ErrCode int           `json:"error_code"`
 	ErrMsg  string        `json:"error_message"`
 }
+
+// ConflictResolver 定义单个冲突的解决办法
+type HostApplyConflictResolver struct {
+	HostID        int64       `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
+	AttributeID   int64       `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
+	PropertyValue interface{} `field:"bk_property_value" json:"bk_property_value" bson:"bk_property_value" mapstructure:"bk_property_value"`
+}
+
+type Host2Modules struct {
+	HostID    int64   `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
+	ModuleIDs []int64 `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+}
+
+// 主机属性自动应用执行计划生成逻辑核心数据结构
+// 设计背景：该数据结构需要支持如下三种场景
+// 1. 应用模块配置到主机属性
+// 2. 编辑模块配置(可能未保存), 预览应用效果(查看是否有冲突)
+// 3. 将主机转移到模块下前预览应用效果（查看是否有冲突）
+// 字段说明
+// - Rules: 主机属性应用规则，由于上述case2的存在，其中 ID 可能为0
+// - HostModules: 主机所有模块信息，case3的存在，导致不能直接从db中查询主机所属模块
+// - ConflictResolvers: 可选参数，用于表示主机属性应用出现冲突时，如何设置应用值，如果未设置则冲突的字段不会被更新
+type HostApplyPlanOption struct {
+	Rules             []HostApplyRule             `field:"host_apply_rules" json:"host_apply_rules" bson:"host_apply_rules" mapstructure:"host_apply_rules"`
+	HostModules       []Host2Modules              `field:"host_modules" json:"host_modules" bson:"host_modules" mapstructure:"host_modules"`
+	ConflictResolvers []HostApplyConflictResolver `field:"conflict_resolvers" json:"conflict_resolvers" bson:"conflict_resolvers" mapstructure:"conflict_resolvers"`
+}
+
+type HostApplyConflictField struct {
+	AttributeID int64           `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
+	Rules       []HostApplyRule `field:"host_apply_rules" json:"host_apply_rules" bson:"host_apply_rules" mapstructure:"host_apply_rules"`
+}
+
+type OneHostApplyPlan struct {
+	// 预计执行后端主机信息
+	ExpiredHost    map[string]interface{}   `field:"expired_host" json:"expired_host" bson:"expired_host" mapstructure:"expired_host"`
+	ConflictFields []HostApplyConflictField `field:"conflicts" json:"conflicts" bson:"conflicts" mapstructure:"conflicts"`
+	ErrCode        int                      `json:"error_code" json:"error_code" bson:"error_code" mapstructure:"error_code"`
+	ErrMsg         string                   `json:"error_message" json:"error_message" bson:"error_message" mapstructure:"error_message"`
+}
