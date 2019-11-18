@@ -130,7 +130,7 @@
             },
             canSyncStatus () {
                 for (const _module of this.instance.module_diffs) {
-                    if (this.moduleHostCount[_module.bk_module_id] > 0) {
+                    if (_module.diff_type === 'remove' && this.moduleHostCount[_module.bk_module_id] > 0) {
                         return false
                     }
                 }
