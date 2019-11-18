@@ -160,3 +160,35 @@ func (s *Service) GetHostApplyRule(req *restful.Request, resp *restful.Response)
 
 	_ = resp.WriteEntity(meta.NewSuccessResp(rule))
 }
+
+func (s *Service) ListHostApplyRule(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	rid := srvData.rid
+
+	bizIDStr := req.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("ListHostApplyRule failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	option := meta.ListHostApplyRuleOption{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&option); err != nil {
+		blog.Errorf("ListHostApplyRule failed, decode request body failed, err: %v,rid:%s", err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	ruleResult, err := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(srvData.ctx, srvData.header, bizID, option)
+	if err != nil {
+		blog.ErrorJSON("ListHostApplyRule failed, core service ListHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
+		result := &meta.RespError{Msg: err}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	_ = resp.WriteEntity(meta.NewSuccessResp(ruleResult))
+}
