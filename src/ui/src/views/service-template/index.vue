@@ -41,6 +41,7 @@
                     class="filter-search fl"
                     :placeholder="$t('模板名称搜索')"
                     :right-icon="'bk-icon icon-search'"
+                    clearable
                     font-size="medium"
                     v-model.trim="filter.templateName"
                     @enter="getTableData(true)">

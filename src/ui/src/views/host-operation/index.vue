@@ -18,7 +18,7 @@
                             'is-business-module': type === 'business'
                         }"
                         v-bk-tooltips="getModulePath(id)">
-                        <span class="module-icon">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
+                        <span class="module-icon" v-if="type === 'business'">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
                         {{getModuleName(id)}}
                         <span class="module-mask"
                             v-if="type === 'idle'"
@@ -71,7 +71,7 @@
             <bk-button theme="primary" :disabled="!availableTabList.length" @click="handleConfrim">{{confirmText}}</bk-button>
             <bk-button class="ml10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
-        <cmdb-dialog v-model="dialog.show" :width="dialog.width">
+        <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="460">
             <component
                 :is="dialog.component"
                 v-bind="dialog.props"
