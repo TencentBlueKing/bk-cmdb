@@ -59,3 +59,25 @@ type ListHostApplyRuleOption struct {
 type DeleteHostApplyRuleOption struct {
 	RuleIDs []int64 `field:"host_apply_rule_ids" json:"host_apply_rule_ids" bson:"host_apply_rule_ids"`
 }
+
+type BatchCreateOrUpdateApplyRuleOption struct {
+	Rules []CreateOrUpdateApplyRuleOption `field:"host_apply_rules" json:"host_apply_rules" bson:"host_apply_rules" mapstructure:"host_apply_rules"`
+}
+
+type CreateOrUpdateApplyRuleOption struct {
+	AttributeID   int64       `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
+	ModuleID      int64       `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id" mapstructure:"bk_module_id"`
+	PropertyValue interface{} `field:"bk_property_value" json:"bk_property_value" bson:"bk_property_value" mapstructure:"bk_property_value"`
+	RuleID        int64       `field:"host_apply_rule_id" json:"host_apply_rule_id" bson:"host_apply_rule_id"`
+}
+
+type BatchCreateOrUpdateHostApplyRuleResult struct {
+	Items []CreateOrUpdateHostApplyRuleResult `json:"items"`
+}
+
+type CreateOrUpdateHostApplyRuleResult struct {
+	Index   int           `json:"index"`
+	Rule    HostApplyRule `json:"rule"`
+	ErrCode int           `json:"error_code"`
+	ErrMsg  string        `json:"error_message"`
+}

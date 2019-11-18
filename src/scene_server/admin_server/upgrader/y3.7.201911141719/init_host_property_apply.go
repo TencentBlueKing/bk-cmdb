@@ -128,8 +128,8 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 			Background: false,
 		}, {
 			Keys: map[string]int32{
-				common.BKModuleIDField:   1,
-				common.BKPropertyIDField: 1,
+				common.BKModuleIDField:    1,
+				common.BKAttributeIDField: 1,
 			},
 			Name:       "host_property_under_module",
 			Unique:     true,

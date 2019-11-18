@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	meta "configcenter/src/common/metadata"
 
 	"github.com/emicklei/go-restful"
@@ -191,4 +192,82 @@ func (s *Service) ListHostApplyRule(req *restful.Request, resp *restful.Response
 	}
 
 	_ = resp.WriteEntity(meta.NewSuccessResp(ruleResult))
+}
+
+func (s *Service) BatchCreateOrUpdateHostApplyRule(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	rid := srvData.rid
+
+	bizIDStr := req.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("BatchCreateOrUpdateHostApplyRule failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	option := meta.BatchCreateOrUpdateApplyRuleOption{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&option); err != nil {
+		blog.Errorf("BatchCreateOrUpdateHostApplyRule failed, decode request body failed, err: %v,rid:%s", err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	batchResult := meta.BatchCreateOrUpdateHostApplyRuleResult{
+		Items: make([]meta.CreateOrUpdateHostApplyRuleResult, 0),
+	}
+	var firstErr errors.CCErrorCoder
+	for index, item := range option.Rules {
+		var rule meta.HostApplyRule
+		var err errors.CCErrorCoder
+		if item.RuleID > 0 {
+			updateOption := meta.UpdateHostApplyRuleOption{
+				PropertyValue: item.PropertyValue,
+			}
+			rule, err = s.CoreAPI.CoreService().HostApplyRule().UpdateHostApplyRule(srvData.ctx, srvData.header, bizID, item.RuleID, updateOption)
+			if err != nil {
+				blog.ErrorJSON("BatchCreateOrUpdateHostApplyRule failed, core service UpdateHostApplyRule failed, bizID: %s, ruleID: %s, option: %s, err: %s, rid: %s", bizID, item.RuleID, updateOption, err.Error(), rid)
+			}
+		} else {
+			createOption := meta.CreateHostApplyRuleOption{
+				AttributeID:   item.AttributeID,
+				ModuleID:      item.ModuleID,
+				PropertyValue: item.PropertyValue,
+			}
+			rule, err = s.CoreAPI.CoreService().HostApplyRule().CreateHostApplyRule(srvData.ctx, srvData.header, bizID, createOption)
+			if err != nil {
+				blog.ErrorJSON("BatchCreateOrUpdateHostApplyRule failed, core service CreateHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, createOption, err.Error(), rid)
+			}
+		}
+		itemResult := meta.CreateOrUpdateHostApplyRuleResult{
+			Index:   index,
+			Rule:    rule,
+			ErrCode: 0,
+			ErrMsg:  "",
+		}
+		if err != nil {
+			itemResult.ErrCode = err.GetCode()
+			itemResult.ErrMsg = err.Error()
+			if firstErr == nil {
+				firstErr = err
+			}
+		}
+		batchResult.Items = append(batchResult.Items, itemResult)
+	}
+	response := meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     batchResult,
+	}
+	if firstErr != nil {
+		response.BaseResp = meta.BaseResp{
+			Result:      false,
+			Code:        firstErr.GetCode(),
+			ErrMsg:      firstErr.Error(),
+			Permissions: nil,
+		}
+	}
+
+	_ = resp.WriteEntity(response)
 }
