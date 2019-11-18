@@ -309,6 +309,10 @@ func (i *Identifier) build(ctx core.ContextParams) {
 				mod.SetStatus = set.SetStatus
 			}
 
+			if module, ok := i.modules[mod.ModuleID]; ok {
+				mod.ModuleName = module.ModuleName
+			}
+
 		}
 		host.Process = i.hostProcRelation[host.HostID]
 		i.hosts[idx] = host
