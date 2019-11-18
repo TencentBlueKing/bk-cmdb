@@ -189,11 +189,11 @@
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('serviceProcess', ['localProcessTemplate']),
-            isCreatedType () {
-                return !this.$route.params['templateId']
-            },
             templateId () {
-                return this.$route.params['templateId']
+                return this.$route.params.templateId
+            },
+            isCreatedType () {
+                return this.templateId === undefined
             },
             auth () {
                 if (this.isCreatedType) {
@@ -310,7 +310,6 @@
                         config: {
                             requestId: 'getSingleServiceTemplate',
                             globalError: false,
-                            cancelPrevious: true,
                             transformData: false
                         }
                     }).then(res => {
@@ -542,7 +541,6 @@
 
 <style lang="scss" scoped>
     .create-template-wrapper {
-        padding: 0 20px;
         .info-group {
             h3 {
                 color: #63656e;
