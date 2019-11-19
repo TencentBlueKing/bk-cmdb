@@ -23,12 +23,12 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, cache *redis.Client, db dal.RDB) *metadata.HostIdentifier {
+func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, cache *redis.Client, db dal.RDB) (*metadata.HostIdentifier, error) {
 	// fill cloudName
 	cloud, err := getCache(ctx, cache, db, common.BKInnerObjIDPlat, identifier.CloudID, false)
 	if err != nil {
-		blog.Errorf("identifier: getCache error %s", err.Error())
-		return identifier
+		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDPlat, identifier.CloudID, err.Error())
+		return nil, err
 	}
 	identifier.CloudName = getString(cloud.data[common.BKCloudNameField])
 
@@ -36,17 +36,21 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 	for _, hostIdentModule := range identifier.HostIdentModule {
 		biz, err := getCache(ctx, cache, db, common.BKInnerObjIDApp, hostIdentModule.BizID, false)
 		if err != nil {
-			blog.Errorf("identifier: getCache error %s", err.Error())
-			continue
+			blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDApp, hostIdentModule.BizID, err.Error())
+			return nil, err
 		}
 		hostIdentModule.BizName = getString(biz.data[common.BKAppNameField])
 		identifier.SupplierAccount = getString(biz.data[common.BKOwnerIDField])
-		identifier.SupplierID = getInt(biz.data, common.BKSupplierIDField)
+		identifier.SupplierID, err = getInt(biz.data, common.BKSupplierIDField)
+		if err != nil {
+			blog.Errorf("identifier: convert instID failed the raw is %+v", biz.data[common.BKSupplierIDField])
+			return nil, err
+		}
 
 		set, err := getCache(ctx, cache, db, common.BKInnerObjIDSet, hostIdentModule.SetID, false)
 		if err != nil {
-			blog.Errorf("identifier: getCache error %s", err.Error())
-			continue
+			blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDSet, hostIdentModule.SetID, err.Error())
+			return nil, err
 		}
 		hostIdentModule.SetName = getString(set.data[common.BKSetNameField])
 		hostIdentModule.SetEnv = getString(set.data[common.BKSetEnvField])
@@ -54,8 +58,8 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 
 		module, err := getCache(ctx, cache, db, common.BKInnerObjIDModule, hostIdentModule.ModuleID, false)
 		if err != nil {
-			blog.Errorf("identifier: getCache error %s", err.Error())
-			continue
+			blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDModule, hostIdentModule.ModuleID, err.Error())
+			return nil, err
 		}
 		hostIdentModule.ModuleName = getString(module.data[common.BKModuleNameField])
 	}
@@ -66,7 +70,7 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 		proc, err := getCache(ctx, cache, db, common.BKInnerObjIDProc, process.ProcessID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDProc, process.ProcessID, err.Error())
-			continue
+			return nil, err
 		}
 		process.ProcessName = getString(proc.data[common.BKProcessNameField])
 		process.FuncID = getString(proc.data[common.BKFuncIDField])
@@ -77,5 +81,5 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 		process.StartParamRegex = getString(proc.data[common.BKStartParamRegex])
 	}
 
-	return identifier
+	return identifier, nil
 }
