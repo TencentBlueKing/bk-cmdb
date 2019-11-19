@@ -4,10 +4,10 @@
             type="unborder-card"
             :show-header="isUpdate"
             :active.sync="active">
-            <bk-tab-panel :label="$t('模板配置')" name="config">
+            <bk-tab-panel :label="$t('服务模板配置')" name="config">
                 <service-template-config :style="{ padding: isUpdate ? '20px 18px' : '0 20px' }"></service-template-config>
             </bk-tab-panel>
-            <bk-tab-panel :label="$t('模板实例')" name="instance" v-if="isUpdate">
+            <bk-tab-panel :label="$t('服务模板实例')" name="instance" v-if="isUpdate">
                 <service-template-instance :active="active === 'instance'"></service-template-instance>
             </bk-tab-panel>
         </bk-tab>
@@ -17,6 +17,7 @@
 <script>
     import ServiceTemplateConfig from './children/operational'
     import ServiceTemplateInstance from './children/template-instance'
+    import Bus from '@/utils/bus'
     export default {
         components: {
             ServiceTemplateConfig,
@@ -31,6 +32,14 @@
             isUpdate () {
                 return this.$route.params.templateId !== undefined
             }
+        },
+        created () {
+            Bus.$on('active-change', active => {
+                this.active = active
+            })
+        },
+        beforeDestroy () {
+            Bus.$off('active-change')
         }
     }
 </script>
