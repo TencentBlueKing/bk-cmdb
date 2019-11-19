@@ -230,6 +230,9 @@ const (
 	// BKAssetIDField  the asset id field
 	BKAssetIDField = "bk_asset_id"
 
+	// BKSNField  the sn  field
+	BKSNField = "bk_sn"
+
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
 
