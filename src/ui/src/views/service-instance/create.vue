@@ -24,7 +24,6 @@
                     :name="item.host.bk_host_innerip"
                     :source-processes="sourceProcesses"
                     :templates="templates"
-                    :show-tips="showTips"
                     :addible="!withTemplate"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
@@ -70,7 +69,6 @@
                 moduleInstance: {},
                 hosts: [],
                 templates: [],
-                showTips: false,
                 dialog: {
                     show: false,
                     props: {
@@ -249,10 +247,6 @@
                             }, { injectBizId: true })
                         })
                     } else {
-                        if (serviceInstanceTables.some(table => !table.processList.length)) {
-                            this.showTips = true
-                            return
-                        }
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
                             params: this.$injectMetadata({
                                 name: this.moduleInstance.bk_module_name,

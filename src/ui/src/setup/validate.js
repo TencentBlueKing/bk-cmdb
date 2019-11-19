@@ -121,10 +121,14 @@ const customRules = {
         validate: (value) => {
             const nameList = value.split('\n').filter(name => name)
             const nameSet = new Set(nameList)
-            if (nameList.length !== nameSet.size) {
-                return false
-            }
-            return true
+            return nameList.length === nameSet.size
+        }
+    },
+    emptySetName: {
+        validate: (value) => {
+            const values = value.split('\n')
+            const list = values.map(text => text.trim()).filter(text => text)
+            return values.length === list.length
         }
     }
 }
@@ -159,6 +163,7 @@ const dictionary = {
             max_value: () => '该值大于最大值',
             repeatTagKey: () => '标签键不能重复',
             setNameMap: () => '集群名称重复',
+            emptySetName: () => '请勿输入空白集群名称',
             instanceTagValue: () => '请输入英文 / 数字',
             instanceTagKey: () => '请输入英文 / 数字, 以英文开头'
         },
@@ -195,7 +200,8 @@ const dictionary = {
             namedCharacter: () => 'Special symbols only support(:_-)',
             min_value: () => 'This value is less than the minimum',
             max_value: () => 'This value is greater than the maximum',
-            setNameMap: () => 'Duplicate cluster name',
+            setNameMap: () => 'Duplicate Set name',
+            emptySetName: () => 'Do not enter blank Set name',
             instanceTagValue: () => 'Please enter letter / number',
             instanceTagKey: () => 'Please enter letter / number starts with letter',
             repeatTagKey: () => 'Label key cannot be repeated'

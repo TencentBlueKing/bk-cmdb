@@ -198,7 +198,7 @@
             </ul>
         </div>
         <footer class="footer">
-            <bk-button theme="primary" :loading="$loading('savePush')" class="btn" @click="save">{{$t('保存')}}</bk-button>
+            <bk-button theme="primary" :loading="$loading('savePush')" class="btn" @click="save">{{type === 'create' ? $t('提交') : $t('保存')}}</bk-button>
             <bk-button theme="default" class="btn vice-btn" @click="cancel">{{$t('取消')}}</bk-button>
         </footer>
         <v-pop
