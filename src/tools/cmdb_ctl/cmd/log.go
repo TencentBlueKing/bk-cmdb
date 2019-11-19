@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common/types"
 	"configcenter/src/tools/cmdb_ctl/app/config"
@@ -29,8 +30,9 @@ func init() {
 }
 
 type logConf struct {
-	v   string
-	def bool
+	v        string
+	def      bool
+	addrPort string
 }
 
 func NewLogCommand() *cobra.Command {
@@ -52,22 +54,25 @@ func NewLogCommand() *cobra.Command {
 func (c *logConf) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&c.v, "set-v", "", "set log level for V logs")
 	cmd.Flags().BoolVar(&c.def, "set-default", false, "set log level to default value")
+	cmd.Flags().StringVar(&c.addrPort, "addrport", "", "the ip address and port for the hosts to apply command, separated by comma")
 }
 
 type logService struct {
-	service *config.Service
+	service  *config.Service
+	addrport []string
 }
 
 func newLogService(zkaddr string, addrport string) (*logService, error) {
 	if addrport == "" {
 		return nil, errors.New("addrport must set via flag or environment variable")
 	}
-	service, err := config.NewService(zkaddr, addrport)
+	service, err := config.NewZkService(zkaddr)
 	if err != nil {
 		return nil, err
 	}
 	return &logService{
-		service: service,
+		service:  service,
+		addrport: strings.Split(addrport, ","),
 	}, nil
 }
 
@@ -79,7 +84,7 @@ func runLog(c *logConf) error {
 		return fmt.Errorf("can't set log level to v and default at the same time")
 	}
 
-	srv, err := newLogService(config.Conf.ZkAddr, config.Conf.AddrPort)
+	srv, err := newLogService(config.Conf.ZkAddr, c.addrPort)
 	if err != nil {
 		return err
 	}
@@ -98,7 +103,7 @@ func runLog(c *logConf) error {
 }
 
 func (s *logService) setV(v int32) error {
-	for _, addr := range s.service.Addrport {
+	for _, addr := range s.addrport {
 		if err := s.service.ZkCli.Ping(); err != nil {
 			if err = s.service.ZkCli.Connect(); err != nil {
 				return err
@@ -127,7 +132,7 @@ func (s *logService) setV(v int32) error {
 }
 
 func (s *logService) setDefault() error {
-	for _, addr := range s.service.Addrport {
+	for _, addr := range s.addrport {
 		if err := s.service.ZkCli.Ping(); err != nil {
 			if err = s.service.ZkCli.Connect(); err != nil {
 				return err
