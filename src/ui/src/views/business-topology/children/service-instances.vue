@@ -393,7 +393,7 @@
                 try {
                     this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
                         params: this.$injectMetadata({
-                            bk_module_id: this.currentNode.data.bk_inst_id,
+                            bk_module_ids: [this.currentNode.data.bk_inst_id],
                             service_template_id: this.withTemplate
                         }, { injectBizId: true })
                     }).then(res => {
