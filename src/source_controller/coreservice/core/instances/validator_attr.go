@@ -14,6 +14,7 @@ package instances
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
 	"strconv"
 	"strings"
@@ -423,4 +424,14 @@ func (valid *validator) validList(val interface{}, key string) error {
 		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
+}
+
+// isNumeric judges if value is a number
+func (valid *validator) isNumeric(val interface{}) bool {
+	switch val.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, json.Number:
+		return true
+	}
+
+	return false
 }
