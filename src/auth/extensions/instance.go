@@ -264,6 +264,19 @@ func (am *AuthManager) AuthorizeByInstanceID(ctx context.Context, header http.He
 		return nil
 	}
 
+	switch objID {
+	case common.BKInnerObjIDPlat:
+		return am.AuthorizeByPlatIDs(ctx, header, action, ids...)
+	case common.BKInnerObjIDHost:
+		return am.AuthorizeByHostsIDs(ctx, header, action, ids...)
+	case common.BKInnerObjIDModule:
+		return am.AuthorizeByModuleID(ctx, header, action, ids...)
+	case common.BKInnerObjIDSet:
+		return am.AuthorizeBySetID(ctx, header, action, ids...)
+	case common.BKInnerObjIDApp:
+		return am.AuthorizeByBusinessID(ctx, header, action, ids...)
+	}
+
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objID, ids...)
 	if err != nil {
 		return fmt.Errorf("collect instance of model: %s by id %+v failed, err: %+v", objID, ids, err)

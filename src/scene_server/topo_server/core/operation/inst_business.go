@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"strings"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
@@ -34,7 +33,7 @@ import (
 type BusinessOperationInterface interface {
 	CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
 	DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error
-	FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error)
+	FindBusiness(params types.ContextParams, fields []string, cond condition.Condition) (count int, results []mapstr.MapStr, err error)
 	GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error)
 	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error
 	HasHosts(params types.ContextParams, bizID int64) (bool, error)
@@ -302,16 +301,24 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 	return b.inst.DeleteInst(params, bizModel, innerCond, true)
 }
 
-func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error) {
-	query := &metadata.QueryInput{}
-	cond.Field(common.BKDefaultField).Eq(common.DefaultFlagDefaultValue)
-	query.Condition = cond.ToMapStr()
-	query.Limit = int(cond.GetLimit())
-	query.Fields = strings.Join(fields, ",")
-	query.Sort = cond.GetSort()
-	query.Start = int(cond.GetStart())
+func (b *business) FindBusiness(params types.ContextParams, fields []string, cond condition.Condition) (count int, results []mapstr.MapStr, err error) {
+	cond.Field(common.BKDefaultField).Eq(0)
+	query := &metadata.QueryCondition{
+		Fields:    fields,
+		Condition: cond.ToMapStr(),
+		Limit: metadata.SearchLimit{
+			Limit:  cond.GetLimit(),
+			Offset: cond.GetStart(),
+		},
+		SortArr: metadata.NewSearchSortParse().String(cond.GetSort()).ToSearchSortArr(),
+	}
 
-	return b.inst.FindInst(params, obj, query, false)
+	result, err := b.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDApp, query)
+	if err != nil {
+		blog.ErrorJSON("failed to find business by query condition: %s, err: %s, rid: %s", query, err.Error(), params.ReqID)
+		return 0, nil, err
+	}
+	return result.Data.Count, result.Data.Info, err
 }
 
 func (b *business) GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error) {

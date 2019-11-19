@@ -278,7 +278,8 @@
                     'longchar': this.$t('长字符'),
                     'objuser': this.$t('用户'),
                     'timezone': this.$t('时区'),
-                    'bool': 'bool'
+                    'bool': 'bool',
+                    'list': this.$t('列表')
                 },
                 dialog: {
                     isShow: false,

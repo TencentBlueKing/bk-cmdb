@@ -1116,5 +1116,6 @@
     "服务模板配置": "Service Template Config",
     "服务模板实例": "Service Template Instance",
     "集群模板配置": "Set Template Config",
-    "集群模板实例": "Set Template Instance"
+    "集群模板实例": "Set Template Instance",
+    "选项": "option"
 }

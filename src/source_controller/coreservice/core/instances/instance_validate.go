@@ -102,13 +102,13 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		blog.Errorf("init validator failed %s, rid: %s", err.Error(), ctx.ReqID)
 		return err
 	}
-	FillLostedFieldValue(ctx.Context, instanceData, valid.propertyslice, valid.requirefields)
 	for _, key := range valid.requirefields {
 		if _, ok := instanceData[key]; !ok {
 			blog.Errorf("field [%s] in required for model [%s], input data: %+v, rid: %s", key, objID, instanceData, ctx.ReqID)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 	}
+	FillLostedFieldValue(ctx.Context, instanceData, valid.propertyslice)
 	var instMedataData metadata.Metadata
 	instMedataData.Label = make(metadata.Label)
 	for key, val := range instanceData {
@@ -120,7 +120,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		if metadata.BKMetadata == key {
 			bizID := metadata.GetBusinessIDFromMeta(val)
 			if "" != bizID {
-				instMedataData.Label.Set(metadata.LabelBusinessID, metadata.GetBusinessIDFromMeta(val))
+				instMedataData.Label.Set(metadata.LabelBusinessID, bizID)
 			}
 			continue
 		}
@@ -157,6 +157,8 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			err = valid.validBool(ctx.Context, val, key)
 		case common.FieldTypeForeignKey:
 			err = valid.validForeignKey(ctx.Context, val, key)
+		case common.FieldTypeList:
+			err = valid.validList(ctx.Context, val, key)
 		default:
 			continue
 		}
@@ -223,20 +225,15 @@ func (m *instanceManager) validateModuleCreate(ctx core.ContextParams, instanceD
 }
 
 func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
-	originData, err := m.getInstDataByID(ctx, objID, instID, m)
+	updateData, err := m.getInstDataByID(ctx, objID, instID, m)
 	if err != nil {
-		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v, rid: %s", err, ctx.ReqID)
+		blog.ErrorJSON("validUpdateInstanceData failed, getInstDataByID failed, err: %s, objID: %s, instID: %s, rid: %s", err, instID, objID, ctx.ReqID)
 		return err
 	}
-	bizID, err := FetchBizIDFromInstance(objID, originData)
+	bizID, err := FetchBizIDFromInstance(objID, updateData)
 	if err != nil {
-		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v, rid: %s", err, ctx.ReqID)
+		blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
-	}
-	err = m.validBizID(ctx, bizID)
-	if err != nil {
-		blog.Errorf("valid biz id error %v, rid: %s", err, ctx.ReqID)
-		return err
 	}
 
 	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
@@ -279,6 +276,8 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			err = valid.validBool(ctx.Context, val, key)
 		case common.FieldTypeForeignKey:
 			err = valid.validForeignKey(ctx.Context, val, key)
+		case common.FieldTypeList:
+			err = valid.validList(ctx.Context, val, key)
 		default:
 			continue
 		}
@@ -287,5 +286,21 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 		}
 	}
 
-	return valid.validUpdateUnique(ctx, instanceData, instMetaData, instID, m)
+	for key, val := range instanceData {
+		updateData[key] = val
+	}
+	bizID, err = FetchBizIDFromInstance(objID, updateData)
+	if err != nil {
+		blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, ctx.ReqID)
+		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+	}
+	if bizID != 0 {
+		err = m.validBizID(ctx, bizID)
+		if err != nil {
+			blog.Errorf("valid biz id error %v, rid: %s", err, ctx.ReqID)
+			return err
+		}
+	}
+
+	return valid.validUpdateUnique(ctx, updateData, instMetaData, instID, m)
 }

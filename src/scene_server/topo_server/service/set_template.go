@@ -13,9 +13,9 @@
 package service
 
 import (
-	"configcenter/src/auth/meta"
 	"strconv"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -408,7 +408,49 @@ func (s *Service) DiffSetTplWithInst(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
-	return setDiffs, nil
+	moduleIDs := make([]int64, 0)
+	for _, setDiff := range setDiffs {
+		for _, moduleDiff := range setDiff.ModuleDiffs {
+			if moduleDiff.ModuleID == 0 {
+				continue
+			}
+			moduleIDs = append(moduleIDs, moduleDiff.ModuleID)
+		}
+	}
+
+	result := metadata.SetTplDiffResult{
+		Difference:      setDiffs,
+		ModuleHostCount: make(map[int64]int64),
+	}
+
+	if len(moduleIDs) > 0 {
+		relationOption := &metadata.HostModuleRelationRequest{
+			ApplicationID: bizID,
+			ModuleIDArr:   moduleIDs,
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+		}
+		relationResult, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, relationOption)
+		if err != nil {
+			return setDiffs, err
+		}
+		moduleHostsCount := make(map[int64]int64)
+		for _, item := range relationResult.Data.Info {
+			if _, exist := moduleHostsCount[item.ModuleID]; exist == false {
+				moduleHostsCount[item.ModuleID] = 0
+			}
+			moduleHostsCount[item.ModuleID] += 1
+		}
+		for _, moduleID := range moduleIDs {
+			if _, exist := moduleHostsCount[moduleID]; exist == false {
+				moduleHostsCount[moduleID] = 0
+			}
+		}
+		result.ModuleHostCount = moduleHostsCount
+	}
+
+	return result, nil
 }
 
 func (s *Service) SyncSetTplToInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
