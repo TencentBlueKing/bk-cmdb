@@ -165,27 +165,6 @@ func (valid *validator) validTimeZone(ctx context.Context, val interface{}, key 
 	return nil
 }
 
-// validForeignKey valid object attribute that is foreign key type
-func (valid *validator) validForeignKey(ctx context.Context, val interface{}, key string) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
-		if valid.require[key] {
-			blog.Errorf("params can not be null, rid: %s", rid)
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
-
-		}
-		return nil
-	}
-
-	_, ok := util.GetTypeSensitiveUInt64(val)
-	if !ok {
-		blog.Errorf("params %s:%#v not int, rid: %s", key, val, rid)
-		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
-	}
-
-	return nil
-}
-
 // validInt valid object attribute that is int type
 func (valid *validator) validInt(ctx context.Context, val interface{}, key string) error {
 	rid := util.ExtractRequestIDFromContext(ctx)

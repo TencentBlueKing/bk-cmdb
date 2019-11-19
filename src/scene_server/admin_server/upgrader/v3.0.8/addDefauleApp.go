@@ -144,7 +144,7 @@ func fillEmptyFields(data map[string]interface{}, rows []*Attribute) []string {
 			data[fieldName] = ""
 		case common.FieldTypeUser:
 			data[fieldName] = ""
-		case common.FieldTypeMultiAsst:
+		case "multiasst":
 			data[fieldName] = nil
 		case common.FieldTypeTimeZone:
 			data[fieldName] = nil
