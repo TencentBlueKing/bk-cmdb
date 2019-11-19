@@ -790,6 +790,8 @@ const (
 	CCErrCloudSyncDeleteSyncTaskFail      = 1116011
 	CCErrCloudSyncUpdateSyncTaskFail      = 1116012
 
+	CCErrParseAttrOptionListFailed = 1116040
+
 	// task_server 1117xxx
 	// CCErrTaskNotFound task not found
 	CCErrTaskNotFound = 1117001
