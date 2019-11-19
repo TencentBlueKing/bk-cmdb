@@ -88,7 +88,7 @@
             <bk-button theme="primary"
                 :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
                 @click="saveField">
-                {{$t('确定')}}
+                {{isEditField ? $t('保存') : $t('提交')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">
                 {{$t('取消')}}

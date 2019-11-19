@@ -12,9 +12,7 @@
             }">
             {{$t('移动到空闲机的主机提示')}}
         </cmdb-tips>
-        <bk-table class="table"
-            :data="list"
-            :cell-style="getCellStyle">
+        <bk-table class="table" :data="list">
             <bk-table-column :label="$t('操作')">
                 <!-- eslint-disable-next-line -->
                 <template slot-scope="{ row }">{{$t('转移到空闲机的主机')}}</template>
@@ -56,14 +54,6 @@
             }
         },
         methods: {
-            getCellStyle ({ columnIndex }) {
-                if (columnIndex === 0) {
-                    return {
-                        color: '#3A84FF'
-                    }
-                }
-                return {}
-            },
             getHostValue (row, field) {
                 const host = row.host
                 if (host) {
@@ -76,9 +66,6 @@
 </script>
 
 <style lang="scss" scoped>
-    .move-layout {
-        max-width: 945px;
-    }
     .table {
         margin-top: 8px;
     }
