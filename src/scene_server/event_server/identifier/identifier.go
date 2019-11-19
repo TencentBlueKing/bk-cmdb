@@ -102,8 +102,8 @@ func (ih *IdentifierHandler) handleInstFieldChange(event *metadata.EventInstCtx,
 
 		instIDField := common.GetInstIDField(event.ObjType)
 
-		instID := getInt(curData, instIDField)
-		if 0 == instID {
+		instID, err := getInt(curData, instIDField)
+		if err != nil || 0 == instID {
 			blog.Errorf("identifier: convert instID failed the raw is %+v, rid: %s", curData[instIDField], rid)
 			continue
 		}
@@ -120,11 +120,19 @@ func (ih *IdentifierHandler) handleInstFieldChange(event *metadata.EventInstCtx,
 		// save previous host identifier data for later usage.
 		preIdentifier := *inst.ident
 		for _, field := range diffFields {
-			inst.set(field, curData[field])
+			err = inst.set(field, curData[field])
+			if err != nil {
+				blog.Errorf("key %s, value: %s, convert error %s", field, curData[field], err.Error())
+				break
+			}
 		}
+		if err != nil {
+			continue
+		}
+
 		err = inst.saveCache(ih.cache)
 		if err != nil {
-			blog.Errorf("identifier: SaveCache error %+v, rid: %s", err, rid)
+			blog.ErrorJSON("saveCache inst data %s failed, err: %s, rid: %s", inst.data, err, rid)
 			continue
 		}
 
@@ -167,8 +175,8 @@ func (ih *IdentifierHandler) handleModuleTransfer(e *metadata.EventInstCtx) {
 				continue
 			}
 
-			instID := getInt(curData, common.BKHostIDField)
-			if 0 == instID {
+			instID, err := getInt(curData, common.BKHostIDField)
+			if err != nil || 0 == instID {
 				blog.Errorf("identifier: convert instID failed the raw is %+v, rid: %s", curData[common.BKHostIDField], rid)
 				continue
 			}
@@ -190,7 +198,7 @@ func (ih *IdentifierHandler) handleModuleTransfer(e *metadata.EventInstCtx) {
 			}
 
 			if err := inst.saveCache(ih.cache); err != nil {
-				blog.Errorf("saveCache failed, err: %+v", err)
+				blog.ErrorJSON("saveCache inst data %s failed, err: %s, rid: %s", inst.data, err, rid)
 			}
 			d := metadata.EventData{CurData: inst.ident, PreData: preIdentifier}
 			hostIdentify.Data = append(hostIdentify.Data, d)
@@ -227,8 +235,8 @@ func (ih *IdentifierHandler) handleBindProcess(e *metadata.EventInstCtx) {
 				continue
 			}
 
-			instID := getInt(curData, common.BKProcIDField)
-			if 0 == instID {
+			instID, err := getInt(curData, common.BKProcIDField)
+			if err != nil || 0 == instID {
 				blog.Errorf("identifier: convert instID failed the raw is %+v, rid: %s", curData[common.BKProcIDField], rid)
 				continue
 			}
@@ -279,7 +287,7 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 		}
 		idens, err := ih.cache.MGet(hostIDKeys...).Result()
 		if err != nil {
-			blog.Errorf("identifier: ih.cache.MGet by %v,%v. we will try to fetch it from db instead, rid: %s", hostIDKeys, err, rid)
+			blog.Warnf("identifier: ih.cache.MGet by %v,%v. we will try to fetch it from db instead, rid: %s", hostIDKeys, err, rid)
 			idens = make([]interface{}, len(hostIDKeys))
 			for index := range idens {
 				// simulate that redis returns all nil
@@ -292,8 +300,8 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 			var preIdentifier metadata.HostIdentifier
 
 			err = json.Unmarshal([]byte(getString(idenVal)), &iden)
-			if "" == idenVal || nilStr == idenVal || err != nil {
-				blog.Infof("hostID %d not in cache, fetch it from db, rid: %s", hostID, rid)
+			if err != nil {
+				blog.Warnf("hostID %d cache value %v unmarshal error: %s, fetch it from db, rid: %s", hostID, idenVal, err.Error(), rid)
 				preInst, err := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, instID, false)
 				if err != nil {
 					blog.Errorf("identifier: getCache error %+v, rid: %s", err, rid)
@@ -313,7 +321,7 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 				continue
 			}
 			if err := inst.saveCache(ih.cache); err != nil {
-				blog.Errorf("saveCache failed, err: %+v", err)
+				blog.ErrorJSON("saveCache inst data %s failed, err: %s, rid: %s", inst.data, err, rid)
 			}
 			d := metadata.EventData{CurData: inst.ident, PreData: preIdentifier}
 			hostIdentify.Data = append(hostIdentify.Data, d)
@@ -331,12 +339,12 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 	return nil
 }
 
-func getInt(data map[string]interface{}, key string) int64 {
+func getInt(data map[string]interface{}, key string) (int64, error) {
 	i, err := util.GetInt64ByInterface(data[key])
 	if err != nil {
 		blog.ErrorJSON("identifier: getInt error: %s, key: %s, value: %s", err, key, data[key])
 	}
-	return i
+	return i, err
 }
 
 func getString(value interface{}) string {
@@ -388,7 +396,7 @@ type Inst struct {
 	ident   *metadata.HostIdentifier
 }
 
-func (i *Inst) set(key string, value interface{}) {
+func (i *Inst) set(key string, value interface{}) error {
 	i.data[key] = value
 	var err error
 	if i.objType == common.BKInnerObjIDHost {
@@ -416,6 +424,7 @@ func (i *Inst) set(key string, value interface{}) {
 			blog.Errorf("key %s	convert error %s", key, err.Error())
 		}
 	}
+	return err
 }
 
 func (i *Inst) saveCache(cache *redis.Client) error {
@@ -426,13 +435,14 @@ func (i *Inst) saveCache(cache *redis.Client) error {
 	return cache.Set(getInstCacheKey(i.objType, i.instID), string(out), time.Minute*20).Err()
 }
 
-func NewHostIdentifier(m map[string]interface{}) *metadata.HostIdentifier {
+func NewHostIdentifier(m map[string]interface{}) (*metadata.HostIdentifier, error) {
 	var err error
 	ident := metadata.HostIdentifier{}
 	ident.HostName = getString(m[common.BKHostNameField])
 	ident.CloudID, err = util.GetInt64ByInterface(m[common.BKCloudIDField])
 	if nil != err {
 		blog.Errorf("%s is not integer, %+v", common.BKCloudIDField, m)
+		return nil, err
 	}
 	ident.InnerIP = getString(m[common.BKHostInnerIPField])
 	ident.OuterIP = getString(m[common.BKHostOuterIPField])
@@ -440,28 +450,32 @@ func NewHostIdentifier(m map[string]interface{}) *metadata.HostIdentifier {
 	ident.OSName = getString(m[common.BKOSNameField])
 	ident.HostID, err = util.GetInt64ByInterface(m[common.BKHostIDField])
 	if nil != err {
-		blog.Errorf("%s is not integer, %+v ", common.BKHostIDField, m)
+		blog.Errorf("%s is not integer, %+v", common.BKHostIDField, m)
+		return nil, err
 	}
 	if m["bk_mem"] != nil {
 		ident.Memory, err = util.GetInt64ByInterface(m["bk_mem"])
 		if nil != err {
-			blog.Warnf("%s is not integer, %+v ", "bk_mem", m)
+			blog.Errorf("bk_mem is not integer, %+v", m)
+			return nil, err
 		}
 	}
 	if m["bk_cpu"] != nil {
 		ident.CPU, err = util.GetInt64ByInterface(m["bk_cpu"])
 		if nil != err {
-			blog.Warnf("%s is not integer, %+v ", "bk_cpu", m)
+			blog.Errorf("bk_cpu is not integer, %+v", m)
+			return nil, err
 		}
 	}
 	if m["bk_disk"] != nil {
 		ident.Disk, err = util.GetInt64ByInterface(m["bk_disk"])
 		if nil != err {
-			blog.Warnf("%s is not integer, %+v ", "bk_disk", m)
+			blog.Errorf("bk_disk is not integer, %+v", m)
+			return nil, err
 		}
 	}
 	ident.HostIdentModule = map[string]*metadata.HostIdentModule{}
-	return &ident
+	return &ident, nil
 }
 
 func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType string, instID int64, fromdb bool) (*Inst, error) {
@@ -469,15 +483,20 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 	ret := cache.Get(getInstCacheKey(objType, instID)).Val()
 	inst := Inst{objType: objType, instID: instID, ident: &metadata.HostIdentifier{}, data: map[string]interface{}{}}
 	if "" == ret || nilStr == ret || fromdb {
-		blog.Infof("objType %s, instID %d not in cache, fetch it from db", objType, instID)
+		blog.Warnf("object %s inst %d not in cache, fetch it from db", objType, instID)
 		getObjCondition := map[string]interface{}{
 			common.GetInstIDField(objType): instID,
 		}
 		if err = db.Table(common.GetInstTableName(objType)).Find(getObjCondition).One(ctx, &inst.data); err != nil {
+			blog.ErrorJSON("find object %s inst %s error: %s", objType, instID, err)
 			return nil, err
 		}
 		if common.BKInnerObjIDHost == objType {
-			inst.ident = NewHostIdentifier(inst.data)
+			inst.ident, err = NewHostIdentifier(inst.data)
+			if err != nil {
+				blog.ErrorJSON("NewHostIdentifier using inst data %s error: %s", inst.data, err)
+				return nil, err
+			}
 
 			// 1. fill modules
 			relations := make([]metadata.ModuleHost, 0)
@@ -485,6 +504,7 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 				common.GetInstIDField(objType): instID,
 			}
 			if err = db.Table(common.BKTableNameModuleHostConfig).Find(moduleHostCond).All(ctx, &relations); err != nil {
+				blog.ErrorJSON("find module host relation hostID %s error: %s", instID, err)
 				return nil, err
 			}
 			for _, relate := range relations {
@@ -504,12 +524,16 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 			inst.ident.Process = hostProcessMap[instID]
 
 			// 3. fill other instances' detail
-			inst.ident = fillIdentifier(inst.ident, ctx, cache, db)
+			inst.ident, err = fillIdentifier(inst.ident, ctx, cache, db)
+			if err != nil {
+				blog.ErrorJSON("fillIdentifier for ident: %s, error: %s", inst.ident, err)
+				return nil, err
+			}
 			inst.data["associations"] = inst.ident.HostIdentModule
 			inst.data["process"] = inst.ident.Process
 		}
 		if err := inst.saveCache(cache); err != nil {
-			blog.Errorf("saveCache failed, err: %+v", err)
+			blog.ErrorJSON("saveCache inst data %s failed, err: %s", inst.data, err)
 		}
 	} else {
 		err := json.Unmarshal([]byte(ret), &inst.data)
@@ -680,8 +704,13 @@ func (ih *IdentifierHandler) fetchHostCache() {
 
 		for _, cache := range caches {
 			out, _ := json.Marshal(cache)
-			if err := ih.cache.Set(getInstCacheKey(objID, getInt(cache, common.GetInstIDField(objID))), string(out), 0).Err(); err != nil {
-				blog.Errorf("set cache error %v, rid: %s", err, rid)
+			instID, err := getInt(cache, common.GetInstIDField(objID))
+			if err != nil {
+				blog.ErrorJSON("set cache key: %s, value: %s, error %s, rid: %s", getInstCacheKey(objID, instID), cache, err, rid)
+				continue
+			}
+			if err := ih.cache.Set(getInstCacheKey(objID, instID), string(out), 0).Err(); err != nil {
+				blog.ErrorJSON("set cache key: %s, value: %s, error %s, rid: %s", getInstCacheKey(objID, instID), cache, err, rid)
 				continue
 			}
 		}
@@ -728,7 +757,12 @@ func (ih *IdentifierHandler) fetchHostCache() {
 			}
 		}
 		ident.Process = hostProcessMap[ident.HostID]
-		ident = fillIdentifier(ident, ih.ctx, ih.cache, ih.db)
+
+		ident, err = fillIdentifier(ident, ih.ctx, ih.cache, ih.db)
+		if err != nil {
+			blog.ErrorJSON("fillIdentifier for ident: %s, error: %s", ident, err)
+			continue
+		}
 
 		if err := ih.cache.Set(getInstCacheKey(common.BKInnerObjIDHost, ident.HostID), ident, 0).Err(); err != nil {
 			blog.Errorf("set cache error %s, rid: %s", err.Error(), rid)
