@@ -343,7 +343,7 @@ func NewModule(m map[string]interface{}) *metadata.HostIdentModule {
 func getInt(data map[string]interface{}, key string) int64 {
 	i, err := util.GetInt64ByInterface(data[key])
 	if err != nil {
-		blog.Errorf("identifier: getInt error: %+v", err)
+		blog.ErrorJSON("identifier: getInt error: %s, key: %s, value: %s", err, key, data[key])
 	}
 	return i
 }
@@ -487,7 +487,6 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 		}
 		if common.BKInnerObjIDHost == objType {
 			inst.ident = NewHostIdentifier(inst.data)
-			hostModuleIDs := make([]int64, 0)
 
 			// 1. fill modules
 			relations := make([]metadata.ModuleHost, 0)
@@ -498,22 +497,24 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 				return nil, err
 			}
 			for _, relate := range relations {
-				hostModuleIDs = append(hostModuleIDs, relate.ModuleID)
 				inst.ident.HostIdentModule[strconv.FormatInt(relate.ModuleID, 10)] = &metadata.HostIdentModule{
 					SetID:    relate.SetID,
 					ModuleID: relate.ModuleID,
 					BizID:    relate.AppID,
 				}
 			}
-			inst.data["associations"] = inst.ident.HostIdentModule
 
 			// 2. fill process
 			hostProcessMap, err := getHostIdentifierProcInfo(ctx, db, []int64{instID})
 			if err != nil {
-				blog.InfoJSON("find host")
+				blog.ErrorJSON("find host process error: %s", err)
 				return nil, err
 			}
 			inst.ident.Process = hostProcessMap[instID]
+
+			// 3. fill other instances' detail
+			inst.ident = fillIdentifier(inst.ident, ctx, cache, db)
+			inst.data["associations"] = inst.ident.HostIdentModule
 			inst.data["process"] = inst.ident.Process
 		}
 		if err := inst.saveCache(cache); err != nil {
@@ -553,11 +554,11 @@ func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64)
 	// query process id with host id
 	err := db.Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).All(ctx, &relations)
 	if err != nil {
-		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameProcessInstanceRelation, relationFilter)
+		blog.ErrorJSON("getHostIdentifierProcInfo query table %s err. cond:%s", common.BKTableNameProcessInstanceRelation, relationFilter)
 		return nil, err
 	}
 
-	blog.V(5).Infof("findHostServiceInst query host and process relation. hostID:%#v, relation:%#v", hostIDs, relations)
+	blog.V(5).Infof("getHostIdentifierProcInfo query host and process relation. hostID:%#v, relation:%#v", hostIDs, relations)
 
 	procIDs := make([]int64, 0)
 	serviceInstIDs := make([]int64, 0)
@@ -577,10 +578,10 @@ func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64)
 	}
 	err = db.Table(common.BKTableNameServiceInstance).Find(serviceInstFilter).All(ctx, &serviceInstInfos)
 	if err != nil {
-		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameBaseProcess, serviceInstFilter)
+		blog.ErrorJSON("getHostIdentifierProcInfo query table %s err. cond:%s", common.BKTableNameServiceInstance, serviceInstFilter)
 		return nil, err
 	}
-	blog.V(5).Infof("findHostServiceInst query service instance info. service instance id:%#v, info:%#v", serviceInstIDs, serviceInstInfos)
+	blog.V(5).Infof("getHostIdentifierProcInfo query service instance info. service instance id:%#v, info:%#v", serviceInstIDs, serviceInstInfos)
 	// 服务实例与模块的关系
 	serviceInstModuleRelation := make(map[int64][]int64, 0)
 	for _, serviceInstInfo := range serviceInstInfos {
@@ -590,31 +591,15 @@ func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64)
 	procModuleRelation := make(map[int64][]int64, 0)
 	for procID, serviceInstIDs := range procServiceInstMap {
 		for _, serviceInstID := range serviceInstIDs {
-			for _, moduleID := range serviceInstModuleRelation[serviceInstID] {
-				procModuleRelation[procID] = append(procModuleRelation[procID], moduleID)
-			}
+			procModuleRelation[procID] = append(procModuleRelation[procID], serviceInstModuleRelation[serviceInstID]...)
 		}
 	}
 
-	procInfos := make([]metadata.HostIdentProcess, 0)
-	// query process info with process id
-	processFilter := map[string]interface{}{
-		common.BKProcIDField: map[string]interface{}{
-			common.BKDBIN: procIDs,
-		},
-	}
-	err = db.Table(common.BKTableNameBaseProcess).Find(processFilter).All(ctx, &procInfos)
-	if err != nil {
-		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameBaseProcess, processFilter)
-		return nil, err
-	}
-
-	blog.V(5).Infof("findHostServiceInst query process info. procIDs:%#v, info:%#v", procIDs, procInfos)
-
 	procs := make(map[int64]metadata.HostIdentProcess, 0)
-	for _, procInfo := range procInfos {
-		if moduleIDs, ok := procModuleRelation[procInfo.ProcessID]; ok {
-			procInfo.BindModules = moduleIDs
+	for _, procID := range procIDs {
+		procInfo := metadata.HostIdentProcess{
+			ProcessID:   procID,
+			BindModules: procModuleRelation[procID],
 		}
 		procs[procInfo.ProcessID] = procInfo
 	}
@@ -694,10 +679,28 @@ func (ih *IdentifierHandler) popEvent() *metadata.EventInstCtx {
 func (ih *IdentifierHandler) fetchHostCache() {
 	rid := util.ExtractRequestIDFromContext(ih.ctx)
 
+	objs := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDPlat, common.BKInnerObjIDProc}
+	for _, objID := range objs {
+		caches := make([]map[string]interface{}, 0)
+		if err := ih.db.Table(common.GetInstTableName(objID)).Find(map[string]interface{}{}).All(ih.ctx, &caches); err != nil {
+			blog.Errorf("set cache for objID %s error %v, rid: %s", objID, err, rid)
+			continue
+		}
+
+		for _, cache := range caches {
+			out, _ := json.Marshal(cache)
+			if err := ih.cache.Set(getInstCacheKey(objID, getInt(cache, common.GetInstIDField(objID))), string(out), 0).Err(); err != nil {
+				blog.Errorf("set cache error %v, rid: %s", err, rid)
+				continue
+			}
+		}
+
+		blog.Infof("identifier: fetched %d %s, rid: %s", len(caches), objID, rid)
+	}
+
 	relations := make([]metadata.ModuleHost, 0)
 	hosts := make([]*metadata.HostIdentifier, 0)
-	modules := make([]metadata.ModuleInst, 0)
-	proc2modules := make([]metadata.ProcessModule, 0)
+	hostIDs := make([]int64, 0)
 
 	err := ih.db.Table(common.BKTableNameModuleHostConfig).Find(map[string]interface{}{}).All(ih.ctx, &relations)
 	if err != nil {
@@ -709,14 +712,13 @@ func (ih *IdentifierHandler) fetchHostCache() {
 		blog.Errorf("[identifier][fetchHostCache] get cc_HostBase error: %v, rid: %s", err, rid)
 		return
 	}
-	err = ih.db.Table(common.BKTableNameProcModule).Find(map[string]interface{}{}).All(ih.ctx, &proc2modules)
-	if err != nil {
-		blog.Errorf("[identifier][fetchHostCache] get cc_Proc2Module error: %v, rid: %s", err, rid)
-		return
+
+	for _, ident := range hosts {
+		hostIDs = append(hostIDs, ident.HostID)
 	}
-	err = ih.db.Table(common.BKTableNameBaseModule).Find(map[string]interface{}{}).All(ih.ctx, &modules)
+	hostProcessMap, err := getHostIdentifierProcInfo(ih.ctx, ih.db, hostIDs)
 	if err != nil {
-		blog.Errorf("[identifier][fetchHostCache] get cc_ModuleBase error: %v, rid: %s", err, rid)
+		blog.ErrorJSON("find host process error: %s", err)
 		return
 	}
 
@@ -725,70 +727,24 @@ func (ih *IdentifierHandler) fetchHostCache() {
 		relationMap[relate.HostID] = append(relationMap[relate.HostID], relate)
 	}
 
-	proc2modulesMap := map[string][]int64{}
-	bindModulesMap := map[int64][]int64{}
-	for _, proc2module := range proc2modules {
-		proc2modulesMap[proc2module.ModuleName] = append(proc2modulesMap[proc2module.ModuleName], proc2module.ProcessID)
-		for _, module := range modules {
-			if module.BizID == proc2module.AppID && module.ModuleName == proc2module.ModuleName {
-				bindModulesMap[proc2module.ProcessID] = append(bindModulesMap[proc2module.ProcessID], module.ModuleID)
-			}
-		}
-	}
-
-	modulesMap := map[int64]metadata.ModuleInst{}
-	for _, module := range modules {
-		modulesMap[module.ModuleID] = module
-	}
-
 	for _, ident := range hosts {
 		ident.HostIdentModule = map[string]*metadata.HostIdentModule{}
-		hostProcs := map[int64]bool{}
 		for _, relate := range relationMap[ident.HostID] {
 			ident.HostIdentModule[strconv.FormatInt(relate.ModuleID, 10)] = &metadata.HostIdentModule{
 				SetID:    relate.SetID,
 				ModuleID: relate.ModuleID,
 				BizID:    relate.AppID,
 			}
-			if module, ok := modulesMap[relate.ModuleID]; ok {
-				for _, procID := range proc2modulesMap[module.ModuleName] {
-					hostProcs[procID] = true
-				}
-			}
 		}
-
-		ident.Process = make([]metadata.HostIdentProcess, 0)
-		for procID := range hostProcs {
-			bindModules := bindModulesMap[procID]
-			if len(bindModules) == 0 {
-				bindModules = make([]int64, 0)
-			}
-			ident.Process = append(ident.Process, metadata.HostIdentProcess{ProcessID: procID, BindModules: bindModules})
-		}
+		ident.Process = hostProcessMap[ident.HostID]
+		ident = fillIdentifier(ident, ih.ctx, ih.cache, ih.db)
 
 		if err := ih.cache.Set(getInstCacheKey(common.BKInnerObjIDHost, ident.HostID), ident, 0).Err(); err != nil {
 			blog.Errorf("set cache error %s, rid: %s", err.Error(), rid)
+			continue
 		}
 	}
 	blog.Infof("identifier: fetched %d hosts", len(hosts))
-
-	objs := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDPlat, common.BKInnerObjIDProc}
-	for _, objID := range objs {
-		caches := make([]map[string]interface{}, 0)
-		if err := ih.db.Table(common.GetInstTableName(objID)).Find(map[string]interface{}{}).All(ih.ctx, &caches); err != nil {
-			blog.Errorf("set cache for objID %s error %v, rid: %s", objID, err, rid)
-		}
-
-		for _, cache := range caches {
-			out, _ := json.Marshal(cache)
-			if err := ih.cache.Set(getInstCacheKey(objID, getInt(cache, common.GetInstIDField(objID))), string(out), 0).Err(); err != nil {
-				blog.Errorf("set cache error %v, rid: %s", err, rid)
-			}
-		}
-
-		blog.Infof("identifier: fetched %d %s, rid: %s", len(caches), objID, rid)
-	}
-
 }
 
 func hasChanged(curData, preData map[string]interface{}, fields ...string) (isDifferent bool) {
