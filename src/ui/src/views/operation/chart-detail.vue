@@ -144,7 +144,7 @@
                     </div>
                 </div>
                 <div class="footer" slot="footer">
-                    <bk-button theme="primary" @click="confirm">{{$t('确定')}}</bk-button>
+                    <bk-button theme="primary" @click="confirm">{{openType === 'add' ? $t('提交') : $t('保存')}}</bk-button>
                     <bk-button theme="default" @click="closeChart">{{$t('取消')}}</bk-button>
                 </div>
             </div>

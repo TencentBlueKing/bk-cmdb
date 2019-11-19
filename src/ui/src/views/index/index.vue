@@ -116,7 +116,7 @@
                 &.active {
                     background-color: #FFFFFF;
                     border-bottom-color: #FFFFFF !important;
-                    z-index: 10;
+                    z-index: 1000;
                 }
             }
         }
