@@ -394,10 +394,10 @@ func (valid *validator) validChar(ctx context.Context, val interface{}, key stri
 }
 
 //valid list
-func (valid *validator) validList(val interface{}, key string) error {
+func (valid *validator) validList(ctx context.Context, val interface{}, key string) error {
 	if nil == val {
 		if valid.require[key] {
-			blog.Error("params can not be null")
+			blog.Error("params can not be null, list field key: %s", key)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 		return nil
@@ -410,11 +410,12 @@ func (valid *validator) validList(val interface{}, key string) error {
 
 	option, ok := valid.propertys[key]
 	if !ok {
-		return nil
+		blog.Errorf("option %v invalid, not string type list option", option)
+		return valid.errif.Errorf(common.CCErrCollectNetDeviceObjPropertyNotExist, key)
 	}
 	listOption, ok := option.Option.([]interface{})
 	if false == ok {
-		blog.Errorf(" option %v not string type list option", option)
+		blog.Errorf("option %v invalid, not string type list option", option)
 		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
 	match := false
@@ -426,11 +427,11 @@ func (valid *validator) validList(val interface{}, key string) error {
 		}
 		if strVal == inValStr {
 			match = true
+			break
 		}
 	}
 	if !match {
-		blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOption, option, val)
-		blog.Errorf("params %s not valid , list field value: %#v", key, val)
+		blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOption, option, val)
 		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
