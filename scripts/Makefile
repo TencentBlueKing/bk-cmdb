@@ -29,7 +29,7 @@ SOURCE_ROOT?=$(realpath $(firstword $(subst :, ,${GOPATH}))/src/configcenter/src
 BUILD_DIR?=$(SOURCE_ROOT)/bin/build/$(VERSION)
 BIN_PATH?=$(BUILD_DIR)
 
-GOFILES
+
 GOFILES = $(shell find . -type f -name '*.go')
 GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "*/vendor/*")
 GOFILES_ALL = $(GOFILES)
