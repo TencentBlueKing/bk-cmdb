@@ -273,12 +273,13 @@ type HostApplyRuleOperation interface {
 	DeleteHostApplyRule(ctx ContextParams, bizID int64, ruleIDs ...int64) errors.CCErrorCoder
 	GetHostApplyRule(ctx ContextParams, bizID int64, ruleID int64) (metadata.HostApplyRule, errors.CCErrorCoder)
 	ListHostApplyRule(ctx ContextParams, bizID int64, option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder)
+	GenerateApplyPlan(ctx ContextParams, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder)
 }
 
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
-	associaction    AssociationOperation
+	association     AssociationOperation
 	dataSynchronize DataSynchronizeOperation
 	topo            TopoOperation
 	host            HostOperation
@@ -307,7 +308,7 @@ func New(
 	return &core{
 		model:           model,
 		instance:        instance,
-		associaction:    association,
+		association:     association,
 		dataSynchronize: dataSynchronize,
 		topo:            topo,
 		host:            host,
@@ -329,7 +330,7 @@ func (m *core) InstanceOperation() InstanceOperation {
 }
 
 func (m *core) AssociationOperation() AssociationOperation {
-	return m.associaction
+	return m.association
 }
 
 func (m *core) TopoOperation() TopoOperation {

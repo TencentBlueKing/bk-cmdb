@@ -5,7 +5,6 @@
                 <i class="bk-icon icon-down-shape" v-if="localExpanded"></i>
                 <i class="bk-icon icon-right-shape" v-else></i>
                 {{name}}
-                <i class="title-tips" v-if="showTips && !processList.length">{{tooltips.content}}</i>
             </div>
             <div class="fr">
                 <span v-if="topology" class="service-topology">{{topology}}</span>
@@ -104,10 +103,6 @@
                     return []
                 }
             },
-            showTips: {
-                type: Boolean,
-                default: false
-            },
             addible: {
                 type: Boolean,
                 default: true
@@ -191,7 +186,7 @@
                 if (this.processForm.type === 'create') {
                     return false
                 }
-                return !property.editable || property.isreadonly
+                return !property.editable || property.isreadonly || this.immutableProperties.includes('bind_ip')
             }
         },
         watch: {
@@ -258,7 +253,7 @@
             },
             async getInstanceIpByHost (hostId) {
                 try {
-                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    const instanceIpMap = this.$store.state.businessHost.instanceIpMap
                     let res = null
                     if (instanceIpMap.hasOwnProperty(hostId)) {
                         res = instanceIpMap[hostId]
@@ -269,7 +264,7 @@
                                 requestId: 'getInstanceIpByHost'
                             }
                         })
-                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                        this.$store.commit('businessHost/setInstanceIp', { hostId, res })
                     }
                     this.processBindIp = res.options.map(ip => {
                         return {
@@ -363,16 +358,6 @@
             font-size: 12px;
             color: $textColor;
             cursor: default;
-        }
-        .title-tips {
-            display: inline-block;
-            padding: 0 10px;
-            vertical-align: 1px;
-            color: $dangerColor;
-            font-style: normal;
-            font-size: 12px;
-            line-height: 20px;
-            outline: 0;
         }
     }
     .add-process-options {

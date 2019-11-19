@@ -20,7 +20,6 @@
                                 :key="propertyIndex">
                                 <div class="property-name clearfix">
                                     <bk-checkbox class="form-checkbox"
-                                        v-bk-tooltips="checkboxTips"
                                         v-if="property['isLocking'] !== undefined"
                                         v-model="values[property['bk_property_id']]['as_default_value']"
                                         @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
@@ -63,7 +62,7 @@
                         theme="primary"
                         :disabled="saveDisabled || $loading() || disabled"
                         @click="handleSave">
-                        {{$t('保存')}}
+                        {{type === 'create' ? $t('提交') : $t('保存')}}
                     </bk-button>
                 </cmdb-auth>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
@@ -170,25 +169,6 @@
                     return filterProperties
                 })
                 return properties
-            },
-            checkboxTips () {
-                return {
-                    content: this.$t('纳入模板管理'),
-                    placement: 'top-start',
-                    offset: -2,
-                    popperOptions: {
-                        modifiers: {
-                            customArrowStyles: {
-                                enabled: true,
-                                order: 100,
-                                fn (data, options) {
-                                    Object.assign(data.arrowStyles, { left: 0 })
-                                    return data
-                                }
-                            }
-                        }
-                    }
-                }
             }
         },
         watch: {

@@ -27,6 +27,7 @@ type HostApplyRuleInterface interface {
 	GetHostApplyRule(ctx context.Context, header http.Header, bizID int64, ruleID int64) (metadata.HostApplyRule, errors.CCErrorCoder)
 	ListHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder)
 	DeleteHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder
+	GenerateApplyPlan(ctx context.Context, header http.Header, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder)
 }
 
 func NewHostApplyRuleClient(client rest.ClientInterface) HostApplyRuleInterface {

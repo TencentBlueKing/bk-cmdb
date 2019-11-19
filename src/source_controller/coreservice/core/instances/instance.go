@@ -146,7 +146,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 		if metadata.BKMetadata == key {
 			bizID := metadata.GetBusinessIDFromMeta(val)
 			if "" != bizID {
-				instMedataData.Label.Set(metadata.LabelBusinessID, metadata.GetBusinessIDFromMeta(val))
+				instMedataData.Label.Set(metadata.LabelBusinessID, bizID)
 			}
 			continue
 		}

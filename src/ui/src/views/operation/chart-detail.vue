@@ -33,15 +33,18 @@
                                 {{$t('图表名称')}}
                             </label>
                             <span class="cmdb-form-item">
-                                <cmdb-selector
-                                    setting-key="name"
-                                    display-key="name"
-                                    :list="seList.disList"
-                                    v-model="chartData.name"
+                                <bk-select v-model="chartData.name"
                                     v-validate="'required'"
-                                    name="present"
-                                    :disabled="openType === 'edit'">
-                                </cmdb-selector>
+                                    data-vv-name="present"
+                                    :disabled="openType === 'edit'"
+                                    :clearable="false">
+                                    <bk-option v-for="option in seList.disList"
+                                        :key="option.repType"
+                                        :id="option.name"
+                                        :name="option.name"
+                                        :disabled="existedCharts.findIndex(item => item.report_type === option.repType) > -1">
+                                    </bk-option>
+                                </bk-select>
                                 <span class="form-error">{{errors.first('present')}}</span>
                             </span>
                         </div>
@@ -78,15 +81,18 @@
                                 {{$t('统计维度')}}
                             </label>
                             <span class="cmdb-form-item">
-                                <cmdb-selector
-                                    :disabled="openType === 'edit'"
-                                    setting-key="bk_property_id"
-                                    display-key="bk_property_name"
-                                    :list="filterList"
+                                <bk-select v-model="chartData.field"
                                     v-validate="'required'"
-                                    name="staticDim"
-                                    v-model="chartData.field">
-                                </cmdb-selector>
+                                    data-vv-name="staticDim"
+                                    :disabled="openType === 'edit'"
+                                    :clearable="false">
+                                    <bk-option v-for="option in filterList"
+                                        :key="option.bk_property_id"
+                                        :id="option.bk_property_id"
+                                        :name="option.bk_property_name"
+                                        :disabled="getDisabled(option)">
+                                    </bk-option>
+                                </bk-select>
                                 <span class="form-error">{{errors.first('staticDim')}}</span>
                             </span>
                         </div>
@@ -138,7 +144,7 @@
                     </div>
                 </div>
                 <div class="footer" slot="footer">
-                    <bk-button theme="primary" @click="confirm">{{$t('确定')}}</bk-button>
+                    <bk-button theme="primary" @click="confirm">{{openType === 'add' ? $t('提交') : $t('保存')}}</bk-button>
                     <bk-button theme="default" @click="closeChart">{{$t('取消')}}</bk-button>
                 </div>
             </div>
@@ -174,6 +180,10 @@
                         x_axis_count: 10
                     }
                 }
+            },
+            existedCharts: {
+                type: Array,
+                default: () => []
             }
         },
         data () {
@@ -221,6 +231,9 @@
         computed: {
             filterList () {
                 return this.demList.filter(item => {
+                    if (this.hostType === 'host') {
+                        return item.bk_property_type === 'enum' && item.bk_property_id !== 'bk_os_type'
+                    }
                     return item.bk_property_type === 'enum'
                 })
             },
@@ -262,6 +275,15 @@
                 'newStatisticalCharts',
                 'updateStatisticalCharts'
             ]),
+            getDisabled (property) {
+                if (this.hostType === 'host') {
+                    return this.existedCharts.findIndex(item => item.field === property.bk_property_id) > -1
+                } else if (this.hostType === 'inst') {
+                    const existed = this.existedCharts.find(item => item.bk_obj_id === property.bk_obj_id)
+                    if (existed) return existed.field === property.bk_property_id
+                }
+                return false
+            },
             calculate (flag) {
                 if (flag === 'up') {
                     this.chartData.x_axis_count += 1
@@ -289,11 +311,11 @@
                 if (this.openType === 'add') this.chartData.field = ''
             },
             confirm () {
-                this.chartData.report_type = this.chartType ? 'custom' : this.typeFilter[0].repType
-                this.chartData.x_axis_count = parseInt(this.chartData.x_axis_count)
-                const data = this.$tools.clone(this.chartData)
                 this.$validator.validateAll().then(result => {
                     if (result) {
+                        this.chartData.report_type = this.chartType ? 'custom' : this.typeFilter[0].repType
+                        this.chartData.x_axis_count = parseInt(this.chartData.x_axis_count)
+                        const data = this.$tools.clone(this.chartData)
                         if (this.openType === 'add') {
                             if (!this.chartType) this.delKeys(data, ['bk_obj_id', 'config_id', 'field', 'name', 'chart_type'])
                             this.newStatisticalCharts({ params: data }).then(res => {

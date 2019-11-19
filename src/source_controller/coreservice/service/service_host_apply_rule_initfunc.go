@@ -22,4 +22,5 @@ func (s *coreService) initHostApplyRule() {
 	s.addAction(http.MethodDelete, "/deletemany/host_apply_rule/bk_biz_id/{bk_biz_id}/", s.DeleteHostApplyRule, nil)
 	s.addAction(http.MethodGet, "/find/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/", s.GetHostApplyRule, nil)
 	s.addAction(http.MethodPost, "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}/", s.ListHostApplyRule, nil)
+	s.addAction(http.MethodPost, "/findmany/host_apply_plan/bk_biz_id/{bk_biz_id}/", s.GenerateApplyPlan, nil)
 }

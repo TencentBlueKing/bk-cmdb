@@ -121,3 +121,14 @@ type OneHostApplyPlan struct {
 	ErrCode        int                      `json:"error_code" json:"error_code" bson:"error_code" mapstructure:"error_code"`
 	ErrMsg         string                   `json:"error_message" json:"error_message" bson:"error_message" mapstructure:"error_message"`
 }
+
+type HostApplyPlanResult struct {
+	Plans          []OneHostApplyPlan `field:"plans" json:"plans" bson:"plans" mapstructure:"plans"`
+	HostAttributes []Attribute        `field:"host_attributes" json:"host_attributes" bson:"host_attributes" mapstructure:"host_attributes"`
+}
+
+type HostApplyPlanRequest struct {
+	AdditionalRules   []CreateHostApplyRuleOption `field:"additional_host_apply_rules" json:"additional_host_apply_rules" bson:"additional_host_apply_rules" mapstructure:"additional_host_apply_rules"`
+	ConflictResolvers []HostApplyConflictResolver `field:"conflict_resolvers" json:"conflict_resolvers" bson:"conflict_resolvers" mapstructure:"conflict_resolvers"`
+	ModuleIDs         []int64                     `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+}

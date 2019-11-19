@@ -205,10 +205,6 @@
         &:not(.view) {
             .node-child:hover {
                 background-color: rgba(240,241,245, .6);
-                .node-icon {
-                    background-color: $highlightColor;
-                    color: #FFF;
-                }
                 .child-name {
                     color: $highlightColor;
                 }
@@ -229,7 +225,7 @@
         font-size: 12px;
         font-style: normal;
         color: #fff;
-        background-color: $iconColor;
+        background-color: #97AED6;
         z-index: 2;
     }
     .node-root {

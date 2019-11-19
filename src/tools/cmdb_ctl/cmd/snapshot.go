@@ -64,7 +64,7 @@ type snapshotCheckService struct {
 }
 
 func newSnapshotCheckService(zkaddr string, bizID int) (*snapshotCheckService, error) {
-	service, err := config.NewService(zkaddr, "")
+	service, err := config.NewZkService(zkaddr)
 	if err != nil {
 		return nil, err
 	}

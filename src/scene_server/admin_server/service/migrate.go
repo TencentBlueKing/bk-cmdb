@@ -35,7 +35,9 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		User:         common.CCSystemOperatorUserName,
 		CCApiSrvAddr: s.ccApiSrvAddr,
 	}
-	if err := upgrader.Upgrade(s.ctx, s.db, updateCfg); err != nil {
+
+	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db, updateCfg)
+	if err != nil {
 		blog.Errorf("db upgrade failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
@@ -44,5 +46,29 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	resp.WriteEntity(metadata.NewSuccessResp("migrate success"))
+	currentVersion := preVersion
+	if len(finishedVersions) > 0 {
+		currentVersion = finishedVersions[len(finishedVersions)-1]
+	}
+
+	type MigrationResponse struct {
+		metadata.BaseResp `json:",inline"`
+		Data              interface{} `json:"data"`
+		PreVersion        string      `json:"pre_version"`
+		CurrentVersion    string      `json:"current_version"`
+		FinishedVersions  []string    `json:"finished_migrations"`
+	}
+	result := MigrationResponse{
+		BaseResp: metadata.BaseResp{
+			Result:      true,
+			Code:        0,
+			ErrMsg:      "",
+			Permissions: nil,
+		},
+		Data:             "migrate success",
+		PreVersion:       preVersion,
+		CurrentVersion:   currentVersion,
+		FinishedVersions: finishedVersions,
+	}
+	resp.WriteEntity(result)
 }

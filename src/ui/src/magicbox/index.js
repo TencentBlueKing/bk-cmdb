@@ -15,6 +15,9 @@ Vue.use(magicbox, {
         quickClose: true,
         width: 800
     },
+    'bk-input': {
+        fontSize: 'medium'
+    },
     i18n: (key, value) => i18n.t(key, value)
 })
 

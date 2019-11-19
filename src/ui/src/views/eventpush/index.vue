@@ -66,12 +66,12 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff slot="empty" :stuff="table.stuff">
+            <cmdb-table-empty slot="empty" :stuff="table.stuff">
                 <template>
                     <p>{{$t('暂时没有数据')}}</p>
                     <p>{{$t('事件推送功能提示')}}</p>
                 </template>
-            </cmdb-table-stuff>
+            </cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom

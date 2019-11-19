@@ -5,13 +5,13 @@
                 <div class="dialog-body" ref="body"
                     v-if="showBody"
                     :style="bodyStyle">
-                    <div class="dialog-header" v-if="showHeader">
+                    <div class="dialog-header" v-if="showHeader" ref="header">
                         <slot name="header"></slot>
                     </div>
                     <div class="dialog-content">
                         <slot></slot>
                     </div>
-                    <div class="dialog-footer" v-if="showFooter">
+                    <div class="dialog-footer" v-if="showFooter" ref="footer">
                         <slot name="footer"></slot>
                     </div>
                     <i class="bk-icon icon-close" v-if="showCloseIcon" @click="handleCloseDialog"></i>
@@ -47,7 +47,7 @@
         data () {
             return {
                 timer: null,
-                bodyHeight: null,
+                bodyHeight: 0,
                 showWrapper: false,
                 showBody: false
             }
@@ -55,10 +55,8 @@
         computed: {
             bodyStyle () {
                 const style = {
-                    width: this.width + 'px'
-                }
-                if (this.bodyHeight) {
-                    style['--height'] = this.bodyHeight
+                    width: this.width + 'px',
+                    '--height': this.bodyHeight + 'px'
                 }
                 return style
             }
@@ -91,7 +89,7 @@
         methods: {
             resizeHandler () {
                 this.$nextTick(() => {
-                    this.bodyHeight = this.$refs.resizeTrigger.offsetHeight + 'px'
+                    this.bodyHeight = this.$refs.resizeTrigger.offsetHeight
                 })
             },
             handleCloseDialog () {

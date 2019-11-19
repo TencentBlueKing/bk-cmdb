@@ -180,7 +180,11 @@
                 </div>
             </div>
             <div slot="footer" class="footer">
-                <bk-button theme="primary" :loading="$loading(['updateClassification', 'createClassification'])" @click="saveGroup">{{$t('保存')}}</bk-button>
+                <bk-button theme="primary"
+                    :loading="$loading(['updateClassification', 'createClassification'])"
+                    @click="saveGroup">
+                    {{groupDialog.isEdit ? $t('保存') : $t('提交')}}
+                </bk-button>
                 <bk-button theme="default" @click="hideGroupDialog">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>

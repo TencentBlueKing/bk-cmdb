@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -270,4 +271,112 @@ func (s *Service) BatchCreateOrUpdateHostApplyRule(req *restful.Request, resp *r
 	}
 
 	_ = resp.WriteEntity(response)
+}
+
+func (s *Service) GenerateApplyPlan(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	rid := srvData.rid
+
+	bizIDStr := req.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("GenerateApplyPlan failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	planRequest := meta.HostApplyPlanRequest{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&planRequest); err != nil {
+		blog.Errorf("GenerateApplyPlan failed, decode request body failed, err: %v,rid:%s", err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+	result, err := s.generateApplyPlan(srvData, bizID, planRequest)
+	if err != nil {
+		blog.ErrorJSON("GenerateApplyPlan failed, generateApplyPlan failed, bizID: %s, request: %s, err: %v, rid:%s", bizID, planRequest, err, rid)
+		result := &meta.RespError{Msg: err}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	_ = resp.WriteEntity(result)
+	return
+}
+
+func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest meta.HostApplyPlanRequest) (meta.HostApplyPlanResult, errors.CCErrorCoder) {
+	rid := srvData.rid
+	var planResult meta.HostApplyPlanResult
+
+	relationRequest := &meta.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		ModuleIDArr:   planRequest.ModuleIDs,
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	hostRelations, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, relationRequest)
+	if err != nil {
+		blog.Errorf("generateApplyPlan failed, err: %+v, rid: %s", err, rid)
+		return planResult, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	hostModuleMap := make(map[int64][]int64)
+	for _, item := range hostRelations.Data.Info {
+		if _, exist := hostModuleMap[item.HostID]; exist == false {
+			hostModuleMap[item.HostID] = make([]int64, 0)
+		}
+		hostModuleMap[item.HostID] = append(hostModuleMap[item.HostID], item.ModuleID)
+	}
+	hostModules := make([]meta.Host2Modules, 0)
+	for hostID, moduleIDs := range hostModuleMap {
+		hostModules = append(hostModules, meta.Host2Modules{
+			HostID:    hostID,
+			ModuleIDs: moduleIDs,
+		})
+	}
+
+	ruleOption := meta.ListHostApplyRuleOption{
+		ModuleIDs: planRequest.ModuleIDs,
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	rules, ccErr := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(srvData.ctx, srvData.header, bizID, ruleOption)
+	if ccErr != nil {
+		blog.ErrorJSON("generateApplyPlan failed, ListHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, ruleOption, ccErr.Error(), rid)
+		return planResult, ccErr
+	}
+
+	now := time.Now()
+	if len(planRequest.AdditionalRules) > 0 {
+		for _, item := range planRequest.AdditionalRules {
+			rules.Info = append(rules.Info, meta.HostApplyRule{
+				ID:              0,
+				BizID:           bizID,
+				ModuleID:        item.ModuleID,
+				AttributeID:     item.AttributeID,
+				PropertyValue:   item.PropertyValue,
+				Creator:         srvData.user,
+				Modifier:        srvData.user,
+				CreateTime:      now,
+				LastTime:        now,
+				SupplierAccount: srvData.ownerID,
+			})
+		}
+	}
+
+	planOption := meta.HostApplyPlanOption{
+		Rules:             rules.Info,
+		HostModules:       hostModules,
+		ConflictResolvers: planRequest.ConflictResolvers,
+	}
+
+	planResult, ccErr = s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(srvData.ctx, srvData.header, bizID, planOption)
+	if err != nil {
+		blog.ErrorJSON("generateApplyPlan failed, core service GenerateApplyPlan failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, planOption, ccErr.Error(), rid)
+		return planResult, ccErr
+	}
+
+	return planResult, nil
 }

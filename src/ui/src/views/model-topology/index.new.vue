@@ -1,7 +1,7 @@
 <template>
     <div :class="['topo-wrapper', { hover: isTopoHover }]">
         <div class="toolbar">
-            <cmdb-auth style="display: none;" :auth="$authResources({ type: $OPERATION.SYSTEM_TOPOLOGY })" @update-auth="handleReceiveAuth"></cmdb-auth>
+            <cmdb-auth style="display: none;" ref="addBusinessLevel" :auth="$authResources({ type: $OPERATION.SYSTEM_TOPOLOGY })" @update-auth="handleReceiveAuth"></cmdb-auth>
             <template v-if="!topoEdit.isEdit">
                 <cmdb-auth :auth="$authResources({ type: $OPERATION.SYSTEM_MODEL_GRAPHICS })">
                     <bk-button slot-scope="{ disabled }"
@@ -556,7 +556,7 @@
 
                     // 添加hover样式
                     node.addClass('hover')
-                    node.neighborhood().addClass('hover')
+                    node.connectedEdges().addClass('hover')
 
                     // 显示tooltip
                     if (this.topoEdit.isEdit && !this.specialModel.includes(nodeData.id)) {
@@ -586,7 +586,7 @@
                 }, 160)).on('mouseout', 'node.model', throttle((event) => {
                     const node = event.target
                     node.removeClass('hover')
-                    node.neighborhood().removeClass('hover')
+                    node.connectedEdges().removeClass('hover')
 
                     const popover = node.data('popover')
                     if (popover) {
@@ -695,6 +695,7 @@
                         },
                         group: 'nodes',
                         locked: false,
+                        selectable: false,
                         classes: nodeClasses.join(' ')
                     })
 
@@ -860,11 +861,12 @@
             handleSelectGroup (group) {
                 if (group) {
                     const groupId = group['bk_classification_id']
+                    const groupNodes = cy.$(`node[groupId='${groupId}']`)
 
                     // 通过样式降低其它节点透明度，使用batch降低开销
                     cy.startBatch()
-                    cy.$('node').addClass('mask').outgoers().addClass('mask').unselect()
-                    cy.$(`node[groupId='${groupId}']`).select().removeClass('mask').outgoers().removeClass('mask')
+                    cy.$('*').addClass('mask')
+                    groupNodes.removeClass('mask').edgesWith(groupNodes).removeClass('mask')
                     cy.endBatch()
 
                     this.topoNav.selectedGroupId = group['bk_classification_id']
@@ -882,8 +884,8 @@
                 this.topoNav.selectedNodeId = nodeId
 
                 cy.startBatch()
-                cy.$('*').addClass('mask').unselect()
-                cy.$(`node#${nodeId}`).select().removeClass('mask').outgoers().removeClass('mask')
+                cy.$('*').addClass('mask')
+                cy.$(`node#${nodeId}`).removeClass('mask')
                 cy.endBatch()
 
                 // 取消组选择
@@ -1128,6 +1130,11 @@
                 if (this.createAuth) {
                     this.addBusinessLevel.parent = model
                     this.addBusinessLevel.showDialog = true
+                } else {
+                    const addBusinessLevel = this.$refs.addBusinessLevel
+                    if (addBusinessLevel) {
+                        addBusinessLevel.$el && addBusinessLevel.$el.click()
+                    }
                 }
             },
             async handleCreateBusinessLevel (data) {
