@@ -1835,10 +1835,11 @@ func (ps *parseStream) objectAttribute() *parseStream {
 }
 
 var (
-	createModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/?$`)
-	deleteModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
-	updateModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
-	findModuleRegexp   = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	createModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/?$`)
+	deleteModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	updateModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	findModuleRegexp                  = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	findModuleByServiceTemplateRegexp = regexp.MustCompile(`^/api/v3/module/bk_biz_id/[0-9]+/service_template_id/[0-9]+/?$`)
 )
 
 func (ps *parseStream) objectModule() *parseStream {
@@ -2004,6 +2005,32 @@ func (ps *parseStream) objectModule() *parseStream {
 						InstanceID: setID,
 					},
 				},
+			},
+		}
+		return ps
+	}
+
+	// find module by service template.
+	if ps.hitRegexp(findModuleByServiceTemplateRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("find module by service template id, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find module, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelModule,
+					Action: meta.FindMany,
+				},
+				Layers: []meta.Item{},
 			},
 		}
 		return ps
