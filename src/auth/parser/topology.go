@@ -1835,10 +1835,11 @@ func (ps *parseStream) objectAttribute() *parseStream {
 }
 
 var (
-	createModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/?$`)
-	deleteModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
-	updateModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
-	findModuleRegexp   = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	createModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/?$`)
+	deleteModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	updateModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	findModuleRegexp                  = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	findModuleByServiceTemplateRegexp = regexp.MustCompile(`^/api/v3/module/bk_biz_id/(?P<bk_biz_id>[0-9]+)/service_template_id/(?P<service_template_id>[0-9]+)/?$`)
 )
 
 func (ps *parseStream) objectModule() *parseStream {
@@ -2004,6 +2005,39 @@ func (ps *parseStream) objectModule() *parseStream {
 						InstanceID: setID,
 					},
 				},
+			},
+		}
+		return ps
+	}
+
+	// find module by service template.
+	if ps.hitRegexp(findModuleByServiceTemplateRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("find module by service template id, but got invalid url")
+			return ps
+		}
+		var bizIDStr string
+		match := findModuleByServiceTemplateRegexp.FindStringSubmatch(ps.RequestCtx.URI)
+		for i, name := range findModuleByServiceTemplateRegexp.SubexpNames() {
+			if name == common.BKAppIDField {
+				bizIDStr = match[i]
+				break
+			}
+		}
+		bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find module, but parse bk_biz_id failed, bizIDStr: %s, uri: %s, err: %+v", bizIDStr, ps.RequestCtx.URI, err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelModule,
+					Action: meta.FindMany,
+				},
+				Layers: []meta.Item{},
 			},
 		}
 		return ps
