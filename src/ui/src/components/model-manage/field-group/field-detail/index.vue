@@ -102,6 +102,7 @@
     import theFieldInt from './int'
     import theFieldFloat from './float'
     import theFieldEnum from './enum'
+    import theFieldList from './list'
     import theConfig from './config'
     import { mapGetters, mapActions } from 'vuex'
     export default {
@@ -110,6 +111,7 @@
             theFieldInt,
             theFieldFloat,
             theFieldEnum,
+            theFieldList,
             theConfig
         },
         props: {
@@ -168,6 +170,9 @@
                 }, {
                     id: 'bool',
                     name: 'bool'
+                }, {
+                    id: 'list',
+                    name: this.$t('列表')
                 }],
                 fieldInfo: {
                     bk_property_name: '',
@@ -200,7 +205,7 @@
                 return type
             },
             isComponentShow () {
-                return ['singlechar', 'longchar', 'enum', 'int', 'float'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+                return ['singlechar', 'longchar', 'enum', 'int', 'float', 'list'].indexOf(this.fieldInfo['bk_property_type']) !== -1
             },
             changedValues () {
                 const changedValues = {}
