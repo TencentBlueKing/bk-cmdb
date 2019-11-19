@@ -231,6 +231,65 @@ func (s *Service) UpdateModule(params types.ContextParams, pathParams, queryPara
 	return nil, nil
 }
 
+func (s *Service) ListModulesByServiceTemplateID(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("ListModulesByServiceTemplateID failed, parse bk_biz_id failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
+	}
+
+	serviceTemplateID, err := strconv.ParseInt(pathParams(common.BKServiceTemplateIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("ListModulesByServiceTemplateID failed, parse service_template_id field failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKServiceTemplateIDField)
+	}
+
+	requestBody := struct {
+		Page    *metadata.BasePage `field:"page" json:"page" mapstructure:"page"`
+		Keyword string             `field:"keyword" json:"keyword" mapstructure:"keyword"`
+	}{}
+	if err := mapstruct.Decode2Struct(data, &requestBody); err != nil {
+		blog.Errorf("ListModulesByServiceTemplateID failed, parse request body failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	start := int64(0)
+	limit := int64(common.BKDefaultLimit)
+	sortArr := make([]metadata.SearchSort, 0)
+	if requestBody.Page != nil {
+		limit = int64(requestBody.Page.Limit)
+		start = int64(requestBody.Page.Start)
+		sortArr = requestBody.Page.ToSearchSort()
+	}
+	filter := map[string]interface{}{
+		common.BKServiceTemplateIDField: serviceTemplateID,
+		common.BKAppIDField:             bizID,
+	}
+	if len(requestBody.Keyword) != 0 {
+		filter[common.BKModuleNameField] = map[string]interface{}{
+			common.BKDBLIKE: requestBody.Keyword,
+		}
+	}
+	qc := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Offset: start,
+			Limit:  limit,
+		},
+		SortArr:   sortArr,
+		Condition: filter,
+	}
+	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, qc)
+	if err != nil {
+		blog.Errorf("ListModulesByServiceTemplateID failed, http request failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if instanceResult.Code != 0 {
+		blog.ErrorJSON("ListModulesByServiceTemplateID failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, params.ReqID)
+		return nil, errors.New(instanceResult.Code, instanceResult.ErrMsg)
+	}
+	return instanceResult.Data, nil
+}
+
 // SearchModule search the modules
 func (s *Service) SearchModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 

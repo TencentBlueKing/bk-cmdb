@@ -130,6 +130,9 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 			err = valid.validFloat(val, key)
 		case common.FieldTypeUser:
 			err = valid.validUser(val, key)
+		case common.FieldTypeList:
+			err = valid.validList(val, key)
+
 		default:
 			continue
 		}
@@ -492,6 +495,50 @@ func (valid *ValidMap) validTime(val interface{}, key string) error {
 	result := util.IsTime(valStr)
 	if !result {
 		blog.Error("params   not valid")
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+	}
+	return nil
+}
+
+//valid list
+func (valid *ValidMap) validList(val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+		}
+		return nil
+	}
+
+	strVal, ok := val.(string)
+	if !ok {
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+	}
+
+	option, ok := valid.propertys[key]
+	if !ok {
+		blog.Errorf("option %v invalid, key: %s not exist", option, key)
+		return valid.errif.Errorf(common.CCErrCollectNetDeviceObjPropertyNotExist, key)
+	}
+	listOption, ok := option.Option.([]interface{})
+	if false == ok {
+		blog.Errorf(" option %v not string type list option", option)
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+	}
+	match := false
+	for _, inVal := range listOption {
+		inValStr, ok := inVal.(string)
+		if !ok {
+			blog.Errorf("inner list option convert to string  failed, params %s not valid , list field value: %#v", key, val)
+			return valid.errif.Errorf(common.CCErrParseAttrOptionListFailed, key)
+		}
+		if strVal == inValStr {
+			match = true
+		}
+	}
+	if !match {
+		blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOption, option, val)
+		blog.Errorf("params %s not valid , list field value: %#v", key, val)
 		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil

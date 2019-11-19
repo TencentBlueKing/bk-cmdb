@@ -206,6 +206,8 @@ const (
 	CCErrCommModifyFieldForbidden                            = 1199077
 	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199078
 
+	CCErrParseAttrOptionListFailed = 1199080
+
 	// one argument: maxValue
 	CCErrExceedMaxOperationRecordsAtOnce = 1199077
 
@@ -432,14 +434,15 @@ const (
 	CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden = 1101090
 	CCErrorTopoUpdateModuleFromTplNameForbidden            = 1101091
 	CCErrTopoCanNotAddRequiredAttributeForMainlineModel    = 1101092
-	CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl     = 1101093
+	CCErrorTopoObjectInstanceObjIDFieldConflictWithURL     = 1101093
+	CCErrTopoImportMainlineForbidden                       = 1101094
 
-	CCErrorTopoModuleNameDuplicated    = 1101094
 	CCErrorTopoSyncModuleTaskFailed    = 1101095
 	CCErrorTopoSyncModuleTaskIsRunning = 1101096
 
 	CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate = 1101097
 	CCErrorTopoForbiddenDeleteBuiltInSetModule                  = 1101098
+	CCErrorTopoModuleNameDuplicated                             = 1101099
 
 	// object controller 1102XXX
 
