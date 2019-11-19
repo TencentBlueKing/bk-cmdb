@@ -13,10 +13,11 @@
 package util
 
 import (
+	"encoding/json"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"encoding/json"
 )
 
 // ValidPropertyOption valid property field option
