@@ -62,7 +62,7 @@
                         theme="primary"
                         :disabled="saveDisabled || $loading() || disabled"
                         @click="handleSave">
-                        {{$t('保存')}}
+                        {{type === 'create' ? $t('提交') : $t('保存')}}
                     </bk-button>
                 </cmdb-auth>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>

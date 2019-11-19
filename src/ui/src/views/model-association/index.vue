@@ -96,6 +96,7 @@
                 :is-edit="slider.isEdit"
                 :is-read-only="slider.isReadOnly"
                 :relation="slider.relation"
+                :save-btn-text="slider.isEdit ? $t('保存') : $t('提交')"
                 @saved="saveRelation"
                 @cancel="handleSliderBeforeClose">
             </the-relation>
